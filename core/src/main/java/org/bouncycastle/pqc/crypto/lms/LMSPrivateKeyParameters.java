@@ -109,13 +109,24 @@ public class LMSPrivateKeyParameters
              */
 
 
-            if (dIn.readInt() != 0)
+            int version = dIn.readInt();
+            if (version != 0 && version != 1)
             {
-                throw new IllegalStateException("expected version 0 lms private key");
+                throw new IllegalStateException("expected version 0 or 1 lms private key");
             }
 
-            LMSigParameters parameter = LMSigParameters.getParametersForType(dIn.readInt());
-            LMOtsParameters otsParameter = LMOtsParameters.getParametersForType(dIn.readInt());
+            int sigType = dIn.readInt();
+            LMSigParameters parameter = LMSigParameters.getParametersForType(sigType);
+            if (parameter == null)
+            {
+                throw new IOException("unknown LMS type code: " + sigType);
+            }
+            int otsType = dIn.readInt();
+            LMOtsParameters otsParameter = LMOtsParameters.getParametersForType(otsType);
+            if (otsParameter == null)
+            {
+                throw new IOException("unknown LM-OTS type code: " + otsType);
+            }
             byte[] I = new byte[16];
             dIn.readFully(I);
 
@@ -133,8 +144,35 @@ public class LMSPrivateKeyParameters
             byte[] masterSecret = new byte[l];
             dIn.readFully(masterSecret);
 
-            return new LMSPrivateKeyParameters(parameter, otsParameter, q, I, maxQ, masterSecret);
+            LMSPrivateKeyParameters key = new LMSPrivateKeyParameters(parameter, otsParameter, q, I, maxQ, masterSecret);
 
+            //
+            // A version 1 encoding appends a cache of the top of the Merkle tree (see getEncoded).
+            // Priming it here means the first signature made after the key is decoded does not have
+            // to rebuild the whole tree, which otherwise costs about as much as key generation.
+            //
+            if (version == 1)
+            {
+                int cacheCount = dIn.readInt();
+                if (cacheCount < 0 || cacheCount >= internedKeys.length)
+                {
+                    throw new IOException("tree cache node count out of range: " + cacheCount);
+                }
+                int m = parameter.getM();
+                if ((long)cacheCount * m > dIn.available())
+                {
+                    throw new IOException("tree cache length exceeded " + dIn.available());
+                }
+                byte[][] cachedT = new byte[cacheCount + 1][];
+                for (int r = 1; r <= cacheCount; r++)
+                {
+                    cachedT[r] = new byte[m];
+                    dIn.readFully(cachedT[r]);
+                }
+                key.primeTreeCache(cachedT);
+            }
+
+            return key;
         }
         else if (src instanceof byte[])
         {
@@ -384,6 +422,40 @@ public class LMSPrivateKeyParameters
         return T;
     }
 
+    /**
+     * Populate the node cache with the top-of-tree nodes recovered from a version 1
+     * encoding. Entries are keyed on the interned cache keys so they are not evicted, matching
+     * the state a freshly generated key reaches after its public key has been derived.
+     *
+     * @param cachedT nodes indexed by tree node number; index 0 is unused, entries 1..n are cached.
+     */
+    void primeTreeCache(byte[][] cachedT)
+    {
+        synchronized (tCache)
+        {
+            for (int r = 1; r < cachedT.length; r++)
+            {
+                if (cachedT[r] != null)
+                {
+                    tCache.put(internedKeys[r], cachedT[r]);
+                }
+            }
+        }
+    }
+
+    /**
+     * Return true if the top of the Merkle tree is present in the node cache - either because
+     * this key has been used/queried, or because it was decoded from a version 1 encoding (see
+     * getEncoded). Used by the regression tests that verify tree-cache persistence.
+     */
+    boolean isTreeCachePrimed()
+    {
+        synchronized (tCache)
+        {
+            return tCache.get(T1) != null;
+        }
+    }
+
     @Override
     public boolean equals(Object o)
     {
@@ -440,7 +512,7 @@ public class LMSPrivateKeyParameters
         // It is implementation dependent.
         //
         // Format:
-        //     version u32
+        //     version u32                 (1; version 0 - without the tree cache - is still accepted on read)
         //     type u32
         //     otstype u32
         //     I u8x16
@@ -448,10 +520,21 @@ public class LMSPrivateKeyParameters
         //     maxQ u32
         //     master secret Length u32
         //     master secret u8[]
+        //     tree cache node count u32   (n; the top-of-tree nodes 1..n)
+        //     tree cache nodes u8[]       (n * getSigParameters().getM() bytes)
+        //
+        // The tree cache carries the top of the Merkle tree so that the first signature made after
+        // the key is decoded does not have to rebuild the whole tree - which otherwise costs about
+        // as much as key generation (see github #2365). The nodes are a deterministic function of I,
+        // the master secret and the parameters and are independent of q, so persisting them leaks
+        // nothing the (already encoded) master secret does not. A key written by this method cannot
+        // be read by releases before 1.86; those releases reject the version field.
         //
 
-        return Composer.compose()
-            .u32str(0) // version
+        int cacheTop = Math.min(internedKeys.length, maxCacheR);
+
+        Composer composer = Composer.compose()
+            .u32str(1) // version
             .u32str(parameters.getType()) // type
             .u32str(otsParameters.getType()) // ots type
             .bytes(I) // I at 16 bytes
@@ -459,7 +542,14 @@ public class LMSPrivateKeyParameters
             .u32str(maxQ) // maximum q
             .u32str(masterSecret.length) // length of master secret.
             .bytes(masterSecret) // the master secret
-            .build();
+            .u32str(cacheTop - 1); // number of cached tree nodes (nodes 1 .. cacheTop-1)
+
+        for (int r = 1; r < cacheTop; r++)
+        {
+            composer.bytes(findT(r)); // top-of-tree node r
+        }
+
+        return composer.build();
     }
 
     private static class CacheKey
