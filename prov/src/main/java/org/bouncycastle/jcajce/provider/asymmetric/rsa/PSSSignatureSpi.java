@@ -372,6 +372,33 @@ public class PSSSignatureSpi
         }
     }
 
+    static public class RIPEMD128withRSA
+        extends PSSSignatureSpi
+    {
+        public RIPEMD128withRSA()
+        {
+            super(new RSABlindedEngine(), new PSSParameterSpec("RIPEMD128", "MGF1", new MGF1ParameterSpec("RIPEMD128"), 16, 1));
+        }
+    }
+
+    static public class RIPEMD160withRSA
+        extends PSSSignatureSpi
+    {
+        public RIPEMD160withRSA()
+        {
+            super(new RSABlindedEngine(), new PSSParameterSpec("RIPEMD160", "MGF1", new MGF1ParameterSpec("RIPEMD160"), 20, 1));
+        }
+    }
+
+    static public class RIPEMD256withRSA
+        extends PSSSignatureSpi
+    {
+        public RIPEMD256withRSA()
+        {
+            super(new RSABlindedEngine(), new PSSParameterSpec("RIPEMD256", "MGF1", new MGF1ParameterSpec("RIPEMD256"), 32, 1));
+        }
+    }
+
     static public class SHA224withRSA
         extends PSSSignatureSpi
     {

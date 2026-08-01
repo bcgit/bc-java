@@ -3,6 +3,8 @@ package org.bouncycastle.jce.provider.test;
 import java.math.BigInteger;
 import java.security.AlgorithmParameters;
 import java.security.KeyFactory;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
 import java.security.PrivateKey;
 import java.security.ProviderException;
@@ -20,8 +22,13 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
+import org.bouncycastle.crypto.digests.RIPEMD160Digest;
+import org.bouncycastle.crypto.engines.RSABlindedEngine;
+import org.bouncycastle.crypto.signers.PSSSigner;
+import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 import org.bouncycastle.util.test.TestRandomData;
@@ -457,6 +464,75 @@ public class PSSTest
         {
             fail("raw mode signature verification failed");
         }
+    
+        ripemdPSSTest();
+    }
+
+    /**
+     * RIPEMD had no PSS registration at all, and org.bouncycastle.jcajce.provider.util.DigestFactory
+     * knew nothing about it either: getDigest returned null for the name, and isSameDigest - an
+     * allow-list of the SHA families and MD5 - reported two identical RIPEMD names as different
+     * digests, so a PSSParameterSpec naming RIPEMD160 for both the hash and MGF1 was rejected with
+     * "digest algorithm for MGF should be the same as for PSS parameters" (github #2381).
+     */
+    private void ripemdPSSTest()
+        throws Exception
+    {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", "BC");
+        kpg.initialize(2048, new SecureRandom());
+        KeyPair kp = kpg.generateKeyPair();
+
+        byte[] msg = Strings.toByteArray("the quick brown fox jumps over the lazy dog");
+
+        String[] names = new String[]{"RIPEMD128", "RIPEMD160", "RIPEMD256"};
+        int[] saltSizes = new int[]{16, 20, 32};
+
+        for (int i = 0; i != names.length; i++)
+        {
+            // the named algorithm, which did not resolve at all
+            Signature s = Signature.getInstance(names[i] + "WITHRSAANDMGF1", "BC");
+            s.initSign(kp.getPrivate());
+            s.update(msg);
+            byte[] sig = s.sign();
+
+            s = Signature.getInstance(names[i] + "WITHRSAANDMGF1", "BC");
+            s.initVerify(kp.getPublic());
+            s.update(msg);
+            isTrue(names[i] + " PSS verify failed", s.verify(sig));
+
+            byte[] tampered = Arrays.clone(msg);
+            tampered[0] ^= 1;
+            s = Signature.getInstance(names[i] + "WITHRSAANDMGF1", "BC");
+            s.initVerify(kp.getPublic());
+            s.update(tampered);
+            isTrue(names[i] + " PSS accepted a tampered message", !s.verify(sig));
+
+            // and the generic RSASSA-PSS route with an explicit spec, which the isSameDigest
+            // allow-list rejected even though both names are the same string
+            Signature g = Signature.getInstance("RSASSA-PSS", "BC");
+            g.setParameter(new PSSParameterSpec(names[i], "MGF1", new MGF1ParameterSpec(names[i]), saltSizes[i], 1));
+            g.initSign(kp.getPrivate());
+            g.update(msg);
+            byte[] gSig = g.sign();
+
+            g = Signature.getInstance("RSASSA-PSS", "BC");
+            g.setParameter(new PSSParameterSpec(names[i], "MGF1", new MGF1ParameterSpec(names[i]), saltSizes[i], 1));
+            g.initVerify(kp.getPublic());
+            g.update(msg);
+            isTrue(names[i] + " generic PSS verify failed", g.verify(gSig));
+        }
+
+        // a signature from the JCA path must verify under the lightweight signer, so the encoding
+        // is checked against an independent implementation rather than only against itself
+        Signature s = Signature.getInstance("RIPEMD160WITHRSAANDMGF1", "BC");
+        s.initSign(kp.getPrivate());
+        s.update(msg);
+        byte[] sig = s.sign();
+
+        PSSSigner lw = new PSSSigner(new RSABlindedEngine(), new RIPEMD160Digest(), 20);
+        lw.init(false, PublicKeyFactory.createKey(kp.getPublic().getEncoded()));
+        lw.update(msg, 0, msg.length);
+        isTrue("lightweight PSSSigner did not verify the JCA RIPEMD160 signature", lw.verifySignature(sig));
     }
 
     public String getName()

@@ -9,6 +9,10 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.digests.RIPEMD128Digest;
+import org.bouncycastle.crypto.digests.RIPEMD160Digest;
+import org.bouncycastle.crypto.digests.RIPEMD256Digest;
+import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
 import org.bouncycastle.internal.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.util.Strings;
 
@@ -26,6 +30,9 @@ public class DigestFactory
     private static Set sha3_256 = new HashSet();
     private static Set sha3_384 = new HashSet();
     private static Set sha3_512 = new HashSet();
+    private static Set ripemd128 = new HashSet();
+    private static Set ripemd160 = new HashSet();
+    private static Set ripemd256 = new HashSet();
     private static Set shake128 = new HashSet();
     private static Set shake256 = new HashSet();
 
@@ -82,8 +89,32 @@ public class DigestFactory
         shake256.add("SHAKE256");
         shake256.add(NISTObjectIdentifiers.id_shake256.getId());
 
+        ripemd128.add("RIPEMD128");
+        ripemd128.add("RIPEMD-128");
+        ripemd128.add(TeleTrusTObjectIdentifiers.ripemd128.getId());
+
+        ripemd160.add("RIPEMD160");
+        ripemd160.add("RIPEMD-160");
+        ripemd160.add(TeleTrusTObjectIdentifiers.ripemd160.getId());
+
+        ripemd256.add("RIPEMD256");
+        ripemd256.add("RIPEMD-256");
+        ripemd256.add(TeleTrusTObjectIdentifiers.ripemd256.getId());
+
         oids.put("MD5", PKCSObjectIdentifiers.md5);
         oids.put(PKCSObjectIdentifiers.md5.getId(), PKCSObjectIdentifiers.md5);
+
+        oids.put("RIPEMD128", TeleTrusTObjectIdentifiers.ripemd128);
+        oids.put("RIPEMD-128", TeleTrusTObjectIdentifiers.ripemd128);
+        oids.put(TeleTrusTObjectIdentifiers.ripemd128.getId(), TeleTrusTObjectIdentifiers.ripemd128);
+
+        oids.put("RIPEMD160", TeleTrusTObjectIdentifiers.ripemd160);
+        oids.put("RIPEMD-160", TeleTrusTObjectIdentifiers.ripemd160);
+        oids.put(TeleTrusTObjectIdentifiers.ripemd160.getId(), TeleTrusTObjectIdentifiers.ripemd160);
+
+        oids.put("RIPEMD256", TeleTrusTObjectIdentifiers.ripemd256);
+        oids.put("RIPEMD-256", TeleTrusTObjectIdentifiers.ripemd256);
+        oids.put(TeleTrusTObjectIdentifiers.ripemd256.getId(), TeleTrusTObjectIdentifiers.ripemd256);
         
         oids.put("SHA1", OIWObjectIdentifiers.idSHA1);
         oids.put("SHA-1", OIWObjectIdentifiers.idSHA1);
@@ -186,6 +217,18 @@ public class DigestFactory
         {
             return org.bouncycastle.crypto.util.DigestFactory.createSHA3_512();
         }
+        if (ripemd128.contains(digestName))
+        {
+            return new RIPEMD128Digest();
+        }
+        if (ripemd160.contains(digestName))
+        {
+            return new RIPEMD160Digest();
+        }
+        if (ripemd256.contains(digestName))
+        {
+            return new RIPEMD256Digest();
+        }
         if (shake128.contains(digestName))
         {
             return org.bouncycastle.crypto.util.DigestFactory.createSHAKE128();
@@ -202,6 +245,15 @@ public class DigestFactory
         String digest1,
         String digest2)
     {
+        // the alias sets below cover only the SHA families and MD5, so without this two identical
+        // names for anything else - RIPEMD160, Whirlpool, SM3, GOST3411 - were reported as
+        // different digests, and PSS refused a PSSParameterSpec naming the same digest twice
+        // (github #2381)
+        if (digest1 != null && digest1.equalsIgnoreCase(digest2))
+        {
+            return true;
+        }
+
         return (sha1.contains(digest1) && sha1.contains(digest2))
             || (sha224.contains(digest1) && sha224.contains(digest2))
             || (sha256.contains(digest1) && sha256.contains(digest2))
@@ -213,7 +265,10 @@ public class DigestFactory
             || (sha3_256.contains(digest1) && sha3_256.contains(digest2))
             || (sha3_384.contains(digest1) && sha3_384.contains(digest2))
             || (sha3_512.contains(digest1) && sha3_512.contains(digest2))
-            || (md5.contains(digest1) && md5.contains(digest2));
+            || (md5.contains(digest1) && md5.contains(digest2))
+            || (ripemd128.contains(digest1) && ripemd128.contains(digest2))
+            || (ripemd160.contains(digest1) && ripemd160.contains(digest2))
+            || (ripemd256.contains(digest1) && ripemd256.contains(digest2));
     }
     
     public static ASN1ObjectIdentifier getOID(

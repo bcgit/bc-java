@@ -117,6 +117,9 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         addAlgorithm("SHA512(224)WITHRSA", PKCSObjectIdentifiers.sha512_224WithRSAEncryption);
         addAlgorithm("SHA512(256)WITHRSAENCRYPTION", PKCSObjectIdentifiers.sha512_256WithRSAEncryption);
         addAlgorithm("SHA512(256)WITHRSA", PKCSObjectIdentifiers.sha512_256WithRSAEncryption);
+        addAlgorithm("RIPEMD128WITHRSAANDMGF1", PKCSObjectIdentifiers.id_RSASSA_PSS);
+        addAlgorithm("RIPEMD160WITHRSAANDMGF1", PKCSObjectIdentifiers.id_RSASSA_PSS);
+        addAlgorithm("RIPEMD256WITHRSAANDMGF1", PKCSObjectIdentifiers.id_RSASSA_PSS);
         addAlgorithm("SHA1WITHRSAANDMGF1", PKCSObjectIdentifiers.id_RSASSA_PSS);
         addAlgorithm("SHA224WITHRSAANDMGF1", PKCSObjectIdentifiers.id_RSASSA_PSS);
         addAlgorithm("SHA256WITHRSAANDMGF1", PKCSObjectIdentifiers.id_RSASSA_PSS);
@@ -607,6 +610,15 @@ public class DefaultSignatureAlgorithmIdentifierFinder
         //
         // explicit params
         //
+        AlgorithmIdentifier ripemd128AlgId = new AlgorithmIdentifier(TeleTrusTObjectIdentifiers.ripemd128, DERNull.INSTANCE);
+        addParameters("RIPEMD128WITHRSAANDMGF1", createPSSParams(ripemd128AlgId, 16));
+
+        AlgorithmIdentifier ripemd160AlgId = new AlgorithmIdentifier(TeleTrusTObjectIdentifiers.ripemd160, DERNull.INSTANCE);
+        addParameters("RIPEMD160WITHRSAANDMGF1", createPSSParams(ripemd160AlgId, 20));
+
+        AlgorithmIdentifier ripemd256AlgId = new AlgorithmIdentifier(TeleTrusTObjectIdentifiers.ripemd256, DERNull.INSTANCE);
+        addParameters("RIPEMD256WITHRSAANDMGF1", createPSSParams(ripemd256AlgId, 32));
+
         AlgorithmIdentifier sha1AlgId = new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1, DERNull.INSTANCE);
         addParameters("SHA1WITHRSAANDMGF1", createPSSParams(sha1AlgId, 20));
 

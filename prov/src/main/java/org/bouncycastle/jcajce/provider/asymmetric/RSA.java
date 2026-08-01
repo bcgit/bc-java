@@ -47,6 +47,9 @@ public class RSA
             provider.addAlgorithm("Alg.Alias.AlgorithmParameters.SHA384withRSA/PSS", "PSS");
             provider.addAlgorithm("Alg.Alias.AlgorithmParameters.SHA512withRSA/PSS", "PSS");
 
+            provider.addAlgorithm("Alg.Alias.AlgorithmParameters.RIPEMD128WITHRSAANDMGF1", "PSS");
+            provider.addAlgorithm("Alg.Alias.AlgorithmParameters.RIPEMD160WITHRSAANDMGF1", "PSS");
+            provider.addAlgorithm("Alg.Alias.AlgorithmParameters.RIPEMD256WITHRSAANDMGF1", "PSS");
             provider.addAlgorithm("Alg.Alias.AlgorithmParameters.SHA224WITHRSAANDMGF1", "PSS");
             provider.addAlgorithm("Alg.Alias.AlgorithmParameters.SHA256WITHRSAANDMGF1", "PSS");
             provider.addAlgorithm("Alg.Alias.AlgorithmParameters.SHA384WITHRSAANDMGF1", "PSS");
@@ -124,6 +127,9 @@ public class RSA
             provider.addAlgorithm("Alg.Alias.Signature.NONEWITHRSAANDMGF1", "RAWRSASSA-PSS");
             provider.addAlgorithm("Alg.Alias.Signature.RSAPSS", "RSASSA-PSS");
 
+            addPSSSignature(provider, "RIPEMD128", "MGF1", PREFIX + "PSSSignatureSpi$RIPEMD128withRSA");
+            addPSSSignature(provider, "RIPEMD160", "MGF1", PREFIX + "PSSSignatureSpi$RIPEMD160withRSA");
+            addPSSSignature(provider, "RIPEMD256", "MGF1", PREFIX + "PSSSignatureSpi$RIPEMD256withRSA");
             addPSSSignature(provider, "SHA224", "MGF1", PREFIX + "PSSSignatureSpi$SHA224withRSA");
             addPSSSignature(provider, "SHA256", "MGF1", PREFIX + "PSSSignatureSpi$SHA256withRSA");
             addPSSSignature(provider, "SHA384", "MGF1", PREFIX + "PSSSignatureSpi$SHA384withRSA");
