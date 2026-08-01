@@ -314,19 +314,23 @@ public class PublicKeyFactory
         AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
             throws IOException
         {
+            ASN1ObjectIdentifier algOID = keyInfo.getAlgorithm().getAlgorithm();
+            SPHINCSPlusParameters spParams = Utils.sphincsPlusParamsLookup(algOID);
+
+            if (spParams == null)
+            {
+                throw new IOException("algorithm identifier in public key not recognised: " + algOID);
+            }
+
             try
             {
                 byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
-
-                SPHINCSPlusParameters spParams = Utils.sphincsPlusParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
 
                 return new SPHINCSPlusPublicKeyParameters(spParams, Arrays.copyOfRange(keyEnc, 4, keyEnc.length));
             }
             catch (Exception e)
             {
                 byte[] keyEnc = keyInfo.getPublicKeyData().getOctets();
-
-                SPHINCSPlusParameters spParams = Utils.sphincsPlusParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
 
                 return new SPHINCSPlusPublicKeyParameters(spParams, keyEnc);
             }
@@ -409,7 +413,13 @@ public class PublicKeyFactory
         AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
             throws IOException
         {
-            MLKEMParameters parameters = Utils.mlkemParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
+            ASN1ObjectIdentifier algOID = keyInfo.getAlgorithm().getAlgorithm();
+            MLKEMParameters parameters = Utils.mlkemParamsLookup(algOID);
+
+            if (parameters == null)
+            {
+                throw new IOException("algorithm identifier in public key not recognised: " + algOID);
+            }
 
             // we're a raw encoding
             return new MLKEMPublicKeyParameters(parameters, keyInfo.getPublicKeyData().getOctets());
