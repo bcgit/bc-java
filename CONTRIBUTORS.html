@@ -599,6 +599,7 @@ CertPath support for implicit DSA parameters and a range of NameConstraints. Add
 <li>liamgilligan &lt;https://github.com/liamgilligan&gt; - noticing the BIP-340 step numbering in the BIP340Signer signing comments was incorrect (PR #2340).</li>
 <li>digi-scrypt &lt;https://github.com/digi-scrypt&gt; - disabling DTD and external-entity resolution in KMIPInputStream to close an XXE (local file disclosure / SSRF) exposure in KMIP XML parsing (PR #2315).</li>
 <li>Major Hayden &lt;https://github.com/major&gt; - exercising the SPHINCS+ OID encode/decode round-trip for the "-simple" hash-mode variants and adding parameter-identity assertions, removing a stale test guard (PR #2345).</li>
+<li>bannus &lt;https://github.com/bannus&gt; - diagnosing the BouncyCastleProvider construction slowdown introduced with the AlgorithmParameters.EC SupportedCurves attribute, and the move to a lazy named-curve lookup that builds the attribute without materialising every curve's parameters (issue #2382).</li>
 </ul>
 </body>
 </html>
