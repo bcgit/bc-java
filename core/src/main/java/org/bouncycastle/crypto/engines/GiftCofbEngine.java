@@ -31,18 +31,41 @@ public class GiftCofbEngine
         setInnerMembers(ProcessingBufferType.Buffered, AADOperatorType.Default, DataOperatorType.Counter);
     }
 
-    private int rowperm(int S, int B0_pos, int B1_pos, int B2_pos, int B3_pos)
+    private static int bitPermuteStep(int x, int mask, int shift)
     {
-        int T = 0;
-        int b;
-        for (b = 0; b < 8; b++)
-        {
-            T |= ((S >>> (4 * b)) & 0x1) << (b + 8 * B0_pos);
-            T |= ((S >>> (4 * b + 1)) & 0x1) << (b + 8 * B1_pos);
-            T |= ((S >>> (4 * b + 2)) & 0x1) << (b + 8 * B2_pos);
-            T |= ((S >>> (4 * b + 3)) & 0x1) << (b + 8 * B3_pos);
-        }
-        return T;
+        int t = ((x >>> shift) ^ x) & mask;
+        return x ^ t ^ (t << shift);
+    }
+
+    // 4-way perfect unshuffle: maps input bit (4b + r) -> bit (8r + b), i.e. it gathers the four
+    // "planes" of S (positions sharing the same r = pos mod 4) into four contiguous bytes (plane r
+    // in byte r). Two perfect-unshuffle stages over public masks/shifts only.
+    private static int unshuffle4(int x)
+    {
+        x = bitPermuteStep(x, 0x22222222, 1);
+        x = bitPermuteStep(x, 0x0C0C0C0C, 2);
+        x = bitPermuteStep(x, 0x00F000F0, 4);
+        x = bitPermuteStep(x, 0x0000FF00, 8);
+        x = bitPermuteStep(x, 0x22222222, 1);
+        x = bitPermuteStep(x, 0x0C0C0C0C, 2);
+        x = bitPermuteStep(x, 0x00F000F0, 4);
+        x = bitPermuteStep(x, 0x0000FF00, 8);
+        return x;
+    }
+
+    // GIFT PermBits row permutation. The reference recomputed this fixed bit-permutation bit-by-bit
+    // (32 shift/mask/or per call). It is an 8x4 -> 4x8 bit-transpose: transpose with unshuffle4, then
+    // place plane r into output byte B[r] (B = {b0,b1,b2,b3}, a permutation of 0..3). Implemented with
+    // branchless SWAR over PUBLIC masks/shifts only - no secret-indexed memory access, preserving the
+    // original's constant-time (L1/L2/L3) behaviour. Byte-identical to the reference: a bit-permutation
+    // is GF(2)-linear, verified equal on all 32 single-bit basis vectors for every call pattern.
+    private static int rowperm(int S, int b0, int b1, int b2, int b3)
+    {
+        int u = unshuffle4(S);
+        return ((u & 0xFF) << (b0 << 3))
+            | (((u >>> 8) & 0xFF) << (b1 << 3))
+            | (((u >>> 16) & 0xFF) << (b2 << 3))
+            | (((u >>> 24) & 0xFF) << (b3 << 3));
     }
 
     private void giftb128(byte[] P, byte[] K, byte[] C)

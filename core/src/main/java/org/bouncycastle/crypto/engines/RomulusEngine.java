@@ -633,111 +633,89 @@ public class RomulusEngine
 
     private static void skinny_128_384_plus_enc(byte[] input, byte[] userkey)
     {
-        byte[][] state = new byte[4][4];
-        byte[][][] keyCells = new byte[3][4][4];
-        int i, j, q, r;
-        byte pos, tmp;
-        byte[][][] keyCells_tmp = new byte[3][4][4];
-        for (i = 0; i < 4; ++i)
-        {
-            q = i << 2;
-            System.arraycopy(input, q, state[i], 0, 4);
-            System.arraycopy(userkey, q, keyCells[0][i], 0, 4);
-            System.arraycopy(userkey, q + 16, keyCells[1][i], 0, 4);
-            System.arraycopy(userkey, q + 32, keyCells[2][i], 0, 4);
-        }
+        // Flattened SKINNY-128-384+ state and tweakey: the reference's byte[4][4] state and two
+        // byte[3][4][4] tweakey arrays become flat byte[16] / byte[48] (cell [r][c] -> [(r<<2)+c],
+        // tweakey [t][r][c] -> [t*16 + (r<<2) + c]). This removes the per-block byte[][]/byte[][][]
+        // allocations and the 2D/3D pointer-chase, and the index algebra reduces load/store to plain
+        // arraycopy. Byte-identical (same cell values, same step order). The TWEAKEY_P cell index
+        // (q<<2)|r equals the permutation entry itself, so the gather indexes kc[pos] directly.
+        byte[] state = new byte[16];
+        byte[] kc = new byte[48];
+        byte[] kt = new byte[48];
+        int i, j;
+        byte tmp;
+        System.arraycopy(input, 0, state, 0, 16);
+        System.arraycopy(userkey, 0, kc, 0, 48);
         for (int round = 0; round < 40; round++)
         {
             //SubCell8;
-            for (i = 0; i < 4; i++)
+            for (i = 0; i < 16; i++)
             {
-                for (j = 0; j < 4; j++)
-                {
-                    state[i][j] = sbox_8[state[i][j] & 0xFF];
-                }
+                state[i] = sbox_8[state[i] & 0xFF];
             }
             //AddConstants
-            state[0][0] ^= (RC[round] & 0xf);
-            state[1][0] ^= ((RC[round] >>> 4) & 0x3);
-            state[2][0] ^= 0x2;
-            //AddKey
-            // apply the subtweakey to the internal state
-            for (i = 0; i <= 1; i++)
+            state[0] ^= (RC[round] & 0xf);
+            state[4] ^= ((RC[round] >>> 4) & 0x3);
+            state[8] ^= 0x2;
+            //AddKey: apply the subtweakey (rows 0..1) to the internal state
+            for (i = 0; i < 8; i++)
             {
-                for (j = 0; j < 4; j++)
-                {
-                    state[i][j] ^= keyCells[0][i][j] ^ keyCells[1][i][j] ^ keyCells[2][i][j];
-                }
+                state[i] ^= kc[i] ^ kc[16 + i] ^ kc[32 + i];
             }
-            for (i = 0; i < 4; i++)
+            //application of the TWEAKEY permutation
+            for (i = 0; i < 16; i++)
             {
-                for (j = 0; j < 4; j++)
-                {
-                    //application of the TWEAKEY permutation
-                    pos = TWEAKEY_P[j + (i << 2)];
-                    q = pos >>> 2;
-                    r = pos & 3;
-                    keyCells_tmp[0][i][j] = keyCells[0][q][r];
-                    keyCells_tmp[1][i][j] = keyCells[1][q][r];
-                    keyCells_tmp[2][i][j] = keyCells[2][q][r];
-                }
+                int pos = TWEAKEY_P[i];
+                kt[i] = kc[pos];
+                kt[16 + i] = kc[16 + pos];
+                kt[32 + i] = kc[32 + pos];
             }
-            // update the subtweakey states with the LFSRs
-            for (i = 0; i <= 1; i++)
+            // update the subtweakey states with the LFSRs (rows 0..1 only)
+            for (i = 0; i < 8; i++)
             {
-                for (j = 0; j < 4; j++)
-                {
-                    //application of LFSRs for TK updates
-                    keyCells[0][i][j] = keyCells_tmp[0][i][j];
-                    tmp = keyCells_tmp[1][i][j];
-                    keyCells[1][i][j] = (byte)(((tmp << 1) & 0xFE) ^ ((tmp >>> 7) & 0x01) ^ ((tmp >>> 5) & 0x01));
-                    tmp = keyCells_tmp[2][i][j];
-                    keyCells[2][i][j] = (byte)(((tmp >>> 1) & 0x7F) ^ ((tmp << 7) & 0x80) ^ ((tmp << 1) & 0x80));
-                }
+                kc[i] = kt[i];
+                tmp = kt[16 + i];
+                kc[16 + i] = (byte)(((tmp << 1) & 0xFE) ^ ((tmp >>> 7) & 0x01) ^ ((tmp >>> 5) & 0x01));
+                tmp = kt[32 + i];
+                kc[32 + i] = (byte)(((tmp >>> 1) & 0x7F) ^ ((tmp << 7) & 0x80) ^ ((tmp << 1) & 0x80));
             }
-            for (; i < 4; ++i)
+            for (i = 8; i < 16; i++)
             {
-                for (j = 0; j < 4; j++)
-                {
-                    keyCells[0][i][j] = keyCells_tmp[0][i][j];
-                    keyCells[1][i][j] = keyCells_tmp[1][i][j];
-                    keyCells[2][i][j] = keyCells_tmp[2][i][j];
-                }
+                kc[i] = kt[i];
+                kc[16 + i] = kt[16 + i];
+                kc[32 + i] = kt[32 + i];
             }
             //ShiftRows(state);
-            tmp = state[1][3];
-            state[1][3] = state[1][2];
-            state[1][2] = state[1][1];
-            state[1][1] = state[1][0];
-            state[1][0] = tmp;
-            tmp = state[2][0];
-            state[2][0] = state[2][2];
-            state[2][2] = tmp;
-            tmp = state[2][1];
-            state[2][1] = state[2][3];
-            state[2][3] = tmp;
-            tmp = state[3][0];
-            state[3][0] = state[3][1];
-            state[3][1] = state[3][2];
-            state[3][2] = state[3][3];
-            state[3][3] = tmp;
+            tmp = state[7];
+            state[7] = state[6];
+            state[6] = state[5];
+            state[5] = state[4];
+            state[4] = tmp;
+            tmp = state[8];
+            state[8] = state[10];
+            state[10] = tmp;
+            tmp = state[9];
+            state[9] = state[11];
+            state[11] = tmp;
+            tmp = state[12];
+            state[12] = state[13];
+            state[13] = state[14];
+            state[14] = state[15];
+            state[15] = tmp;
             //MixColumn(state);
             for (j = 0; j < 4; j++)
             {
-                state[1][j] ^= state[2][j];
-                state[2][j] ^= state[0][j];
-                state[3][j] ^= state[2][j];
-                tmp = state[3][j];
-                state[3][j] = state[2][j];
-                state[2][j] = state[1][j];
-                state[1][j] = state[0][j];
-                state[0][j] = tmp;
+                state[4 + j] ^= state[8 + j];
+                state[8 + j] ^= state[j];
+                state[12 + j] ^= state[8 + j];
+                tmp = state[12 + j];
+                state[12 + j] = state[8 + j];
+                state[8 + j] = state[4 + j];
+                state[4 + j] = state[j];
+                state[j] = tmp;
             }
         }  //The last subtweakey should not be added
-        for (i = 0; i < 16; i++)
-        {
-            input[i] = (byte)(state[i >>> 2][i & 0x3] & 0xFF);
-        }
+        System.arraycopy(state, 0, input, 0, 16);
     }
 
 
