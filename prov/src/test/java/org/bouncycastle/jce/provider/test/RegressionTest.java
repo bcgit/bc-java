@@ -47,6 +47,7 @@ public class RegressionTest
         new ECIESTest(),
         new ECIESVectorTest(),
         new ECNRTest(),
+        new EdECKeyFactoryMalformedTest(),
         new EdECTest(),
         new ElGamalTest(),
         new EncryptedPrivateKeyInfoTest(),
