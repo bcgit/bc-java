@@ -1,5 +1,7 @@
 package org.bouncycastle.pqc.crypto.lms;
 
+import java.io.IOException;
+
 import junit.framework.TestCase;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
@@ -166,6 +168,189 @@ public class LMSTests
             assertTrue(true);
         }
 
+    }
+
+    /**
+     * Regression test for https://github.com/bcgit/bc-java/issues/2365 - getEncoded() must carry
+     * the top of the Merkle tree so that the first signature made after a key is decoded does not
+     * have to rebuild the whole tree (which costs about as much as key generation). Also checks
+     * that the legacy version 0 encoding, which carries no cache, is still accepted.
+     */
+    public void testTreeCachePersistence()
+        throws Exception
+    {
+        byte[] seed = Hex.decode("558b8966c48ae9cb898b423c83443aae014a72f1b1ab5cc85cf1d892903b5439");
+        byte[] I = Hex.decode("d08fabd4a2091ff0a8cb4ed834e74534");
+        byte[] msg = Hex.decode("54686520656e756d65726174696f6e20696e2074686520436f6e737469747574");
+
+        LMSigParameters sigParams = LMSigParameters.lms_sha256_n32_h5;
+        LMOtsParameters otsParams = LMOtsParameters.sha256_n32_w4;
+
+        LMSPrivateKeyParameters privateKey = LMS.generateKeys(sigParams, otsParams, 0, I, seed);
+        LMSPublicKeyParameters publicKey = privateKey.getPublicKey();
+
+        int h = sigParams.getH();
+        int m = sigParams.getM();
+        int cacheTop = Math.min(129, 1 << (h + 1));
+
+        byte[] enc = privateKey.getEncoded();
+
+        // version 1: 72 byte legacy body + u32 node count + (cacheTop - 1) nodes of m bytes each.
+        assertEquals(0, enc[0]);
+        assertEquals(0, enc[1]);
+        assertEquals(0, enc[2]);
+        assertEquals(1, enc[3]);
+        assertEquals(72 + 4 + (cacheTop - 1) * m, enc.length);
+
+        // Decoding primes the cache - this is the fix; without it the decoded key's cache is empty
+        // and the first signature rebuilds the whole tree.
+        LMSPrivateKeyParameters decoded = LMSPrivateKeyParameters.getInstance(enc);
+        assertTrue("decoded key tree cache should be primed", decoded.isTreeCachePrimed());
+
+        // The decoded key signs correctly and byte-identically to a fresh key at the same index.
+        LMSSignature sigFromDecoded = LMS.generateSign(decoded, msg);
+        assertTrue(LMS.verifySignature(publicKey, sigFromDecoded, msg));
+
+        LMSPrivateKeyParameters fresh = LMS.generateKeys(sigParams, otsParams, 0, I, seed);
+        assertTrue(Arrays.areEqual(sigFromDecoded.getEncoded(), LMS.generateSign(fresh, msg).getEncoded()));
+
+        // Legacy version 0 encodings (no cache) must still decode and sign correctly.
+        byte[] legacyEnc = Composer.compose()
+            .u32str(0)
+            .u32str(sigParams.getType())
+            .u32str(otsParams.getType())
+            .bytes(I)
+            .u32str(0)
+            .u32str(1 << h)
+            .u32str(seed.length)
+            .bytes(seed)
+            .build();
+        assertEquals(72, legacyEnc.length);
+
+        LMSPrivateKeyParameters legacy = LMSPrivateKeyParameters.getInstance(legacyEnc);
+        assertFalse("version 0 encoding carries no cache", legacy.isTreeCachePrimed());
+        assertTrue(LMS.verifySignature(publicKey, LMS.generateSign(legacy, msg), msg));
+    }
+
+    /**
+     * A private key encoding carrying an unknown LMS or LM-OTS type code must be rejected with the
+     * declared IOException, not leak a NullPointerException out of getInstance (matching the guards
+     * already present in LMSPublicKeyParameters / LMSSignature / LMOtsSignature).
+     */
+    public void testMalformedPrivateKeyTypeCode()
+        throws Exception
+    {
+        byte[] I = Hex.decode("d08fabd4a2091ff0a8cb4ed834e74534");
+        byte[] seed = Hex.decode("558b8966c48ae9cb898b423c83443aae014a72f1b1ab5cc85cf1d892903b5439");
+
+        byte[] unknownSigType = Composer.compose()
+            .u32str(0)
+            .u32str(0x7fffffff) // bogus LMS type code
+            .u32str(LMOtsParameters.sha256_n32_w4.getType())
+            .bytes(I)
+            .u32str(0)
+            .u32str(32)
+            .u32str(seed.length)
+            .bytes(seed)
+            .build();
+        try
+        {
+            LMSPrivateKeyParameters.getInstance(unknownSigType);
+            fail("no exception on unknown LMS type code");
+        }
+        catch (IOException e)
+        {
+            assertTrue(e.getMessage().startsWith("unknown LMS type code"));
+        }
+
+        byte[] unknownOtsType = Composer.compose()
+            .u32str(0)
+            .u32str(LMSigParameters.lms_sha256_n32_h5.getType())
+            .u32str(0x7fffffff) // bogus LM-OTS type code
+            .bytes(I)
+            .u32str(0)
+            .u32str(32)
+            .u32str(seed.length)
+            .bytes(seed)
+            .build();
+        try
+        {
+            LMSPrivateKeyParameters.getInstance(unknownOtsType);
+            fail("no exception on unknown LM-OTS type code");
+        }
+        catch (IOException e)
+        {
+            assertTrue(e.getMessage().startsWith("unknown LM-OTS type code"));
+        }
+    }
+
+    public void testMalformedPrivateKeyTreeCache()
+        throws Exception
+    {
+        byte[] I = Hex.decode("d08fabd4a2091ff0a8cb4ed834e74534");
+        byte[] seed = Hex.decode("558b8966c48ae9cb898b423c83443aae014a72f1b1ab5cc85cf1d892903b5439");
+
+        LMSigParameters sigParams = LMSigParameters.lms_sha256_n32_h10;
+        LMOtsParameters otsParams = LMOtsParameters.sha256_n32_w4;
+        int cacheCountLimit = 128;
+        int m = sigParams.getM();
+
+        byte[] atLimit = Composer.compose()
+            .u32str(1)
+            .u32str(sigParams.getType())
+            .u32str(otsParams.getType())
+            .bytes(I)
+            .u32str(0)
+            .u32str(1 << sigParams.getH())
+            .u32str(seed.length)
+            .bytes(seed)
+            .u32str(cacheCountLimit)
+            .bytes(new byte[cacheCountLimit * m])
+            .build();
+        assertTrue(LMSPrivateKeyParameters.getInstance(atLimit).isTreeCachePrimed());
+
+        byte[] beyondLimit = Composer.compose()
+            .u32str(1)
+            .u32str(sigParams.getType())
+            .u32str(otsParams.getType())
+            .bytes(I)
+            .u32str(0)
+            .u32str(1 << sigParams.getH())
+            .u32str(seed.length)
+            .bytes(seed)
+            .u32str(cacheCountLimit + 1)
+            .build();
+        try
+        {
+            LMSPrivateKeyParameters.getInstance(beyondLimit);
+            fail("no exception on over-sized tree cache");
+        }
+        catch (IOException e)
+        {
+            assertTrue(e.getMessage().startsWith("tree cache node count out of range"));
+        }
+
+        byte[] truncated = Composer.compose()
+            .u32str(1)
+            .u32str(sigParams.getType())
+            .u32str(otsParams.getType())
+            .bytes(I)
+            .u32str(0)
+            .u32str(1 << sigParams.getH())
+            .u32str(seed.length)
+            .bytes(seed)
+            .u32str(cacheCountLimit)
+            .bytes(new byte[cacheCountLimit * m - 1])
+            .build();
+        try
+        {
+            LMSPrivateKeyParameters.getInstance(truncated);
+            fail("no exception on truncated tree cache");
+        }
+        catch (IOException e)
+        {
+            assertTrue(e.getMessage().startsWith("tree cache length exceeded"));
+        }
     }
 
 }
