@@ -459,7 +459,7 @@ public class ECJPAKEUtil
             keyingMaterial,
             digest);
 
-        if (!expectedMacTag.equals(partnerMacTag))
+        if (!Arrays.constantTimeAreEqual(expectedMacTag.toByteArray(), partnerMacTag.toByteArray()))
         {
             throw new CryptoException(
                 "Partner MacTag validation failed. "

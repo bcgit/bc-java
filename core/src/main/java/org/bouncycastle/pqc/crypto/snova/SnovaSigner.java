@@ -468,49 +468,55 @@ public class SnovaSigner
     private int performGaussianElimination(byte[][] Gauss, byte[] solution, int size)
     {
         final int cols = size + 1;
+        int flagRedo = 0;
 
         for (int i = 0; i < size; i++)
         {
-            // Find pivot
-            int pivot = i;
-            while (pivot < size && Gauss[pivot][i] == 0)
+            /*
+             * Branchless pivot. The previous form searched downward for the first non-zero
+             * pivot, swapped rows, and skipped the row-add when the factor was zero - three
+             * branches on the secret Gauss matrix (derived from the private key and the
+             * per-signature vinegar), i.e. a timing / branch-prediction leak. Instead, add
+             * every lower row into the pivot row under a mask that is all-ones only while
+             * the pivot is still zero, so the work is the same whatever the data is.
+             */
+            int mask = GF16Utils.ctGF16IsNotZero(Gauss[i][i]) - 1;
+            for (int j = i + 1; j < size; j++)
             {
-                pivot++;
+                byte[] gi = Gauss[i], gj = Gauss[j];
+                for (int k = i; k < cols; k++)
+                {
+                    gi[k] ^= (byte)(gj[k] & mask);
+                }
+                mask = GF16Utils.ctGF16IsNotZero(Gauss[i][i]) - 1;
             }
-
-            // Check for singularity
-            if (pivot >= size)
-            {
-                return 1; // Flag for redo
-            }
-
-            // Swap rows if needed
-            if (pivot != i)
-            {
-                byte[] tempRow = Gauss[i];
-                Gauss[i] = Gauss[pivot];
-                Gauss[pivot] = tempRow;
-            }
+            // Still zero after trying every lower row => singular. Accumulate rather than
+            // returning here, so the loop trip count does not depend on the matrix.
+            flagRedo |= mask;
 
             // Normalize pivot row
             byte invPivot = GF16.inv(Gauss[i][i]);
-            for (int j = i; j < cols; j++)
+            byte[] gi = Gauss[i];
+            for (int k = i; k < cols; k++)
             {
-                Gauss[i][j] = GF16.mul(Gauss[i][j], invPivot);
+                gi[k] = GF16.mul(gi[k], invPivot);
             }
 
-            // Eliminate below
+            // Eliminate below; a zero factor makes GF16.mul a no-op, so no if-guard is needed
             for (int j = i + 1; j < size; j++)
             {
                 byte factor = Gauss[j][i];
-                if (factor != 0)
+                byte[] gj = Gauss[j];
+                for (int k = i; k < cols; k++)
                 {
-                    for (int k = i; k < cols; k++)
-                    {
-                        Gauss[j][k] ^= GF16.mul(Gauss[i][k], factor);
-                    }
+                    gj[k] ^= GF16.mul(gi[k], factor);
                 }
             }
+        }
+
+        if (flagRedo != 0)
+        {
+            return 1; // singular system, the caller resamples (matches the reference do-while)
         }
 
         // Back substitution

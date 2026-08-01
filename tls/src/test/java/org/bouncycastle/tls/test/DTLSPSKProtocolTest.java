@@ -1,9 +1,11 @@
 package org.bouncycastle.tls.test;
 
+import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.DTLSClientProtocol;
 import org.bouncycastle.tls.DTLSServerProtocol;
 import org.bouncycastle.tls.DTLSTransport;
 import org.bouncycastle.tls.DatagramTransport;
+import org.bouncycastle.tls.TlsFatalAlertReceived;
 import org.bouncycastle.tls.TlsServer;
 import org.bouncycastle.tls.TlsTimeoutException;
 import org.bouncycastle.util.Arrays;
@@ -84,19 +86,16 @@ public class DTLSPSKProtocolTest
 
         clientTransport = new LoggingDatagramTransport(clientTransport, System.out);
 
-        boolean correctException = false;
+        Exception clientFailure = null;
 
         try
         {
             DTLSTransport dtlsClient = clientProtocol.connect(client, clientTransport);
             dtlsClient.close();
         }
-        catch (TlsTimeoutException e)
-        {
-            correctException = true;
-        }
         catch (Exception e)
         {
+            clientFailure = e;
         }
         finally
         {
@@ -105,7 +104,25 @@ public class DTLSPSKProtocolTest
 
         serverThread.shutdown();
 
-        assertTrue(correctException);
+        Exception serverFailure = serverThread.getFailure();
+
+        // The PSKs do not match, so the handshake cannot complete and both peers run out of patience.
+        // Both use the same handshake timeout, so which of them notices first is a race: the client
+        // either hits its own timeout, or - when the server gets there first - receives the
+        // internal_error alert the server raises on ITS timeout. Both outcomes are the timeout this test
+        // is about, so accept either, but require that a timeout is what actually happened on the side
+        // that reported it rather than accepting internal_error on its own.
+        assertNotNull("Handshake unexpectedly succeeded with mismatched PSKs", clientFailure);
+
+        if (!(clientFailure instanceof TlsTimeoutException))
+        {
+            assertTrue("Expected a handshake timeout, client failed with: " + clientFailure,
+                clientFailure instanceof TlsFatalAlertReceived
+                    && ((TlsFatalAlertReceived)clientFailure).getAlertDescription() == AlertDescription.internal_error);
+            assertTrue("Client received internal_error but the server did not time out; server failed with: "
+                    + serverFailure,
+                serverFailure instanceof TlsTimeoutException);
+        }
     }
 
     static class ServerThread
@@ -115,12 +132,23 @@ public class DTLSPSKProtocolTest
         private final TlsServer server;
         private final DatagramTransport serverTransport;
         private volatile boolean isShutdown = false;
+        private volatile Exception failure = null;
 
         ServerThread(DTLSServerProtocol serverProtocol, TlsServer server, DatagramTransport serverTransport)
         {
             this.serverProtocol = serverProtocol;
             this.server = server;
             this.serverTransport = serverTransport;
+        }
+
+        /**
+         * Return the exception that terminated this thread, or null if it shut down cleanly. A
+         * key-mismatch test needs this to tell the server timing out from the server failing some other
+         * way, since either shows up at the client as an internal_error alert.
+         */
+        Exception getFailure()
+        {
+            return failure;
         }
 
         public void run()
@@ -141,6 +169,7 @@ public class DTLSPSKProtocolTest
             }
             catch (Exception e)
             {
+                failure = e;
                 e.printStackTrace();
             }
         }

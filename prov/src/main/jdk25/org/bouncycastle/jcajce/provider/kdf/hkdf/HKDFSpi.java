@@ -19,17 +19,18 @@ import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.generators.HKDFBytesGenerator;
 import org.bouncycastle.crypto.params.HKDFParameters;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Memoable;
 
 public class HKDFSpi
     extends KDFSpi
 {
-    private final HKDFBytesGenerator hkdf;
+    private final Digest digest;
 
     HKDFSpi(KDFParameters kdfParameters, Digest digest)
         throws InvalidAlgorithmParameterException
     {
         super(requireNull(kdfParameters, "HKDF" + " does not support parameters"));
-        this.hkdf = new HKDFBytesGenerator(digest);
+        this.digest = digest;
     }
 
     /**
@@ -71,13 +72,18 @@ public class HKDFSpi
     protected byte[] engineDeriveData(AlgorithmParameterSpec derivationSpec)
         throws InvalidAlgorithmParameterException
     {
+        // Fresh generator (and digest copy) per invocation: a KDF instance may be shared across
+        // threads, and HKDFBytesGenerator/Digest hold mutable state that would otherwise race
+        // between concurrent engineDeriveData() calls.
+        HKDFBytesGenerator hkdf = new HKDFBytesGenerator((Digest)((Memoable)digest).copy());
+
         if (derivationSpec instanceof org.bouncycastle.jcajce.spec.HKDFParameterSpec bcSpec)
         {
             byte[] ikm = bcSpec.getIKM();
             byte[] salt = bcSpec.getSalt();
             byte[] info = bcSpec.getInfo();
 
-            return expand(bcSpec.getOutputLength(), new HKDFParameters(ikm, salt, info));
+            return expand(hkdf, bcSpec.getOutputLength(), new HKDFParameters(ikm, salt, info));
         }
 
         if (!(derivationSpec instanceof HKDFParameterSpec))
@@ -90,7 +96,7 @@ public class HKDFSpi
             byte[] ikm = expandSpec.prk().getEncoded();
             byte[] info = expandSpec.info();
 
-            return expand(expandSpec.length(), HKDFParameters.skipExtractParameters(ikm, info));
+            return expand(hkdf, expandSpec.length(), HKDFParameters.skipExtractParameters(ikm, info));
         }
         else if (derivationSpec instanceof HKDFParameterSpec.Extract extractSpec)
         {
@@ -105,7 +111,7 @@ public class HKDFSpi
             byte[] salt = flattenSecretKeys(extractExpandSpec.salts());
             byte[] info = extractExpandSpec.info();
 
-            return expand(extractExpandSpec.length(), new HKDFParameters(ikm, salt, info));
+            return expand(hkdf, extractExpandSpec.length(), new HKDFParameters(ikm, salt, info));
         }
         else
         {
@@ -113,7 +119,7 @@ public class HKDFSpi
         }
     }
 
-    private byte[] expand(int length, HKDFParameters hkdfParameters)
+    private byte[] expand(HKDFBytesGenerator hkdf, int length, HKDFParameters hkdfParameters)
     {
         hkdf.init(hkdfParameters);
 

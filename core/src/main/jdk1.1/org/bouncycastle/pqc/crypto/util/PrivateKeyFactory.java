@@ -121,14 +121,14 @@ public class PrivateKeyFactory
             ASN1Encodable obj = keyInfo.parsePrivateKey();
             return new SLHDSAPrivateKeyParameters(spParams, ASN1OctetString.getInstance(obj).getOctets());
         }
-        else if (algOID.on(BCObjectIdentifiers.pqc_kem_mceliece))
+        else if (Utils.mcElieceParams.containsKey(algOID))
         {
             CMCEPrivateKey cmceKey = CMCEPrivateKey.getInstance(keyInfo.parsePrivateKey());
             CMCEParameters spParams = Utils.mcElieceParamsLookup(algOID);
 
             return new CMCEPrivateKeyParameters(spParams, cmceKey.getDelta(), cmceKey.getC(), cmceKey.getG(), cmceKey.getAlpha(), cmceKey.getS());
         }
-        else if (algOID.on(BCObjectIdentifiers.pqc_kem_saber))
+        else if (Utils.saberParams.containsKey(algOID))
         {
             byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
             SABERParameters spParams = Utils.saberParamsLookup(algOID);
@@ -262,7 +262,7 @@ public class PrivateKeyFactory
 
             return new FalconPrivateKeyParameters(falconParams, falconKey.getf(), falconKey.getG(), falconKey.getF(), falconKey.getPublicKey().getH());
         }
-        else if (algOID.on(BCObjectIdentifiers.pqc_kem_bike))
+        else if (Utils.bikeParams.containsKey(algOID))
         {
             byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
             BIKEParameters bikeParams = Utils.bikeParamsLookup(algOID);
@@ -272,7 +272,7 @@ public class PrivateKeyFactory
             byte[] sigma = Arrays.copyOfRange(keyEnc, 2 * bikeParams.getRByte(), keyEnc.length);
             return new BIKEPrivateKeyParameters(bikeParams, h0, h1, sigma);
         }
-        else if (algOID.on(BCObjectIdentifiers.pqc_kem_hqc))
+        else if (Utils.hqcParams.containsKey(algOID))
         {
             byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
             HQCParameters hqcParams = Utils.hqcParamsLookup(algOID);
@@ -281,7 +281,7 @@ public class PrivateKeyFactory
         }
         else
         {
-            throw new RuntimeException("algorithm identifier in private key not recognised");
+            throw new IOException("algorithm identifier in private key not recognised: " + algOID);
         }
     }
 

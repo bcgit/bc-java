@@ -883,6 +883,7 @@ public class PBETest
         testExtendedPBEParameterSpec();
         testNoIvPBEParameterSpec();
         testPKCS12Interop();
+        testIterationCountLimit();
 
         testPBEHMac("PBEWithHMacSHA1", hMac1);
         testPBEHMac("PBEWithHMacRIPEMD160", hMac2);
@@ -1025,6 +1026,50 @@ public class PBETest
         return "PBETest";
     }
 
+
+    private void testIterationCountLimit()
+        throws Exception
+    {
+        byte[] salt = new byte[16];
+        char[] password = "hello".toCharArray();
+
+        // Lower the cap for the test so the without-cap derivation stays cheap.
+        System.setProperty(org.bouncycastle.util.Properties.PBE_MAX_ITERATION_COUNT, "1000");
+        try
+        {
+            // Cap at the derivation engine (SecretKeyFactory).
+            try
+            {
+                SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256", "BC").generateSecret(
+                    new PBEKeySpec(password, salt, 2000, 256));
+                fail("no exception on over-limit PBKDF2 iteration count");
+            }
+            catch (java.security.spec.InvalidKeySpecException e)
+            {
+                isTrue(e.getMessage().startsWith("iteration count"));
+            }
+
+            // Cap at the untrusted-parameter parse (AlgorithmParameters.init - the raw Cipher path).
+            byte[] encoded = new org.bouncycastle.asn1.pkcs.PBKDF2Params(salt, 2000).getEncoded();
+            try
+            {
+                AlgorithmParameters.getInstance("PBKDF2", "BC").init(encoded);
+                fail("no exception on over-limit PBKDF2 parameters");
+            }
+            catch (java.io.IOException e)
+            {
+                isTrue(e.getMessage().startsWith("iteration count"));
+            }
+
+            // A count within the limit still works.
+            SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256", "BC").generateSecret(
+                new PBEKeySpec(password, salt, 500, 256));
+        }
+        finally
+        {
+            System.getProperties().remove(org.bouncycastle.util.Properties.PBE_MAX_ITERATION_COUNT);
+        }
+    }
 
     public static void main(
         String[] args)

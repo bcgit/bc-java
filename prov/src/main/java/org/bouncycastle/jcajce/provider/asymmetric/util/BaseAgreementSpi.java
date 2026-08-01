@@ -188,11 +188,62 @@ public abstract class BaseAgreementSpi
         return algDetails;
     }
 
+    /**
+     * Return the key size, in bits, associated with the passed in algorithm details, or -1 if
+     * no key size can be determined from them.
+     * <p>
+     * Note: a malformed explicit key size - "AES[]", "AES[abc]", "AES[-8]" - is reported as -1
+     * here as well; the internal path used by {@link #engineGenerateSecret(String)} rejects it
+     * with a NoSuchAlgorithmException naming the actual problem instead.
+     * </p>
+     *
+     * @param algDetails an algorithm name, an algorithm OID, or either with an explicit
+     *                   "[keySize]" suffix.
+     * @return the key size in bits, -1 if it cannot be determined.
+     */
     protected static int getKeySize(String algDetails)
     {
-        if (algDetails.indexOf('[') > 0)
+        try
         {
-            return Integer.parseInt(algDetails.substring(algDetails.indexOf('[') + 1, algDetails.indexOf(']')));
+            return getRequestedKeySize(algDetails);
+        }
+        catch (NoSuchAlgorithmException e)
+        {
+            return -1;
+        }
+    }
+
+    private static int getRequestedKeySize(String algDetails)
+        throws NoSuchAlgorithmException
+    {
+        int start = algDetails.indexOf('[');
+
+        if (start > 0)
+        {
+            int end = algDetails.indexOf(']', start);
+
+            if (end < 0)
+            {
+                throw new NoSuchAlgorithmException("missing closing bracket on key size for algorithm: " + algDetails);
+            }
+
+            int keySize;
+
+            try
+            {
+                keySize = Integer.parseInt(algDetails.substring(start + 1, end));
+            }
+            catch (NumberFormatException e)
+            {
+                throw new NoSuchAlgorithmException("unable to parse key size for algorithm: " + algDetails);
+            }
+
+            if (keySize <= 0 || (keySize % 8) != 0)
+            {
+                throw new NoSuchAlgorithmException("key size must be a positive multiple of 8 for algorithm: " + algDetails);
+            }
+
+            return keySize;
         }
 
         String algKey = Strings.toUpperCase(algDetails);
@@ -309,7 +360,7 @@ public abstract class BaseAgreementSpi
             oidAlgorithm = ((ASN1ObjectIdentifier)oids.get(algKey)).getId();
         }
 
-        int keySize = getKeySize(oidAlgorithm);
+        int keySize = getRequestedKeySize(oidAlgorithm);
 
         byte[] secret = getSharedSecretBytes(calcSecret(), oidAlgorithm, keySize);
 
@@ -370,7 +421,22 @@ public abstract class BaseAgreementSpi
         {
             if (keySize > 0)
             {
-                byte[] keyBytes = new byte[keySize / 8];
+                int keyLength = keySize / 8;
+
+                // without a KDF the key can only be taken from the shared secret itself - a
+                // KDF based agreement is the way to derive a key longer than the secret.
+                if (keyLength > secret.length)
+                {
+                    int available = secret.length * 8;
+
+                    Arrays.clear(secret);
+
+                    throw new NoSuchAlgorithmException("unable to generate " + keySize + " bit key for "
+                        + oidAlgorithm + ": shared secret is only " + available
+                        + " bits, use a KDF based agreement");
+                }
+
+                byte[] keyBytes = new byte[keyLength];
 
                 System.arraycopy(secret, 0, keyBytes, 0, keyBytes.length);
 
