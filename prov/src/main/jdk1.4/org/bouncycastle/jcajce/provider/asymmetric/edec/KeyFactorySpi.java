@@ -170,39 +170,51 @@ public class KeyFactorySpi
         if (keySpec instanceof X509EncodedKeySpec)
         {
             byte[] enc = ((X509EncodedKeySpec)keySpec).getEncoded();
+            // the optimised path below reads the algorithm discriminator and the
+            // AlgorithmIdentifier parameters at the fixed offsets enc[8..10], so guard the
+            // length first: a short X509EncodedKeySpec must surface as an InvalidKeySpecException
+            // rather than an ArrayIndexOutOfBoundsException escaping the declared contract.
+            if (enc.length <= 10)
+            {
+                throw new InvalidKeySpecException("malformed EdEC key encoding");
+            }
             // optimise if we can
             if ((specificBase == 0 || specificBase == enc[8]))
             {
-                // watch out for badly placed DER NULL - the default X509Cert will add these!
-                if (enc[9] == 0x05 && enc[10] == 0x00)
+                try
                 {
-                    SubjectPublicKeyInfo keyInfo = SubjectPublicKeyInfo.getInstance(enc);
-
-                    keyInfo = new SubjectPublicKeyInfo(
-                        new AlgorithmIdentifier(keyInfo.getAlgorithm().getAlgorithm()), keyInfo.getPublicKeyData().getBytes());
-
-                    try
+                    // watch out for badly placed DER NULL - the default X509Cert will add these!
+                    if (enc[9] == 0x05 && enc[10] == 0x00)
                     {
+                        SubjectPublicKeyInfo keyInfo = SubjectPublicKeyInfo.getInstance(enc);
+
+                        keyInfo = new SubjectPublicKeyInfo(
+                            new AlgorithmIdentifier(keyInfo.getAlgorithm().getAlgorithm()), keyInfo.getPublicKeyData().getBytes());
+
                         enc = keyInfo.getEncoded(ASN1Encoding.DER);
                     }
-                    catch (IOException e)
+
+                    switch (enc[8])
                     {
-                        throw new InvalidKeySpecException("attempt to reconstruct key failed: " + e.getMessage());
+                    case x448_type:
+                        return new BCXDHPublicKey(x448Prefix, enc);
+                    case x25519_type:
+                        return new BCXDHPublicKey(x25519Prefix, enc);
+                    case Ed448_type:
+                        return new BCEdDSAPublicKey(Ed448Prefix, enc);
+                    case Ed25519_type:
+                        return new BCEdDSAPublicKey(Ed25519Prefix, enc);
+                    default:
+                        return super.engineGeneratePublic(keySpec);
                     }
                 }
-
-                switch (enc[8])
+                catch (IOException e)
                 {
-                case x448_type:
-                    return new BCXDHPublicKey(x448Prefix, enc);
-                case x25519_type:
-                    return new BCXDHPublicKey(x25519Prefix, enc);
-                case Ed448_type:
-                    return new BCEdDSAPublicKey(Ed448Prefix, enc);
-                case Ed25519_type:
-                    return new BCEdDSAPublicKey(Ed25519Prefix, enc);
-                default:
-                    return super.engineGeneratePublic(keySpec);
+                    throw new InvalidKeySpecException("attempt to reconstruct key failed: " + e.getMessage());
+                }
+                catch (RuntimeException e)
+                {
+                    throw SecurityExceptions.invalidKeySpecException("unable to decode EdEC public key: " + e.getMessage(), e);
                 }
             }
         }
