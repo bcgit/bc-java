@@ -1,6 +1,7 @@
 package org.bouncycastle.cert.ocsp.test;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.Security;
@@ -19,6 +20,7 @@ import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.ExtensionsGenerator;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.cert.CertIOException;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
 import org.bouncycastle.cert.ocsp.BasicOCSPResp;
@@ -34,6 +36,8 @@ import org.bouncycastle.cert.ocsp.RespID;
 import org.bouncycastle.cert.ocsp.SingleResp;
 import org.bouncycastle.cert.ocsp.jcajce.JcaBasicOCSPRespBuilder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.operator.DigestCalculator;
+import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.DigestCalculatorProvider;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.operator.jcajce.JcaContentVerifierProviderBuilder;
@@ -739,9 +743,74 @@ public class OCSPTest
 
     }
 
+    /**
+     * CertificateID.matchesIssuer rebuilds the CertID using whatever DigestCalculator the supplied
+     * provider hands back for the ID's hash algorithm, so a provider free to name the digest its own
+     * way - absent parameters where the ID carries NULL, or the reverse - must not defeat the match.
+     * asn1.ocsp.CertID.equals already compares the algorithm OID and treats an absent parameters
+     * field and NULL as the same thing, per RFC 5754 sec. 2, so this holds; there was no coverage of
+     * it, and this pins it (raised while sweeping for github #2379).
+     */
+    private void matchesIssuerAcrossDigestParameterEncodings()
+        throws Exception
+    {
+        String signDN = "O=Bouncy Castle, C=AU";
+        KeyPair signKP = OCSPTestUtil.makeKeyPair();
+        X509CertificateHolder testCert = new JcaX509CertificateHolder(
+            OCSPTestUtil.makeCertificate(signKP, signDN, signKP, signDN));
+
+        final DigestCalculatorProvider digCalcProv = new JcaDigestCalculatorProviderBuilder().setProvider(BC).build();
+
+        // CertificateID.HASH_SHA1 names SHA-1 with NULL parameters
+        CertificateID id = new CertificateID(digCalcProv.get(CertificateID.HASH_SHA1), testCert, BigInteger.valueOf(1));
+
+        isTrue("test needs an ID with NULL parameters", null != id.getHashAlgOID()
+            && null != id.toASN1Primitive().getHashAlgorithm().getParameters());
+
+        // a provider that names the same digest with the parameters absent instead
+        DigestCalculatorProvider strippingProv = new DigestCalculatorProvider()
+        {
+            public DigestCalculator get(final AlgorithmIdentifier digestAlgorithmIdentifier)
+                throws OperatorCreationException
+            {
+                final DigestCalculator delegate = digCalcProv.get(digestAlgorithmIdentifier);
+
+                return new DigestCalculator()
+                {
+                    public AlgorithmIdentifier getAlgorithmIdentifier()
+                    {
+                        return new AlgorithmIdentifier(delegate.getAlgorithmIdentifier().getAlgorithm());
+                    }
+
+                    public OutputStream getOutputStream()
+                    {
+                        return delegate.getOutputStream();
+                    }
+
+                    public byte[] getDigest()
+                    {
+                        return delegate.getDigest();
+                    }
+                };
+            }
+        };
+
+        isTrue("issuer should match across the two parameter encodings",
+            id.matchesIssuer(testCert, strippingProv));
+
+        // and a genuinely different issuer must still not match
+        KeyPair otherKP = OCSPTestUtil.makeKeyPair();
+        X509CertificateHolder otherCert = new JcaX509CertificateHolder(
+            OCSPTestUtil.makeCertificate(otherKP, "O=Other, C=AU", otherKP, "O=Other, C=AU"));
+
+        isTrue("a different issuer must not match", !id.matchesIssuer(otherCert, strippingProv));
+    }
+
     public void performTest()
         throws Exception
     {
+        matchesIssuerAcrossDigestParameterEncodings();
+
         String signDN = "O=Bouncy Castle, C=AU";
         KeyPair signKP = OCSPTestUtil.makeKeyPair();
         X509CertificateHolder testCert = new JcaX509CertificateHolder(OCSPTestUtil.makeCertificate(signKP, signDN, signKP, signDN));

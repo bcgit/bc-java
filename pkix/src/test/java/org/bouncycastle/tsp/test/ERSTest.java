@@ -24,6 +24,7 @@ import java.util.List;
 import junit.framework.TestCase;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.tsp.ArchiveTimeStamp;
 import org.bouncycastle.asn1.tsp.ArchiveTimeStampChain;
@@ -88,6 +89,74 @@ public class ERSTest
     public void setUp()
     {
         Security.addProvider(new BouncyCastleProvider());
+    }
+
+    /**
+     * Some TSAs - DigiCert among them - name the imprint digest with an explicit NULL parameters
+     * field where BC's own DigestCalculator leaves it absent. Both encodings name the same digest
+     * and RFC 5754 sec. 2 requires a receiver to accept either ("Implementations MUST accept SHA2
+     * AlgorithmIdentifiers with absent parameters. Implementations MUST accept SHA2
+     * AlgorithmIdentifiers with NULL parameters."), but the generator compared the two
+     * AlgorithmIdentifiers with equals(), which compares the encodings, and rejected the response
+     * with "time stamp imprint for wrong algorithm" (github #2379).
+     */
+    public void testTsaWithNullDigestParameters()
+        throws Exception
+    {
+        DigestCalculatorProvider digestCalculatorProvider = new JcaDigestCalculatorProviderBuilder().build();
+        DigestCalculator digestCalculator = digestCalculatorProvider.get(new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256));
+
+        assertNull("test needs a calculator with absent parameters",
+            digestCalculator.getAlgorithmIdentifier().getParameters());
+
+        ERSArchiveTimeStampGenerator ersGen = new ERSArchiveTimeStampGenerator(digestCalculator);
+
+        ersGen.addData(new ERSByteData(H1_DATA));
+        ersGen.addData(new ERSByteData(H2_DATA));
+
+        TimeStampRequestGenerator tspReqGen = new TimeStampRequestGenerator();
+        tspReqGen.setCertReq(true);
+
+        // ask for the timestamp naming SHA-256 the way such a TSA does, with NULL parameters
+        TimeStampRequest tspReq = new TimeStampRequestGenerator().generate(
+            new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256, DERNull.INSTANCE),
+            ersGen.generateTimeStampRequest(tspReqGen).getMessageImprintDigest());
+
+        assertNotNull("request should carry NULL parameters",
+            tspReq.getMessageImprintAlgID().getParameters());
+
+        String signDN = "O=Bouncy Castle, C=AU";
+        KeyPair signKP = TSPTestUtil.makeKeyPair();
+        X509Certificate signCert = TSPTestUtil.makeCACertificate(signKP, signDN, signKP, signDN);
+
+        String origDN = "CN=Eric H. Echidna, E=eric@bouncycastle.org, O=Bouncy Castle, C=AU";
+        KeyPair origKP = TSPTestUtil.makeKeyPair();
+        X509Certificate origCert = TSPTestUtil.makeCertificate(origKP, origDN, signKP, signDN);
+
+        List certList = new ArrayList();
+        certList.add(origCert);
+        certList.add(signCert);
+
+        JcaSignerInfoGeneratorBuilder infoGeneratorBuilder =
+            new JcaSignerInfoGeneratorBuilder(new JcaDigestCalculatorProviderBuilder().setProvider(BC).build());
+
+        TimeStampTokenGenerator tsTokenGen = new TimeStampTokenGenerator(
+            infoGeneratorBuilder.build(new JcaContentSignerBuilder("SHA256withRSA").setProvider(BC).build(origKP.getPrivate()), origCert),
+            new SHA1DigestCalculator(), new ASN1ObjectIdentifier("1.2.3"));
+        tsTokenGen.addCertificates(new JcaCertStore(certList));
+
+        TimeStampResponseGenerator tsRespGen = new TimeStampResponseGenerator(tsTokenGen, TSPAlgorithms.ALLOWED);
+        TimeStampResponse tsResp = tsRespGen.generateGrantedResponse(tspReq, new BigInteger("23"), new Date());
+
+        assertNotNull("response imprint should carry NULL parameters",
+            tsResp.getTimeStampToken().getTimeStampInfo().toASN1Structure()
+                .getMessageImprint().getHashAlgorithm().getParameters());
+
+        // the generator must take it: same digest, differently spelled
+        List<ERSArchiveTimeStamp> atss = ersGen.generateArchiveTimeStamps(tsResp);
+
+        assertEquals(2, atss.size());
+        ((ERSArchiveTimeStamp)atss.get(0)).validatePresent(new ERSByteData(H1_DATA), new Date());
     }
 
     public void testBasicBuild()

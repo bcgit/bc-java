@@ -2,6 +2,7 @@ package org.bouncycastle.asn1.x509;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1Null;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
@@ -82,6 +83,56 @@ public class AlgorithmIdentifier
     public ASN1Encodable getParameters()
     {
         return parameters;
+    }
+
+    /**
+     * Return true if two algorithm identifiers name the same algorithm carrying the same
+     * parameters, counting an absent parameters field and an explicit {@code NULL} as the same
+     * thing - both say "this algorithm takes no parameters", they simply say it differently.
+     * <p>
+     * The two encodings are both in wide use for the SHA-2 digests, and
+     * <a href="https://www.rfc-editor.org/rfc/rfc5754#section-2">RFC 5754 sec. 2</a> requires a
+     * receiver to take either: <em>"Implementations MUST accept SHA2 AlgorithmIdentifiers with
+     * absent parameters. Implementations MUST accept SHA2 AlgorithmIdentifiers with NULL
+     * parameters."</em> - while requiring that they be <em>generated</em> with the parameters
+     * absent. {@link #equals(Object)} compares the encodings and so separates them, which is right
+     * for a map key but wrong for deciding whether a peer named the algorithm we expected.
+     * <p>
+     * Note this only equates absent with {@code NULL}; an identifier carrying an actual parameter
+     * structure is never equivalent to one carrying none.
+     *
+     * @param a an algorithm identifier, may be null.
+     * @param b an algorithm identifier, may be null.
+     * @return true if the two name the same algorithm with the same parameters.
+     */
+    public static boolean areEquivalent(AlgorithmIdentifier a, AlgorithmIdentifier b)
+    {
+        if (a == b)
+        {
+            return true;
+        }
+        if (a == null || b == null)
+        {
+            return false;
+        }
+        if (!a.getAlgorithm().equals(b.getAlgorithm()))
+        {
+            return false;
+        }
+
+        ASN1Encodable pa = a.getParameters(), pb = b.getParameters();
+
+        if (isAbsentOrNull(pa))
+        {
+            return isAbsentOrNull(pb);
+        }
+
+        return pa.equals(pb);
+    }
+
+    private static boolean isAbsentOrNull(ASN1Encodable parameters)
+    {
+        return parameters == null || parameters instanceof ASN1Null;
     }
 
     /**
