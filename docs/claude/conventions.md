@@ -211,17 +211,22 @@ Changing the BC version (opening a dev cycle, cutting a release) is a fixed, mul
 - The JCE providers — the `info` string (`"...Security Provider v<ver>[-SNAPSHOT]"`) and the `super(PROVIDER_NAME, 1.<yy>99, info)` version double, in **every** copy: `prov/src/main/java/.../jce/provider/BouncyCastleProvider.java`, `prov/src/main/jdk1.1/.../BouncyCastleProvider.java`, `prov/src/main/jdk1.4/.../BouncyCastleProvider.java`, and `prov/src/main/java/.../pqc/jcajce/provider/BouncyCastlePQCProvider.java`. The dev-cycle double is `1.<prev>99` (e.g. `1.8599` while developing 1.86) and the `info`/label use `<next>-SNAPSHOT`; historically `v<ver>b` was standardised to `v<ver>-SNAPSHOT` mid-cycle (see git of `b7eaf8f5ad` / `c93b376083`).
 - **The OpenPGP ASCII-armor version stamp** — `ArmoredOutputStream.DEFAULT_VERSION` (`public static final String DEFAULT_VERSION = "BCPG v<ver>"`, written as the `Version:` header of every armored PGP output), in both `pg/src/main/java/org/bouncycastle/bcpg/ArmoredOutputStream.java` **and** its legacy overlay `pg/src/main/jdk1.4/org/bouncycastle/bcpg/ArmoredOutputStream.java`. This lives in `pg`, away from the provider/build files, so it is the one most often forgotten. The pg tests that assert on the emitted armor `Version:` header (`BCPGOutputStreamTest`, `ArmoredInputStreamTest`, `PGPArmoredTest`, `ECDSAKeyPairTest`, `PGPv6SignatureTest`) then need updating in lockstep.
 
-## Crediting reporters and contributors in `CONTRIBUTORS.html`
+## `CONTRIBUTORS.html` is for contributed code, not for reporting a bug
 
-Entries go at the end of the list in the house form
+An entry is normally added when someone **opened a PR or otherwise supplied code** — including when
+their patch was reworked or discarded, in which case the entry says "initial implementation of ...".
+Simply reporting a defect, however well, does not usually earn one; the issue number in the release
+note and the `relates to github #NNNN` in the commit message are the credit for a report. A handful
+of older entries do read "Reported ..." for findings that came with substantial analysis, so it is
+not an absolute rule — but the default is no entry, and adding one for a bare report is a change
+dgh should make rather than something to assume. Ask if unsure.
+
+When an entry is warranted it goes at the end of the list in the house form
 `<li>name-or-handle &lt;email-or-github-url&gt; - what they contributed (PR #NNNN).</li>`; a bare
-GitHub handle with `https://github.com/<handle>` in place of an email is well established. Reporters
-are credited as well as patch authors — plenty of existing entries read "Reported ...".
-
-Two habits worth keeping: when someone reports more than one thing, **append to their existing
-entry** rather than adding a second `<li>` (see `rootvector2`, `mauromol`); and cite the source the
-work actually came from — everything historic says `(PR #NNNN)`, so an issue that arrived without a
-pull request is cited `(issue #NNNN)`.
+GitHub handle with `https://github.com/<handle>` in place of an email is well established. When a
+contributor appears more than once, **append to their existing entry** rather than adding a second
+`<li>` (see `rootvector2`). Cite the source the work came from — everything historic says
+`(PR #NNNN)`, so a contribution that arrived on an issue rather than a pull request is `(issue #NNNN)`.
 
 ## Commit messages
 
