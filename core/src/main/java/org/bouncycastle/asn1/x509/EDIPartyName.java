@@ -1,10 +1,12 @@
 package org.bouncycastle.asn1.x509;
 
+import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.x500.DirectoryString;
 
 /**
@@ -94,8 +96,17 @@ public class EDIPartyName
 
     public ASN1Primitive toASN1Primitive()
     {
-        return nameAssigner == null
-            ?  new DERSequence(partyName)
-            :  new DERSequence(nameAssigner, partyName);
+        // DirectoryString is a CHOICE type, so the [0] and [1] tags are explicit despite the
+        // IMPLICIT TAGS of the RFC 5280 module - the same reasoning the decoder above applies.
+        // Emitting the DirectoryStrings untagged left the encoder unable to parse its own output.
+        ASN1EncodableVector v = new ASN1EncodableVector(2);
+
+        if (nameAssigner != null)
+        {
+            v.add(new DERTaggedObject(true, 0, nameAssigner));
+        }
+        v.add(new DERTaggedObject(true, 1, partyName));
+
+        return new DERSequence(v);
     }
 }

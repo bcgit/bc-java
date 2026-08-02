@@ -8,6 +8,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.tsp.ArchiveTimeStamp;
@@ -138,7 +139,10 @@ public class ERSArchiveTimeStampGenerator
 
         TSTInfo tstInfo = tspResponse.getTimeStampToken().getTimeStampInfo().toASN1Structure();
 
-        if (!tstInfo.getMessageImprint().getHashAlgorithm().equals(digCalc.getAlgorithmIdentifier()))
+        // the imprint algorithm comes from the TSA, which may name the digest with NULL parameters
+        // where we name it with them absent - RFC 5754 sec. 2 requires both to be accepted
+        if (!AlgorithmIdentifier.areEquivalent(tstInfo.getMessageImprint().getHashAlgorithm(),
+            digCalc.getAlgorithmIdentifier()))
         {
             throw new ERSException("time stamp imprint for wrong algorithm");
         }
@@ -185,7 +189,10 @@ public class ERSArchiveTimeStampGenerator
 
         TSTInfo tstInfo = tspResponse.getTimeStampToken().getTimeStampInfo().toASN1Structure();
 
-        if (!tstInfo.getMessageImprint().getHashAlgorithm().equals(digCalc.getAlgorithmIdentifier()))
+        // the imprint algorithm comes from the TSA, which may name the digest with NULL parameters
+        // where we name it with them absent - RFC 5754 sec. 2 requires both to be accepted
+        if (!AlgorithmIdentifier.areEquivalent(tstInfo.getMessageImprint().getHashAlgorithm(),
+            digCalc.getAlgorithmIdentifier()))
         {
             throw new ERSException("time stamp imprint for wrong algorithm");
         }

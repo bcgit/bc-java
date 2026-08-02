@@ -166,7 +166,7 @@ public class ERSEvidenceRecord
                 ArchiveTimeStamp archiveTimeStamp = archiveTimeStamps[j];
 
                 // check digest algorithm consistent.
-                if (!digAlg.equals(archiveTimeStamp.getDigestAlgorithmIdentifier()))
+                if (!AlgorithmIdentifier.areEquivalent(digAlg, archiveTimeStamp.getDigestAlgorithmIdentifier()))
                 {
                     throw new ERSException("invalid digest algorithm in chain");
                 }
@@ -441,7 +441,8 @@ public class ERSEvidenceRecord
 
         ArchiveTimeStamp[] previous = this.getArchiveTimeStamps();
 
-        if (!digCalc.getAlgorithmIdentifier().equals(previous[0].getDigestAlgorithmIdentifier()))
+        if (!AlgorithmIdentifier.areEquivalent(digCalc.getAlgorithmIdentifier(),
+            previous[0].getDigestAlgorithmIdentifier()))
         {
             throw new ERSException("digest mismatch for timestamp renewal");
         }

@@ -1,5 +1,10 @@
 package org.bouncycastle.asn1.test;
 
+import org.bouncycastle.asn1.ASN1Encoding;
+import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.DERTaggedObject;
+import org.bouncycastle.asn1.x500.DirectoryString;
+import org.bouncycastle.asn1.x509.EDIPartyName;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.asn1.x509.GeneralNamesBuilder;
@@ -26,6 +31,58 @@ public class GeneralNameTest
     private static final byte[] ipv6i = Hex.decode("872020010db885a300000000000000000000fffffffffffe00000000000000000000");
     private static final byte[] ipv6j = Hex.decode("872020010db885a300000000000000000000ffffffffffff80000000000000000000");
 
+    /**
+     * RFC 5280 sec. 4.2.1.6:
+     * <pre>
+     * EDIPartyName ::= SEQUENCE {
+     *      nameAssigner            [0]     DirectoryString OPTIONAL,
+     *      partyName               [1]     DirectoryString }
+     * </pre>
+     * Both tags are explicit, despite the module's IMPLICIT TAGS, because DirectoryString is a
+     * CHOICE and X.680 does not permit implicitly tagging one. The decoder had this right but
+     * toASN1Primitive emitted the DirectoryStrings bare, so an EDIPartyName built through the
+     * constructor could not parse its own encoding, and neither could GeneralName - which since
+     * the type was added validates the ediPartyName alternative through it (github #2380).
+     */
+    private void ediPartyNameTest()
+        throws Exception
+    {
+        // SEQUENCE { [0] { UTF8String "assigner" }, [1] { UTF8String "party" } }
+        byte[] expected = Hex.decode("3015a00a0c0861737369676e6572a1070c057061727479");
+
+        EDIPartyName both = new EDIPartyName(new DirectoryString("assigner"), new DirectoryString("party"));
+        isTrue("EDIPartyName encoding not as RFC 5280", Arrays.areEqual(expected, both.getEncoded(ASN1Encoding.DER)));
+
+        EDIPartyName decoded = EDIPartyName.getInstance(both.getEncoded(ASN1Encoding.DER));
+        isEquals("assigner", decoded.getNameAssigner().getString());
+        isEquals("party", decoded.getPartyName().getString());
+
+        // nameAssigner is OPTIONAL; partyName keeps its [1] tag either way
+        byte[] partyOnly = Hex.decode("3009a1070c057061727479");
+        EDIPartyName one = new EDIPartyName(null, new DirectoryString("party"));
+        isTrue("optional nameAssigner encoding wrong", Arrays.areEqual(partyOnly, one.getEncoded(ASN1Encoding.DER)));
+
+        EDIPartyName decodedOne = EDIPartyName.getInstance(one.getEncoded(ASN1Encoding.DER));
+        isTrue("nameAssigner should be absent", null == decodedOne.getNameAssigner());
+        isEquals("party", decodedOne.getPartyName().getString());
+
+        // and the GeneralName path that validates the alternative
+        GeneralName gn = GeneralName.getInstance(
+            new DERTaggedObject(false, GeneralName.ediPartyName, ASN1Primitive.fromByteArray(expected)));
+        isEquals(GeneralName.ediPartyName, gn.getTagNo());
+
+        // an untagged sequence remains a decode failure - the type is not read leniently
+        try
+        {
+            EDIPartyName.getInstance(Hex.decode("30110c0861737369676e65720c057061727479"));
+            fail("untagged EDIPartyName accepted");
+        }
+        catch (IllegalArgumentException e)
+        {
+            // expected
+        }
+    }
+
     public String getName()
     {
         return "GeneralName";
@@ -34,6 +91,8 @@ public class GeneralNameTest
     public void performTest()
         throws Exception
     {
+        ediPartyNameTest();
+
         GeneralName nm = new GeneralName(GeneralName.iPAddress, "10.9.8.0");
         if (!Arrays.areEqual(nm.getEncoded(), ipv4))
         {
