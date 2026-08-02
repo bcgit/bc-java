@@ -1,9 +1,11 @@
 package org.bouncycastle.pqc.crypto.lms;
 
 import java.io.IOException;
+import java.security.SecureRandom;
 
 import junit.framework.TestCase;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.encoders.Hex;
 
 public class LMSTests
@@ -195,11 +197,13 @@ public class LMSTests
 
         byte[] enc = privateKey.getEncoded();
 
-        // version 1: 72 byte legacy body + u32 node count + (cacheTop - 1) nodes of m bytes each.
+        // 72 byte body + u32 node count + (cacheTop - 1) nodes of m bytes each. The version stays 0
+        // and the cache is appended as trailing data, so releases that predate it still read the
+        // key - they stop at the master secret - and simply do not see the cache.
         assertEquals(0, enc[0]);
         assertEquals(0, enc[1]);
         assertEquals(0, enc[2]);
-        assertEquals(1, enc[3]);
+        assertEquals(0, enc[3]);
         assertEquals(72 + 4 + (cacheTop - 1) * m, enc.length);
 
         // Decoding primes the cache - this is the fix; without it the decoded key's cache is empty
@@ -214,7 +218,8 @@ public class LMSTests
         LMSPrivateKeyParameters fresh = LMS.generateKeys(sigParams, otsParams, 0, I, seed);
         assertTrue(Arrays.areEqual(sigFromDecoded.getEncoded(), LMS.generateSign(fresh, msg).getEncoded()));
 
-        // Legacy version 0 encodings (no cache) must still decode and sign correctly.
+        // An encoding with no trailing cache - what an older release writes - must still decode
+        // and sign correctly.
         byte[] legacyEnc = Composer.compose()
             .u32str(0)
             .u32str(sigParams.getType())
@@ -228,7 +233,7 @@ public class LMSTests
         assertEquals(72, legacyEnc.length);
 
         LMSPrivateKeyParameters legacy = LMSPrivateKeyParameters.getInstance(legacyEnc);
-        assertFalse("version 0 encoding carries no cache", legacy.isTreeCachePrimed());
+        assertFalse("encoding without trailing data carries no cache", legacy.isTreeCachePrimed());
         assertTrue(LMS.verifySignature(publicKey, LMS.generateSign(legacy, msg), msg));
     }
 
@@ -292,11 +297,20 @@ public class LMSTests
 
         LMSigParameters sigParams = LMSigParameters.lms_sha256_n32_h10;
         LMOtsParameters otsParams = LMOtsParameters.sha256_n32_w4;
-        int cacheCountLimit = 128;
         int m = sigParams.getM();
 
+        //
+        // The number of nodes cached is capped by LMSPrivateKeyParameters' interned-key table, so
+        // read it off a freshly generated key of the same parameters rather than hard-coding it -
+        // the limit moves if that table is resized.
+        //
+        LMSKeyPairGenerator limitGen = new LMSKeyPairGenerator();
+        limitGen.init(new LMSKeyGenerationParameters(new LMSParameters(sigParams, otsParams), new SecureRandom()));
+        byte[] sampleEnc = ((LMSPrivateKeyParameters)limitGen.generateKeyPair().getPrivate()).getEncoded();
+        int cacheCountLimit = Pack.bigEndianToInt(sampleEnc, 40 + m);
+
         byte[] atLimit = Composer.compose()
-            .u32str(1)
+            .u32str(0)
             .u32str(sigParams.getType())
             .u32str(otsParams.getType())
             .bytes(I)
@@ -310,7 +324,7 @@ public class LMSTests
         assertTrue(LMSPrivateKeyParameters.getInstance(atLimit).isTreeCachePrimed());
 
         byte[] beyondLimit = Composer.compose()
-            .u32str(1)
+            .u32str(0)
             .u32str(sigParams.getType())
             .u32str(otsParams.getType())
             .bytes(I)
@@ -331,7 +345,7 @@ public class LMSTests
         }
 
         byte[] truncated = Composer.compose()
-            .u32str(1)
+            .u32str(0)
             .u32str(sigParams.getType())
             .u32str(otsParams.getType())
             .bytes(I)

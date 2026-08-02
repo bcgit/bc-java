@@ -17,7 +17,7 @@ public class LMSPrivateKeyParameters
     implements LMSContextBasedSigner
 {
     private static CacheKey T1 = new CacheKey(1);
-    private static CacheKey[] internedKeys = new CacheKey[129];
+    private static CacheKey[] internedKeys = new CacheKey[64];
 
     static
     {
@@ -109,10 +109,9 @@ public class LMSPrivateKeyParameters
              */
 
 
-            int version = dIn.readInt();
-            if (version != 0 && version != 1)
+            if (dIn.readInt() != 0)
             {
-                throw new IllegalStateException("expected version 0 or 1 lms private key");
+                throw new IllegalStateException("expected version 0 lms private key");
             }
 
             int sigType = dIn.readInt();
@@ -147,11 +146,15 @@ public class LMSPrivateKeyParameters
             LMSPrivateKeyParameters key = new LMSPrivateKeyParameters(parameter, otsParameter, q, I, maxQ, masterSecret);
 
             //
-            // A version 1 encoding appends a cache of the top of the Merkle tree (see getEncoded).
-            // Priming it here means the first signature made after the key is decoded does not have
-            // to rebuild the whole tree, which otherwise costs about as much as key generation.
+            // Anything after the master secret is a cache of the top of the Merkle tree (see
+            // getEncoded). Priming it here means the first signature made after the key is decoded
+            // does not have to rebuild the whole tree, which otherwise costs about as much as key
+            // generation. The cache is optional trailing data rather than a new version so that
+            // releases predating it still read the key - they stop at the master secret and ignore
+            // what follows - at the cost of it being absent rather than malformed when a stream
+            // supplies no more bytes.
             //
-            if (version == 1)
+            if (dIn.available() > 0)
             {
                 int cacheCount = dIn.readInt();
                 if (cacheCount < 0 || cacheCount >= internedKeys.length)
@@ -512,7 +515,7 @@ public class LMSPrivateKeyParameters
         // It is implementation dependent.
         //
         // Format:
-        //     version u32                 (1; version 0 - without the tree cache - is still accepted on read)
+        //     version u32                 (0)
         //     type u32
         //     otstype u32
         //     I u8x16
@@ -520,21 +523,23 @@ public class LMSPrivateKeyParameters
         //     maxQ u32
         //     master secret Length u32
         //     master secret u8[]
-        //     tree cache node count u32   (n; the top-of-tree nodes 1..n)
-        //     tree cache nodes u8[]       (n * getSigParameters().getM() bytes)
+        //     tree cache node count u32   (n; the top-of-tree nodes 1..n) - optional
+        //     tree cache nodes u8[]       (n * getSigParameters().getM() bytes) - optional
         //
         // The tree cache carries the top of the Merkle tree so that the first signature made after
         // the key is decoded does not have to rebuild the whole tree - which otherwise costs about
         // as much as key generation (see github #2365). The nodes are a deterministic function of I,
         // the master secret and the parameters and are independent of q, so persisting them leaks
-        // nothing the (already encoded) master secret does not. A key written by this method cannot
-        // be read by releases before 1.86; those releases reject the version field.
+        // nothing the (already encoded) master secret does not. The cache is appended after the
+        // master secret rather than announced by a new version number, so a key written by this
+        // method is still readable by releases that predate it: their decoder returns at the end of
+        // the master secret and never looks at the trailing bytes.
         //
 
         int cacheTop = Math.min(internedKeys.length, maxCacheR);
 
         Composer composer = Composer.compose()
-            .u32str(1) // version
+            .u32str(0) // version
             .u32str(parameters.getType()) // type
             .u32str(otsParameters.getType()) // ots type
             .bytes(I) // I at 16 bytes
