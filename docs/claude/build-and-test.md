@@ -54,6 +54,44 @@ Common gotchas:
 - IDE-built classes under `out/production/...` (IntelliJ) are NOT on the Gradle classpath — don't reference them, and beware that they can drift from Gradle's outputs.
 - After deleting or renaming a test method (e.g. when rolling back an edit), the stale `.class` file lingers under `<module>/build/classes/java/test/`. JUnit's `TestSuite.class` reflection-walk will still find and run the stale method, surfacing confusing `ClassNotFoundException` / `NoClassDefFoundError` for inner-class artifacts that were removed. Run `./gradlew :<module>:compileTestJava --rerun-tasks` (or `:<module>:clean`) after a rollback to flush.
 
+## A green Gradle run can mean the tests never ran — and the tree can move under you
+
+Two ways a "BUILD SUCCESSFUL" has lied in practice. Both are cheap to check and expensive to miss.
+
+**`UP-TO-DATE` test tasks.** Gradle will skip a test task it believes is current and still print
+`BUILD SUCCESSFUL`. The tell is the wall time: `:pkix:test` in seconds when it normally takes
+minutes. Confirm with `--console=plain` and look for `> Task :pkix:test UP-TO-DATE` (a real run
+prints the task line with no suffix), or check the result XML is actually fresh:
+
+```
+find <module>/build -name "*.xml" -path "*test-result*" -printf "%TH:%TM %p\n" | sort | tail
+```
+
+`ls`-ing the results directory is not enough — the directory mtime updates even when nothing is
+rewritten, and `find -newermt "-30 minutes"` is *not* valid relative syntax (it silently matches
+nothing; use `-newermt "30 minutes ago"`). When in doubt force it: `:<module>:cleanTest :<module>:test`.
+
+**HEAD moves while a suite runs.** dgh pulls into this clone during a session, so a long
+`:core:test` / `:prov:test` can straddle a merge and describe a tree that no longer exists. This
+has already produced a confident-but-wrong "my change broke three unrelated tests" (the failures
+belonged to the pre-pull tree). So:
+
+- Print `git log --oneline -1` immediately before launching a long run and again when it finishes;
+  only trust the result if they match.
+- A before/after comparison (stash the fix, re-run) is only valid if **both** runs are at the same
+  HEAD. Re-run the baseline if a pull landed between them.
+- `git stash push <paths>` names the commit it stashed against ("WIP on main: <hash> <subject>") —
+  a free HEAD check, worth reading rather than skipping.
+- `git log --oneline <old-head>..HEAD -- <paths you changed>` says whether the incoming work
+  touched what you are touching; uncommitted edits usually survive a pull untouched, but verify
+  rather than assume.
+
+**`BC_JDK8` is exported in dgh's shell**, so `:prov:test` pulls in `test8`, which runs the suite
+against the *built jar* on a real JDK 8 with `maxParallelForks = 8`. That is a different execution
+path from running a test class directly against `build/classes`, and the only place some failures
+appear. A `:prov:test` that suddenly takes much longer, or fails in tests you did not touch, is
+usually `test8`.
+
 ## Verifying a fix actually catches the bug
 
 The repo's working norm for any defect-fix patch is: write the test that reproduces the bug, then **stash the fix** (`git stash push <fix-files>`), recompile (`./gradlew :<module>:compileJava`), rerun the test to confirm it now fails on the original symptom, then `git stash pop` and rerun to confirm it now passes. This catches tests that pass for the wrong reason. Use it whenever you add a regression test alongside a fix.
@@ -70,6 +108,16 @@ The same stash/mutate technique also answers "is this call site actually on my n
 - **A stale `prov` copy shadowed it.** Per the `core`-into-`prov` trap, `prov/build/classes/java/main` contains its own build of every `core` class. If it precedes `core/build/classes/java/main` on a hand-built classpath, or if only `:core:compileJava` was re-run, the JVM loads the old bytecode. Compile both (`:core:compileJava :prov:compileJava`) and put `core` first — and confirm the marker is present in *both* class trees.
 
 This bit the EC constant-time multiplier work (`965f42dae9`), where both causes fired in turn and produced a confident but wrong "none of these paths are wired" conclusion. It invalidates ordinary test *results* the same way it invalidates a probe, so when a `core` change is exercised through `prov` tests, compile both and order the classpath core-first as routine.
+
+## Parsing base64 out of Java source: `+` is the concatenation operator
+
+A recurring shape in this tree is a PEM or key blob spread over many `"...\n" +` string literals.
+Stripping "non-base64" characters with something like `re.sub(r'[^A-Za-z0-9+/=]', '', text)` keeps
+the `+` that joins the literals, silently corrupting the decode — the result still base64-decodes,
+just into garbage, so the failure is a wrong *answer* rather than an error. This produced a
+confident undercount of the OpenSSH test keys (8 of 15) that survived two rounds of "checking".
+Extract the contents of each `"..."` literal instead, then join. Where a tool can confirm the
+result — `ssh-keygen -l -f`, `openssl asn1parse` — use it as the authority rather than the parse.
 
 ## The legacy jdk15to18 (Java 5) build has a *runtime* floor Gradle can't see
 

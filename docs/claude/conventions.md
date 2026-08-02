@@ -47,6 +47,45 @@ Lenient-on-read covers legal-but-non-DER *formatting*, not malformed *content*. 
 
 The worked example is `Properties.ASN1_ALLOW_NON_DER_TIME` for time fields (`ASN1UTCTime` / `ASN1GeneralizedTime`, github #1973 / #1986 / #2040). Reuse the same shape — `toDERObject` gate + `DEREncodingException` + default-on `Properties.*` flag — for any future DER-strictness opt-in on a primitive type, so the lenient-on-read convention is preserved and a single property name conveys the same semantic regardless of which primitive flips. This complements "Non-standard format interop" below: that section covers *read-side* concessions that default off; this one covers *write-side* DER restrictions that default off.
 
+## Comparing `AlgorithmIdentifier`s on the receive side: use `areEquivalent`, not `equals`
+
+`AlgorithmIdentifier.equals()` compares the encodings, so it separates the two spellings of "this
+algorithm takes no parameters" — an absent `parameters` field and an explicit `NULL`. Both are in
+wide use for the SHA-2 digests and
+[RFC 5754 sec. 2](https://www.rfc-editor.org/rfc/rfc5754#section-2) requires a receiver to take
+either ("Implementations MUST accept SHA2 AlgorithmIdentifiers with absent parameters.
+Implementations MUST accept SHA2 AlgorithmIdentifiers with NULL parameters."), while requiring that
+they be *generated* with the parameters absent — which BC already does.
+
+So when deciding whether a peer named the algorithm you expected, use
+`AlgorithmIdentifier.areEquivalent(a, b)` (core, `asn1.x509`): same algorithm OID, and parameters
+either equal or each absent-or-`NULL`. It equates absent only with `NULL` — an identifier carrying a
+real parameter structure is never equivalent to one carrying none, so RSASSA-PSS and the GOST
+parameterised algorithms stay strict. `asn1.ocsp.CertID` implements the same rule inline in its own
+`equals`/`hashCode` (with `hashCode` normalising so the contract holds) and predates the helper.
+
+Keep `equals()` where the comparison is not receiver-side identity:
+
+- a map/cache key, where `equals` must stay consistent with `hashCode` (`ERSCachingData`);
+- deciding whether a DER `DEFAULT` field may be omitted when *encoding* — changing that changes
+  emitted bytes (`RSAESOAEPparams`, `RSASSAPSSparams`);
+- a gate that admits exactly one algorithm (`RespID` requires SHA-1).
+
+The worked example is the RFC 4998 evidence-record path (github #2379): a TSA naming SHA-256 with
+`NULL` where BC's own `DigestCalculator` leaves it absent was rejected as "time stamp imprint for
+wrong algorithm".
+
+## Adding an entry to `DefaultAlgorithmNameFinder` means editing its test too
+
+`pkix/src/test/java/org/bouncycastle/operator/test/AllTests.java` asserts
+`values.length == nameFinder.getOIDSet().size()`, so the finder and the test's expected-name array
+are locked together: add an `addAlgorithm(...)` without a matching `new Object[]{oid, "NAME"}` row
+and `testAgainstKnownList` fails with `expected:<N> but was:<N-k>`. That is deliberate — it is what
+stops entries being added without an asserted name. The same test then tries to resolve every name
+through the BC provider as a `MessageDigest` / `Cipher` / `Signature`; an unresolvable name only
+prints a "Could not resolve" line (the `fail` is commented out), but a name that resolves to nothing
+is usually a sign the mapping is wrong.
+
 ## Exception messages are part of the test contract
 
 Many tests assert on exact exception message text (e.g. `isTrue(e.getMessage().equals("..."))` or `getCause().getMessage()` checks). Changing the wording of a thrown exception — even something as small as adding a colon, rewording for clarity, or wrapping with `Exceptions.illegalArgumentException(...)` — will silently break tests in another module. Before modifying any exception message, grep the whole tree for the existing string and update every matching assertion in lockstep.
@@ -148,6 +187,15 @@ Affected arcs include `kisa` (SEED), `nsri` (ARIA), `ntt` (Camellia), `oiw`, `gn
 
 The `iana` arc is *not* dual-located: `org.bouncycastle.asn1.iana.IANAObjectIdentifiers` lives only in `core` (public package, bundled into `bcprov` via the core-into-prov trick and exported by `prov`'s `module-info`), so `core` / `prov` and everything above import the same `org.bouncycastle.asn1.iana` form. It was consolidated out of the `util` copy + `internal.asn1.iana` copy in the 1.85 cycle (github #2176) — don't reintroduce an `internal.asn1.iana` copy.
 
+## Check whether the type already solves it before fixing a call site
+
+Twice in one session a call site that looked broken turned out not to be, because the *type* being
+compared already handled the case: `CertificateID.matchesIssuer` compares whole `CertID` objects
+with `equals()`, and `asn1.ocsp.CertID` overrides `equals`/`hashCode` with exactly the absent-vs-NULL
+tolerance the call site appeared to be missing. Read the class's own `equals` (and any
+`getInstance` normalisation) before concluding a comparison is too strict, and prove the defect with
+a probe rather than by reading — a two-minute check saved shipping a redundant fix.
+
 ## Release notes
 
 Defects fixed and additional features go into `docs/releasenotes.html` under the **current** unreleased version block (e.g. section 2.1 with header "Release: 1.85"). Each entry is a single `<li>...</li>` referencing the GitHub issue number where applicable. The file is hand-edited HTML; preserve the existing prose style and `<ul>` structure.
@@ -162,6 +210,23 @@ Changing the BC version (opening a dev cycle, cutting a release) is a fixed, mul
 - `bc-build.properties` — `release.suffix` / `release.version` (numeric, e.g. `1.85.99`) and `release.name` (label, e.g. `1.86-SNAPSHOT`).
 - The JCE providers — the `info` string (`"...Security Provider v<ver>[-SNAPSHOT]"`) and the `super(PROVIDER_NAME, 1.<yy>99, info)` version double, in **every** copy: `prov/src/main/java/.../jce/provider/BouncyCastleProvider.java`, `prov/src/main/jdk1.1/.../BouncyCastleProvider.java`, `prov/src/main/jdk1.4/.../BouncyCastleProvider.java`, and `prov/src/main/java/.../pqc/jcajce/provider/BouncyCastlePQCProvider.java`. The dev-cycle double is `1.<prev>99` (e.g. `1.8599` while developing 1.86) and the `info`/label use `<next>-SNAPSHOT`; historically `v<ver>b` was standardised to `v<ver>-SNAPSHOT` mid-cycle (see git of `b7eaf8f5ad` / `c93b376083`).
 - **The OpenPGP ASCII-armor version stamp** — `ArmoredOutputStream.DEFAULT_VERSION` (`public static final String DEFAULT_VERSION = "BCPG v<ver>"`, written as the `Version:` header of every armored PGP output), in both `pg/src/main/java/org/bouncycastle/bcpg/ArmoredOutputStream.java` **and** its legacy overlay `pg/src/main/jdk1.4/org/bouncycastle/bcpg/ArmoredOutputStream.java`. This lives in `pg`, away from the provider/build files, so it is the one most often forgotten. The pg tests that assert on the emitted armor `Version:` header (`BCPGOutputStreamTest`, `ArmoredInputStreamTest`, `PGPArmoredTest`, `ECDSAKeyPairTest`, `PGPv6SignatureTest`) then need updating in lockstep.
+
+## `CONTRIBUTORS.html` is for contributed code, not for reporting a bug
+
+An entry is normally added when someone **opened a PR or otherwise supplied code** — including when
+their patch was reworked or discarded, in which case the entry says "initial implementation of ...".
+Simply reporting a defect, however well, does not usually earn one; the issue number in the release
+note and the `relates to github #NNNN` in the commit message are the credit for a report. A handful
+of older entries do read "Reported ..." for findings that came with substantial analysis, so it is
+not an absolute rule — but the default is no entry, and adding one for a bare report is a change
+dgh should make rather than something to assume. Ask if unsure.
+
+When an entry is warranted it goes at the end of the list in the house form
+`<li>name-or-handle &lt;email-or-github-url&gt; - what they contributed (PR #NNNN).</li>`; a bare
+GitHub handle with `https://github.com/<handle>` in place of an email is well established. When a
+contributor appears more than once, **append to their existing entry** rather than adding a second
+`<li>` (see `rootvector2`). Cite the source the work came from — everything historic says
+`(PR #NNNN)`, so a contribution that arrived on an issue rather than a pull request is `(issue #NNNN)`.
 
 ## Commit messages
 

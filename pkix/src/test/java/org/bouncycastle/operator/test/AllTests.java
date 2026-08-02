@@ -16,6 +16,7 @@ import javax.crypto.spec.SecretKeySpec;
 import junit.framework.Assert;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import org.bouncycastle.asn1.gm.GMObjectIdentifiers;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
@@ -165,6 +166,9 @@ public class AllTests
             new Object[]{NISTObjectIdentifiers.id_dsa_with_sha3_512, "SHA3-512WITHDSA"},
             new Object[]{BCObjectIdentifiers.falcon_512, "FALCON"},
             new Object[]{BCObjectIdentifiers.falcon_1024, "FALCON"},
+            new Object[]{GMObjectIdentifiers.sm3, "SM3"},
+            new Object[]{GMObjectIdentifiers.sm2sign_with_sm3, "SM3WITHSM2"},
+            new Object[]{GMObjectIdentifiers.sm2sign_with_sha256, "SHA256WITHSM2"},
             new Object[]{EdECObjectIdentifiers.id_Ed25519, "ED25519"},
             new Object[]{EdECObjectIdentifiers.id_Ed448, "ED448"},
             new Object[]{EdECObjectIdentifiers.id_X25519, "X25519"},

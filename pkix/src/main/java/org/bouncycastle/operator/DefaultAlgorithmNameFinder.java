@@ -9,6 +9,7 @@ import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.bsi.BSIObjectIdentifiers;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
+import org.bouncycastle.asn1.gm.GMObjectIdentifiers;
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.gnu.GNUObjectIdentifiers;
 import org.bouncycastle.asn1.kisa.KISAObjectIdentifiers;
@@ -135,6 +136,11 @@ public class DefaultAlgorithmNameFinder
         addAlgorithm(BCObjectIdentifiers.sphincsPlus_shake_256f_r3_simple, "SPHINCS+");
         addAlgorithm(BCObjectIdentifiers.sphincsPlus_haraka_256s_r3_simple, "SPHINCS+");
         addAlgorithm(BCObjectIdentifiers.sphincsPlus_haraka_256f_r3_simple, "SPHINCS+");
+
+
+        addAlgorithm(GMObjectIdentifiers.sm3, "SM3");
+        addAlgorithm(GMObjectIdentifiers.sm2sign_with_sm3, "SM3WITHSM2");
+        addAlgorithm(GMObjectIdentifiers.sm2sign_with_sha256, "SHA256WITHSM2");
 
         addAlgorithm(NISTObjectIdentifiers.id_sha224, "SHA224");
         addAlgorithm(NISTObjectIdentifiers.id_sha256, "SHA256");
