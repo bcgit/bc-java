@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Stack;
 import java.util.TreeMap;
 
+import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Properties;
 
@@ -455,9 +456,7 @@ final class BDSStateCodec
 
     private static IOException invalidState(IllegalStateException cause)
     {
-        IOException exception = new IOException("invalid BDS state: " + cause.getMessage());
-        exception.initCause(cause);
-        return exception;
+        return Exceptions.ioException("invalid BDS state", cause);
     }
 
     private static final class NodeBudget

@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Encodable;
+import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Pack;
 
 /**
@@ -90,15 +91,15 @@ public final class XMSSPrivateKeyParameters
             }
             catch (IOException e)
             {
-                throw new IllegalArgumentException(e.getMessage(), e);
+                throw Exceptions.illegalArgumentException(e.getMessage(), e);
             }
             catch (ClassNotFoundException e)
             {
-                throw new IllegalArgumentException(e.getMessage(), e);
+                throw Exceptions.illegalArgumentException(e.getMessage(), e);
             }
             catch (IllegalStateException e)
             {
-                throw new IllegalArgumentException(e.getMessage(), e);
+                throw Exceptions.illegalArgumentException(e.getMessage(), e);
             }
         }
         else
@@ -175,7 +176,7 @@ public final class XMSSPrivateKeyParameters
             }
             catch (IllegalStateException e)
             {
-                throw new IllegalArgumentException(e.getMessage(), e);
+                throw Exceptions.illegalArgumentException(e.getMessage(), e);
             }
         }
     }
@@ -394,7 +395,7 @@ public final class XMSSPrivateKeyParameters
             }
             catch (IOException e)
             {
-                throw new IllegalStateException("error encoding BDS state", e);
+                throw Exceptions.illegalStateException("error encoding BDS state", e);
             }
 
             return Arrays.concatenate(out, bdsStateOut);
