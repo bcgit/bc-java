@@ -85,17 +85,18 @@ public final class XMSSPrivateKeyParameters
             try
             {
                 BDS bdsImport = (BDS)XMSSUtil.deserialize(bdsStateBinary, BDS.class);
-                if (bdsImport.getIndex() != index)
-                {
-                    throw new IllegalStateException("serialized BDS has wrong index");
-                }
                 bdsState = bdsImport.withWOTSDigest(builder.params.getTreeDigestOID(), builder.params.getTreeDigestSize());
+                bdsState.validate(params, index);
             }
             catch (IOException e)
             {
                 throw new IllegalArgumentException(e.getMessage(), e);
             }
             catch (ClassNotFoundException e)
+            {
+                throw new IllegalArgumentException(e.getMessage(), e);
+            }
+            catch (IllegalStateException e)
             {
                 throw new IllegalArgumentException(e.getMessage(), e);
             }
@@ -167,6 +168,14 @@ public final class XMSSPrivateKeyParameters
             if (builder.maxIndex >= 0 && builder.maxIndex != bdsState.getMaxIndex())
             {
                 throw new IllegalArgumentException("maxIndex set but not reflected in state");
+            }
+            try
+            {
+                bdsState.validate(params, builder.index);
+            }
+            catch (IllegalStateException e)
+            {
+                throw new IllegalArgumentException(e.getMessage(), e);
             }
         }
     }
@@ -385,7 +394,7 @@ public final class XMSSPrivateKeyParameters
             }
             catch (IOException e)
             {
-                throw new RuntimeException("error serializing bds state: " + e.getMessage());
+                throw new IllegalStateException("error encoding BDS state", e);
             }
 
             return Arrays.concatenate(out, bdsStateOut);

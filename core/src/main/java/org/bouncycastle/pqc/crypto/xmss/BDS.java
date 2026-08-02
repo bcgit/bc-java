@@ -113,6 +113,30 @@ public final class BDS
         this.used = false;
     }
 
+    BDS(int treeHeight, int k, int maxIndex, int index, boolean used, XMSSNode root,
+        List<XMSSNode> authenticationPath, Map<Integer, List<XMSSNode>> retain,
+        Stack<XMSSNode> stack, List<BDSTreeHash> treeHashInstances, Map<Integer, XMSSNode> keep)
+    {
+        this.wotsPlus = null;
+        this.treeHeight = treeHeight;
+        this.k = k;
+        this.maxIndex = maxIndex;
+        this.index = index;
+        this.used = used;
+        this.root = root;
+        this.authenticationPath = authenticationPath;
+        this.retain = new TreeMap<Integer, LinkedList<XMSSNode>>();
+        for (Iterator<Integer> it = retain.keySet().iterator(); it.hasNext();)
+        {
+            Integer height = it.next();
+            this.retain.put(height, new LinkedList<XMSSNode>(retain.get(height)));
+        }
+        this.stack = stack;
+        this.treeHashInstances = treeHashInstances;
+        this.keep = keep;
+        this.validate();
+    }
+
     BDS(BDS last)
     {
         this.wotsPlus = new WOTSPlus(last.wotsPlus.getParams());
@@ -464,7 +488,7 @@ public final class BDS
         return ret;
     }
 
-    private void validate()
+    void validate()
     {
         if (authenticationPath == null)
         {
@@ -486,9 +510,133 @@ public final class BDS
         {
             throw new IllegalStateException("keep == null");
         }
-        if (!XMSSUtil.isIndexValid(treeHeight, index))
+        if (treeHeight < 2 || treeHeight > 30)
+        {
+            throw new IllegalStateException("treeHeight in BDS state out of bounds");
+        }
+        if (k > treeHeight || k < 2 || ((treeHeight - k) & 1) != 0)
+        {
+            throw new IllegalStateException("k in BDS state out of bounds");
+        }
+        int maxIndexLimit = (1 << treeHeight) - 1;
+        if (maxIndex < 0 || maxIndex > maxIndexLimit || index < 0 || index > maxIndex + 1)
         {
             throw new IllegalStateException("index in BDS state out of bounds");
+        }
+        if (root == null)
+        {
+            if (!authenticationPath.isEmpty())
+            {
+                throw new IllegalStateException("authenticationPath present without root");
+            }
+        }
+        else
+        {
+            if (root.getHeight() != treeHeight || authenticationPath.size() != treeHeight)
+            {
+                throw new IllegalStateException("inconsistent root or authenticationPath in BDS state");
+            }
+        }
+        if (treeHashInstances.size() != treeHeight - k || retain.size() > k - 1
+            || stack.size() > treeHeight || keep.size() > treeHeight)
+        {
+            throw new IllegalStateException("inconsistent collection size in BDS state");
+        }
+    }
+
+    void validate(XMSSParameters params)
+    {
+        validate();
+        if (treeHeight != params.getHeight() || k != params.getK())
+        {
+            throw new IllegalStateException("BDS state does not match XMSS parameters");
+        }
+
+        int digestSize = params.getTreeDigestSize();
+        validateNode(root, digestSize, treeHeight, treeHeight);
+        for (int i = 0; i < authenticationPath.size(); i++)
+        {
+            validateRequiredNode(authenticationPath.get(i), digestSize, i, i);
+        }
+
+        for (Iterator<Integer> it = retain.keySet().iterator(); it.hasNext();)
+        {
+            Integer height = it.next();
+            if (height.intValue() < treeHeight - k || height.intValue() > treeHeight - 2)
+            {
+                throw new IllegalStateException("retain height in BDS state out of bounds");
+            }
+            List<XMSSNode> nodes = retain.get(height);
+            int maximumRetained = (1 << (treeHeight - height.intValue() - 1)) - 1;
+            if (nodes == null || nodes.size() > maximumRetained)
+            {
+                throw new IllegalStateException("retain queue in BDS state out of bounds");
+            }
+            validateNodes(nodes, digestSize, height.intValue(), height.intValue());
+        }
+
+        validateNodes(stack, digestSize, 0, treeHeight);
+        for (int i = 0; i < treeHashInstances.size(); i++)
+        {
+            BDSTreeHash treeHash = treeHashInstances.get(i);
+            if (treeHash == null || treeHash.getInitialHeight() != i || treeHash.getRawHeight() < 0
+                || treeHash.getRawHeight() > i || treeHash.getIndexLeaf() < 0
+                || treeHash.getIndexLeaf() > (1 << treeHeight) - 1)
+            {
+                throw new IllegalStateException("tree hash in BDS state out of bounds");
+            }
+            validateNode(treeHash.getTailNode(), digestSize, 0, i);
+        }
+
+        for (Iterator<Integer> it = keep.keySet().iterator(); it.hasNext();)
+        {
+            Integer height = it.next();
+            if (height.intValue() < 0 || height.intValue() > treeHeight - 2)
+            {
+                throw new IllegalStateException("keep height in BDS state out of bounds");
+            }
+            validateRequiredNode(keep.get(height), digestSize, height.intValue(), height.intValue());
+        }
+    }
+
+    void validate(XMSSParameters params, int expectedIndex)
+    {
+        validate(params);
+        if (index != expectedIndex)
+        {
+            throw new IllegalStateException("BDS state has wrong index");
+        }
+    }
+
+    private static void validateNodes(Iterable<XMSSNode> nodes, int digestSize, int minimumHeight,
+        int maximumHeight)
+    {
+        for (Iterator<XMSSNode> it = nodes.iterator(); it.hasNext();)
+        {
+            validateRequiredNode(it.next(), digestSize, minimumHeight, maximumHeight);
+        }
+    }
+
+    private static void validateRequiredNode(XMSSNode node, int digestSize, int minimumHeight,
+        int maximumHeight)
+    {
+        if (node == null)
+        {
+            throw new IllegalStateException("null XMSS node in BDS state");
+        }
+        validateNode(node, digestSize, minimumHeight, maximumHeight);
+    }
+
+    private static void validateNode(XMSSNode node, int digestSize, int minimumHeight, int maximumHeight)
+    {
+        if (node != null)
+        {
+            byte[] value = node.getValue();
+            if (node.getHeight() < minimumHeight || node.getHeight() > maximumHeight
+                || value == null || value.length != digestSize)
+            {
+                throw new IllegalStateException("XMSS node in BDS state out of bounds");
+            }
         }
     }
 
@@ -521,6 +669,33 @@ public final class BDS
     public int getMaxIndex()
     {
         return maxIndex;
+    }
+
+    int getK()
+    {
+        return k;
+    }
+
+    Map<Integer, List<XMSSNode>> getRetain()
+    {
+        Map<Integer, List<XMSSNode>> result = new TreeMap<Integer, List<XMSSNode>>();
+        result.putAll(retain);
+        return result;
+    }
+
+    Stack<XMSSNode> getStack()
+    {
+        return stack;
+    }
+
+    List<BDSTreeHash> getTreeHashInstances()
+    {
+        return treeHashInstances;
+    }
+
+    Map<Integer, XMSSNode> getKeep()
+    {
+        return keep;
     }
 
     public BDS withWOTSDigest(ASN1ObjectIdentifier digestName)

@@ -42,6 +42,7 @@ public class Properties
     public static final String ASN1_MAX_LIMIT = "org.bouncycastle.asn1.max_limit";
     public static final String DH_MAX_SIZE = "org.bouncycastle.dh.max_size";
     public static final String DSA_MAX_SIZE = "org.bouncycastle.dsa.max_size";
+    public static final String XMSS_MAX_BDS_STATE_SIZE = "org.bouncycastle.xmss.max_bds_state_size";
     public static final String BCFKS_MAX_IT_COUNT = "org.bouncycastle.bcfks.max_it_count";
     public static final String BCFKS_MAX_SCRYPT_MEMORY = "org.bouncycastle.bcfks.max_scrypt_memory";
     public static final String PBE_MAX_ITERATION_COUNT = "org.bouncycastle.pbe.max_iteration_count";

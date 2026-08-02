@@ -75,12 +75,17 @@ public final class XMSSMTPrivateKeyParameters
                 BDSStateMap bdsImport = (BDSStateMap)XMSSUtil.deserialize(bdsStateBinary, BDSStateMap.class);
 
                 bdsState = bdsImport.withWOTSDigest(builder.xmss.getTreeDigestOID(), builder.xmss.getTreeDigestSize());
+                bdsState.validate(params);
             }
             catch (IOException e)
             {
                 throw new IllegalArgumentException(e.getMessage(), e);
             }
             catch (ClassNotFoundException e)
+            {
+                throw new IllegalArgumentException(e.getMessage(), e);
+            }
+            catch (IllegalStateException e)
             {
                 throw new IllegalArgumentException(e.getMessage(), e);
             }
@@ -163,6 +168,14 @@ public final class XMSSMTPrivateKeyParameters
             if (builder.maxIndex >= 0 && builder.maxIndex != bdsState.getMaxIndex())
             {
                 throw new IllegalArgumentException("maxIndex set but not reflected in state");
+            }
+            try
+            {
+                bdsState.validate(params);
+            }
+            catch (IllegalStateException e)
+            {
+                throw new IllegalArgumentException(e.getMessage(), e);
             }
         }
     }
@@ -299,7 +312,7 @@ public final class XMSSMTPrivateKeyParameters
             }
             catch (IOException e)
             {
-                throw new IllegalStateException("error serializing bds state: " + e.getMessage(), e);
+                throw new IllegalStateException("error encoding BDS state map", e);
             }
         }
     }

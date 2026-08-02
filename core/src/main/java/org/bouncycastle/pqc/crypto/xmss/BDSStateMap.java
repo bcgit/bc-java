@@ -104,6 +104,37 @@ public class BDSStateMap
         return bdsState.isEmpty();
     }
 
+    Map<Integer, BDS> getStateMap()
+    {
+        return bdsState;
+    }
+
+    void validate(XMSSMTParameters params)
+    {
+        long maxIndexLimit = (1L << params.getHeight()) - 1;
+        if (bdsState == null || maxIndex < 0 || maxIndex > maxIndexLimit
+            || bdsState.size() > params.getLayers())
+        {
+            throw new IllegalStateException("BDS state map does not match XMSSMT parameters");
+        }
+
+        XMSSParameters xmssParams = params.getXMSSParameters();
+        for (Iterator<Integer> it = bdsState.keySet().iterator(); it.hasNext();)
+        {
+            Integer layer = it.next();
+            if (layer.intValue() < 0 || layer.intValue() >= params.getLayers())
+            {
+                throw new IllegalStateException("BDS state map has invalid layer");
+            }
+            BDS state = bdsState.get(layer);
+            if (state == null)
+            {
+                throw new IllegalStateException("BDS state map has null state");
+            }
+            state.validate(xmssParams);
+        }
+    }
+
     BDS get(int index)
     {
         return bdsState.get(Integers.valueOf(index));

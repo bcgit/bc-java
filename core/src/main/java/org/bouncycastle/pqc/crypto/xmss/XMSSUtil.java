@@ -315,6 +315,15 @@ public class XMSSUtil
     public static byte[] serialize(Object obj)
         throws IOException
     {
+        if (obj instanceof BDS)
+        {
+            return BDSStateCodec.encode((BDS)obj);
+        }
+        if (obj instanceof BDSStateMap)
+        {
+            return BDSStateCodec.encode((BDSStateMap)obj);
+        }
+
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         ObjectOutputStream oos = new ObjectOutputStream(out);
         oos.writeObject(obj);
@@ -325,6 +334,27 @@ public class XMSSUtil
     public static Object deserialize(byte[] data, final Class clazz)
         throws IOException, ClassNotFoundException
     {
+        if (clazz == BDS.class || clazz == BDSStateMap.class)
+        {
+            BDSStateCodec.checkEncodingSize(data);
+            if (BDSStateCodec.isBDSStateEncoding(data))
+            {
+                if (clazz != BDS.class)
+                {
+                    throw new IOException("unexpected BDS state encoding");
+                }
+                return BDSStateCodec.decodeBDS(data);
+            }
+            if (BDSStateCodec.isBDSStateMapEncoding(data))
+            {
+                if (clazz != BDSStateMap.class)
+                {
+                    throw new IOException("unexpected BDS state map encoding");
+                }
+                return BDSStateCodec.decodeBDSStateMap(data);
+            }
+        }
+
         ByteArrayInputStream in = new ByteArrayInputStream(data);
         ObjectInputStream is = new CheckingStream(clazz, in);
 

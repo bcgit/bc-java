@@ -24,6 +24,17 @@ class BDSTreeHash
         finished = false;
     }
 
+    BDSTreeHash(int initialHeight, int height, int nextIndex, boolean initialized, boolean finished,
+        XMSSNode tailNode)
+    {
+        this.initialHeight = initialHeight;
+        this.height = height;
+        this.nextIndex = nextIndex;
+        this.initialized = initialized;
+        this.finished = finished;
+        this.tailNode = tailNode;
+    }
+
     void initialize(int nextIndex)
     {
         tailNode = null;
@@ -134,6 +145,16 @@ class BDSTreeHash
         return nextIndex;
     }
 
+    int getInitialHeight()
+    {
+        return initialHeight;
+    }
+
+    int getRawHeight()
+    {
+        return height;
+    }
+
     void setNode(XMSSNode node)
     {
         tailNode = node;
@@ -172,4 +193,3 @@ class BDSTreeHash
         return th;
     }
 }
-

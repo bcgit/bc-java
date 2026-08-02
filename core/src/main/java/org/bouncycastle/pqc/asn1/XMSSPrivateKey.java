@@ -24,9 +24,8 @@ import org.bouncycastle.util.Arrays;
  *            root          OCTET STRING
  *            maxIndex      [0] INTEGER OPTIONAL
  *         }
- *         bdsState CHOICE {
- *            platformSerialization [0] OCTET STRING
- *         } OPTIONAL
+ *         bdsState [0] OCTET STRING OPTIONAL
+ *             -- legacy Java serialization or versioned binary BDS state
  *    }
  * </pre>
  */
