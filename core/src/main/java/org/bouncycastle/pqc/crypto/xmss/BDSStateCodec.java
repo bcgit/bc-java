@@ -17,6 +17,14 @@ import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Properties;
 
+/**
+ * Codec for the implementation-specific BDS traversal state stored with an XMSS or XMSSMT private key.
+ * <p>
+ * RFC 8391 Sections 4.1.7 and 4.2.2 leave the private-key representation unspecified, and Section 7
+ * describes BDS only as an optimized authentication-path implementation. Consequently, this versioned
+ * encoding is a BC private-key implementation detail, not an RFC-defined interchange format.
+ * </p>
+ */
 final class BDSStateCodec
 {
     static final int BDS_STATE_MAGIC = 0x42445300;
@@ -199,6 +207,8 @@ final class BDSStateCodec
         {
             throw new IOException("BDS tree height out of bounds");
         }
+        // k controls the BDS time-memory trade-off; it is not an XMSS wire parameter. The BDS traversal
+        // layout requires 2 <= k <= treeHeight and an even treeHeight - k.
         if (k < 2 || k > treeHeight || ((treeHeight - k) & 1) != 0)
         {
             throw new IOException("BDS k out of bounds");

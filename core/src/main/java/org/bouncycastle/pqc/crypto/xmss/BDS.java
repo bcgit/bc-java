@@ -602,6 +602,8 @@ public final class BDS
     void validate(XMSSParameters params, int expectedIndex)
     {
         validate(params);
+        // RFC 8391 Section 1.1 requires each secret-key state to be used only once. Tie restored BDS
+        // state to the enclosing private-key index so stale or mismatched traversal state is rejected.
         if (index != expectedIndex)
         {
             throw new IllegalStateException("BDS state has wrong index");

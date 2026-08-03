@@ -25,6 +25,7 @@ import org.bouncycastle.util.Arrays;
  *            maxIndex      [0] INTEGER OPTIONAL
  *         }
  *         bdsState [0] OCTET STRING OPTIONAL
+ *             -- opaque, implementation-specific traversal state;
  *             -- legacy Java serialization or versioned binary BDS state map
  *    }
  * </pre>
