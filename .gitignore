@@ -60,5 +60,3 @@ bc-build.user.properties
 /prov/ells
 /tls/ells
 
-# Local-only scratch: analysis reports, plans, working notes
-/local/
