@@ -10,9 +10,6 @@ import java.security.interfaces.RSAPublicKey;
 
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.jcajce.io.OutputStreamFactory;
-import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
-import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
-import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPRuntimeOperationException;
@@ -24,7 +21,7 @@ import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
 public class JcaPGPContentVerifierBuilderProvider
     implements PGPContentVerifierBuilderProvider
 {
-    private OperatorHelper helper = new OperatorHelper(new DefaultJcaJceHelper());
+    private OperatorHelper helper = OperatorUtils.createDefaultHelper();
     private JcaPGPDigestCalculatorProviderBuilder digestCalculatorProviderBuilder = new JcaPGPDigestCalculatorProviderBuilder();
     private JcaPGPKeyConverter keyConverter = new JcaPGPKeyConverter();
 
@@ -34,7 +31,7 @@ public class JcaPGPContentVerifierBuilderProvider
 
     public JcaPGPContentVerifierBuilderProvider setProvider(Provider provider)
     {
-        this.helper = new OperatorHelper(new ProviderJcaJceHelper(provider));
+        this.helper = OperatorUtils.createProviderHelper(provider);
         keyConverter.setProvider(provider);
         digestCalculatorProviderBuilder.setProvider(provider);
 
@@ -43,7 +40,7 @@ public class JcaPGPContentVerifierBuilderProvider
 
     public JcaPGPContentVerifierBuilderProvider setProvider(String providerName)
     {
-        this.helper = new OperatorHelper(new NamedJcaJceHelper(providerName));
+        this.helper = OperatorUtils.createNamedHelper(providerName);
         keyConverter.setProvider(providerName);
         digestCalculatorProviderBuilder.setProvider(providerName);
 

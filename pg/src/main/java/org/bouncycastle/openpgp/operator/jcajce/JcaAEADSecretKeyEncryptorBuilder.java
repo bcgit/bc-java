@@ -9,9 +9,6 @@ import org.bouncycastle.bcpg.AEADUtils;
 import org.bouncycastle.bcpg.PacketTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.S2K;
-import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
-import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
-import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.operator.AEADSecretKeyEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.PBESecretKeyEncryptor;
@@ -23,7 +20,7 @@ public class JcaAEADSecretKeyEncryptorBuilder
     private int symmetricAlgorithm;
     private S2K.Argon2Params argon2Params;
 
-    private OperatorHelper helper = new OperatorHelper(new DefaultJcaJceHelper());
+    private OperatorHelper helper = OperatorUtils.createDefaultHelper();
     private JceAEADUtil aeadUtil = new JceAEADUtil(helper);
 
     public JcaAEADSecretKeyEncryptorBuilder(int aeadAlgorithm, int symmetricAlgorithm, S2K.Argon2Params argon2Params)
@@ -35,7 +32,7 @@ public class JcaAEADSecretKeyEncryptorBuilder
 
     public JcaAEADSecretKeyEncryptorBuilder setProvider(Provider provider)
     {
-        this.helper = new OperatorHelper(new ProviderJcaJceHelper(provider));
+        this.helper = OperatorUtils.createProviderHelper(provider);
         this.aeadUtil = new JceAEADUtil(helper);
 
         return this;
@@ -43,7 +40,7 @@ public class JcaAEADSecretKeyEncryptorBuilder
 
     public JcaAEADSecretKeyEncryptorBuilder setProvider(String providerName)
     {
-        this.helper = new OperatorHelper(new NamedJcaJceHelper(providerName));
+        this.helper = OperatorUtils.createNamedHelper(providerName);
         this.aeadUtil = new JceAEADUtil(helper);
 
         return this;

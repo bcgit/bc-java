@@ -6,9 +6,6 @@ import java.security.GeneralSecurityException;
 import java.security.MessageDigest;
 import java.security.Provider;
 
-import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
-import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
-import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculatorProvider;
@@ -24,7 +21,7 @@ import org.bouncycastle.openpgp.operator.PGPDigestCalculatorProvider;
  */
 public class JcaPGPDigestCalculatorProviderBuilder
 {
-    private OperatorHelper helper = new OperatorHelper(new DefaultJcaJceHelper());
+    private OperatorHelper helper = OperatorUtils.createDefaultHelper();
 
     /**
      * Default constructor.
@@ -46,7 +43,7 @@ public class JcaPGPDigestCalculatorProviderBuilder
      */
     public JcaPGPDigestCalculatorProviderBuilder setProvider(Provider provider)
     {
-        this.helper = new OperatorHelper(new ProviderJcaJceHelper(provider));
+        this.helper = OperatorUtils.createProviderHelper(provider);
 
         return this;
     }
@@ -59,7 +56,7 @@ public class JcaPGPDigestCalculatorProviderBuilder
      */
     public JcaPGPDigestCalculatorProviderBuilder setProvider(String providerName)
     {
-        this.helper = new OperatorHelper(new NamedJcaJceHelper(providerName));
+        this.helper = OperatorUtils.createNamedHelper(providerName);
 
         return this;
     }
