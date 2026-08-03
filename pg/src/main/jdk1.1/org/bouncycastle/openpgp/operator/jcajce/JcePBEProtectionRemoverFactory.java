@@ -17,9 +17,6 @@ import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.generators.HKDFBytesGenerator;
 import org.bouncycastle.crypto.params.HKDFParameters;
 import org.bouncycastle.jcajce.spec.AEADParameterSpec;
-import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
-import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
-import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPUtil;
 import org.bouncycastle.openpgp.operator.PBEProtectionRemoverFactory;
@@ -33,7 +30,7 @@ public class JcePBEProtectionRemoverFactory
 {
     private final char[] passPhrase;
 
-    private OperatorHelper helper = new OperatorHelper(new DefaultJcaJceHelper());
+    private OperatorHelper helper = OperatorUtils.createDefaultHelper();
     private PGPDigestCalculatorProvider calculatorProvider;
     private JceAEADUtil aeadUtil = new JceAEADUtil(helper);
 
@@ -53,7 +50,7 @@ public class JcePBEProtectionRemoverFactory
 
     public JcePBEProtectionRemoverFactory setProvider(Provider provider)
     {
-        this.helper = new OperatorHelper(new ProviderJcaJceHelper(provider));
+        this.helper = OperatorUtils.createProviderHelper(provider);
         this.aeadUtil = new JceAEADUtil(helper);
 
         if (calculatorProviderBuilder != null)
@@ -66,7 +63,7 @@ public class JcePBEProtectionRemoverFactory
 
     public JcePBEProtectionRemoverFactory setProvider(String providerName)
     {
-        this.helper = new OperatorHelper(new NamedJcaJceHelper(providerName));
+        this.helper = OperatorUtils.createNamedHelper(providerName);
         this.aeadUtil = new JceAEADUtil(helper);
 
         if (calculatorProviderBuilder != null)

@@ -17,9 +17,6 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.crypto.util.DEROtherInfo;
 import org.bouncycastle.jcajce.spec.KTSParameterSpec;
-import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
-import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
-import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
 import org.bouncycastle.operator.AsymmetricKeyWrapper;
 import org.bouncycastle.operator.GenericKey;
 import org.bouncycastle.operator.OperatorException;
@@ -33,7 +30,7 @@ public class JceKTSKeyWrapper
     private final byte[] partyUInfo;
     private final byte[] partyVInfo;
 
-    private OperatorHelper helper = new OperatorHelper(new DefaultJcaJceHelper());
+    private OperatorHelper helper = OperatorUtils.createDefaultHelper();
     private PublicKey publicKey;
     private SecureRandom random;
 
@@ -55,14 +52,14 @@ public class JceKTSKeyWrapper
 
     public JceKTSKeyWrapper setProvider(Provider provider)
     {
-        this.helper = new OperatorHelper(new ProviderJcaJceHelper(provider));
+        this.helper = OperatorUtils.createProviderHelper(provider);
 
         return this;
     }
 
     public JceKTSKeyWrapper setProvider(String providerName)
     {
-        this.helper = new OperatorHelper(new NamedJcaJceHelper(providerName));
+        this.helper = OperatorUtils.createNamedHelper(providerName);
 
         return this;
     }

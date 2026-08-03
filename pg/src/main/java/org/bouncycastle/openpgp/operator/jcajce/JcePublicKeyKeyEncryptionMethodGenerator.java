@@ -29,9 +29,6 @@ import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.jcajce.spec.HybridValueParameterSpec;
 import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
-import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
-import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
-import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPUtil;
@@ -45,7 +42,7 @@ public class JcePublicKeyKeyEncryptionMethodGenerator
 {
     private static final byte X_HDR = 0x40;
 
-    private OperatorHelper helper = new OperatorHelper(new DefaultJcaJceHelper());
+    private OperatorHelper helper = OperatorUtils.createDefaultHelper();
     private SecureRandom random;
     private JcaPGPKeyConverter keyConverter = new JcaPGPKeyConverter();
 
@@ -61,7 +58,7 @@ public class JcePublicKeyKeyEncryptionMethodGenerator
 
     public JcePublicKeyKeyEncryptionMethodGenerator setProvider(Provider provider)
     {
-        this.helper = new OperatorHelper(new ProviderJcaJceHelper(provider));
+        this.helper = OperatorUtils.createProviderHelper(provider);
 
         keyConverter.setProvider(provider);
 
@@ -70,7 +67,7 @@ public class JcePublicKeyKeyEncryptionMethodGenerator
 
     public JcePublicKeyKeyEncryptionMethodGenerator setProvider(String providerName)
     {
-        this.helper = new OperatorHelper(new NamedJcaJceHelper(providerName));
+        this.helper = OperatorUtils.createNamedHelper(providerName);
 
         keyConverter.setProvider(providerName);
 

@@ -12,7 +12,7 @@ import org.bouncycastle.cms.CMSException;
 
 public class JceAlgorithmIdentifierConverter
 {
-    private EnvelopedDataHelper helper = new EnvelopedDataHelper(new DefaultJcaJceExtHelper());
+    private EnvelopedDataHelper helper = CMSUtils.createDefaultHelper();
     private SecureRandom random;
 
     public JceAlgorithmIdentifierConverter()
@@ -21,14 +21,14 @@ public class JceAlgorithmIdentifierConverter
 
     public JceAlgorithmIdentifierConverter setProvider(Provider provider)
     {
-        this.helper = new EnvelopedDataHelper(new ProviderJcaJceExtHelper(provider));
+        this.helper = CMSUtils.createProviderHelper(provider);
 
         return this;
     }
 
     public JceAlgorithmIdentifierConverter setProvider(String providerName)
     {
-        this.helper = new EnvelopedDataHelper(new NamedJcaJceExtHelper(providerName));
+        this.helper = CMSUtils.createNamedHelper(providerName);
 
         return this;
     }

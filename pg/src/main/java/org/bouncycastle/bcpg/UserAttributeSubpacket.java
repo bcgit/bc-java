@@ -50,21 +50,14 @@ public class UserAttributeSubpacket
     {
         int    bodyLen = data.length + 1;
 
-        if (bodyLen < 192 && !forceLongLength)
-        {
-            out.write((byte)bodyLen);
-        }
-        else if (bodyLen <= 8383 && !forceLongLength)
-        {
-            bodyLen -= 192;
-
-            out.write((byte)(((bodyLen >> 8) & 0xff) + 192));
-            out.write((byte)bodyLen);
-        }
-        else
+        if (forceLongLength)
         {
             out.write(0xff);
             StreamUtil.writeBodyLen(out, bodyLen);
+        }
+        else
+        {
+            StreamUtil.writeNewPacketLength(out, bodyLen);
         }
 
         out.write(type);        

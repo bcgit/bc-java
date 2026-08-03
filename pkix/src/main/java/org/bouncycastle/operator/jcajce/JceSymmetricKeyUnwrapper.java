@@ -8,9 +8,6 @@ import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
-import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
-import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
 import org.bouncycastle.operator.GenericKey;
 import org.bouncycastle.operator.OperatorException;
 import org.bouncycastle.operator.SymmetricKeyUnwrapper;
@@ -18,7 +15,7 @@ import org.bouncycastle.operator.SymmetricKeyUnwrapper;
 public class JceSymmetricKeyUnwrapper
     extends SymmetricKeyUnwrapper
 {
-    private OperatorHelper helper = new OperatorHelper(new DefaultJcaJceHelper());
+    private OperatorHelper helper = OperatorUtils.createDefaultHelper();
     private SecretKey secretKey;
 
     public JceSymmetricKeyUnwrapper(AlgorithmIdentifier algorithmIdentifier, SecretKey secretKey)
@@ -30,14 +27,14 @@ public class JceSymmetricKeyUnwrapper
 
     public JceSymmetricKeyUnwrapper setProvider(Provider provider)
     {
-        this.helper = new OperatorHelper(new ProviderJcaJceHelper(provider));
+        this.helper = OperatorUtils.createProviderHelper(provider);
 
         return this;
     }
 
     public JceSymmetricKeyUnwrapper setProvider(String providerName)
     {
-        this.helper = new OperatorHelper(new NamedJcaJceHelper(providerName));
+        this.helper = OperatorUtils.createNamedHelper(providerName);
 
         return this;
     }

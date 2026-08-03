@@ -8,9 +8,6 @@ import javax.crypto.SecretKeyFactory;
 
 import org.bouncycastle.bcpg.S2K;
 import org.bouncycastle.jcajce.spec.Argon2KeySpec;
-import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
-import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
-import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.operator.PGPS2KCalculator;
 
@@ -23,7 +20,7 @@ import org.bouncycastle.openpgp.operator.PGPS2KCalculator;
 public class JcePGPS2KCalculator
     implements PGPS2KCalculator
 {
-    private OperatorHelper helper = new OperatorHelper(new DefaultJcaJceHelper());
+    private OperatorHelper helper = OperatorUtils.createDefaultHelper();
 
     public JcePGPS2KCalculator()
     {
@@ -36,14 +33,14 @@ public class JcePGPS2KCalculator
 
     public JcePGPS2KCalculator setProvider(Provider provider)
     {
-        this.helper = new OperatorHelper(new ProviderJcaJceHelper(provider));
+        this.helper = OperatorUtils.createProviderHelper(provider);
 
         return this;
     }
 
     public JcePGPS2KCalculator setProvider(String providerName)
     {
-        this.helper = new OperatorHelper(new NamedJcaJceHelper(providerName));
+        this.helper = OperatorUtils.createNamedHelper(providerName);
 
         return this;
     }

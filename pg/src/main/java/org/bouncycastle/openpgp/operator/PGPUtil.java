@@ -5,7 +5,7 @@ import java.io.OutputStream;
 
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.S2K;
-import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
+import org.bouncycastle.bcpg.SymmetricKeyUtils;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Properties;
@@ -88,30 +88,12 @@ class PGPUtil
     {
         int keySize;
 
-        switch (algorithm)
+        try
         {
-        case SymmetricKeyAlgorithmTags.TRIPLE_DES:
-        case SymmetricKeyAlgorithmTags.AES_192:
-        case SymmetricKeyAlgorithmTags.CAMELLIA_192:
-            keySize = 192;
-            break;
-        case SymmetricKeyAlgorithmTags.IDEA:
-        case SymmetricKeyAlgorithmTags.CAST5:
-        case SymmetricKeyAlgorithmTags.BLOWFISH:
-        case SymmetricKeyAlgorithmTags.SAFER:
-        case SymmetricKeyAlgorithmTags.AES_128:
-        case SymmetricKeyAlgorithmTags.CAMELLIA_128:
-            keySize = 128;
-            break;
-        case SymmetricKeyAlgorithmTags.DES:
-            keySize = 64;
-            break;
-        case SymmetricKeyAlgorithmTags.AES_256:
-        case SymmetricKeyAlgorithmTags.TWOFISH:
-        case SymmetricKeyAlgorithmTags.CAMELLIA_256:
-            keySize = 256;
-            break;
-        default:
+            keySize = SymmetricKeyUtils.getKeyLengthInBits(algorithm);
+        }
+        catch (IllegalArgumentException e)
+        {
             throw new PGPException("unknown symmetric algorithm: " + algorithm);
         }
         return keySize;

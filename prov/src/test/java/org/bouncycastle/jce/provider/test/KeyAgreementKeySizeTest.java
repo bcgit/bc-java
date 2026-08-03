@@ -7,9 +7,12 @@ import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.security.Security;
 
+import javax.crypto.Cipher;
 import javax.crypto.KeyAgreement;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 
+import org.bouncycastle.asn1.gm.GMObjectIdentifiers;
 import org.bouncycastle.jcajce.interfaces.SM9EncMasterPrivateKey;
 import org.bouncycastle.jcajce.interfaces.SM9EncMasterPublicKey;
 import org.bouncycastle.jcajce.spec.SM2KeyExchangeSpec;
@@ -70,7 +73,62 @@ public class KeyAgreementKeySizeTest
         ecdhShortCurveRejected();
         malformedKeySizeRejected();
         kdfPathUnaffected();
+        sm4KeySizeResolved();
         unrecognisedNameStillReturnsSecret();
+    }
+
+    /**
+     * SM4 (GB/T 32907-2016) takes a 128-bit key in every mode. Before its entries were added it was
+     * not in the key-size table at all, so the derived key came out at whatever length the agreement
+     * happened to produce - which for the SM4 key-wrap OIDs is the key-encryption key a CMS
+     * key-agreement recipient uses, and SM4 rejects any length but 16 bytes.
+     */
+    private void sm4KeySizeResolved()
+        throws Exception
+    {
+        String sm4Wrap = GMObjectIdentifiers.sms4_wrap.getId();
+        String sm4WrapPad = GMObjectIdentifiers.sms4_wrap_pad.getId();
+
+        // by name, and from agreements whose secret is longer than 128 bits
+        expectKey(sm2Agreement(), "SM4", "SM4", 16);
+        expectKey(ecdhAgreement("ECDH", "secp256r1"), "SM4", "SM4", 16);
+        expectKey(ecdhAgreement("ECDHwithSHA256KDF", "secp256r1"), "SM4", "SM4", 16);
+
+        // by OID - the shape JceKeyAgreeRecipient uses, where the OID names the key wrap. Both
+        // flavours of agreement: with a KDF this used to fail outright as an unknown algorithm,
+        // without one it silently produced a KEK of the full secret length.
+        String[] agreements = new String[]{"ECDH", "ECDHwithSHA256KDF"};
+
+        for (int i = 0; i != agreements.length; i++)
+        {
+            expectKey(ecdhAgreement(agreements[i], "secp256r1"), sm4Wrap, "SM4", 16);
+            expectKey(ecdhAgreement(agreements[i], "secp256r1"), sm4WrapPad, "SM4", 16);
+            expectKey(ecdhAgreement(agreements[i], "secp256r1"),
+                GMObjectIdentifiers.sms4_cbc.getId(), "SM4", 16);
+            expectKey(ecdhAgreement(agreements[i], "secp256r1"),
+                GMObjectIdentifiers.sms4_gcm.getId(), "SM4", 16);
+            expectKey(ecdhAgreement(agreements[i], "secp256r1"),
+                GMObjectIdentifiers.sms4_ccm.getId(), "SM4", 16);
+        }
+
+        // the point of the exercise: the derived KEK actually works as an SM4 key wrap
+        SecretKey kek = ecdhAgreement("ECDHwithSHA256KDF", "secp256r1").generateSecret(sm4Wrap);
+        SecretKey cek = new SecretKeySpec(new byte[16], "SM4");
+
+        Cipher wrapper = Cipher.getInstance(sm4Wrap, "BC");
+        wrapper.init(Cipher.WRAP_MODE, kek);
+        byte[] wrapped = wrapper.wrap(cek);
+
+        Cipher unwrapper = Cipher.getInstance(sm4Wrap, "BC");
+        unwrapper.init(Cipher.UNWRAP_MODE, kek);
+        Key recovered = unwrapper.unwrap(wrapped, "SM4", Cipher.SECRET_KEY);
+
+        isTrue("SM4 key wrap round trip failed", areEqual(cek.getEncoded(), recovered.getEncoded()));
+
+        // sms4_xts is deliberately absent - XTS takes a double-length key and BC registers no SM4
+        // XTS, so it must not be answered with 128 bits. It stays an unrecognised name.
+        expectKey(ecdhAgreement("ECDH", "secp256r1"), GMObjectIdentifiers.sms4_xts.getId(),
+            GMObjectIdentifiers.sms4_xts.getId(), 32);
     }
 
     /**

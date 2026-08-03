@@ -18,7 +18,7 @@ import org.bouncycastle.operator.GenericKey;
 public class JcePasswordRecipientInfoGenerator
     extends PasswordRecipientInfoGenerator
 {
-    private EnvelopedDataHelper helper = new EnvelopedDataHelper(new DefaultJcaJceExtHelper());
+    private EnvelopedDataHelper helper = CMSUtils.createDefaultHelper();
 
     public JcePasswordRecipientInfoGenerator(ASN1ObjectIdentifier kekAlgorithm, char[] password)
     {
@@ -27,14 +27,14 @@ public class JcePasswordRecipientInfoGenerator
 
     public JcePasswordRecipientInfoGenerator setProvider(Provider provider)
     {
-        this.helper = new EnvelopedDataHelper(new ProviderJcaJceExtHelper(provider));
+        this.helper = CMSUtils.createProviderHelper(provider);
 
         return this;
     }
 
     public JcePasswordRecipientInfoGenerator setProvider(String providerName)
     {
-        this.helper = new EnvelopedDataHelper(new NamedJcaJceExtHelper(providerName));
+        this.helper = CMSUtils.createNamedHelper(providerName);
 
         return this;
     }

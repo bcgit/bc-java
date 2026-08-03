@@ -18,9 +18,6 @@ import org.bouncycastle.bcpg.S2K;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.bcpg.SymmetricKeyUtils;
 import org.bouncycastle.jcajce.spec.AEADParameterSpec;
-import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
-import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
-import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPUtil;
 import org.bouncycastle.openpgp.operator.PBEKeyEncryptionMethodGenerator;
@@ -32,7 +29,7 @@ import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
 public class JcePBEKeyEncryptionMethodGenerator
     extends PBEKeyEncryptionMethodGenerator
 {
-    private OperatorHelper helper = new OperatorHelper(new DefaultJcaJceHelper());
+    private OperatorHelper helper = OperatorUtils.createDefaultHelper();
     private JcePGPS2KCalculator argon2Calculator;
 
     /**
@@ -104,7 +101,7 @@ public class JcePBEKeyEncryptionMethodGenerator
      */
     public JcePBEKeyEncryptionMethodGenerator setProvider(Provider provider)
     {
-        this.helper = new OperatorHelper(new ProviderJcaJceHelper(provider));
+        this.helper = OperatorUtils.createProviderHelper(provider);
 
         if (argon2Calculator != null)
         {
@@ -122,7 +119,7 @@ public class JcePBEKeyEncryptionMethodGenerator
      */
     public JcePBEKeyEncryptionMethodGenerator setProvider(String providerName)
     {
-        this.helper = new OperatorHelper(new NamedJcaJceHelper(providerName));
+        this.helper = OperatorUtils.createNamedHelper(providerName);
 
         if (argon2Calculator != null)
         {

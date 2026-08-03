@@ -13,9 +13,6 @@ import org.bouncycastle.asn1.cms.RsaKemParameters;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.crypto.util.DEROtherInfo;
 import org.bouncycastle.jcajce.spec.KTSParameterSpec;
-import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
-import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
-import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
 import org.bouncycastle.operator.AsymmetricKeyUnwrapper;
 import org.bouncycastle.operator.GenericKey;
 import org.bouncycastle.operator.OperatorException;
@@ -24,7 +21,7 @@ import org.bouncycastle.util.Arrays;
 public class JceKTSKeyUnwrapper
     extends AsymmetricKeyUnwrapper
 {
-    private OperatorHelper helper = new OperatorHelper(new DefaultJcaJceHelper());
+    private OperatorHelper helper = OperatorUtils.createDefaultHelper();
     private Map extraMappings = new HashMap();
     private PrivateKey privKey;
     private byte[] partyUInfo;
@@ -41,14 +38,14 @@ public class JceKTSKeyUnwrapper
 
     public JceKTSKeyUnwrapper setProvider(Provider provider)
     {
-        this.helper = new OperatorHelper(new ProviderJcaJceHelper(provider));
+        this.helper = OperatorUtils.createProviderHelper(provider);
 
         return this;
     }
 
     public JceKTSKeyUnwrapper setProvider(String providerName)
     {
-        this.helper = new OperatorHelper(new NamedJcaJceHelper(providerName));
+        this.helper = OperatorUtils.createNamedHelper(providerName);
 
         return this;
     }

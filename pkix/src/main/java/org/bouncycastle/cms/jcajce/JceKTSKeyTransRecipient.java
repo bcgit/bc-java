@@ -31,7 +31,7 @@ public abstract class JceKTSKeyTransRecipient
 
     private PrivateKey recipientKey;
 
-    protected EnvelopedDataHelper helper = new EnvelopedDataHelper(new DefaultJcaJceExtHelper());
+    protected EnvelopedDataHelper helper = CMSUtils.createDefaultHelper();
     protected EnvelopedDataHelper contentHelper = helper;
     protected Map extraMappings = new HashMap();
     protected boolean validateKeySize = false;
@@ -51,7 +51,7 @@ public abstract class JceKTSKeyTransRecipient
      */
     public JceKTSKeyTransRecipient setProvider(Provider provider)
     {
-        this.helper = new EnvelopedDataHelper(new ProviderJcaJceExtHelper(provider));
+        this.helper = CMSUtils.createProviderHelper(provider);
         this.contentHelper = helper;
 
         return this;
@@ -65,7 +65,7 @@ public abstract class JceKTSKeyTransRecipient
      */
     public JceKTSKeyTransRecipient setProvider(String providerName)
     {
-        this.helper = new EnvelopedDataHelper(new NamedJcaJceExtHelper(providerName));
+        this.helper = CMSUtils.createNamedHelper(providerName);
         this.contentHelper = helper;
 
         return this;

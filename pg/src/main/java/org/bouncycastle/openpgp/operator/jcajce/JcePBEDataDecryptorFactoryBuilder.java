@@ -13,9 +13,6 @@ import org.bouncycastle.bcpg.SymmetricEncIntegrityPacket;
 import org.bouncycastle.bcpg.SymmetricKeyEncSessionPacket;
 import org.bouncycastle.bcpg.SymmetricKeyUtils;
 import org.bouncycastle.bcpg.UnsupportedPacketVersionException;
-import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
-import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
-import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPSessionKey;
 import org.bouncycastle.openpgp.PGPUtil;
@@ -29,7 +26,7 @@ import org.bouncycastle.util.Exceptions;
  */
 public class JcePBEDataDecryptorFactoryBuilder
 {
-    private OperatorHelper helper = new OperatorHelper(new DefaultJcaJceHelper());
+    private OperatorHelper helper = OperatorUtils.createDefaultHelper();
     private JceAEADUtil aeadHelper = new JceAEADUtil(helper);
     private PGPDigestCalculatorProvider calculatorProvider;
 
@@ -60,7 +57,7 @@ public class JcePBEDataDecryptorFactoryBuilder
      */
     public JcePBEDataDecryptorFactoryBuilder setProvider(Provider provider)
     {
-        this.helper = new OperatorHelper(new ProviderJcaJceHelper(provider));
+        this.helper = OperatorUtils.createProviderHelper(provider);
         this.aeadHelper = new JceAEADUtil(helper);
 
         return this;
@@ -74,7 +71,7 @@ public class JcePBEDataDecryptorFactoryBuilder
      */
     public JcePBEDataDecryptorFactoryBuilder setProvider(String providerName)
     {
-        this.helper = new OperatorHelper(new NamedJcaJceHelper(providerName));
+        this.helper = OperatorUtils.createNamedHelper(providerName);
         this.aeadHelper = new JceAEADUtil(helper);
 
         return this;

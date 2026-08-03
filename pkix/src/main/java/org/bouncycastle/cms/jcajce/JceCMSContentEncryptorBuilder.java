@@ -60,7 +60,7 @@ public class JceCMSContentEncryptorBuilder
     private final ASN1ObjectIdentifier encryptionOID;
     private final int                  keySize;
 
-    private EnvelopedDataHelper helper = new EnvelopedDataHelper(new DefaultJcaJceExtHelper());
+    private EnvelopedDataHelper helper = CMSUtils.createDefaultHelper();
     private SecureRandom random;
     private AlgorithmIdentifier algorithmIdentifier;
     private AlgorithmParameters algorithmParameters;
@@ -147,7 +147,7 @@ public class JceCMSContentEncryptorBuilder
      */
     public JceCMSContentEncryptorBuilder setProvider(Provider provider)
     {
-        this.helper = new EnvelopedDataHelper(new ProviderJcaJceExtHelper(provider));
+        this.helper = CMSUtils.createProviderHelper(provider);
 
         return this;
     }
@@ -160,7 +160,7 @@ public class JceCMSContentEncryptorBuilder
      */
     public JceCMSContentEncryptorBuilder setProvider(String providerName)
     {
-        this.helper = new EnvelopedDataHelper(new NamedJcaJceExtHelper(providerName));
+        this.helper = CMSUtils.createNamedHelper(providerName);
 
         return this;
     }
