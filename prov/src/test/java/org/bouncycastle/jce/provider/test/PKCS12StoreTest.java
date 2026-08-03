@@ -2417,6 +2417,46 @@ public class PKCS12StoreTest
         keyStore.getEntry("cycle", new KeyStore.PasswordProtection("test".toCharArray()));
     }
 
+    private void testGetCertificateAlias()
+        throws Exception
+    {
+        KeyStore keyStore = KeyStore.getInstance("PKCS12", BC);
+
+        keyStore.load(null, null);
+
+        // enough entries that the backing table has grown past its initial capacity: a copy of
+        // the table is sized from its entry count instead, so the two end up with different
+        // bucket layouts and any order-dependent pairing of keys() with elements() diverges.
+        KeyPair keyPair = TestUtils.generateRSAKeyPair();
+        int certCount = 12;
+
+        X509Certificate[] certs = new X509Certificate[certCount];
+        String[] aliases = new String[certCount];
+
+        for (int i = 0; i != certCount; i++)
+        {
+            aliases[i] = "cert-" + i;
+            certs[i] = TestUtils.createSelfSignedCert("CN=Test Certificate " + i, "SHA256withRSA", keyPair);
+
+            keyStore.setCertificateEntry(aliases[i], certs[i]);
+        }
+
+        for (int i = 0; i != certCount; i++)
+        {
+            String alias = keyStore.getCertificateAlias(certs[i]);
+
+            if (!aliases[i].equals(alias))
+            {
+                fail("getCertificateAlias returned wrong alias: expected " + aliases[i] + ", got " + alias);
+            }
+        }
+
+        if (keyStore.getCertificateAlias(TestUtils.createSelfSignedCert("CN=Absent", "SHA256withRSA", keyPair)) != null)
+        {
+            fail("getCertificateAlias returned an alias for a certificate that is not in the store");
+        }
+    }
+
     private void testOrphanedCertCleanup()
         throws Exception
     {
@@ -2798,6 +2838,7 @@ public class PKCS12StoreTest
         testPKCS12Store();
         testGOSTStore();
         testChainCycle();
+        testGetCertificateAlias();
         testBCFKSLoad();
         testCertsOnly();
         testJKS();

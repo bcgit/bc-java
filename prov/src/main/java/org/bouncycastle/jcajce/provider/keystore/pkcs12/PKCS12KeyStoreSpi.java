@@ -438,29 +438,24 @@ public class PKCS12KeyStoreSpi
     public String engineGetCertificateAlias(
         Certificate cert)
     {
-        Enumeration c = certs.elements();
-        Enumeration k = certs.keys();
-
-        while (c.hasMoreElements())
+        // look the certificate up by alias rather than advancing keys() and elements() in
+        // lockstep - IgnoresCaseHashtable.keys() enumerates a copy of the table while
+        // elements() enumerates the original, so the two orders are not required to agree.
+        for (Enumeration k = certs.keys(); k.hasMoreElements();)
         {
-            Certificate tc = (Certificate)c.nextElement();
             String ta = (String)k.nextElement();
 
-            if (tc.equals(cert))
+            if (cert.equals(certs.get(ta)))
             {
                 return ta;
             }
         }
 
-        c = keyCerts.elements();
-        k = keyCerts.keys();
-
-        while (c.hasMoreElements())
+        for (Enumeration k = keyCerts.keys(); k.hasMoreElements();)
         {
-            Certificate tc = (Certificate)c.nextElement();
             String ta = (String)k.nextElement();
 
-            if (tc.equals(cert))
+            if (cert.equals(keyCerts.get(ta)))
             {
                 return ta;
             }
