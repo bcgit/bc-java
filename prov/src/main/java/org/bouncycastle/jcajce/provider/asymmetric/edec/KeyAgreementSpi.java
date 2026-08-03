@@ -57,7 +57,8 @@ public class KeyAgreementSpi
             throw new InvalidKeyException("private XDH key required");
         }
 
-        AsymmetricKeyParameter priv = EdECUtil.generatePrivateKeyParameter((PrivateKey)key);
+        // the XDHKeys jdk1.11 twin also accepts the JDK 11+ XECPrivateKey here.
+        AsymmetricKeyParameter priv = XDHKeys.generatePrivateKeyParameter((PrivateKey)key);
 
         if (priv instanceof X25519PrivateKeyParameters)
         {
@@ -136,7 +137,8 @@ public class KeyAgreementSpi
             throw new IllegalStateException(kaAlgorithm + " can only be between two parties.");
         }
 
-        AsymmetricKeyParameter pub = EdECUtil.generatePublicKeyParameter((PublicKey)key);
+        // the XDHKeys jdk1.11 twin also accepts the JDK 11+ XECPublicKey here.
+        AsymmetricKeyParameter pub = XDHKeys.generatePublicKeyParameter((PublicKey)key);
 
         result = new byte[agreement.getAgreementSize()];
 
