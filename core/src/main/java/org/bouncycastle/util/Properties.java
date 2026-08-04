@@ -278,6 +278,19 @@ public class Properties
     public static final String X509_ALLOW_LENIENT_RFC822_NAME = "org.bouncycastle.x509.allow_lenient_rfc822_name";
 
     /**
+     * If set to "true", the certificate parser (TBSCertificate and everything built on it, such as
+     * the X.509 CertificateFactory) will accept a certificate whose issuer is an empty distinguished
+     * name. RFC 5280 sec. 4.1.2.4 requires the issuer field to contain a non-empty DN and the parser
+     * rejects an empty one by default, but some non-PKIX certificate profiles - notably the libp2p
+     * TLS profile, which uses a self-signed certificate purely as a peer-identity carrier - place no
+     * requirements on the issuer and such certificates are in circulation. This is a read-side
+     * concession only: certificate generation still requires a non-empty issuer unconditionally, and
+     * X509CertificateReviewer reports the empty issuer whether or not the property is set. Read via
+     * {@link #isOverrideSet(String)}.
+     */
+    public static final String X509_ALLOW_EMPTY_ISSUER = "org.bouncycastle.x509.allow_empty_issuer";
+
+    /**
      * Opt in to short AEAD authentication tags for AES-GCM parameters. RFC 5084 constrains the
      * AES-GCM ICV (tag) length carried in {@code GCMParameters} to 12..16 octets (96..128 bits), and
      * BC enforces that by default. When this property is set, {@code GCMParameters} additionally
