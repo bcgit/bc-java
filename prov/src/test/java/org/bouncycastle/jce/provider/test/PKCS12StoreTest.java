@@ -2765,6 +2765,8 @@ public class PKCS12StoreTest
             certs[i] = TestUtils.createSelfSignedCert(new X500Name("CN=alias-cert-" + i), "SHA256withECDSA", kp);
         }
 
+        X509Certificate absent = TestUtils.createSelfSignedCert(new X500Name("CN=alias-cert-absent"), "SHA256withECDSA", kp);
+
         KeyStore store = KeyStore.getInstance(storeType, "BC");
         store.load(null, null);
 
@@ -2778,6 +2780,8 @@ public class PKCS12StoreTest
             isEquals(storeType + " alias mismatch", "cert-" + i, store.getCertificateAlias(certs[i]));
         }
 
+        isTrue(storeType + " alias found for absent certificate", store.getCertificateAlias(absent) == null);
+
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
 
         store.store(bOut, passwd);
@@ -2790,6 +2794,8 @@ public class PKCS12StoreTest
         {
             isEquals(storeType + " alias mismatch after reload", "cert-" + i, inStore.getCertificateAlias(certs[i]));
         }
+
+        isTrue(storeType + " alias found for absent certificate after reload", inStore.getCertificateAlias(absent) == null);
     }
 
     private void testStoreType(String storeType, boolean isMacExpected)
