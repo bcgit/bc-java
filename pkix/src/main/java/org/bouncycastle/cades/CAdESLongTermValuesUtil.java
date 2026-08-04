@@ -5,7 +5,6 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
@@ -196,26 +195,19 @@ public final class CAdESLongTermValuesUtil
         // across signers (legal: they reference the same long-term material).
         DigestCalculator dc = digCalcProv.get(refDigestAlg);
 
-        Attribute certRefsAttr = buildCertificateRefs(additionalCerts, refDigestAlg, dc);
-        Attribute certValuesAttr = buildCertificateValues(additionalCerts);
-        Attribute revRefsAttr = buildRevocationRefs(crls, ocspResponses, refDigestAlg, dc);
-        Attribute revValuesAttr = buildRevocationValues(crls, ocspResponses);
+        final Attribute certRefsAttr = buildCertificateRefs(additionalCerts, refDigestAlg, dc);
+        final Attribute certValuesAttr = buildCertificateValues(additionalCerts);
+        final Attribute revRefsAttr = buildRevocationRefs(crls, ocspResponses, refDigestAlg, dc);
+        final Attribute revValuesAttr = buildRevocationValues(crls, ocspResponses);
 
-        List<SignerInformation> rebuilt = new ArrayList<SignerInformation>(signers.size());
-        for (Iterator<SignerInformation> it = signers.getSigners().iterator(); it.hasNext(); )
+        return CAdESSigners.replaceMatched(signed, signers, matched, new CAdESSigners.Upgrade()
         {
-            SignerInformation cur = it.next();
-            if (matched.contains(cur))
+            public SignerInformation apply(SignerInformation signer)
+                throws CAdESException
             {
-                rebuilt.add(attach(cur, certRefsAttr, revRefsAttr, certValuesAttr, revValuesAttr));
+                return attach(signer, certRefsAttr, revRefsAttr, certValuesAttr, revValuesAttr);
             }
-            else
-            {
-                rebuilt.add(cur);
-            }
-        }
-
-        return CMSSignedData.replaceSigners(signed, new SignerInformationStore(rebuilt));
+        });
     }
 
     private static SignerInformation attach(SignerInformation signer,
