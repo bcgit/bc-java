@@ -6,8 +6,20 @@ import java.lang.reflect.Method;
 import java.security.SecureRandom;
 
 import junit.framework.TestCase;
+import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.DERTaggedObject;
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.digests.SHA256Digest;
+import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
+import org.bouncycastle.pqc.asn1.XMSSMTPrivateKey;
+import org.bouncycastle.pqc.asn1.XMSSPrivateKey;
+import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
+import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.pqc.crypto.xmss.BDS;
 import org.bouncycastle.pqc.crypto.xmss.BDSStateMap;
 import org.bouncycastle.pqc.crypto.xmss.XMSSKeyGenerationParameters;
@@ -256,6 +268,138 @@ public class XMSSStateEncodingTest
             verifier.init(false, kp.getPublic());
             assertTrue("signature at index " + i, verifier.verifySignature(message, signature));
             privateKey = (XMSSMTPrivateKeyParameters)signer.getUpdatedPrivateKey();
+        }
+    }
+
+    public void testXmssPrivateKeyInfoUsesBinaryBdsStateChoice()
+        throws Exception
+    {
+        XMSSParameters params = new XMSSParameters(4, new SHA256Digest());
+        AsymmetricCipherKeyPair kp = generateXmssKeyPair(params);
+        XMSSPrivateKeyParameters privateKey = (XMSSPrivateKeyParameters)kp.getPrivate();
+
+        PrivateKeyInfo keyInfo = PrivateKeyInfoFactory.createPrivateKeyInfo(privateKey);
+        assertEquals(PQCObjectIdentifiers.xmss, keyInfo.getPrivateKeyAlgorithm().getAlgorithm());
+
+        ASN1Sequence seq = ASN1Sequence.getInstance(keyInfo.parsePrivateKey());
+        assertEquals(1, ASN1TaggedObject.getInstance(seq.getObjectAt(2)).getTagNo());
+        assertTrue(XMSSPrivateKey.getInstance(seq).hasBinaryBdsState());
+
+        XMSSPrivateKeyParameters restored = (XMSSPrivateKeyParameters)PrivateKeyFactory.createKey(keyInfo.getEncoded());
+        assertXmssSigns(restored, kp);
+    }
+
+    public void testXmssPrivateKeyAcceptsLegacyBdsStateChoice()
+        throws Exception
+    {
+        XMSSParameters params = new XMSSParameters(4, new SHA256Digest());
+        AsymmetricCipherKeyPair kp = generateXmssKeyPair(params);
+        XMSSPrivateKeyParameters privateKey = (XMSSPrivateKeyParameters)kp.getPrivate();
+
+        PrivateKeyInfo keyInfo = PrivateKeyInfoFactory.createPrivateKeyInfo(privateKey);
+        XMSSPrivateKey parsed = XMSSPrivateKey.getInstance(keyInfo.parsePrivateKey());
+
+        XMSSPrivateKey legacy = new XMSSPrivateKey(parsed.getIndex(), parsed.getSecretKeySeed(),
+            parsed.getSecretKeyPRF(), parsed.getPublicSeed(), parsed.getRoot(),
+            serializeLegacyState(privateKey, "getBDSState"));
+        PrivateKeyInfo legacyInfo = new PrivateKeyInfo(keyInfo.getPrivateKeyAlgorithm(), legacy);
+
+        ASN1Sequence legacySeq = ASN1Sequence.getInstance(legacyInfo.parsePrivateKey());
+        assertEquals(0, ASN1TaggedObject.getInstance(legacySeq.getObjectAt(2)).getTagNo());
+        assertFalse(XMSSPrivateKey.getInstance(legacySeq).hasBinaryBdsState());
+
+        XMSSPrivateKeyParameters restored = (XMSSPrivateKeyParameters)PrivateKeyFactory.createKey(legacyInfo.getEncoded());
+        assertXmssSigns(restored, kp);
+    }
+
+    public void testXmssPrivateKeyRejectsUnknownBdsStateChoice()
+        throws Exception
+    {
+        XMSSParameters params = new XMSSParameters(4, new SHA256Digest());
+        AsymmetricCipherKeyPair kp = generateXmssKeyPair(params);
+
+        PrivateKeyInfo keyInfo = PrivateKeyInfoFactory.createPrivateKeyInfo((XMSSPrivateKeyParameters)kp.getPrivate());
+        ASN1Sequence seq = ASN1Sequence.getInstance(keyInfo.parsePrivateKey());
+
+        ASN1EncodableVector v = new ASN1EncodableVector();
+        v.add(seq.getObjectAt(0));
+        v.add(seq.getObjectAt(1));
+        v.add(new DERTaggedObject(true, 2, new DEROctetString(XMSSPrivateKey.getInstance(seq).getBdsState())));
+
+        try
+        {
+            XMSSPrivateKey.getInstance(new DERSequence(v));
+            fail("unknown bdsState choice accepted");
+        }
+        catch (IllegalArgumentException e)
+        {
+            assertEquals("unknown bdsState choice in XMSSPrivateKey", e.getMessage());
+        }
+    }
+
+    public void testXmssMtPrivateKeyInfoUsesBinaryBdsStateChoice()
+        throws Exception
+    {
+        XMSSMTParameters params = new XMSSMTParameters(4, 2, new SHA256Digest());
+        AsymmetricCipherKeyPair kp = generateXmssMtKeyPair(params);
+        XMSSMTPrivateKeyParameters privateKey = (XMSSMTPrivateKeyParameters)kp.getPrivate();
+
+        PrivateKeyInfo keyInfo = PrivateKeyInfoFactory.createPrivateKeyInfo(privateKey);
+        assertEquals(PQCObjectIdentifiers.xmss_mt, keyInfo.getPrivateKeyAlgorithm().getAlgorithm());
+
+        ASN1Sequence seq = ASN1Sequence.getInstance(keyInfo.parsePrivateKey());
+        assertEquals(1, ASN1TaggedObject.getInstance(seq.getObjectAt(2)).getTagNo());
+        assertTrue(XMSSMTPrivateKey.getInstance(seq).hasBinaryBdsState());
+
+        XMSSMTPrivateKeyParameters restored = (XMSSMTPrivateKeyParameters)PrivateKeyFactory.createKey(keyInfo.getEncoded());
+        assertXmssMtSigns(restored, kp);
+    }
+
+    public void testXmssMtPrivateKeyAcceptsLegacyBdsStateChoice()
+        throws Exception
+    {
+        XMSSMTParameters params = new XMSSMTParameters(4, 2, new SHA256Digest());
+        AsymmetricCipherKeyPair kp = generateXmssMtKeyPair(params);
+        XMSSMTPrivateKeyParameters privateKey = (XMSSMTPrivateKeyParameters)kp.getPrivate();
+
+        PrivateKeyInfo keyInfo = PrivateKeyInfoFactory.createPrivateKeyInfo(privateKey);
+        XMSSMTPrivateKey parsed = XMSSMTPrivateKey.getInstance(keyInfo.parsePrivateKey());
+
+        XMSSMTPrivateKey legacy = new XMSSMTPrivateKey(parsed.getIndex(), parsed.getSecretKeySeed(),
+            parsed.getSecretKeyPRF(), parsed.getPublicSeed(), parsed.getRoot(),
+            serializeLegacyState(privateKey, "getBDSState"));
+        PrivateKeyInfo legacyInfo = new PrivateKeyInfo(keyInfo.getPrivateKeyAlgorithm(), legacy);
+
+        ASN1Sequence legacySeq = ASN1Sequence.getInstance(legacyInfo.parsePrivateKey());
+        assertEquals(0, ASN1TaggedObject.getInstance(legacySeq.getObjectAt(2)).getTagNo());
+        assertFalse(XMSSMTPrivateKey.getInstance(legacySeq).hasBinaryBdsState());
+
+        XMSSMTPrivateKeyParameters restored = (XMSSMTPrivateKeyParameters)PrivateKeyFactory.createKey(legacyInfo.getEncoded());
+        assertXmssMtSigns(restored, kp);
+    }
+
+    public void testXmssMtPrivateKeyRejectsUnknownBdsStateChoice()
+        throws Exception
+    {
+        XMSSMTParameters params = new XMSSMTParameters(4, 2, new SHA256Digest());
+        AsymmetricCipherKeyPair kp = generateXmssMtKeyPair(params);
+
+        PrivateKeyInfo keyInfo = PrivateKeyInfoFactory.createPrivateKeyInfo((XMSSMTPrivateKeyParameters)kp.getPrivate());
+        ASN1Sequence seq = ASN1Sequence.getInstance(keyInfo.parsePrivateKey());
+
+        ASN1EncodableVector v = new ASN1EncodableVector();
+        v.add(seq.getObjectAt(0));
+        v.add(seq.getObjectAt(1));
+        v.add(new DERTaggedObject(true, 2, new DEROctetString(XMSSMTPrivateKey.getInstance(seq).getBdsState())));
+
+        try
+        {
+            XMSSMTPrivateKey.getInstance(new DERSequence(v));
+            fail("unknown bdsState choice accepted");
+        }
+        catch (IllegalArgumentException e)
+        {
+            assertEquals("unknown bdsState choice in XMSSMTPrivateKey", e.getMessage());
         }
     }
 

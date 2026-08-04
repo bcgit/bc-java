@@ -24,15 +24,21 @@ import org.bouncycastle.util.Arrays;
  *            root          OCTET STRING
  *            maxIndex      [0] INTEGER OPTIONAL
  *         }
- *         bdsState [0] OCTET STRING OPTIONAL
- *             -- opaque, implementation-specific traversal state;
- *             -- legacy Java serialization or versioned binary BDS state
+ *         bdsState CHOICE {
+ *             legacyBdsState [0] OCTET STRING,
+ *             binaryBdsState [1] OCTET STRING
+ *         } OPTIONAL
+ *             -- opaque, implementation-specific traversal state. [0] carries the
+ *             -- legacy Java serialization, [1] the versioned binary BDS state.
  *    }
  * </pre>
  */
 public class XMSSPrivateKey
     extends ASN1Object
 {
+    static final int LEGACY_BDS_STATE = 0;
+    static final int BINARY_BDS_STATE = 1;
+
     private final int version;
     private final int index;
     private final byte[] secretKeySeed;
@@ -41,10 +47,23 @@ public class XMSSPrivateKey
     private final byte[] root;
     private final int maxIndex;
     private final byte[] bdsState;
+    private final int bdsStateTag;
 
     public XMSSPrivateKey(int index, byte[] secretKeySeed, byte[] secretKeyPRF, byte[] publicSeed, byte[] root, byte[] bdsState)
     {
+        this(index, secretKeySeed, secretKeyPRF, publicSeed, root, bdsState, false);
+    }
+
+    /**
+     * Base constructor with an explicit choice of bdsState alternative.
+     *
+     * @param binaryBdsState true if bdsState carries the versioned binary BDS state ([1]),
+     *                       false if it carries the legacy Java serialization ([0]).
+     */
+    public XMSSPrivateKey(int index, byte[] secretKeySeed, byte[] secretKeyPRF, byte[] publicSeed, byte[] root, byte[] bdsState, boolean binaryBdsState)
+    {
         this.version = 0;
+        this.bdsStateTag = binaryBdsState ? BINARY_BDS_STATE : LEGACY_BDS_STATE;
         this.index = index;
         this.secretKeySeed = Arrays.clone(secretKeySeed);
         this.secretKeyPRF = Arrays.clone(secretKeyPRF);
@@ -56,7 +75,19 @@ public class XMSSPrivateKey
 
     public XMSSPrivateKey(int index, byte[] secretKeySeed, byte[] secretKeyPRF, byte[] publicSeed, byte[] root, byte[] bdsState, int maxIndex)
     {
+        this(index, secretKeySeed, secretKeyPRF, publicSeed, root, bdsState, maxIndex, false);
+    }
+
+    /**
+     * Base constructor for a key carrying maxIndex, with an explicit choice of bdsState alternative.
+     *
+     * @param binaryBdsState true if bdsState carries the versioned binary BDS state ([1]),
+     *                       false if it carries the legacy Java serialization ([0]).
+     */
+    public XMSSPrivateKey(int index, byte[] secretKeySeed, byte[] secretKeyPRF, byte[] publicSeed, byte[] root, byte[] bdsState, int maxIndex, boolean binaryBdsState)
+    {
         this.version = 1;
+        this.bdsStateTag = binaryBdsState ? BINARY_BDS_STATE : LEGACY_BDS_STATE;
         this.index = index;
         this.secretKeySeed = Arrays.clone(secretKeySeed);
         this.secretKeyPRF = Arrays.clone(secretKeyPRF);
@@ -108,10 +139,17 @@ public class XMSSPrivateKey
 
         if (seq.size() == 3)
         {
-            this.bdsState = Arrays.clone(DEROctetString.getInstance(ASN1TaggedObject.getInstance(seq.getObjectAt(2)), true).getOctets());
+            ASN1TaggedObject state = ASN1TaggedObject.getInstance(seq.getObjectAt(2));
+            if (state.getTagNo() != LEGACY_BDS_STATE && state.getTagNo() != BINARY_BDS_STATE)
+            {
+                throw new IllegalArgumentException("unknown bdsState choice in XMSSPrivateKey");
+            }
+            this.bdsStateTag = state.getTagNo();
+            this.bdsState = Arrays.clone(DEROctetString.getInstance(state, true).getOctets());
         }
         else
         {
+            this.bdsStateTag = LEGACY_BDS_STATE;
             this.bdsState = null;
         }
     }
@@ -170,6 +208,15 @@ public class XMSSPrivateKey
         return Arrays.clone(bdsState);
     }
 
+    /**
+     * Return true if bdsState was carried in the versioned binary BDS state alternative ([1]),
+     * false if it was carried in the legacy Java serialization alternative ([0]).
+     */
+    public boolean hasBinaryBdsState()
+    {
+        return bdsStateTag == BINARY_BDS_STATE;
+    }
+
     public ASN1Primitive toASN1Primitive()
     {
         ASN1EncodableVector v = new ASN1EncodableVector(3);
@@ -196,7 +243,10 @@ public class XMSSPrivateKey
         }
         
         v.add(new DERSequence(vK));
-        v.add(new DERTaggedObject(true, 0, new DEROctetString(bdsState)));
+        if (bdsState != null)
+        {
+            v.add(new DERTaggedObject(true, bdsStateTag, new DEROctetString(bdsState)));
+        }
 
         return new DERSequence(v);
     }

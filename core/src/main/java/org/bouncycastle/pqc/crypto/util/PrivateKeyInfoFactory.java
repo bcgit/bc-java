@@ -477,13 +477,15 @@ public class PrivateKeyInfoFactory
             throw Exceptions.ioException("cannot parse BDS: " + e.getMessage(), e);
         }
 
+        // the state tail of getEncoded() is always the versioned binary encoding, so the
+        // bdsState is written in the binary [1] alternative rather than the legacy [0] one.
         if ((bds.getMaxIndex() != (1 << totalHeight) - 1))
         {
-            return new XMSSPrivateKey(index, secretKeySeed, secretKeyPRF, publicSeed, root, bdsStateBinary, bds.getMaxIndex());
+            return new XMSSPrivateKey(index, secretKeySeed, secretKeyPRF, publicSeed, root, bdsStateBinary, bds.getMaxIndex(), true);
         }
         else
         {
-            return new XMSSPrivateKey(index, secretKeySeed, secretKeyPRF, publicSeed, root, bdsStateBinary);
+            return new XMSSPrivateKey(index, secretKeySeed, secretKeyPRF, publicSeed, root, bdsStateBinary, true);
         }
     }
 
@@ -532,13 +534,14 @@ public class PrivateKeyInfoFactory
             throw Exceptions.ioException("cannot parse BDSStateMap: " + e.getMessage(), e);
         }
 
+        // see xmssCreateKeyStructure: the state tail is always the versioned binary encoding.
         if ((bds.getMaxIndex() != (1L << totalHeight) - 1))
         {
-            return new XMSSMTPrivateKey(index, secretKeySeed, secretKeyPRF, publicSeed, root, bdsStateBinary, bds.getMaxIndex());
+            return new XMSSMTPrivateKey(index, secretKeySeed, secretKeyPRF, publicSeed, root, bdsStateBinary, bds.getMaxIndex(), true);
         }
         else
         {
-            return new XMSSMTPrivateKey(index, secretKeySeed, secretKeyPRF, publicSeed, root, bdsStateBinary);
+            return new XMSSMTPrivateKey(index, secretKeySeed, secretKeyPRF, publicSeed, root, bdsStateBinary, true);
         }
     }
 }
