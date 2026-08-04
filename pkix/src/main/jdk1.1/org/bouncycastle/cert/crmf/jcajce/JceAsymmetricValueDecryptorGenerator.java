@@ -17,16 +17,13 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.cert.crmf.CRMFException;
 import org.bouncycastle.cert.crmf.ValueDecryptorGenerator;
 import org.bouncycastle.jcajce.io.CipherInputStream;
-import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
-import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
-import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
 import org.bouncycastle.operator.InputDecryptor;
 
 public class JceAsymmetricValueDecryptorGenerator
     implements ValueDecryptorGenerator
 {
     private PrivateKey recipientKey;
-    private CRMFHelper helper = new CRMFHelper(new DefaultJcaJceHelper());
+    private CRMFHelper helper = CRMFHelper.createDefaultHelper();
 
     public JceAsymmetricValueDecryptorGenerator(PrivateKey recipientKey)
     {
@@ -35,14 +32,14 @@ public class JceAsymmetricValueDecryptorGenerator
 
     public JceAsymmetricValueDecryptorGenerator setProvider(Provider provider)
     {
-        this.helper = new CRMFHelper(new ProviderJcaJceHelper(provider));
+        this.helper = CRMFHelper.createProviderHelper(provider);
 
         return this;
     }
 
     public JceAsymmetricValueDecryptorGenerator setProvider(String providerName)
     {
-        this.helper = new CRMFHelper(new NamedJcaJceHelper(providerName));
+        this.helper = CRMFHelper.createNamedHelper(providerName);
 
         return this;
     }

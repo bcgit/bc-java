@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
-import java.util.Iterator;
 import java.util.List;
 
 import org.bouncycastle.asn1.ASN1Encodable;
@@ -214,7 +213,7 @@ public final class CAdESArchiveTimestampUtil
             throw new CAdESException("no signer matched in CMSSignedData");
         }
 
-        ContentInfo tokenCi;
+        final ContentInfo tokenCi;
         try
         {
             tokenCi = ContentInfo.getInstance(
@@ -225,20 +224,14 @@ public final class CAdESArchiveTimestampUtil
             throw new CAdESException("unable to encode TimeStampToken: " + e.getMessage(), e);
         }
 
-        List<SignerInformation> rebuilt = new ArrayList<SignerInformation>(signers.size());
-        for (Iterator<SignerInformation> it = signers.getSigners().iterator(); it.hasNext(); )
+        return CAdESSigners.replaceMatched(signed, signers, matched, new CAdESSigners.Upgrade()
         {
-            SignerInformation cur = it.next();
-            if (matched.contains(cur))
+            public SignerInformation apply(SignerInformation signer)
+                throws CAdESException
             {
-                rebuilt.add(appendArchiveTimestamp(cur, tokenCi));
+                return appendArchiveTimestamp(signer, tokenCi);
             }
-            else
-            {
-                rebuilt.add(cur);
-            }
-        }
-        return CMSSignedData.replaceSigners(signed, new SignerInformationStore(rebuilt));
+        });
     }
 
     /**

@@ -62,7 +62,7 @@ public class JceKeyAgreeRecipientInfoGenerator
     private PublicKey senderPublicKey;
     private PrivateKey senderPrivateKey;
 
-    private EnvelopedDataHelper helper = new EnvelopedDataHelper(new DefaultJcaJceExtHelper());
+    private EnvelopedDataHelper helper = CMSUtils.createDefaultHelper();
     private SecureRandom random;
     private KeyPair ephemeralKP;
     private byte[] userKeyingMaterial;
@@ -84,14 +84,14 @@ public class JceKeyAgreeRecipientInfoGenerator
 
     public JceKeyAgreeRecipientInfoGenerator setProvider(Provider provider)
     {
-        this.helper = new EnvelopedDataHelper(new ProviderJcaJceExtHelper(provider));
+        this.helper = CMSUtils.createProviderHelper(provider);
 
         return this;
     }
 
     public JceKeyAgreeRecipientInfoGenerator setProvider(String providerName)
     {
-        this.helper = new EnvelopedDataHelper(new NamedJcaJceExtHelper(providerName));
+        this.helper = CMSUtils.createNamedHelper(providerName);
 
         return this;
     }

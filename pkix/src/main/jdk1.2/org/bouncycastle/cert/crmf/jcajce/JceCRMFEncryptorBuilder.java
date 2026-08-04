@@ -14,9 +14,6 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.cert.crmf.CRMFException;
 import org.bouncycastle.jcajce.io.CipherOutputStream;
-import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
-import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
-import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
 import org.bouncycastle.operator.GenericKey;
 import org.bouncycastle.operator.OutputEncryptor;
 
@@ -25,7 +22,7 @@ public class JceCRMFEncryptorBuilder
     private ASN1ObjectIdentifier encryptionOID;
     private int                  keySize;
 
-    private CRMFHelper helper = new CRMFHelper(new DefaultJcaJceHelper());
+    private CRMFHelper helper = CRMFHelper.createDefaultHelper();
     private SecureRandom random;
 
     public JceCRMFEncryptorBuilder(ASN1ObjectIdentifier encryptionOID)
@@ -41,14 +38,14 @@ public class JceCRMFEncryptorBuilder
 
     public JceCRMFEncryptorBuilder setProvider(Provider provider)
     {
-        this.helper = new CRMFHelper(new ProviderJcaJceHelper(provider));
+        this.helper = CRMFHelper.createProviderHelper(provider);
 
         return this;
     }
 
     public JceCRMFEncryptorBuilder setProvider(String providerName)
     {
-        this.helper = new CRMFHelper(new NamedJcaJceHelper(providerName));
+        this.helper = CRMFHelper.createNamedHelper(providerName);
 
         return this;
     }
