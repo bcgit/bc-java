@@ -155,10 +155,16 @@ public class TBSCertificate
 
         signature = AlgorithmIdentifier.getInstance(seq.getObjectAt(seqStart + 2));
         issuer = X500Name.getInstance(seq.getObjectAt(seqStart + 3));
-        // RFC 5280 sec. 4.1.2.4: certificate issuer MUST be a non-empty DN.
+        // RFC 5280 sec. 4.1.2.4: certificate issuer MUST be a non-empty DN. Some non-PKIX
+        // profiles (e.g. the libp2p TLS profile) carry an empty issuer in self-signed identity
+        // certificates, so the strict parse can be relaxed with the property below - the
+        // reviewer reports the problem regardless, and generation stays strict.
         if (issuer.size() == 0)
         {
-            reportProblem(errors, "certificate issuer is an empty distinguished name");
+            if (errors != null || !Properties.isOverrideSet(Properties.X509_ALLOW_EMPTY_ISSUER))
+            {
+                reportProblem(errors, "certificate issuer is an empty distinguished name");
+            }
         }
         validity = Validity.getInstance(seq.getObjectAt(seqStart + 4));
         subject = X500Name.getInstance(seq.getObjectAt(seqStart + 5));

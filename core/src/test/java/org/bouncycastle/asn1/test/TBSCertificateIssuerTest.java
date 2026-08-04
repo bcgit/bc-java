@@ -1,11 +1,13 @@
 package org.bouncycastle.asn1.test;
 
 import java.io.IOException;
+import java.util.List;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERUTCTime;
@@ -18,6 +20,8 @@ import org.bouncycastle.asn1.x509.Time;
 import org.bouncycastle.asn1.x509.V1TBSCertificateGenerator;
 import org.bouncycastle.asn1.x509.V3TBSCertificateGenerator;
 import org.bouncycastle.asn1.x509.Validity;
+import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.test.SimpleTest;
 
 public class TBSCertificateIssuerTest
@@ -35,9 +39,49 @@ public class TBSCertificateIssuerTest
         publicConstructorRejectsEmptyIssuer();
         v1GeneratorRejectsEmptyIssuer();
         v3GeneratorRejectsEmptyIssuer();
+        allowEmptyIssuerPropertyTest();
     }
 
-    private void parseRejectsEmptyIssuer()
+    private void allowEmptyIssuerPropertyTest()
+        throws IOException
+    {
+        byte[] encoded = emptyIssuerTbs();
+
+        System.setProperty(Properties.X509_ALLOW_EMPTY_ISSUER, "true");
+        try
+        {
+            // the read-side concession for non-PKIX profiles (github #2387): the parse
+            // accepts the empty issuer and round-trips the original encoding...
+            TBSCertificate cert = TBSCertificate.getInstance(encoded);
+
+            isTrue("issuer not empty", cert.getIssuer().size() == 0);
+            isTrue("encoding not preserved", Arrays.areEqual(encoded, cert.getEncoded(ASN1Encoding.DER)));
+
+            // ...the reviewer still reports the problem...
+            List problems = TBSCertificate.reviewStructure(ASN1Sequence.getInstance(encoded));
+
+            boolean found = false;
+            for (int i = 0; i != problems.size(); i++)
+            {
+                if (((Exception)problems.get(i)).getMessage().indexOf("empty distinguished name") >= 0)
+                {
+                    found = true;
+                }
+            }
+            isTrue("reviewer no longer reports empty issuer", found);
+
+            // ...and generation stays strict.
+            publicConstructorRejectsEmptyIssuer();
+            v1GeneratorRejectsEmptyIssuer();
+            v3GeneratorRejectsEmptyIssuer();
+        }
+        finally
+        {
+            System.getProperties().remove(Properties.X509_ALLOW_EMPTY_ISSUER);
+        }
+    }
+
+    private static byte[] emptyIssuerTbs()
         throws IOException
     {
         // Build a v1 TBSCertificate with an empty issuer DN.
@@ -48,7 +92,14 @@ public class TBSCertificateIssuerTest
         v.add(validity());
         v.add(subjectName());
         v.add(spki());
-        byte[] encoded = new DERSequence(v).getEncoded(ASN1Encoding.DER);
+
+        return new DERSequence(v).getEncoded(ASN1Encoding.DER);
+    }
+
+    private void parseRejectsEmptyIssuer()
+        throws IOException
+    {
+        byte[] encoded = emptyIssuerTbs();
 
         try
         {
