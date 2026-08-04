@@ -64,6 +64,111 @@ public class HSSTests
 
     }
 
+    /**
+     * A multi-level HSS private key in the version 0 encoding - written by any release before
+     * the tree-cache feature, whose component keys end at the master secret - must still decode
+     * and sign. The component keys share one stream, so the cache cannot be detected from "more
+     * bytes available": before the encoding version told the parser whether the cache field is
+     * present, 4 bytes of the next component key were consumed as a phantom cache count and a
+     * d &gt; 1 key from an older release failed to decode (github #2365).
+     */
+    public void testVersion0HssKeyDecodes()
+        throws Exception
+    {
+        implVersion0HssKeyDecodes(1);
+        implVersion0HssKeyDecodes(2);
+        implVersion0HssKeyDecodes(3);
+    }
+
+    private void implVersion0HssKeyDecodes(int d)
+        throws Exception
+    {
+        HSSPrivateKeyParameters generated = generateKey(d);
+
+        Composer composer = Composer.compose()
+            .u32str(0) // version 0: pre-tree-cache component keys
+            .u32str(generated.getL())
+            .u64str(generated.getIndex())
+            .u64str(generated.getIndexLimit())
+            .bool(false);
+
+        for (LMSPrivateKeyParameters key : generated.getKeys())
+        {
+            composer.bytes(version0KeyEncoding(key));
+        }
+        for (LMSSignature s : generated.getSig())
+        {
+            composer.bytes(s);
+        }
+
+        HSSPrivateKeyParameters decoded = HSSPrivateKeyParameters.getInstance(composer.build());
+
+        assertEquals(generated.getL(), decoded.getL());
+        assertEquals(generated.getIndex(), decoded.getIndex());
+        assertEquals(generated.getIndexLimit(), decoded.getIndexLimit());
+        for (int t = 0; t < d; t++)
+        {
+            assertFalse("version 0 component key carries no cache", decoded.getKeys().get(t).isTreeCachePrimed());
+        }
+
+        HSSSignature signature = HSS.generateSignature(decoded, Hex.decode("ABCDEF"));
+        assertTrue(HSS.verifySignature(generated.getPublicKey(), signature, Hex.decode("ABCDEF")));
+    }
+
+    /**
+     * The current encoding is version 1: the component keys always carry the tree-cache field,
+     * and the version - the first four bytes - is what a pre-cache release's decoder rejects
+     * cleanly instead of misparsing the cache as key material.
+     */
+    public void testVersion1HssKeyRoundTrip()
+        throws Exception
+    {
+        HSSPrivateKeyParameters generated = generateKey(2);
+
+        byte[] enc = generated.getEncoded();
+
+        assertEquals("encoding version", 1, Pack.bigEndianToInt(enc, 0));
+
+        HSSPrivateKeyParameters decoded = HSSPrivateKeyParameters.getInstance(enc);
+
+        assertTrue(decoded.equals(generated));
+        for (int t = 0; t < 2; t++)
+        {
+            assertTrue("version 1 component key carries the cache", decoded.getKeys().get(t).isTreeCachePrimed());
+        }
+
+        HSSSignature signature = HSS.generateSignature(decoded, Hex.decode("ABCDEF"));
+        assertTrue(HSS.verifySignature(generated.getPublicKey(), signature, Hex.decode("ABCDEF")));
+    }
+
+    private static HSSPrivateKeyParameters generateKey(int d)
+    {
+        LMSParameters[] lmsParameters = new LMSParameters[d];
+        for (int t = 0; t < d; t++)
+        {
+            lmsParameters[t] = new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w4);
+        }
+
+        return HSS.generateHSSKeyPair(new HSSKeyGenerationParameters(lmsParameters, new SecureRandom()));
+    }
+
+    // Exactly what LMSPrivateKeyParameters.getEncoded() produced before the tree-cache feature:
+    // version, type, otstype, I, q, maxQ, secret length, secret - no trailing cache.
+    private static byte[] version0KeyEncoding(LMSPrivateKeyParameters key)
+        throws Exception
+    {
+        return Composer.compose()
+            .u32str(0)
+            .u32str(key.getSigParameters().getType())
+            .u32str(key.getOtsParameters().getType())
+            .bytes(key.getI())
+            .u32str((int)key.getIndex())
+            .u32str((int)key.getIndexLimit())
+            .u32str(key.getMasterSecret().length)
+            .bytes(key.getMasterSecret())
+            .build();
+    }
+
 
     /**
      * Test Case 1 Signature

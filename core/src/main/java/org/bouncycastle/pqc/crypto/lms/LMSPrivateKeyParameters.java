@@ -96,83 +96,23 @@ public class LMSPrivateKeyParameters
         {
             DataInputStream dIn = (DataInputStream)src;
 
-            /*
-            .u32str(0) // version
-            .u32str(parameters.getType()) // type
-            .u32str(otsParameters.getType()) // ots type
-            .bytes(I) // I at 16 bytes
-            .u32str(q) // q
-            .u32str(maxQ) // maximum q
-            .u32str(masterSecret.length) // length of master secret.
-            .bytes(masterSecret) // the master secret
-            .build();
-             */
-
-
-            if (dIn.readInt() != 0)
-            {
-                throw new IllegalStateException("expected version 0 lms private key");
-            }
-
-            int sigType = dIn.readInt();
-            LMSigParameters parameter = LMSigParameters.getParametersForType(sigType);
-            if (parameter == null)
-            {
-                throw new IOException("unknown LMS type code: " + sigType);
-            }
-            int otsType = dIn.readInt();
-            LMOtsParameters otsParameter = LMOtsParameters.getParametersForType(otsType);
-            if (otsParameter == null)
-            {
-                throw new IOException("unknown LM-OTS type code: " + otsType);
-            }
-            byte[] I = new byte[16];
-            dIn.readFully(I);
-
-            int q = dIn.readInt();
-            int maxQ = dIn.readInt();
-            int l = dIn.readInt();
-            if (l < 0)
-            {
-                throw new IllegalStateException("secret length less than zero");
-            }
-            if (l > dIn.available())
-            {
-                throw new IOException("secret length exceeded " + dIn.available());
-            }
-            byte[] masterSecret = new byte[l];
-            dIn.readFully(masterSecret);
-
-            LMSPrivateKeyParameters key = new LMSPrivateKeyParameters(parameter, otsParameter, q, I, maxQ, masterSecret);
+            LMSPrivateKeyParameters key = readCoreKey(dIn);
 
             //
             // Anything after the master secret is a cache of the top of the Merkle tree (see
             // getEncoded). Priming it here means the first signature made after the key is decoded
             // does not have to rebuild the whole tree, which otherwise costs about as much as key
-            // generation. The cache is optional trailing data rather than a new version so that
-            // releases predating it still read the key - they stop at the master secret and ignore
-            // what follows - at the cost of it being absent rather than malformed when a stream
-            // supplies no more bytes.
+            // generation. For a standalone key the cache is optional trailing data rather than a
+            // new version so that releases predating it still read the key - they stop at the
+            // master secret and ignore what follows - at the cost of it being absent rather than
+            // malformed when a stream supplies no more bytes. Component keys inside an HSS private
+            // key share their stream with the keys and signatures that follow, so "more data"
+            // means nothing there - they are read via readKey, where the enclosing HSS encoding's
+            // version dictates whether the cache field is present (github #2365).
             //
             if (dIn.available() > 0)
             {
-                int cacheCount = dIn.readInt();
-                if (cacheCount < 0 || cacheCount >= internedKeys.length)
-                {
-                    throw new IOException("tree cache node count out of range: " + cacheCount);
-                }
-                int m = parameter.getM();
-                if ((long)cacheCount * m > dIn.available())
-                {
-                    throw new IOException("tree cache length exceeded " + dIn.available());
-                }
-                byte[][] cachedT = new byte[cacheCount + 1][];
-                for (int r = 1; r <= cacheCount; r++)
-                {
-                    cachedT[r] = new byte[m];
-                    dIn.readFully(cachedT[r]);
-                }
-                key.primeTreeCache(cachedT);
+                readTreeCache(dIn, key);
             }
 
             return key;
@@ -201,6 +141,98 @@ public class LMSPrivateKeyParameters
         throw new IllegalArgumentException("cannot parse " + src);
     }
 
+    /**
+     * Read a component key from a stream shared with the other keys and signatures of an HSS
+     * private key. Unlike the public getInstance entry point, whether the tree-cache field is
+     * present is dictated by the caller - from the enclosing HSS encoding's version - rather
+     * than inferred from the stream having more data, which is meaningless mid-stream.
+     */
+    static LMSPrivateKeyParameters readKey(DataInputStream dIn, boolean withCache)
+        throws IOException
+    {
+        LMSPrivateKeyParameters key = readCoreKey(dIn);
+
+        if (withCache)
+        {
+            readTreeCache(dIn, key);
+        }
+
+        return key;
+    }
+
+    private static LMSPrivateKeyParameters readCoreKey(DataInputStream dIn)
+        throws IOException
+    {
+        /*
+        .u32str(0) // version
+        .u32str(parameters.getType()) // type
+        .u32str(otsParameters.getType()) // ots type
+        .bytes(I) // I at 16 bytes
+        .u32str(q) // q
+        .u32str(maxQ) // maximum q
+        .u32str(masterSecret.length) // length of master secret.
+        .bytes(masterSecret) // the master secret
+        .build();
+         */
+
+        if (dIn.readInt() != 0)
+        {
+            throw new IllegalStateException("expected version 0 lms private key");
+        }
+
+        int sigType = dIn.readInt();
+        LMSigParameters parameter = LMSigParameters.getParametersForType(sigType);
+        if (parameter == null)
+        {
+            throw new IOException("unknown LMS type code: " + sigType);
+        }
+        int otsType = dIn.readInt();
+        LMOtsParameters otsParameter = LMOtsParameters.getParametersForType(otsType);
+        if (otsParameter == null)
+        {
+            throw new IOException("unknown LM-OTS type code: " + otsType);
+        }
+        byte[] I = new byte[16];
+        dIn.readFully(I);
+
+        int q = dIn.readInt();
+        int maxQ = dIn.readInt();
+        int l = dIn.readInt();
+        if (l < 0)
+        {
+            throw new IllegalStateException("secret length less than zero");
+        }
+        if (l > dIn.available())
+        {
+            throw new IOException("secret length exceeded " + dIn.available());
+        }
+        byte[] masterSecret = new byte[l];
+        dIn.readFully(masterSecret);
+
+        return new LMSPrivateKeyParameters(parameter, otsParameter, q, I, maxQ, masterSecret);
+    }
+
+    private static void readTreeCache(DataInputStream dIn, LMSPrivateKeyParameters key)
+        throws IOException
+    {
+        int cacheCount = dIn.readInt();
+        if (cacheCount < 0 || cacheCount >= internedKeys.length)
+        {
+            throw new IOException("tree cache node count out of range: " + cacheCount);
+        }
+        int m = key.getSigParameters().getM();
+        if ((long)cacheCount * m > dIn.available())
+        {
+            throw new IOException("tree cache length exceeded " + dIn.available());
+        }
+        byte[][] cachedT = new byte[cacheCount + 1][];
+        for (int r = 1; r <= cacheCount; r++)
+        {
+            cachedT[r] = new byte[m];
+            dIn.readFully(cachedT[r]);
+        }
+        key.primeTreeCache(cachedT);
+    }
 
     LMOtsPrivateKey getCurrentOTSKey()
     {

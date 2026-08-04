@@ -41,7 +41,10 @@ first signature. Its properties:
   master secret (a key written by 1.85 or earlier, which then rebuilds the tree on first use),
   and a release predating the cache reads a 1.86+ encoding successfully because its decoder
   returns at the end of the master secret and never examines the trailing bytes. This is why
-  the cache is appended rather than announced by a new version number.
+  the cache is appended rather than announced by a new version number. Note this
+  trailing-data inference only works for a key that owns its whole encoding: for the component
+  keys inside an HSS private key, which share one stream, the presence of the cache field is
+  dictated by the HSS encoding's version instead — see "HSS private keys" below.
 - **It carries at most the top six levels** of the tree: nodes `1 .. min(2`<sup>`h+1`</sup>`, 64) - 1`.
   For `h = 5` that is the entire tree (63 nodes); for `h = 10` and above it is the top 63
   nodes, from which the remaining path nodes are recomputed on demand.
@@ -68,8 +71,39 @@ PrivateKeyInfo ::= SEQUENCE {
 }
 ```
 
-An HSS private key with `L > 1` uses the same OID and prefix convention but a different body
-(the HSS key chain state); it is not covered here.
+An HSS private key uses the same OID and prefix convention but carries the HSS structure
+described in the next section as its body. (A PKCS#8 encoding produced from a standalone
+`LMSPrivateKeyParameters`, as in the example below, carries the bare LMS key after the
+`L = 1` prefix instead; the decoder accepts either.)
+
+## HSS private keys
+
+An HSS private key (`HSSPrivateKeyParameters.getEncoded()`) is the chain state for the RFC 8554
+sec. 6 hierarchy: `L` component LMS private keys, one per level, plus the `L - 1` chaining
+signatures by which each tree certifies the public key of the tree below it.
+
+| offset | size | field | contents |
+|---|---|---|---|
+| 0 | 4 | `version` | `1`. The version 0 form written by earlier releases is read but no longer generated — see below. Anything else is rejected. |
+| 4 | 4 | `L` | Number of levels. |
+| 8 | 8 | `index` | Next signature index across the whole hierarchy (an unsigned 64-bit value). |
+| 16 | 8 | `indexLimit` | Exclusive upper bound on `index`; the key is exhausted when they meet. |
+| 24 | 1 | `limited` | `01` when the key is a shard produced by `extractKeyShard()`. |
+| 25 | — | `keys` | The `L` component LMS private keys, concatenated, each in the LMS format above. |
+| — | — | `signatures` | The `L - 1` chaining signatures, concatenated, each an RFC 8554 sec. 5.4 LMS signature: `sig[i]` is tree `i`'s signature over tree `i + 1`'s public key. |
+
+The component keys share the stream with whatever follows them, so the standalone key's
+"trailing data means a cache" inference is meaningless here — for every component but the last,
+more data is *always* available. The HSS `version` field carries the distinction instead:
+
+- **version 1** (written by current code): every component key carries the tree-cache field —
+  the `u32` node count (possibly 0) and its nodes — exactly as `LMSPrivateKeyParameters.getEncoded()`
+  emits it.
+- **version 0** (written by every release before the tree cache): every component key ends at
+  its master secret and carries no cache field. Read-compatible, never generated.
+
+A release predating the tree cache rejects a version 1 encoding cleanly at its version check
+("unknown version for hss private key") rather than misparsing cache bytes as key material.
 
 ## Worked example
 

@@ -91,7 +91,8 @@ public class HSSPrivateKeyParameters
         }
         else if (src instanceof DataInputStream)
         {
-            if (((DataInputStream)src).readInt() != 0)
+            int version = ((DataInputStream)src).readInt();
+            if (version != 0 && version != 1)
             {
                 throw new IllegalStateException("unknown version for hss private key");
             }
@@ -105,7 +106,12 @@ public class HSSPrivateKeyParameters
 
             for (int t = 0; t < d; t++)
             {
-                keys.add(LMSPrivateKeyParameters.getInstance(src));
+                // The component keys share this stream with the keys and signatures that follow,
+                // so whether each one carries the tree-cache field cannot be inferred from the
+                // stream having more data - the encoding version says: a version 0 encoding
+                // predates the tree cache and its component keys end at the master secret, a
+                // version 1 component always carries the cache field (github #2365).
+                keys.add(LMSPrivateKeyParameters.readKey((DataInputStream)src, version != 0));
             }
 
             for (int t = 0; t < d - 1; t++)
@@ -475,8 +481,11 @@ public class HSSPrivateKeyParameters
         // Private keys are implementation dependent.
         //
 
+        // Version 1: the component keys carry the mandatory tree-cache field their getEncoded
+        // appends; a version 0 encoding (any release before the tree cache) carries them without
+        // it. The version dispatch in getInstance is what keeps the shared stream unambiguous.
         Composer composer = Composer.compose()
-            .u32str(0) // Version.
+            .u32str(1) // Version.
             .u32str(l)
             .u64str(index)
             .u64str(indexLimit)
