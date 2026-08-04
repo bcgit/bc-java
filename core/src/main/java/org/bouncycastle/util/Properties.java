@@ -181,15 +181,6 @@ public class Properties
     public static final String DSA_MAX_SIZE = "org.bouncycastle.dsa.max_size";
 
     /**
-     * Upper bound, in bytes, on the encoded BDS traversal state accepted in an XMSS or XMSSMT
-     * private key. The state follows the fixed-size secret fields and is processed before the key
-     * can be used, so an unbounded legacy Java-serialization stream would be an import-time memory
-     * and CPU-exhaustion vector. Default 4194304 (4 MiB), well above the state produced by the
-     * standard parameter sets. Read via {@link #asInteger(String, int)}.
-     */
-    public static final String XMSS_MAX_BDS_STATE_SIZE = "org.bouncycastle.xmss.max_bds_state_size";
-
-    /**
      * Upper bound on the PBKDF2 iteration count honoured when deriving the integrity-MAC key of a
      * BCFKS keystore during load. The KDF runs on parameters taken from the (not-yet-verified)
      * keystore, so an unbounded iteration count is a pre-integrity CPU-exhaustion vector. Default

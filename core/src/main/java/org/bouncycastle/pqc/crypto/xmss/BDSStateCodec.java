@@ -15,7 +15,6 @@ import java.util.TreeMap;
 
 import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Integers;
-import org.bouncycastle.util.Properties;
 
 /**
  * Codec for the implementation-specific BDS traversal state stored with an XMSS or XMSSMT private key.
@@ -448,8 +447,7 @@ final class BDSStateCodec
     static void checkEncodingSize(byte[] encoding)
         throws IOException
     {
-        int maximumSize = Properties.asInteger(Properties.XMSS_MAX_BDS_STATE_SIZE, MAX_ENCODED_STATE_SIZE);
-        if (encoding == null || encoding.length < 8 || maximumSize < 8 || encoding.length > maximumSize)
+        if (encoding == null || encoding.length < 8 || encoding.length > MAX_ENCODED_STATE_SIZE)
         {
             throw new IOException("BDS state encoding size out of bounds");
         }

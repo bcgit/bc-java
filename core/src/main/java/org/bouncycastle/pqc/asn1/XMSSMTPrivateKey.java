@@ -49,21 +49,14 @@ public class XMSSMTPrivateKey
     private final byte[] bdsState;
     private final int bdsStateTag;
 
+    /**
+     * Base constructor. bdsState is written in the binary [1] alternative; the legacy Java
+     * serialization is accepted on parsing but is no longer generated.
+     */
     public XMSSMTPrivateKey(long index, byte[] secretKeySeed, byte[] secretKeyPRF, byte[] publicSeed, byte[] root, byte[] bdsState)
     {
-        this(index, secretKeySeed, secretKeyPRF, publicSeed, root, bdsState, false);
-    }
-
-    /**
-     * Base constructor with an explicit choice of bdsState alternative.
-     *
-     * @param binaryBdsState true if bdsState carries the versioned binary BDS state map ([1]),
-     *                       false if it carries the legacy Java serialization ([0]).
-     */
-    public XMSSMTPrivateKey(long index, byte[] secretKeySeed, byte[] secretKeyPRF, byte[] publicSeed, byte[] root, byte[] bdsState, boolean binaryBdsState)
-    {
         this.version = 0;
-        this.bdsStateTag = binaryBdsState ? BINARY_BDS_STATE : LEGACY_BDS_STATE;
+        this.bdsStateTag = BINARY_BDS_STATE;
         this.index = index;
         this.secretKeySeed = Arrays.clone(secretKeySeed);
         this.secretKeyPRF = Arrays.clone(secretKeyPRF);
@@ -73,21 +66,14 @@ public class XMSSMTPrivateKey
         this.maxIndex = -1;
     }
 
+    /**
+     * Base constructor for a key carrying maxIndex. bdsState is written in the binary [1]
+     * alternative; the legacy Java serialization is accepted on parsing but is no longer generated.
+     */
     public XMSSMTPrivateKey(long index, byte[] secretKeySeed, byte[] secretKeyPRF, byte[] publicSeed, byte[] root, byte[] bdsState, long maxIndex)
     {
-        this(index, secretKeySeed, secretKeyPRF, publicSeed, root, bdsState, maxIndex, false);
-    }
-
-    /**
-     * Base constructor for a key carrying maxIndex, with an explicit choice of bdsState alternative.
-     *
-     * @param binaryBdsState true if bdsState carries the versioned binary BDS state map ([1]),
-     *                       false if it carries the legacy Java serialization ([0]).
-     */
-    public XMSSMTPrivateKey(long index, byte[] secretKeySeed, byte[] secretKeyPRF, byte[] publicSeed, byte[] root, byte[] bdsState, long maxIndex, boolean binaryBdsState)
-    {
         this.version = 1;
-        this.bdsStateTag = binaryBdsState ? BINARY_BDS_STATE : LEGACY_BDS_STATE;
+        this.bdsStateTag = BINARY_BDS_STATE;
         this.index = index;
         this.secretKeySeed = Arrays.clone(secretKeySeed);
         this.secretKeyPRF = Arrays.clone(secretKeyPRF);

@@ -34,7 +34,6 @@ import org.bouncycastle.pqc.crypto.xmss.XMSSPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSSigner;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
-import org.bouncycastle.util.Properties;
 
 public class XMSSStateEncodingTest
     extends TestCase
@@ -109,45 +108,6 @@ public class XMSSStateEncodingTest
         XMSSMTPrivateKeyParameters recovered = new XMSSMTPrivateKeyParameters.Builder(params)
             .withPrivateKey(legacyEncoding).build();
         assertXmssMtSigns(recovered, kp);
-    }
-
-    public void testStateSizeLimitAcceptsCapAndRejectsCapPlusOne()
-        throws Exception
-    {
-        XMSSParameters params = new XMSSParameters(4, new SHA256Digest());
-        AsymmetricCipherKeyPair kp = generateXmssKeyPair(params);
-        byte[] encoding = ((XMSSPrivateKeyParameters)kp.getPrivate()).getEncoded();
-        int stateOffset = 4 + 4 * params.getTreeDigestSize();
-        int stateSize = encoding.length - stateOffset;
-        String previousLimit = System.getProperty(Properties.XMSS_MAX_BDS_STATE_SIZE);
-
-        try
-        {
-            System.setProperty(Properties.XMSS_MAX_BDS_STATE_SIZE, Integer.toString(stateSize));
-            new XMSSPrivateKeyParameters.Builder(params).withPrivateKey(encoding).build();
-
-            System.setProperty(Properties.XMSS_MAX_BDS_STATE_SIZE, Integer.toString(stateSize - 1));
-            try
-            {
-                new XMSSPrivateKeyParameters.Builder(params).withPrivateKey(encoding).build();
-                fail("oversized BDS state accepted");
-            }
-            catch (IllegalArgumentException e)
-            {
-                assertEquals("BDS state encoding size out of bounds", e.getMessage());
-            }
-        }
-        finally
-        {
-            if (previousLimit == null)
-            {
-                System.clearProperty(Properties.XMSS_MAX_BDS_STATE_SIZE);
-            }
-            else
-            {
-                System.setProperty(Properties.XMSS_MAX_BDS_STATE_SIZE, previousLimit);
-            }
-        }
     }
 
     public void testStateCollectionCountIsBoundedBeforeAllocation()
@@ -297,11 +257,10 @@ public class XMSSStateEncodingTest
         XMSSPrivateKeyParameters privateKey = (XMSSPrivateKeyParameters)kp.getPrivate();
 
         PrivateKeyInfo keyInfo = PrivateKeyInfoFactory.createPrivateKeyInfo(privateKey);
-        XMSSPrivateKey parsed = XMSSPrivateKey.getInstance(keyInfo.parsePrivateKey());
+        ASN1Sequence seq = ASN1Sequence.getInstance(keyInfo.parsePrivateKey());
 
-        XMSSPrivateKey legacy = new XMSSPrivateKey(parsed.getIndex(), parsed.getSecretKeySeed(),
-            parsed.getSecretKeyPRF(), parsed.getPublicSeed(), parsed.getRoot(),
-            serializeLegacyState(privateKey, "getBDSState"));
+        // BC no longer generates the legacy alternative, so build the [0] form by hand
+        ASN1Sequence legacy = legacyBdsStateSequence(seq, serializeLegacyState(privateKey, "getBDSState"));
         PrivateKeyInfo legacyInfo = new PrivateKeyInfo(keyInfo.getPrivateKeyAlgorithm(), legacy);
 
         ASN1Sequence legacySeq = ASN1Sequence.getInstance(legacyInfo.parsePrivateKey());
@@ -363,11 +322,10 @@ public class XMSSStateEncodingTest
         XMSSMTPrivateKeyParameters privateKey = (XMSSMTPrivateKeyParameters)kp.getPrivate();
 
         PrivateKeyInfo keyInfo = PrivateKeyInfoFactory.createPrivateKeyInfo(privateKey);
-        XMSSMTPrivateKey parsed = XMSSMTPrivateKey.getInstance(keyInfo.parsePrivateKey());
+        ASN1Sequence seq = ASN1Sequence.getInstance(keyInfo.parsePrivateKey());
 
-        XMSSMTPrivateKey legacy = new XMSSMTPrivateKey(parsed.getIndex(), parsed.getSecretKeySeed(),
-            parsed.getSecretKeyPRF(), parsed.getPublicSeed(), parsed.getRoot(),
-            serializeLegacyState(privateKey, "getBDSState"));
+        // BC no longer generates the legacy alternative, so build the [0] form by hand
+        ASN1Sequence legacy = legacyBdsStateSequence(seq, serializeLegacyState(privateKey, "getBDSState"));
         PrivateKeyInfo legacyInfo = new PrivateKeyInfo(keyInfo.getPrivateKeyAlgorithm(), legacy);
 
         ASN1Sequence legacySeq = ASN1Sequence.getInstance(legacyInfo.parsePrivateKey());
@@ -415,6 +373,19 @@ public class XMSSStateEncodingTest
         XMSSMTKeyPairGenerator generator = new XMSSMTKeyPairGenerator();
         generator.init(new XMSSMTKeyGenerationParameters(params, new SecureRandom()));
         return generator.generateKeyPair();
+    }
+
+    /**
+     * Rebuild an XMSSPrivateKey / XMSSMTPrivateKey sequence with the bdsState carried in the
+     * legacy [0] alternative, which BC accepts on parsing but no longer generates.
+     */
+    private static ASN1Sequence legacyBdsStateSequence(ASN1Sequence seq, byte[] legacyState)
+    {
+        ASN1EncodableVector v = new ASN1EncodableVector();
+        v.add(seq.getObjectAt(0));
+        v.add(seq.getObjectAt(1));
+        v.add(new DERTaggedObject(true, 0, new DEROctetString(legacyState)));
+        return new DERSequence(v);
     }
 
     private static byte[] serializeLegacyState(Object privateKey, String accessorName)
