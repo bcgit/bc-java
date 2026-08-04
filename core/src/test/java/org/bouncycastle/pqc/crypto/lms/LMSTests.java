@@ -193,7 +193,7 @@ public class LMSTests
 
         int h = sigParams.getH();
         int m = sigParams.getM();
-        int cacheTop = Math.min(129, 1 << (h + 1));
+        int cacheTop = Math.min(64, 1 << (h + 1));
 
         byte[] enc = privateKey.getEncoded();
 

@@ -426,9 +426,10 @@ public class LMSPrivateKeyParameters
     }
 
     /**
-     * Populate the node cache with the top-of-tree nodes recovered from a version 1
-     * encoding. Entries are keyed on the interned cache keys so they are not evicted, matching
-     * the state a freshly generated key reaches after its public key has been derived.
+     * Populate the node cache with the top-of-tree nodes recovered from the optional trailing
+     * cache in a version 0 encoding. Entries are keyed on the interned cache keys so they are not
+     * evicted, matching the state a freshly generated key reaches after its public key has been
+     * derived.
      *
      * @param cachedT nodes indexed by tree node number; index 0 is unused, entries 1..n are cached.
      */
@@ -448,8 +449,9 @@ public class LMSPrivateKeyParameters
 
     /**
      * Return true if the top of the Merkle tree is present in the node cache - either because
-     * this key has been used/queried, or because it was decoded from a version 1 encoding (see
-     * getEncoded). Used by the regression tests that verify tree-cache persistence.
+     * this key has been used/queried, or because it was decoded from the optional trailing data in
+     * a version 0 encoding (see getEncoded). Used by the regression tests that verify tree-cache
+     * persistence.
      */
     boolean isTreeCachePrimed()
     {

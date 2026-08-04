@@ -25,14 +25,20 @@ import org.bouncycastle.util.Arrays;
  *            maxIndex      [0] INTEGER OPTIONAL
  *         }
  *         bdsState CHOICE {
- *            platformSerialization [0] OCTET STRING
+ *             legacyBdsState [0] OCTET STRING,
+ *             binaryBdsState [1] OCTET STRING
  *         } OPTIONAL
+ *             -- opaque, implementation-specific traversal state. [0] carries the
+ *             -- legacy Java serialization, [1] the versioned binary BDS state map.
  *    }
  * </pre>
  */
 public class XMSSMTPrivateKey
     extends ASN1Object
 {
+    static final int LEGACY_BDS_STATE = 0;
+    static final int BINARY_BDS_STATE = 1;
+
     private final int version;
     private final long index;
     private final long maxIndex;
@@ -41,10 +47,16 @@ public class XMSSMTPrivateKey
     private final byte[] publicSeed;
     private final byte[] root;
     private final byte[] bdsState;
+    private final int bdsStateTag;
 
+    /**
+     * Base constructor. bdsState is written in the binary [1] alternative; the legacy Java
+     * serialization is accepted on parsing but is no longer generated.
+     */
     public XMSSMTPrivateKey(long index, byte[] secretKeySeed, byte[] secretKeyPRF, byte[] publicSeed, byte[] root, byte[] bdsState)
     {
         this.version = 0;
+        this.bdsStateTag = BINARY_BDS_STATE;
         this.index = index;
         this.secretKeySeed = Arrays.clone(secretKeySeed);
         this.secretKeyPRF = Arrays.clone(secretKeyPRF);
@@ -54,9 +66,14 @@ public class XMSSMTPrivateKey
         this.maxIndex = -1;
     }
 
+    /**
+     * Base constructor for a key carrying maxIndex. bdsState is written in the binary [1]
+     * alternative; the legacy Java serialization is accepted on parsing but is no longer generated.
+     */
     public XMSSMTPrivateKey(long index, byte[] secretKeySeed, byte[] secretKeyPRF, byte[] publicSeed, byte[] root, byte[] bdsState, long maxIndex)
     {
         this.version = 1;
+        this.bdsStateTag = BINARY_BDS_STATE;
         this.index = index;
         this.secretKeySeed = Arrays.clone(secretKeySeed);
         this.secretKeyPRF = Arrays.clone(secretKeyPRF);
@@ -108,10 +125,17 @@ public class XMSSMTPrivateKey
 
         if(seq.size() == 3)
         {
-            this.bdsState = Arrays.clone(DEROctetString.getInstance(ASN1TaggedObject.getInstance(seq.getObjectAt(2)), true).getOctets());
+            ASN1TaggedObject state = ASN1TaggedObject.getInstance(seq.getObjectAt(2));
+            if (state.getTagNo() != LEGACY_BDS_STATE && state.getTagNo() != BINARY_BDS_STATE)
+            {
+                throw new IllegalArgumentException("unknown bdsState choice in XMSSMTPrivateKey");
+            }
+            this.bdsStateTag = state.getTagNo();
+            this.bdsState = Arrays.clone(DEROctetString.getInstance(state, true).getOctets());
         }
         else
         {
+            this.bdsStateTag = LEGACY_BDS_STATE;
             this.bdsState = null;
         }
     }
@@ -170,6 +194,15 @@ public class XMSSMTPrivateKey
         return Arrays.clone(bdsState);
     }
 
+    /**
+     * Return true if bdsState was carried in the versioned binary BDS state alternative ([1]),
+     * false if it was carried in the legacy Java serialization alternative ([0]).
+     */
+    public boolean hasBinaryBdsState()
+    {
+        return bdsStateTag == BINARY_BDS_STATE;
+    }
+
     public ASN1Primitive toASN1Primitive()
     {
         ASN1EncodableVector v = new ASN1EncodableVector();
@@ -196,7 +229,10 @@ public class XMSSMTPrivateKey
         }
 
         v.add(new DERSequence(vK));
-        v.add(new DERTaggedObject(true, 0, new DEROctetString(bdsState)));
+        if (bdsState != null)
+        {
+            v.add(new DERTaggedObject(true, bdsStateTag, new DEROctetString(bdsState)));
+        }
 
         return new DERSequence(v);
     }

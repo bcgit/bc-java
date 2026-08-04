@@ -30,6 +30,7 @@ public class AllTestsXMSS
         suite.addTestSuite(XMSSUtilTest.class);
         suite.addTestSuite(XMSSPublicKeyParseTest.class);
         suite.addTestSuite(XMSSPrivateKeyEncodingTest.class);
+        suite.addTestSuite(XMSSStateEncodingTest.class);
 
         return new AllTests.BCTestSetup(suite);
     }
