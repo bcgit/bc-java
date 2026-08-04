@@ -5,7 +5,6 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
@@ -122,6 +121,8 @@ public final class CAdESSignatureTimestampUtil
             throw new NullPointerException("token");
         }
 
+        final TimeStampToken finalToken = token;
+
         SignerInformationStore signers = signedData.getSignerInfos();
         Collection<SignerInformation> matched = signers.getSigners(signerId);
         if (matched.isEmpty())
@@ -129,21 +130,14 @@ public final class CAdESSignatureTimestampUtil
             throw new CAdESException("no signer matched in CMSSignedData");
         }
 
-        List<SignerInformation> rebuilt = new ArrayList<SignerInformation>(signers.size());
-        for (Iterator<SignerInformation> it = signers.getSigners().iterator(); it.hasNext(); )
+        return CAdESSigners.replaceMatched(signedData, signers, matched, new CAdESSigners.Upgrade()
         {
-            SignerInformation cur = (SignerInformation)it.next();
-            if (matched.contains(cur))
+            public SignerInformation apply(SignerInformation signer)
+                throws CAdESException
             {
-                rebuilt.add(addSignatureTimestamp(cur, token));
+                return addSignatureTimestamp(signer, finalToken);
             }
-            else
-            {
-                rebuilt.add(cur);
-            }
-        }
-
-        return CMSSignedData.replaceSigners(signedData, new SignerInformationStore(rebuilt));
+        });
     }
 
     /**
