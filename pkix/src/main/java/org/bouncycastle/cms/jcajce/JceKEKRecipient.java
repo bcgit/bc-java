@@ -21,7 +21,7 @@ public abstract class JceKEKRecipient
 {
     private SecretKey recipientKey;
 
-    protected EnvelopedDataHelper helper = new EnvelopedDataHelper(new DefaultJcaJceExtHelper());
+    protected EnvelopedDataHelper helper = CMSUtils.createDefaultHelper();
     protected EnvelopedDataHelper contentHelper = helper;
     protected boolean validateKeySize = false;
 
@@ -38,7 +38,7 @@ public abstract class JceKEKRecipient
      */
     public JceKEKRecipient setProvider(Provider provider)
     {
-        this.helper = new EnvelopedDataHelper(new ProviderJcaJceExtHelper(provider));
+        this.helper = CMSUtils.createProviderHelper(provider);
         this.contentHelper = helper;
 
         return this;
@@ -52,7 +52,7 @@ public abstract class JceKEKRecipient
      */
     public JceKEKRecipient setProvider(String providerName)
     {
-        this.helper = new EnvelopedDataHelper(new NamedJcaJceExtHelper(providerName));
+        this.helper = CMSUtils.createNamedHelper(providerName);
         this.contentHelper = helper;
 
         return this;
@@ -66,7 +66,7 @@ public abstract class JceKEKRecipient
      */
     public JceKEKRecipient setContentProvider(Provider provider)
     {
-        this.contentHelper = new EnvelopedDataHelper(new ProviderJcaJceExtHelper(provider));
+        this.contentHelper = CMSUtils.createProviderHelper(provider);
 
         return this;
     }
@@ -79,7 +79,7 @@ public abstract class JceKEKRecipient
      */
     public JceKEKRecipient setContentProvider(String providerName)
     {
-        this.contentHelper = new EnvelopedDataHelper(new NamedJcaJceExtHelper(providerName));
+        this.contentHelper = CMSUtils.createNamedHelper(providerName);
 
         return this;
     }

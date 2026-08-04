@@ -146,15 +146,30 @@ class CMSUtils
         }
     }
 
+    static EnvelopedDataHelper createDefaultHelper()
+    {
+        return new EnvelopedDataHelper(new DefaultJcaJceExtHelper());
+    }
+
+    static EnvelopedDataHelper createProviderHelper(Provider provider)
+    {
+        return new EnvelopedDataHelper(new ProviderJcaJceExtHelper(provider));
+    }
+
+    static EnvelopedDataHelper createNamedHelper(String providerName)
+    {
+        return new EnvelopedDataHelper(new NamedJcaJceExtHelper(providerName));
+    }
+
     static EnvelopedDataHelper createContentHelper(Provider provider)
     {
         if (provider != null)
         {
-            return new EnvelopedDataHelper(new ProviderJcaJceExtHelper(provider));
+            return createProviderHelper(provider);
         }
         else
         {
-            return new EnvelopedDataHelper(new DefaultJcaJceExtHelper());
+            return createDefaultHelper();
         }
     }
 
@@ -162,11 +177,11 @@ class CMSUtils
     {
         if (providerName != null)
         {
-            return new EnvelopedDataHelper(new NamedJcaJceExtHelper(providerName));
+            return createNamedHelper(providerName);
         }
         else
         {
-            return new EnvelopedDataHelper(new DefaultJcaJceExtHelper());
+            return createDefaultHelper();
         }
     }
 

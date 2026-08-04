@@ -14,9 +14,6 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
-import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
-import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
-import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
 import org.bouncycastle.operator.ContentVerifier;
 import org.bouncycastle.operator.ContentVerifierProvider;
 import org.bouncycastle.operator.OperatorCreationException;
@@ -26,7 +23,7 @@ import org.bouncycastle.operator.RuntimeOperatorException;
 
 public class JcaContentVerifierProviderBuilder
 {
-    private OperatorHelper helper = new OperatorHelper(new DefaultJcaJceHelper());
+    private OperatorHelper helper = OperatorUtils.createDefaultHelper();
 
     public JcaContentVerifierProviderBuilder()
     {
@@ -34,14 +31,14 @@ public class JcaContentVerifierProviderBuilder
 
     public JcaContentVerifierProviderBuilder setProvider(Provider provider)
     {
-        this.helper = new OperatorHelper(new ProviderJcaJceHelper(provider));
+        this.helper = OperatorUtils.createProviderHelper(provider);
 
         return this;
     }
 
     public JcaContentVerifierProviderBuilder setProvider(String providerName)
     {
-        this.helper = new OperatorHelper(new NamedJcaJceHelper(providerName));
+        this.helper = OperatorUtils.createNamedHelper(providerName);
 
         return this;
     }

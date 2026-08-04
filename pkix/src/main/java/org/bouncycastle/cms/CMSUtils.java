@@ -360,7 +360,7 @@ class CMSUtils
         return others;
     }
 
-    static ASN1Set createBerSetFromList(List derObjects)
+    private static ASN1EncodableVector toVector(List derObjects)
     {
         ASN1EncodableVector v = new ASN1EncodableVector();
 
@@ -369,31 +369,22 @@ class CMSUtils
             v.add((ASN1Encodable)it.next());
         }
 
-        return new BERSet(v);
+        return v;
+    }
+
+    static ASN1Set createBerSetFromList(List derObjects)
+    {
+        return new BERSet(toVector(derObjects));
     }
 
     static ASN1Set createDlSetFromList(List derObjects)
     {
-        ASN1EncodableVector v = new ASN1EncodableVector();
-
-        for (Iterator it = derObjects.iterator(); it.hasNext(); )
-        {
-            v.add((ASN1Encodable)it.next());
-        }
-
-        return new DLSet(v);
+        return new DLSet(toVector(derObjects));
     }
 
     static ASN1Set createDerSetFromList(List derObjects)
     {
-        ASN1EncodableVector v = new ASN1EncodableVector();
-
-        for (Iterator it = derObjects.iterator(); it.hasNext(); )
-        {
-            v.add((ASN1Encodable)it.next());
-        }
-
-        return new DERSet(v);
+        return new DERSet(toVector(derObjects));
     }
 
     /**

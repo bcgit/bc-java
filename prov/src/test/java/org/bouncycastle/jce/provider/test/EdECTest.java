@@ -188,6 +188,8 @@ public class EdECTest
         x25519withKDFTest();
         x448UwithKDFTest();
         x25519UwithKDFTest();
+        xdhHKDFTest();
+        hkdfSaltTest();
 
         xdhGeneratorTest();
         eddsaGeneratorTest();
@@ -852,6 +854,49 @@ public class EdECTest
             isTrue(areEqual(sec3, sec4));
             isTrue(!areEqual(sec1, sec4));
         }
+    }
+
+    private void xdhHKDFTest()
+        throws Exception
+    {
+        // the RFC 8418 HKDF agreements - the XDHwith* names accept X25519 or X448 keys.
+        agreementTest("XDHwithSHA256HKDF", new UserKeyingMaterialSpec(Hex.decode("beeffeed")));
+        agreementTest("XDHwithSHA384HKDF", new UserKeyingMaterialSpec(Hex.decode("beeffeed")));
+        agreementTest("XDHwithSHA512HKDF", new UserKeyingMaterialSpec(Hex.decode("beeffeed")));
+        agreementTest("X448withSHA512HKDF", new UserKeyingMaterialSpec(Hex.decode("beeffeed")));
+        agreementTest("X25519withSHA256HKDF", new UserKeyingMaterialSpec(Hex.decode("beeffeed")));
+    }
+
+    private void hkdfSaltTest()
+        throws Exception
+    {
+        // the salt carried by UserKeyingMaterialSpec must reach the HKDF extract phase.
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("X25519", "BC");
+
+        KeyPair kp1 = kpGen.generateKeyPair();
+        KeyPair kp2 = kpGen.generateKeyPair();
+
+        byte[] ukm = Hex.decode("beeffeed");
+        byte[] salt = Hex.decode("000102030405060708090a0b0c0d0e0f");
+
+        byte[] noSalt = hkdfAgree(kp1.getPrivate(), kp2.getPublic(), new UserKeyingMaterialSpec(ukm));
+        byte[] salted1 = hkdfAgree(kp1.getPrivate(), kp2.getPublic(), new UserKeyingMaterialSpec(ukm, salt));
+        byte[] salted2 = hkdfAgree(kp2.getPrivate(), kp1.getPublic(), new UserKeyingMaterialSpec(ukm, salt));
+
+        isTrue("salted agreement mismatch", areEqual(salted1, salted2));
+        isTrue("salt ignored in HKDF agreement", !areEqual(noSalt, salted1));
+    }
+
+    private byte[] hkdfAgree(PrivateKey priv, PublicKey pub, AlgorithmParameterSpec spec)
+        throws Exception
+    {
+        KeyAgreement keyAgreement = KeyAgreement.getInstance("X25519withSHA256HKDF", "BC");
+
+        keyAgreement.init(priv, spec);
+
+        keyAgreement.doPhase(pub, true);
+
+        return keyAgreement.generateSecret();
     }
 
     private void x448UwithKDFTest()

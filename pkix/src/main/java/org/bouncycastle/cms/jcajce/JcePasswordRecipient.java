@@ -26,7 +26,7 @@ public abstract class JcePasswordRecipient
     implements PasswordRecipient
 {
     private int schemeID = PasswordRecipient.PKCS5_SCHEME2_UTF8;
-    protected EnvelopedDataHelper helper = new EnvelopedDataHelper(new DefaultJcaJceExtHelper());
+    protected EnvelopedDataHelper helper = CMSUtils.createDefaultHelper();
     private char[] password;
 
     JcePasswordRecipient(
@@ -44,14 +44,14 @@ public abstract class JcePasswordRecipient
 
     public JcePasswordRecipient setProvider(Provider provider)
     {
-        this.helper = new EnvelopedDataHelper(new ProviderJcaJceExtHelper(provider));
+        this.helper = CMSUtils.createProviderHelper(provider);
 
         return this;
     }
 
     public JcePasswordRecipient setProvider(String providerName)
     {
-        this.helper = new EnvelopedDataHelper(new NamedJcaJceExtHelper(providerName));
+        this.helper = CMSUtils.createNamedHelper(providerName);
 
         return this;
     }

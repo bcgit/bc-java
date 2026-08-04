@@ -19,9 +19,6 @@ import javax.crypto.spec.SecretKeySpec;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
-import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
-import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
 import org.bouncycastle.operator.AsymmetricKeyUnwrapper;
 import org.bouncycastle.operator.GenericKey;
 import org.bouncycastle.operator.OperatorException;
@@ -29,7 +26,7 @@ import org.bouncycastle.operator.OperatorException;
 public class JceAsymmetricKeyUnwrapper
     extends AsymmetricKeyUnwrapper
 {
-    private OperatorHelper helper = new OperatorHelper(new DefaultJcaJceHelper());
+    private OperatorHelper helper = OperatorUtils.createDefaultHelper();
     private Map extraMappings = new HashMap();
     private PrivateKey privKey;
     private boolean unwrappedKeyMustBeEncodable;
@@ -43,14 +40,14 @@ public class JceAsymmetricKeyUnwrapper
 
     public JceAsymmetricKeyUnwrapper setProvider(Provider provider)
     {
-        this.helper = new OperatorHelper(new ProviderJcaJceHelper(provider));
+        this.helper = OperatorUtils.createProviderHelper(provider);
 
         return this;
     }
 
     public JceAsymmetricKeyUnwrapper setProvider(String providerName)
     {
-        this.helper = new OperatorHelper(new NamedJcaJceHelper(providerName));
+        this.helper = OperatorUtils.createNamedHelper(providerName);
 
         return this;
     }

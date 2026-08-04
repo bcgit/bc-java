@@ -23,7 +23,7 @@ public class JceCMSMacCalculatorBuilder
     private final ASN1ObjectIdentifier macOID;
     private final int                  keySize;
 
-    private EnvelopedDataHelper helper = new EnvelopedDataHelper(new DefaultJcaJceExtHelper());
+    private EnvelopedDataHelper helper = CMSUtils.createDefaultHelper();
     private AlgorithmParameters algorithmParameters;
     private SecureRandom random;
 
@@ -46,7 +46,7 @@ public class JceCMSMacCalculatorBuilder
      */
     public JceCMSMacCalculatorBuilder setProvider(Provider provider)
     {
-        this.helper = new EnvelopedDataHelper(new ProviderJcaJceExtHelper(provider));
+        this.helper = CMSUtils.createProviderHelper(provider);
 
         return this;
     }
@@ -59,7 +59,7 @@ public class JceCMSMacCalculatorBuilder
      */
     public JceCMSMacCalculatorBuilder setProvider(String providerName)
     {
-        this.helper = new EnvelopedDataHelper(new NamedJcaJceExtHelper(providerName));
+        this.helper = CMSUtils.createNamedHelper(providerName);
 
         return this;
     }

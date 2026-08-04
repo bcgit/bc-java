@@ -97,13 +97,15 @@ public class SignatureSpi
     private static AsymmetricKeyParameter getLwEdDSAKeyPrivate(PrivateKey key)
         throws InvalidKeyException
     {
-        return EdECUtil.generatePrivateKeyParameter(key);
+        // the EdDSAKeys jdk1.15 twin also accepts the JDK 15+ EdECPrivateKey here.
+        return EdDSAKeys.generatePrivateKeyParameter(key);
     }
 
     private static AsymmetricKeyParameter getLwEdDSAKeyPublic(PublicKey key)
         throws InvalidKeyException
     {
-        return EdECUtil.generatePublicKeyParameter(key);
+        // the EdDSAKeys jdk1.15 twin also accepts the JDK 15+ EdECPublicKey here.
+        return EdDSAKeys.generatePublicKeyParameter(key);
     }
 
     private Signer getSigner(String alg)
@@ -171,18 +173,18 @@ public class SignatureSpi
     protected void engineSetParameter(AlgorithmParameterSpec params)
         throws InvalidAlgorithmParameterException
     {
-        if (params instanceof EdDSAParameterSpec)
-        {
-            EdDSAParameterSpec edSpec = (EdDSAParameterSpec)params;
-
-            checkCurve(edSpec.getCurveName());
-            applyParams(edSpec.isPrehash(), edSpec.getContext());
-        }
-        else
+        // on JDK 15+ the EdDSAKeys twin also reads the standard java.security.spec.EdDSAParameterSpec
+        // here - that spec carries no curve name (the curve comes from the key), so checkCurve then
+        // has nothing to cross-check.
+        EdDSAInstanceParams instanceParams = EdDSAKeys.getInstanceParams(params);
+        if (instanceParams == null)
         {
             throw new InvalidAlgorithmParameterException("unknown AlgorithmParameterSpec for EdDSA: "
                 + ((params == null) ? "null" : params.getClass().getName()));
         }
+
+        checkCurve(instanceParams.curveName);
+        applyParams(instanceParams.prehash, instanceParams.context);
     }
 
     /**

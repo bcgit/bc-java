@@ -8,11 +8,13 @@ import org.bouncycastle.jcajce.spec.EdDSAParameterSpec;
 
 /**
  * AlgorithmParameters for the RFC 8032 EdDSA instance selectors (prehash / context) carried by
- * {@link EdDSAParameterSpec}. These parameters have <b>no encoded form</b>: RFC 8410 specifies the
- * EdDSA AlgorithmIdentifier with absent parameters, and the prehash flag / context are not part of
- * any standard ASN.1 parameter structure, so {@code engineGetEncoded} / {@code engineInit(byte[])}
- * throw {@link IOException}. The class exists as a spec container so that Signature.getParameters()
- * can report the selected instance and callers can copy it between Signature objects.
+ * {@link EdDSAParameterSpec}. On JDK 15+ the standard {@code java.security.spec.EdDSAParameterSpec}
+ * is also read and produced, via the multi-release {@link EdDSAKeys} twin. These parameters have
+ * <b>no encoded form</b>: RFC 8410 specifies the EdDSA AlgorithmIdentifier with absent parameters,
+ * and the prehash flag / context are not part of any standard ASN.1 parameter structure, so
+ * {@code engineGetEncoded} / {@code engineInit(byte[])} throw {@link IOException}. The class exists
+ * as a spec container so that Signature.getParameters() can report the selected instance and
+ * callers can copy it between Signature objects.
  */
 public class AlgorithmParametersSpi
     extends java.security.AlgorithmParametersSpi
@@ -31,16 +33,15 @@ public class AlgorithmParametersSpi
     protected void engineInit(AlgorithmParameterSpec paramSpec)
         throws InvalidParameterSpecException
     {
-        if (!(paramSpec instanceof EdDSAParameterSpec))
+        EdDSAInstanceParams instanceParams = EdDSAKeys.getInstanceParams(paramSpec);
+        if (instanceParams == null)
         {
             throw new InvalidParameterSpecException("unknown AlgorithmParameterSpec for EdDSA: "
                 + ((paramSpec == null) ? "null" : paramSpec.getClass().getName()));
         }
 
-        EdDSAParameterSpec edSpec = (EdDSAParameterSpec)paramSpec;
-
-        this.prehash = edSpec.isPrehash();
-        this.context = edSpec.getContext();
+        this.prehash = instanceParams.prehash;
+        this.context = instanceParams.context;
         this.initialised = true;
     }
 
@@ -71,6 +72,13 @@ public class AlgorithmParametersSpi
         if (paramSpec == EdDSAParameterSpec.class || paramSpec == AlgorithmParameterSpec.class)
         {
             return new EdDSAParameterSpec(curveName, prehash, context);
+        }
+
+        // on JDK 15+ the EdDSAKeys twin also produces the standard java.security.spec.EdDSAParameterSpec.
+        AlgorithmParameterSpec versionSpec = EdDSAKeys.getParameterSpec(paramSpec, prehash, context);
+        if (versionSpec != null)
+        {
+            return versionSpec;
         }
 
         throw new InvalidParameterSpecException("AlgorithmParameterSpec not recognized: " + paramSpec.getName());

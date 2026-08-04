@@ -103,10 +103,10 @@ public class KeyPairGeneratorSpi
         {
         case Ed25519:
         case Ed448:
-            return new KeyPair(new BCEdDSAPublicKey(kp.getPublic()), new BCEdDSAPrivateKey(kp.getPrivate()));
+            return new KeyPair(EdDSAKeys.publicKey(kp.getPublic()), EdDSAKeys.privateKey(kp.getPrivate()));
         case X25519:
         case X448:
-            return new KeyPair(new BCXDHPublicKey(kp.getPublic()), new BCXDHPrivateKey(kp.getPrivate()));
+            return new KeyPair(XDHKeys.publicKey(kp.getPublic()), XDHKeys.privateKey(kp.getPrivate()));
         default:
             throw new IllegalStateException("generator not correctly initialized");
         }

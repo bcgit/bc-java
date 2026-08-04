@@ -43,9 +43,6 @@ import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.jcajce.spec.GOST28147WrapParameterSpec;
 import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
-import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
-import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
-import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
 import org.bouncycastle.operator.AsymmetricKeyWrapper;
 import org.bouncycastle.operator.GenericKey;
 import org.bouncycastle.operator.OperatorException;
@@ -71,7 +68,7 @@ public class JceAsymmetricKeyWrapper
         return gostAlgs.contains(algorithm);
     }
 
-    private OperatorHelper helper = new OperatorHelper(new DefaultJcaJceHelper());
+    private OperatorHelper helper = OperatorUtils.createDefaultHelper();
     private Map extraMappings = new HashMap();
     private PublicKey publicKey;
     private SecureRandom random;
@@ -131,14 +128,14 @@ public class JceAsymmetricKeyWrapper
 
     public JceAsymmetricKeyWrapper setProvider(Provider provider)
     {
-        this.helper = new OperatorHelper(new ProviderJcaJceHelper(provider));
+        this.helper = OperatorUtils.createProviderHelper(provider);
 
         return this;
     }
 
     public JceAsymmetricKeyWrapper setProvider(String providerName)
     {
-        this.helper = new OperatorHelper(new NamedJcaJceHelper(providerName));
+        this.helper = OperatorUtils.createNamedHelper(providerName);
 
         return this;
     }

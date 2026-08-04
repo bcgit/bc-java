@@ -11,6 +11,7 @@ import org.bouncycastle.crypto.agreement.SM9KeyExchange;
 import org.bouncycastle.crypto.params.SM9EncPrivateKeyParameters;
 import org.bouncycastle.crypto.params.SM9EncPublicKeyParameters;
 import org.bouncycastle.jcajce.provider.asymmetric.util.BaseAgreementSpi;
+import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 import org.bouncycastle.jcajce.spec.SM9KeyExchangeSpec;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.Arrays;
@@ -114,7 +115,7 @@ public class KeyAgreementSpi
         catch (IllegalArgumentException e)
         {
             // an invalid peer ephemeral point
-            throw new InvalidKeyException(e.getMessage(), e);
+            throw SecurityExceptions.invalidKeyException(e.getMessage(), e);
         }
 
         return null;

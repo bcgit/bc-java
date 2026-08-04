@@ -436,29 +436,25 @@ public class PKCS12PBMAC1KeyStoreSpi
     public String engineGetCertificateAlias(
         Certificate cert)
     {
-        Enumeration c = certs.elements();
-        Enumeration k = certs.keys();
-
-        while (c.hasMoreElements())
+        // the certs table's keys() enumerates a copy of the table, so it cannot be
+        // paired positionally with elements() - look each alias up instead (github #2384).
+        for (Enumeration k = certs.keys(); k.hasMoreElements();)
         {
-            Certificate tc = (Certificate)c.nextElement();
             String ta = (String)k.nextElement();
+            Certificate tc = (Certificate)certs.get(ta);
 
-            if (tc.equals(cert))
+            if (tc != null && tc.equals(cert))
             {
                 return ta;
             }
         }
 
-        c = keyCerts.elements();
-        k = keyCerts.keys();
-
-        while (c.hasMoreElements())
+        for (Enumeration k = keyCerts.keys(); k.hasMoreElements();)
         {
-            Certificate tc = (Certificate)c.nextElement();
             String ta = (String)k.nextElement();
+            Certificate tc = (Certificate)keyCerts.get(ta);
 
-            if (tc.equals(cert))
+            if (tc != null && tc.equals(cert))
             {
                 return ta;
             }

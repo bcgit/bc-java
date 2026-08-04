@@ -31,9 +31,6 @@ import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.bcpg.X25519PublicBCPGKey;
 import org.bouncycastle.bcpg.X448PublicBCPGKey;
 import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
-import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
-import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
-import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPrivateKey;
@@ -48,8 +45,8 @@ import org.bouncycastle.util.Arrays;
 
 public class JcePublicKeyDataDecryptorFactoryBuilder
 {
-    private OperatorHelper helper = new OperatorHelper(new DefaultJcaJceHelper());
-    private OperatorHelper contentHelper = new OperatorHelper(new DefaultJcaJceHelper());
+    private OperatorHelper helper = OperatorUtils.createDefaultHelper();
+    private OperatorHelper contentHelper = OperatorUtils.createDefaultHelper();
     private JceAEADUtil aeadHelper = new JceAEADUtil(contentHelper);
     private JcaPGPKeyConverter keyConverter = new JcaPGPKeyConverter();
     private JcaKeyFingerprintCalculator fingerprintCalculator = new JcaKeyFingerprintCalculator();
@@ -66,7 +63,7 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
      */
     public JcePublicKeyDataDecryptorFactoryBuilder setProvider(Provider provider)
     {
-        this.helper = new OperatorHelper(new ProviderJcaJceHelper(provider));
+        this.helper = OperatorUtils.createProviderHelper(provider);
         keyConverter.setProvider(provider);
         this.contentHelper = helper;
         this.aeadHelper = new JceAEADUtil(contentHelper);
@@ -82,7 +79,7 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
      */
     public JcePublicKeyDataDecryptorFactoryBuilder setProvider(String providerName)
     {
-        this.helper = new OperatorHelper(new NamedJcaJceHelper(providerName));
+        this.helper = OperatorUtils.createNamedHelper(providerName);
         keyConverter.setProvider(providerName);
         this.contentHelper = helper;
         this.aeadHelper = new JceAEADUtil(contentHelper);
@@ -92,7 +89,7 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
 
     public JcePublicKeyDataDecryptorFactoryBuilder setContentProvider(Provider provider)
     {
-        this.contentHelper = new OperatorHelper(new ProviderJcaJceHelper(provider));
+        this.contentHelper = OperatorUtils.createProviderHelper(provider);
         this.aeadHelper = new JceAEADUtil(contentHelper);
 
         return this;
@@ -100,7 +97,7 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
 
     public JcePublicKeyDataDecryptorFactoryBuilder setContentProvider(String providerName)
     {
-        this.contentHelper = new OperatorHelper(new NamedJcaJceHelper(providerName));
+        this.contentHelper = OperatorUtils.createNamedHelper(providerName);
         this.aeadHelper = new JceAEADUtil(contentHelper);
 
         return this;
