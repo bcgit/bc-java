@@ -19,9 +19,9 @@ import org.bouncycastle.util.Integers;
 /**
  * Codec for the implementation-specific BDS traversal state stored with an XMSS or XMSSMT private key.
  * <p>
- * RFC 8391 Sections 4.1.7 and 4.2.2 leave the private-key representation unspecified, and Section 7
- * describes BDS only as an optimized authentication-path implementation. Consequently, this versioned
- * encoding is a BC private-key implementation detail, not an RFC-defined interchange format.
+ * RFC 8391 Sections 4.1.7 and 4.2.2 leave the private-key representation unspecified, and Section 4.1.9
+ * refers to BDS [BDS09] only as one of the authentication-path computation optimizations. Consequently,
+ * this versioned encoding is a BC private-key implementation detail, not an RFC-defined interchange format.
  * </p>
  */
 final class BDSStateCodec
