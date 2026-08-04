@@ -602,6 +602,7 @@ CertPath support for implicit DSA parameters and a range of NameConstraints. Add
 <li>bannus &lt;https://github.com/bannus&gt; - diagnosing the BouncyCastleProvider construction slowdown introduced with the AlgorithmParameters.EC SupportedCurves attribute, and the move to a lazy named-curve lookup that builds the attribute without materialising every curve's parameters (issue #2382).</li>
 <li>mauromol &lt;https://github.com/mauromol&gt; - reporting that RSASSA-PSS could not be used with a RIPEMD digest through the JCA API, tracing it to the missing PSS registrations and to DigestFactory.isSameDigest treating two identical non-SHA digest names as different (issue #2381) Reporting that EDIPartyName encoded its DirectoryString members without the RFC 5280 sec. 4.2.1.6 context tags its own decoder requires, so the type could not parse its own output (issue #2380).</li>
 <li>jmeeder &lt;https://github.com/jmeeder&gt; - reporting that RFC 4998 evidence-record generation rejected time stamps from an authority naming the digest with NULL parameters where BC names it with them absent, both of which RFC 5754 requires a receiver to accept (issue #2379).</li>
+<li>rimuln &lt;https://github.com/rimuln&gt; - diagnosis and fix for PKCS12 getCertificateAlias returning the alias of an unrelated certificate, tracing it to the alias and certificate enumerations of the keystore's certs table diverging in order once keys() enumerated a copy (issue #2384).</li>
 </ul>
 </body>
 </html>

@@ -2742,6 +2742,56 @@ public class PKCS12StoreTest
         isTrue(ks.isCertificateEntry("cert0"));
     }
 
+    private void testCertificateAliasConsistency()
+        throws Exception
+    {
+        implCertificateAliasConsistency("PKCS12");
+        implCertificateAliasConsistency("PKCS12-PBMAC1");
+    }
+
+    private void implCertificateAliasConsistency(String storeType)
+        throws Exception
+    {
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("EC", "BC");
+        KeyPair kp = kpGen.generateKeyPair();
+
+        // enough entries that the enumeration order of a copied hashtable diverges from
+        // the original's - getCertificateAlias returned the alias of an unrelated
+        // certificate when the alias and certificate enumerations were paired
+        // positionally (github #2384).
+        X509Certificate[] certs = new X509Certificate[12];
+        for (int i = 0; i != certs.length; i++)
+        {
+            certs[i] = TestUtils.createSelfSignedCert(new X500Name("CN=alias-cert-" + i), "SHA256withECDSA", kp);
+        }
+
+        KeyStore store = KeyStore.getInstance(storeType, "BC");
+        store.load(null, null);
+
+        for (int i = 0; i != certs.length; i++)
+        {
+            store.setCertificateEntry("cert-" + i, certs[i]);
+        }
+
+        for (int i = 0; i != certs.length; i++)
+        {
+            isEquals(storeType + " alias mismatch", "cert-" + i, store.getCertificateAlias(certs[i]));
+        }
+
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+
+        store.store(bOut, passwd);
+
+        KeyStore inStore = KeyStore.getInstance(storeType, "BC");
+
+        inStore.load(new ByteArrayInputStream(bOut.toByteArray()), passwd);
+
+        for (int i = 0; i != certs.length; i++)
+        {
+            isEquals(storeType + " alias mismatch after reload", "cert-" + i, inStore.getCertificateAlias(certs[i]));
+        }
+    }
+
     private void testStoreType(String storeType, boolean isMacExpected)
         throws Exception
     {
@@ -2801,6 +2851,7 @@ public class PKCS12StoreTest
         testBCFKSLoad();
         testCertsOnly();
         testJKS();
+        testCertificateAliasConsistency();
         testLoadRepeatedLocalKeyID();
         testDilithiumStore();
         testFalconStore();
