@@ -11,17 +11,12 @@ import java.security.interfaces.RSAPrivateKey;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.PSSParameterSpec;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
-import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Integer;
-import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERNull;
-import org.bouncycastle.asn1.DERSequence;
-import org.bouncycastle.asn1.misc.MiscObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.pkcs.RSASSAPSSparams;
@@ -29,7 +24,6 @@ import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.jcajce.io.OutputStreamFactory;
-import org.bouncycastle.jcajce.spec.CompositeAlgorithmSpec;
 import org.bouncycastle.jcajce.util.DefaultJcaJceHelper;
 import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
 import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
@@ -41,7 +35,6 @@ import org.bouncycastle.operator.DigestAlgorithmIdentifierFinder;
 import org.bouncycastle.operator.ExtendedContentSigner;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.RuntimeOperatorException;
-import org.bouncycastle.operator.SignatureAlgorithmIdentifierFinder;
 import org.bouncycastle.util.Strings;
 
 /**
@@ -123,14 +116,6 @@ public class JcaContentSignerBuilder
             this.sigAlgId = new AlgorithmIdentifier(
                                     PKCSObjectIdentifiers.id_RSASSA_PSS, createPSSParams(signatureAlgorithm, pssSpec));
         }
-        else if (sigParamSpec instanceof CompositeAlgorithmSpec)
-        {
-            CompositeAlgorithmSpec compSpec = (CompositeAlgorithmSpec)sigParamSpec;
-
-            this.sigAlgSpec = compSpec;
-            this.sigAlgId = new AlgorithmIdentifier(
-                                    MiscObjectIdentifiers.id_alg_composite, createCompParams(compSpec));
-        }
         else
         {
             throw new IllegalArgumentException("unknown sigParamSpec: "
@@ -159,12 +144,6 @@ public class JcaContentSignerBuilder
         return this;
     }
 
-    // NOTE: base's genuine-CompositePrivateKey short-circuit (buildComposite(), driving one
-    // Signature per component key) is dropped here - org.bouncycastle.jcajce.CompositePrivateKey's
-    // jdk1.4 overlay has no getAlgorithmIdentifier() (composite JCE support is excluded from the
-    // jdk1.4 distribution's asymmetric.compositesignatures/compositekem packages), so no real
-    // CompositePrivateKey ever reaches build() here. The ASN.1-only CompositeAlgorithmSpec handling
-    // in the constructor above is unrelated and stays, matching the pre-existing overlay shape.
     public ContentSigner build(PrivateKey privateKey)
         throws OperatorCreationException
     {
@@ -359,34 +338,5 @@ public class JcaContentSignerBuilder
             new AlgorithmIdentifier(PKCSObjectIdentifiers.id_mgf1, mgfDig),
             ASN1Integer.valueOf(pssSpec.getSaltLength()),
             RSASSAPSSparams.DEFAULT_TRAILER_FIELD);
-    }
-
-    private static ASN1Sequence createCompParams(CompositeAlgorithmSpec compSpec)
-    {
-        SignatureAlgorithmIdentifierFinder algFinder = new DefaultSignatureAlgorithmIdentifierFinder();
-        ASN1EncodableVector v = new ASN1EncodableVector();
-
-        List<String> algorithmNames = compSpec.getAlgorithmNames();
-        List<AlgorithmParameterSpec> algorithmSpecs = compSpec.getParameterSpecs();
-
-        for (int i = 0; i != algorithmNames.size(); i++)
-        {
-            AlgorithmParameterSpec sigSpec = (AlgorithmParameterSpec)algorithmSpecs.get(i);
-            if (sigSpec == null)
-            {
-                v.add(algFinder.find((String)algorithmNames.get(i)));
-            }
-            else if (sigSpec instanceof PSSParameterSpec)
-            {
-                v.add(new AlgorithmIdentifier(PKCSObjectIdentifiers.id_RSASSA_PSS,
-                    createPSSParams((String)algorithmNames.get(i), (PSSParameterSpec)sigSpec)));
-            }
-            else
-            {
-                throw new IllegalArgumentException("unrecognized parameterSpec");
-            }
-        }
-
-        return new DERSequence(v);
     }
 }

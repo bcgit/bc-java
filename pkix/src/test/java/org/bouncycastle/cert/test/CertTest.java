@@ -5,9 +5,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.io.Serializable;
 import java.io.UnsupportedEncodingException;
 import java.math.BigInteger;
+import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
@@ -51,6 +53,7 @@ import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Enumerated;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERNull;
@@ -107,7 +110,6 @@ import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
 import org.bouncycastle.asn1.iana.IANAObjectIdentifiers;
 import org.bouncycastle.jcajce.CompositePrivateKey;
 import org.bouncycastle.jcajce.CompositePublicKey;
-import org.bouncycastle.jcajce.spec.CompositeAlgorithmSpec;
 import org.bouncycastle.jcajce.spec.MLDSAParameterSpec;
 import org.bouncycastle.jcajce.spec.SLHDSAParameterSpec;
 import org.bouncycastle.jce.X509KeyUsage;
@@ -4248,14 +4250,55 @@ public class CertTest
         //
         // create the certificate - version 3
         //
-        CompositeAlgorithmSpec compAlgSpec = new CompositeAlgorithmSpec.Builder()
-            .add("SHA256withECDSA")
-            .add("LMS")
-            .build();
         CompositePublicKey compPub = new CompositePublicKey(ecPub, lmsPub);
         CompositePrivateKey compPrivKey = new CompositePrivateKey(ecPriv, lmsPriv);
 
-        ContentSigner sigGen = new JcaContentSignerBuilder("Composite", compAlgSpec).setProvider(BC).build(compPrivKey);
+        // Legacy composite signature *creation* via JcaContentSignerBuilder has since been
+        // removed (verification is unaffected), so the genuine 2-of-2 signature here is built
+        // directly from two raw java.security.Signature instances rather than through the builder.
+        final DefaultSignatureAlgorithmIdentifierFinder compSigAlgFinder = new DefaultSignatureAlgorithmIdentifierFinder();
+        final AlgorithmIdentifier compSigAlgId = new AlgorithmIdentifier(
+            MiscObjectIdentifiers.id_alg_composite,
+            new DERSequence(compSigAlgFinder.find("SHA256withECDSA"), compSigAlgFinder.find("LMS")));
+        final Signature compEcSig = Signature.getInstance("SHA256withECDSA", BC);
+        compEcSig.initSign(ecPriv);
+        final Signature compLmsSig = Signature.getInstance("LMS", "BCPQC");
+        compLmsSig.initSign(lmsPriv);
+
+        ContentSigner sigGen = new ContentSigner()
+        {
+            private final ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+
+            public AlgorithmIdentifier getAlgorithmIdentifier()
+            {
+                return compSigAlgId;
+            }
+
+            public OutputStream getOutputStream()
+            {
+                return bOut;
+            }
+
+            public byte[] getSignature()
+            {
+                try
+                {
+                    byte[] tbs = bOut.toByteArray();
+                    compEcSig.update(tbs);
+                    compLmsSig.update(tbs);
+                    return new DERSequence(new DERBitString(compEcSig.sign()), new DERBitString(compLmsSig.sign()))
+                        .getEncoded(ASN1Encoding.DER);
+                }
+                catch (GeneralSecurityException e)
+                {
+                    throw new RuntimeException(e);
+                }
+                catch (IOException e)
+                {
+                    throw new RuntimeException(e);
+                }
+            }
+        };
 
         X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(
             issuer,
@@ -4400,10 +4443,6 @@ public class CertTest
         //
         // create the certificate - version 3
         //
-        CompositeAlgorithmSpec compAlgSpec = new CompositeAlgorithmSpec.Builder()
-            .add("SHA256withECDSA")
-            .add("LMS")
-            .build();
         CompositePublicKey compPub = new CompositePublicKey(ecPub, lmsPub);
         CompositePrivateKey compPrivKey = new CompositePrivateKey(ecPriv, lmsPriv);
 
