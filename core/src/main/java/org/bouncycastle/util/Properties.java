@@ -288,7 +288,7 @@ public class Properties
      * X509CertificateReviewer reports the empty issuer whether or not the property is set. Read via
      * {@link #isOverrideSet(String)}.
      */
-    public static final String X509_ALLOW_EMPTY_ISSUER = "org.bouncycastle.x509.allow_empty_issuer";
+    public static final String X509_ALLOW_EMPTY_ISSUER_CERT = "org.bouncycastle.x509.allow_empty_issuer_cert";
 
     /**
      * Opt in to short AEAD authentication tags for AES-GCM parameters. RFC 5084 constrains the

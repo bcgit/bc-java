@@ -161,7 +161,7 @@ public class TBSCertificate
         // reviewer reports the problem regardless, and generation stays strict.
         if (issuer.size() == 0)
         {
-            if (errors != null || !Properties.isOverrideSet(Properties.X509_ALLOW_EMPTY_ISSUER))
+            if (errors != null || !Properties.isOverrideSet(Properties.X509_ALLOW_EMPTY_ISSUER_CERT))
             {
                 reportProblem(errors, "certificate issuer is an empty distinguished name");
             }
