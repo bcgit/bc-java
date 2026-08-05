@@ -64,11 +64,8 @@ task stampVersion {
     }
 }
 
-// Temporarily unwired on this branch: the 1.85.2 backports are deliberately confined to core
-// and prov, and stamping rewrites the pg armor version in place on every compile, reintroducing
-// a pg working-tree diff after it has been reverted. Re-enable when pg is meant to move.
-// compileJava.dependsOn stampVersion
-// compileTestJava.dependsOn stampVersion
+compileJava.dependsOn stampVersion
+compileTestJava.dependsOn stampVersion
 
 compileJava {
 
