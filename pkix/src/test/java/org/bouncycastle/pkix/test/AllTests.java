@@ -18,7 +18,7 @@ public class AllTests
     
     public static Test suite()
     {
-        TestSuite suite = new TestSuite("PKIX Tests");
+        TestSuite suite = new TestSuite("PKCS Tests");
         
         suite.addTestSuite(CheckerTest.class);
         suite.addTestSuite(RevocationTest.class);
