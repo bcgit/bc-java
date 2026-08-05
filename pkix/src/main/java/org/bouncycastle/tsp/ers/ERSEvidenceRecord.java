@@ -7,6 +7,7 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
@@ -61,7 +62,7 @@ public class ERSEvidenceRecord
     public ERSEvidenceRecord(InputStream ersIn, DigestCalculatorProvider digestCalculatorProvider)
         throws TSPException, ERSException, IOException
     {
-        this(EvidenceRecord.getInstance(Streams.readAll(ersIn)), digestCalculatorProvider);
+        this(parseEvidenceRecord(Streams.readAll(ersIn)), digestCalculatorProvider);
     }
 
     /**
@@ -73,7 +74,32 @@ public class ERSEvidenceRecord
     public ERSEvidenceRecord(byte[] evidenceRecord, DigestCalculatorProvider digestCalculatorProvider)
         throws TSPException, ERSException
     {
-        this(EvidenceRecord.getInstance(evidenceRecord), digestCalculatorProvider);
+        this(parseEvidenceRecord(evidenceRecord), digestCalculatorProvider);
+    }
+
+    private static EvidenceRecord parseEvidenceRecord(byte[] evidenceRecord)
+        throws ERSException
+    {
+        try
+        {
+            return EvidenceRecord.getInstance(evidenceRecord);
+        }
+        catch (IllegalArgumentException e)
+        {
+            throw new ERSException("malformed evidence record: " + e.getMessage(), e);
+        }
+        catch (IllegalStateException e)
+        {
+            throw new ERSException("malformed evidence record: " + e.getMessage(), e);
+        }
+        catch (NoSuchElementException e)
+        {
+            throw new ERSException("malformed evidence record: " + e.getMessage(), e);
+        }
+        catch (ArrayIndexOutOfBoundsException e)
+        {
+            throw new ERSException("malformed evidence record: " + e.getMessage(), e);
+        }
     }
 
     /**
