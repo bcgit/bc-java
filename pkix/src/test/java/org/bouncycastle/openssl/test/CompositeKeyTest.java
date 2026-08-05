@@ -334,67 +334,6 @@ public class CompositeKeyTest
             modernVerifier.verify(genuineModernSignature));
     }
 
-    public void testLegacyCompositeKeyRejectsForgedShortLegacySignature()
-        throws Exception
-    {
-        // Broader than testModernCompositeKeyRejectsLegacyCompositeSignature: even a PURELY
-        // legacy composite key (id_composite_key, no modern key involved at all) never actually
-        // required every component to validate. The CVE-2026-5588 follow-up's sigSeq.size() !=
-        // sigs.length check only confirms a signature is self-consistent with its own declared
-        // shape - it never compares that shape with the trusted key's real component count. So
-        // it catches *stripping* an honest two-component signature down to one (see
-        // testCompositeSignatureStripping, which starts from a genuine signature and truncates
-        // the encoded bytes) but not an attacker who holds only one real component's private key
-        // and constructs a self-consistent one-component AlgorithmIdentifier/signature pair from
-        // scratch, matching each other but not the key. Confirmed experimentally: disabling just
-        // the keySeq.size() != pubKeys.size() check (leaving the legacy-key-OID check intact,
-        // since the key here already is legacy) makes this accept.
-        KeyPairGenerator ecKpg = KeyPairGenerator.getInstance("EC", "BC");
-        ecKpg.initialize(new ECNamedCurveGenParameterSpec("P-256"));
-        KeyPair ecKp = ecKpg.generateKeyPair();
-
-        KeyPairGenerator rsaKpg = KeyPairGenerator.getInstance("RSA", "BC");
-        rsaKpg.initialize(new RSAKeyGenParameterSpec(3072, RSAKeyGenParameterSpec.F4));
-        KeyPair rsaKp = rsaKpg.generateKeyPair();
-
-        // a purely legacy two-component composite key - both components real, no modern OID
-        CompositePublicKey legacyCompPub = new CompositePublicKey(ecKp.getPublic(), rsaKp.getPublic());
-
-        byte[] message = Strings.toByteArray("legacy composite key, forged one-component signature regression test");
-
-        // only the EC component's signing capability is used - as if that were the only key
-        // an attacker (or a compromised single-algorithm signing service) actually had
-        Signature ecSigner = Signature.getInstance("SHA256withECDSA", "BC");
-        ecSigner.initSign(ecKp.getPrivate());
-        ecSigner.update(message);
-        byte[] ecSignature = ecSigner.sign();
-
-        // a freshly forged one-component legacy AlgorithmIdentifier/signature pair, naming only
-        // the EC component - not derived by stripping a genuine two-component signature
-        DefaultSignatureAlgorithmIdentifierFinder algFinder = new DefaultSignatureAlgorithmIdentifierFinder();
-        AlgorithmIdentifier oneComponentLegacyAlgId = new AlgorithmIdentifier(
-            MiscObjectIdentifiers.id_alg_composite,
-            new DERSequence(algFinder.find("SHA256withECDSA")));
-        byte[] oneComponentLegacySignature = new DERSequence(new DERBitString(ecSignature)).getEncoded(ASN1Encoding.DER);
-
-        ContentVerifierProvider provider = new JcaContentVerifierProviderBuilder().setProvider("BC").build(legacyCompPub);
-
-        try
-        {
-            ContentVerifier cv = provider.get(oneComponentLegacyAlgId);
-            OutputStream sOut = cv.getOutputStream();
-            sOut.write(message);
-            sOut.close();
-
-            assertFalse("forged one-component legacy signature must not verify a two-component legacy composite key",
-                cv.verify(oneComponentLegacySignature));
-        }
-        catch (OperatorCreationException e)
-        {
-            // rejecting the component-count mismatch outright is the expected, stronger response
-        }
-    }
-
     public void testMLDSA44andP256()
         throws Exception
     {

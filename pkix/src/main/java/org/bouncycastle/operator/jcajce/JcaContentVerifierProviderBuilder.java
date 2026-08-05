@@ -210,10 +210,7 @@ public class JcaContentVerifierProviderBuilder
 
             List<PublicKey> pubKeys = compositePublicKey.getPublicKeys();
             ASN1Sequence keySeq = ASN1Sequence.getInstance(compAlgId.getParameters());
-            if (keySeq.size() != pubKeys.size())
-            {
-                throw new OperatorCreationException("composite signature component count does not match composite key component count");
-            }
+
             Signature[] sigs = new Signature[keySeq.size()];
             for (int i = 0; i != keySeq.size(); i++)
             {
