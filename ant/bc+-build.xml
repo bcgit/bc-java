@@ -983,8 +983,6 @@
              <fileset dir="${src.dir}" includes="**/math/**/*Test.java" />
              <fileset dir="${src.dir}" includes="**/crypto/*/*Test.java" />
              <fileset dir="${src.dir}" includes="**/crypto/agreement/owl/*Test.java" />
-             <fileset dir="${src.dir}" includes="**/pqc/crypto/hqc/*Test.java" />
-             <fileset dir="${src.dir}" includes="**/pqc/math/ntru/*Test.java" />
              <fileset dir="${src.dir}" includes="**/tsp/*UnitTest.java" />
              <fileset dir="${src.dir}" includes="**/utiltest/*Test.java" />
              <fileset dir="${src.dir}" includes="**/util/io/pem/*Test.java" />
@@ -1023,6 +1021,8 @@
 
         <delete file="${test.target.src.dir}/org/bouncycastle/pqc/crypto/lms/AllTests.java" />
         <delete file="${test.target.src.dir}/org/bouncycastle/pqc/crypto/mayo/AllTests.java" />
+        <delete file="${test.target.src.dir}/org/bouncycastle/pqc/crypto/hqc/AllTests.java" />
+        <delete file="${test.target.src.dir}/org/bouncycastle/pqc/math/ntru/AllTests.java" />
         <delete file="${test.target.src.dir}/org/bouncycastle/est/AllTests.java" />
         <delete file="${test.target.src.dir}/org/bouncycastle/gpg/keybox/AllTests.java" />
         <delete file="${test.target.src.dir}/org/bouncycastle/x509/CertPathReviewerMessages_de.properties" />
