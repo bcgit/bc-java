@@ -371,8 +371,12 @@
                  <exclude name="org/bouncycastle/**/AllTests.java" />
                  <exclude name="org/bouncycastle/test/*.java" />
                  <exclude name="org/bouncycastle/**/test/**" />
-                 <exclude name="org/bouncycastle/crypto/*/*Test.java" />
-                 <exclude name="org/bouncycastle/asn1/*/*Test.java" />
+                 <!-- any depth: a unit test living directly in a main-namespace package to reach
+                      a package-private class is missed by a single-level glob and swept into
+                      bcprov, where a junit.framework.TestCase subclass makes bnd emit an
+                      Import-Package on junit for a production crypto bundle. -->
+                 <exclude name="org/bouncycastle/crypto/**/*Test.java" />
+                 <exclude name="org/bouncycastle/asn1/**/*Test.java" />
                  <exclude name="org/bouncycastle/util/*Test.java" />
                  <exclude name="org/bouncycastle/pqc/**/*Tests.java" />
                  <exclude name="org/bouncycastle/pqc/**/*Test.java" />

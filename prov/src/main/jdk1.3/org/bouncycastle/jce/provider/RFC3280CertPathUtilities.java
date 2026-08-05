@@ -48,6 +48,7 @@ import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.asn1.x509.GeneralSubtree;
 import org.bouncycastle.asn1.x509.IssuingDistributionPoint;
+import org.bouncycastle.asn1.x509.PKIXCRLValidator;
 import org.bouncycastle.asn1.x509.NameConstraints;
 import org.bouncycastle.asn1.x509.PolicyInformation;
 import org.bouncycastle.jcajce.PKIXCRLStore;
@@ -366,23 +367,8 @@ class RFC3280CertPathUtilities
         {
             throw new AnnotatedException("Issuing distribution point extension could not be decoded.", e);
         }
-        // (d) (1)
-        if (idp != null && idp.getOnlySomeReasons() != null && dp.getReasons() != null)
-        {
-            return new ReasonsMask(dp.getReasons()).intersect(new ReasonsMask(idp.getOnlySomeReasons()));
-        }
-        // (d) (4)
-        if ((idp == null || idp.getOnlySomeReasons() == null) && dp.getReasons() == null)
-        {
-            return ReasonsMask.allReasons;
-        }
-        // (d) (2) and (d)(3)
-        return (dp.getReasons() == null
-            ? ReasonsMask.allReasons
-            : new ReasonsMask(dp.getReasons())).intersect(idp == null
-            ? ReasonsMask.allReasons
-            : new ReasonsMask(idp.getOnlySomeReasons()));
-
+        // (d) (1..4) Intersect the IDP and DP reasons; absent reasons are interpreted as AllReasons
+        return new ReasonsMask(PKIXCRLValidator.intersectReasons(idp, dp));
     }
 
     public static final String CERTIFICATE_POLICIES = Extension.certificatePolicies.getId();
@@ -1634,7 +1620,7 @@ class RFC3280CertPathUtilities
                  * can update it. If this CRL does not contain new reasons it
                  * must be ignored.
                  */
-                if (!interimReasonsMask.hasNewReasons(reasonMask))
+                if (!reasonMask.hasNewReasons(interimReasonsMask))
                 {
                     continue;
                 }
