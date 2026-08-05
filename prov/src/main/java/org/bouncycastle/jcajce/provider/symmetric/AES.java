@@ -159,7 +159,7 @@ public final class AES
     {
         public CBC256()
         {
-            super(192, CBCBlockCipher.newInstance(AESEngine.newInstance()), 128);
+            super(256, CBCBlockCipher.newInstance(AESEngine.newInstance()), 128);
         }
     }
 
