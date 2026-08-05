@@ -24,6 +24,7 @@ import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.iana.IANAObjectIdentifiers;
 import org.bouncycastle.asn1.misc.MiscObjectIdentifiers;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -32,6 +33,7 @@ import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
 import org.bouncycastle.jcajce.CompositePrivateKey;
 import org.bouncycastle.jcajce.CompositePublicKey;
+import org.bouncycastle.jcajce.spec.MLDSAParameterSpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECNamedCurveGenParameterSpec;
 import org.bouncycastle.openssl.PEMParser;
@@ -41,6 +43,7 @@ import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.ContentVerifier;
 import org.bouncycastle.operator.ContentVerifierProvider;
 import org.bouncycastle.operator.DefaultSignatureAlgorithmIdentifierFinder;
+import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaContentVerifierProviderBuilder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
@@ -263,6 +266,133 @@ public class CompositeKeyTest
         sOut.close();
 
         assertFalse("composite signature stripped of a component must not verify", cv.verify(strippedSig));
+    }
+
+    public void testModernCompositeKeyRejectsLegacyCompositeSignature()
+        throws Exception
+    {
+        // A modern fixed-algorithm composite public key (id_MLDSA44_Ed25519_SHA512, two
+        // components) must never be checked via the legacy generic id_alg_composite signature
+        // format. That format trusts an attacker-controlled AlgorithmIdentifier parameter
+        // sequence to say both how many components to check and which key indexes to check them
+        // against - accepting it against a modern key let a one-component (ML-DSA-44 only)
+        // legacy-shaped signature satisfy verification of the two-component modern key, silently
+        // dropping the Ed25519 check the composite identity exists to require.
+        KeyPairGenerator mlDsaKpg = KeyPairGenerator.getInstance("ML-DSA", "BC");
+        mlDsaKpg.initialize(MLDSAParameterSpec.ml_dsa_44);
+        KeyPair mlDsaKp = mlDsaKpg.generateKeyPair();
+
+        KeyPairGenerator edKpg = KeyPairGenerator.getInstance("Ed25519", "BC");
+        KeyPair edKp = edKpg.generateKeyPair();
+
+        CompositePublicKey modernPub = new CompositePublicKey(
+            IANAObjectIdentifiers.id_MLDSA44_Ed25519_SHA512, mlDsaKp.getPublic(), edKp.getPublic());
+
+        byte[] message = Strings.toByteArray("modern composite key, legacy signature downgrade regression test");
+
+        Signature mlDsaSigner = Signature.getInstance("ML-DSA-44", "BC");
+        mlDsaSigner.initSign(mlDsaKp.getPrivate());
+        mlDsaSigner.update(message);
+        byte[] mlDsaSignature = mlDsaSigner.sign();
+
+        // a one-component legacy AlgorithmIdentifier/signature pair naming only ML-DSA-44
+        AlgorithmIdentifier oneComponentLegacyAlgId = new AlgorithmIdentifier(
+            MiscObjectIdentifiers.id_alg_composite,
+            new DERSequence(new AlgorithmIdentifier(NISTObjectIdentifiers.id_ml_dsa_44)));
+        byte[] oneComponentLegacySignature = new DERSequence(new DERBitString(mlDsaSignature)).getEncoded(ASN1Encoding.DER);
+
+        ContentVerifierProvider provider = new JcaContentVerifierProviderBuilder().setProvider("BC").build(modernPub);
+
+        try
+        {
+            ContentVerifier cv = provider.get(oneComponentLegacyAlgId);
+            OutputStream sOut = cv.getOutputStream();
+            sOut.write(message);
+            sOut.close();
+
+            assertFalse("legacy one-component signature must not verify a modern composite key",
+                cv.verify(oneComponentLegacySignature));
+        }
+        catch (OperatorCreationException e)
+        {
+            // rejecting the algorithm/key combination outright is the expected, stronger response
+        }
+
+        // the modern key's own algorithm must still verify a genuine two-component signature
+        CompositePrivateKey modernPriv = new CompositePrivateKey(
+            IANAObjectIdentifiers.id_MLDSA44_Ed25519_SHA512, mlDsaKp.getPrivate(), edKp.getPrivate());
+
+        Signature modernSigner = Signature.getInstance("MLDSA44-Ed25519-SHA512", "BC");
+        modernSigner.initSign(modernPriv);
+        modernSigner.update(message);
+        byte[] genuineModernSignature = modernSigner.sign();
+
+        Signature modernVerifier = Signature.getInstance("MLDSA44-Ed25519-SHA512", "BC");
+        modernVerifier.initVerify(modernPub);
+        modernVerifier.update(message);
+        assertTrue("genuine two-component modern composite signature should verify",
+            modernVerifier.verify(genuineModernSignature));
+    }
+
+    public void testLegacyCompositeKeyRejectsForgedShortLegacySignature()
+        throws Exception
+    {
+        // Broader than testModernCompositeKeyRejectsLegacyCompositeSignature: even a PURELY
+        // legacy composite key (id_composite_key, no modern key involved at all) never actually
+        // required every component to validate. The CVE-2026-5588 follow-up's sigSeq.size() !=
+        // sigs.length check only confirms a signature is self-consistent with its own declared
+        // shape - it never compares that shape with the trusted key's real component count. So
+        // it catches *stripping* an honest two-component signature down to one (see
+        // testCompositeSignatureStripping, which starts from a genuine signature and truncates
+        // the encoded bytes) but not an attacker who holds only one real component's private key
+        // and constructs a self-consistent one-component AlgorithmIdentifier/signature pair from
+        // scratch, matching each other but not the key. Confirmed experimentally: disabling just
+        // the keySeq.size() != pubKeys.size() check (leaving the legacy-key-OID check intact,
+        // since the key here already is legacy) makes this accept.
+        KeyPairGenerator ecKpg = KeyPairGenerator.getInstance("EC", "BC");
+        ecKpg.initialize(new ECNamedCurveGenParameterSpec("P-256"));
+        KeyPair ecKp = ecKpg.generateKeyPair();
+
+        KeyPairGenerator rsaKpg = KeyPairGenerator.getInstance("RSA", "BC");
+        rsaKpg.initialize(new RSAKeyGenParameterSpec(3072, RSAKeyGenParameterSpec.F4));
+        KeyPair rsaKp = rsaKpg.generateKeyPair();
+
+        // a purely legacy two-component composite key - both components real, no modern OID
+        CompositePublicKey legacyCompPub = new CompositePublicKey(ecKp.getPublic(), rsaKp.getPublic());
+
+        byte[] message = Strings.toByteArray("legacy composite key, forged one-component signature regression test");
+
+        // only the EC component's signing capability is used - as if that were the only key
+        // an attacker (or a compromised single-algorithm signing service) actually had
+        Signature ecSigner = Signature.getInstance("SHA256withECDSA", "BC");
+        ecSigner.initSign(ecKp.getPrivate());
+        ecSigner.update(message);
+        byte[] ecSignature = ecSigner.sign();
+
+        // a freshly forged one-component legacy AlgorithmIdentifier/signature pair, naming only
+        // the EC component - not derived by stripping a genuine two-component signature
+        DefaultSignatureAlgorithmIdentifierFinder algFinder = new DefaultSignatureAlgorithmIdentifierFinder();
+        AlgorithmIdentifier oneComponentLegacyAlgId = new AlgorithmIdentifier(
+            MiscObjectIdentifiers.id_alg_composite,
+            new DERSequence(algFinder.find("SHA256withECDSA")));
+        byte[] oneComponentLegacySignature = new DERSequence(new DERBitString(ecSignature)).getEncoded(ASN1Encoding.DER);
+
+        ContentVerifierProvider provider = new JcaContentVerifierProviderBuilder().setProvider("BC").build(legacyCompPub);
+
+        try
+        {
+            ContentVerifier cv = provider.get(oneComponentLegacyAlgId);
+            OutputStream sOut = cv.getOutputStream();
+            sOut.write(message);
+            sOut.close();
+
+            assertFalse("forged one-component legacy signature must not verify a two-component legacy composite key",
+                cv.verify(oneComponentLegacySignature));
+        }
+        catch (OperatorCreationException e)
+        {
+            // rejecting the component-count mismatch outright is the expected, stronger response
+        }
     }
 
     public void testMLDSA44andP256()
