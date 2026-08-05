@@ -24,6 +24,7 @@ import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.PBEParametersGenerator;
 import org.bouncycastle.crypto.digests.GOST3411Digest;
+import org.bouncycastle.crypto.digests.MD5Digest;
 import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.digests.SHA224Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
@@ -32,9 +33,12 @@ import org.bouncycastle.crypto.digests.SHA3Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.digests.SHA512tDigest;
 import org.bouncycastle.crypto.digests.SM3Digest;
+import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.generators.OpenSSLPBEParametersGenerator;
 import org.bouncycastle.crypto.generators.PKCS12ParametersGenerator;
 import org.bouncycastle.crypto.generators.PKCS5S2ParametersGenerator;
+import org.bouncycastle.crypto.modes.CBCBlockCipher;
+import org.bouncycastle.crypto.paddings.PaddedBufferedBlockCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.jcajce.PKCS12Key;
@@ -916,6 +920,51 @@ public class PBETest
 
         testMixedKeyTypes();
         testNullSalt();
+        testAES256CBCPKCS12KeySize();
+    }
+
+    private void testAES256CBCPKCS12KeySize()
+        throws Exception
+    {
+        String cipherAlgo = "2.16.840.1.101.3.4.1.42"; // id_aes256_CBC - BaseBlockCipher$CBC256
+
+        char[] password = "hello world".toCharArray();
+        byte[] salt = Hex.decode("0102030405060708");
+        int iCount = 100;
+
+        Cipher cipher = Cipher.getInstance(cipherAlgo, "BC");
+        cipher.init(Cipher.ENCRYPT_MODE, new PKCS12Key(password), new PBEParameterSpec(salt, iCount));
+
+        byte[] input = Strings.toByteArray("AES-256 CBC needs a full 256 bit derived key, not 192 bits");
+        byte[] actual = cipher.doFinal(input);
+
+        // CBC256 derives its PBE key/IV via the PKCS12/MD5 generator (PBE.PKCS12, default digest PBE.MD5) -
+        // reproduce that derivation directly, insisting on the 256 bit key CBC256 is meant to use.
+        PKCS12ParametersGenerator pGen = new PKCS12ParametersGenerator(new MD5Digest());
+        pGen.init(PBEParametersGenerator.PKCS12PasswordToBytes(password), salt, iCount);
+        ParametersWithIV params = (ParametersWithIV)pGen.generateDerivedParameters(256, 128);
+
+        isTrue("expected a 256 bit derived key", ((KeyParameter)params.getParameters()).getKey().length == 32);
+
+        PaddedBufferedBlockCipher engine = new PaddedBufferedBlockCipher(CBCBlockCipher.newInstance(AESEngine.newInstance()));
+        engine.init(true, params);
+
+        byte[] expected = new byte[engine.getOutputSize(input.length)];
+        int len = engine.processBytes(input, 0, input.length, expected, 0);
+        len += engine.doFinal(expected, len);
+
+        if (!Arrays.areEqual(Arrays.copyOfRange(expected, 0, len), actual))
+        {
+            fail("AES256 CBC cipher (OID " + cipherAlgo + ") did not derive a 256 bit key from the PBE key");
+        }
+
+        Cipher decCipher = Cipher.getInstance(cipherAlgo, "BC");
+        decCipher.init(Cipher.DECRYPT_MODE, new PKCS12Key(password), new PBEParameterSpec(salt, iCount));
+
+        if (!Arrays.areEqual(input, decCipher.doFinal(actual)))
+        {
+            fail("AES256 CBC round trip failed");
+        }
     }
 
     private void testPKCS12Interop()
