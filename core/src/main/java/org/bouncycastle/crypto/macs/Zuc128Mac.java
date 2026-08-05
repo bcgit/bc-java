@@ -12,11 +12,6 @@ public final class Zuc128Mac
     implements Mac
 {
     /**
-     * The Maximum Bit Mask.
-     */
-    private static final int TOPBIT = 0x80;
-
-    /**
      * The Zuc128 Engine.
      */
     private final InternalZuc128Engine theEngine;
@@ -115,17 +110,21 @@ public final class Zuc128Mac
         /* shift for next byte */
         shift4NextByte();
 
-        /* Loop through the bits */
+        /*
+         * Loop through the bits, accumulating each bit's contribution branchlessly:
+         * the mask -bit is all-ones for a set bit and zero for a clear one, so the
+         * keyStream window is XORed in either way and the amount of work done does
+         * not depend on the message. Branching on the message bit made the time taken
+         * proportional to its Hamming weight.
+         */
         final int bitBase = theByteIndex * 8; //Byte.SIZE;
-        for (int bitMask = TOPBIT, bitNo = 0; bitMask > 0; bitMask >>= 1, bitNo++)
+        int acc = 0;
+        for (int bitNo = 0; bitNo < 8; bitNo++) //Byte.SIZE
         {
-            /* If the bit is set */
-            if ((in & bitMask) != 0)
-            {
-                /* update theMac */
-                updateMac(bitBase + bitNo);
-            }
+            final int bit = (in >>> (7 - bitNo)) & 1;
+            acc ^= getKeyStreamWord(bitBase + bitNo) & -bit;
         }
+        theMac ^= acc;
     }
 
     /**
@@ -142,17 +141,6 @@ public final class Zuc128Mac
             theKeyStream[theWordIndex] = theEngine.createKeyStreamWord();
             theWordIndex = (theWordIndex + 1) % theKeyStream.length;
         }
-    }
-
-    /**
-     * Update the Mac.
-     *
-     * @param bitNo the bit number
-     */
-    private void updateMac(final int bitNo)
-    {
-        /* Update the Mac */
-        theMac ^= getKeyStreamWord(bitNo);
     }
 
     /**

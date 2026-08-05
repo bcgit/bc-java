@@ -153,7 +153,9 @@ public class EvidenceRecord
 
     private EvidenceRecord(final ASN1Sequence sequence)
     {
-        if (sequence.size() < 3 && sequence.size() > 5)
+        // RFC 4998 sec. 4: version, digestAlgorithms and archiveTimeStampSequence are mandatory,
+        // cryptoInfos [0] and encryptionInfo [1] optional - so 3 to 5 elements inclusive.
+        if (sequence.size() < 3 || sequence.size() > 5)
         {
             throw new IllegalArgumentException("wrong sequence size in constructor: " + sequence.size());
         }

@@ -1,17 +1,12 @@
 package org.bouncycastle.openpgp.operator.jcajce;
 
-import java.security.InvalidAlgorithmParameterException;
-import java.security.InvalidKeyException;
 import java.security.Provider;
 
-import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.spec.IvParameterSpec;
 
 import org.bouncycastle.jcajce.spec.AEADParameterSpec;
 import org.bouncycastle.openpgp.PGPException;
-import org.bouncycastle.openpgp.PGPUtil;
 import org.bouncycastle.openpgp.operator.PBEProtectionRemoverFactory;
 import org.bouncycastle.openpgp.operator.PBESecretKeyDecryptor;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculatorProvider;
@@ -81,29 +76,8 @@ public class JcePBEProtectionRemoverFactory
                 public byte[] recoverKeyData(int encAlgorithm, byte[] key, byte[] iv, byte[] aad, byte[] keyData,  int keyOff, int keyLen)
                     throws PGPException
                 {
-                    try
-                    {
-                        Cipher c;
-                        c = helper.createCipher(PGPUtil.getSymmetricCipherName(encAlgorithm) + "/OCB/NoPadding");
-                        c.init(Cipher.DECRYPT_MODE, JcaJcePGPUtil.makeSymmetricKey(encAlgorithm, key), new AEADParameterSpec(iv, 128, aad));
-                        return c.doFinal(keyData, keyOff, keyLen);
-                    }
-                    catch (IllegalBlockSizeException e)
-                    {
-                        throw new PGPException("illegal block size: " + e.getMessage(), e);
-                    }
-                    catch (BadPaddingException e)
-                    {
-                        throw new PGPException("bad padding: " + e.getMessage(), e);
-                    }
-                    catch (InvalidAlgorithmParameterException e)
-                    {
-                        throw new PGPException("invalid parameter: " + e.getMessage(), e);
-                    }
-                    catch (InvalidKeyException e)
-                    {
-                        throw new PGPException("invalid key: " + e.getMessage(), e);
-                    }
+                    return JcePBEKeyDataDecryptor.decryptKeyData(helper, encAlgorithm, "OCB", key,
+                        new AEADParameterSpec(iv, 128, aad), keyData, keyOff, keyLen);
                 }
 
                 @Override
@@ -121,29 +95,8 @@ public class JcePBEProtectionRemoverFactory
                 public byte[] recoverKeyData(int encAlgorithm, byte[] key, byte[] iv, byte[] keyData, int keyOff, int keyLen)
                     throws PGPException
                 {
-                    try
-                    {
-                        Cipher c;
-                        c = helper.createCipher(PGPUtil.getSymmetricCipherName(encAlgorithm) + "/CBC/NoPadding");
-                        c.init(Cipher.DECRYPT_MODE, JcaJcePGPUtil.makeSymmetricKey(encAlgorithm, key), new IvParameterSpec(iv));
-                        return c.doFinal(keyData, keyOff, keyLen);
-                    }
-                    catch (IllegalBlockSizeException e)
-                    {
-                        throw new PGPException("illegal block size: " + e.getMessage(), e);
-                    }
-                    catch (BadPaddingException e)
-                    {
-                        throw new PGPException("bad padding: " + e.getMessage(), e);
-                    }
-                    catch (InvalidAlgorithmParameterException e)
-                    {
-                        throw new PGPException("invalid parameter: " + e.getMessage(), e);
-                    }
-                    catch (InvalidKeyException e)
-                    {
-                        throw new PGPException("invalid key: " + e.getMessage(), e);
-                    }
+                    return JcePBEKeyDataDecryptor.decryptKeyData(helper, encAlgorithm, "CBC", key,
+                        new IvParameterSpec(iv), keyData, keyOff, keyLen);
                 }
 
                 @Override

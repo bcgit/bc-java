@@ -3,6 +3,7 @@ package org.bouncycastle.tsp.ers;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Date;
+import java.util.NoSuchElementException;
 
 import org.bouncycastle.asn1.tsp.ArchiveTimeStamp;
 import org.bouncycastle.asn1.tsp.PartialHashtree;
@@ -42,7 +43,32 @@ public class ERSArchiveTimeStamp
     public ERSArchiveTimeStamp(byte[] archiveTimeStamp, DigestCalculatorProvider digCalcProv)
         throws TSPException, ERSException
     {
-        this(ArchiveTimeStamp.getInstance(archiveTimeStamp), digCalcProv);
+        this(parseArchiveTimeStamp(archiveTimeStamp), digCalcProv);
+    }
+
+    private static ArchiveTimeStamp parseArchiveTimeStamp(byte[] archiveTimeStamp)
+        throws ERSException
+    {
+        try
+        {
+            return ArchiveTimeStamp.getInstance(archiveTimeStamp);
+        }
+        catch (IllegalArgumentException e)
+        {
+            throw new ERSException("malformed archive time stamp: " + e.getMessage(), e);
+        }
+        catch (IllegalStateException e)
+        {
+            throw new ERSException("malformed archive time stamp: " + e.getMessage(), e);
+        }
+        catch (NoSuchElementException e)
+        {
+            throw new ERSException("malformed archive time stamp: " + e.getMessage(), e);
+        }
+        catch (ArrayIndexOutOfBoundsException e)
+        {
+            throw new ERSException("malformed archive time stamp: " + e.getMessage(), e);
+        }
     }
 
     /**
