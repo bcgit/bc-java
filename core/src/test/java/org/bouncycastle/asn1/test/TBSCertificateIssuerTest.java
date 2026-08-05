@@ -47,7 +47,7 @@ public class TBSCertificateIssuerTest
     {
         byte[] encoded = emptyIssuerTbs();
 
-        System.setProperty(Properties.X509_ALLOW_EMPTY_ISSUER, "true");
+        System.setProperty(Properties.X509_ALLOW_EMPTY_ISSUER_CERT, "true");
         try
         {
             // the read-side concession for non-PKIX profiles (github #2387): the parse
@@ -77,7 +77,7 @@ public class TBSCertificateIssuerTest
         }
         finally
         {
-            System.getProperties().remove(Properties.X509_ALLOW_EMPTY_ISSUER);
+            System.getProperties().remove(Properties.X509_ALLOW_EMPTY_ISSUER_CERT);
         }
     }
 
