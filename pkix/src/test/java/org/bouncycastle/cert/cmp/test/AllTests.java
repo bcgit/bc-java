@@ -38,7 +38,6 @@ import org.bouncycastle.asn1.crmf.EncryptedValue;
 import org.bouncycastle.asn1.crmf.ProofOfPossession;
 import org.bouncycastle.asn1.crmf.SubsequentMessage;
 import org.bouncycastle.asn1.misc.MiscObjectIdentifiers;
-import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.EncryptedPrivateKeyInfo;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
@@ -454,23 +453,14 @@ public class AllTests
         }
     }
 
-    // Disabled by the legacy generic composite (id_alg_composite) phase-out.
-    //
-    // The forged half below pairs a modern fixed-algorithm composite key with the legacy
-    // composite signature algorithm. JcaContentVerifierProviderBuilder now refuses that
-    // combination outright ("attempt to use standard composite key with legacy composite
-    // signature algorithm"), so verify() throws a CMPException rather than returning false and
-    // the assertFalse is never reached. The same scenario is asserted directly by
-    // openssl.test.CompositeKeyTest.testModernCompositeKeyRejectsLegacyCompositeSignature, and
-    // the empty-signature forgery against a non-composite key is still covered by
-    // testForgedComposite below.
-    //
-    // TODO: the first half - a modern composite key protecting a ProtectedPKIMessage - is
-    // unaffected by the phase-out and is not covered anywhere else at the CMP layer. Restore it
-    // as a test in its own right, without the legacy forged half. The java.security.SecureRandom
-    // and NISTObjectIdentifiers imports are used only by the block below; keep them while it
-    // stays commented out.
-    /*
+    // A modern fixed-algorithm composite key (MLDSA44-RSA2048-PKCS15-SHA256) protecting a
+    // ProtectedPKIMessage in the ordinary way - sign, then verify against the composite public
+    // key. The legacy id_alg_composite forgery formerly paired with this setup is gone: pairing a
+    // modern composite key with the legacy composite signature algorithm now makes
+    // JcaContentVerifierProviderBuilder refuse outright ("attempt to use standard composite key
+    // with legacy composite signature algorithm"), asserted directly by
+    // openssl.test.CompositeKeyTest.testModernCompositeKeyRejectsLegacyCompositeSignature; the
+    // empty-signature forgery against a non-composite key is covered by testForgedComposite below.
     public void testComposite()
         throws Exception
     {
@@ -479,7 +469,6 @@ public class AllTests
         {
             return;
         }
-        // ── setup: a trusted RSA keypair (stand-in for a CA / server key) ──
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("MLDSA44-RSA2048-PKCS15-SHA256", "BC");
         kpg.initialize(null, new SecureRandom());
         KeyPair kp = kpg.generateKeyPair();
@@ -488,47 +477,19 @@ public class AllTests
         ContentVerifierProvider verifier =
             new JcaContentVerifierProviderBuilder().build(trustedKey);
 
-        GeneralName sender = new GeneralName(new X500Name("CN=attacker"));
-        GeneralName recip = new GeneralName(new X500Name("CN=victim"));
+        GeneralName sender = new GeneralName(new X500Name("CN=Sender"));
+        GeneralName recipient = new GeneralName(new X500Name("CN=Recip"));
         PKIBody body = new PKIBody(PKIBody.TYPE_CONFIRM, DERNull.INSTANCE);
 
-        // ── NORMAL: legitimately signed with the private key ────────────────
         ContentSigner signer =
             new JcaContentSignerBuilder("COMPOSITE").build(kp.getPrivate());
-        ProtectedPKIMessage legit = new ProtectedPKIMessageBuilder(sender, recip)
+        ProtectedPKIMessage legit = new ProtectedPKIMessageBuilder(sender, recipient)
             .setMessageTime(new Date())
             .setBody(body)
             .build(signer);
 
         assertTrue(legit.verify(verifier));
-
-        // this is using the experimental composite construction.
-        // protectionAlg.algorithm  = 1.3.6.1.4.1.18227.2.1 (id_alg_composite)
-        // protectionAlg.parameters = SEQUENCE { AlgId(sha256WithRSA, NULL) }
-        //   → createCompositeVerifier builds sigs[] = { one real Signature }
-        //     so the "no matching signature found" guard passes
-        // protection               = BIT STRING wrapping 30 00 (empty SEQ)
-        //   → sigSeq.size()==0 → loop body never runs → verify() returns true
-        //
-        AlgorithmIdentifier innerAlg1 = new AlgorithmIdentifier(
-              NISTObjectIdentifiers.id_ml_dsa_44, DERNull.INSTANCE);
-        AlgorithmIdentifier innerAlg2 = new AlgorithmIdentifier(
-            PKCSObjectIdentifiers.sha256WithRSAEncryption, DERNull.INSTANCE);
-        AlgorithmIdentifier compositeAlg = new AlgorithmIdentifier(
-            MiscObjectIdentifiers.id_alg_composite,
-            new DERSequence(innerAlg1, innerAlg2));
-
-        PKIHeaderBuilder fh = new PKIHeaderBuilder(2, sender, recip);
-        fh.setProtectionAlg(compositeAlg);
-        // Signature bytes: an empty DER SEQUENCE. Two bytes. No key needed.
-        DERBitString emptySigSeq = new DERBitString(
-            new DERSequence().getEncoded());
-
-        PKIMessage forged = new PKIMessage(fh.build(), body, emptySigSeq);
-        ProtectedPKIMessage forgedPM = new ProtectedPKIMessage(new GeneralPKIMessage(forged));
-        assertFalse(forgedPM.verify(verifier));
     }
-    */
 
     public void testForgedComposite()
         throws Exception
