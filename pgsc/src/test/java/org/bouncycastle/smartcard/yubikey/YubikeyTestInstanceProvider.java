@@ -3,11 +3,21 @@ package org.bouncycastle.smartcard.yubikey;
 import org.bouncycastle.smartcard.OpenPGPSmartCardManager;
 import org.bouncycastle.smartcard.card.CardException;
 import org.bouncycastle.smartcard.test.SmartCardTestProperties;
+import org.bouncycastle.smartcard.yubikey.operator.bc.BcYubikeyPublicKeyDataDecryptorFactory;
 
 public class YubikeyTestInstanceProvider
 {
 
-    public static OpenPGPSmartCardManager prepareOneYubikeySmartCardManager(SmartCardTestProperties testProperties)
+    public static OpenPGPSmartCardManager prepareOneYubikeySmartCardManager(
+            SmartCardTestProperties testProperties)
+        throws YubikeySetupException, CardException
+    {
+        return prepareOneYubikeySmartCardManager(testProperties, YubikeySmartCardBackend.bcImpl());
+    }
+
+    public static OpenPGPSmartCardManager prepareOneYubikeySmartCardManager(
+            SmartCardTestProperties testProperties,
+            YubikeySmartCardBackend.YubikeyDecryptorFactoryProvider decryptorFactoryProvider)
             throws YubikeySetupException, CardException
     {
         if (testProperties.getSerialNumber() == null)
@@ -15,7 +25,7 @@ public class YubikeyTestInstanceProvider
             throw new YubikeySetupException("Missing yubikey.properties file.");
         }
 
-        YubikeySmartCardBackend backend = YubikeySmartCardBackend.createInstance()
+        YubikeySmartCardBackend backend = YubikeySmartCardBackend.createInstance(decryptorFactoryProvider)
                 .addAllowedCardSerial(testProperties.getSerialNumber());
         if (backend.listSmartCards().isEmpty())
         {

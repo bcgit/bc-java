@@ -54,6 +54,13 @@ public class OpenPGPMessageProcessor
     {
         this.implementation = implementation;
         this.configuration = new Configuration(policy);
+        configuration.exceptionCallback = new PGPExceptionCallback() {
+            @Override
+            public void onException(PGPException e) {
+                // -
+                e.printStackTrace();
+            }
+        };
     }
 
     /**

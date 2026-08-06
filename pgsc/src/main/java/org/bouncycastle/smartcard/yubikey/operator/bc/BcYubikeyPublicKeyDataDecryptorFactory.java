@@ -1,4 +1,4 @@
-package org.bouncycastle.smartcard.yubikey.operator;
+package org.bouncycastle.smartcard.yubikey.operator.bc;
 
 import com.yubico.yubikit.core.application.InvalidPinException;
 import com.yubico.yubikit.core.keys.PublicKeyValues;
@@ -23,19 +23,21 @@ import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.bc.BcPGPKeyConverter;
 import org.bouncycastle.smartcard.card.CardException;
 import org.bouncycastle.smartcard.yubikey.YubikeyOpenPGPSmartCard;
+import org.bouncycastle.smartcard.yubikey.YubikeySmartCardBackend;
+import org.bouncycastle.util.encoders.Hex;
 
 import java.io.IOException;
 import java.util.Date;
 
-public class YubikeyPublicKeyDataDecryptorFactory
+public class BcYubikeyPublicKeyDataDecryptorFactory
         extends BcExternalPublicKeyDataDecryptorFactory
 {
     private final KeyPassphraseProvider userPinProvider;
     private final YubikeyOpenPGPSmartCard yubikey;
 
-    public YubikeyPublicKeyDataDecryptorFactory(OpenPGPKey.OpenPGPSecretKey secretKey,
-                                                YubikeyOpenPGPSmartCard yubikey,
-                                                KeyPassphraseProvider userPinProvider)
+    public BcYubikeyPublicKeyDataDecryptorFactory(OpenPGPKey.OpenPGPSecretKey secretKey,
+                                                  YubikeyOpenPGPSmartCard yubikey,
+                                                  KeyPassphraseProvider userPinProvider)
             throws PGPException
     {
         super(secretKey);
@@ -64,7 +66,9 @@ public class YubikeyPublicKeyDataDecryptorFactory
                 try (OpenPgpSession openPgpSession = yubikey.openSession())
                 {
                     openPgpSession.verifyUserPin(pin, true);
+                    System.out.println("BCYK: pEnc: " + Hex.toHexString(pEnc));
                     byte[] decryptedSessionKey = openPgpSession.decrypt(pEnc);
+                    System.out.println("BCYK: decSes: " + Hex.toHexString(decryptedSessionKey));
                     return decryptedSessionKey;
                 }
                 catch (ApduException | CardException | IOException e)
@@ -163,7 +167,9 @@ public class YubikeyPublicKeyDataDecryptorFactory
                 try (OpenPgpSession openPgpSession = yubikey.openSession())
                 {
                     openPgpSession.verifyUserPin(pin, true);
+                    System.out.println("BCYK: pEnc: " + Hex.toHexString(ephemeralKey));
                     byte[] decryptedSessionKey = openPgpSession.decrypt(peerKey);
+                    System.out.println("BCYK: decSes: " + Hex.toHexString(decryptedSessionKey));
                     return decryptedSessionKey;
                 }
                 catch (ApduException | IOException | CardException e)

@@ -40,6 +40,7 @@ public class YubikeyTests
 
             if (!result.isSuccessful())
             {
+                result.getException().printStackTrace();
                 fail(result.toString());
             }
         }

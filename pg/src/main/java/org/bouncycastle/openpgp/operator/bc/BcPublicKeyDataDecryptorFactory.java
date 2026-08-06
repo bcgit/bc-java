@@ -240,8 +240,17 @@ public class BcPublicKeyDataDecryptorFactory
 
         byte[] secret = getCryptoCallback().decryptX448(privKey, ephemeralKey);
 
+        PublicKeyPacket publicKeyPacket;
+        if (pgpPubKey != null)
+        {
+            publicKeyPacket = pgpPubKey.getPublicKeyPacket();
+        }
+        else
+        {
+            publicKeyPacket = pgpPrivKey.getPublicKeyPacket();
+        }
         byte[] hkdfOut = RFC6637KDFCalculator.createKey(HashAlgorithmTags.SHA512, SymmetricKeyAlgorithmTags.AES_256,
-                Arrays.concatenate(ephemeralKey, pgpPrivKey.getPublicKeyPacket().getKey().getEncoded(), secret),
+                Arrays.concatenate(ephemeralKey, publicKeyPacket.getKey().getEncoded(), secret),
                 "OpenPGP X448");
 
         return unwrapSessionData(keyEnc, SymmetricKeyAlgorithmTags.AES_128, new KeyParameter(hkdfOut));
@@ -310,7 +319,85 @@ public class BcPublicKeyDataDecryptorFactory
         return BcAEADUtil.createOpenPgpV6DataDecryptor(seipd, sessionKey);
     }
 
-    @Override
+    /**
+     * Callback for low-level PK crypto operations.
+     *
+     */
+    public static abstract class PublicKeyCryptoCallback
+    {
+        /**
+         * Perform RSA decryption of an encrypted session key.
+         *
+         * @param keyAlgorithm public key algorithm
+         * @param pEnc encrypted session key
+         * @param privKey RSA private key
+         * @return decrypted session key
+         * @throws PGPException if the message cannot be decrypted
+         * @throws InvalidCipherTextException if the ciphertext is invalid
+         */
+        public abstract byte[] decryptRSA(int keyAlgorithm,
+                                          byte[] pEnc,
+                                          AsymmetricKeyParameter privKey)
+                throws PGPException, InvalidCipherTextException;
+
+        /**
+         * Perform ElGamal decryption of an encrypted session key.
+         *
+         * @param keyAlgorithm public key algorithm
+         * @param secKeyData encrypted session key data
+         * @param privKey ElGamal private key
+         * @return decrypted session key
+         * @throws InvalidCipherTextException if the ciphertext is invalid
+         * @throws PGPException if the message cannot be decrypted
+         */
+        public abstract byte[] decryptElGamal(int keyAlgorithm,
+                                              byte[][] secKeyData,
+                                              AsymmetricKeyParameter privKey)
+                throws InvalidCipherTextException, PGPException;
+
+        /**
+         * Perform an ECDH handshake to calculate a shared secret.
+         *
+         * @param pubKey our ECDH public key
+         * @param ephemeralKeyBytes encoded ephemeral key pair
+         * @param privKey private ECDH key
+         * @return shared secret
+         * @throws PGPException if the message cannot be decrypted
+         */
+        public abstract byte[] decryptECDH(ECDHPublicBCPGKey pubKey,
+                                           byte[] ephemeralKeyBytes,
+                                           AsymmetricKeyParameter privKey)
+                throws PGPException;
+
+        /**
+         * Perform an X25519 handshake to calculate a shared secret.
+         *
+         * @param privKey private X25519 key
+         * @param ephemeralKey encoded ephemeral X25519 public key
+         * @return shared secret
+         * @throws PGPException if the message cannot be decrypted
+         */
+        public abstract byte[] decryptX25519(AsymmetricKeyParameter privKey,
+                                             byte[] ephemeralKey)
+                throws PGPException;
+
+        /**
+         * Perform an X448 handshake to calculate a shared secret.
+         *
+         * @param privKey private X448 key
+         * @param ephemeralKey encoded ephemeral X448 public key
+         * @return shared secret
+         * @throws PGPException if the message cannot be decrypted
+         */
+        public abstract byte[] decryptX448(AsymmetricKeyParameter privKey,
+                                           byte[] ephemeralKey)
+                throws PGPException;
+    }
+
+    /**
+     * Return a callback to perform low-level public-key cryptographic operations.
+     * @return callback
+     */
     protected PublicKeyCryptoCallback getCryptoCallback() {
         return new BcPublicKeyCryptoCallback();
     }
@@ -322,9 +409,12 @@ public class BcPublicKeyDataDecryptorFactory
         public byte[] decryptRSA(int keyAlgorithm, byte[] sessionKey, AsymmetricKeyParameter privKey)
                 throws PGPException, InvalidCipherTextException
         {
+            System.out.println("BC pEnc: " + org.bouncycastle.util.encoders.Hex.toHexString(sessionKey));
             BufferedAsymmetricBlockCipher c1 = getBufferedAsymmetricBlockCipher(keyAlgorithm, privKey);
             c1.processBytes(sessionKey, 0, sessionKey.length);
-            return c1.doFinal();
+            byte[] decSess = c1.doFinal();
+            System.out.println("BC decSes: " + org.bouncycastle.util.encoders.Hex.toHexString(decSess));
+            return decSess;
         }
 
         @Override
