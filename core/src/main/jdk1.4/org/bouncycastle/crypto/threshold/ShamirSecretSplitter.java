@@ -28,6 +28,15 @@ public class ShamirSecretSplitter
     static final int _Native = 0;
     static final int _Table = 1;
 
+    /**
+     * The GF(256) arithmetic to use.
+     *
+     * @deprecated no longer selects anything. Mode.Table indexed log/exp tables with the secret being
+     * split and with the share bytes, so which cache line it touched revealed them; both values now
+     * use the same constant-time arithmetic. Use {@link #getInstance(Algorithm, int, SecureRandom)},
+     * which takes no mode.
+     */
+    @Deprecated
     public static class Mode
     {
         public static final Mode Native = new Mode(_Native);
@@ -49,14 +58,36 @@ public class ShamirSecretSplitter
 
     protected SecureRandom random;
 
+    /**
+     * Create a splitter using constant-time GF(256) arithmetic.
+     *
+     * @param algorithm the reduction polynomial to work over.
+     * @param l length in bytes of the secret to be split.
+     * @param random source of randomness for the polynomial coefficients.
+     */
+    public static ShamirSecretSplitter getInstance(Algorithm algorithm, int l, SecureRandom random)
+    {
+        return new ShamirSecretSplitter(algorithm, l, random);
+    }
+
+    /**
+     * @deprecated the mode is ignored - see {@link Mode}. Use
+     * {@link #getInstance(Algorithm, int, SecureRandom)}.
+     */
+    @Deprecated
     public ShamirSecretSplitter(Algorithm algorithm, Mode mode, int l, SecureRandom random)
+    {
+        this(algorithm, l, random);
+    }
+
+    private ShamirSecretSplitter(Algorithm algorithm, int l, SecureRandom random)
     {
         if (l < 0 || l > 65534)
         {
             throw new IllegalArgumentException("Invalid input: l ranges from 0 to 65534 (2^16-2) bytes.");
         }
 
-        poly = Polynomial.newInstance(algorithm, mode);
+        poly = new Polynomial(algorithm);
         this.l = l;
         this.random = random;
     }
@@ -66,7 +97,7 @@ public class ShamirSecretSplitter
     {
         byte[][] p = initP(m, n);
         byte[][] sr = new byte[m][l];
-        ShamirSplitSecretShare[] secretShares = new ShamirSplitSecretShare[l];
+        ShamirSplitSecretShare[] secretShares = new ShamirSplitSecretShare[n];
         int i;
         for (i = 0; i < m; i++)
         {
@@ -85,8 +116,12 @@ public class ShamirSecretSplitter
     {
         byte[][] p = initP(m, n);
         byte[][] sr = new byte[m][l];
-        ShamirSplitSecretShare[] secretShares = new ShamirSplitSecretShare[l];
+        ShamirSplitSecretShare[] secretShares = new ShamirSplitSecretShare[n];
         byte[] ss0 = s.getEncoded();
+        if (ss0.length != l)
+        {
+            throw new IllegalArgumentException("Invalid input: the secret share must be l bytes long.");
+        }
         secretShares[0] = new ShamirSplitSecretShare(ss0, 1);
         int i, j;
         byte tmp;
@@ -94,14 +129,16 @@ public class ShamirSecretSplitter
         {
             random.nextBytes(sr[i]);
         }
+        // the share at x = 1 is the XOR of every coefficient row, so sr[0] is chosen to make it come
+        // out as the supplied share - with m == 1 there are no other rows and sr[0] is that share
         for (i = 0; i < l; i++)
         {
-            tmp = sr[1][i];
-            for (j = 2; j < m; j++)
+            tmp = ss0[i];
+            for (j = 1; j < m; j++)
             {
                 tmp ^= sr[j][i];
             }
-            sr[0][i] = (byte)(tmp ^ ss0[i]);
+            sr[0][i] = tmp;
         }
         for (i = 1; i < p.length; i++)
         {
@@ -114,9 +151,14 @@ public class ShamirSecretSplitter
     @Override
     public SplitSecret resplit(byte[] secret, int m, int n)
     {
+        if (secret.length != l)
+        {
+            throw new IllegalArgumentException("Invalid input: the secret must be l bytes long.");
+        }
+
         byte[][] p = initP(m, n);
         byte[][] sr = new byte[m][l];
-        ShamirSplitSecretShare[] secretShares = new ShamirSplitSecretShare[l];
+        ShamirSplitSecretShare[] secretShares = new ShamirSplitSecretShare[n];
         sr[0] = Arrays.clone(secret);
         int i;
         for (i = 1; i < m; i++)
@@ -138,7 +180,7 @@ public class ShamirSecretSplitter
         }
         if (n < m || n > 255)
         {
-            throw new IllegalArgumentException("Invalid input: n must be less than 256 and greater than or equal to n.");
+            throw new IllegalArgumentException("Invalid input: n must be less than 256 and greater than or equal to m.");
         }
         byte[][] p = new byte[n][m];
         for (int i = 0; i < n; i++)

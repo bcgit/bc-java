@@ -13,7 +13,7 @@ public interface SecretSplitter
      * Creates secret shares. The secret will be divided into shares, where the secret has a length of L bytes.
      * @param m A threshold number of shares
      * @param n Total number of shares
-     * @return An array of {@code byte[][]} representing the generated secret shares for m users with l bytes each.
+     * @return the n generated secret shares, each L bytes long, any m of which recover the secret.
      */
     SplitSecret split(int m, int n);
 
@@ -21,7 +21,7 @@ public interface SecretSplitter
      * Creates secret shares from a given secret share. The secret will be divided into shares, where the secret has a length of L bytes.
      * @param m A threshold number of shares
      * @param n Total number of shares
-     * @return An array of {@code byte[][]} representing the generated secret shares for m users with l bytes each.
+     * @return the n generated secret shares, each L bytes long, any m of which recover the secret. The first of them is s.
      */
     SplitSecret splitAround(SecretShare s, int m, int n)
         throws IOException;
@@ -30,7 +30,7 @@ public interface SecretSplitter
      * Creates secret shares from a given secret. The secret will be divided into shares, where the secret has a length of L bytes.
      * @param m A threshold number of shares
      * @param n Total number of shares
-     * @return An array of {@code byte[][]} representing the generated secret shares for m users with l bytes each.
+     * @return the n generated secret shares, each L bytes long, any m of which recover the secret.
      */
     SplitSecret resplit(byte[] secret, int m, int n);
 }
