@@ -453,26 +453,29 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
         }
 
         //
-        // process each certificate except the last in the path
+        // process each certificate in the path, target certificate included
         //
         int index;
         int i;
-        
-        try 
+
+        try
         {
-            for (index = certs.size()-1; index>0; index--) 
+            for (index = certs.size()-1; index>=0; index--)
             {
                 i = n - index;
-                
+
                 //
                 // certificate processing
-                //    
-                
+                //
+
                 cert = (X509Certificate) certs.get(index);
-                
+
                 // b),c)
-                
-                if (!isSelfIssued(cert))
+
+                // RFC 5280 sec. 6.1.3 (b) and (c) skip a self-issued certificate only when it is
+                // not the final certificate in the path, so the target certificate (i == n) is
+                // always checked - as RFC3280CertPathUtilities.processCertBC does.
+                if (i >= n || !isSelfIssued(cert))
                 {
                     X500Principal principal = getSubjectPrincipal(cert);
                     ASN1InputStream aIn = new ASN1InputStream(new ByteArrayInputStream(principal.getEncoded()));
@@ -552,7 +555,14 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                 //
                 // prepare for next certificate
                 //
-                
+
+                // RFC 5280 sec. 6.1.4 runs only where a next certificate exists, so the target
+                // certificate contributes no name constraints of its own.
+                if (i == n)
+                {
+                    continue;
+                }
+
                 //
                 // (g) handle the name constraints extension
                 //
