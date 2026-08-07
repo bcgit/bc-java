@@ -739,7 +739,12 @@ public class Group
         Commit commit = content.getCommit();
         List<CachedProposal> proposals = mustResolve(commit.getProposals(), sender);
 
-        CommitParameters params = inferCommitType(sender, proposals, expectedParams);
+        // The joiner's own leaf, carried in the commit's path field - an external commit MUST
+        // contain one (RFC 9420 sec. 12.4.3.2), and a Remove it carries is only valid against
+        // that same participant's prior leaf.
+        LeafNode joinerLeaf = (commit.getUpdatePath() != null) ? commit.getUpdatePath().getLeafNode() : null;
+
+        CommitParameters params = inferCommitType(sender, proposals, expectedParams, joinerLeaf);
         boolean externalcommit = params.paramID == EXTERNAL_COMMIT_PARAMS;
 
         // Check that a path is present when required
@@ -830,7 +835,8 @@ public class Group
 
     }
 
-    private CommitParameters inferCommitType(LeafIndex sender, List<CachedProposal> proposals, CommitParameters expectedParams)
+    private CommitParameters inferCommitType(LeafIndex sender, List<CachedProposal> proposals, CommitParameters expectedParams,
+        LeafNode joinerLeaf)
         throws Exception
     {
         // If an expected type was provided, validate against it
@@ -843,7 +849,7 @@ public class Group
                 specifically = (sender != null) && validateNormalCachedProposals(proposals, sender);
                 break;
             case EXTERNAL_COMMIT_PARAMS:
-                specifically = (sender == null) && validateExternalCachedProposals(proposals);
+                specifically = (sender == null) && validateExternalCachedProposals(proposals, joinerLeaf);
                 break;
             case RESTART_COMMIT_PARAMS:
                 specifically = (sender != null) && validateRestartCachedProposals(proposals, expectedParams.allowedUsage);
@@ -861,7 +867,7 @@ public class Group
         }
 
         // Otherwise, check to see if this is a valid external or normal commit
-        if ((sender == null) && validateExternalCachedProposals(proposals))
+        if ((sender == null) && validateExternalCachedProposals(proposals, joinerLeaf))
         {
             return new CommitParameters(EXTERNAL_COMMIT_PARAMS);
         }
@@ -1951,6 +1957,51 @@ public class Group
             && tree.hasLeaf(remove.removed);
     }
 
+    /**
+     * RFC 9420 sec. 12.2: an external commit's proposal list may carry "at most one Remove
+     * proposal, with which the joiner removes an old version of themselves", and if one is
+     * present "the credential in the LeafNode MUST present a set of identifiers that is
+     * acceptable to the application for the removed participant". validateRemove's not_me rule
+     * is deliberately not applied on this path, because a resync commit legitimately removes a
+     * leaf the joiner owns - so the ownership test has to be made here instead, against the
+     * credential carried by the joiner's own new leaf in the commit's path field. Without it any
+     * party holding the group's public GroupInfo - which is exactly what an external joiner is
+     * meant to be given - can evict any member it names.
+     * <p>
+     * What counts as "the same participant" is application policy the library cannot settle in
+     * general, so the check here is the strict one: the removed leaf must carry an identical
+     * credential. That accepts the resync the RFC describes and refuses everything else; an
+     * application needing a looser notion (a certificate reissued between epochs, say) has to
+     * drive the removal as a separate in-group Remove after joining.
+     */
+    private boolean removesOwnPriorAppearance(Proposal.Remove remove, LeafNode joinerLeaf)
+        throws IOException
+    {
+        if (joinerLeaf == null)
+        {
+            return false;
+        }
+
+        LeafNode removedLeaf = tree.getLeafNode(remove.removed);
+        if (removedLeaf == null)
+        {
+            return false;
+        }
+
+        Credential removedCredential = removedLeaf.getCredential();
+        Credential joinerCredential = joinerLeaf.getCredential();
+        if (removedCredential == null || joinerCredential == null)
+        {
+            return false;
+        }
+
+        // Compare the encoded credentials rather than Credential.getIdentity(): identity is only
+        // populated for the basic credential type, so an identity-only comparison would treat any
+        // two x509 credentials (both carrying a null identity) as the same participant.
+        return Arrays.areEqual(MLSOutputStream.encode(removedCredential),
+            MLSOutputStream.encode(joinerCredential));
+    }
+
     private boolean validateKeyPackage(KeyPackage keyPackage)
         throws IOException
     {
@@ -2072,7 +2123,8 @@ public class Group
         case NORMAL_COMMIT_PARAMS:
             return validateNormalCachedProposals(proposals, commitSender);
         case EXTERNAL_COMMIT_PARAMS:
-            return validateExternalCachedProposals(proposals);
+            return validateExternalCachedProposals(proposals,
+                params.joinerKeyPackage != null ? params.joinerKeyPackage.getLeafNode() : null);
         case RESTART_COMMIT_PARAMS:
             return validateRestartCachedProposals(proposals, params.allowedUsage);
         case REINIT_COMMIT_PARAMS:
@@ -2316,7 +2368,8 @@ public class Group
             has_dup_enc_key);
     }
 
-    private boolean validateExternalCachedProposals(List<CachedProposal> proposals)
+    private boolean validateExternalCachedProposals(List<CachedProposal> proposals, LeafNode joinerLeaf)
+        throws IOException
     {
         int extInitCount = 0;
         int removeCount = 0;
@@ -2333,7 +2386,8 @@ public class Group
                 removeCount++;
                 // An external commit does not run validateProposal, so bound the removed index
                 // here: applyRemove would otherwise be handed the raw wire value.
-                noDisallowed = noDisallowed && removedIsInTree(cached.proposal.getRemove());
+                noDisallowed = noDisallowed && removedIsInTree(cached.proposal.getRemove())
+                    && removesOwnPriorAppearance(cached.proposal.getRemove(), joinerLeaf);
                 break;
             case PSK:
                 noDisallowed = noDisallowed && validatePSK(cached.proposal.getPreSharedKey());
