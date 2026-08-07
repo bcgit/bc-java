@@ -29,6 +29,9 @@ public class BLS12_381G1
     public static final BigInteger COFACTOR = new BigInteger(
         "396c8c005555e1568c00aaab0000aaab", 16);
 
+    /** Curve equation coefficient b in {@code y^2 = x^3 + b}; a is 0. */
+    private static final BigInteger B = BigInteger.valueOf(4);
+
     /**
      * Effective cofactor for hash-to-curve (RFC 9380 sec. 8.8.1):
      * {@code h_eff = 1 - x} where {@code x = -0xd201000000010000} is the
@@ -61,7 +64,25 @@ public class BLS12_381G1
      */
     public static ECCurve createCurve()
     {
-        return new ECCurve.Fp(Q, BigInteger.ZERO, BigInteger.valueOf(4), ORDER, COFACTOR);
+        return new ECCurve.Fp(Q, BigInteger.ZERO, B, ORDER, COFACTOR);
+    }
+
+    /**
+     * @return true iff {@code curve} carries exactly the canonical BLS12-381 G1
+     * field, curve equation, order, and cofactor. A point's own curve object is
+     * caller-suppliable data (e.g. via {@link ECCurve.Fp#createPoint}) and so
+     * cannot itself be trusted to name the right curve - callers relying on a
+     * point being on G1 (subgroup checks in particular, which trust a
+     * cofactor of 1 on the point's own curve) must check this first.
+     */
+    public static boolean isCanonicalCurve(ECCurve curve)
+    {
+        return curve != null
+            && Q.equals(curve.getField().getCharacteristic())
+            && BigInteger.ZERO.equals(curve.getA().toBigInteger())
+            && B.equals(curve.getB().toBigInteger())
+            && ORDER.equals(curve.getOrder())
+            && COFACTOR.equals(curve.getCofactor());
     }
 
     /**

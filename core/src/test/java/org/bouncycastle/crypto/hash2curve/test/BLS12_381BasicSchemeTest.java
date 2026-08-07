@@ -186,6 +186,23 @@ public class BLS12_381BasicSchemeTest
         fail("could not construct an off-subgroup G1 point in 16 attempts");
     }
 
+    // A point names its own ECCurve, and ECPoint.satisfiesOrder() trusts that curve's own
+    // cofactor - so a point on a foreign curve that merely shares BLS12-381's field, with
+    // its cofactor forged to 1, would trivially pass the subgroup check unless keyValidate
+    // first confirms the curve itself is canonical BLS12-381 G1 (phantom aggregate signer,
+    // feedback-crypto report from bshastry@posteo.de).
+    public void testKeyValidateRejectsForeignCurveSharingField()
+    {
+        // y^2 = x^3 + x over the real field Q, with order/cofactor forged to 1: (0,0)
+        // satisfies this equation and trivially "satisfies" a cofactor-1 subgroup check.
+        ECCurve foreign = new ECCurve.Fp(BLS12_381G1.Q, BigInteger.ONE, BigInteger.ZERO,
+            BigInteger.ONE, BigInteger.ONE);
+        ECPoint phantom = foreign.createPoint(BigInteger.ZERO, BigInteger.ZERO);
+
+        assertFalse("point on a foreign curve sharing BLS12-381's field must be rejected",
+            BLS12_381BasicScheme.keyValidate(phantom));
+    }
+
     // ---------------------------------------------------------------------
     // Empty-message round-trip (review gap G8).
     // Eth2 KAT vectors don't include a sign-and-verify with msg = [],

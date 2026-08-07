@@ -124,6 +124,13 @@ public class BLS12_381BasicScheme
         {
             return false;
         }
+        // The subgroup check below trusts pk's own curve's cofactor; a point built on a
+        // foreign curve that merely shares BLS12-381's field can claim cofactor 1 and pass
+        // it trivially, so the curve identity itself must be checked first.
+        if (!BLS12_381G1.isCanonicalCurve(pk.getCurve()))
+        {
+            return false;
+        }
         if (!pk.isValid())
         {
             return false;
