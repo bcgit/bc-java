@@ -14,13 +14,24 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.bouncycastle.asn1.ASN1Encoding;
+import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.ASN1Set;
+import org.bouncycastle.asn1.DERSet;
+import org.bouncycastle.asn1.DERTaggedObject;
+import org.bouncycastle.asn1.DLSequence;
+import org.bouncycastle.asn1.cms.Attribute;
+import org.bouncycastle.asn1.cms.AuthenticatedData;
+import org.bouncycastle.asn1.cms.CMSAttributes;
+import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cms.CMSAlgorithm;
+import org.bouncycastle.cms.CMSAuthenticatedData;
 import org.bouncycastle.cms.CMSAuthenticatedDataParser;
 import org.bouncycastle.cms.CMSAuthenticatedDataStreamGenerator;
 import org.bouncycastle.cms.CMSException;
@@ -414,6 +425,164 @@ public class NewAuthenticatedDataStreamTest
             assertTrue(Arrays.equals(data, recData));
             assertTrue(Arrays.equals(ad.getMac(), recipient.getMac()));
             assertTrue(Arrays.equals(ad.getContentDigest(), recipient.getContentDigest()));
+        }
+    }
+
+    // In digestAlgorithm-absent mode the MAC covers only the content, so authAttrs carried
+    // in the message play no part in it - a message with digestAlgorithm absent but authAttrs
+    // present would otherwise let getAuthAttrs() return attacker-inserted attributes with no
+    // authentication behind them at all, from a message whose (genuinely valid) content MAC
+    // makes it look fully verified. The streaming AuthenticatedDataParser has no way to notice
+    // this itself (authAttrs comes later in the SEQUENCE than the digestAlgorithm choice that
+    // already committed the parser to a secureReadable strategy), so CMSAuthenticatedDataParser
+    // must cross-check the two once authAttrs is actually read.
+    public void testDigestAbsentAuthAttrsPresentRejected()
+        throws Exception
+    {
+        byte[] data = "Eric H. Echidna".getBytes();
+
+        CMSAuthenticatedDataStreamGenerator adGen = new CMSAuthenticatedDataStreamGenerator();
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+
+        adGen.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(_reciCert).setProvider(BC));
+
+        OutputStream aOut = adGen.open(bOut, new JceCMSMacCalculatorBuilder(CMSAlgorithm.DES_EDE3_CBC).setProvider(BC).build());
+        aOut.write(data);
+        aOut.close();
+
+        // A genuine digestAlgorithm-absent message: no digestAlgorithm, no authAttrs, a MAC
+        // computed over the content alone.
+        ContentInfo original = ContentInfo.getInstance(ASN1Primitive.fromByteArray(bOut.toByteArray()));
+        AuthenticatedData authData = AuthenticatedData.getInstance(original.getContent());
+
+        // Forge in an attacker-chosen authAttrs set, leaving digestAlgorithm absent and the
+        // (content-only) MAC untouched - the MAC never covered content-type either way.
+        ASN1Set forgedAuthAttrs = new DERSet(
+            new Attribute(CMSAttributes.contentType, new DERSet(CMSObjectIdentifiers.data)));
+
+        ASN1EncodableVector v = new ASN1EncodableVector();
+        v.add(authData.getVersion());
+        v.add(authData.getRecipientInfos());
+        v.add(authData.getMacAlgorithm());
+        v.add(authData.getEncapsulatedContentInfo());
+        v.add(new DERTaggedObject(false, 2, forgedAuthAttrs));
+        v.add(authData.getMac());
+
+        ContentInfo forged = new ContentInfo(CMSObjectIdentifiers.authenticatedData, new DLSequence(v));
+
+        // The in-memory ASN.1 type rejects the pairing outright.
+        try
+        {
+            AuthenticatedData.getInstance(forged.getContent());
+            fail("AuthenticatedData must reject authAttrs without digestAlgorithm");
+        }
+        catch (IllegalArgumentException e)
+        {
+            assertEquals("digestAlgorithm and authAttrs must be set together", e.getMessage());
+        }
+
+        // ... as does the in-memory CMS wrapper over the same bytes, as a CMSException.
+        try
+        {
+            new CMSAuthenticatedData(forged.getEncoded());
+            fail("CMSAuthenticatedData must reject authAttrs without digestAlgorithm");
+        }
+        catch (CMSException e)
+        {
+            assertEquals("Malformed content.", e.getMessage());
+        }
+
+        // The streaming parser cannot see the two fields together at construction time, so it
+        // cross-checks when authAttrs is finally read. Follow the path a victim application
+        // takes: recover the content through the recipient (the content MAC is genuine and
+        // verifies), then read the attributes the message claims are authenticated.
+        CMSAuthenticatedDataParser ad = new CMSAuthenticatedDataParser(forged.getEncoded());
+
+        RecipientInformation recipient = (RecipientInformation)ad.getRecipientInfos().getRecipients().iterator().next();
+
+        byte[] recData = recipient.getContent(new JceKeyTransAuthenticatedRecipient(_reciKP.getPrivate()).setProvider(BC));
+
+        assertTrue(Arrays.equals(data, recData));
+
+        try
+        {
+            ad.getAuthAttrs();
+            fail("forged authAttrs must be rejected when digestAlgorithm is absent");
+        }
+        catch (IOException e)
+        {
+            assertEquals("authAttrs presence inconsistent with digestAlgorithm presence", e.getMessage());
+        }
+
+        // getMac() reads the attributes on the way past, so the MAC comparison a verifier
+        // performs cannot succeed on the forged message either.
+        try
+        {
+            ad.getMac();
+            fail("getMac() must not return a MAC for a message with orphan authAttrs");
+        }
+        catch (IOException e)
+        {
+            assertEquals("authAttrs presence inconsistent with digestAlgorithm presence", e.getMessage());
+        }
+    }
+
+    // The mirror of the above: digestAlgorithm present commits the parser to MACing DER(authAttrs),
+    // so a message that then omits authAttrs entirely must not be treated as verifiable either.
+    public void testDigestPresentAuthAttrsAbsentRejected()
+        throws Exception
+    {
+        byte[] data = "Eric H. Echidna".getBytes();
+
+        CMSAuthenticatedDataStreamGenerator adGen = new CMSAuthenticatedDataStreamGenerator();
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        DigestCalculatorProvider calcProvider = new JcaDigestCalculatorProviderBuilder().setProvider(BC).build();
+
+        adGen.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(_reciCert).setProvider(BC));
+
+        OutputStream aOut = adGen.open(bOut, new JceCMSMacCalculatorBuilder(CMSAlgorithm.DES_EDE3_CBC).setProvider(BC).build(),
+            calcProvider.get(new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1)));
+        aOut.write(data);
+        aOut.close();
+
+        ContentInfo original = ContentInfo.getInstance(ASN1Primitive.fromByteArray(bOut.toByteArray()));
+        AuthenticatedData authData = AuthenticatedData.getInstance(original.getContent());
+
+        // Strip authAttrs, leave digestAlgorithm in place.
+        ASN1EncodableVector v = new ASN1EncodableVector();
+        v.add(authData.getVersion());
+        v.add(authData.getRecipientInfos());
+        v.add(authData.getMacAlgorithm());
+        v.add(new DERTaggedObject(false, 1, authData.getDigestAlgorithm()));
+        v.add(authData.getEncapsulatedContentInfo());
+        v.add(authData.getMac());
+
+        ContentInfo forged = new ContentInfo(CMSObjectIdentifiers.authenticatedData, new DLSequence(v));
+
+        try
+        {
+            AuthenticatedData.getInstance(forged.getContent());
+            fail("AuthenticatedData must reject digestAlgorithm without authAttrs");
+        }
+        catch (IllegalArgumentException e)
+        {
+            assertEquals("digestAlgorithm and authAttrs must be set together", e.getMessage());
+        }
+
+        CMSAuthenticatedDataParser ad = new CMSAuthenticatedDataParser(forged.getEncoded(), calcProvider);
+
+        RecipientInformation recipient = (RecipientInformation)ad.getRecipientInfos().getRecipients().iterator().next();
+
+        recipient.getContent(new JceKeyTransAuthenticatedRecipient(_reciKP.getPrivate()).setProvider(BC));
+
+        try
+        {
+            ad.getAuthAttrs();
+            fail("missing authAttrs must be rejected when digestAlgorithm is present");
+        }
+        catch (IOException e)
+        {
+            assertEquals("authAttrs presence inconsistent with digestAlgorithm presence", e.getMessage());
         }
     }
 }

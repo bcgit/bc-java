@@ -123,6 +123,11 @@ public class AuthenticatedData
         {
             unauthAttrs = ASN1Set.getInstance((ASN1TaggedObject)seq.getObjectAt(index), false);
         }
+
+        if ((digestAlgorithm != null) != (authAttrs != null))
+        {
+            throw new IllegalArgumentException("digestAlgorithm and authAttrs must be set together");
+        }
     }
 
     /**

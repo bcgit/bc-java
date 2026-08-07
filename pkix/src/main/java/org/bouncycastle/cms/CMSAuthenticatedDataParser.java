@@ -85,6 +85,7 @@ public class CMSAuthenticatedDataParser
     private boolean authAttrNotRead;
     private boolean unauthAttrNotRead;
     private OriginatorInformation originatorInfo;
+    private boolean digestAlgorithmPresent;
 
     private CMSSecureReadable secureReadable;
 
@@ -140,6 +141,8 @@ public class CMSAuthenticatedDataParser
         // build the RecipientInformationStore
         //
         AlgorithmIdentifier digestAlgorithm = authData.getDigestAlgorithm();
+
+        this.digestAlgorithmPresent = digestAlgorithm != null;
 
         if (digestAlgorithm != null)
         {
@@ -256,6 +259,17 @@ public class CMSAuthenticatedDataParser
             if (set != null)
             {
                 authAttrSet = (ASN1Set)set.toASN1Primitive();
+            }
+
+            // RFC 5652 sec 9.1: digestAlgorithm and authAttrs are set together. The secureReadable
+            // strategy (and so whether the MAC is computed over the content or over authAttrs) was
+            // already picked from digestAlgorithm's presence in the constructor, before authAttrs -
+            // which comes later in the SEQUENCE - could be read; a message where the two disagree
+            // would otherwise let authAttrs be returned via getAuthAttrs()/getContentDigest() with the
+            // MAC never having authenticated them at all.
+            if (digestAlgorithmPresent != (authAttrSet != null))
+            {
+                throw new IOException("authAttrs presence inconsistent with digestAlgorithm presence");
             }
 
             authAttrNotRead = false;
