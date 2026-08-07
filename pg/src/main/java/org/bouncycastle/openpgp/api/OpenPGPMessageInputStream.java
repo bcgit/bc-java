@@ -643,7 +643,13 @@ public class OpenPGPMessageInputStream
             PGPCompressedData compressedData = (PGPCompressedData)packet;
             resultBuilder.compressed(compressedData.getAlgorithm());
 
-            InputStream decompressed = compressedData.getDataStream();
+            // A compressed data packet declares no decompressed length, so the expansion is
+            // bounded here rather than left to the consumer: by the time bytes reach a caller
+            // counting them off the stream, the decompression producing them has already
+            // happened. MAX_RECURSION caps how many compression layers nest, not how much any
+            // one of them yields.
+            InputStream decompressed = compressedData.getDataStream(
+                processor.getPolicy().getMaximumDecompressedDataSize());
             processNestedStream(decompressed);
         }
 

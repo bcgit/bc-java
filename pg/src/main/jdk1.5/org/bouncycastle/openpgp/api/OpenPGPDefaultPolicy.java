@@ -25,6 +25,7 @@ public class OpenPGPDefaultPolicy
     private int defaultDocumentSignatureHashAlgorithm = HashAlgorithmTags.SHA512;
     private int defaultCertificationSignatureHashAlgorithm = HashAlgorithmTags.SHA512;
     private int defaultSymmetricKeyAlgorithm = SymmetricKeyAlgorithmTags.AES_128;
+    private long maximumDecompressedDataSize = -1;
 
     public OpenPGPDefaultPolicy()
     {
@@ -428,6 +429,27 @@ public class OpenPGPDefaultPolicy
     public boolean isAcceptablePublicKeyStrength(int publicKeyAlgorithmId, int bitStrength)
     {
         return isAcceptable(publicKeyAlgorithmId, bitStrength, publicKeyMinimalBitStrengths);
+    }
+
+    public long getMaximumDecompressedDataSize()
+    {
+        return maximumDecompressedDataSize;
+    }
+
+    /**
+     * Set the maximum number of bytes a compressed data packet may decompress to. Unbounded by
+     * default, mirroring the low-level
+     * {@link org.bouncycastle.openpgp.PGPCompressedData#getDataStream()}; an application
+     * processing untrusted messages whose plaintext has a known upper bound should set one. A
+     * negative value restores the unbounded behaviour.
+     *
+     * @param maximumDecompressedDataSize maximum decompressed size in bytes
+     * @return this
+     */
+    public OpenPGPDefaultPolicy setMaximumDecompressedDataSize(long maximumDecompressedDataSize)
+    {
+        this.maximumDecompressedDataSize = maximumDecompressedDataSize;
+        return this;
     }
 
     @Override

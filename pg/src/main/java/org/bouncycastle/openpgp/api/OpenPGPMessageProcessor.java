@@ -554,6 +554,18 @@ public class OpenPGPMessageProcessor
     }
 
     /**
+     * Return the {@link OpenPGPPolicy} this processor was configured with. Note this is not
+     * necessarily {@code getImplementation().policy()} - the two-argument constructor takes a
+     * policy that overrides the implementation's own.
+     *
+     * @return the policy in force for this processor
+     */
+    OpenPGPPolicy getPolicy()
+    {
+        return configuration.policy;
+    }
+
+    /**
      * Method that can be called if a {@link PGPException} is thrown.
      * If the user provided a {@link PGPExceptionCallback} ({@link Configuration#exceptionCallback} is not null),
      * the exception will be passed along to that callback.

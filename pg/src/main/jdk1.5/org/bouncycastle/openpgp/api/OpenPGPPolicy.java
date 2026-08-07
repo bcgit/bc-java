@@ -201,6 +201,31 @@ public interface OpenPGPPolicy
     boolean isAcceptablePublicKeyStrength(int publicKeyAlgorithmId, int bitStrength);
 
     /**
+     * Return the maximum number of bytes a compressed data packet may decompress to before
+     * message processing fails, or a negative value for no limit.
+     * <p>
+     * An OpenPGP compressed data packet carries no decompressed-length field, so a small packet
+     * can expand into an arbitrarily large amount of data (a "decompression bomb"). The nesting
+     * limit ({@link OpenPGPMessageInputStream#MAX_RECURSION}) bounds how many compression layers
+     * a message may carry but says nothing about how much any one of them may produce, so this
+     * is the bound on the latter. It is applied per compressed data packet, as the bytes are
+     * produced, which is the only point at which decompression can be stopped - a consumer
+     * counting bytes off the returned stream has already paid the cost it is trying to avoid.
+     * </p><p>
+     * Exceeding it surfaces as a {@link org.bouncycastle.util.io.StreamOverflowException} (an
+     * {@link java.io.IOException}) from reading the
+     * {@link OpenPGPMessageInputStream message input stream}.
+     * </p><p>
+     * This mirrors the {@link org.bouncycastle.openpgp.PGPCompressedData#getDataStream()} /
+     * {@link org.bouncycastle.openpgp.PGPCompressedData#getDataStream(long)} pair on the
+     * low-level API: the default is unbounded, and bounding it is the caller's decision.
+     * </p>
+     *
+     * @return maximum decompressed size in bytes, or a negative value for no limit
+     */
+    long getMaximumDecompressedDataSize();
+
+    /**
      * Return the policies {@link OpenPGPNotationRegistry} containing known notation names.
      *
      * @return notation registry
