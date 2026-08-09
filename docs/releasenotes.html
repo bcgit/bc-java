@@ -897,6 +897,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2023, June 12th
 <h3>2.15.2 Defects Fixed</h3>
 <ul>
 <li>AsconEngine: Fixed a buffering bug when decrypting across multiple processBytes calls (ascon128a unaffected).</li>
+<li>Following the change to the wrapping of a single 64 bit block in 1.73, RFC3394WrapEngine.unwrap would reject 16 byte input produced by 1.72 or earlier with "checksum failed", as it applied only the single block decryption. The unwrap now falls back to the previous 6 pass form when the single block decryption does not yield the expected IV, so both the 1.73 and the pre-1.73 wrapped forms of an 8 byte key can be read. Wrapping continues to produce the single block form (issue #2079).</li>
 <li>Context based sanity checking on PGP signatures has been added.</li>
 <li>The ParallelHash clone constructor was not copying all fields. This is now fixed.</li>
 <li>The maximimum number of blocks for CTR/SIC modes was 1 block less than it should have been. This is now fixed.</li>
@@ -943,7 +944,7 @@ Date:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 2023, April 8th
 <li>There was an off-by-one error in engineGetOutputSize() for ECIES. This has been fixed.</li>
 <li>The method for invoking read() internally in BCPGInputStream could result in inconsistent behaviour if the class was extended. This has been fixed.</li>
 <li>Fixed a rounding issue with FF1 Format Preserving Encryption algorithm for certain radices.</li>
-<li>Fixed RFC3394WrapEngine handling of 64 bit keys.</li>
+<li>Fixed RFC3394WrapEngine handling of 64 bit keys. RFC 3394 sec. 2 states "The only restriction the key wrap algorithm places on n is that n be at least two", the parenthetical going on to note that for key data of 64 bits or less the IV and the key data "form a single 128-bit codebook input making this key wrap unnecessary" - the case RFC 5649 sec. 4.1 spells out as a single ECB block encryption of IV || P. RFC3394WrapEngine previously ran the 6 pass algorithm with n = 1 for a single 64 bit block, which the specification does not define, and now emits the single block encryption instead. Note this changes the wrapped output for 8 byte input, for RFC3394WrapEngine and the AESWrapEngine, ARIAWrapEngine, CamelliaWrapEngine and SEEDWrapEngine built on it (the RFC 5649 padding engines - AESWrapPadEngine, ARIAWrapPadEngine - already handled the single block case themselves and are unaffected): 8 byte input wrapped by 1.73 or later cannot be unwrapped by 1.72 or earlier, and in 1.73 the reverse was also true (see the 1.74 note) (issue #2079).</li>
 <li>Internal buffer for blake2sp was too small and could result in an ArrayIndexOutOfBoundsException. This has been fixed.</li>
 <li>JCA PSS Signatures using SHAKE128 and SHAKE256 now support encoding of algorithm parameters.</li>
 <li>PKCS10CertificationRequest now checks for empty extension parameters.</li>
