@@ -12,16 +12,44 @@ sourceSets {
     }
 }
 
+configurations {
+    mailModulePath
+}
+
 dependencies {
     implementation project(':prov')
     implementation project(':util')
     implementation project(':pkix')
 
     implementation group: 'javax.mail', name: 'mail', version: '1.4'
+    // javax.mail:mail:1.4 pulls in javax.activation:activation:1.1 transitively - both are
+    // needed as automatic modules ("mail", "activation") on the module-info.java compile path,
+    // since neither javax.mail nor javax.activation is a JDK-bundled module on Java 11+.
+    mailModulePath group: 'javax.mail', name: 'mail', version: '1.4'
 
     java9Implementation files(sourceSets.main.output.classesDirs) {
         builtBy compileJava
     }
+}
+
+// module-info.java declares its javax.mail/javax.activation dependences under all four names
+// those libraries are known by (see the comment there), so all four have to be observable when
+// it is compiled. Only one generation can be supplied for real: mail-1.4.jar ("mail") and
+// javax.mail-1.6.2.jar ("java.mail") both contain the javax.mail package, and two automatic
+// modules exporting the same package to us is a resolution error. So the 1.4.x pair is the real
+// one - matching what the main sources compile against - and the "java.*" names are supplied as
+// empty stub modules, named only by their file names. They carry no classes, exist purely so the
+// optional requires resolve at compile time, and are neither needed nor shipped at run time.
+task moduleNameStubJars {
+    ext.stubDir = layout.buildDirectory.dir("module-name-stubs").get().asFile
+}
+
+['java.mail', 'java.activation'].each { stubName ->
+    def stubTask = tasks.register("stubJar_${stubName.replace('.', '_')}", Jar) {
+        archiveFileName = "${stubName}.jar"
+        destinationDirectory = moduleNameStubJars.stubDir
+    }
+    moduleNameStubJars.dependsOn stubTask
 }
 
 evaluationDependsOn(":prov")
@@ -35,14 +63,21 @@ compileJava {
 
 
 compileJava9Java {
+    dependsOn moduleNameStubJars
 
-    options.release = 9
+    // Deliberately source/targetCompatibility rather than options.release = 9: under --release 9
+    // java.activation is a real (since-removed) platform module exporting javax.activation, which
+    // collides with the activation automatic module the same descriptor requires. Compiling against
+    // the current platform leaves the name to the stub jar. Safe here because this source set is
+    // module-info.java alone - no platform API is compiled against.
+    sourceCompatibility = 9
+    targetCompatibility = 9
     def prov_jar="${project(":prov").jar.outputs.files.getFiles().getAt(0)}"
     def util_jar="${project(":util").jar.outputs.files.getFiles().getAt(0)}"
     def pkix_jar="${project(":pkix").jar.outputs.files.getFiles().getAt(0)}"
 
     options.compilerArgs += [
-            '--module-path', "${prov_jar}${File.pathSeparator}${util_jar}${File.pathSeparator}${pkix_jar}"
+            '--module-path', "${prov_jar}${File.pathSeparator}${util_jar}${File.pathSeparator}${pkix_jar}${File.pathSeparator}${configurations.mailModulePath.asPath}${File.pathSeparator}${moduleNameStubJars.stubDir}"
     ]
 
     options.sourcepath = files(['src/main/java', 'src/main/jdk1.9'])
