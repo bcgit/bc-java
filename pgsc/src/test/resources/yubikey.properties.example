@@ -1,0 +1,12 @@
+# Rename this file to yubikey.properties in order to enable execution of the Yubikey tests.
+#
+# NOTE: The Yubikey will be reset, so any keys present on it will be lost!
+
+# Serial number of the Yubikey device.
+DEVICE_SERIAL=15472425
+
+# Admin PIN of the Yubikey device
+ADMIN_PIN=12345678
+
+# User PIN of the Yubikey device
+USER_PIN=123456

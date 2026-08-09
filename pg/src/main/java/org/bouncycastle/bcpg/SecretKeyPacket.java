@@ -5,6 +5,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.io.Streams;
 
 /**
  * Base class for OpenPGP secret (primary) keys.
@@ -63,7 +64,34 @@ public class SecretKeyPacket
      * Users should migrate to AEAD with all due speed.
      */
     public static final int USAGE_AEAD = 0xfd;
-    
+
+    /**
+     * Externally-backed secret key material.
+     * S2K-usage octet indicating that the secret key material is stored externally, e.g. on a hardware device.
+     * The draft specification is an alternative to GnuPGs proprietary {@link S2K#GNU_DUMMY_S2K} mechanism.
+     * <p>
+     * NOTE: this code point is <em>provisional</em>. draft-dkg-openpgp-external-secrets-03 sec. 2 records
+     * it as "TBD (252?)" and IANA has not yet assigned it, so the value here tracks the draft's suggestion
+     * and is subject to change if a different octet is allocated. Do not rely on it for long-term storage.
+     *
+     * @see <a href="https://datatracker.ietf.org/doc/draft-dkg-openpgp-external-secrets/">
+     *     OpenPGP External Secret Keys</a>
+     */
+    public static final int USAGE_EXTERNAL = 0xfc;
+
+    /**
+     * Maximum accepted length of the external key locator hint of a version 4 secret key packet, whose
+     * hint is not length-prefixed and so is bounded only by the packet. Mirrors
+     * {@link SignaturePacket#MAX_SUBPACKET_LEN}.
+     */
+    public static final int MAX_EXTERNAL_LOCATOR_HINT_LEN = 2 * 1024 * 1024;
+
+    /**
+     * Maximum length of the external key locator hint of a version 5 or 6 secret key packet, whose
+     * conditional parameters are prefixed with a one-octet count (RFC 9580 sec. 5.5.3).
+     */
+    public static final int MAX_V6_EXTERNAL_LOCATOR_HINT_LEN = 255;
+
     private PublicKeyPacket pubKeyPacket;
     private byte[] secKeyData;
     private int s2kUsage;
@@ -71,6 +99,7 @@ public class SecretKeyPacket
     private int aeadAlgorithm;
     private S2K s2k;
     private byte[] iv;
+    private byte[] externalKeyLocatorHint;
 
     /**
      * Parse a primary OpenPGP secret key packet from the given OpenPGP {@link BCPGInputStream}.
@@ -140,11 +169,31 @@ public class SecretKeyPacket
         s2kUsage = in.read();
 
         int conditionalParameterLength = -1;
-        if (version == PublicKeyPacket.LIBREPGP_5 || 
+        if (version == PublicKeyPacket.LIBREPGP_5 ||
            (version == PublicKeyPacket.VERSION_6 && s2kUsage != USAGE_NONE))
         {
             // TODO: Use length to parse unknown parameters
             conditionalParameterLength = in.read();
+        }
+
+        if (s2kUsage == USAGE_EXTERNAL)
+        {
+            if (conditionalParameterLength >= 0)
+            {
+                // v5/v6 carry an explicit count of the conditional parameters, which for an external
+                // key is exactly the locator hint - honour it, rather than reading to end of stream.
+                externalKeyLocatorHint = new byte[conditionalParameterLength];
+                in.readFully(externalKeyLocatorHint);
+            }
+            else
+            {
+                // v4 has no count: the hint is the remainder of the packet (draft sec. 2). Bound the
+                // read - a partial-length packet body shares the underlying stream (BCPGInputStream
+                // hands back "this"), so an unbounded readAll() would consume the rest of the input
+                // and turn a short header into an arbitrary allocation.
+                externalKeyLocatorHint = Streams.readAllLimited(in, MAX_EXTERNAL_LOCATOR_HINT_LEN);
+            }
+            return;
         }
 
         if (s2kUsage == USAGE_CHECKSUM || s2kUsage == USAGE_SHA1 || s2kUsage == USAGE_AEAD)
@@ -205,7 +254,7 @@ public class SecretKeyPacket
                     if (encAlgorithm < 7)
                     {
                         iv = new byte[8];
-                    } 
+                    }
                     else
                     {
                         iv = new byte[16];
@@ -214,7 +263,7 @@ public class SecretKeyPacket
                 }
             }
         }
-        
+
         if (version == PublicKeyPacket.LIBREPGP_5)
         {
             long keyOctetCount = ((long) in.read() << 24) | ((long) in.read() << 16) | ((long) in.read() << 8) | in.read();
@@ -231,6 +280,59 @@ public class SecretKeyPacket
         {
             this.secKeyData = in.readAll();
         }
+    }
+
+    /**
+     * Create a SecretKeyPacket representing an external secret key ({@link #USAGE_EXTERNAL}).
+     *
+     * @see <a href="https://datatracker.ietf.org/doc/draft-dkg-openpgp-external-secrets/">
+     *     OpenPGP External Secret Keys</a>
+     * @param pubKeyPacket public key packet
+     * @param locatorHint optional external key locator hint
+     */
+    public SecretKeyPacket(
+            PublicKeyPacket pubKeyPacket,
+            byte[] locatorHint)
+    {
+        this(SECRET_KEY, pubKeyPacket, locatorHint);
+    }
+
+
+    /**
+     * Create a SecretKeyPacket representing an external secret key ({@link #USAGE_EXTERNAL}).
+     *
+     * @see <a href="https://datatracker.ietf.org/doc/draft-dkg-openpgp-external-secrets/">
+     *     OpenPGP External Secret Keys</a>
+     * @param keyTag key packet type
+     * @param pubKeyPacket public key packet
+     * @param locatorHint optional external key locator hint
+     */
+    protected SecretKeyPacket(
+            int keyTag,
+            PublicKeyPacket pubKeyPacket,
+            byte[] locatorHint)
+    {
+        this(keyTag, pubKeyPacket, 0, 0, USAGE_EXTERNAL, null, null, null);
+
+        byte[] hint = locatorHint == null ? new byte[0] : Arrays.clone(locatorHint);
+        int version = pubKeyPacket.getVersion();
+        if (version == PublicKeyPacket.LIBREPGP_5 || version == PublicKeyPacket.VERSION_6)
+        {
+            // a v5/v6 secret key prefixes its conditional parameters - here the locator hint - with a
+            // one-octet count, so a longer hint could not be encoded: the count would wrap while the
+            // hint was still written in full, producing a packet that does not round-trip
+            if (hint.length > MAX_V6_EXTERNAL_LOCATOR_HINT_LEN)
+            {
+                throw new IllegalArgumentException("external key locator hint too long for a version "
+                    + version + " secret key: " + hint.length + " > " + MAX_V6_EXTERNAL_LOCATOR_HINT_LEN);
+            }
+        }
+        else if (hint.length > MAX_EXTERNAL_LOCATOR_HINT_LEN)
+        {
+            throw new IllegalArgumentException("external key locator hint too long: " + hint.length
+                + " > " + MAX_EXTERNAL_LOCATOR_HINT_LEN);
+        }
+        this.externalKeyLocatorHint = hint;
     }
 
     /**
@@ -427,6 +529,24 @@ public class SecretKeyPacket
     }
 
     /**
+     * If the key has external private key material (s2k usage {@link #USAGE_EXTERNAL}), return the locator hint data.
+     * If the locator hint is empty, it is referred to as "best effort".
+     * Otherwise, the first octet indicates the type of locator hint.
+     *
+     * @see <a href="https://www.ietf.org/archive/id/draft-dkg-openpgp-external-secrets-03.html#name-openpgp-external-secret-key">
+     *     OpenPGP External Secret Key Locator Hint type registry</a>
+     * @return locator hints data
+     */
+    public byte[] getExternalKeyLocatorHint()
+    {
+        if (s2kUsage != USAGE_EXTERNAL)
+        {
+            return null;
+        }
+        return Arrays.clone(externalKeyLocatorHint);
+    }
+
+    /**
      * Return the encoded packet content without packet frame.
      * @return encoded packet contents
      * @throws IOException
@@ -443,7 +563,7 @@ public class SecretKeyPacket
 
         // conditional parameters
         byte[] conditionalParameters = encodeConditionalParameters();
-        if (pubKeyPacket.getVersion() == PublicKeyPacket.LIBREPGP_5 || 
+        if (pubKeyPacket.getVersion() == PublicKeyPacket.LIBREPGP_5 ||
            (pubKeyPacket.getVersion() == PublicKeyPacket.VERSION_6 && s2kUsage != USAGE_NONE))
         {
             pOut.write(conditionalParameters.length);
@@ -474,6 +594,12 @@ public class SecretKeyPacket
     private byte[] encodeConditionalParameters()
         throws IOException
     {
+        if (s2kUsage == USAGE_EXTERNAL)
+        {
+            // for an external key the conditional parameters are exactly the locator hint
+            return Arrays.clone(externalKeyLocatorHint);
+        }
+
         ByteArrayOutputStream conditionalParameters = new ByteArrayOutputStream();
         boolean hasS2KSpecifier = s2kUsage == USAGE_CHECKSUM || s2kUsage == USAGE_SHA1 || s2kUsage == USAGE_AEAD;
 

@@ -446,9 +446,40 @@ public class PGPSecretKey
      */
     public boolean isPrivateKeyEmpty()
     {
+        if (isExternalKey())
+        {
+            return true;
+        }
+
         byte[] secKeyData = secret.getSecretKeyData();
 
         return (secKeyData == null || secKeyData.length < 1);
+    }
+
+    /**
+     * Return true if this key's private key material is held externally - typically on a hardware token -
+     * rather than in the packet, i.e. if its S2K usage is {@link SecretKeyPacket#USAGE_EXTERNAL}.
+     *
+     * @see <a href="https://datatracker.ietf.org/doc/draft-dkg-openpgp-external-secrets/">
+     *     OpenPGP External Secret Keys</a>
+     * @return true if the key is externally backed
+     */
+    public boolean isExternalKey()
+    {
+        return secret.getS2KUsage() == SecretKeyPacket.USAGE_EXTERNAL;
+    }
+
+    /**
+     * If this key is externally backed ({@link #isExternalKey()}), return its locator hint, otherwise
+     * return null. An empty hint means "best effort" - the caller should search whatever subsystems it
+     * knows about; a non-empty hint has the hint type in its first octet.
+     *
+     * @see SecretKeyPacket#getExternalKeyLocatorHint()
+     * @return locator hint data, or null if the key is not externally backed
+     */
+    public byte[] getExternalKeyLocatorHint()
+    {
+        return secret.getExternalKeyLocatorHint();
     }
 
     /**
@@ -510,6 +541,7 @@ public class PGPSecretKey
      *     <li>{@link SecretKeyPacket#USAGE_CHECKSUM}: Password-protected using malleable CFB (deprecated)</li>
      *     <li>{@link SecretKeyPacket#USAGE_SHA1}: Password-protected using CFB</li>
      *     <li>{@link SecretKeyPacket#USAGE_AEAD}: Password-protected using AEAD (recommended)</li>
+     *     <li>{@link SecretKeyPacket#USAGE_EXTERNAL}: Externally-backed private key, e.g. hardware token</li>
      * </ul>
      *
      * @return the key's S2K usage
@@ -562,6 +594,11 @@ public class PGPSecretKey
     private byte[] extractKeyData(PBESecretKeyDecryptor decryptorFactory)
         throws PGPException
     {
+        if (isExternalKey())
+        {
+            throw new PGPException("Key is externally-backed and key-data cannot be extracted.");
+        }
+
         byte[] encData = secret.getSecretKeyData();
 
         if (secret.getEncAlgorithm() == SymmetricKeyAlgorithmTags.NULL)
