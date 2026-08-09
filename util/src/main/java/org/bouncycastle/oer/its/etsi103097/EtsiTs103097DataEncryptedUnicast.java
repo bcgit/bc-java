@@ -18,7 +18,7 @@ public class EtsiTs103097DataEncryptedUnicast
 
     public static EtsiTs103097DataEncryptedUnicast getInstance(Object o)
     {
-        if (o instanceof EtsiTs103097DataEncrypted)
+        if (o instanceof EtsiTs103097DataEncryptedUnicast)
         {
             return (EtsiTs103097DataEncryptedUnicast)o;
         }

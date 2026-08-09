@@ -32,7 +32,7 @@ public class UINT32
 
     public static UINT32 getInstance(Object o)
     {
-        if (o instanceof UINT8)
+        if (o instanceof UINT32)
         {
             return (UINT32)o;
         }
