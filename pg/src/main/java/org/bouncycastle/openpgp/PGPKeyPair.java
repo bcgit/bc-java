@@ -5,18 +5,13 @@ import org.bouncycastle.bcpg.PublicSubkeyPacket;
 import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
 
 /**
- * General class to handle JCA key pairs and convert them into OpenPGP ones.
- * <p>
- * A word for the unwary, the KeyID for a OpenPGP public key is calculated from
- * a hash that includes the time of creation, if you pass a different date to the
- * constructor below with the same public private key pair the KeyID will not be the
- * same as for previous generations of the key, so ideally you only want to do
- * this once.
+ * Class to hold an unlocked PGP key pair.
+ * Note: the private key might be null, e.g. for PGP keys with external/removed private key material.
  */
 public class PGPKeyPair
 {
     protected PGPPublicKey pub;
-    protected PGPPrivateKey priv;
+    protected PGPPrivateKey priv; // might be null!
 
     /**
      * Create a key pair from a PGPPrivateKey and a PGPPublicKey.
@@ -66,6 +61,14 @@ public class PGPKeyPair
         return priv;
     }
 
+    /**
+     * Return this PGP key pair as a subkey pair.
+     * The public and private key packets get reconstructed into subkey packets.
+     *
+     * @param fingerPrintCalculator for fingerprint calculations
+     * @return subkey pair
+     * @throws PGPException if a subkey packet cannot be constructed properly
+     */
     public PGPKeyPair asSubkey(KeyFingerPrintCalculator fingerPrintCalculator)
         throws PGPException
     {
@@ -74,13 +77,22 @@ public class PGPKeyPair
             return this; // is already subkey
         }
 
+        // form subkey packet
         PublicSubkeyPacket pubSubPkt = new PublicSubkeyPacket(
             pub.getVersion(),
             pub.getAlgorithm(),
             pub.getCreationTime(),
             pub.getPublicKeyPacket().getKey());
+
+        PGPPrivateKey privateKey = null;
+        if (priv != null)
+        {
+            // reconstruct private key using public subkey packet
+            privateKey = new PGPPrivateKey(pub.getKeyID(), pubSubPkt, priv.getPrivateKeyDataPacket());
+        }
+
         return new PGPKeyPair(
             new PGPPublicKey(pubSubPkt, fingerPrintCalculator),
-            new PGPPrivateKey(pub.getKeyID(), pubSubPkt, priv.getPrivateKeyDataPacket()));
+            privateKey);
     }
 }

@@ -6,6 +6,8 @@ import java.util.Date;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyEncSessionPacket;
 import org.bouncycastle.bcpg.PublicKeyPacket;
+import org.bouncycastle.bcpg.X25519PublicBCPGKey;
+import org.bouncycastle.bcpg.X448PublicBCPGKey;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPKeyPair;
@@ -45,6 +47,8 @@ public class PGPShortEncSessionKeyTest
     {
         testShortX25519EncSessionKey();
         testShortX448EncSessionKey();
+        testZeroSizeX25519EncSessionKey();
+        testZeroSizeX448EncSessionKey();
         testShortECDHEncSessionKey();
         testShortECDHEncSessionKeyJce();
     }
@@ -68,6 +72,31 @@ public class PGPShortEncSessionKeyTest
 
         // encrypted session key shorter than the 56-byte X448 ephemeral key.
         expectPGPException("X448", kp.getPrivateKey(), PublicKeyAlgorithmTags.X448, new byte[10]);
+    }
+
+    // The exact pLen + 1 boundary: long enough to pass every checkRange, but the size octet declares
+    // zero following bytes. A v3 PKESK's size covers the symmetric algorithm octet plus the wrapped key,
+    // so size 0 made sesKeyLen -1 and Arrays.copyOfRange threw IllegalArgumentException("from > to") -
+    // an unchecked escape past the declared throws PGPException, which the short-key cases above miss
+    // because they never reach the size octet at all.
+    private void testZeroSizeX25519EncSessionKey()
+        throws Exception
+    {
+        PGPKeyPair kp = new BcPGPKeyPairGeneratorProvider().get(PublicKeyPacket.VERSION_6, new Date())
+            .generateX25519KeyPair();
+
+        byte[] enc = new byte[X25519PublicBCPGKey.LENGTH + 1];   // ephemeral key + size octet, size = 0
+        expectPGPException("X25519 zero size", kp.getPrivateKey(), PublicKeyAlgorithmTags.X25519, enc);
+    }
+
+    private void testZeroSizeX448EncSessionKey()
+        throws Exception
+    {
+        PGPKeyPair kp = new BcPGPKeyPairGeneratorProvider().get(PublicKeyPacket.VERSION_6, new Date())
+            .generateX448KeyPair();
+
+        byte[] enc = new byte[X448PublicBCPGKey.LENGTH + 1];     // ephemeral key + size octet, size = 0
+        expectPGPException("X448 zero size", kp.getPrivateKey(), PublicKeyAlgorithmTags.X448, enc);
     }
 
     // ECDH dispatches through recoverECDHSessionData, which read enc[0]/enc[1] before its length check.

@@ -316,7 +316,7 @@ configure(subprojects.findAll {it.name != 'bom'}) {
 }
 
 
-test.dependsOn([':core:test', ':prov:test', ':prov:test11', ':prov:test15', ':prov:test17', ':pkix:test', 'pg:test', ':tls:test', ':tls-klog:test', 'mls:test', 'mail:test', 'jmail:test'])
+test.dependsOn([':core:test', ':prov:test', ':prov:test11', ':prov:test15', ':prov:test17', ':pkix:test', 'pg:test', ':pgsc:test', ':tls:test', ':tls-klog:test', 'mls:test', 'mail:test', 'jmail:test'])
 
 // Aggregate all published jars (main, sources, javadoc) into a top-level dist/
 // directory so consumers have a single place to pick up the build outputs.

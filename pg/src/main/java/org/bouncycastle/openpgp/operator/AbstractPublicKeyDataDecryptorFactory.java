@@ -12,7 +12,6 @@ import org.bouncycastle.util.Arrays;
 public abstract class AbstractPublicKeyDataDecryptorFactory
         implements PublicKeyDataDecryptorFactory
 {
-
     @Override
     public final byte[] recoverSessionData(PublicKeyEncSessionPacket pkesk, InputStreamPacket encData)
             throws PGPException
