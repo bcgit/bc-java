@@ -94,10 +94,35 @@ public interface TlsServer
 
     /**
      * This method will be called (only) if the server included an extension of type
-     * "status_request" with empty "extension_data" in the extended server hello. See <i>RFC 3546
-     * 3.6. Certificate Status Request</i>. If a non-null {@link CertificateStatus} is returned, it
-     * is sent to the client as a handshake message of type "certificate_status".
-     * 
+     * "status_request" (<i>RFC 6066 sec. 8. Certificate Status Request</i>) or "status_request_v2"
+     * (<i>RFC 6961 sec. 2.2. Multiple Certificate Status Request Record</i>) with empty
+     * "extension_data" in the extended server hello, i.e. if
+     * {@link SecurityParameters#getStatusRequestVersion()} is non-zero. If a non-null
+     * {@link CertificateStatus} is returned, it is sent to the client as a handshake message of
+     * type "certificate_status".
+     * <p>
+     * The status request version says which of the two shapes the client will accept; returning
+     * the other one is a fatal alert at the client:
+     * <ul>
+     * <li><b>1</b> &ndash; "status_request" was echoed. Return a
+     * {@link CertificateStatusType#ocsp} status carrying a single response, for the end-entity
+     * certificate.</li>
+     * <li><b>2</b> &ndash; "status_request_v2" was echoed. Return a
+     * {@link CertificateStatusType#ocsp_multi} status carrying one entry per certificate in the
+     * chain that was sent, in the same order, with a null entry wherever no response is
+     * available.</li>
+     * </ul>
+     * Whether either extension is echoed at all is decided by
+     * {@link AbstractTlsServer#allowCertificateStatus()} (defaults to true) and
+     * {@link AbstractTlsServer#allowMultiCertStatus()} (defaults to <b>false</b>).
+     * <p>
+     * This callback applies up to (D)TLS 1.2 only. TLS 1.3 has no "certificate_status" handshake
+     * message and carries the response in a per-{@link CertificateEntry} "status_request"
+     * extension instead (<i>RFC 8446 sec. 4.4.2.1</i>), which for now a {@link TlsServer}
+     * implementation has to attach to the {@link Certificate} its credentials supply.
+     * <p>
+     * {@code OCSPStaplingServerExample} in the misc module is a worked example.
+     *
      * @return A {@link CertificateStatus} to be sent to the client (or null for none).
      * @throws IOException
      */

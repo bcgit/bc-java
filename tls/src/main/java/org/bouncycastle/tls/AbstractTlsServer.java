@@ -42,6 +42,15 @@ public abstract class AbstractTlsServer
         super(crypto);
     }
 
+    /**
+     * Whether to echo a client's "status_request" extension (<i>RFC 6066 sec. 8</i>) in the
+     * extended server hello, so that a stapled OCSP response can be sent. Echoing it makes
+     * {@link #getCertificateStatus()} be called with
+     * {@link SecurityParameters#getStatusRequestVersion()} of 1; it does not oblige the server to
+     * actually supply a response.
+     *
+     * @return true (the default) to echo "status_request" when the client offered it.
+     */
     protected boolean allowCertificateStatus()
     {
         return true;
@@ -52,6 +61,15 @@ public abstract class AbstractTlsServer
         return true;
     }
 
+    /**
+     * Whether to echo a client's "status_request_v2" extension (<i>RFC 6961 sec. 2.2</i>) in the
+     * extended server hello. When the client offered both, echoing this one takes precedence over
+     * "status_request", and {@link #getCertificateStatus()} is then called with
+     * {@link SecurityParameters#getStatusRequestVersion()} of 2 &ndash; so a server overriding
+     * this must be prepared to return a {@link CertificateStatusType#ocsp_multi} status.
+     *
+     * @return false (the default) to leave "status_request_v2" unanswered.
+     */
     protected boolean allowMultiCertStatus()
     {
         return false;

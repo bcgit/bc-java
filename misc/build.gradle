@@ -12,6 +12,7 @@ dependencies {
     implementation project(':pkix')
     implementation project(':pg')
     implementation project(':mail')
+    implementation project(':tls')
 
     implementation group: 'javax.mail', name: 'mail', version: '1.4'
 
