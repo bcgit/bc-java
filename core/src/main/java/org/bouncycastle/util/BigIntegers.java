@@ -396,6 +396,46 @@ public final class BigIntegers
         return new BigInteger(1, createRandom(bitLength, random));
     }
 
+    /**
+     * Return a private exponent randomised for use in a variable-time modular exponentiation.
+     * <p>
+     * {@link BigInteger#modPow(BigInteger, BigInteger)} carries no constant-time guarantee and its
+     * running time varies with the exponent, so where an exponent carries long-term secret material
+     * and the base is chosen by a peer, the exponent should be randomised before each use. This
+     * returns <code>exponent + c * groupOrder</code> for a small random <code>c</code>, which does
+     * not change the result of the exponentiation because
+     * <code>base<sup>groupOrder</sup> = 1</code>.
+     * <p>
+     * <b>The caller owns that premise, and it is the easy thing to get wrong.</b> The order must be
+     * one the base <em>actually</em> has:
+     * <ul>
+     * <li>Pass the <b>subgroup order q</b> only when the base is known to lie in that subgroup - a
+     * domain generator <code>g</code> chosen with <code>g<sup>q</sup> = 1</code>, or a peer value that
+     * has been verified with <code>v<sup>q</sup> = 1</code>.</li>
+     * <li>Pass <b>p-1</b> for a caller- or peer-supplied base that has only been range-checked. Any
+     * value coprime to a prime p satisfies <code>base<sup>p-1</sup> = 1</code> by Fermat, so this
+     * always holds.</li>
+     * <li>Pass <b>phi(n)</b> for a composite modulus, which only the private-key holder can do.</li>
+     * </ul>
+     * Passing q for a base outside the order-q subgroup silently returns the wrong answer for an odd
+     * multiple - for a safe prime that is roughly half of the range-valid bases - and no known-answer
+     * test will catch it, since the randomisation is otherwise result-preserving.
+     * <p>
+     * The multiple is small (between 128 and 255 times groupOrder), so it lengthens the exponent by
+     * about eight bits rather than doubling the work.
+     *
+     * @param exponent the private exponent to randomise.
+     * @param groupOrder an order the base is raised to giving 1 - see above.
+     * @param random a source of randomness.
+     * @return exponent plus a random multiple of groupOrder.
+     */
+    public static BigInteger createBlindedExponent(BigInteger exponent, BigInteger groupOrder, SecureRandom random)
+    {
+        int randomBits = 7;
+
+        return exponent.add(createRandomBigInteger(randomBits, random).add(BigInteger.valueOf(128)).multiply(groupOrder));
+    }
+
     // Hexadecimal value of the product of the 131 smallest odd primes from 3 to 743
     private static final BigInteger SMALL_PRIMES_PRODUCT = new BigInteger(
         "8138e8a0fcf3a4e84a771d40fd305d7f4aa59306d7251de54d98af8fe95729a1f"

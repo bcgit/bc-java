@@ -412,7 +412,7 @@ public class JcaTlsCrypto
         BigInteger[] ng = srpConfig.getExplicitNG();
         final SRP6VerifierGenerator verifierGenerator = new SRP6VerifierGenerator();
 
-        verifierGenerator.init(ng[0], ng[1], createHash(CryptoHashAlgorithm.sha1));
+        verifierGenerator.init(ng[0], ng[1], createHash(CryptoHashAlgorithm.sha1), this.getSecureRandom());
 
         return new TlsSRP6VerifierGenerator()
         {

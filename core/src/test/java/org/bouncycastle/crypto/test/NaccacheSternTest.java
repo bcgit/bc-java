@@ -11,6 +11,7 @@ import org.bouncycastle.crypto.generators.NaccacheSternKeyPairGenerator;
 import org.bouncycastle.crypto.params.NaccacheSternKeyGenerationParameters;
 import org.bouncycastle.crypto.params.NaccacheSternKeyParameters;
 import org.bouncycastle.crypto.params.NaccacheSternPrivateKeyParameters;
+import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -107,6 +108,7 @@ public class NaccacheSternTest
     }
 
     public void performTest()
+        throws Exception
     {
         // Test with given key from NaccacheSternPaper (totally insecure)
 
@@ -136,6 +138,8 @@ public class NaccacheSternTest
         {
             fail("failed NaccacheStern paper test");
         }
+
+        testEveryDigitAndBlinding(pair);
 
         //
         // key generation test
@@ -282,6 +286,75 @@ public class NaccacheSternTest
         if (debug)
         {
             System.out.println("All tests successful");
+        }
+    }
+
+    /**
+     * Decryption recovers the plaintext one digit per small prime, by finding the digit's entry in a
+     * precomputed table. The index found is the digit, so the search must look at the whole table
+     * rather than stopping at the match. This walks a plaintext range wide enough to hit every entry
+     * of every table - the paper key's digits are the plaintext modulo 3, 5, 7, 11, 13 and 17 - and
+     * checks the recovered value each time, which is what a search that selects the wrong index would
+     * fail. It also counts the randomiser draws, one per prime, since the exponent carrying phi(n) is
+     * blinded and nothing else on the decrypt path draws.
+     */
+    private void testEveryDigitAndBlinding(AsymmetricCipherKeyPair pair)
+        throws InvalidCipherTextException
+    {
+        NaccacheSternEngine enc = new NaccacheSternEngine();
+        enc.init(true, pair.getPublic());
+
+        CountingRandom counting = new CountingRandom(new SecureRandom());
+
+        NaccacheSternEngine dec = new NaccacheSternEngine();
+        dec.init(false, new ParametersWithRandom(pair.getPrivate(), counting));
+
+        for (int m = 1; m != 256; m++)
+        {
+            byte[] plain = BigInteger.valueOf(m).toByteArray();
+            byte[] cipherText = enc.processBlock(plain, 0, plain.length);
+
+            counting.count = 0;
+
+            byte[] recovered = dec.processBlock(cipherText, 0, cipherText.length);
+
+            if (counting.count != smallPrimes.size())
+            {
+                fail("NaccacheStern decryption did not blind one exponent per small prime (m = " + m
+                    + ", draws " + counting.count + ")");
+            }
+
+            if (!BigInteger.valueOf(m).equals(new BigInteger(1, recovered)))
+            {
+                fail("NaccacheStern decryption recovered the wrong value for m = " + m
+                    + ", got " + new BigInteger(1, recovered));
+            }
+        }
+    }
+
+    /**
+     * Counts randomiser draws only - the randomiser is seven bits, so it is the only single-byte
+     * request the decrypt path makes.
+     */
+    private static class CountingRandom
+        extends SecureRandom
+    {
+        private final SecureRandom delegate;
+
+        int count;
+
+        CountingRandom(SecureRandom delegate)
+        {
+            this.delegate = delegate;
+        }
+
+        public void nextBytes(byte[] bytes)
+        {
+            if (bytes.length == 1)
+            {
+                count++;
+            }
+            delegate.nextBytes(bytes);
         }
     }
 

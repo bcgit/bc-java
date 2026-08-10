@@ -65,7 +65,8 @@ public class CramerShoupCoreEngine
             key = (CramerShoupKeyParameters)param;
         }
 
-        this.random = initSecureRandom(forEncryption, providedRandom);
+        // randomness is needed on both paths now: decryption blinds its private exponents
+        this.random = initSecureRandom(true, providedRandom);
         this.forEncryption = forEncryption;
 
         CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties("CramerShoup", ConstraintUtils.bitsOfSecurityFor(key.getParameters().getP()), key, Utils.getPurpose(forEncryption)));
@@ -263,13 +264,37 @@ public class CramerShoupCoreEngine
             digest.doFinal(out, 0);
 
             BigInteger a = new BigInteger(1, out);
-            BigInteger v = input.u1.modPow(sk.getX1().add(sk.getY1().multiply(a)), p).
-                multiply(input.u2.modPow(sk.getX2().add(sk.getY2().multiply(a)), p)).mod(p);
+            BigInteger pSub1 = p.subtract(ONE);
+
+            // u1 and u2 are ciphertext components raised below to exponents carrying the private key,
+            // so they have to be valid public values in [2, p-2]. Without this an all-zero ciphertext
+            // with v = 0 satisfies the check below - 0 to any power is 0 - and then reaches the
+            // exponentiations; the inverse of 0 does not exist, so the old code raised an unchecked
+            // ArithmeticException out of a method declaring only CramerShoupCiphertextException.
+            if (input.u1.compareTo(ONE) <= 0 || input.u1.compareTo(pSub1) >= 0
+                || input.u2.compareTo(ONE) <= 0 || input.u2.compareTo(pSub1) >= 0)
+            {
+                throw new CramerShoupCiphertextException("Sorry, that ciphertext is not correct");
+            }
+
+            // Every exponent below carries long-term private key material and every base is a
+            // caller-supplied ciphertext component, so each exponent is blinded with a random multiple
+            // of p-1 before the variable-time modPow sees it. Raising a value coprime to a prime p to
+            // p-1 gives 1, so the results are unchanged. The multiple is of p-1 and not of a subgroup
+            // order: these parameters carry no q, and u1/u2 have only been range checked.
+            BigInteger v = input.u1.modPow(BigIntegers.createBlindedExponent(
+                    sk.getX1().add(sk.getY1().multiply(a)), pSub1, random), p).
+                multiply(input.u2.modPow(BigIntegers.createBlindedExponent(
+                    sk.getX2().add(sk.getY2().multiply(a)), pSub1, random), p)).mod(p);
 
             // check correctness of ciphertext
             if (input.v.equals(v))
             {
-                result = input.e.multiply(input.u1.modPow(sk.getZ(), p).modInverse(p)).mod(p);
+                // u1^-z as u1^(p-1-z), so that recovering the message needs no modInverse - which is
+                // not constant time either, and was being applied to a secret-derived value.
+                BigInteger negZ = BigIntegers.createBlindedExponent(pSub1.subtract(sk.getZ()), pSub1, random);
+
+                result = input.e.multiply(input.u1.modPow(negZ, p)).mod(p);
             }
             else
             {

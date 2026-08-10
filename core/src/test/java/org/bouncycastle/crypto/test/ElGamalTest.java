@@ -344,6 +344,133 @@ public class ElGamalTest
         testInitCheck();
 
         testMaliciousCiphertext();
+
+        testBlindedDecryptionAgrees();
+    }
+
+    /**
+     * A 513-bit safe prime p = 2q+1 whose generator 2 is a quadratic non-residue, so it has the full
+     * order p-1 rather than the order q that ElGamalParametersGenerator picks. Legal ElGamal domain
+     * parameters, and the shape OpenPGP keys commonly carry.
+     */
+    private static final BigInteger FULL_ORDER_P = new BigInteger(
+          "182ef717044f5800cc88ede15393b297bb5601295a6fb8a38dd4b7d283cc3b44"
+        + "121604fbd4b8b5ad2f77a5fd3fb59606268b3a7330d73032eca97429de6438cb3", 16);
+    private static final BigInteger FULL_ORDER_G = BigInteger.valueOf(2);
+
+    /**
+     * Decryption blinds the private exponent with a fresh random multiple of p-1 per call, which
+     * leaves the result alone only if the multiple really is of the group order. Blinding by the
+     * subgroup order instead would be wrong for every gamma outside that subgroup - about half of
+     * them - so the parameters here deliberately include a set whose generator has the full order
+     * p-1, which ElGamalParametersGenerator never produces and without which this test cannot tell
+     * the two apart.
+     */
+    private static class CountingRandom
+        extends SecureRandom
+    {
+        private final SecureRandom delegate;
+
+        int count;
+
+        CountingRandom(SecureRandom delegate)
+        {
+            this.delegate = delegate;
+        }
+
+        public void nextBytes(byte[] bytes)
+        {
+            count++;
+            delegate.nextBytes(bytes);
+        }
+    }
+
+    private void testBlindedDecryptionAgrees()
+    {
+        SecureRandom random = new SecureRandom();
+
+        ElGamalParametersGenerator pGen = new ElGamalParametersGenerator();
+        pGen.init(256, 10, random);
+
+        ElGamalParameters[] paramSets = new ElGamalParameters[]
+            {
+                pGen.generateParameters(),                                  // g of order q
+                new ElGamalParameters(FULL_ORDER_P, FULL_ORDER_G)           // g of order p-1
+            };
+
+        for (int set = 0; set != paramSets.length; set++)
+        {
+            testBlindedDecryptionAgrees(paramSets[set], random, set);
+        }
+    }
+
+    private void testBlindedDecryptionAgrees(ElGamalParameters elParams, SecureRandom random, int set)
+    {
+        for (int key = 0; key != 4; key++)
+        {
+            ElGamalKeyPairGenerator kpGen = new ElGamalKeyPairGenerator();
+            kpGen.init(new ElGamalKeyGenerationParameters(random, elParams));
+            AsymmetricCipherKeyPair pair = kpGen.generateKeyPair();
+
+            ElGamalEngine enc = new ElGamalEngine();
+            enc.init(true, new ParametersWithRandom(pair.getPublic(), random));
+
+            CountingRandom decRandom = new CountingRandom(random);
+            ElGamalEngine dec = new ElGamalEngine();
+            dec.init(false, new ParametersWithRandom(pair.getPrivate(), decRandom));
+
+            for (int msg = 0; msg != 8; msg++)
+            {
+                byte[] plain = new byte[enc.getInputBlockSize()];
+                random.nextBytes(plain);
+                plain[0] = (byte)(plain[0] & 0x7f | 0x01);      // keep it inside the block
+
+                byte[] cipherText = enc.processBlock(plain, 0, plain.length);
+
+                decRandom.count = 0;
+                byte[] first = dec.processBlock(cipherText, 0, cipherText.length);
+
+                // nothing on the decrypt path draws randomness except the blinding factor, so this
+                // is what fails if the blinding is ever dropped - the plaintext check below cannot
+                // tell blinded from unblinded
+                if (decRandom.count != 1)
+                {
+                    fail("decryption did not blind its exponent (set " + set + ", key " + key + ", msg "
+                        + msg + ", draws " + decRandom.count + ")");
+                }
+
+                if (!Arrays.areEqual(plain, trimLeadingZero(first, plain.length)))
+                {
+                    fail("blinded decryption recovered the wrong plaintext (set " + set + ", key " + key + ", msg " + msg + ")");
+                }
+
+                // the blinding factor is redrawn per call, so a wrong multiple shows up as
+                // decryptions of one ciphertext disagreeing with each other
+                for (int rep = 0; rep != 12; rep++)
+                {
+                    if (!Arrays.areEqual(first, dec.processBlock(cipherText, 0, cipherText.length)))
+                    {
+                        fail("repeated blinded decryption disagreed (set " + set + ", key " + key + ", msg "
+                            + msg + ", rep " + rep + ")");
+                    }
+                }
+            }
+        }
+    }
+
+    private byte[] trimLeadingZero(byte[] v, int len)
+    {
+        if (v.length == len)
+        {
+            return v;
+        }
+
+        byte[] rv = new byte[len];
+
+        System.arraycopy(v, v.length - len > 0 ? v.length - len : 0, rv, len - v.length > 0 ? len - v.length : 0,
+            v.length < len ? v.length : len);
+
+        return rv;
     }
 
     public static void main(

@@ -1,6 +1,7 @@
 package org.bouncycastle.crypto.engines;
 
 import java.math.BigInteger;
+import java.security.SecureRandom;
 import java.util.Vector;
 
 import org.bouncycastle.crypto.AsymmetricBlockCipher;
@@ -14,6 +15,7 @@ import org.bouncycastle.crypto.params.NaccacheSternKeyParameters;
 import org.bouncycastle.crypto.params.NaccacheSternPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.BigIntegers;
 
 /**
  * NaccacheStern Engine. For details on this cipher, please see
@@ -26,7 +28,13 @@ public class NaccacheSternEngine
 
     private NaccacheSternKeyParameters key;
 
-    private Vector[] lookup = null;
+    // one fixed-length encoding per possible digit, per small prime. Fixed length so the search in
+    // decryption can compare byte by byte without the length itself saying anything.
+    private byte[][][] lookup = null;
+
+    private int modulusLength;
+
+    private SecureRandom random;
 
     private boolean debug = false;
 
@@ -45,10 +53,19 @@ public class NaccacheSternEngine
 
         if (param instanceof ParametersWithRandom)
         {
-            param = ((ParametersWithRandom) param).getParameters();
+            ParametersWithRandom rParam = (ParametersWithRandom)param;
+
+            param = rParam.getParameters();
+            this.random = CryptoServicesRegistrar.getSecureRandom(rParam.getRandom());
+        }
+        else
+        {
+            this.random = CryptoServicesRegistrar.getSecureRandom();
         }
 
         key = (NaccacheSternKeyParameters)param;
+
+        this.modulusLength = (key.getModulus().bitLength() + 7) / 8;
 
         // construct lookup table for faster decryption if necessary
         if (!this.forEncryption)
@@ -60,14 +77,14 @@ public class NaccacheSternEngine
             }
             NaccacheSternPrivateKeyParameters priv = (NaccacheSternPrivateKeyParameters)key;
             Vector primes = priv.getSmallPrimes();
-            lookup = new Vector[primes.size()];
+            lookup = new byte[primes.size()][][];
             for (int i = 0; i < primes.size(); i++)
             {
                 BigInteger actualPrime = (BigInteger)primes.elementAt(i);
                 int actualPrimeValue = actualPrime.intValue();
 
-                lookup[i] = new Vector();
-                lookup[i].addElement(ONE);
+                lookup[i] = new byte[actualPrimeValue][];
+                lookup[i][0] = BigIntegers.asUnsignedByteArray(modulusLength, ONE);
 
                 if (debug)
                 {
@@ -81,7 +98,8 @@ public class NaccacheSternEngine
                 {
                     accJ = accJ.add(priv.getPhi_n());
                     BigInteger comp = accJ.divide(actualPrime);
-                    lookup[i].addElement(priv.getG().modPow(comp, priv.getModulus()));
+                    lookup[i][j] = BigIntegers.asUnsignedByteArray(modulusLength,
+                        priv.getG().modPow(comp, priv.getModulus()));
                 }
             }
         }
@@ -191,22 +209,54 @@ public class NaccacheSternEngine
             // Get Chinese Remainders of CipherText
             for (int i = 0; i < primes.size(); i++)
             {
-                BigInteger exp = input.modPow(priv.getPhi_n().divide((BigInteger)primes.elementAt(i)), priv.getModulus());
-                Vector al = lookup[i];
-                if (lookup[i].size() != ((BigInteger)primes.elementAt(i)).intValue())
+                // input is the caller's ciphertext and the exponent is derived from phi(n), which is
+                // the private key - recovering it factors the modulus - so the exponent is randomised
+                // before the variable-time modPow sees it. input^phi(n) = 1 (mod n) by Euler for any
+                // input coprime to n, so the result is unchanged; an input sharing a factor with n
+                // decrypts to a different value than before, but it failed the lookup below either
+                // way, and producing one means the caller has already factored the modulus.
+                BigInteger exponent = BigIntegers.createBlindedExponent(
+                    priv.getPhi_n().divide((BigInteger)primes.elementAt(i)), priv.getPhi_n(), random);
+
+                BigInteger exp = input.modPow(exponent, priv.getModulus());
+                byte[][] al = lookup[i];
+                if (al.length != ((BigInteger)primes.elementAt(i)).intValue())
                 {
                     if (debug)
                     {
                         // -DM System.out.println
-                        System.out.println("Prime is " + primes.elementAt(i) + ", lookup table has size " + al.size());
+                        System.out.println("Prime is " + primes.elementAt(i) + ", lookup table has size " + al.length);
                     }
                     throw new InvalidCipherTextException("Error in lookup Array for "
                                     + ((BigInteger)primes.elementAt(i)).intValue()
                                     + ": Size mismatch. Expected ArrayList with length "
                                     + ((BigInteger)primes.elementAt(i)).intValue() + " but found ArrayList of length "
-                                    + lookup[i].size());
+                                    + al.length);
                 }
-                int lookedup = al.indexOf(exp);
+
+                // The index of the match IS the plaintext digit for this prime, so returning as soon
+                // as it is found - which Vector.indexOf did - made the running time reveal it. Scan
+                // the whole table instead and select the index with a mask.
+                byte[] expEnc = BigIntegers.asUnsignedByteArray(modulusLength, exp);
+                int found = 0;                                  // 0 for no match, else digit + 1
+
+                for (int j = 0; j != al.length; j++)
+                {
+                    byte[] candidate = al[j];
+                    int nonEqual = 0;
+
+                    for (int k = 0; k != modulusLength; k++)
+                    {
+                        nonEqual |= (candidate[k] ^ expEnc[k]) & 0xFF;
+                    }
+
+                    int isEqual = (nonEqual - 1) >> 31;         // -1 when equal, 0 otherwise
+                    int stillLooking = (found - 1) >> 31;       // -1 until something has matched
+
+                    found |= (j + 1) & isEqual & stillLooking;
+                }
+
+                int lookedup = found - 1;
 
                 if (lookedup == -1)
                 {
@@ -216,12 +266,12 @@ public class NaccacheSternEngine
                         System.out.println("Actual prime is " + primes.elementAt(i));
                         System.out.println("Decrypted value is " + exp);
 
-                        System.out.println("LookupList for " + primes.elementAt(i) + " with size " + lookup[i].size()
+                        System.out.println("LookupList for " + primes.elementAt(i) + " with size " + al.length
                                         + " is: ");
-                        for (int j = 0; j < lookup[i].size(); j++)
+                        for (int j = 0; j < al.length; j++)
                         {
                             // -DM System.out.println
-                            System.out.println(lookup[i].elementAt(j));
+                            System.out.println(new BigInteger(1, al[j]));
                         }
                     }
                     throw new InvalidCipherTextException("Lookup failed");

@@ -283,8 +283,8 @@ public class JPAKEParticipant
         this.x1 = JPAKEUtil.generateX1(q, random);
         this.x2 = JPAKEUtil.generateX2(q, random);
 
-        this.gx1 = JPAKEUtil.calculateGx(p, g, x1);
-        this.gx2 = JPAKEUtil.calculateGx(p, g, x2);
+        this.gx1 = JPAKEUtil.calculateGx(p, q, g, x1, random);
+        this.gx2 = JPAKEUtil.calculateGx(p, q, g, x2, random);
         BigInteger[] knowledgeProofForX1 = JPAKEUtil.calculateZeroKnowledgeProof(p, q, g, gx1, x1, participantId, digest, random);
         BigInteger[] knowledgeProofForX2 = JPAKEUtil.calculateZeroKnowledgeProof(p, q, g, gx2, x2, participantId, digest, random);
 
@@ -347,7 +347,7 @@ public class JPAKEParticipant
         BigInteger gA = JPAKEUtil.calculateGA(p, gx1, gx3, gx4);
         BigInteger s = calculateS();
         BigInteger x2s = JPAKEUtil.calculateX2s(q, x2, s);
-        BigInteger A = JPAKEUtil.calculateA(p, q, gA, x2s);
+        BigInteger A = JPAKEUtil.calculateA(p, q, gA, x2s, random);
         BigInteger[] knowledgeProofForX2s = JPAKEUtil.calculateZeroKnowledgeProof(p, q, gA, A, x2s, participantId, digest, random);
 
         this.state = STATE_ROUND_2_CREATED;
@@ -437,7 +437,7 @@ public class JPAKEParticipant
         Arrays.fill(password, (char)0);
         this.password = null;
 
-        BigInteger keyingMaterial = JPAKEUtil.calculateKeyingMaterial(p, q, gx4, x2, s, b);
+        BigInteger keyingMaterial = JPAKEUtil.calculateKeyingMaterial(p, q, gx4, x2, s, b, random);
         
         /*
          * Clear the ephemeral private key fields as well.

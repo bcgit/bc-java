@@ -105,7 +105,7 @@ public class DSASigner
         BigInteger  k = kCalculator.nextK();
 
         // the randomizer is to conceal timing information related to k and x.
-        BigInteger  r = params.getG().modPow(k.add(getRandomizer(q, random)), params.getP()).mod(q);
+        BigInteger  r = params.getG().modPow(BigIntegers.createBlindedExponent(k, q, CryptoServicesRegistrar.getSecureRandom(random)), params.getP()).mod(q);
 
         k = BigIntegers.modOddInverse(q, k).multiply(m.add(x.multiply(r)));
 
@@ -172,13 +172,5 @@ public class DSASigner
     protected SecureRandom initSecureRandom(boolean needed, SecureRandom provided)
     {
         return needed ? CryptoServicesRegistrar.getSecureRandom(provided) : null;
-    }
-
-    private BigInteger getRandomizer(BigInteger q, SecureRandom provided)
-    {
-        // Calculate a random multiple of q to add to k. Note that g^q = 1 (mod p), so adding multiple of q to k does not change r.
-        int randomBits = 7;
-
-        return BigIntegers.createRandomBigInteger(randomBits, CryptoServicesRegistrar.getSecureRandom(provided)).add(BigInteger.valueOf(128)).multiply(q);
     }
 }

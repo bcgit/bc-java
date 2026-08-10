@@ -20,6 +20,10 @@ import org.bouncycastle.crypto.generators.DHKeyPairGenerator;
 import org.bouncycastle.crypto.generators.DHParametersGenerator;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.DHKeyGenerationParameters;
+import org.bouncycastle.crypto.agreement.DHStandardGroups;
+import org.bouncycastle.crypto.agreement.MQVBasicAgreement;
+import org.bouncycastle.crypto.params.DHMQVPrivateParameters;
+import org.bouncycastle.crypto.params.DHMQVPublicParameters;
 import org.bouncycastle.crypto.params.DHParameters;
 import org.bouncycastle.crypto.params.DHPrivateKeyParameters;
 import org.bouncycastle.crypto.params.DHPublicKeyParameters;
@@ -592,6 +596,10 @@ public class DHTest
 
         testCombinedTestVector1();
         testCombinedTestVector2();
+
+        testBlindedAgreementWithFullOrderGenerator();
+        testBlindedAgreementUsesTheSuppliedRandom();
+        testBlindedMqvAgreement();
         
         //
         // generation test.
@@ -666,6 +674,239 @@ public class DHTest
         catch (IllegalArgumentException e)
         {
             // expected
+        }
+    }
+
+    /**
+     * A 513-bit safe prime p = 2q+1 whose generator 2 is a quadratic non-residue, so it has the full
+     * order p-1 rather than the order q the DH parameter generator picks. Legal DH domain parameters,
+     * and needed here: with a generator of order q every public value lies in that subgroup, and a
+     * blinding multiple of q would then be indistinguishable from one of p-1.
+     */
+    private static final BigInteger FULL_ORDER_P = new BigInteger(
+          "182ef717044f5800cc88ede15393b297bb5601295a6fb8a38dd4b7d283cc3b44"
+        + "121604fbd4b8b5ad2f77a5fd3fb59606268b3a7330d73032eca97429de6438cb3", 16);
+    private static final BigInteger FULL_ORDER_G = BigInteger.valueOf(2);
+
+    /**
+     * Agreement blinds the private exponent with a fresh random multiple of p-1 per call, which leaves
+     * the shared secret alone only if the multiple really is of the group order. Both sides must still
+     * agree, and repeated agreements must be stable, over parameters whose public values do not all
+     * lie in the order-q subgroup.
+     */
+    private void testBlindedAgreementWithFullOrderGenerator()
+    {
+        SecureRandom random = new SecureRandom();
+        DHParameters dhParams = new DHParameters(FULL_ORDER_P, FULL_ORDER_G);
+
+        for (int i = 0; i != 8; i++)
+        {
+            DHBasicKeyPairGenerator kpGen = new DHBasicKeyPairGenerator();
+            kpGen.init(new DHKeyGenerationParameters(random, dhParams));
+
+            AsymmetricCipherKeyPair aPair = kpGen.generateKeyPair();
+            AsymmetricCipherKeyPair bPair = kpGen.generateKeyPair();
+
+            // the agreement is initialised through ParametersWithRandom, so the blinding must draw
+            // from the random the caller supplied - DHBasicAgreement used to discard it
+            CountingRandom aRandom = new CountingRandom(random);
+
+            DHBasicAgreement aAgree = new DHBasicAgreement();
+            aAgree.init(new ParametersWithRandom(aPair.getPrivate(), aRandom));
+
+            DHBasicAgreement bAgree = new DHBasicAgreement();
+            bAgree.init(bPair.getPrivate());
+
+            BigInteger aSecret = aAgree.calculateAgreement(bPair.getPublic());
+
+            if (aRandom.count != 1)
+            {
+                fail("blinded agreement: the caller's SecureRandom was not used (run " + i
+                    + ", draws " + aRandom.count + ")");
+            }
+            BigInteger bSecret = bAgree.calculateAgreement(aPair.getPublic());
+
+            if (!aSecret.equals(bSecret))
+            {
+                fail("blinded agreement: the two sides disagree (run " + i + ")");
+            }
+
+            // the blinding multiple is redrawn per call, so a wrong multiple shows up as repeated
+            // agreements over the same key pair disagreeing with each other
+            for (int rep = 0; rep != 8; rep++)
+            {
+                if (!aSecret.equals(aAgree.calculateAgreement(bPair.getPublic())))
+                {
+                    fail("blinded agreement: repeated agreement disagreed (run " + i + ", rep " + rep + ")");
+                }
+            }
+        }
+    }
+
+    private void testBlindedAgreementUsesTheSuppliedRandom()
+    {
+        SecureRandom random = new SecureRandom();
+        DHParameters dhParams = new DHParameters(p512, g512);
+
+        DHKeyPairGenerator kpGen = new DHKeyPairGenerator();
+        kpGen.init(new DHKeyGenerationParameters(random, dhParams));
+
+        AsymmetricCipherKeyPair aPair = kpGen.generateKeyPair();
+        AsymmetricCipherKeyPair bPair = kpGen.generateKeyPair();
+
+        CountingRandom aRandom = new CountingRandom(random);
+
+        DHAgreement aAgree = new DHAgreement();
+        aAgree.init(new ParametersWithRandom(aPair.getPrivate(), aRandom));
+        BigInteger aMessage = aAgree.calculateMessage();
+
+        DHAgreement bAgree = new DHAgreement();
+        bAgree.init(bPair.getPrivate());
+        BigInteger bMessage = bAgree.calculateMessage();
+
+        // calculateMessage generates an ephemeral key pair, so only count from here
+        aRandom.count = 0;
+
+        BigInteger aSecret = aAgree.calculateAgreement((DHPublicKeyParameters)bPair.getPublic(), bMessage);
+        BigInteger bSecret = bAgree.calculateAgreement((DHPublicKeyParameters)aPair.getPublic(), aMessage);
+
+        if (!aSecret.equals(bSecret))
+        {
+            fail("blinded DHAgreement: the two sides disagree");
+        }
+
+        // both exponentiations in calculateAgreement carry a private exponent and are blinded
+        if (aRandom.count != 2)
+        {
+            fail("blinded DHAgreement: expected two blinding draws from the caller's SecureRandom, got "
+                + aRandom.count);
+        }
+    }
+
+    /**
+     * Prime-field DH-MQV raises a base built entirely from the other party's values to an exponent
+     * carrying our static private key, so that exponent is blinded too. Nothing in core exercised
+     * this agreement before - the existing MQV coverage is the EC variant and a constraints check.
+     */
+    private void testBlindedMqvAgreement()
+    {
+        SecureRandom random = new SecureRandom();
+
+        // MQV requires Q, so use a standard safe-prime group, which carries it
+        DHParameters dhParams = DHStandardGroups.rfc3526_2048;
+
+        DHKeyPairGenerator kpGen = new DHKeyPairGenerator();
+        kpGen.init(new DHKeyGenerationParameters(random, dhParams));
+
+        AsymmetricCipherKeyPair aStatic = kpGen.generateKeyPair();
+        AsymmetricCipherKeyPair aEphem = kpGen.generateKeyPair();
+        AsymmetricCipherKeyPair bStatic = kpGen.generateKeyPair();
+        AsymmetricCipherKeyPair bEphem = kpGen.generateKeyPair();
+
+        CountingRandom aRandom = new CountingRandom(random);
+
+        MQVBasicAgreement aAgree = new MQVBasicAgreement();
+        aAgree.init(new ParametersWithRandom(new DHMQVPrivateParameters(
+            (DHPrivateKeyParameters)aStatic.getPrivate(),
+            (DHPrivateKeyParameters)aEphem.getPrivate(),
+            (DHPublicKeyParameters)aEphem.getPublic()), aRandom));
+
+        MQVBasicAgreement bAgree = new MQVBasicAgreement();
+        bAgree.init(new DHMQVPrivateParameters(
+            (DHPrivateKeyParameters)bStatic.getPrivate(),
+            (DHPrivateKeyParameters)bEphem.getPrivate(),
+            (DHPublicKeyParameters)bEphem.getPublic()));
+
+        BigInteger aSecret = aAgree.calculateAgreement(new DHMQVPublicParameters(
+            (DHPublicKeyParameters)bStatic.getPublic(), (DHPublicKeyParameters)bEphem.getPublic()));
+
+        if (aRandom.count != 1)
+        {
+            fail("MQV agreement did not blind its exponent from the caller's SecureRandom (draws "
+                + aRandom.count + ")");
+        }
+
+        BigInteger bSecret = bAgree.calculateAgreement(new DHMQVPublicParameters(
+            (DHPublicKeyParameters)aStatic.getPublic(), (DHPublicKeyParameters)aEphem.getPublic()));
+
+        if (!aSecret.equals(bSecret))
+        {
+            fail("MQV agreement: the two sides disagree");
+        }
+
+        // the multiple is redrawn per call, so a wrong one shows up as repeats disagreeing
+        for (int rep = 0; rep != 8; rep++)
+        {
+            if (!aSecret.equals(aAgree.calculateAgreement(new DHMQVPublicParameters(
+                (DHPublicKeyParameters)bStatic.getPublic(), (DHPublicKeyParameters)bEphem.getPublic()))))
+            {
+                fail("MQV agreement: repeated agreement disagreed (rep " + rep + ")");
+            }
+        }
+
+        testMqvCannotSeeNonSubgroupValues(dhParams, bStatic);
+    }
+
+    /**
+     * The blinding multiple is of q, which is only sound because a value outside the order-q subgroup
+     * cannot reach the exponentiation. That reachability argument is what this checks, since with the
+     * argument holding, q and p-1 are observationally identical through the public API and no
+     * agreement test can tell them apart. If either rejection below is ever relaxed, the choice of q
+     * in MQVBasicAgreement has to be revisited.
+     */
+    private void testMqvCannotSeeNonSubgroupValues(DHParameters dhParams, AsymmetricCipherKeyPair bStatic)
+    {
+        BigInteger p = dhParams.getP();
+        BigInteger q = dhParams.getQ();
+
+        BigInteger rogueY = BigInteger.valueOf(2);
+        while (rogueY.modPow(q, p).equals(BigInteger.valueOf(1)))
+        {
+            rogueY = rogueY.add(BigInteger.valueOf(1));
+        }
+
+        // DHPublicKeyParameters refuses a y outside the subgroup while q is present
+        try
+        {
+            new DHPublicKeyParameters(rogueY, dhParams);
+            fail("MQV agreement: a public value outside the order-q subgroup was accepted");
+        }
+        catch (IllegalArgumentException e)
+        {
+            // expected
+        }
+
+        // and the value cannot be smuggled in on q-less parameters either, because the MQV container
+        // requires the peer's static and ephemeral keys to share domain parameters
+        DHPublicKeyParameters rogueEphem = new DHPublicKeyParameters(rogueY, new DHParameters(p, dhParams.getG()));
+
+        try
+        {
+            new DHMQVPublicParameters((DHPublicKeyParameters)bStatic.getPublic(), rogueEphem);
+            fail("MQV agreement: an ephemeral key on foreign domain parameters was accepted");
+        }
+        catch (IllegalArgumentException e)
+        {
+            // expected
+        }
+    }
+
+    private static class CountingRandom
+        extends SecureRandom
+    {
+        private final SecureRandom delegate;
+
+        int count;
+
+        CountingRandom(SecureRandom delegate)
+        {
+            this.delegate = delegate;
+        }
+
+        public void nextBytes(byte[] bytes)
+        {
+            count++;
+            delegate.nextBytes(bytes);
         }
     }
 

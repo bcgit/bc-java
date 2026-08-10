@@ -13,6 +13,7 @@ import org.bouncycastle.crypto.params.DHParameters;
 import org.bouncycastle.crypto.params.DHPrivateKeyParameters;
 import org.bouncycastle.crypto.params.DHPublicKeyParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
+import org.bouncycastle.util.BigIntegers;
 
 /**
  * a Diffie-Hellman key exchange engine.
@@ -114,12 +115,24 @@ public class DHAgreement
             ? pub.getY()
             : new DHPublicKeyParameters(pub.getY(), dhParams).getY();
 
-        BigInteger result = peerY.modPow(privateValue, p);
+        // Both bases are peer-supplied and both exponents are private - privateValue is this run's
+        // ephemeral, key.getX() is the long-term key - so both exponents are blinded before the
+        // variable-time modPow. The multiples are of p-1 rather than of the subgroup order: the
+        // DHPublicKeyParameters construction above only checks the subgroup when the parameters carry
+        // q, so a base outside the order-q subgroup is possible, and for a safe prime an odd multiple
+        // of q would give the wrong shared secret for such a base.
+        BigInteger pSub1 = p.subtract(ONE);
+
+        BigInteger blindedPrivateValue = BigIntegers.createBlindedExponent(privateValue, pSub1, random);
+
+        BigInteger result = peerY.modPow(blindedPrivateValue, p);
         if (result.equals(ONE))
         {
             throw new IllegalStateException("Shared key can't be 1");
         }
 
-        return peerMessage.modPow(key.getX(), p).multiply(result).mod(p);
+        BigInteger blindedX = BigIntegers.createBlindedExponent(key.getX(), pSub1, random);
+
+        return peerMessage.modPow(blindedX, p).multiply(result).mod(p);
     }
 }

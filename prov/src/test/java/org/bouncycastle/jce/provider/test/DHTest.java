@@ -1597,6 +1597,7 @@ public class DHTest
         testGP("DIFFIEHELLMAN", 1024, 256, g1024, p1024);
         testExplicitWrapping(512, 0, g512, p512);
         testRandom(256);
+        testJceAgreementIsBlinded();
 
         testECDH("ECDH");
         testECDH("ECDHC");
@@ -1633,6 +1634,77 @@ public class DHTest
         testMinSpecValue();
         testGenerateUsingStandardGroup();
         testHybridValueParameterSpec();
+    }
+
+    /**
+     * The JCE KeyAgreement does its own exponentiation rather than going through DHBasicAgreement,
+     * so being blinded in the lightweight API says nothing about this path - which is the one nearly
+     * every application uses. The agreed secret must not move, and the caller's SecureRandom must be
+     * the one the blinding draws from.
+     */
+    private void testJceAgreementIsBlinded()
+        throws Exception
+    {
+        DHParameterSpec dhSpec = new DHParameterSpec(p512, g512);
+
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("DH", "BC");
+        kpGen.initialize(dhSpec, new SecureRandom());
+
+        KeyPair aPair = kpGen.generateKeyPair();
+        KeyPair bPair = kpGen.generateKeyPair();
+
+        CountingRandom aRandom = new CountingRandom(new SecureRandom());
+
+        KeyAgreement aAgree = KeyAgreement.getInstance("DH", "BC");
+        aAgree.init(aPair.getPrivate(), aRandom);
+        aAgree.doPhase(bPair.getPublic(), true);
+        byte[] aSecret = aAgree.generateSecret();
+
+        if (aRandom.count != 1)
+        {
+            fail("JCE DH agreement did not blind its exponent (draws " + aRandom.count + ")");
+        }
+
+        KeyAgreement bAgree = KeyAgreement.getInstance("DH", "BC");
+        bAgree.init(bPair.getPrivate());
+        bAgree.doPhase(aPair.getPublic(), true);
+
+        if (!areEqual(aSecret, bAgree.generateSecret()))
+        {
+            fail("JCE DH agreement: the two sides disagree");
+        }
+
+        // the multiple is redrawn per call, so a wrong one shows up as repeats disagreeing
+        for (int rep = 0; rep != 8; rep++)
+        {
+            KeyAgreement again = KeyAgreement.getInstance("DH", "BC");
+            again.init(aPair.getPrivate(), aRandom);
+            again.doPhase(bPair.getPublic(), true);
+
+            if (!areEqual(aSecret, again.generateSecret()))
+            {
+                fail("JCE DH agreement: repeated agreement disagreed (rep " + rep + ")");
+            }
+        }
+    }
+
+    private static class CountingRandom
+        extends SecureRandom
+    {
+        private final SecureRandom delegate;
+
+        int count;
+
+        CountingRandom(SecureRandom delegate)
+        {
+            this.delegate = delegate;
+        }
+
+        public void nextBytes(byte[] bytes)
+        {
+            count++;
+            delegate.nextBytes(bytes);
+        }
     }
 
     public static void main(
