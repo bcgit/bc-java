@@ -22,6 +22,8 @@ What is therefore FINE in 1.4-reachable code: generics, `StringBuilder`, varargs
 declarations. What is NOT (the regexes can't fix syntax or APIs): enhanced-for loops,
 autoboxing, enums, covariant return overrides, varargs *call sites*, and any post-1.4 API —
 `String.contains`/`isEmpty`, `System.clearProperty` (use `System.getProperties().remove`),
+`java.nio.charset.StandardCharsets` (Java 7 — use BC `Strings.toUTF8ByteArray` /
+`Strings.toByteArray`; this is the single most common way a new *test* breaks this build),
 `java.util.Arrays.copyOf(Range)` (use BC `Arrays`), `Integer.numberOfLeadingZeros`/`compare`
 (use BC `Integers` or open-code), `Math.scalb`/`getExponent` (Java 6 — see `Dpe`'s private
 bit-twiddling helpers for the pattern), `java.util.concurrent` (use synchronized collections
@@ -80,16 +82,26 @@ assertions. Rules of thumb:
 sh build1-4                                   # build-provider, build, zip-src
 JAVA_HOME=/opt/jdk1.4.2 ant -f ant/jdk14.xml build-test
 /home/dgh/bin/bcsign4 build/artifacts/jdk1.4/jars/*.jar    # this machine only
-JAVA_HOME=/opt/jdk1.4.2 ant -f ant/jdk14.xml test
+JAVA_HOME=/opt/jdk1.4.2 ant -f ant/jdk14.xml test-signed   # NOT "test" — see below
 ```
 
 - JRE 1.4's JCE authenticates providers: unsigned bcprov jars fail with
   "provider BC may not be signed by a trusted party". `bcsign4` signs jdk14 jars with
   `bc1024key` via the 1.4 jarsigner (silently — an empty log is success).
-- **Sign every jar, and sign after `build-test`**: the junit classpath takes the provider
-  from `bcprov-ext-jdk14` plus all other jars in `artifacts/jars`, JRE 1.4 requires all
-  classes in one package to share signer info, and the `test` target's `build-test`
-  dependency re-jars `bctest` (wiping its signature) if anything recompiled.
+- **Sign every jar, and then run `test-signed`, not `test`.** The junit classpath takes the
+  provider from `bcprov-ext-jdk14` plus all other jars in `artifacts/jars`, and JRE 1.4
+  requires all classes in one package to share signer info. `bctest` shares
+  `org.bouncycastle.pqc.crypto.hqc` with the signed provider jar — `GFTest` lives in that
+  main-namespace package to reach the package-private `GF` — so an unsigned `bctest` fails
+  that suite with `SecurityException: class "…hqc.GF"'s signer information does not match
+  signer information of other classes in the same package`. The `test` target **cannot**
+  work here: its `build-test` dependency re-jars `bctest` on *every* invocation (ant's
+  `init` re-copies and re-preprocesses the sources, so javac always has work to do), which
+  strips the signature again after `bcsign4` ran. `test-signed` delegates to the same junit
+  suites with no `build-test` dependency, so it runs against the jars exactly as signed.
+  Don't try to drive `ant -f ant/bc+-build.xml test` directly instead — that file depends on
+  properties `jdk14.xml` supplies (`target.prefix`, `junit.printsummary`, …) and fails
+  immediately with "`${junit.printsummary}` is not a legal value for this attribute".
 - Package-private provider tests (`prov/src/test/java/org/bouncycastle/jce/provider/*.java`
   — `CrlCacheTest` etc.) are excluded in `ant/jdk14.xml` for the same reason `jdk15+.xml`
   excludes them: the test jar cannot share `org.bouncycastle.jce.provider` with the signed
