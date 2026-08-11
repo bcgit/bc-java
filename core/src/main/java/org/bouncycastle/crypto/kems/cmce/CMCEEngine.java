@@ -258,13 +258,13 @@ public class CMCEEngine
 
             // Create Field which is an element in gf2^mt
 
-            // 2.4.1 Irreducible-polynomial generation
+            // 13.8 Irreducible-polynomial generation
             short[] field = new short[SYS_T];
             int sigma1_t = E.length - 32 - (2 * SYS_T);
             seedIndex = sigma1_t;
 
 
-            // Irreducible 2.4.1 - 1. Define βj = ∑m−1
+            // Irreducible 13.8 - 1. Define βj = ∑m−1
             // i=0 dσ1j+izi for each j ∈ {0,1,...,t −1}. (Within each group of σ1
             // input bits, this uses only the first m bits).
             for (int i = 0; i < SYS_T; i++)
@@ -339,11 +339,11 @@ public class CMCEEngine
         }
     }
 
-    // 2.2.3 Encoding subroutine
+    // 13.6 Encoding subroutine
     private void syndrome(byte[] cipher_text, byte[] pk, byte[] error_vector)
     {
         /*
-        2.2.3 Encoding subroutine
+        13.6 Encoding subroutine
         1. Define H = (In−k |T)
         2. Compute and return C0 = He ∈Fn−k2 .
          */
@@ -397,7 +397,7 @@ public class CMCEEngine
         }
     }
 
-    // 2.4.4 Fixed-weight-vector generation
+    // 13.11 Fixed-weight-vector generation
     private void generate_error_vector(byte[] error_vector, SecureRandom random)
     {
         byte[] buf_bytes;
@@ -406,14 +406,14 @@ public class CMCEEngine
         byte[] val = new byte[SYS_T];
 
         /*
-        2.4.4 Fixed-weight-vector generation
+        13.11 Fixed-weight-vector generation
         1. Generate σ1τ uniform random bits b0,b1,...,bσ1τ−1.
          */
         while (true)
         {
 
             /*
-            2.4.4 Fixed-weight-vector generation
+            13.11 Fixed-weight-vector generation
             2. Define dj = ∑m−1
             i=0 bσ1j+i2i for each j ∈{0,1,...,τ −1}.
              */
@@ -428,7 +428,7 @@ public class CMCEEngine
                 }
 
             /*
-            2.4.4 Fixed-weight-vector generation
+            13.11 Fixed-weight-vector generation
             3. Define a0,a1,...,at−1 as the first t entries in d0,d1,...,dτ−1 in the range
             {0,1,...,n −1}. If there are fewer than t such entries, restart the algorithm
              */
@@ -462,7 +462,7 @@ public class CMCEEngine
 
 
             /*
-            2.4.4 Fixed-weight-vector generation
+            13.11 Fixed-weight-vector generation
             4. If a0,a1,...,at−1 are not all distinct, restart the algorithm.
              */
             int eq = 0;
@@ -489,7 +489,7 @@ public class CMCEEngine
 
 
         /*
-        2.4.4 Fixed-weight-vector generation
+        13.11 Fixed-weight-vector generation
         5. Define e = (e0,e1,...,en−1) ∈ Fn2 as the weight-t vector such that eai = 1 for each i.
         (Implementors are cautioned to compute e through arithmetic rather than variable-
         time RAM lookups.)
@@ -516,21 +516,21 @@ public class CMCEEngine
     private void encrypt(byte[] cipher_text, byte[] pk, byte[] error_vector, SecureRandom random)
     {
         /*
-        2.4.5 Encapsulation
+        13.12 Encapsulation
         1. Use FixedWeight to generate a vector e ∈Fn2 of weight t.
          */
 
-        // 2.4.4 Fixed-weight-vector generation
+        // 13.11 Fixed-weight-vector generation
         generate_error_vector(error_vector, random);
 
         /*
-        2.4.5 Encapsulation
+        13.12 Encapsulation
         2. Compute C0 = Encode(e,T).
          */
         syndrome(cipher_text, pk, error_vector);
     }
 
-    // 2.4.5 Encapsulation
+    // 13.12 Encapsulation
     public int kem_enc(byte[] cipher_text, byte[] key, byte[] pk, SecureRandom random)
     {
         byte[] error_vector = new byte[SYS_N / 8];
@@ -543,7 +543,7 @@ public class CMCEEngine
         }
 
         /*
-        2.4.5 Encapsulation
+        13.12 Encapsulation
         1. Use FixedWeight to generate a vector e ∈Fn2 of weight t.
         2. Compute C0 = Encode(e,T).
          */
@@ -559,7 +559,7 @@ public class CMCEEngine
         }
 
         /*
-        2.4.5 Encapsulation
+        13.12 Encapsulation
         4. Compute K = H(1,e,C)   (C = C0 for non-pc, C = C0 || C1 for pc)
          */
 
@@ -592,7 +592,7 @@ public class CMCEEngine
         return 0;
     }
 
-    // 2.3.3 Decapsulation
+    // 13.13 Decapsulation
     public int kem_dec(byte[] key, byte[] cipher_text, byte[] sk)
     {
         byte[] error_vector = new byte[SYS_N / 8];
@@ -606,7 +606,7 @@ public class CMCEEngine
         }
 
         /*
-        2.3.3 Decapsulation
+        13.13 Decapsulation
         4. Compute e = Decode(C0,Γ′). If e = ⊥, set e = s and b = 0.
          */
 
@@ -614,7 +614,7 @@ public class CMCEEngine
         byte ret_decrypt = (byte)decrypt(error_vector, sk, cipher_text);
 
         /*
-        2.3.3 Decapsulation
+        13.13 Decapsulation
         6. If C′1 6= C1, set e = s and b = 0.
          */
 
@@ -642,7 +642,7 @@ public class CMCEEngine
         m &= 0xff;
 
         /*
-        2.3.3 Decapsulation
+        13.13 Decapsulation
         2. Set b = 1.
          */
         preimage[0] = (byte)(m & 1);
@@ -656,7 +656,7 @@ public class CMCEEngine
         }
 
         /*
-        2.3.3 Decapsulation
+        13.13 Decapsulation
         7. Compute K = H(b,e,C)
          */
 
@@ -681,7 +681,7 @@ public class CMCEEngine
         return 0;
     }
 
-    // 2.2.4 Decoding subroutine
+    // 13.7 Decoding subroutine
     // Niederreiter decryption with the Berlekamp decoder
     private int decrypt(byte[] error_vector, byte[] sk, byte[] cipher_text)
     {
@@ -699,7 +699,7 @@ public class CMCEEngine
         byte[] r = new byte[SYS_N / 8];
 
         /*
-        2.2.4 Decoding subroutine
+        13.7 Decoding subroutine
         1. Extend C0 to v = (C0,0,...,0) ∈Fn2 by appending k zeros.
          */
         if (SYND_BYTES >= 0)
@@ -719,7 +719,7 @@ public class CMCEEngine
         g[SYS_T] = 1;
 
         /*
-        2.2.4 Decoding subroutine
+        13.7 Decoding subroutine
         2. Find the unique codeword c in the Goppa code defined by Γ′ that is at distance ≤t
         from v. If there is no such codeword, return ⊥.
          */
@@ -742,7 +742,7 @@ public class CMCEEngine
 
 
         /*
-        2.2.4 Decoding subroutine
+        13.7 Decoding subroutine
         3. Set e = v + c.
          */
         for (int i = 0; i < SYS_N / 8; i++)
@@ -763,7 +763,7 @@ public class CMCEEngine
         synd(s_cmp, eInv, L, error_vector);
 
         /*
-        2.2.4 Decoding subroutine
+        13.7 Decoding subroutine
         4. If wt(e) = t and C0 = He, return e. Otherwise return ⊥
          */
         int check;
@@ -1720,7 +1720,7 @@ public class CMCEEngine
 
     private int generate_irr_poly(short[] field)
     {
-        // Irreducible 2.4.1 - 2. Define β = β0 + β1y + ···+ βt−1yt−1 ∈Fq[y]/F(y).
+        // Irreducible 13.8 - 2. Define β = β0 + β1y + ···+ βt−1yt−1 ∈Fq[y]/F(y).
         // generating poly
         short[][] m = new short[SYS_T + 1][SYS_T];
 
@@ -1748,7 +1748,7 @@ public class CMCEEngine
             }
         }
 
-        // Irreducible 2.4.1 - 3. Compute the minimal polynomial g of β over Fq. (By definition g is monic and irre-
+        // Irreducible 13.8 - 3. Compute the minimal polynomial g of β over Fq. (By definition g is monic and irre-
         // ducible, and g(β) = 0.)
 
         // gaussian
@@ -1763,7 +1763,7 @@ public class CMCEEngine
                 }
             }
 
-            // Irreducible 2.4.1 - 4. Return g if g has degree t. Otherwise return ⊥
+            // Irreducible 13.8 - 4. Return g if g has degree t. Otherwise return ⊥
             if (m[j][j] == 0) // return if not systematic
             {
 //                System.out.println("FAILED GENERATING IRR POLY");
