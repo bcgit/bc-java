@@ -402,6 +402,12 @@ public final class BigIntegers
         // take s = t - M when the top word is set, or when the subtraction did not go negative
         Nat.cmov(len, ((top | -top) >> 31) | ~borrow, s, 0, t, 0);
 
+        // the word the subtraction consumed is still sitting above the result, so clear the
+        // headroom: the returned array is wider than len and must not encode a different value
+        // when read at its full width. Unconditional, so nothing here depends on the operands.
+        t[len] = 0;
+        t[len + 1] = 0;
+
         return t;
     }
 
