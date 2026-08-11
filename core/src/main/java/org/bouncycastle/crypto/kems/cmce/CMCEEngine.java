@@ -466,16 +466,14 @@ public class CMCEEngine
             4. If a0,a1,...,at−1 are not all distinct, restart the algorithm.
              */
             int eq = 0;
-            // check for repetition
-            for (int i = 1; i < SYS_T && eq != 1; i++)
+            // Check for repetition over every pair, accumulating the answer rather than returning on
+            // the first collision found: the indices are the error vector's support, so stopping early
+            // would let the time taken to reject a candidate set reveal which pair collided.
+            for (int i = 1; i < SYS_T; i++)
             {
                 for (int j = 0; j < i; j++)
                 {
-                    if (ind[i] == ind[j])
-                    {
-                        eq = 1;
-                        break;
-                    }
+                    eq |= same_mask32(ind[i], ind[j]) & 1;
                 }
             }
 
