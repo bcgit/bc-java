@@ -78,10 +78,8 @@ public class ECCSISignerTest
 
 
     public static void main(String[] args)
-        throws Exception
     {
-        ECCSISignerTest test = new ECCSISignerTest();
-        test.performTest();
+        runTest(new ECCSISignerTest());
     }
 
     @Override
@@ -130,7 +128,7 @@ public class ECCSISignerTest
         signer.init(true, new ParametersWithRandom(priv, random));
         signer.update(M, 0, M.length);
         byte[] sig = signer.generateSignature();
-        isTrue(Arrays.areEqual(sig, Hex.decode("269D4C8F DEB66A74 E4EF8C0D 5DCC597D\n" +
+        isTrue("RFC 6507 appendix A signature", Arrays.areEqual(sig, Hex.decode("269D4C8F DEB66A74 E4EF8C0D 5DCC597D\n" +
             "                      DFE6029C 2AFFC493 6008CD2C C1045D81\n" +
             "                      E09B528D 0EF8D6DF 1AA3ECBF 80110CFC\n" +
             "                      EC9FC682 52CEBB67 9F413484 6940CCFD\n" +
@@ -144,7 +142,7 @@ public class ECCSISignerTest
 
         signer.init(false, pub);
         signer.update(M, 0, M.length);
-        isTrue(signer.verifySignature(sig));
+        isTrue("RFC 6507 appendix A signature did not verify", signer.verifySignature(sig));
     }
 
     private void testRandom(String curveName, Digest digest)
@@ -175,7 +173,8 @@ public class ECCSISignerTest
         signer.update(M, 0, M.length);
         signer.reset();
         signer.update(M, 0, M.length);
-        isTrue(signer.verifySignature(sig));
+        isTrue("round trip failed for " + curveName + " with " + digest.getAlgorithmName(),
+            signer.verifySignature(sig));
     }
 
 }

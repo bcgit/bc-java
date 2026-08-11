@@ -72,12 +72,19 @@ public class SM9SigMasterPrivateKeyParameters
         BigInteger ks = checkedKs();
         BigInteger n = SM9Curve.N;
         byte[] z = Arrays.append(identity, HID);
-        BigInteger t1 = SM9Sm3.h1(z, n).add(ks).mod(n);
+        // every step from here down touches ks, the master private key, so each avoids the
+        // variable-time BigInteger arithmetic: modAdd for the sum, modOddInverse rather than
+        // modInverse, and modMult for the product. N is the group order and so is odd, h1 returns
+        // a value in [1, N-1] and the constructor pins ks to [1, N-1], so both stay inside the
+        // [0, N) contract those helpers require. The identity is public and supplied by the caller,
+        // so a reduction whose cost varied with the sum or the product would answer a question
+        // about ks once per identity served, and those answers combine.
+        BigInteger t1 = BigIntegers.modAdd(n, SM9Sm3.h1(z, n), ks);
         if (t1.signum() == 0)
         {
             throw new IllegalStateException("SM9 signature master key must be regenerated for this identity");
         }
-        BigInteger t2 = ks.multiply(t1.modInverse(n)).mod(n);
+        BigInteger t2 = BigIntegers.modMult(n, ks, BigIntegers.modOddInverse(n, t1));
         ECPoint ds = SM9Curve.multiplySecure(SM9Curve.P1, t2).normalize();
         return new SM9SigPrivateKeyParameters(ds, publicParams);
     }

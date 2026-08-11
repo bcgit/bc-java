@@ -17,6 +17,7 @@ import javax.crypto.interfaces.DHPublicKey;
 import javax.crypto.spec.DHParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.BasicAgreement;
 import org.bouncycastle.crypto.DerivationFunction;
 import org.bouncycastle.crypto.agreement.DHUnifiedAgreement;
@@ -25,6 +26,7 @@ import org.bouncycastle.crypto.agreement.kdf.ConcatenationKDFGenerator;
 import org.bouncycastle.crypto.agreement.kdf.DHKEKGenerator;
 import org.bouncycastle.crypto.generators.KDF2BytesGenerator;
 import org.bouncycastle.crypto.params.DHMQVPrivateParameters;
+import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.params.DHMQVPublicParameters;
 import org.bouncycastle.crypto.params.DHParameters;
 import org.bouncycastle.crypto.params.DHPrivateKeyParameters;
@@ -59,6 +61,7 @@ public class KeyAgreementSpi
     private BigInteger      x;
     private BigInteger      p;
     private BigInteger      g;
+    private SecureRandom    random;
 
     private byte[]          result;
 
@@ -170,7 +173,15 @@ public class KeyAgreementSpi
         }
         else
         {
-            BigInteger res = peerY.modPow(x, p);
+            // peerY comes from the other party and x is our private value, which for static-static
+            // agreement is long lived, so the exponent is blinded before the variable-time modPow
+            // sees it. A multiple of p-1 rather than of the subgroup order: peerY has only been range
+            // checked above, so it need not lie in the order-q subgroup. This mirrors
+            // DHBasicAgreement, which this branch deliberately does not call - doing so would change
+            // the exception types the JCE contract here promises.
+            BigInteger blindedX = BigIntegers.createBlindedExponent(x, p.subtract(ONE), random);
+
+            BigInteger res = peerY.modPow(blindedX, p);
             if (res.compareTo(ONE) == 0)
             {
                 throw new InvalidKeyException("Shared key can't be 1");
@@ -241,6 +252,9 @@ public class KeyAgreementSpi
         }
         DHPrivateKey    privKey = (DHPrivateKey)key;
 
+        // set before the agreements below are initialised, since they are handed this random
+        this.random = CryptoServicesRegistrar.getSecureRandom(random);
+
         if (params != null)
         {
             if (params instanceof DHParameterSpec)    // p, g override.
@@ -288,14 +302,16 @@ public class KeyAgreementSpi
 
                 if (mqvParameters.getEphemeralPublicKey() != null)
                 {
-                    mqvAgreement.init(new DHMQVPrivateParameters(generatePrivateKeyParameter(privKey),
+                    mqvAgreement.init(new ParametersWithRandom(new DHMQVPrivateParameters(
+                        generatePrivateKeyParameter(privKey),
                         generatePrivateKeyParameter(mqvParameters.getEphemeralPrivateKey()),
-                        generatePublicKeyParameter(mqvParameters.getEphemeralPublicKey())));
+                        generatePublicKeyParameter(mqvParameters.getEphemeralPublicKey())), this.random));
                 }
                 else
                 {
-                    mqvAgreement.init(new DHMQVPrivateParameters(generatePrivateKeyParameter(privKey),
-                            generatePrivateKeyParameter(mqvParameters.getEphemeralPrivateKey())));
+                    mqvAgreement.init(new ParametersWithRandom(new DHMQVPrivateParameters(
+                        generatePrivateKeyParameter(privKey),
+                        generatePrivateKeyParameter(mqvParameters.getEphemeralPrivateKey())), this.random));
                 }
             }
             else if (params instanceof UserKeyingMaterialSpec)
@@ -339,6 +355,7 @@ public class KeyAgreementSpi
         this.p = privKey.getParams().getP();
         this.g = privKey.getParams().getG();
         this.x = privKey.getX();
+        this.random = CryptoServicesRegistrar.getSecureRandom(random);
         this.result = bigIntToBytes(x);
     }
 

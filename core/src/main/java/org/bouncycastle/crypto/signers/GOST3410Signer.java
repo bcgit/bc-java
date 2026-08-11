@@ -74,7 +74,13 @@ public class GOST3410Signer
             }
             while (k.compareTo(params.getQ()) >= 0);
 
-            BigInteger  r = params.getA().modPow(k, params.getP()).mod(params.getQ());
+            // the randomizer conceals timing information related to k, which is what s below would
+            // give up the private key from if it leaked. a has order q by construction, so a^q = 1
+            // (mod p) and adding a multiple of q to k leaves r alone - the same randomizer DSASigner
+            // applies to its own k.
+            BigInteger  blindedK = BigIntegers.createBlindedExponent(k, params.getQ(), random);
+
+            BigInteger  r = params.getA().modPow(blindedK, params.getP()).mod(params.getQ());
 
             BigInteger  s = k.multiply(m).
                                 add(((GOST3410PrivateKeyParameters)key).getX().multiply(r)).

@@ -122,13 +122,26 @@ public class ECCSISigner
         //Compute s' = ( (( HE + r * SSK )^-1) * j ) modulo q
         ECCSIPrivateKeyParameters params = (ECCSIPrivateKeyParameters)(((ParametersWithRandom)param).getParameters());
         BigInteger ssk = params.getSSK();
-        BigInteger denominator = new BigInteger(1, heBytes).add(r.multiply(ssk)).mod(q);
+
+        // HE is a hash over public values, so reducing it with BigInteger reveals nothing; r is
+        // already reduced, and reset() has pinned ssk and j to [1, q-1]. Every remaining step is
+        // then constant time: modMult for the products, modAdd for the sum, and modOddInverse
+        // rather than the variable-time BigInteger.modInverse. q is the curve order, hence odd.
+        //
+        // The products matter as much as the inverse here. HE and r are both public and change per
+        // signature while ssk is the long-term secret, so a reduction of HE + r*ssk costing an
+        // amount that depended on the quotient would answer a question about ssk once per
+        // signature, and those answers combine.
+        BigInteger he = new BigInteger(1, heBytes).mod(q);
+        BigInteger denominator = BigIntegers.modAdd(q, he, BigIntegers.modMult(q, r, ssk));
         if (denominator.equals(BigInteger.ZERO))
         {
             throw new IllegalArgumentException("Invalid j, retry");
         }
 
-        BigInteger sPrime = denominator.modInverse(q).multiply(j).mod(q);
+        // both forms of the inverse throw ArithmeticException for a non-invertible value, which the
+        // zero check above has already ruled out for a prime q
+        BigInteger sPrime = BigIntegers.modMult(q, BigIntegers.modOddInverse(q, denominator), j);
 
         return Arrays.concatenate(BigIntegers.asUnsignedByteArray(this.N, r), BigIntegers.asUnsignedByteArray(this.N, sPrime),
             params.getPublicKeyParameters().getPVT().getEncoded(false));
@@ -190,7 +203,22 @@ public class ECCSISigner
         {
             ECCSIPrivateKeyParameters parameters = (ECCSIPrivateKeyParameters)param;
             pvt = parameters.getPublicKeyParameters().getPVT();
-            j = BigIntegers.createRandomBigInteger(q.bitLength(), random);
+            if (parameters.getSSK().signum() <= 0 || parameters.getSSK().compareTo(q) >= 0)
+            {
+                // RFC 6507 sec. 5.1.2 derives the SSK modulo q, so a value outside [1, q-1] is a
+                // malformed key. Checked here because generateSignature multiplies it in a form
+                // that requires it reduced, and because a wrong answer later is worse than this.
+                throw new IllegalArgumentException("SSK must be in [1, q-1]");
+            }
+            // RFC 6507 sec. 5.2.1 asks for a random non-zero element of F_q, but a draw over q's
+            // bit length can land on zero or above q; reject those. An in-range draw consumes the
+            // same bytes it always did, and being reduced is what lets s' below be computed
+            // without a variable-time reduction of a value derived from j.
+            do
+            {
+                j = BigIntegers.createRandomBigInteger(q.bitLength(), random);
+            }
+            while (j.signum() == 0 || j.compareTo(q) >= 0);
             // j is the per-signature nonce and SSK the long-term secret signing key:
             // constant-time, not the curve's default wNAF multiplier
             ECPoint J = ECAlgorithms.multiplySecret(G, j, q).normalize();

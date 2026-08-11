@@ -57,9 +57,21 @@ public class SAKKEKEMExtractor
         this.p = publicKey.getPrime();
         this.Z_S = publicKey.getZ();
         this.identifier = publicKey.getIdentifier();
-        // the scalar derives from the master secret: constant-time, not the default wNAF multiplier
+        // the scalar derives from the master secret, so all three steps that touch it are constant
+        // time: BigIntegers.modAdd rather than add(...).mod(q) to canonicalise the sum,
+        // BigIntegers.modOddInverse rather than BigInteger.modInverse, which is variable time in the
+        // value it inverts, and multiplySecret rather than the default wNAF multiplier. q is the
+        // subgroup order and therefore odd. The pairing below already uses the same inverse.
+        //
+        // RFC 6508 sec. 6.1 puts both the identifier and the master secret in [2, q-1], so the sum
+        // can reach 2q-2 and only sometimes needs reducing. Leaving it unreduced would leak which:
+        // a reduction short-circuits when its argument already fits the modulus, and the identifier
+        // is public, so the timing of the inverse would answer whether the master secret reaches
+        // the top of q's bit range less this identifier - once per identity served, and those
+        // answers combine across identities into a search for the secret.
         this.K_bs = ECAlgorithms.multiplySecret(P,
-            this.identifier.add(privateKey.getMasterSecret()).modInverse(q), q).normalize();
+            BigIntegers.modOddInverse(q, BigIntegers.modAdd(q, this.identifier, privateKey.getMasterSecret())),
+            q).normalize();
         this.n = publicKey.getN();
 
         this.digest = publicKey.getDigest();

@@ -266,6 +266,142 @@ public final class BigIntegers
         return !BigIntegers.modOddIsCoprimeVar(x, y);
     }
 
+    /**
+     * Return (X + Y) mod M for X and Y already in the range [0, M). The sum is formed at a fixed
+     * width and reduced by subtracting M unconditionally and then keeping or discarding the result
+     * with a mask, so neither the running time nor the memory access pattern depends on the values.
+     * <p>
+     * Use this rather than {@code X.add(Y).mod(M)} when either operand is secret. A reduction
+     * short-circuits when the value it is given is already less than the modulus, so a sum that
+     * crosses the top of M is distinguishable from one that does not. Where the other operand is
+     * public that difference is a threshold predicate on the secret one, and a public operand the
+     * caller does not control turns repeated observations into a search over the secret.
+     * </p>
+     *
+     * @param M the modulus, which must be positive.
+     * @param X a value in the range [0, M).
+     * @param Y a value in the range [0, M).
+     * @return (X + Y) mod M.
+     */
+    public static BigInteger modAdd(BigInteger M, BigInteger X, BigInteger Y)
+    {
+        if (M.signum() != 1)
+        {
+            throw new ArithmeticException("BigInteger: modulus not positive");
+        }
+        if (X.signum() < 0 || X.compareTo(M) >= 0 || Y.signum() < 0 || Y.compareTo(M) >= 0)
+        {
+            throw new IllegalArgumentException("'X' and 'Y' must be in the range [0, M)");
+        }
+
+        // the extra bit of width means X + Y, which is less than 2M, cannot carry out of the top
+        // word, so one conditional subtraction of M is enough to reduce it
+        int bits = M.bitLength() + 1;
+        int[] m = Nat.fromBigInteger(bits, M);
+        int len = m.length;
+        int[] x = Nat.fromBigInteger(bits, X);
+        int[] y = Nat.fromBigInteger(bits, Y);
+        int[] z = Nat.create(len);
+        int[] t = Nat.create(len);
+
+        Nat.add(len, x, y, z);
+        int borrow = Nat.sub(len, z, m, t);     // t = z - M, borrow non-zero exactly when z < M
+        Nat.cmov(len, ~borrow, t, 0, z, 0);     // keep t unless the subtraction went negative
+
+        return Nat.toBigInteger(len, z);
+    }
+
+    /**
+     * Return (X * Y) mod M for an odd M and X, Y already in the range [0, M), by Montgomery
+     * multiplication over a fixed number of words. Every loop runs a value-independent number of
+     * times and no index depends on the operands.
+     * <p>
+     * Use this rather than {@code X.multiply(Y).mod(M)} when either operand is secret. The product
+     * is up to twice the width of M, so the reduction is a real division rather than the single
+     * conditional subtraction {@link #modAdd(BigInteger, BigInteger, BigInteger)} needs, and how
+     * much work it does depends on the quotient - which is to say on the operands.
+     * </p><p>
+     * The quantity derived from M alone (R squared mod M, where R is 2 raised to the width of M
+     * rounded up to a word boundary) is computed with BigInteger, since M is the public modulus.
+     * </p>
+     *
+     * @param M the modulus, which must be odd and positive.
+     * @param X a value in the range [0, M).
+     * @param Y a value in the range [0, M).
+     * @return (X * Y) mod M.
+     */
+    public static BigInteger modMult(BigInteger M, BigInteger X, BigInteger Y)
+    {
+        if (!M.testBit(0))
+        {
+            throw new IllegalArgumentException("'M' must be odd");
+        }
+        if (M.signum() != 1)
+        {
+            throw new ArithmeticException("BigInteger: modulus not positive");
+        }
+        if (X.signum() < 0 || X.compareTo(M) >= 0 || Y.signum() < 0 || Y.compareTo(M) >= 0)
+        {
+            throw new IllegalArgumentException("'X' and 'Y' must be in the range [0, M)");
+        }
+
+        int bits = M.bitLength();
+        int[] m = Nat.fromBigInteger(bits, M);
+        int len = m.length;
+
+        // R is 2^(32*len), which exceeds M, so R and the odd M are coprime and Montgomery form
+        // exists. R^2 mod M depends only on the public modulus.
+        BigInteger r2 = ONE.shiftLeft(len << 6).mod(M);
+
+        int mDash = -Mod.inverse32(m[0]);       // -M^-1 mod 2^32, the CIOS reduction multiplier
+
+        // the first product leaves X*Y*R^-1, the second multiplies by R^2*R^-1 to undo it
+        int[] z = montgomeryMultiply(len, Nat.fromBigInteger(bits, X), Nat.fromBigInteger(bits, Y), m, mDash);
+
+        z = montgomeryMultiply(len, z, Nat.fromBigInteger(bits, r2), m, mDash);
+
+        return Nat.toBigInteger(len, z);
+    }
+
+    /**
+     * Coarsely-integrated operand scanning: returns X * Y * R^-1 mod M in [0, M) for X, Y in
+     * [0, M). The accumulator carries two words of headroom above M so that every carry is
+     * absorbed by a fixed sequence of adds rather than by a ripple whose length would depend on
+     * the values.
+     */
+    private static int[] montgomeryMultiply(int len, int[] x, int[] y, int[] m, int mDash)
+    {
+        int[] t = new int[len + 2];
+
+        for (int i = 0; i < len; ++i)
+        {
+            // t += x * y[i]
+            long c = Nat.mulWordAddTo(len, y[i], x, 0, t, 0) & 0xFFFFFFFFL;
+            c += t[len] & 0xFFFFFFFFL;
+            t[len] = (int)c;
+            t[len + 1] = (int)(c >>> 32);
+
+            // t += (t[0] * -M^-1) * M, which clears the bottom word, then t >>= 32
+            c = Nat.mulWordAddTo(len, t[0] * mDash, m, 0, t, 0) & 0xFFFFFFFFL;
+            c += t[len] & 0xFFFFFFFFL;
+            t[len] = (int)c;
+            t[len + 1] += (int)(c >>> 32);
+
+            System.arraycopy(t, 1, t, 0, len + 1);
+            t[len + 1] = 0;
+        }
+
+        // t is below 2M and so occupies len+1 words: subtract M once if it is there to take
+        int[] s = Nat.create(len);
+        int top = t[len];
+        int borrow = Nat.sub(len, t, m, s);
+
+        // take s = t - M when the top word is set, or when the subtraction did not go negative
+        Nat.cmov(len, ((top | -top) >> 31) | ~borrow, s, 0, t, 0);
+
+        return t;
+    }
+
     public static BigInteger modOddInverse(BigInteger M, BigInteger X)
     {
         if (!M.testBit(0))
@@ -394,6 +530,46 @@ public final class BigIntegers
     public static BigInteger createRandomBigInteger(int bitLength, SecureRandom random)
     {
         return new BigInteger(1, createRandom(bitLength, random));
+    }
+
+    /**
+     * Return a private exponent randomised for use in a variable-time modular exponentiation.
+     * <p>
+     * {@link BigInteger#modPow(BigInteger, BigInteger)} carries no constant-time guarantee and its
+     * running time varies with the exponent, so where an exponent carries long-term secret material
+     * and the base is chosen by a peer, the exponent should be randomised before each use. This
+     * returns <code>exponent + c * groupOrder</code> for a small random <code>c</code>, which does
+     * not change the result of the exponentiation because
+     * <code>base<sup>groupOrder</sup> = 1</code>.
+     * <p>
+     * <b>The caller owns that premise, and it is the easy thing to get wrong.</b> The order must be
+     * one the base <em>actually</em> has:
+     * <ul>
+     * <li>Pass the <b>subgroup order q</b> only when the base is known to lie in that subgroup - a
+     * domain generator <code>g</code> chosen with <code>g<sup>q</sup> = 1</code>, or a peer value that
+     * has been verified with <code>v<sup>q</sup> = 1</code>.</li>
+     * <li>Pass <b>p-1</b> for a caller- or peer-supplied base that has only been range-checked. Any
+     * value coprime to a prime p satisfies <code>base<sup>p-1</sup> = 1</code> by Fermat, so this
+     * always holds.</li>
+     * <li>Pass <b>phi(n)</b> for a composite modulus, which only the private-key holder can do.</li>
+     * </ul>
+     * Passing q for a base outside the order-q subgroup silently returns the wrong answer for an odd
+     * multiple - for a safe prime that is roughly half of the range-valid bases - and no known-answer
+     * test will catch it, since the randomisation is otherwise result-preserving.
+     * <p>
+     * The multiple is small (between 128 and 255 times groupOrder), so it lengthens the exponent by
+     * about eight bits rather than doubling the work.
+     *
+     * @param exponent the private exponent to randomise.
+     * @param groupOrder an order the base is raised to giving 1 - see above.
+     * @param random a source of randomness.
+     * @return exponent plus a random multiple of groupOrder.
+     */
+    public static BigInteger createBlindedExponent(BigInteger exponent, BigInteger groupOrder, SecureRandom random)
+    {
+        int randomBits = 7;
+
+        return exponent.add(createRandomBigInteger(randomBits, random).add(BigInteger.valueOf(128)).multiply(groupOrder));
     }
 
     // Hexadecimal value of the product of the 131 smallest odd primes from 3 to 743

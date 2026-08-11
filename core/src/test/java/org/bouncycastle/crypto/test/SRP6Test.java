@@ -45,6 +45,104 @@ public class SRP6Test extends SimpleTest
         testWithRandomParams(256);
         testWithRandomParams(384);
         testWithRandomParams(512);
+
+        testPrivateExponentsAreBlinded(SRP6StandardGroups.rfc5054_1024);
+        testVerifierSurvivesBlinding(SRP6StandardGroups.rfc5054_1024);
+    }
+
+    /**
+     * The exponents carrying private material are randomised before BigInteger.modPow sees them, so
+     * each of those calls draws a blinding factor. Blinding is result-preserving - the RFC 5054
+     * vectors above are what pin the values - so the draws are the only thing left to observe.
+     */
+    private void testPrivateExponentsAreBlinded(SRP6GroupParameters group) throws CryptoException
+    {
+        byte[] I = "username".getBytes();
+        byte[] P = "password".getBytes();
+        byte[] s = new byte[16];
+        random.nextBytes(s);
+
+        CountingRandom genRandom = new CountingRandom(random);
+        SRP6VerifierGenerator gen = new SRP6VerifierGenerator();
+        gen.init(group, SHA256Digest.newInstance(), genRandom);
+        BigInteger v = gen.generateVerifier(s, I, P);
+
+        // one draw, for the exponent carrying the password derived x
+        isEquals("verifier generation did not blind its exponent", 1, genRandom.count);
+
+        CountingRandom clientRandom = new CountingRandom(random);
+        SRP6Client client = new SRP6Client();
+        client.init(group, SHA256Digest.newInstance(), clientRandom);
+
+        CountingRandom serverRandom = new CountingRandom(random);
+        SRP6Server server = new SRP6Server();
+        server.init(group, v, SHA256Digest.newInstance(), serverRandom);
+
+        BigInteger A = client.generateClientCredentials(s, I, P);
+        BigInteger B = server.generateServerCredentials();
+
+        // the credential draws include the private value itself, which createRandomInRange may
+        // retry, so only the secret calculations below have an exactly known count
+        int clientBase = clientRandom.count;
+        int serverBase = serverRandom.count;
+
+        BigInteger clientS = client.calculateSecret(B);
+        BigInteger serverS = server.calculateSecret(A);
+
+        // client: one draw for x, one for u * x + a
+        isEquals("client secret did not blind both exponents", 2, clientRandom.count - clientBase);
+        // server: one draw for b
+        isEquals("server secret did not blind its exponent", 1, serverRandom.count - serverBase);
+
+        if (!clientS.equals(serverS))
+        {
+            fail("SRP agreement failed - client/server calculated different secrets");
+        }
+    }
+
+    /**
+     * Two different blinding factors have to give the same verifier. A multiple of the wrong order
+     * would not - and for a safe prime it would be wrong about half the time, which is why this is
+     * checked rather than assumed.
+     */
+    private void testVerifierSurvivesBlinding(SRP6GroupParameters group)
+    {
+        byte[] I = "username".getBytes();
+        byte[] P = "password".getBytes();
+        byte[] s = new byte[16];
+        random.nextBytes(s);
+
+        SRP6VerifierGenerator gen = new SRP6VerifierGenerator();
+        gen.init(group, SHA256Digest.newInstance(), random);
+
+        BigInteger first = gen.generateVerifier(s, I, P);
+
+        for (int i = 0; i != 20; i++)
+        {
+            if (!first.equals(gen.generateVerifier(s, I, P)))
+            {
+                fail("blinding changed the SRP verifier");
+            }
+        }
+    }
+
+    private static class CountingRandom
+        extends SecureRandom
+    {
+        private final SecureRandom delegate;
+
+        int count;
+
+        CountingRandom(SecureRandom delegate)
+        {
+            this.delegate = delegate;
+        }
+
+        public void nextBytes(byte[] bytes)
+        {
+            count++;
+            delegate.nextBytes(bytes);
+        }
     }
 
     private void rfc5054AppendixBTestVectors() throws Exception

@@ -22,8 +22,11 @@ import javax.crypto.ShortBufferException;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
+import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.Wrapper;
+import org.bouncycastle.crypto.engines.RSABlindedEngine;
+import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.jcajce.provider.asymmetric.util.WrapUtil;
 import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 import org.bouncycastle.jcajce.spec.KTSParameterSpec;
@@ -37,9 +40,10 @@ import org.bouncycastle.util.Exceptions;
  * against the {@code id-kem-rsa} object identifier (1.0.18033.2.2.4).
  * <p>
  * Driven by the CMS pipeline through
- * {@link org.bouncycastle.cms.jcajce.JceKEMRecipientInfoGenerator} (wrap) and
- * {@link org.bouncycastle.cms.jcajce.JceKEMEnvelopedRecipient} (unwrap) when the
- * recipient holds an RSA key; the analogous peer for ML-KEM is
+ * {@code org.bouncycastle.cms.jcajce.JceKEMRecipientInfoGenerator} (wrap) and
+ * {@code org.bouncycastle.cms.jcajce.JceKEMEnvelopedRecipient} (unwrap) when the
+ * recipient holds an RSA key - both in the pkix module, so they are named rather
+ * than linked; the analogous peer for ML-KEM is
  * {@link org.bouncycastle.jcajce.provider.asymmetric.mlkem.MLKEMCipherSpi}.
  * <p>
  * Cipher operates in {@code WRAP_MODE} / {@code UNWRAP_MODE} only and requires a
@@ -153,7 +157,8 @@ public class RSAKEMCipherSpi
             }
             this.unwrapKey = (RSAPrivateKey)key;
             this.wrapKey = null;
-            this.random = null;
+            // unwrapping needs a random source too: it supplies the decapsulation blinding factor
+            this.random = CryptoServicesRegistrar.getSecureRandom(random);
         }
         else
         {
@@ -270,7 +275,6 @@ public class RSAKEMCipherSpi
         }
 
         BigInteger n = unwrapKey.getModulus();
-        BigInteger d = unwrapKey.getPrivateExponent();
         int modLen = (n.bitLength() + 7) / 8;
 
         if (wrappedKey.length < modLen)
@@ -281,13 +285,23 @@ public class RSAKEMCipherSpi
         byte[] R = null;
         try
         {
-            BigInteger c = BigIntegers.fromUnsignedByteArray(wrappedKey, 0, modLen);
-            BigInteger r = c.modPow(d, n);
+            RSABlindedEngine engine = new RSABlindedEngine();
 
-            R = BigIntegers.asUnsignedByteArray(modLen, r);
+            engine.init(false, new ParametersWithRandom(RSAUtil.generatePrivateKeyParameter(unwrapKey), random));
+
+            byte[] rEnc = engine.processBlock(wrappedKey, 0, modLen);
+
+            R = BigIntegers.asUnsignedByteArray(modLen, new BigInteger(1, rEnc));
+
+            Arrays.fill(rEnc, (byte)0);
+
             Wrapper kWrap = WrapUtil.getKeyUnwrapper(ktsSpec, R);
 
             return new SecretKeySpec(kWrap.unwrap(wrappedKey, modLen, wrappedKey.length - modLen), wrappedKeyAlgorithm);
+        }
+        catch (DataLengthException ex)
+        {
+            throw SecurityExceptions.invalidKeyException("unable to extract KTS secret: " + ex.getMessage(), ex);
         }
         catch (IllegalArgumentException ex)
         {

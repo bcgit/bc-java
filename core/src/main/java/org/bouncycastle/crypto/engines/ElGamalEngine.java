@@ -162,7 +162,17 @@ public class ElGamalEngine
             ElGamalPrivateKeyParameters priv = (ElGamalPrivateKeyParameters)key;
             // a shortcut, which generally relies on p being prime amongst other things.
             // if a problem with this shows up, check the p and g values!
-            BigInteger m = gamma.modPow(pSub1.subtract(priv.getX()), p).multiply(phi).mod(p);
+            //
+            // gamma is caller-supplied and the exponent carries the private key, so the exponent is
+            // blinded with a random multiple of p-1 before the variable-time BigInteger.modPow sees
+            // it. gamma^(p-1) = 1 (mod p) by Fermat for any gamma coprime to p, which the range
+            // check above guarantees, so the result is unchanged. The multiple has to be of p-1 and
+            // not of the subgroup order: gamma need not lie in the order-q subgroup, and for a safe
+            // prime an odd multiple of q would flip the sign of the result for the elements that
+            // do not.
+            BigInteger blindedExp = BigIntegers.createBlindedExponent(pSub1.subtract(priv.getX()), pSub1, random);
+
+            BigInteger m = gamma.modPow(blindedExp, p).multiply(phi).mod(p);
 
             return BigIntegers.asUnsignedByteArray(m);
         }

@@ -86,6 +86,7 @@ public class RegressionTest
         new Poly1305Test(),
         new PQCDHTest(),
         new PSSTest(),
+        new RSAKEMCipherTest(),
         new RSATest(),
         new SealedTest(),
         new SEEDTest(),
