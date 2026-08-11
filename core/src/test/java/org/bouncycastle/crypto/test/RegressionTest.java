@@ -24,6 +24,7 @@ public class RegressionTest
             new DeterministicDSATest(),
             new ECGOST3410Test(),
             new ECCSISignerTest(),
+            new ConstantTimeUsageTest(),
             new ECIESTest(),
             new ECNRTest(),
             new MacTest(),
