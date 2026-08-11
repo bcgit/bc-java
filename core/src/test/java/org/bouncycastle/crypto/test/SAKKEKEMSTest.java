@@ -11,6 +11,8 @@ import org.bouncycastle.crypto.params.SAKKEPublicKeyParameters;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.FixedSecureRandom;
 import org.bouncycastle.util.test.SimpleTest;
@@ -38,6 +40,79 @@ public class SAKKEKEMSTest
         for (int i = 0; i < 1; ++i)
         {
             testRandom();
+        }
+        testLongIdentifier();
+        testMasterSecretRange();
+    }
+
+    /**
+     * RFC 6509 sec. 3.2 builds the identifier from a URI of any length, so nothing bounds it by q -
+     * a URI past about 119 characters carries it over the 1022-bit q of the RFC 6509 parameter set.
+     * The identifier is public and only its residue matters to the RSK, so such a key must still
+     * round-trip rather than being rejected by the order arithmetic in SAKKEKEMExtractor.
+     */
+    private void testLongIdentifier()
+    {
+        SecureRandom random = new SecureRandom();
+
+        StringBuffer uri = new StringBuffer("sip:device-");
+        while (uri.length() < 120)
+        {
+            uri.append("abcdefghij");
+        }
+
+        // "YYYY-MM" NUL URI NUL, per RFC 6509 sec. 3.2
+        byte[] uid = Strings.toByteArray("2011-02\0" + uri.toString() + "\0");
+        BigInteger identifier = new BigInteger(1, uid);
+
+        SAKKEPrivateKeyParameters generated = new SAKKEPrivateKeyParameters(random);
+
+        isTrue("identifier does not exceed q, so this proves nothing",
+            identifier.compareTo(generated.getPublicParams().getQ()) > 0);
+
+        SAKKEPublicKeyParameters b_pub = new SAKKEPublicKeyParameters(identifier,
+            generated.getPublicParams().getZ());
+        SAKKEPrivateKeyParameters b_priv = new SAKKEPrivateKeyParameters(generated.getMasterSecret(), b_pub);
+
+        byte[] ssv = new byte[16];
+        random.nextBytes(ssv);
+
+        SAKKEKEMSGenerator generator = new SAKKEKEMSGenerator(
+            new FixedSecureRandom(new FixedSecureRandom.Source[]{new FixedSecureRandom.Data(ssv)}));
+        SecretWithEncapsulation rlt = generator.generateEncapsulated(b_pub);
+
+        byte[] test = new SAKKEKEMExtractor(b_priv).extractSecret(rlt.getEncapsulation());
+
+        isTrue("long identifier did not round trip", Arrays.areEqual(test, ssv));
+    }
+
+    /**
+     * The master secret cannot be reduced on the way in - that reduction is the variable-time step
+     * the order arithmetic avoids - so one out of [1, q-1] is rejected as a malformed key. The
+     * value congruent to a valid secret modulo q is the case worth covering: [z + q]P is still Z,
+     * so the point check accepts it and only the range check does not.
+     */
+    private void testMasterSecretRange()
+    {
+        SAKKEPrivateKeyParameters good = new SAKKEPrivateKeyParameters(new SecureRandom());
+        SAKKEPublicKeyParameters b_pub = good.getPublicParams();
+
+        BigInteger[] bad = new BigInteger[]{ good.getMasterSecret().add(b_pub.getQ()), BigIntegers.ZERO,
+            b_pub.getQ(), BigIntegers.ONE.negate() };
+
+        for (int i = 0; i != bad.length; i++)
+        {
+            try
+            {
+                new SAKKEPrivateKeyParameters(bad[i], b_pub);
+
+                fail("no exception thrown for master secret " + bad[i]);
+            }
+            catch (IllegalArgumentException e)
+            {
+                isTrue("wrong message: " + e.getMessage(),
+                    "master secret must be in [1, q-1]".equals(e.getMessage()));
+            }
         }
     }
 

@@ -102,12 +102,12 @@ public class BigIntegersTest
                 "A7E535ABD5A5C7C7FF38FA08E2615F6C203177C42B1EB3A1D99B601EBFAA17FB", 16),
             // SM9's N, whose bit length is exactly 256, so the sum does carry out of the top word
             new BigInteger("B640000002A3A6F1D603AB4FF58EC74521F2934B1A7AEEDBE56F9B27E351457D", 16),
-            BigInteger.ONE,
+            BigIntegers.ONE,
             BigInteger.valueOf(3),
             BigInteger.valueOf(4),
-            BigInteger.ONE.shiftLeft(32),
-            BigInteger.ONE.shiftLeft(32).subtract(BigInteger.ONE),
-            BigInteger.ONE.shiftLeft(31).add(BigInteger.ONE)
+            BigIntegers.ONE.shiftLeft(32),
+            BigIntegers.ONE.shiftLeft(32).subtract(BigIntegers.ONE),
+            BigIntegers.ONE.shiftLeft(31).add(BigIntegers.ONE)
         };
 
         SecureRandom random = new SecureRandom();
@@ -115,19 +115,19 @@ public class BigIntegersTest
         for (int i = 0; i != moduli.length; i++)
         {
             BigInteger m = moduli[i];
-            BigInteger last = m.subtract(BigInteger.ONE);
+            BigInteger last = m.subtract(BigIntegers.ONE);
 
-            checkModAdd(m, BigInteger.ZERO, BigInteger.ZERO);
-            checkModAdd(m, BigInteger.ZERO, last);
-            checkModAdd(m, last, BigInteger.ZERO);
+            checkModAdd(m, BigIntegers.ZERO, BigIntegers.ZERO);
+            checkModAdd(m, BigIntegers.ZERO, last);
+            checkModAdd(m, last, BigIntegers.ZERO);
             checkModAdd(m, last, last);
             checkModAdd(m, last.shiftRight(1), last);
 
-            if (m.compareTo(BigInteger.valueOf(2)) > 0)
+            if (m.compareTo(BigIntegers.TWO) > 0)
             {
                 // the sum is exactly m, the one case the conditional subtraction has to take
-                checkModAdd(m, BigInteger.ONE, last);
-                checkModAdd(m, last, BigInteger.ONE);
+                checkModAdd(m, BigIntegers.ONE, last);
+                checkModAdd(m, last, BigIntegers.ONE);
             }
 
             for (int j = 0; j != 200; j++)
@@ -140,14 +140,14 @@ public class BigIntegersTest
         // an operand outside [0, M) is rejected rather than reduced: reducing it is the
         // variable-time step modAdd exists to avoid, so it cannot quietly do it for the caller
         BigInteger q = moduli[0];
-        expectModAddError(q, q, BigInteger.ONE);
-        expectModAddError(q, BigInteger.ONE, q);
-        expectModAddError(q, BigInteger.ONE.negate(), BigInteger.ONE);
-        expectModAddError(q, BigInteger.ONE, BigInteger.ONE.negate());
+        expectModAddError(q, q, BigIntegers.ONE);
+        expectModAddError(q, BigIntegers.ONE, q);
+        expectModAddError(q, BigIntegers.ONE.negate(), BigIntegers.ONE);
+        expectModAddError(q, BigIntegers.ONE, BigIntegers.ONE.negate());
 
         try
         {
-            BigIntegers.modAdd(BigInteger.ZERO, BigInteger.ZERO, BigInteger.ZERO);
+            BigIntegers.modAdd(BigIntegers.ZERO, BigIntegers.ZERO, BigIntegers.ZERO);
 
             fail("no exception thrown");
         }
@@ -179,13 +179,13 @@ public class BigIntegersTest
                 "BD02AAC9F8BF03C6C8A1CC354C69672C39E46CE7FDF222864D5B49FD2999A9B4" +
                 "389B1921CC9AD335144AB173595A07386DABFD2A0C614AA0A9F3CF14870F026A" +
                 "A7E535ABD5A5C7C7FF38FA08E2615F6C203177C42B1EB3A1D99B601EBFAA17FB", 16),
-            BigInteger.ONE,
+            BigIntegers.ONE,
             BigInteger.valueOf(3),
             BigInteger.valueOf(5),
             BigInteger.valueOf(0xFFFFFFFFL),
-            BigInteger.ONE.shiftLeft(32).add(BigInteger.ONE),
-            BigInteger.ONE.shiftLeft(64).subtract(BigInteger.ONE),
-            BigInteger.ONE.shiftLeft(127).subtract(BigInteger.ONE)
+            BigIntegers.ONE.shiftLeft(32).add(BigIntegers.ONE),
+            BigIntegers.ONE.shiftLeft(64).subtract(BigIntegers.ONE),
+            BigIntegers.ONE.shiftLeft(127).subtract(BigIntegers.ONE)
         };
 
         SecureRandom random = new SecureRandom();
@@ -193,17 +193,17 @@ public class BigIntegersTest
         for (int i = 0; i != moduli.length; i++)
         {
             BigInteger m = moduli[i];
-            BigInteger last = m.subtract(BigInteger.ONE);
+            BigInteger last = m.subtract(BigIntegers.ONE);
 
-            checkModMult(m, BigInteger.ZERO, BigInteger.ZERO);
-            checkModMult(m, BigInteger.ZERO, last);
-            checkModMult(m, last, BigInteger.ZERO);
+            checkModMult(m, BigIntegers.ZERO, BigIntegers.ZERO);
+            checkModMult(m, BigIntegers.ZERO, last);
+            checkModMult(m, last, BigIntegers.ZERO);
             checkModMult(m, last, last);
 
-            if (m.compareTo(BigInteger.ONE) > 0)
+            if (m.compareTo(BigIntegers.ONE) > 0)
             {
-                checkModMult(m, BigInteger.ONE, last);
-                checkModMult(m, last, BigInteger.ONE);
+                checkModMult(m, BigIntegers.ONE, last);
+                checkModMult(m, last, BigIntegers.ONE);
                 checkModMult(m, last.shiftRight(1), last.shiftRight(1));
             }
 
@@ -216,22 +216,22 @@ public class BigIntegersTest
 
                 // x * x^-1 is 1, which pins the Montgomery factor rather than just the product.
                 // Some of the moduli above are composite, so check x is a unit before inverting it.
-                if (x.signum() != 0 && m.compareTo(BigInteger.ONE) > 0 && x.gcd(m).equals(BigInteger.ONE))
+                if (x.signum() != 0 && m.compareTo(BigIntegers.ONE) > 0 && x.gcd(m).equals(BigIntegers.ONE))
                 {
                     Assert.assertEquals("m=" + m.toString(16) + " x=" + x.toString(16),
-                        BigInteger.ONE, BigIntegers.modMult(m, x, BigIntegers.modOddInverse(m, x)));
+                        BigIntegers.ONE, BigIntegers.modMult(m, x, BigIntegers.modOddInverse(m, x)));
                 }
             }
         }
 
         BigInteger q = moduli[1];
-        expectModMultError(q, q, BigInteger.ONE);
-        expectModMultError(q, BigInteger.ONE, q);
-        expectModMultError(q, BigInteger.ONE.negate(), BigInteger.ONE);
-        expectModMultError(q, BigInteger.ONE, BigInteger.ONE.negate());
+        expectModMultError(q, q, BigIntegers.ONE);
+        expectModMultError(q, BigIntegers.ONE, q);
+        expectModMultError(q, BigIntegers.ONE.negate(), BigIntegers.ONE);
+        expectModMultError(q, BigIntegers.ONE, BigIntegers.ONE.negate());
 
         // Montgomery form needs R coprime to the modulus, so an even one has no representation
-        expectModMultError(BigInteger.valueOf(4), BigInteger.ONE, BigInteger.ONE);
+        expectModMultError(BigInteger.valueOf(4), BigIntegers.ONE, BigIntegers.ONE);
     }
 
     private void checkModMult(BigInteger m, BigInteger x, BigInteger y)

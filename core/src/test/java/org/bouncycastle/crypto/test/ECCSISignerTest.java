@@ -93,6 +93,9 @@ public class ECCSISignerTest
         throws Exception
     {
         testTestVector();
+        testConsecutiveSignatures();
+        testSSKRange();
+        testNoRandom();
         for (int i = 0; i < curveNames.length; ++i)
         {
             for (int j = 0; j < digests.length; ++j)
@@ -100,6 +103,118 @@ public class ECCSISignerTest
                 testRandom(curveNames[i], digests[j]);
             }
         }
+    }
+
+    /**
+     * RFC 6507 sec. 5.2.1 draws j fresh per signature: two signatures formed over one j share
+     * their r, and the pair of s' values then determines the SSK by linear algebra, so a signer
+     * initialised once and asked for a second signature must draw a new pair rather than reuse
+     * the first.
+     */
+    private void testConsecutiveSignatures()
+        throws Exception
+    {
+        SecureRandom random = new SecureRandom();
+        X9ECParameters params = CustomNamedCurves.getByName("secP256r1");
+        ECCSIKeyPairGenerator generator = new ECCSIKeyPairGenerator();
+        byte[] id = "2011-02\0tel:+447700900123\0".getBytes();
+        ECCSIKeyGenerationParameters keyGenerationParameters = new ECCSIKeyGenerationParameters(random,
+            params, new SHA256Digest(), id);
+        generator.init(keyGenerationParameters);
+        AsymmetricCipherKeyPair keyPair = generator.generateKeyPair();
+
+        byte[] M1 = "message\0".getBytes();
+        byte[] M2 = "message2\0".getBytes();
+
+        ECCSISigner signer = new ECCSISigner(keyGenerationParameters.getKPAK(), params, new SHA256Digest(), id);
+        signer.init(true, new ParametersWithRandom(keyPair.getPrivate(), random));
+        signer.update(M1, 0, M1.length);
+        byte[] sig1 = signer.generateSignature();
+        signer.update(M2, 0, M2.length);
+        byte[] sig2 = signer.generateSignature();
+
+        // r is the first N bytes of each signature; a shared r is a reused nonce
+        int n = 32;
+        isTrue("nonce reused: consecutive signatures share r",
+            !Arrays.areEqual(Arrays.copyOf(sig1, n), Arrays.copyOf(sig2, n)));
+
+        ECCSISigner verifier = new ECCSISigner(keyGenerationParameters.getKPAK(), params, new SHA256Digest(), id);
+        verifier.init(false, keyPair.getPublic());
+        verifier.update(M1, 0, M1.length);
+        isTrue("first consecutive signature did not verify", verifier.verifySignature(sig1));
+
+        verifier = new ECCSISigner(keyGenerationParameters.getKPAK(), params, new SHA256Digest(), id);
+        verifier.init(false, keyPair.getPublic());
+        verifier.update(M2, 0, M2.length);
+        isTrue("second consecutive signature did not verify", verifier.verifySignature(sig2));
+    }
+
+    /**
+     * RFC 6507 sec. 5.1.2 derives the SSK modulo q, so one outside [1, q-1] is a malformed key,
+     * rejected when the signer is initialised. The value congruent to a valid SSK modulo q is the
+     * case worth covering: [ssk + q]G is still the point the KPAK consistency check expects, so
+     * only the range check stands between it and the order arithmetic that requires it reduced.
+     */
+    private void testSSKRange()
+    {
+        SecureRandom random = new SecureRandom();
+        X9ECParameters params = CustomNamedCurves.getByName("secP256r1");
+        ECCSIKeyPairGenerator generator = new ECCSIKeyPairGenerator();
+        byte[] id = "2011-02\0tel:+447700900123\0".getBytes();
+        ECCSIKeyGenerationParameters keyGenerationParameters = new ECCSIKeyGenerationParameters(random,
+            params, new SHA256Digest(), id);
+        generator.init(keyGenerationParameters);
+        AsymmetricCipherKeyPair keyPair = generator.generateKeyPair();
+        ECCSIPrivateKeyParameters priv = (ECCSIPrivateKeyParameters)keyPair.getPrivate();
+
+        BigInteger q = params.getCurve().getOrder();
+        BigInteger[] bad = new BigInteger[]{ priv.getSSK().add(q), BigIntegers.ZERO, q,
+            BigIntegers.ONE.negate() };
+
+        for (int i = 0; i != bad.length; i++)
+        {
+            ECCSISigner signer = new ECCSISigner(keyGenerationParameters.getKPAK(), params, new SHA256Digest(), id);
+            try
+            {
+                signer.init(true, new ParametersWithRandom(
+                    new ECCSIPrivateKeyParameters(bad[i], priv.getPublicKeyParameters()), random));
+
+                fail("no exception thrown for SSK " + bad[i]);
+            }
+            catch (IllegalArgumentException e)
+            {
+                isTrue("wrong message: " + e.getMessage(), "SSK must be in [1, q-1]".equals(e.getMessage()));
+            }
+        }
+    }
+
+    /**
+     * A signer initialised for signing with bare ECCSIPrivateKeyParameters rather than
+     * ParametersWithRandom draws j from the default SecureRandom; the signature must round-trip.
+     */
+    private void testNoRandom()
+        throws Exception
+    {
+        SecureRandom random = new SecureRandom();
+        X9ECParameters params = CustomNamedCurves.getByName("secP256r1");
+        ECCSIKeyPairGenerator generator = new ECCSIKeyPairGenerator();
+        byte[] id = "2011-02\0tel:+447700900123\0".getBytes();
+        ECCSIKeyGenerationParameters keyGenerationParameters = new ECCSIKeyGenerationParameters(random,
+            params, new SHA256Digest(), id);
+        generator.init(keyGenerationParameters);
+        AsymmetricCipherKeyPair keyPair = generator.generateKeyPair();
+
+        byte[] M = "message\0".getBytes();
+
+        ECCSISigner signer = new ECCSISigner(keyGenerationParameters.getKPAK(), params, new SHA256Digest(), id);
+        signer.init(true, keyPair.getPrivate());
+        signer.update(M, 0, M.length);
+        byte[] sig = signer.generateSignature();
+
+        signer = new ECCSISigner(keyGenerationParameters.getKPAK(), params, new SHA256Digest(), id);
+        signer.init(false, keyPair.getPublic());
+        signer.update(M, 0, M.length);
+        isTrue("signature from default SecureRandom did not verify", signer.verifySignature(sig));
     }
 
     private void testTestVector()

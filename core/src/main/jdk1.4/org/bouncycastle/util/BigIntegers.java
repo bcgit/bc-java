@@ -351,6 +351,9 @@ public final class BigIntegers
 
         // R is 2^(32*len), which exceeds M, so R and the odd M are coprime and Montgomery form
         // exists. R^2 mod M depends only on the public modulus.
+        // NOTE: base caches r2 and mDash across calls behind a volatile reference; this overlay
+        // recomputes them each call, since the pre-Java-5 memory model cannot safely publish the
+        // immutable holder that cache relies on.
         BigInteger r2 = ONE.shiftLeft(len << 6).mod(M);
 
         int mDash = -Mod.inverse32(m[0]);       // -M^-1 mod 2^32, the CIOS reduction multiplier

@@ -63,14 +63,22 @@ public class SAKKEKEMExtractor
         // value it inverts, and multiplySecret rather than the default wNAF multiplier. q is the
         // subgroup order and therefore odd. The pairing below already uses the same inverse.
         //
-        // RFC 6508 sec. 6.1 puts both the identifier and the master secret in [2, q-1], so the sum
-        // can reach 2q-2 and only sometimes needs reducing. Leaving it unreduced would leak which:
-        // a reduction short-circuits when its argument already fits the modulus, and the identifier
-        // is public, so the timing of the inverse would answer whether the master secret reaches
-        // the top of q's bit range less this identifier - once per identity served, and those
-        // answers combine across identities into a search for the secret.
+        // RFC 6508 sec. 2.2 puts the identifier and sec. 6.1 the master secret in [2, q-1], so the
+        // sum can reach 2q-2 and only sometimes needs reducing. Leaving it unreduced would leak
+        // which: a reduction short-circuits when its argument already fits the modulus, and the
+        // identifier is public, so the timing of the inverse would answer whether the master secret
+        // reaches the top of q's bit range less this identifier - once per identity served, and
+        // those answers combine across identities into a search for the secret.
+        //
+        // The identifier is reduced on the way in because nothing enforces that range on it: RFC
+        // 6509 sec. 3.2 builds it from a URI of any length, so a long one runs past q, and modAdd
+        // rejects rather than reduces an operand out of range. Reducing it here costs nothing -
+        // it is public, and (b + z)^-1 mod q does not depend on which representative of b we use,
+        // so the RSK is the same value this computed before modAdd was introduced. Note b is still
+        // used unreduced everywhere else, since the hash and the encoding are over its bytes.
         this.K_bs = ECAlgorithms.multiplySecret(P,
-            BigIntegers.modOddInverse(q, BigIntegers.modAdd(q, this.identifier, privateKey.getMasterSecret())),
+            BigIntegers.modOddInverse(q, BigIntegers.modAdd(q, this.identifier.mod(q),
+                privateKey.getMasterSecret())),
             q).normalize();
         this.n = publicKey.getN();
 

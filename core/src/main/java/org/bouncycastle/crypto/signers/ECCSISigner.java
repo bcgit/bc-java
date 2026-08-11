@@ -7,6 +7,7 @@ import java.security.SecureRandom;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoException;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.Signer;
@@ -39,6 +40,7 @@ public class ECCSISigner
     private CipherParameters param;
     private ByteArrayOutputStream stream;
     private boolean forSigning;
+    private boolean stale;
     private final int N;
 
     /**
@@ -63,7 +65,8 @@ public class ECCSISigner
      *
      * @param forSigning true for signing, false for verification
      * @param param      Key parameters:
-     *                   - For signing: {@code ParametersWithRandom} containing {@code ECCSIPrivateKeyParameters}
+     *                   - For signing: {@code ParametersWithRandom} containing {@code ECCSIPrivateKeyParameters},
+     *                     or bare {@code ECCSIPrivateKeyParameters} to draw from the default SecureRandom
      *                   - For verification: {@code ECCSIPublicKeyParameters}
      * @throws IllegalArgumentException if invalid parameters are provided
      */
@@ -80,6 +83,10 @@ public class ECCSISigner
     {
         if (forSigning)
         {
+            if (stale)
+            {
+                reset();
+            }
             digest.update(b);
         }
         else
@@ -93,6 +100,10 @@ public class ECCSISigner
     {
         if (forSigning)
         {
+            if (stale)
+            {
+                reset();
+            }
             digest.update(in, off, len);
         }
         else
@@ -116,11 +127,28 @@ public class ECCSISigner
     public byte[] generateSignature()
         throws CryptoException, DataLengthException
     {
+        if (stale)
+        {
+            // a signature has already been formed with the current j and r; RFC 6507 sec. 5.2.1
+            // draws them per signature, and a second signature over the same pair determines the
+            // SSK, so set up afresh rather than reuse them
+            reset();
+        }
+
         byte[] heBytes = new byte[digest.getDigestSize()];
         digest.doFinal(heBytes, 0);
 
+        // whatever happens below, j and r are spent: the next message (or the retry after the
+        // zero-denominator throw) must start from a fresh pair
+        stale = true;
+
         //Compute s' = ( (( HE + r * SSK )^-1) * j ) modulo q
-        ECCSIPrivateKeyParameters params = (ECCSIPrivateKeyParameters)(((ParametersWithRandom)param).getParameters());
+        CipherParameters keyParam = param;
+        if (keyParam instanceof ParametersWithRandom)
+        {
+            keyParam = ((ParametersWithRandom)keyParam).getParameters();
+        }
+        ECCSIPrivateKeyParameters params = (ECCSIPrivateKeyParameters)keyParam;
         BigInteger ssk = params.getSSK();
 
         // HE is a hash over public values, so reducing it with BigInteger reveals nothing; r is
@@ -208,7 +236,13 @@ public class ECCSISigner
                 // RFC 6507 sec. 5.1.2 derives the SSK modulo q, so a value outside [1, q-1] is a
                 // malformed key. Checked here because generateSignature multiplies it in a form
                 // that requires it reduced, and because a wrong answer later is worse than this.
+                // The key parameters cannot check it for themselves: unlike SAKKE's fixed RFC 6509
+                // group, ECCSI keys do not carry their curve, so q is first known here.
                 throw new IllegalArgumentException("SSK must be in [1, q-1]");
+            }
+            if (random == null)
+            {
+                random = CryptoServicesRegistrar.getSecureRandom();
             }
             // RFC 6507 sec. 5.2.1 asks for a random non-zero element of F_q, but a draw over q's
             // bit length can land on zero or above q; reject those. An in-range draw consumes the
@@ -262,5 +296,7 @@ public class ECCSISigner
             // Compute Y = HS*PVT + KPAK
             Y = pvt.multiply(HS).add(kpak).normalize();
         }
+
+        stale = false;
     }
 }

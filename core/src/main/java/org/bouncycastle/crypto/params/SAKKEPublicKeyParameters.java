@@ -122,8 +122,11 @@ public class SAKKEPublicKeyParameters
     /**
      * Constructs SAKKE public key parameters with the specified identifier and KMS Public Key.
      *
-     * @param identifier The user's identifier as defined in RFC 6508, Section 2.2.
-     *                   Must be a valid integer in [2, q-1].
+     * @param identifier The user's identifier as defined in RFC 6508, Section 2.2, which puts it in
+     *                   [2, q-1]. A value past q is accepted: RFC 6509, Section 3.2 builds the
+     *                   identifier from a URI of any length, so a long one runs past q, and the
+     *                   identifier is used as it stands wherever its bytes are hashed or encoded
+     *                   and reduced modulo q only where the order arithmetic needs it.
      * @param Z          The KMS Public Key Z_S = [z_S]P (RFC 6508, Section 2.2).
      *                   Must be a valid point on the curve E(F_p).
      */

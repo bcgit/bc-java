@@ -48,6 +48,11 @@ public class ConstantTimeUsageTest
         {"org/bouncycastle/crypto/kems/SAKKEKEMExtractor", "multiplySecret", REQUIRED},
         {"org/bouncycastle/crypto/kems/SAKKEKEMExtractor", "modInverse", FORBIDDEN},
 
+        // RFC 6508 sec. 6.1 KMS master secret z, used as Z = [z]P when a key is constructed or
+        // generated. No FORBIDDEN row for the default multiplier is possible: its name is a
+        // substring of multiplySecret, so the byte scan cannot tell the two apart.
+        {"org/bouncycastle/crypto/params/SAKKEPrivateKeyParameters", "multiplySecret", REQUIRED},
+
         // RFC 6507 sec. 5.2.1 ECCSI signing, s' = ((HE + r * SSK)^-1 * j) mod q
         {"org/bouncycastle/crypto/signers/ECCSISigner", "modAdd", REQUIRED},
         {"org/bouncycastle/crypto/signers/ECCSISigner", "modMult", REQUIRED},

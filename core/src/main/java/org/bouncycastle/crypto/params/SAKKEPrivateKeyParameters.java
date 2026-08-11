@@ -3,6 +3,7 @@ package org.bouncycastle.crypto.params;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 
+import org.bouncycastle.math.ec.ECAlgorithms;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.BigIntegers;
 
@@ -42,9 +43,21 @@ public class SAKKEPrivateKeyParameters
     public SAKKEPrivateKeyParameters(BigInteger z, SAKKEPublicKeyParameters publicParams)
     {
         super(true);
+        if (z.signum() <= 0 || z.compareTo(SAKKEPublicKeyParameters.q) >= 0)
+        {
+            // RFC 6508 sec. 6.1 draws the master secret in [2, q-1], so a value outside [1, q-1]
+            // is a malformed key. Checked here because SAKKEKEMExtractor adds it modulo q in a
+            // form that requires it reduced, and unlike the public identifier it cannot simply be
+            // reduced on the way in - that reduction is the variable-time step being avoided.
+            // Note the [z]P == Z check below already rejects most out-of-range values; what this
+            // adds is the one congruent to a valid z modulo q, which that check accepts.
+            throw new IllegalArgumentException("master secret must be in [1, q-1]");
+        }
         this.z = z;
         this.publicParams = publicParams;
-        ECPoint computed_Z = publicParams.getPoint().multiply(z).normalize();
+        // z is the master secret: constant-time, not the curve's default wNAF multiplier
+        ECPoint computed_Z = ECAlgorithms.multiplySecret(publicParams.getPoint(), z,
+            SAKKEPublicKeyParameters.q).normalize();
         if (!computed_Z.equals(publicParams.getZ()))
         {
             throw new IllegalStateException("public key and private key of SAKKE do not match");
@@ -65,8 +78,10 @@ public class SAKKEPrivateKeyParameters
         super(true);
         this.z = BigIntegers.createRandomInRange(BigIntegers.TWO, qMinOne, random);
         BigInteger identifier = BigIntegers.createRandomInRange(BigIntegers.TWO, qMinOne, random);
+        // z is the master secret: constant-time, not the curve's default wNAF multiplier
         this.publicParams = new SAKKEPublicKeyParameters(identifier,
-            SAKKEPublicKeyParameters.P.multiply(z).normalize());
+            ECAlgorithms.multiplySecret(SAKKEPublicKeyParameters.P, z,
+                SAKKEPublicKeyParameters.q).normalize());
     }
 
     /**

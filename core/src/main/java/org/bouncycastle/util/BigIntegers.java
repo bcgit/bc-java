@@ -321,8 +321,11 @@ public final class BigIntegers
      * conditional subtraction {@link #modAdd(BigInteger, BigInteger, BigInteger)} needs, and how
      * much work it does depends on the quotient - which is to say on the operands.
      * </p><p>
-     * The quantity derived from M alone (R squared mod M, where R is 2 raised to the width of M
-     * rounded up to a word boundary) is computed with BigInteger, since M is the public modulus.
+     * The quantities derived from M alone (R squared mod M, where R is 2 raised to the width of M
+     * rounded up to a word boundary, and the reduction multiplier) are computed with BigInteger,
+     * since M is the public modulus, and retained from one call to the next - callers run whole
+     * chains of order arithmetic against one group order. Whether a call reuses them depends only
+     * on the modulus.
      * </p>
      *
      * @param M the modulus, which must be odd and positive.
@@ -350,10 +353,17 @@ public final class BigIntegers
         int len = m.length;
 
         // R is 2^(32*len), which exceeds M, so R and the odd M are coprime and Montgomery form
-        // exists. R^2 mod M depends only on the public modulus.
-        BigInteger r2 = ONE.shiftLeft(len << 6).mod(M);
-
-        int mDash = -Mod.inverse32(m[0]);       // -M^-1 mod 2^32, the CIOS reduction multiplier
+        // exists. R^2 mod M and the reduction multiplier -M^-1 mod 2^32 depend only on the public
+        // modulus, so the cache lookup keys on nothing secret; R^2 is the one BigInteger division
+        // in the method, which is what makes it worth keeping.
+        MontgomeryConstants constants = montgomeryConstants;
+        if (constants == null || !constants.m.equals(M))
+        {
+            constants = new MontgomeryConstants(M, ONE.shiftLeft(len << 6).mod(M), -Mod.inverse32(m[0]));
+            montgomeryConstants = constants;
+        }
+        BigInteger r2 = constants.r2;
+        int mDash = constants.mDash;
 
         // the first product leaves X*Y*R^-1, the second multiplies by R^2*R^-1 to undo it
         int[] z = montgomeryMultiply(len, Nat.fromBigInteger(bits, X), Nat.fromBigInteger(bits, Y), m, mDash);
@@ -362,6 +372,27 @@ public final class BigIntegers
 
         return Nat.toBigInteger(len, z);
     }
+
+    /**
+     * The modulus-only quantities of {@link #modMult(BigInteger, BigInteger, BigInteger)}, held
+     * behind a volatile reference as a single-entry cache. The holder is immutable, so a reader
+     * sees either nothing or a complete entry, and a miss just recomputes.
+     */
+    private static final class MontgomeryConstants
+    {
+        final BigInteger m;
+        final BigInteger r2;
+        final int mDash;
+
+        MontgomeryConstants(BigInteger m, BigInteger r2, int mDash)
+        {
+            this.m = m;
+            this.r2 = r2;
+            this.mDash = mDash;
+        }
+    }
+
+    private static volatile MontgomeryConstants montgomeryConstants;
 
     /**
      * Coarsely-integrated operand scanning: returns X * Y * R^-1 mod M in [0, M) for X, Y in
