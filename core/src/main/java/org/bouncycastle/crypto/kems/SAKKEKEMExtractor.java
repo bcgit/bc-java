@@ -57,9 +57,12 @@ public class SAKKEKEMExtractor
         this.p = publicKey.getPrime();
         this.Z_S = publicKey.getZ();
         this.identifier = publicKey.getIdentifier();
-        // the scalar derives from the master secret: constant-time, not the default wNAF multiplier
+        // the scalar derives from the master secret, so both steps that touch it are constant time:
+        // BigIntegers.modOddInverse rather than BigInteger.modInverse, which is variable time in the
+        // value it inverts, and multiplySecret rather than the default wNAF multiplier. q is the
+        // subgroup order and therefore odd. The pairing below already uses the same inverse.
         this.K_bs = ECAlgorithms.multiplySecret(P,
-            this.identifier.add(privateKey.getMasterSecret()).modInverse(q), q).normalize();
+            BigIntegers.modOddInverse(q, this.identifier.add(privateKey.getMasterSecret())), q).normalize();
         this.n = publicKey.getN();
 
         this.digest = publicKey.getDigest();

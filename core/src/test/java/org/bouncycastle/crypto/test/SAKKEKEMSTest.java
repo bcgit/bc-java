@@ -19,10 +19,8 @@ public class SAKKEKEMSTest
     extends SimpleTest
 {
     public static void main(String[] args)
-        throws Exception
     {
-        SAKKEKEMSTest test = new SAKKEKEMSTest();
-        test.performTest();
+        runTest(new SAKKEKEMSTest());
     }
 
 

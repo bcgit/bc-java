@@ -140,7 +140,9 @@ public class SM9EncMasterPrivateKeyParameters
         {
             throw new IllegalStateException("SM9 encryption master key must be regenerated for this identity");
         }
-        BigInteger t2 = ke.multiply(t1.modInverse(n)).mod(n);
+        // t1 carries the master private key ke, and BigInteger.modInverse is variable time in the
+        // value it inverts, so use the constant-time inverse - N is the group order and so is odd.
+        BigInteger t2 = ke.multiply(BigIntegers.modOddInverse(n, t1)).mod(n);
         SM9G2Point de = SM9Curve.P2.multiply(t2);
         return new SM9EncPrivateKeyParameters(de, publicParams, Arrays.clone(identity), hid, exchangeKey);
     }

@@ -128,7 +128,11 @@ public class ECCSISigner
             throw new IllegalArgumentException("Invalid j, retry");
         }
 
-        BigInteger sPrime = denominator.modInverse(q).multiply(j).mod(q);
+        // the denominator carries the secret signing key, and BigInteger.modInverse is variable time
+        // in the value it inverts, so use the constant-time inverse instead - q is the curve order and
+        // therefore odd. Both forms throw ArithmeticException for a non-invertible value, which the
+        // zero check above has already ruled out for a prime q.
+        BigInteger sPrime = BigIntegers.modOddInverse(q, denominator).multiply(j).mod(q);
 
         return Arrays.concatenate(BigIntegers.asUnsignedByteArray(this.N, r), BigIntegers.asUnsignedByteArray(this.N, sPrime),
             params.getPublicKeyParameters().getPVT().getEncoded(false));

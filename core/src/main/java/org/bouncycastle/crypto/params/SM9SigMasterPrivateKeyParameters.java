@@ -77,7 +77,9 @@ public class SM9SigMasterPrivateKeyParameters
         {
             throw new IllegalStateException("SM9 signature master key must be regenerated for this identity");
         }
-        BigInteger t2 = ks.multiply(t1.modInverse(n)).mod(n);
+        // t1 carries the master private key ks, and BigInteger.modInverse is variable time in the
+        // value it inverts, so use the constant-time inverse - N is the group order and so is odd.
+        BigInteger t2 = ks.multiply(BigIntegers.modOddInverse(n, t1)).mod(n);
         ECPoint ds = SM9Curve.multiplySecure(SM9Curve.P1, t2).normalize();
         return new SM9SigPrivateKeyParameters(ds, publicParams);
     }
