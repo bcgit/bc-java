@@ -21,6 +21,11 @@ public class RegressionTest
         new ECTest(),
         new GOST3410Test(),
         new ECGOST3410Test(),
+        // NOTE: base also registers ECCSISignerTest here, which this overlay cannot: the jdk1.3
+        // build layers these same sources and excludes Ascon (ant/jdk13.xml), which that test
+        // imports, so registering it would break the jdk1.3 compile. ConstantTimeUsageTest below
+        // reaches its call sites by resource name rather than by reference, so it is safe in both.
+        new ConstantTimeUsageTest(),
         new ECIESTest(),
         new ECNRTest(),
         new MacTest(),
