@@ -10,12 +10,12 @@ import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.PublicSubkeyPacket;
 import org.bouncycastle.bcpg.SecretKeyPacket;
 import org.bouncycastle.bcpg.SecretSubkeyPacket;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.io.Streams;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 
 public class ExternalSecretKeyPacketTest
         extends AbstractPacketTest
@@ -159,7 +159,7 @@ public class ExternalSecretKeyPacketTest
     private byte[] toExternalKey(String asciiArmoredKey)
             throws IOException
     {
-        ByteArrayInputStream bIn = new ByteArrayInputStream(asciiArmoredKey.getBytes(StandardCharsets.UTF_8));
+        ByteArrayInputStream bIn = new ByteArrayInputStream(Strings.toUTF8ByteArray(asciiArmoredKey));
         ArmoredInputStream aIn = ArmoredInputStream.builder().build(bIn);
         BCPGInputStream pIn = new BCPGInputStream(aIn);
 
@@ -193,7 +193,7 @@ public class ExternalSecretKeyPacketTest
     private byte[] dearmor(String asciiArmoredKey)
             throws IOException
     {
-        ByteArrayInputStream bIn = new ByteArrayInputStream(asciiArmoredKey.getBytes(StandardCharsets.UTF_8));
+        ByteArrayInputStream bIn = new ByteArrayInputStream(Strings.toUTF8ByteArray(asciiArmoredKey));
         ArmoredInputStream aIn = ArmoredInputStream.builder().build(bIn);
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         Streams.pipeAll(aIn, bOut);
@@ -319,7 +319,7 @@ public class ExternalSecretKeyPacketTest
     private PublicKeyPacket readPrimaryPublicKeyPacket(String asciiArmoredKey)
             throws IOException
     {
-        ByteArrayInputStream bIn = new ByteArrayInputStream(asciiArmoredKey.getBytes(StandardCharsets.UTF_8));
+        ByteArrayInputStream bIn = new ByteArrayInputStream(Strings.toUTF8ByteArray(asciiArmoredKey));
         ArmoredInputStream aIn = ArmoredInputStream.builder().build(bIn);
         BCPGInputStream pIn = new BCPGInputStream(aIn);
         return ((SecretKeyPacket)pIn.readPacket()).getPublicKeyPacket();

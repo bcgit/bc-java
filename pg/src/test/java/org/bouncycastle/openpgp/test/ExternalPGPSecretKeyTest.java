@@ -9,9 +9,10 @@ import org.bouncycastle.openpgp.PGPSecretKeyRing;
 import org.bouncycastle.openpgp.bc.BcPGPObjectFactory;
 import org.bouncycastle.openpgp.operator.bc.BcPBESecretKeyDecryptorBuilder;
 import org.bouncycastle.openpgp.operator.bc.BcPGPDigestCalculatorProvider;
+import org.bouncycastle.util.Strings;
 
 import java.io.ByteArrayInputStream;
-import java.nio.charset.StandardCharsets;
+import java.util.Iterator;
 
 public class ExternalPGPSecretKeyTest
         extends AbstractPgpKeyPairTest
@@ -46,14 +47,16 @@ public class ExternalPGPSecretKeyTest
     public void performTest()
             throws Exception
     {
-        ByteArrayInputStream bIn = new ByteArrayInputStream(V4_TSK_AS_EXTERNAL_KEY.getBytes(StandardCharsets.UTF_8));
+        ByteArrayInputStream bIn = new ByteArrayInputStream(Strings.toUTF8ByteArray(V4_TSK_AS_EXTERNAL_KEY));
         ArmoredInputStream aIn = ArmoredInputStream.builder().build(bIn);
         BCPGInputStream pIn = new BCPGInputStream(aIn);
         PGPObjectFactory objFac = new BcPGPObjectFactory(pIn);
         PGPSecretKeyRing secretKeys = (PGPSecretKeyRing) objFac.nextObject();
 
-        for (PGPSecretKey key : secretKeys)
+        for (Iterator<PGPSecretKey> it = secretKeys.getSecretKeys(); it.hasNext(); )
         {
+            PGPSecretKey key = (PGPSecretKey)it.next();
+
             isTrue(key.isPrivateKeyEmpty());
             isTrue(key.isExternalKey());
             PGPKeyPair kp = key.extractKeyPair(

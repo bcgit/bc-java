@@ -58,6 +58,13 @@
                 <exclude name="**/keybox/**/*.java"/>
                 <exclude name="**/api/*.java"/>
                 <exclude name="**/api/**/*.java"/>
+                <!-- follows the api exclude above: OpenPGPKey.OpenPGPSecretKey is in this class's
+                     constructor and accessors, so it cannot be decoupled from the excluded
+                     package. It is the only structural dependency on org.bouncycastle.openpgp.api
+                     outside that package - the references in PGPPublicKey and
+                     BcPublicKeyCryptoCallback are javadoc only - and nothing structurally depends
+                     on it in turn. -->
+                <exclude name="**/BcExternalPublicKeyDataDecryptorFactory.java"/>
             </fileset>
             <fileset dir="pkix/src/main/java">
                 <exclude name="**/JceAADStream.java"/>
@@ -406,6 +413,20 @@
 
     <target name="test-lw" depends="build-test">
         <ant antfile="ant/bc+-build.xml" dir="." target="test-lw"/>
+    </target>
+
+    <!-- Run the junit suites against the jars exactly as they stand, with no build-test
+         dependency. JRE 1.4 requires every class in a package to share signer info, and bctest
+         shares org.bouncycastle.pqc.crypto.hqc with the signed provider jar (GFTest sits in that
+         main-namespace package to reach the package-private GF), so the suite only passes when
+         bctest is signed too. "test" cannot deliver that: its build-test dependency re-jars bctest
+         on every invocation - init re-copies and re-preprocesses the sources, so javac always has
+         work to do - which strips the signature again after bcsign4 has run. Sign, then use this
+         target. -->
+    <target name="test-signed">
+        <!-- normally created by build-test, which this target deliberately does not depend on -->
+        <mkdir dir="${artifacts.dir}/reports/xml"/>
+        <ant antfile="ant/bc+-build.xml" dir="." target="test"/>
     </target>
 
     <target name="zip-src">

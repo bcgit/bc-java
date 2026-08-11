@@ -82,7 +82,7 @@ public class ShamirSecretSplitterTest
             secret[i] = (byte)i;
         }
 
-        ShamirSplitSecretShare[] shares = splitter.resplit(secret, m, n).getSecretShares();
+        ShamirSplitSecretShare[] shares = (ShamirSplitSecretShare[])splitter.resplit(secret, m, n).getSecretShares();
 
         assertEquals("wrong number of shares", n, shares.length);
 
@@ -129,7 +129,7 @@ public class ShamirSecretSplitterTest
             int n = shareCounts[c];
             ShamirSecretSplitter splitter = ShamirSecretSplitter.getInstance(
                 ShamirSecretSplitter.Algorithm.AES, l, new SecureRandom());
-            ShamirSplitSecretShare[] shares = splitter.split(m, n).getSecretShares();
+            ShamirSplitSecretShare[] shares = (ShamirSplitSecretShare[])splitter.split(m, n).getSecretShares();
 
             assertEquals("n=" + n + ": wrong number of shares", n, shares.length);
 
@@ -156,7 +156,7 @@ public class ShamirSecretSplitterTest
 
         ShamirSecretSplitter splitter = ShamirSecretSplitter.getInstance(
             ShamirSecretSplitter.Algorithm.AES, l, new SecureRandom());
-        ShamirSplitSecretShare[] shares =
+        ShamirSplitSecretShare[] shares = (ShamirSplitSecretShare[])
             splitter.splitAround(new ShamirSplitSecretShare(seed), 1, n).getSecretShares();
 
         assertEquals("wrong number of shares", n, shares.length);
@@ -308,7 +308,7 @@ public class ShamirSecretSplitterTest
             ShamirSecretSplitter.Algorithm algorithm = algorithms[a];
 
             ShamirSecretSplitter splitter = ShamirSecretSplitter.getInstance(algorithm, l, new SecureRandom());
-            ShamirSplitSecretShare[] shares = splitter.split(m, n).getSecretShares();
+            ShamirSplitSecretShare[] shares = (ShamirSplitSecretShare[])splitter.split(m, n).getSecretShares();
 
             ShamirSplitSecretShare[] quorum = new ShamirSplitSecretShare[m];
             System.arraycopy(shares, 0, quorum, 0, m);
@@ -359,7 +359,7 @@ public class ShamirSecretSplitterTest
         return copy;
     }
 
-    private static byte[] flatten(ShamirSplitSecretShare[] shares)
+    private static byte[] flatten(SecretShare[] shares)
         throws IOException
     {
         byte[] out = new byte[0];
