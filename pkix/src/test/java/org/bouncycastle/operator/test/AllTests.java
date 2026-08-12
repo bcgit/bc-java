@@ -136,15 +136,17 @@ public class AllTests
             assertEquals("name did not round trip", names[i], nameFinder.getAlgorithmName(algId));
         }
 
-        // the KEM and signature finders are the two implementors of the shared base interface -
-        // these assignments are the compile-time half of the assertion
+        // the KEM, signature and digest finders implement the shared base interface - these
+        // assignments are the compile-time half of the assertion
         AlgorithmIdentifierFinder[] baseFinders = new AlgorithmIdentifierFinder[]{
             finder,
-            new DefaultSignatureAlgorithmIdentifierFinder()};
+            new DefaultSignatureAlgorithmIdentifierFinder(),
+            new DefaultDigestAlgorithmIdentifierFinder()};
 
-        String[] baseNames = new String[]{"ML-KEM-768", "ML-DSA-44"};
+        String[] baseNames = new String[]{"ML-KEM-768", "ML-DSA-44", "SHA-256"};
         ASN1ObjectIdentifier[] baseOids = new ASN1ObjectIdentifier[]{
-            NISTObjectIdentifiers.id_alg_ml_kem_768, NISTObjectIdentifiers.id_ml_dsa_44};
+            NISTObjectIdentifiers.id_alg_ml_kem_768, NISTObjectIdentifiers.id_ml_dsa_44,
+            NISTObjectIdentifiers.id_sha256};
 
         for (int i = 0; i != baseFinders.length; i++)
         {
@@ -152,7 +154,7 @@ public class AllTests
 
             assertEquals(who, baseOids[i], baseFinders[i].find(baseNames[i]).getAlgorithm());
 
-            // both fold case, and both throw rather than returning null - the contract
+            // all of them fold case, and all throw rather than returning null - the contract
             // AlgorithmIdentifierFinder documents
             assertEquals("case not folded by " + who,
                 baseFinders[i].find(baseNames[i]), baseFinders[i].find(Strings.toLowerCase(baseNames[i])));
@@ -188,22 +190,32 @@ public class AllTests
             assertEquals("Unknown signature type requested: ML-KEM-512", e.getMessage());
         }
 
-        // the digest and MAC finders stay outside that hierarchy: they return null instead of
-        // throwing, which is why they are not AlgorithmIdentifierFinders
-        DigestAlgorithmIdentifierFinder digFinder = new DefaultDigestAlgorithmIdentifierFinder();
+        // the MAC finder is the one left outside the hierarchy: it returns null rather than
+        // throwing for an unrecognised name, though it folds case like the rest
         MacAlgorithmIdentifierFinder macFinder = new DefaultMacAlgorithmIdentifierFinder();
 
-        assertNull(digFinder.find("NOT-A-DIGEST"));
         assertNull(macFinder.find("NOT-A-MAC"));
-
-        // they fold case all the same
-        assertEquals(digFinder.find("SHA-256"), digFinder.find("sha-256"));
         assertEquals(macFinder.find("HMACSHA256"), macFinder.find("hmacsha256"));
 
-        // and the digest finder still reads a name given in dotted OID form, which folding must
-        // not have disturbed
+        // the digest finder is in the hierarchy on its name lookup, but keeps its own behaviour on
+        // the other two overloads: it reads a name in dotted OID form, and find(AlgorithmIdentifier)
+        // still returns null for a signature it cannot map - see
+        // testCompositeMLDsaDigestLookupIssue1767
+        DigestAlgorithmIdentifierFinder digFinder = new DefaultDigestAlgorithmIdentifierFinder();
+
+        try
+        {
+            digFinder.find("NOT-A-DIGEST");
+            fail("no exception thrown");
+        }
+        catch (IllegalArgumentException e)
+        {
+            assertEquals("Unknown digest algorithm requested: NOT-A-DIGEST", e.getMessage());
+        }
+
         assertEquals(NISTObjectIdentifiers.id_sha256,
             digFinder.find(NISTObjectIdentifiers.id_sha256.getId()).getAlgorithm());
+        assertNull(digFinder.find(new AlgorithmIdentifier(new ASN1ObjectIdentifier("1.2.3.4.5.6.7.8.9"))));
 
         // names are matched without regard to case, as the other finders do
         assertEquals(finder.find("ML-KEM-512"), finder.find("ml-kem-512"));
@@ -225,6 +237,50 @@ public class AllTests
             catch (IllegalArgumentException e)
             {
                 assertEquals("Unknown KEM algorithm requested: " + unknown[i], e.getMessage());
+            }
+        }
+    }
+
+    /**
+     * hasAlgorithm has to answer for exactly the names find(String) accepts, which means both of
+     * find's readings of the name: the digest name table (case folded), and a dotted OID, which
+     * find(ASN1ObjectIdentifier) will name whatever it is.
+     */
+    public void testDigestAlgorithmFinderHasAlgorithm()
+    {
+        DefaultDigestAlgorithmIdentifierFinder f = new DefaultDigestAlgorithmIdentifierFinder();
+
+        String[] known = new String[]{
+            "SHA-1", "SHA-256", "SHA256", "SHA-512-256", "SHA3-512", "SHAKE256", "GOST3411", "MD5",
+            "RIPEMD160", "SM3",
+            // case is folded, as it is on find
+            "sha-256", "Sha3-512", "md5",
+            // and a name in dotted OID form
+            NISTObjectIdentifiers.id_sha256.getId(), OIWObjectIdentifiers.idSHA1.getId()};
+
+        for (int i = 0; i != known.length; i++)
+        {
+            assertTrue("not recognised: " + known[i], f.hasAlgorithm(known[i]));
+
+            // where hasAlgorithm says yes, find must produce an identifier rather than throw
+            assertNotNull(known[i], f.find(known[i]));
+        }
+
+        String[] unknown = new String[]{"NOT-A-DIGEST", "SHA-999", "", "1.2.3.4.not.an.oid"};
+
+        for (int i = 0; i != unknown.length; i++)
+        {
+            assertFalse("wrongly recognised: " + unknown[i], f.hasAlgorithm(unknown[i]));
+
+            // and where it says no, find must throw
+            try
+            {
+                f.find(unknown[i]);
+                fail("no exception thrown for " + unknown[i]);
+            }
+            catch (IllegalArgumentException e)
+            {
+                assertEquals("Unknown digest algorithm requested: " + unknown[i], e.getMessage());
             }
         }
     }

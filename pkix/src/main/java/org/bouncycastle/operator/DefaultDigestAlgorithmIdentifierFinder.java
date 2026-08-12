@@ -399,6 +399,19 @@ public class DefaultDigestAlgorithmIdentifierFinder
         }
     }
 
+    public boolean hasAlgorithm(String digAlgName)
+    {
+        // digestNameToOids, not digestOidToAlgIds: the latter is keyed by ASN1ObjectIdentifier, so
+        // a name could never be found in it. This has to accept exactly what find(String) does -
+        // the name table, then a dotted OID, which find(ASN1ObjectIdentifier) names whatever it is.
+        if (!this.digestNameToOids.containsKey(Strings.toUpperCase(digAlgName)))
+        {
+             return ASN1ObjectIdentifier.tryFromID(digAlgName) != null;
+        }
+
+        return true;
+    }
+
     public AlgorithmIdentifier find(String digAlgName)
     {
         ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)digestNameToOids.get(Strings.toUpperCase(digAlgName));
@@ -413,6 +426,9 @@ public class DefaultDigestAlgorithmIdentifierFinder
             return find(oid);
         }
 
-        return null;
+        // NOTE: only the name lookup reports failure this way. find(AlgorithmIdentifier) still
+        // returns null when it cannot derive a digest from a signature algorithm - github #1767
+        // depends on that, and testCompositeMLDsaDigestLookupIssue1767 pins it.
+        throw new IllegalArgumentException("Unknown digest algorithm requested: " + digAlgName);
     }
 }

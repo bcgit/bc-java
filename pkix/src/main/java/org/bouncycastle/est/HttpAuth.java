@@ -467,7 +467,17 @@ public class HttpAuth
             return digestAlgorithmIdentifierFinder.find(NISTObjectIdentifiers.id_sha512_256);
         }
 
-        return digestAlgorithmIdentifierFinder.find(algorithm);
+        try
+        {
+            return digestAlgorithmIdentifierFinder.find(algorithm);
+        }
+        catch (IllegalArgumentException e)
+        {
+            // the token comes from the server's WWW-Authenticate header, so an unrecognised one is
+            // a protocol condition rather than a programming error; the caller turns null into the
+            // IOException this API reports it with
+            return null;
+        }
     }
 
     private void update(OutputStream dOut, char[] value)

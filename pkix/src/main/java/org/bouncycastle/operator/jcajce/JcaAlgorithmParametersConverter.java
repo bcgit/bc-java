@@ -17,6 +17,7 @@ import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.RSAESOAEPparams;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 import org.bouncycastle.operator.DefaultDigestAlgorithmIdentifierFinder;
 
 public class JcaAlgorithmParametersConverter
@@ -60,19 +61,27 @@ public class JcaAlgorithmParametersConverter
                     throw new InvalidAlgorithmParameterException("only " + OAEPParameterSpec.DEFAULT.getMGFAlgorithm() + " mask generator supported.");
                 }
 
-                AlgorithmIdentifier hashAlgorithm = new DefaultDigestAlgorithmIdentifierFinder().find(oaepSpec.getDigestAlgorithm());
-                if (hashAlgorithm.getParameters() == null)
+                DefaultDigestAlgorithmIdentifierFinder defaultDigestAlgorithmIdentifierFinder = new DefaultDigestAlgorithmIdentifierFinder();
+                try
                 {
-                    hashAlgorithm = new AlgorithmIdentifier(hashAlgorithm.getAlgorithm(), DERNull.INSTANCE);
+                    AlgorithmIdentifier hashAlgorithm = defaultDigestAlgorithmIdentifierFinder.find(oaepSpec.getDigestAlgorithm());
+                    if (hashAlgorithm.getParameters() == null)
+                    {
+                        hashAlgorithm = new AlgorithmIdentifier(hashAlgorithm.getAlgorithm(), DERNull.INSTANCE);
+                    }
+                    AlgorithmIdentifier mgf1HashAlgorithm = defaultDigestAlgorithmIdentifierFinder.find((((MGF1ParameterSpec)oaepSpec.getMGFParameters()).getDigestAlgorithm()));
+                    if (mgf1HashAlgorithm.getParameters() == null)
+                    {
+                        mgf1HashAlgorithm = new AlgorithmIdentifier(mgf1HashAlgorithm.getAlgorithm(), DERNull.INSTANCE);
+                    }
+                    return new AlgorithmIdentifier(algorithm,
+                        new RSAESOAEPparams(hashAlgorithm, new AlgorithmIdentifier(PKCSObjectIdentifiers.id_mgf1, mgf1HashAlgorithm),
+                            new AlgorithmIdentifier(PKCSObjectIdentifiers.id_pSpecified, new DEROctetString(((PSource.PSpecified)pSource).getValue()))));
                 }
-                AlgorithmIdentifier mgf1HashAlgorithm = new DefaultDigestAlgorithmIdentifierFinder().find((((MGF1ParameterSpec)oaepSpec.getMGFParameters()).getDigestAlgorithm()));
-                if (mgf1HashAlgorithm.getParameters() == null)
+                catch (IllegalArgumentException e)
                 {
-                    mgf1HashAlgorithm = new AlgorithmIdentifier(mgf1HashAlgorithm.getAlgorithm(), DERNull.INSTANCE);
+                     throw new InvalidAlgorithmParameterException(e.getMessage(), e);
                 }
-                return new AlgorithmIdentifier(algorithm,
-                    new RSAESOAEPparams(hashAlgorithm, new AlgorithmIdentifier(PKCSObjectIdentifiers.id_mgf1, mgf1HashAlgorithm),
-                        new AlgorithmIdentifier(PKCSObjectIdentifiers.id_pSpecified, new DEROctetString(((PSource.PSpecified)pSource).getValue()))));
             }
         }
 

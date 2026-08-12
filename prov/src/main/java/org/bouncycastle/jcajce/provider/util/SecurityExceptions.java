@@ -1,6 +1,7 @@
 package org.bouncycastle.jcajce.provider.util;
 
 import java.security.GeneralSecurityException;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SignatureException;
@@ -35,6 +36,14 @@ public class SecurityExceptions
     public static InvalidKeyException invalidKeyException(String message, Throwable cause)
     {
         return (InvalidKeyException)new InvalidKeyException(message).initCause(cause);
+    }
+
+    public static InvalidAlgorithmParameterException invalidAlgorithmParameterException(String message, Throwable cause)
+    {
+        // InvalidAlgorithmParameterException(String, Throwable) only exists from Java 5; initCause
+        // keeps the legacy (Java 4) builds compiling, so do not "simplify" this to the two-arg
+        // constructor.
+        return (InvalidAlgorithmParameterException)new InvalidAlgorithmParameterException(message).initCause(cause);
     }
 
     public static NoSuchAlgorithmException noSuchAlgorithmException(String message, Throwable cause)
