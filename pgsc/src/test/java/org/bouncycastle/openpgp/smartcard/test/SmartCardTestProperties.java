@@ -1,5 +1,7 @@
 package org.bouncycastle.openpgp.smartcard.test;
 
+import org.bouncycastle.util.Arrays;
+
 public class SmartCardTestProperties
 {
     public static final char[] DEFAULT_ADMIN_PIN = "12345678".toCharArray();
@@ -30,11 +32,11 @@ public class SmartCardTestProperties
 
     public char[] getAdminPin()
     {
-        return adminPin;
+        return Arrays.clone(adminPin);
     }
 
     public char[] getUserPin()
     {
-        return userPin;
+        return Arrays.clone(userPin);
     }
 }

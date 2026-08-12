@@ -15,7 +15,7 @@ import org.bouncycastle.util.encoders.Hex;
 /**
  * Calculator for the EC based KDF algorithm described in RFC 6637
  */
-class RFC6637KDFCalculator
+public class RFC6637KDFCalculator
 {
     // "Anonymous Sender    ", which is the octet sequence
     private static final byte[] ANONYMOUS_SENDER = Hex.decode("416E6F6E796D6F75732053656E64657220202020");

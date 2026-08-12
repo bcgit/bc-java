@@ -1,6 +1,7 @@
 package org.bouncycastle.openpgp.smartcard.yubikey;
 
 import com.yubico.yubikit.core.smartcard.ApduException;
+import com.yubico.yubikit.openpgp.OpenPgpSession;
 import org.bouncycastle.openpgp.smartcard.OpenPGPSmartCard;
 import org.bouncycastle.openpgp.smartcard.OpenPGPSmartCardManager;
 import org.bouncycastle.openpgp.smartcard.card.CardException;
@@ -29,9 +30,10 @@ public class CloseYubikeySessionTest
         }
 
         YubikeyOpenPGPSmartCard yubikey = (YubikeyOpenPGPSmartCard) card;
+        OpenPgpSession session;
         try
         {
-            yubikey.openSession();
+            session = yubikey.openSession();
         }
         catch (ApduException e)
         {
@@ -50,7 +52,10 @@ public class CloseYubikeySessionTest
         {
             throw new RuntimeException(e);
         }
-
+        finally
+        {
+            session.close();
+        }
     }
 
     @Override
