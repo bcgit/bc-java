@@ -32,6 +32,7 @@ public class ShamirSecretSplitterTest
     {
         testShamirSecretResplit();
         testShamirSecretMultipleDivide();
+        testMultipleDivideRejectFieldZero();
         testShamirSecretSplitterSplitAround();
         testPolynomial();
         testPolynomialModeEquivalence();
@@ -435,6 +436,70 @@ public class ShamirSecretSplitterTest
         ShamirSplitSecret splitSecret3 = new ShamirSplitSecret(algorithm, mode, secretShares3);
         byte[] secret3 = splitSecret3.getSecret();
         assertFalse(Arrays.areEqual(secret1, secret3));
+    }
+
+    /**
+     * divide() and multiple() rewrite every share in place, so a zero divisor or multiplier would
+     * silently overwrite the whole set with zeroes and irreversibly destroy the secret. gfMul reduces
+     * its operand modulo 256, so the field's zero element is any value with (v &amp; 0xFF) == 0 - not just
+     * an exact 0 - and both methods reject it up front. An in-range re-scale must still be accepted.
+     */
+    public void testMultipleDivideRejectFieldZero()
+        throws IOException
+    {
+        int l = 9, m = 3, n = 9;
+        SecureRandom random = new SecureRandom();
+        ShamirSecretSplitter.Algorithm algorithm = ShamirSecretSplitter.Algorithm.AES;
+
+        int[] fieldZeros = new int[]{0, 256, 512};
+
+        for (int z = 0; z != fieldZeros.length; z++)
+        {
+            ShamirSecretSplitter splitter = ShamirSecretSplitter.getInstance(algorithm, l, random);
+
+            try
+            {
+                ((ShamirSplitSecret)splitter.split(m, n)).divide(fieldZeros[z]);
+                fail("divide accepted the field-zero divisor " + fieldZeros[z]);
+            }
+            catch (IllegalArgumentException e)
+            {
+                assertEquals("Invalid input: the divisor cannot be zero.", e.getMessage());
+            }
+
+            try
+            {
+                ((ShamirSplitSecret)splitter.split(m, n)).multiple(fieldZeros[z]);
+                fail("multiple accepted the field-zero multiplier " + fieldZeros[z]);
+            }
+            catch (IllegalArgumentException e)
+            {
+                assertEquals("Invalid input: the multiplier cannot be zero.", e.getMessage());
+            }
+        }
+
+        // an in-range multiplier is still accepted, and multiple(k) followed by divide(k) leaves every
+        // share byte unchanged - the guard must not reject a legitimate re-scale.
+        ShamirSecretSplitter splitter = ShamirSecretSplitter.getInstance(algorithm, l, random);
+        ShamirSplitSecret splitSecret = (ShamirSplitSecret)splitter.split(m, n);
+
+        ShamirSplitSecretShare[] originalShares = (ShamirSplitSecretShare[])splitSecret.getSecretShares();
+        byte[][] before = new byte[originalShares.length][];
+        for (int i = 0; i != originalShares.length; i++)
+        {
+            before[i] = Arrays.clone(originalShares[i].getEncoded());
+        }
+
+        int k = random.nextInt(255) + 1;    // 1..255, a non-zero field element
+        splitSecret.multiple(k).divide(k);
+
+        ShamirSplitSecretShare[] after = (ShamirSplitSecretShare[])splitSecret.getSecretShares();
+        assertEquals("share count changed", before.length, after.length);
+        for (int i = 0; i != before.length; i++)
+        {
+            assertTrue("multiple(" + k + ").divide(" + k + ") altered share " + i,
+                Arrays.areEqual(before[i], after[i].getEncoded()));
+        }
     }
 
     public void testShamirSecretSplitterSplitAround()

@@ -43,6 +43,15 @@ public class ShamirSplitSecret
     public ShamirSplitSecret multiple(int mul)
         throws IOException
     {
+        // gfMul reduces the multiplier modulo 256, so any mul with (mul & 0xFF) == 0 is the field's
+        // zero element, which would rewrite every share in place to zero and irreversibly destroy the
+        // secret. The multiplier is a caller parameter rather than secret material, so rejecting it up
+        // front leaks nothing.
+        if ((mul & 0xFF) == 0)
+        {
+            throw new IllegalArgumentException("Invalid input: the multiplier cannot be zero.");
+        }
+
         byte[] ss;
         for (int i = 0; i < secretShares.length; ++i)
         {
@@ -59,10 +68,12 @@ public class ShamirSplitSecret
     public ShamirSplitSecret divide(int div)
         throws IOException
     {
-        // division by zero is undefined in the field, and every share is rewritten in place, so
-        // accepting it would silently overwrite the whole set with zeroes. The divisor is a caller
-        // parameter rather than secret material, so rejecting it up front leaks nothing.
-        if (div == 0)
+        // gfDiv/gfMul reduce the operand modulo 256, so any divisor with (div & 0xFF) == 0 - zero, or
+        // a multiple of 256 - is the field's zero element. Division by zero is undefined, and every
+        // share is rewritten in place, so accepting it would silently overwrite the whole set with
+        // zeroes. The divisor is a caller parameter rather than secret material, so rejecting it up
+        // front leaks nothing.
+        if ((div & 0xFF) == 0)
         {
             throw new IllegalArgumentException("Invalid input: the divisor cannot be zero.");
         }
