@@ -28,6 +28,7 @@ import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.gnu.GNUObjectIdentifiers;
 import org.bouncycastle.asn1.iana.IANAObjectIdentifiers;
+import org.bouncycastle.asn1.iso.ISOIECObjectIdentifiers;
 import org.bouncycastle.asn1.kisa.KISAObjectIdentifiers;
 import org.bouncycastle.asn1.misc.MiscObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
@@ -239,6 +240,52 @@ public class AllTests
             new Object[]{BCObjectIdentifiers.sphincsPlus_shake_256f_r3_simple, "SPHINCS+"},
             new Object[]{BCObjectIdentifiers.sphincsPlus_haraka_256s_r3_simple, "SPHINCS+"},
             new Object[]{BCObjectIdentifiers.sphincsPlus_haraka_256f_r3_simple, "SPHINCS+"},
+
+    // ML-KEM (FIPS 203); names as MLKEMParameters.getName() spells them
+            new Object[]{NISTObjectIdentifiers.id_alg_ml_kem_512, "ML-KEM-512"},
+            new Object[]{NISTObjectIdentifiers.id_alg_ml_kem_768, "ML-KEM-768"},
+            new Object[]{NISTObjectIdentifiers.id_alg_ml_kem_1024, "ML-KEM-1024"},
+
+    // FrodoKEM, ISO/IEC 18033-2 arc; names as FrodoKEMParameters.getName() spells them
+            new Object[]{ISOIECObjectIdentifiers.frodokem976_shake, "frodokem976shake"},
+            new Object[]{ISOIECObjectIdentifiers.frodokem1344_shake, "frodokem1344shake"},
+            new Object[]{ISOIECObjectIdentifiers.efrodokem976_shake, "efrodokem976shake"},
+            new Object[]{ISOIECObjectIdentifiers.efrodokem1344_shake, "efrodokem1344shake"},
+            new Object[]{ISOIECObjectIdentifiers.frodokem976_aes, "frodokem976aes"},
+            new Object[]{ISOIECObjectIdentifiers.frodokem1344_aes, "frodokem1344aes"},
+            new Object[]{ISOIECObjectIdentifiers.efrodokem976_aes, "efrodokem976aes"},
+            new Object[]{ISOIECObjectIdentifiers.efrodokem1344_aes, "efrodokem1344aes"},
+
+    // Classic McEliece, ISO/IEC 18033-2 arc; names as CMCEParameters.getName() spells them
+            new Object[]{ISOIECObjectIdentifiers.mceliece460896, "mceliece460896"},
+            new Object[]{ISOIECObjectIdentifiers.mceliece460896f, "mceliece460896f"},
+            new Object[]{ISOIECObjectIdentifiers.mceliece460896pc, "mceliece460896pc"},
+            new Object[]{ISOIECObjectIdentifiers.mceliece460896pcf, "mceliece460896pcf"},
+            new Object[]{ISOIECObjectIdentifiers.mceliece6688128, "mceliece6688128"},
+            new Object[]{ISOIECObjectIdentifiers.mceliece6688128f, "mceliece6688128f"},
+            new Object[]{ISOIECObjectIdentifiers.mceliece6688128pc, "mceliece6688128pc"},
+            new Object[]{ISOIECObjectIdentifiers.mceliece6688128pcf, "mceliece6688128pcf"},
+            new Object[]{ISOIECObjectIdentifiers.mceliece6960119, "mceliece6960119"},
+            new Object[]{ISOIECObjectIdentifiers.mceliece6960119f, "mceliece6960119f"},
+            new Object[]{ISOIECObjectIdentifiers.mceliece6960119pc, "mceliece6960119pc"},
+            new Object[]{ISOIECObjectIdentifiers.mceliece6960119pcf, "mceliece6960119pcf"},
+            new Object[]{ISOIECObjectIdentifiers.mceliece8192128, "mceliece8192128"},
+            new Object[]{ISOIECObjectIdentifiers.mceliece8192128f, "mceliece8192128f"},
+            new Object[]{ISOIECObjectIdentifiers.mceliece8192128pc, "mceliece8192128pc"},
+            new Object[]{ISOIECObjectIdentifiers.mceliece8192128pcf, "mceliece8192128pcf"},
+
+    // the round-3 Classic McEliece arc BCPQC still registers - the same parameter sets
+            // under a different assignment, so they carry the same names
+            new Object[]{BCObjectIdentifiers.mceliece348864_r3, "mceliece348864"},
+            new Object[]{BCObjectIdentifiers.mceliece348864f_r3, "mceliece348864f"},
+            new Object[]{BCObjectIdentifiers.mceliece460896_r3, "mceliece460896"},
+            new Object[]{BCObjectIdentifiers.mceliece460896f_r3, "mceliece460896f"},
+            new Object[]{BCObjectIdentifiers.mceliece6688128_r3, "mceliece6688128"},
+            new Object[]{BCObjectIdentifiers.mceliece6688128f_r3, "mceliece6688128f"},
+            new Object[]{BCObjectIdentifiers.mceliece6960119_r3, "mceliece6960119"},
+            new Object[]{BCObjectIdentifiers.mceliece6960119f_r3, "mceliece6960119f"},
+            new Object[]{BCObjectIdentifiers.mceliece8192128_r3, "mceliece8192128"},
+            new Object[]{BCObjectIdentifiers.mceliece8192128f_r3, "mceliece8192128f"},
             new Object[]{GNUObjectIdentifiers.Tiger_192, "Tiger"},
             new Object[]{PKCSObjectIdentifiers.id_alg_hss_lms_hashsig, "LMS"},
 
