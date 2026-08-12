@@ -50,11 +50,16 @@ import org.bouncycastle.crypto.params.MLKEMKeyGenerationParameters;
 import org.bouncycastle.crypto.params.MLKEMParameters;
 import org.bouncycastle.crypto.params.MLKEMPrivateKeyParameters;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.operator.AlgorithmIdentifierFinder;
 import org.bouncycastle.operator.AlgorithmNameFinder;
 import org.bouncycastle.operator.DefaultAlgorithmNameFinder;
 import org.bouncycastle.operator.DefaultDigestAlgorithmIdentifierFinder;
+import org.bouncycastle.operator.DefaultKemAlgorithmIdentifierFinder;
 import org.bouncycastle.operator.DefaultKemEncapsulationLengthProvider;
+import org.bouncycastle.operator.DefaultMacAlgorithmIdentifierFinder;
+import org.bouncycastle.operator.DefaultSignatureAlgorithmIdentifierFinder;
 import org.bouncycastle.operator.DefaultSignatureNameFinder;
+import org.bouncycastle.operator.KemAlgorithmIdentifierFinder;
 import org.bouncycastle.operator.InputDecryptor;
 import org.bouncycastle.operator.InputDecryptorProvider;
 import org.bouncycastle.operator.KemEncapsulationLengthProvider;
@@ -92,6 +97,81 @@ public class AllTests
         TestSuite suite = new TestSuite();
         suite.addTestSuite(AllTests.class);
         PrintTestResult.printResult(junit.textui.TestRunner.run(suite));
+    }
+
+    /**
+     * DefaultKemAlgorithmIdentifierFinder is the name-to-OID direction of the KEM entries
+     * DefaultAlgorithmNameFinder holds, so the two tables have to agree. Round-tripping every
+     * name the KEM finder knows back through the name finder locks them together: an entry added
+     * to one and not the other, or spelled differently in the two, fails here.
+     */
+    public void testKemAlgorithmIdentifierFinder()
+        throws Exception
+    {
+        String[] names = new String[]{
+            "ML-KEM-512", "ML-KEM-768", "ML-KEM-1024",
+            "frodokem976shake", "frodokem1344shake", "efrodokem976shake", "efrodokem1344shake",
+            "frodokem976aes", "frodokem1344aes", "efrodokem976aes", "efrodokem1344aes",
+            "mceliece460896", "mceliece460896f", "mceliece460896pc", "mceliece460896pcf",
+            "mceliece6688128", "mceliece6688128f", "mceliece6688128pc", "mceliece6688128pcf",
+            "mceliece6960119", "mceliece6960119f", "mceliece6960119pc", "mceliece6960119pcf",
+            "mceliece8192128", "mceliece8192128f", "mceliece8192128pc", "mceliece8192128pcf"};
+
+        KemAlgorithmIdentifierFinder finder = new DefaultKemAlgorithmIdentifierFinder();
+        DefaultAlgorithmNameFinder nameFinder = new DefaultAlgorithmNameFinder();
+
+        for (int i = 0; i != names.length; i++)
+        {
+            AlgorithmIdentifier algId = finder.find(names[i]);
+
+            // each parameter set has its own OID, so there are never any parameters
+            assertNull("parameters present for " + names[i], algId.getParameters());
+            assertEquals("name did not round trip", names[i], nameFinder.getAlgorithmName(algId));
+        }
+
+        // all four finder families have to be usable through the shared base interface - these
+        // assignments are the compile-time half of the assertion
+        AlgorithmIdentifierFinder[] baseFinders = new AlgorithmIdentifierFinder[]{
+            finder,
+            new DefaultSignatureAlgorithmIdentifierFinder(),
+            new DefaultDigestAlgorithmIdentifierFinder(),
+            new DefaultMacAlgorithmIdentifierFinder()};
+
+        assertEquals(NISTObjectIdentifiers.id_alg_ml_kem_768, baseFinders[0].find("ML-KEM-768").getAlgorithm());
+        assertEquals(NISTObjectIdentifiers.id_ml_dsa_44, baseFinders[1].find("ML-DSA-44").getAlgorithm());
+        assertEquals(NISTObjectIdentifiers.id_sha256, baseFinders[2].find("SHA-256").getAlgorithm());
+        assertEquals(PKCSObjectIdentifiers.id_hmacWithSHA256, baseFinders[3].find("HMACSHA256").getAlgorithm());
+
+        // the digest and MAC finders return null for an unknown name where the signature and KEM
+        // finders throw - AlgorithmIdentifierFinder deliberately does not unify that
+        assertNull(baseFinders[2].find("NOT-A-DIGEST"));
+        assertNull(baseFinders[3].find("NOT-A-MAC"));
+
+        // names are matched without regard to case, as the other finders do
+        assertEquals(finder.find("ML-KEM-512"), finder.find("ml-kem-512"));
+        assertEquals(finder.find("mceliece8192128pcf"), finder.find("MCELIECE8192128PCF"));
+
+        // an unrecognised name is rejected rather than returning null
+        try
+        {
+            finder.find("ML-KEM-2048");
+            fail("no exception thrown");
+        }
+        catch (IllegalArgumentException e)
+        {
+            assertEquals("Unknown KEM algorithm requested: ML-KEM-2048", e.getMessage());
+        }
+
+        // the pre-standard arcs are deliberately not named
+        try
+        {
+            finder.find("mceliece348864");
+            fail("no exception thrown");
+        }
+        catch (IllegalArgumentException e)
+        {
+            assertEquals("Unknown KEM algorithm requested: mceliece348864", e.getMessage());
+        }
     }
 
     public void testAgainstKnownList()
@@ -273,19 +353,6 @@ public class AllTests
             new Object[]{ISOIECObjectIdentifiers.mceliece8192128f, "mceliece8192128f"},
             new Object[]{ISOIECObjectIdentifiers.mceliece8192128pc, "mceliece8192128pc"},
             new Object[]{ISOIECObjectIdentifiers.mceliece8192128pcf, "mceliece8192128pcf"},
-
-    // the round-3 Classic McEliece arc BCPQC still registers - the same parameter sets
-            // under a different assignment, so they carry the same names
-            new Object[]{BCObjectIdentifiers.mceliece348864_r3, "mceliece348864"},
-            new Object[]{BCObjectIdentifiers.mceliece348864f_r3, "mceliece348864f"},
-            new Object[]{BCObjectIdentifiers.mceliece460896_r3, "mceliece460896"},
-            new Object[]{BCObjectIdentifiers.mceliece460896f_r3, "mceliece460896f"},
-            new Object[]{BCObjectIdentifiers.mceliece6688128_r3, "mceliece6688128"},
-            new Object[]{BCObjectIdentifiers.mceliece6688128f_r3, "mceliece6688128f"},
-            new Object[]{BCObjectIdentifiers.mceliece6960119_r3, "mceliece6960119"},
-            new Object[]{BCObjectIdentifiers.mceliece6960119f_r3, "mceliece6960119f"},
-            new Object[]{BCObjectIdentifiers.mceliece8192128_r3, "mceliece8192128"},
-            new Object[]{BCObjectIdentifiers.mceliece8192128f_r3, "mceliece8192128f"},
             new Object[]{GNUObjectIdentifiers.Tiger_192, "Tiger"},
             new Object[]{PKCSObjectIdentifiers.id_alg_hss_lms_hashsig, "LMS"},
 

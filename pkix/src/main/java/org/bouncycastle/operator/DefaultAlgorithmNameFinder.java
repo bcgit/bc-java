@@ -138,9 +138,10 @@ public class DefaultAlgorithmNameFinder
         addAlgorithm(BCObjectIdentifiers.sphincsPlus_haraka_256s_r3_simple, "SPHINCS+");
         addAlgorithm(BCObjectIdentifiers.sphincsPlus_haraka_256f_r3_simple, "SPHINCS+");
 
-        // KEMs. The finder is asked to name whatever turns up in an AlgorithmIdentifier,
-        // so these are keyed on every OID BouncyCastle assigns for the family, not only the
-        // ones a given build still implements.
+        // KEMs, restricted to the standardised assignments. BouncyCastle's own pre-standard arcs
+        // for these families - the round-3 Classic McEliece sets under BCObjectIdentifiers, which
+        // include a 348864 ISO never published, and the FrodoKEM sets there - are deliberately
+        // left unnamed, as those parameters are to be phased out.
 
         // ML-KEM (FIPS 203); names as MLKEMParameters.getName() spells them
         addAlgorithm(NISTObjectIdentifiers.id_alg_ml_kem_512, "ML-KEM-512");
@@ -174,19 +175,6 @@ public class DefaultAlgorithmNameFinder
         addAlgorithm(ISOIECObjectIdentifiers.mceliece8192128f, "mceliece8192128f");
         addAlgorithm(ISOIECObjectIdentifiers.mceliece8192128pc, "mceliece8192128pc");
         addAlgorithm(ISOIECObjectIdentifiers.mceliece8192128pcf, "mceliece8192128pcf");
-
-        // the round-3 Classic McEliece arc BCPQC still registers - the same parameter sets
-        // under a different assignment, so they carry the same names
-        addAlgorithm(BCObjectIdentifiers.mceliece348864_r3, "mceliece348864");
-        addAlgorithm(BCObjectIdentifiers.mceliece348864f_r3, "mceliece348864f");
-        addAlgorithm(BCObjectIdentifiers.mceliece460896_r3, "mceliece460896");
-        addAlgorithm(BCObjectIdentifiers.mceliece460896f_r3, "mceliece460896f");
-        addAlgorithm(BCObjectIdentifiers.mceliece6688128_r3, "mceliece6688128");
-        addAlgorithm(BCObjectIdentifiers.mceliece6688128f_r3, "mceliece6688128f");
-        addAlgorithm(BCObjectIdentifiers.mceliece6960119_r3, "mceliece6960119");
-        addAlgorithm(BCObjectIdentifiers.mceliece6960119f_r3, "mceliece6960119f");
-        addAlgorithm(BCObjectIdentifiers.mceliece8192128_r3, "mceliece8192128");
-        addAlgorithm(BCObjectIdentifiers.mceliece8192128f_r3, "mceliece8192128f");
 
 
         addAlgorithm(GMObjectIdentifiers.sm3, "SM3");
