@@ -76,6 +76,11 @@ public class DefaultKemAlgorithmIdentifierFinder
         algorithms.put(Strings.toUpperCase(algorithmName), algOid);
     }
 
+    public boolean hasAlgorithm(String kemAlgName)
+    {
+        return algorithms.containsKey(Strings.toUpperCase(kemAlgName));
+    }
+
     public AlgorithmIdentifier find(String kemAlgName)
     {
         ASN1ObjectIdentifier kemOID = (ASN1ObjectIdentifier)algorithms.get(Strings.toUpperCase(kemAlgName));

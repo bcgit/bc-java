@@ -7,12 +7,15 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
  * {@link AlgorithmIdentifier} - algorithm OID plus any algorithm-specific
  * parameters - that names it in an ASN.1 structure.
  * <p>
- * What happens for a name the finder does not recognise is left to the
- * implementation, and the existing ones differ: the signature and KEM finders
- * throw {@link IllegalArgumentException}, while the digest and MAC finders
- * return null. So do not assume either without checking the implementation you
- * are holding. Name matching is likewise implementation-specific - most fold
- * case, {@link DefaultDigestAlgorithmIdentifierFinder} does not.
+ * Implemented by {@link SignatureAlgorithmIdentifierFinder} and
+ * {@link KemAlgorithmIdentifierFinder}, whose finders match names without regard
+ * to case and throw {@link IllegalArgumentException} for a name they do not
+ * recognise rather than returning null.
+ * </p><p>
+ * The digest and MAC finders deliberately stand outside this hierarchy: they
+ * return null for an unrecognised name, and {@code DigestAlgorithmIdentifierFinder}
+ * additionally reads a name given in dotted OID form, so neither shares the
+ * contract above.
  * </p>
  */
 public interface AlgorithmIdentifierFinder

@@ -648,6 +648,23 @@ public class DefaultSignatureAlgorithmIdentifierFinder
 
     }
 
+    /**
+     * Return true if a signature algorithm of the passed in name is recognised, false otherwise.
+     * Where this returns true {@link #find(String)} returns an identifier; where it returns false
+     * {@code find} throws, so this is the way to test for support without catching.
+     * <p>
+     * Declared here rather than on {@link SignatureAlgorithmIdentifierFinder}, which is long
+     * published - adding a method there would break every implementation outside this library.
+     * </p>
+     *
+     * @param sigAlgName the name of the signature algorithm of interest.
+     * @return true if the name is recognised, false otherwise.
+     */
+    public boolean hasAlgorithm(String sigAlgName)
+    {
+        return algorithms.containsKey(Strings.toUpperCase(sigAlgName));
+    }
+
     public AlgorithmIdentifier find(String sigAlgName)
     {
         String algorithmName = Strings.toUpperCase(sigAlgName);

@@ -4,7 +4,6 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 
 public interface DigestAlgorithmIdentifierFinder
-    extends AlgorithmIdentifierFinder
 {
     /**
      * Find the digest algorithm identifier that matches with
