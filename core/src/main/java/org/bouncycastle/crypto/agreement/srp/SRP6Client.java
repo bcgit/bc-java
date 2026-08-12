@@ -114,7 +114,7 @@ public class SRP6Client
      */
     private BigInteger blindExponent(BigInteger e)
     {
-        return BigIntegers.createBlindedExponent(e, N.subtract(BigInteger.ONE),
+        return BigIntegers.createBlindedExponent(e, N.subtract(BigIntegers.ONE),
             CryptoServicesRegistrar.getSecureRandom(random));
     }
 

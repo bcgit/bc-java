@@ -75,7 +75,7 @@ public class SRP6VerifierGenerator
         // x is derived from the password, making it the longest lived secret in the protocol, so the
         // exponent is randomised before the variable-time BigInteger.modPow sees it. Raising g to
         // the power N-1 gives 1 by Fermat's little theorem, so the verifier is unchanged.
-        BigInteger blindedX = BigIntegers.createBlindedExponent(x, N.subtract(BigInteger.ONE),
+        BigInteger blindedX = BigIntegers.createBlindedExponent(x, N.subtract(BigIntegers.ONE),
             CryptoServicesRegistrar.getSecureRandom(random));
 
         return g.modPow(blindedX, N);
