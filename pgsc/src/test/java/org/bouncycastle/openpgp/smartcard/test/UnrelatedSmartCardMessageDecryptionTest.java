@@ -9,6 +9,7 @@ import org.bouncycastle.openpgp.smartcard.OpenPGPSmartCardManager;
 import org.bouncycastle.openpgp.smartcard.card.CardException;
 import org.bouncycastle.openpgp.smartcard.simulator.SimulatorOpenPGPSmartCard;
 import org.bouncycastle.openpgp.smartcard.simulator.SimulatorSmartCardBackend;
+import org.bouncycastle.openpgp.smartcard.yubikey.YubikeySmartCardBackend;
 import org.bouncycastle.openpgp.smartcard.yubikey.YubikeyTestInstanceProvider;
 import org.bouncycastle.openpgp.smartcard.yubikey.YubikeyTestProperties;
 import org.bouncycastle.util.Arrays;
@@ -38,7 +39,7 @@ public class UnrelatedSmartCardMessageDecryptionTest
     {
         OpenPGPSmartCard card = manager.listSmartCards().get(0);
         // -DM System.out.println
-        System.out.println("Run UnrelatedSmartCardMessageDecryptionTest on " + card.getCardType() + " " + card.getVersion());
+        System.out.println("Run UnrelatedSmartCardMessageDecryptionTest on " + card.getCardType() + " " + card.getVersion() + " (" + card.getBackend().getName() + ")");
 
         OpenPGPKey cardKey = api.generateKey(4)
                 .compositeRSAKey(3072, "Eric Cartman <eric@cart.man>")
@@ -79,16 +80,35 @@ public class UnrelatedSmartCardMessageDecryptionTest
     {
         SmartCardTestProperties p;
         OpenPGPSmartCardManager m;
+
+        // BCYK
         try
         {
             p = new YubikeyTestProperties();
-            m = YubikeyTestInstanceProvider.prepareOneYubikeySmartCardManager(p);
+            m = YubikeyTestInstanceProvider.prepareOneYubikeySmartCardManager(p, YubikeySmartCardBackend.bcImpl());
             runTest(new UnrelatedSmartCardMessageDecryptionTest(m, p));
         }
         catch (YubikeyTestInstanceProvider.YubikeySetupException e)
         {
             // -DM System.out.println
-            System.out.println("Skipping run of SmartCardMessageDecryptionTest on Yubikey.");
+            System.out.println("Skipping run of SmartCardMessageDecryptionTest on BC Yubikey.");
+        }
+        catch (CardException e)
+        {
+            throw new RuntimeException(e);
+        }
+
+        // JCYK
+        try
+        {
+            p = new YubikeyTestProperties();
+            m = YubikeyTestInstanceProvider.prepareOneYubikeySmartCardManager(p, YubikeySmartCardBackend.jceImpl());
+            runTest(new UnrelatedSmartCardMessageDecryptionTest(m, p));
+        }
+        catch (YubikeyTestInstanceProvider.YubikeySetupException e)
+        {
+            // -DM System.out.println
+            System.out.println("Skipping run of SmartCardMessageDecryptionTest on JCE Yubikey.");
         }
         catch (CardException e)
         {

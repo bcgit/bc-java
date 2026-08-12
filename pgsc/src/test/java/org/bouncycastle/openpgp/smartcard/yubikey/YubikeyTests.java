@@ -14,20 +14,58 @@ public class YubikeyTests
         extends TestCase
 {
 
-    public void testYubikeySmartCard()
+    public void testBCYK()
             throws CardException
     {
         SmartCardTestProperties p;
         OpenPGPSmartCardManager m;
+
         try
         {
             p = new YubikeyTestProperties();
-            m = YubikeyTestInstanceProvider.prepareOneYubikeySmartCardManager(p);
+            m = YubikeyTestInstanceProvider.prepareOneYubikeySmartCardManager(p, YubikeySmartCardBackend.bcImpl());
         }
         catch (YubikeyTestInstanceProvider.YubikeySetupException e)
         {
             // -DM System.err.println
-            System.err.println("Skipping run of OpenPGP Smart Card tests on Yubikey.");
+            System.err.println("Skipping run of OpenPGP Smart Card tests on BC Yubikey.");
+            return;
+        }
+
+        AbstractOpenPGPSmartCardTest[] tests = new AbstractOpenPGPSmartCardTest[]
+                {
+                        new SmartCardMessageDecryptionTest(m, p),
+                        new AnonymousRecipientSmartCardDecryptionTest(m, p),
+                        new UnrelatedSmartCardMessageDecryptionTest(m, p),
+                        new CloseYubikeySessionTest(m, p),
+                };
+
+        for (int i = 0; i != tests.length; i++)
+        {
+            SimpleTestResult result = (SimpleTestResult)tests[i].perform();
+
+            if (!result.isSuccessful())
+            {
+                fail(result.toString());
+            }
+        }
+    }
+
+    public void testJCEYK()
+            throws CardException
+    {
+        SmartCardTestProperties p;
+        OpenPGPSmartCardManager m;
+
+        try
+        {
+            p = new YubikeyTestProperties();
+            m = YubikeyTestInstanceProvider.prepareOneYubikeySmartCardManager(p, YubikeySmartCardBackend.jceImpl());
+        }
+        catch (YubikeyTestInstanceProvider.YubikeySetupException e)
+        {
+            // -DM System.err.println
+            System.err.println("Skipping run of OpenPGP Smart Card tests on JCE Yubikey.");
             return;
         }
 

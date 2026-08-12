@@ -12,7 +12,7 @@ import org.bouncycastle.openpgp.PGPException;
  * work itself and delegates only the private-key operation - an RSA or ElGamal decryption, or an
  * ECDH / X25519 / X448 agreement - to an instance of this class. A subclass may therefore route that one
  * operation to a hardware device (a smart card or HSM) without reimplementing any of the session-key
- * recovery logic. See {@code org.bouncycastle.openpgp.operator.bc.BcExternalPublicKeyDataDecryptorFactory}
+ * recovery logic. See {@code org.bouncycastle.openpgp.api.operator.bc.BcExternalPublicKeyDataDecryptorFactory}
  * for the externally-backed-key base class built on this seam.
  * <p>
  * This is the lightweight (<code>.bc</code>) binding: keys are passed as

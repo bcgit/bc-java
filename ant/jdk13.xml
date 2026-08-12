@@ -232,11 +232,6 @@
                      (PGPPublicKey.java's only reference is a Javadoc {@link}). -->
                 <exclude name="**/api/*.java"/>
                 <exclude name="**/api/**/*.java"/>
-                <!-- follows the api exclude above, mirroring ant/jdk14.xml:
-                     OpenPGPKey.OpenPGPSecretKey is in this class's constructor and accessors, so it
-                     cannot be decoupled from the excluded package, and nothing structurally depends
-                     on it in turn. -->
-                <exclude name="**/BcExternalPublicKeyDataDecryptorFactory.java"/>
             </fileset>
             <fileset dir="mail/src/main/java">
                 <exclude name="**/ValidateSignedMail.java" />
