@@ -5,20 +5,12 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 /**
  * Base interface for the finders that turn an algorithm name into the
  * {@link AlgorithmIdentifier} - algorithm OID plus any algorithm-specific
- * parameters - that names it in an ASN.1 structure.
+ * parameters - naming it in an ASN.1 structure.
  * <p>
- * Implemented by {@link SignatureAlgorithmIdentifierFinder},
- * {@link KemAlgorithmIdentifierFinder} and {@link DigestAlgorithmIdentifierFinder},
- * whose finders match names without regard to case and throw
+ * Implementations match names without regard to case, and throw
  * {@link IllegalArgumentException} for a name they do not recognise rather than
- * returning null.
- * </p><p>
- * Two things this contract does not reach. {@link MacAlgorithmIdentifierFinder}
- * stands outside the hierarchy entirely, as it returns null for an unrecognised
- * name; and the digest finder's further overloads keep their own behaviour - it
- * also reads a name given in dotted OID form, and its
- * {@code find(AlgorithmIdentifier)} returns null when it cannot derive a digest
- * from a signature algorithm.
+ * returning null. {@link MacAlgorithmIdentifierFinder} returns null instead, and
+ * so is deliberately not part of this hierarchy.
  * </p>
  */
 public interface AlgorithmIdentifierFinder
@@ -29,6 +21,7 @@ public interface AlgorithmIdentifierFinder
      *
      * @param algorithmName the name of the algorithm of interest.
      * @return an algorithm identifier for the corresponding algorithm.
+     * @throws IllegalArgumentException if the name is not recognised.
      */
     AlgorithmIdentifier find(String algorithmName);
 }
