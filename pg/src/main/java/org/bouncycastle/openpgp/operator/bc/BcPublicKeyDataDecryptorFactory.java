@@ -173,22 +173,9 @@ public class BcPublicKeyDataDecryptorFactory
                                           AsymmetricKeyParameter privKey)
             throws PGPException, IOException, InvalidCipherTextException
     {
-        byte[] enc = secKeyData[0];
-        byte[] pEnc;
-        byte[] keyEnc;
-        // the two length octets themselves
-        checkRange(2, enc);
-        int pLen = ((((enc[0] & 0xff) << 8) + (enc[1] & 0xff)) + 7) / 8;
-        checkRange(2 + pLen + 1, enc);
-
-        pEnc = new byte[pLen];
-        System.arraycopy(enc, 2, pEnc, 0, pLen);
-
-        int keyLen = enc[pLen + 2] & 0xff;
-        checkRange(2 + pLen + 1 + keyLen, enc);
-
-        keyEnc = new byte[keyLen];
-        System.arraycopy(enc, 2 + pLen + 1, keyEnc, 0, keyLen);
+        byte[][] pEncAndKeyEnc = parseECDHEncSessionKey(secKeyData[0]);
+        byte[] pEnc = pEncAndKeyEnc[0];
+        byte[] keyEnc = pEncAndKeyEnc[1];
 
         byte[] secret;
         RFC6637KDFCalculator rfc6637KDFCalculator;
@@ -236,26 +223,10 @@ public class BcPublicKeyDataDecryptorFactory
                                           AsymmetricKeyParameter privKey)
             throws PGPException, InvalidCipherTextException
     {
-        byte[] enc = secKeyData[0];
-        int pLen = X448PublicBCPGKey.LENGTH;
-        byte[] ephemeralKey = Arrays.copyOf(enc, pLen);
-
-        // size of following fields
-        checkRange(pLen + 1, enc);
-        int size = enc[pLen] & 0xff;
-        checkRange(pLen + 1 + size, enc);
-
-        // encrypted session key
-        boolean includesSesKeyAlg = containsSKAlg(pkeskVersion);
-        if (includesSesKeyAlg && size < 1)
-        {
-            // a v3 PKESK's size octet covers the symmetric algorithm octet plus the wrapped key, so a
-            // declared size of zero leaves no room for it - guard before the length arithmetic underflows
-            throw new PGPException("encoded length out of range");
-        }
-        int sesKeyLen = size - (includesSesKeyAlg ? 1 : 0);
-        int sesKeyOff = pLen + 1 + (includesSesKeyAlg ? 1 : 0);
-        byte[] keyEnc = Arrays.copyOfRange(enc, sesKeyOff, sesKeyOff + sesKeyLen);
+        byte[][] ephemeralKeyAndKeyEnc = parseXDHEncSessionKey(secKeyData[0], X448PublicBCPGKey.LENGTH,
+                containsSKAlg(pkeskVersion));
+        byte[] ephemeralKey = ephemeralKeyAndKeyEnc[0];
+        byte[] keyEnc = ephemeralKeyAndKeyEnc[1];
 
         byte[] secret = getCryptoCallback().decryptX448(privKey, ephemeralKey);
 
@@ -271,26 +242,10 @@ public class BcPublicKeyDataDecryptorFactory
                                             AsymmetricKeyParameter privKey)
             throws PGPException, InvalidCipherTextException
     {
-        byte[] enc = secKeyData[0];
-        int pLen = X25519PublicBCPGKey.LENGTH;
-        byte[] ephemeralKey = Arrays.copyOf(enc, pLen);
-
-        // size of following fields
-        checkRange(pLen + 1, enc);
-        int size = enc[pLen] & 0xff;
-        checkRange(pLen + 1 + size, enc);
-
-        // encrypted session key
-        boolean includesSesKeyAlg = containsSKAlg(pkeskVersion);
-        if (includesSesKeyAlg && size < 1)
-        {
-            // a v3 PKESK's size octet covers the symmetric algorithm octet plus the wrapped key, so a
-            // declared size of zero leaves no room for it - guard before the length arithmetic underflows
-            throw new PGPException("encoded length out of range");
-        }
-        int sesKeyLen = size - (includesSesKeyAlg ? 1 : 0);
-        int sesKeyOff = pLen + 1 + (includesSesKeyAlg ? 1 : 0);
-        byte[] keyEnc = Arrays.copyOfRange(enc, sesKeyOff, sesKeyOff + sesKeyLen);
+        byte[][] ephemeralKeyAndKeyEnc = parseXDHEncSessionKey(secKeyData[0], X25519PublicBCPGKey.LENGTH,
+                containsSKAlg(pkeskVersion));
+        byte[] ephemeralKey = ephemeralKeyAndKeyEnc[0];
+        byte[] keyEnc = ephemeralKeyAndKeyEnc[1];
 
         byte[] secret = getCryptoCallback().decryptX25519(privKey, ephemeralKey);
 

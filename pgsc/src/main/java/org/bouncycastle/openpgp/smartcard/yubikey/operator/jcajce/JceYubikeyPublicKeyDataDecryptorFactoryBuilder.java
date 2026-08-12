@@ -4,6 +4,7 @@ import com.yubico.yubikit.core.application.InvalidPinException;
 import com.yubico.yubikit.core.keys.PublicKeyValues;
 import com.yubico.yubikit.core.smartcard.ApduException;
 import com.yubico.yubikit.openpgp.OpenPgpSession;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.bcpg.ECDHPublicBCPGKey;
 import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
 import org.bouncycastle.openpgp.PGPException;
@@ -12,7 +13,7 @@ import org.bouncycastle.openpgp.api.KeyPassphraseProvider;
 import org.bouncycastle.openpgp.api.OpenPGPKey;
 import org.bouncycastle.openpgp.api.exception.KeyPassphraseException;
 import org.bouncycastle.openpgp.operator.PublicKeyDataDecryptorFactory;
-import org.bouncycastle.openpgp.operator.jcajce.JceExternalPublicKeyDataDecryptorFactoryBuilder;
+import org.bouncycastle.openpgp.api.operator.jcajce.JceExternalPublicKeyDataDecryptorFactoryBuilder;
 import org.bouncycastle.openpgp.smartcard.card.CardException;
 import org.bouncycastle.openpgp.smartcard.yubikey.YubikeyOpenPGPSmartCard;
 import org.bouncycastle.util.Arrays;
@@ -84,29 +85,21 @@ public class JceYubikeyPublicKeyDataDecryptorFactoryBuilder
             }
 
             @Override
-            public byte[] decryptECDH(ECDHPublicBCPGKey pubKey, PublicKey ephemeralKeyBytes)
+            public byte[] decryptECDH(ECDHPublicBCPGKey pubKey, PublicKey ephemeralKey)
                     throws PGPException
             {
-                char[] pin = requireUserPin(userPinProvider, secretKey);
-
-                String curveName = ECUtil.getCurveName(pubKey.getCurveOID());
-                switch (curveName)
+                // validate the curve and convert the ephemeral key before fetching the PIN, so no
+                // failure on this path can leave the PIN unzeroized
+                ASN1ObjectIdentifier curveOid = pubKey.getCurveOID();
+                String curveName = ECUtil.getCurveName(curveOid);
+                if (curveName == null || !isSupportedCurve(curveName))
                 {
-                    case "secp256r1":
-                    case "prime256v1":
-                    case "secp256k1":
-                    case "secp384r1":
-                    case "secp521r1":
-                    case "brainpoolP256r1":
-                    case "brainpoolP384r1":
-                    case "brainpoolP512r1":
-                    case "curve25519":
-                        break;
-                    default:
-                        throw new PGPException("Unsupported EC curve: " + ECUtil.getCurveName(pubKey.getCurveOID()) + " (" + pubKey.getCurveOID() + ")");
+                    throw new PGPException("Unsupported EC curve: " + curveName + " (" + curveOid + ")");
                 }
 
-                PublicKeyValues ephemeralPublicKey = PublicKeyValues.fromPublicKey(ephemeralKeyBytes);
+                PublicKeyValues ephemeralPublicKey = PublicKeyValues.fromPublicKey(ephemeralKey);
+
+                char[] pin = requireUserPin(userPinProvider, secretKey);
 
                 try (OpenPgpSession openPgpSession = yubikey.openSession())
                 {
@@ -133,9 +126,10 @@ public class JceYubikeyPublicKeyDataDecryptorFactoryBuilder
             public byte[] decryptX25519(PublicKey ephemeralKey)
                     throws PGPException
             {
-                char[] pin = requireUserPin(userPinProvider, secretKey);
-
+                // convert the ephemeral key before fetching the PIN - see decryptECDH
                 PublicKeyValues peerKey = PublicKeyValues.fromPublicKey(ephemeralKey);
+
+                char[] pin = requireUserPin(userPinProvider, secretKey);
 
                 try (OpenPgpSession openPgpSession = yubikey.openSession())
                 {
@@ -164,6 +158,19 @@ public class JceYubikeyPublicKeyDataDecryptorFactoryBuilder
                 throw new PGPException("X448 not supported by YubiKey.");
             }
         });
+    }
+
+    private static boolean isSupportedCurve(String curveName)
+    {
+        return "secp256r1".equals(curveName)
+            || "prime256v1".equals(curveName)
+            || "secp256k1".equals(curveName)
+            || "secp384r1".equals(curveName)
+            || "secp521r1".equals(curveName)
+            || "brainpoolP256r1".equals(curveName)
+            || "brainpoolP384r1".equals(curveName)
+            || "brainpoolP512r1".equals(curveName)
+            || "curve25519".equals(curveName);
     }
 
     private char[] requireUserPin(KeyPassphraseProvider userPinProvider,

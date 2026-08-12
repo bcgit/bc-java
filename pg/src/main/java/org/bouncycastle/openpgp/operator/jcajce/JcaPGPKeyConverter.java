@@ -669,7 +669,7 @@ public class JcaPGPKeyConverter
         }
     }
 
-    public BCPGKey getPublicBCPGKey(int algorithm, PGPAlgorithmParameters algorithmParameters, PublicKey pubKey)
+    private BCPGKey getPublicBCPGKey(int algorithm, PGPAlgorithmParameters algorithmParameters, PublicKey pubKey)
         throws PGPException
     {
         switch (algorithm)

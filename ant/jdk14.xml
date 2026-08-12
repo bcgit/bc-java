@@ -58,13 +58,6 @@
                 <exclude name="**/keybox/**/*.java"/>
                 <exclude name="**/api/*.java"/>
                 <exclude name="**/api/**/*.java"/>
-                <!-- follows the api exclude above: OpenPGPKey.OpenPGPSecretKey is in this class's
-                     constructor and accessors, so it cannot be decoupled from the excluded
-                     package. It is the only structural dependency on org.bouncycastle.openpgp.api
-                     outside that package - the references in PGPPublicKey and
-                     BcPublicKeyCryptoCallback are javadoc only - and nothing structurally depends
-                     on it in turn. -->
-                <exclude name="**/BcExternalPublicKeyDataDecryptorFactory.java"/>
             </fileset>
             <fileset dir="pkix/src/main/java">
                 <exclude name="**/JceAADStream.java"/>
@@ -192,6 +185,10 @@
                 <exclude name="**/OpenPGPKeyEditorTest.java"/>
                 <exclude name="**/OpenPGPMessageGeneratorTest.java"/>
                 <exclude name="**/OpenPGPKeyReaderTest.java"/>
+                <!-- extends org.bouncycastle.openpgp.api.operator.jcajce.JceExternalPublicKeyDataDecryptorFactoryBuilder,
+                     excluded with the api package above; the jdk1.4 RegressionTest overlay does not
+                     reference it -->
+                <exclude name="**/JceExternalPublicKeyDataDecryptorFactoryBuilderTest.java"/>
             </fileset>
             <fileset dir="pkix/src/test/java">
                 <exclude name="**/est/**/*.java"/>

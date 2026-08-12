@@ -20,7 +20,7 @@ import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.api.KeyPassphraseProvider;
 import org.bouncycastle.openpgp.api.OpenPGPKey;
 import org.bouncycastle.openpgp.api.exception.KeyPassphraseException;
-import org.bouncycastle.openpgp.operator.bc.BcExternalPublicKeyDataDecryptorFactory;
+import org.bouncycastle.openpgp.api.operator.bc.BcExternalPublicKeyDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.bc.BcPGPKeyConverter;
 import org.bouncycastle.openpgp.operator.bc.BcPublicKeyCryptoCallback;

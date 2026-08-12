@@ -25,6 +25,7 @@ import org.bouncycastle.util.Arrays;
 
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
+import java.security.Provider;
 import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
@@ -325,6 +326,18 @@ public class YubikeySmartCardBackend
 
     public static YubikeyDecryptorFactoryProvider jceImpl()
     {
+        return jceImpl(new BouncyCastleProvider());
+    }
+
+    /**
+     * JCE-backed decryptor factory provider drawing its cryptographic primitives from the given
+     * JCA provider.
+     *
+     * @param provider provider object for cryptographic primitives.
+     * @return decryptor factory provider.
+     */
+    public static YubikeyDecryptorFactoryProvider jceImpl(final Provider provider)
+    {
         return new YubikeyDecryptorFactoryProvider()
         {
             @Override
@@ -334,7 +347,7 @@ public class YubikeySmartCardBackend
                     throws PGPException
             {
                 return new JceYubikeyPublicKeyDataDecryptorFactoryBuilder(card, userPinProvider)
-                        .setProvider(new BouncyCastleProvider())
+                        .setProvider(provider)
                         .build(secretKey);
             }
 

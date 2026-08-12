@@ -1,8 +1,10 @@
-package org.bouncycastle.openpgp.operator.bc;
+package org.bouncycastle.openpgp.api.operator.bc;
 
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPKeyPair;
 import org.bouncycastle.openpgp.api.OpenPGPKey;
+import org.bouncycastle.openpgp.operator.bc.BcPublicKeyCryptoCallback;
+import org.bouncycastle.openpgp.operator.bc.BcPublicKeyDataDecryptorFactory;
 
 /**
  * Base class for a {@link BcPublicKeyDataDecryptorFactory} whose private key material is held outside

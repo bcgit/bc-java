@@ -81,6 +81,7 @@ public class RegressionTest
         new LegacyX448KeyPairTest(),
 
         new PGPv6MessageDecryptionTest(),
+        new JceExternalPublicKeyDataDecryptorFactoryBuilderTest(),
         new Curve25519PrivateKeyEncodingTest(),
         new EdDSAKeyConversionWithLeadingZeroTest(),
         new JcaECDSAKeyConverterTest(),
