@@ -51,7 +51,17 @@ public class SM9KEMExtractor
         }
         Fp12 w = SM9Pairing.pairing(c, key.getPrivatePoint());
         byte[] encap = SM9Curve.g1ToBytes(c);
-        return SM9Sm3.kdf(Arrays.concatenate(encap, SM9Pairing.toBytes(w), key.getIdentity()), keyLenBits);
+        byte[] k = SM9Sm3.kdf(Arrays.concatenate(encap, SM9Pairing.toBytes(w), key.getIdentity()), keyLenBits);
+
+        // GM/T 0044.4-2016 6.2.1 B3: an all-zero K' is reported as an error and the decapsulation
+        // exits. Note the asymmetry with encapsulation, where 6.1.1 A6 redraws r and tries again -
+        // the receiver has no r to redraw, so it can only reject.
+        if (Arrays.areAllZeroes(k, 0, k.length))
+        {
+            throw new IllegalArgumentException("SM9 key derivation produced an all-zero key");
+        }
+
+        return k;
     }
 
     public int getEncapsulationLength()
