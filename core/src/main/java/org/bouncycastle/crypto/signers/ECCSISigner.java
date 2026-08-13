@@ -57,7 +57,11 @@ public class ECCSISigner
         this.G = params.getG();
         this.digest = digest;
         this.digest.reset();
-        this.N = (params.getCurve().getOrder().bitLength() + 7) >> 3;
+        // RFC 6507 sec. 2 sizes N by the prime p the curve is over, and r is an N-octet field
+        // element; the order can be the wider of the two on a curve like secp160r1, and s' is
+        // N octets as well, so take whichever is larger. On the RFC's own P-256 parameters,
+        // and on every curve whose field and order share a bit length, the two agree.
+        this.N = (Math.max(params.getCurve().getFieldSize(), q.bitLength()) + 7) >> 3;
     }
 
     /**
@@ -151,18 +155,19 @@ public class ECCSISigner
         ECCSIPrivateKeyParameters params = (ECCSIPrivateKeyParameters)keyParam;
         BigInteger ssk = params.getSSK();
 
-        // HE is a hash over public values, so reducing it with BigInteger reveals nothing; r is
-        // already reduced, and reset() has pinned ssk and j to [1, q-1]. Every remaining step is
-        // then constant time: modMult for the products, modAdd for the sum, and modOddInverse
-        // rather than the variable-time BigInteger.modInverse. q is the curve order, hence odd.
+        // HE is a hash over public values and r is the unreduced Jx carried in the signature, so
+        // reducing either with BigInteger reveals nothing; reset() has pinned ssk and j to
+        // [1, q-1]. Every remaining step is then constant time: modMult for the products, modAdd
+        // for the sum, and modOddInverse rather than the variable-time BigInteger.modInverse.
+        // q is the curve order, hence odd.
         //
         // The products matter as much as the inverse here. HE and r are both public and change per
         // signature while ssk is the long-term secret, so a reduction of HE + r*ssk costing an
         // amount that depended on the quotient would answer a question about ssk once per
         // signature, and those answers combine.
         BigInteger he = new BigInteger(1, heBytes).mod(q);
-        BigInteger denominator = BigIntegers.modAdd(q, he, BigIntegers.modMult(q, r, ssk));
-        if (denominator.equals(BigInteger.ZERO))
+        BigInteger denominator = BigIntegers.modAdd(q, he, BigIntegers.modMult(q, r.mod(q), ssk));
+        if (denominator.equals(BigIntegers.ZERO))
         {
             throw new IllegalArgumentException("Invalid j, retry");
         }
@@ -256,7 +261,10 @@ public class ECCSISigner
             // j is the per-signature nonce and SSK the long-term secret signing key:
             // constant-time, not the curve's default wNAF multiplier
             ECPoint J = ECAlgorithms.multiplySecret(G, j, q).normalize();
-            r = J.getAffineXCoord().toBigInteger().mod(q);
+            // RFC 6507 sec. 5.2.1 assigns r the N-octet Jx itself, not Jx mod q: sec. 5.2.2 has
+            // the verifier check Jx = r modulo p, so a reduced r would fail a conforming external
+            // verifier whenever Jx lands in [q, p)
+            r = J.getAffineXCoord().toBigInteger();
 
             kpak_computed = ECAlgorithms.multiplySecret(G, parameters.getSSK(), q);
         }

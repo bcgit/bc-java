@@ -53,7 +53,10 @@ public class ConstantTimeUsageTest
         // substring of multiplySecret, so the byte scan cannot tell the two apart.
         {"org/bouncycastle/crypto/params/SAKKEPrivateKeyParameters", "multiplySecret", REQUIRED},
 
-        // RFC 6507 sec. 5.2.1 ECCSI signing, s' = ((HE + r * SSK)^-1 * j) mod q
+        // RFC 6507 sec. 5.2.1 ECCSI signing, s' = ((HE + r * SSK)^-1 * j) mod q; the nonce j and
+        // the long-term SSK also each scale G, kept off the curve's default multiplier the same
+        // way as the SAKKE secrets above.
+        {"org/bouncycastle/crypto/signers/ECCSISigner", "multiplySecret", REQUIRED},
         {"org/bouncycastle/crypto/signers/ECCSISigner", "modAdd", REQUIRED},
         {"org/bouncycastle/crypto/signers/ECCSISigner", "modMult", REQUIRED},
         {"org/bouncycastle/crypto/signers/ECCSISigner", "modOddInverse", REQUIRED},

@@ -20,6 +20,7 @@ import org.bouncycastle.crypto.params.ECCSIPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECCSIPublicKeyParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.signers.ECCSISigner;
+import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
@@ -96,6 +97,7 @@ public class ECCSISignerTest
         testConsecutiveSignatures();
         testSSKRange();
         testNoRandom();
+        testUnreducedR();
         for (int i = 0; i < curveNames.length; ++i)
         {
             for (int j = 0; j < digests.length; ++j)
@@ -215,6 +217,55 @@ public class ECCSISignerTest
         signer.init(false, keyPair.getPublic());
         signer.update(M, 0, M.length);
         isTrue("signature from default SecureRandom did not verify", signer.verifySignature(sig));
+    }
+
+    /**
+     * RFC 6507 sec. 5.2.1 assigns r the N-octet Jx itself, not Jx mod q - sec. 5.2.2 has the
+     * verifier check Jx = r modulo p, so a reduced r fails a conforming external verifier. On
+     * P-256 the two differ for about one signature in four billion; curve25519's order sits two
+     * bits below its field size, so a nonce whose Jx exceeds q is found by a short search and
+     * the emitted r can be checked against the unreduced Jx directly.
+     */
+    private void testUnreducedR()
+        throws Exception
+    {
+        SecureRandom random = new SecureRandom();
+        X9ECParameters params = CustomNamedCurves.getByName("curve25519");
+        BigInteger q = params.getCurve().getOrder();
+        int n = (params.getCurve().getFieldSize() + 7) / 8;
+
+        // find a small nonce whose [j]G x-coordinate is at least q
+        BigInteger j = BigIntegers.ONE;
+        ECPoint J = params.getG().normalize();
+        while (J.getAffineXCoord().toBigInteger().compareTo(q) < 0)
+        {
+            j = j.add(BigIntegers.ONE);
+            J = J.add(params.getG()).normalize();
+        }
+        BigInteger jx = J.getAffineXCoord().toBigInteger();
+
+        byte[] id = "2011-02\0tel:+447700900123\0".getBytes();
+        ECCSIKeyPairGenerator generator = new ECCSIKeyPairGenerator();
+        ECCSIKeyGenerationParameters keyGenerationParameters = new ECCSIKeyGenerationParameters(random,
+            params, new SHA256Digest(), id);
+        generator.init(keyGenerationParameters);
+        AsymmetricCipherKeyPair keyPair = generator.generateKeyPair();
+
+        byte[] M = "message\0".getBytes();
+
+        ECCSISigner signer = new ECCSISigner(keyGenerationParameters.getKPAK(), params, new SHA256Digest(), id);
+        signer.init(true, new ParametersWithRandom(keyPair.getPrivate(),
+            new FixedSecureRandom(BigIntegers.asUnsignedByteArray((q.bitLength() + 7) / 8, j))));
+        signer.update(M, 0, M.length);
+        byte[] sig = signer.generateSignature();
+
+        isTrue("r is not the unreduced Jx RFC 6507 sec. 5.2.1 assigns",
+            Arrays.areEqual(BigIntegers.asUnsignedByteArray(n, jx), Arrays.copyOf(sig, n)));
+
+        ECCSISigner verifier = new ECCSISigner(keyGenerationParameters.getKPAK(), params, new SHA256Digest(), id);
+        verifier.init(false, keyPair.getPublic());
+        verifier.update(M, 0, M.length);
+        isTrue("unreduced-r signature did not verify", verifier.verifySignature(sig));
     }
 
     private void testTestVector()
