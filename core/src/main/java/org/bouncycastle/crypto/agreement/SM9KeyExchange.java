@@ -129,6 +129,22 @@ public class SM9KeyExchange
         write(z, SM9Pairing.toBytes(g1));
         write(z, SM9Pairing.toBytes(g2));
         write(z, SM9Pairing.toBytes(g3));
+
+        // GM/T 0044.3-2016 6.1 B5 and A7 derive SK with no all-zero rejection, unlike every KDF
+        // site in 0044.4 (6.1.1 A6 and 7.1.1 A6 redraw r, 6.2.1 B3 and 7.2.1 B3 report an error).
+        // That difference is deliberate, not an omission there or here.
+        //
+        // In 0044.4's stream mode K1 *is* the keystream and its length is the message length, so an
+        // all-zero K1 gives C2 = M xor 0 = M - the plaintext in the clear - and at one byte of
+        // message that is a 1-in-256 event rather than a negligible one; on the decrypt side the
+        // length comes from the ciphertext, so an attacker reaches it in a few hundred tries. SK
+        // here is negotiated key material the protocol never XORs with, and its length is the
+        // caller's klenBits rather than a message length. Neither the consequence nor the rate
+        // carries over, which is presumably why 0044.3 does not ask for the check.
+        //
+        // Do not "fix" this to match the 0044.4 sites: it would be strictness the standard does not
+        // impose on a conformance-sensitive protocol path, and it would suggest one uniform rule
+        // where the standard has two, for two different reasons.
         return SM9Sm3.kdf(z.toByteArray(), klenBits);
     }
 
