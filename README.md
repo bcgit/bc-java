@@ -22,14 +22,14 @@ For the lightweight crypto API plus the JCA/JCE provider — the most common sta
 <dependency>
     <groupId>org.bouncycastle</groupId>
     <artifactId>bcprov-jdk18on</artifactId>
-    <version>1.84</version>
+    <version>1.85.2</version>
 </dependency>
 ```
 
 **Gradle**:
 
 ```groovy
-implementation 'org.bouncycastle:bcprov-jdk18on:1.84'
+implementation 'org.bouncycastle:bcprov-jdk18on:1.85.2'
 ```
 
 If you need functionality beyond what `bcprov` provides, add the appropriate companion artifacts. They all share the same `org.bouncycastle` group, the same `-jdk18on` suffix, and the same version — pull each one in the same way as the snippets above:
@@ -40,9 +40,11 @@ If you need functionality beyond what `bcprov` provides, add the appropriate com
 | `bcpkix-jdk18on`   | X.509 / PKCS#10 / PKCS#12, CMS, S/MIME helpers (top-level only), TSP, OCSP, CMP / CRMF, certificate path validation. |
 | `bcpg-jdk18on`     | OpenPGP (RFC 4880 / RFC 9580). |
 | `bctls-jdk18on`    | Standalone TLS 1.0 – 1.3 implementation plus the BCJSSE provider. |
+| `bctls-klog-jdk18on` | Drop-in replacement for `bctls-jdk18on` that reports TLS connection secrets in RFC 9850 (SSLKEYLOGFILE) format for decrypting a test capture in an analyser such as Wireshark. Not for production use — see the package javadoc for why. |
 | `bcmail-jdk18on`   | S/MIME built on top of `bcpkix`, targeting the legacy `javax.mail` / `javax.activation` 1.x runtimes. |
 | `bcjmail-jdk18on`  | S/MIME for the Jakarta runtimes (`jakarta.mail` / `jakarta.activation` 2.x). Pick this for modern Spring Boot / Quarkus / Jakarta EE apps, and use `bcmail-jdk18on` for the older `javax.*` stack. |
 | `bcmls-jdk18on`    | Messaging Layer Security (RFC 9420). |
+| `bcpgsc-jdk18on`   | Adds an API for using OpenPGP keys held on a smart card or hardware token (e.g. a YubiKey) with `bcpg`'s high-level OpenPGP API. |
 | `bcutil-jdk18on`   | Shared ASN.1 utility classes used by `bcpkix`. Pulled in transitively. |
 
 ### Suffix history
@@ -192,11 +194,19 @@ The **util** module is the home for code which is used by other modules that doe
 The **pkix** module is the home for code for X.509 certificate generation and the APIs for standards that rely on ASN.1 such
 as CMS, TSP, PKCS#12, OCSP, CRMF, and CMP.
 
-The **mail** module provides an S/MIME API built on top of CMS.
+The **mail** module provides an S/MIME API built on top of CMS, targeting the legacy `javax.mail` / `javax.activation` 1.x runtimes.
+
+The **jmail** module is the same S/MIME API as **mail**, targeting the Jakarta `jakarta.mail` / `jakarta.activation` 2.x runtimes.
 
 The **pg** module is the home for code used to support OpenPGP.
 
+The **pgsc** module adds an API for using OpenPGP keys held on a smart card or hardware token (e.g. a YubiKey) with **pg**'s high-level OpenPGP API.
+
 The **tls** module is the home for code used to a general TLS API and JSSE Provider.
+
+The **tls-klog** module is a build of **tls** that reports TLS connection secrets in RFC 9850 (SSLKEYLOGFILE) format, for decrypting a test capture in an analyser such as Wireshark. It is not for production use — see the `org.bouncycastle.tls.keylog` package javadoc for why.
+
+The **mls** module is the home for code used to support Messaging Layer Security (RFC 9420).
 
 The build scripts that come with the full distribution allow creation of the different releases by using the different source trees while excluding classes that are not appropriate and copying in the required compatibility classes from the directories containing compatibility classes appropriate for the distribution.
 
