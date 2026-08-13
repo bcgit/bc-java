@@ -2,16 +2,20 @@ package org.bouncycastle.jcajce.provider.asymmetric.sm9;
 
 import java.io.NotSerializableException;
 import java.io.ObjectStreamException;
-import java.security.PublicKey;
 
 import org.bouncycastle.crypto.params.SM9SigMasterPublicKeyParameters;
+import org.bouncycastle.jcajce.interfaces.SM9SigMasterPublicKey;
+import org.bouncycastle.jcajce.interfaces.SM9SigUserPublicKey;
 import org.bouncycastle.util.Arrays;
 
 /**
  * A user's SM9 signature public key: the signature master public key bound to the
  * user's identity (GM/T 0044.2). It is the key an {@code SM9}
  * {@link java.security.Signature} verifies against, obtained by a verifier from
- * {@link org.bouncycastle.jcajce.interfaces.SM9SigMasterPublicKey#getUserPublicKey(byte[])}.
+ * {@link SM9SigMasterPublicKey#getUserPublicKey(byte[])}.
+ * <p>
+ * {@link #getIdentity()} and {@link #getMasterPublicKey()} return the two things a
+ * verifier derived this key from, so a caller need not track them separately.
  * <p>
  * Like the other SM9 user keys this is a composite (master key + identity) handle
  * rather than a standalone-encodable key: {@code getEncoded()} returns {@code null}, and
@@ -19,7 +23,7 @@ import org.bouncycastle.util.Arrays;
  * separately and reconstruct it.
  */
 class BCSM9SigPublicKey
-    implements PublicKey
+    implements SM9SigUserPublicKey
 {
     private static final long serialVersionUID = 1L;
 
@@ -41,7 +45,14 @@ class BCSM9SigPublicKey
         return masterParams;
     }
 
-    byte[] getIdentity()
+    @Override
+    public SM9SigMasterPublicKey getMasterPublicKey()
+    {
+        return new BCSM9SigMasterPublicKey(masterParams);
+    }
+
+    @Override
+    public byte[] getIdentity()
     {
         return Arrays.clone(identity);
     }

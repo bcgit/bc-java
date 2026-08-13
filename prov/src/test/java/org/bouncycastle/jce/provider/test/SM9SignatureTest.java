@@ -24,6 +24,9 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.jcajce.interfaces.SM9SigMasterPrivateKey;
 import org.bouncycastle.jcajce.interfaces.SM9SigMasterPublicKey;
 import org.bouncycastle.jcajce.interfaces.SM9SigUserKeyGenerator;
+import org.bouncycastle.jcajce.interfaces.SM9SigUserPrivateKey;
+import org.bouncycastle.jcajce.interfaces.SM9SigUserPublicKey;
+import org.bouncycastle.jcajce.spec.SM9SigUserPrivateKeySpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
@@ -75,6 +78,15 @@ public class SM9SignatureTest
         // the KGC-generated public half and the verifier-derived key are the same key
         isTrue("SM9 user public key halves agree",
             alice.getPublic().equals(masterPub.getUserPublicKey(identityAlice)));
+
+        // the user keys derive their identity (and, for the public key, the master public
+        // key) directly, rather than a caller having to track them separately
+        isTrue("SM9 sign user private key identity",
+            Arrays.areEqual(identityAlice, ((SM9SigUserPrivateKey)alice.getPrivate()).getIdentity()));
+        SM9SigUserPublicKey alicePublic = (SM9SigUserPublicKey)alice.getPublic();
+        isTrue("SM9 sign user public key identity", Arrays.areEqual(identityAlice, alicePublic.getIdentity()));
+        isTrue("SM9 sign user public key master public key",
+            Arrays.areEqual(masterPub.getEncoded(), alicePublic.getMasterPublicKey().getEncoded()));
 
         // 2. verifying against the wrong identity must fail
         Signature wrongIdentity = Signature.getInstance("SM9", "BC");
@@ -151,6 +163,46 @@ public class SM9SignatureTest
 
         // 7. the sign private keys honour the Destroyable contract
         destroyTest(masterPair, identityAlice, message);
+
+        // 8. a stored user private key round-trips through the KeyFactory without the master
+        //    private key, using only the encoding and the published master public key
+        userKeySpecRoundTrip(kf, masterPub, alice.getPrivate(), identityAlice, message);
+    }
+
+    /**
+     * A user's signature private key does not carry the master public key it needs to sign
+     * with, so it cannot be rebuilt from its bare PKCS#8 encoding the way a master key can -
+     * SM9SigUserPrivateKeySpec supplies that context, letting a stored user key be
+     * reconstituted with only the published master public key, never the master private key.
+     */
+    private void userKeySpecRoundTrip(KeyFactory kf, SM9SigMasterPublicKey masterPub,
+                                      PrivateKey aliceKey, byte[] identityAlice, byte[] message)
+        throws Exception
+    {
+        byte[] stored = aliceKey.getEncoded();
+
+        PrivateKey rebuilt = kf.generatePrivate(new SM9SigUserPrivateKeySpec(stored, masterPub, identityAlice));
+        isTrue("SM9 user private key spec round-trip", Arrays.areEqual(stored, rebuilt.getEncoded()));
+        isTrue("SM9 spec-rebuilt user key identity",
+            Arrays.areEqual(identityAlice, ((SM9SigUserPrivateKey)rebuilt).getIdentity()));
+
+        Signature signer = Signature.getInstance("SM9", "BC");
+        signer.initSign(rebuilt);
+        signer.update(message);
+        byte[] sig = signer.sign();
+
+        Signature verifier = Signature.getInstance("SM9", "BC");
+        verifier.initVerify(masterPub.getUserPublicKey(identityAlice));
+        verifier.update(message);
+        isTrue("SM9 signature from a spec-rebuilt user key verifies", verifier.verify(sig));
+
+        // the factory hands the same spec back for a user key
+        SM9SigUserPrivateKeySpec roundTripSpec = (SM9SigUserPrivateKeySpec)kf.getKeySpec(
+            aliceKey, SM9SigUserPrivateKeySpec.class);
+        isTrue("SM9 getKeySpec round-trip encoding", Arrays.areEqual(stored, roundTripSpec.getEncoded()));
+        isTrue("SM9 getKeySpec round-trip master public key",
+            Arrays.areEqual(masterPub.getEncoded(), roundTripSpec.getMasterPublicKey().getEncoded()));
+        isTrue("SM9 getKeySpec round-trip identity", Arrays.areEqual(identityAlice, roundTripSpec.getIdentity()));
     }
 
     private void destroyTest(KeyPair masterPair, byte[] identityAlice, byte[] message)
@@ -169,6 +221,16 @@ public class SM9SignatureTest
         {
             aliceKey.getEncoded();
             fail("destroyed sign user key still encodes");
+        }
+        catch (IllegalStateException e)
+        {
+            isTrue("key destroyed".equals(e.getMessage()));
+        }
+
+        try
+        {
+            ((SM9SigUserPrivateKey)aliceKey).getIdentity();
+            fail("destroyed sign user key still returns its identity");
         }
         catch (IllegalStateException e)
         {

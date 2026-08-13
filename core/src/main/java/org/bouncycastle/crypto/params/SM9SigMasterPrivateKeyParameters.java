@@ -86,7 +86,7 @@ public class SM9SigMasterPrivateKeyParameters
         }
         BigInteger t2 = BigIntegers.modMult(n, ks, BigIntegers.modOddInverse(n, t1));
         ECPoint ds = SM9Curve.multiplySecure(SM9Curve.P1, t2).normalize();
-        return new SM9SigPrivateKeyParameters(ds, publicParams);
+        return new SM9SigPrivateKeyParameters(ds, publicParams, identity);
     }
 
     /**

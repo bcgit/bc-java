@@ -3,6 +3,7 @@ package org.bouncycastle.jcajce.provider.asymmetric.sm9;
 import java.io.IOException;
 import java.security.PrivateKey;
 
+import org.bouncycastle.jcajce.interfaces.SM9SigUserPrivateKey;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.asn1.ASN1Encoding;
@@ -18,10 +19,11 @@ import org.bouncycastle.crypto.params.SM9SigPrivateKeyParameters;
  * <p>
  * The JCA {@code getEncoded()} is a PKCS#8 PrivateKeyInfo under the GM algorithm OID
  * (the JCA convention); the bare GM/T 0080-2020 key bytes are available via the
- * lightweight key-parameter class's {@code getEncoded()}.
+ * lightweight key-parameter class's {@code getEncoded()}. {@link #getIdentity()} returns
+ * the identity the key was derived for, so a caller need not track it separately.
  */
 class BCSM9SigPrivateKey
-    implements PrivateKey
+    implements SM9SigUserPrivateKey
 {
     private static final long serialVersionUID = 1L;
 
@@ -64,6 +66,12 @@ class BCSM9SigPrivateKey
         {
             throw Exceptions.illegalStateException("unable to encode SM9 user private key", e);
         }
+    }
+
+    @Override
+    public byte[] getIdentity()
+    {
+        return keyParams.getIdentity();
     }
 
     public boolean equals(Object o)

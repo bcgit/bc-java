@@ -2,9 +2,10 @@ package org.bouncycastle.jcajce.provider.asymmetric.sm9;
 
 import java.io.NotSerializableException;
 import java.io.ObjectStreamException;
-import java.security.PublicKey;
 
 import org.bouncycastle.crypto.params.SM9EncPublicKeyParameters;
+import org.bouncycastle.jcajce.interfaces.SM9EncMasterPublicKey;
+import org.bouncycastle.jcajce.interfaces.SM9EncUserPublicKey;
 import org.bouncycastle.util.Arrays;
 
 /**
@@ -14,13 +15,16 @@ import org.bouncycastle.util.Arrays;
  * {@link org.bouncycastle.jcajce.spec.KEMGenerateSpec} when encapsulating a key to an
  * identity through {@code KeyGenerator.SM9-KEM}.
  * <p>
+ * {@link #getIdentity()} and {@link #getMasterPublicKey()} return the two things this key
+ * was derived from, so a caller need not track them separately.
+ * <p>
  * Like the SM9 user identity keys this is a composite (master key + identity) handle
  * rather than a standalone-encodable key: {@code getEncoded()} returns {@code null}, and
  * it is not serializable on its own - persist the master public key and the identity
  * separately and reconstruct it.
  */
 class BCSM9EncPublicKey
-    implements PublicKey
+    implements SM9EncUserPublicKey
 {
     private static final long serialVersionUID = 1L;
 
@@ -34,6 +38,18 @@ class BCSM9EncPublicKey
     SM9EncPublicKeyParameters getKeyParameters()
     {
         return keyParams;
+    }
+
+    @Override
+    public SM9EncMasterPublicKey getMasterPublicKey()
+    {
+        return new BCSM9EncMasterPublicKey(keyParams.getMasterPublicKey());
+    }
+
+    @Override
+    public byte[] getIdentity()
+    {
+        return keyParams.getIdentity();
     }
 
     public String getAlgorithm()

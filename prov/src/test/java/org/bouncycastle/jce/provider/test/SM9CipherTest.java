@@ -30,8 +30,11 @@ import org.bouncycastle.crypto.params.SM9EncMasterPrivateKeyParameters;
 import org.bouncycastle.jcajce.SecretKeyWithEncapsulation;
 import org.bouncycastle.jcajce.interfaces.SM9EncMasterPrivateKey;
 import org.bouncycastle.jcajce.interfaces.SM9EncMasterPublicKey;
+import org.bouncycastle.jcajce.interfaces.SM9EncUserPrivateKey;
+import org.bouncycastle.jcajce.interfaces.SM9EncUserPublicKey;
 import org.bouncycastle.jcajce.spec.KEMExtractSpec;
 import org.bouncycastle.jcajce.spec.KEMGenerateSpec;
+import org.bouncycastle.jcajce.spec.SM9EncUserPrivateKeySpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
@@ -62,6 +65,15 @@ public class SM9CipherTest
         SM9EncMasterPrivateKey masterPriv = (SM9EncMasterPrivateKey)masterPair.getPrivate();
         PrivateKey bobKey = masterPriv.generateUserKeyPair(bob, SM9EncMasterPrivateKeyParameters.HID).getPrivate();
         PublicKey bobPublic = ((SM9EncMasterPublicKey)masterPair.getPublic()).getUserPublicKey(bob);
+
+        // the user keys derive their identity (and, for the public key, the master public
+        // key) directly, rather than a caller having to track them separately
+        isTrue("SM9 enc user private key identity",
+            Arrays.areEqual(bob, ((SM9EncUserPrivateKey)bobKey).getIdentity()));
+        SM9EncUserPublicKey bobPublicKey = (SM9EncUserPublicKey)bobPublic;
+        isTrue("SM9 enc user public key identity", Arrays.areEqual(bob, bobPublicKey.getIdentity()));
+        isTrue("SM9 enc user public key master public key",
+            Arrays.areEqual(masterPair.getPublic().getEncoded(), bobPublicKey.getMasterPublicKey().getEncoded()));
 
         // KeyFactory round-trip of the encryption master public key
         KeyFactory kf = KeyFactory.getInstance("SM9", "BC");
@@ -193,6 +205,48 @@ public class SM9CipherTest
         {
             // expected - invalid SM9 KEM encapsulation
         }
+
+        // a stored user private key round-trips through the KeyFactory without the master
+        // private key, using only the encoding, the published master public key, the
+        // identity and hid
+        userKeySpecRoundTrip(kf, (SM9EncMasterPublicKey)masterPair.getPublic(), bobKey, bob,
+            SM9EncMasterPrivateKeyParameters.HID, plaintext);
+    }
+
+    /**
+     * A user's encryption private key does not carry the master public key, identity or hid
+     * decryption needs, so it cannot be rebuilt from its bare PKCS#8 encoding the way a master
+     * key can - SM9EncUserPrivateKeySpec supplies that context, letting a stored user key be
+     * reconstituted with only the published master public key, never the master private key.
+     */
+    private void userKeySpecRoundTrip(KeyFactory kf, SM9EncMasterPublicKey masterPub, PrivateKey bobKey,
+                                      byte[] identity, byte hid, byte[] plaintext)
+        throws Exception
+    {
+        byte[] stored = bobKey.getEncoded();
+
+        PrivateKey rebuilt = kf.generatePrivate(new SM9EncUserPrivateKeySpec(stored, masterPub, identity, hid));
+        isTrue("SM9 user private key spec round-trip", Arrays.areEqual(stored, rebuilt.getEncoded()));
+        isTrue("SM9 spec-rebuilt user key identity",
+            Arrays.areEqual(identity, ((SM9EncUserPrivateKey)rebuilt).getIdentity()));
+
+        Cipher enc = Cipher.getInstance("SM9", "BC");
+        enc.init(Cipher.ENCRYPT_MODE, masterPub.getUserPublicKey(identity));
+        byte[] ct = enc.doFinal(plaintext);
+
+        Cipher dec = Cipher.getInstance("SM9", "BC");
+        dec.init(Cipher.DECRYPT_MODE, rebuilt);
+        isTrue("SM9 decryption with a spec-rebuilt user key round-trips",
+            Arrays.areEqual(dec.doFinal(ct), plaintext));
+
+        // the factory hands the same spec back for a user key
+        SM9EncUserPrivateKeySpec roundTripSpec = (SM9EncUserPrivateKeySpec)kf.getKeySpec(
+            bobKey, SM9EncUserPrivateKeySpec.class);
+        isTrue("SM9 getKeySpec round-trip encoding", Arrays.areEqual(stored, roundTripSpec.getEncoded()));
+        isTrue("SM9 getKeySpec round-trip master public key",
+            Arrays.areEqual(masterPub.getEncoded(), roundTripSpec.getMasterPublicKey().getEncoded()));
+        isTrue("SM9 getKeySpec round-trip identity", Arrays.areEqual(identity, roundTripSpec.getIdentity()));
+        isTrue("SM9 getKeySpec round-trip hid", hid == roundTripSpec.getHid());
     }
 
     private void checkEncryptionVector(Map kat, KeyPair recipient, String transformation,
