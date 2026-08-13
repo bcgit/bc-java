@@ -56,6 +56,15 @@ public class SM9Engine
 
     private static final int K2_LEN = 32; // K2_len = 256 bits
 
+    /**
+     * Largest K1 length the KDF can be asked for. In stream mode K1 is as long as the message, so
+     * the KDF length (K1_len + K2_len) * 8 is driven by a caller- or wire-supplied size; past this
+     * it overflows int and {@link SM9Sm3#kdf} sizes its output buffer from a negative length,
+     * raising NegativeArraySizeException rather than the InvalidCipherTextException this engine
+     * declares. The SM4 mode is unaffected - its K1 is a fixed 16 bytes.
+     */
+    private static final int MAX_K1_LEN = (Integer.MAX_VALUE / 8) - K2_LEN;
+
     private final Mode mode;
 
     private boolean forEncryption;
@@ -182,6 +191,10 @@ public class SM9Engine
         BigInteger n = SM9Curve.N;
 
         int k1Len = (mode == Mode.SM4) ? 16 : message.length;
+        if (k1Len > MAX_K1_LEN)
+        {
+            throw new InvalidCipherTextException("SM9 message too long for the stream mode KDF");
+        }
 
         for (;;)
         {
@@ -222,8 +235,14 @@ public class SM9Engine
         byte[] c3 = Arrays.copyOfRange(ciphertext, 64, 96);
         byte[] c2 = Arrays.copyOfRange(ciphertext, 96, ciphertext.length);
 
-        Fp12 w = SM9Pairing.pairing(c1, userKey.getPrivatePoint());
         int k1Len = (mode == Mode.SM4) ? 16 : c2.length;
+        if (k1Len > MAX_K1_LEN)
+        {
+            // checked before the pairing so an over-long ciphertext is rejected without paying for one
+            throw new InvalidCipherTextException("SM9 ciphertext too long for the stream mode KDF");
+        }
+
+        Fp12 w = SM9Pairing.pairing(c1, userKey.getPrivatePoint());
         byte[] k = SM9Sm3.kdf(Arrays.concatenate(c1b, SM9Pairing.toBytes(w), userKey.getIdentity()), (k1Len + K2_LEN) * 8);
         byte[] k1 = Arrays.copyOfRange(k, 0, k1Len);
         if (Arrays.areAllZeroes(k1, 0, k1Len))
