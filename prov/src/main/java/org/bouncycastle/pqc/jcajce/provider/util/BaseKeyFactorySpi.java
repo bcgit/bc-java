@@ -13,6 +13,7 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
+import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 
 public abstract class BaseKeyFactorySpi
     extends KeyFactorySpi
@@ -55,11 +56,11 @@ public abstract class BaseKeyFactorySpi
             }
             catch (IllegalStateException e)
             {
-                throw new InvalidKeySpecException(e.getMessage());
+                throw SecurityExceptions.invalidKeySpecException(e.getMessage(), e);
             }
             catch (Exception e)
             {
-                throw new InvalidKeySpecException(e.toString());
+                throw SecurityExceptions.invalidKeySpecException(e.toString(), e);
             }
         }
 
@@ -90,7 +91,7 @@ public abstract class BaseKeyFactorySpi
             }
             catch (Exception e)
             {
-                throw new InvalidKeySpecException(e.toString());
+                throw SecurityExceptions.invalidKeySpecException(e.toString(), e);
             }
         }
 

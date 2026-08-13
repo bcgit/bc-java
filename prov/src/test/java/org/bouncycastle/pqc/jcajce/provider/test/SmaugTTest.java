@@ -8,6 +8,7 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Security;
+import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
@@ -17,6 +18,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
 import junit.framework.TestCase;
+import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.jcajce.SecretKeyWithEncapsulation;
@@ -208,6 +210,60 @@ public class SmaugTTest
 
             assertEquals(kp.getPublic(), pub);
             assertEquals(kp.getPrivate(), priv);
+        }
+    }
+    /**
+     * A parameter-set-specific KeyFactory must reject a key of a different parameter set, so that a
+     * caller using such a factory as an import policy cannot be handed a weaker key than it asked
+     * for. The generic "SMAUGT" factory continues to accept every parameter set.
+     */
+    public void testKeyFactoryParameterSetEnforced()
+        throws Exception
+    {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("SMAUGT", "BCPQC");
+
+        kpg.initialize(SmaugTParameterSpec.smaugt_mode1, new SecureRandom());
+        KeyPair weak = kpg.generateKeyPair();
+
+        kpg.initialize(SmaugTParameterSpec.smaugt_mode5, new SecureRandom());
+        KeyPair strong = kpg.generateKeyPair();
+
+        KeyFactory strongFact = KeyFactory.getInstance("SMAUGT-MODE5", "BCPQC");
+
+        try
+        {
+            strongFact.generatePublic(new X509EncodedKeySpec(weak.getPublic().getEncoded()));
+            fail("SMAUGT-MODE1 public key accepted by SMAUGT-MODE5 key factory");
+        }
+        catch (InvalidKeySpecException e)
+        {
+            assertEquals("incorrect algorithm OID for key: " + BCObjectIdentifiers.smaugt_mode1, e.getMessage());
+        }
+
+        try
+        {
+            strongFact.generatePrivate(new PKCS8EncodedKeySpec(weak.getPrivate().getEncoded()));
+            fail("SMAUGT-MODE1 private key accepted by SMAUGT-MODE5 key factory");
+        }
+        catch (InvalidKeySpecException e)
+        {
+            assertEquals("incorrect algorithm OID for key: " + BCObjectIdentifiers.smaugt_mode1, e.getMessage());
+        }
+
+        // the factory's own parameter set is still accepted
+        assertEquals(strong.getPublic(), strongFact.generatePublic(new X509EncodedKeySpec(strong.getPublic().getEncoded())));
+        assertEquals(strong.getPrivate(), strongFact.generatePrivate(new PKCS8EncodedKeySpec(strong.getPrivate().getEncoded())));
+
+        // as is every parameter set through the generic factory
+        KeyFactory genericFact = KeyFactory.getInstance("SMAUGT", "BCPQC");
+
+        for (int i = 0; i != ALL_SPECS.length; i++)
+        {
+            kpg.initialize(ALL_SPECS[i], new SecureRandom());
+            KeyPair kp = kpg.generateKeyPair();
+
+            assertEquals(kp.getPublic(), genericFact.generatePublic(new X509EncodedKeySpec(kp.getPublic().getEncoded())));
+            assertEquals(kp.getPrivate(), genericFact.generatePrivate(new PKCS8EncodedKeySpec(kp.getPrivate().getEncoded())));
         }
     }
 }

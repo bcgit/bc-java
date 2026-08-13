@@ -13,7 +13,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
-import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
@@ -41,50 +40,6 @@ public class HQCKeyFactorySpi
         super(keyOids);
     }
     
-    public PrivateKey engineGeneratePrivate(KeySpec keySpec)
-            throws InvalidKeySpecException
-    {
-        if (keySpec instanceof PKCS8EncodedKeySpec)
-        {
-            // get the DER-encoded Key according to PKCS#8 from the spec
-            byte[] encKey = ((PKCS8EncodedKeySpec)keySpec).getEncoded();
-
-            try
-            {
-                return generatePrivate(PrivateKeyInfo.getInstance(ASN1Primitive.fromByteArray(encKey)));
-            }
-            catch (Exception e)
-            {
-                throw new InvalidKeySpecException(e.toString());
-            }
-        }
-
-        throw new InvalidKeySpecException("Unsupported key specification: "
-                + keySpec.getClass() + ".");
-    }
-
-    public PublicKey engineGeneratePublic(KeySpec keySpec)
-            throws InvalidKeySpecException
-    {
-        if (keySpec instanceof X509EncodedKeySpec)
-        {
-            // get the DER-encoded Key according to X.509 from the spec
-            byte[] encKey = ((X509EncodedKeySpec)keySpec).getEncoded();
-
-            // decode the SubjectPublicKeyInfo data structure to the pki object
-            try
-            {
-                return generatePublic(SubjectPublicKeyInfo.getInstance(encKey));
-            }
-            catch (Exception e)
-            {
-                throw new InvalidKeySpecException(e.toString());
-            }
-        }
-
-        throw new InvalidKeySpecException("Unknown key specification: " + keySpec + ".");
-    }
-
     public final KeySpec engineGetKeySpec(Key key, Class keySpec)
             throws InvalidKeySpecException
     {

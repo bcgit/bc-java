@@ -2,10 +2,14 @@ package org.bouncycastle.pqc.jcajce.provider.test;
 
 import java.security.InvalidAlgorithmParameterException;
 import java.security.Key;
+import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.SecureRandom;
 import java.security.Security;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
@@ -13,6 +17,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
 import junit.framework.TestCase;
+import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.jcajce.SecretKeyWithEncapsulation;
 import org.bouncycastle.jcajce.spec.KEMExtractSpec;
 import org.bouncycastle.jcajce.spec.KEMGenerateSpec;
@@ -259,5 +264,55 @@ public class NTRUPlusTest
             locked.initialize(specs[i], new SecureRandom());
             locked.generateKeyPair();
         }
+    }
+    /**
+     * A parameter-set-specific KeyFactory must reject a key of a different parameter set, so that a
+     * caller using such a factory as an import policy cannot be handed a weaker key than it asked
+     * for. The generic "NTRUPLUS" factory continues to accept every parameter set.
+     */
+    public void testKeyFactoryParameterSetEnforced()
+        throws Exception
+    {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("NTRUPLUS", "BCPQC");
+
+        kpg.initialize(NTRUPlusParameterSpec.ntruplus_768, new SecureRandom());
+        KeyPair weak = kpg.generateKeyPair();
+
+        kpg.initialize(NTRUPlusParameterSpec.ntruplus_1152, new SecureRandom());
+        KeyPair strong = kpg.generateKeyPair();
+
+        KeyFactory strongFact = KeyFactory.getInstance("NTRU+KEM-1152", "BCPQC");
+
+        try
+        {
+            strongFact.generatePublic(new X509EncodedKeySpec(weak.getPublic().getEncoded()));
+            fail("NTRU+KEM-768 public key accepted by NTRU+KEM-1152 key factory");
+        }
+        catch (InvalidKeySpecException e)
+        {
+            assertEquals("incorrect algorithm OID for key: " + BCObjectIdentifiers.ntruplus768, e.getMessage());
+        }
+
+        try
+        {
+            strongFact.generatePrivate(new PKCS8EncodedKeySpec(weak.getPrivate().getEncoded()));
+            fail("NTRU+KEM-768 private key accepted by NTRU+KEM-1152 key factory");
+        }
+        catch (InvalidKeySpecException e)
+        {
+            assertEquals("incorrect algorithm OID for key: " + BCObjectIdentifiers.ntruplus768, e.getMessage());
+        }
+
+        // the factory's own parameter set is still accepted
+        assertEquals(strong.getPublic(), strongFact.generatePublic(new X509EncodedKeySpec(strong.getPublic().getEncoded())));
+        assertEquals(strong.getPrivate(), strongFact.generatePrivate(new PKCS8EncodedKeySpec(strong.getPrivate().getEncoded())));
+
+        // as is every parameter set through the generic factory
+        KeyFactory genericFact = KeyFactory.getInstance("NTRUPLUS", "BCPQC");
+
+        assertEquals(weak.getPublic(), genericFact.generatePublic(new X509EncodedKeySpec(weak.getPublic().getEncoded())));
+        assertEquals(weak.getPrivate(), genericFact.generatePrivate(new PKCS8EncodedKeySpec(weak.getPrivate().getEncoded())));
+        assertEquals(strong.getPublic(), genericFact.generatePublic(new X509EncodedKeySpec(strong.getPublic().getEncoded())));
+        assertEquals(strong.getPrivate(), genericFact.generatePrivate(new PKCS8EncodedKeySpec(strong.getPrivate().getEncoded())));
     }
 }
