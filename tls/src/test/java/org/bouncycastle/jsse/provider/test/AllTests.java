@@ -35,6 +35,7 @@ public class AllTests
         suite.addTestSuite(SLHDSACredentialsTest.class);
         suite.addTestSuite(SSLServerSocketTest.class);
         suite.addTestSuite(SSLSocketTest.class);
+        suite.addTestSuite(TlsFipsTest.class);
 
 
         if (hasClass("javax.net.ssl.CertPathTrustManagerParameters"))

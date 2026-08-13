@@ -170,14 +170,14 @@ abstract class FipsUtils
         case NamedGroup.ffdhe8192:
         case NamedGroup.SecP256r1MLKEM768:
         case NamedGroup.SecP384r1MLKEM1024:
+        case NamedGroup.X25519MLKEM768:
+        case NamedGroup.MLKEM512:
+        case NamedGroup.MLKEM768:
+        case NamedGroup.MLKEM1024:
             return true;
 
         case NamedGroup.x25519:
         case NamedGroup.x448:
-        case NamedGroup.MLKEM512:
-        case NamedGroup.MLKEM768:
-        case NamedGroup.MLKEM1024:
-        case NamedGroup.X25519MLKEM768:
         case NamedGroup.curveSM2MLKEM768:
         default:
             return false;
