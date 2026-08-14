@@ -28,9 +28,6 @@ class ProvRevocationChecker
     extends PKIXRevocationChecker
     implements PKIXCertRevocationChecker
 {
-    private static final int DEFAULT_OCSP_TIMEOUT = 15000;
-    private static final int DEFAULT_OCSP_MAX_RESPONSE_SIZE = 32 * 1024;
-
     private static final Map oids = new HashMap();
 
     static
