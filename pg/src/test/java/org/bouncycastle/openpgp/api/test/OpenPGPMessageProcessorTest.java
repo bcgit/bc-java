@@ -731,6 +731,11 @@ public class OpenPGPMessageProcessorTest
         OpenPGPMessageInputStream.Result result = mIn.getResult();
         isTrue(result.getEncryptionMethod().equals(MessageEncryptionMechanism.unencrypted()));
         isNull(result.getEncryptionMethod().getMode());
+
+        // the null mode must not reach the hashCode/toString of an otherwise ordinary object -
+        // equals() holding while hashCode() throws would also break any hashed collection
+        isEquals(MessageEncryptionMechanism.unencrypted().hashCode(), result.getEncryptionMethod().hashCode());
+        isEquals("unencrypted", result.getEncryptionMethod().toString());
     }
 
     private void testVerificationOfSEIPD1MessageWithTamperedCiphertext(OpenPGPApi api)

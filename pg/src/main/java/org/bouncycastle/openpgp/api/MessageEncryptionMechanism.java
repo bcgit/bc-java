@@ -29,6 +29,13 @@ public class MessageEncryptionMechanism
         this.aeadAlgorithm = aeadAlgorithm;
     }
 
+    /**
+     * Return the encryption mode (packet type) the message will use, or null where it will not be
+     * encrypted at all - see {@link #unencrypted()}, which a sign-only message uses. Test with
+     * {@link #isEncrypted()} before switching on the result.
+     *
+     * @return encryption mode, null if unencrypted
+     */
     public EncryptedDataPacketType getMode()
     {
         return mode;
@@ -119,7 +126,8 @@ public class MessageEncryptionMechanism
     @Override
     public int hashCode()
     {
-        return mode.hashCode()
+        // an unencrypted mechanism has no mode
+        return (mode == null ? 0 : mode.hashCode())
             + 13 * symmetricKeyAlgorithm
             + 17 * aeadAlgorithm;
     }
@@ -148,6 +156,11 @@ public class MessageEncryptionMechanism
     @Override
     public String toString()
     {
+        if (mode == null)
+        {
+            return "unencrypted";
+        }
+
         String out = mode.name() + "[cipher: " + symmetricKeyAlgorithm;
         if (mode == EncryptedDataPacketType.SEIPDv2 || mode == EncryptedDataPacketType.LIBREPGP_OED)
         {
