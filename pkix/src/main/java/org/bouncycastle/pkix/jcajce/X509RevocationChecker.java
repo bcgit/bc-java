@@ -54,11 +54,18 @@ import org.bouncycastle.jcajce.util.NamedJcaJceHelper;
 import org.bouncycastle.jcajce.util.ProviderJcaJceHelper;
 import org.bouncycastle.util.CollectionStore;
 import org.bouncycastle.util.Iterable;
+import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.Selector;
 import org.bouncycastle.util.Store;
 
 /**
  * X.509 Certificate Revocation Checker - still lacks OCSP support and support for delta CRLs.
+ * <p/>
+ * Where the CRLs supplied to the builder cannot answer for a certificate, the checker will fetch
+ * from the certificate's CRL Distribution Points extension, but only if the
+ * {@link Properties#X509_ENABLE_CRLDP} property is set - the same opt-in the provider's CertPath
+ * validator applies, and the one that property's javadoc has always described. The protocols a
+ * distribution point may name can be narrowed further with {@link Properties#X509_CRLDP_PROTOCOLS}.
  */
 public class X509RevocationChecker
     extends PKIXCertPathChecker
@@ -465,15 +472,24 @@ public class X509RevocationChecker
                 throw e;
             }
 
-            Set<CRL> crls;
-            try
+            Set<CRL> crls = new HashSet<CRL>();
+
+            // Fetching from the distribution point is opt-in, as it already was for the provider's
+            // CertPath validator: the URI being dereferenced comes out of the certificate, so the
+            // outbound connection is something a caller asks for rather than something they get.
+            // With the property unset this proceeds as an unproductive fetch always did - soft
+            // failing where the caller configured that, rethrowing where they did not.
+            if (Properties.isOverrideSet(Properties.X509_ENABLE_CRLDP))
             {
-                crls = downloadCRLs(cert.getIssuerX500Principal(), validityDate,
-                    RevocationUtilities.getExtensionValue(cert, Extension.cRLDistributionPoints), helper);
-            }
-            catch(AnnotatedException e1)
-            {
-                throw new CertPathValidatorException(e1.getMessage(), e1.getCause());
+                try
+                {
+                    crls = downloadCRLs(cert.getIssuerX500Principal(), validityDate,
+                        RevocationUtilities.getExtensionValue(cert, Extension.cRLDistributionPoints), helper);
+                }
+                catch(AnnotatedException e1)
+                {
+                    throw new CertPathValidatorException(e1.getMessage(), e1.getCause());
+                }
             }
 
             if (!crls.isEmpty())

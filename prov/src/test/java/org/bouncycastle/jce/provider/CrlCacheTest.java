@@ -6,6 +6,7 @@ import java.net.URI;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.Security;
+import java.security.cert.CRLException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509CRL;
 import java.security.cert.X509Certificate;
@@ -84,6 +85,65 @@ public class CrlCacheTest
             finally
             {
                 System.getProperties().remove(Properties.X509_CRL_CACHE_TTL);
+            }
+        }
+        finally
+        {
+            tmp.delete();
+        }
+    }
+    /**
+     * The optional {@link Properties#X509_CRLDP_PROTOCOLS} whitelist refuses any protocol it does
+     * not name, ahead of the fetch and ahead of the cache.
+     */
+    public void testProtocolWhitelist()
+        throws Exception
+    {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", "BC");
+        kpg.initialize(2048);
+        KeyPair caKp = kpg.generateKeyPair();
+        X509Certificate ca = TestCertificateGen.createSelfSignedCert("CN=BC CrlCacheTest CA", "SHA256withRSA", caKp);
+        X509CRL crl = TestCertificateGen.createCRL(ca, caKp.getPrivate(), java.math.BigInteger.valueOf(1));
+
+        File tmp = File.createTempFile("bc-crlcache-protocols-", ".crl");
+        tmp.deleteOnExit();
+        FileOutputStream out = new FileOutputStream(tmp);
+        out.write(crl.getEncoded());
+        out.close();
+
+        URI dp = tmp.toURI();
+        CertificateFactory certFact = CertificateFactory.getInstance("X.509", "BC");
+        Date now = new Date();
+
+        try
+        {
+            // unset: unrestricted, and this fetch leaves an entry in the cache
+            assertTrue("unrestricted fetch returned null", CrlCache.getCrl(certFact, now, dp) != null);
+
+            System.setProperty(Properties.X509_CRLDP_PROTOCOLS, "http, https");
+            try
+            {
+                CrlCache.getCrl(certFact, now, dp);
+                fail("file: distribution point accepted under an http/https whitelist");
+            }
+            catch (CRLException e)
+            {
+                assertEquals("CRL distribution point protocol not permitted: file", e.getMessage());
+            }
+            finally
+            {
+                System.getProperties().remove(Properties.X509_CRLDP_PROTOCOLS);
+            }
+
+            // naming the protocol permits it again, matched without regard to case
+            System.setProperty(Properties.X509_CRLDP_PROTOCOLS, "HTTP,FILE");
+            try
+            {
+                assertTrue("whitelisted protocol refused", CrlCache.getCrl(certFact, now, dp) != null);
+            }
+            finally
+            {
+                System.getProperties().remove(Properties.X509_CRLDP_PROTOCOLS);
             }
         }
         finally

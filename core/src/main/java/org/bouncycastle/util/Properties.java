@@ -56,6 +56,20 @@ public class Properties
     public static final String X509_ENABLE_CRLDP = "org.bouncycastle.x509.enableCRLDP";
 
     /**
+     * Optional comma separated list of the protocols a CRL Distribution Point may name, applied
+     * by the internal CrlCache used by the CertPath validator and X509RevocationChecker before
+     * any connection is opened. Protocol names are matched without regard to case, so
+     * "http,https,ldap" refuses a distribution point naming ftp, file, jar or anything else the
+     * JVM happens to have a URL handler for. Default (unset or empty) leaves the protocol
+     * unrestricted: RFC 5280 sec. 4.2.1.13 requires a distribution point URI to name a protocol
+     * but does not limit which, and BC supports http, https, ftp and ldap here, so this is an
+     * operator policy for deployments that want a narrower set rather than a default.
+     * <p/>
+     * Note the CRL fetch this governs only happens at all when {@link #X509_ENABLE_CRLDP} is set.
+     */
+    public static final String X509_CRLDP_PROTOCOLS = "org.bouncycastle.x509.CRLDP_protocols";
+
+    /**
      * If set to "true", the BC PKCS#12 KeyStore will additionally accept (on load only)
      * SafeBags of type secretBag that use SunJCE's non-standard nested encoding —
      * a SecretBag whose secretTypeId is pkcs8ShroudedKeyBag and whose secretValue is

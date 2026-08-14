@@ -18,6 +18,7 @@ import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.WeakHashMap;
 
 import javax.naming.Context;
@@ -33,6 +34,7 @@ import org.bouncycastle.util.Iterable;
 import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.Selector;
 import org.bouncycastle.util.Store;
+import org.bouncycastle.util.Strings;
 
 class CrlCache
 {
@@ -44,6 +46,8 @@ class CrlCache
     static synchronized PKIXCRLStore getCrl(CertificateFactory certFact, Date validDate, URI distributionPoint)
         throws IOException, CRLException
     {
+        checkProtocolPermitted(distributionPoint);
+
         PKIXCRLStore crlStore = null;
 
         CacheEntry entry = cache.get(distributionPoint);
@@ -117,6 +121,30 @@ class CrlCache
         {
             this.ref = new WeakReference<PKIXCRLStore>(store);
             this.loadTimeMillis = System.currentTimeMillis();
+        }
+    }
+
+    /**
+     * Optional operator policy: when {@link Properties#X509_CRLDP_PROTOCOLS} names a comma
+     * separated list of protocols, a distribution point naming any other protocol is refused
+     * before a connection is opened. An unset or empty property leaves the protocol
+     * unrestricted, which is the default - see the property's javadoc for why.
+     */
+    private static void checkProtocolPermitted(URI distributionPoint)
+        throws CRLException
+    {
+        Set<String> permitted = Properties.asKeySet(Properties.X509_CRLDP_PROTOCOLS);
+
+        if (permitted.isEmpty())
+        {
+            return;
+        }
+
+        String scheme = distributionPoint.getScheme();
+
+        if (scheme == null || !permitted.contains(Strings.toLowerCase(scheme)))
+        {
+            throw new CRLException("CRL distribution point protocol not permitted: " + scheme);
         }
     }
 

@@ -1,5 +1,7 @@
 package org.bouncycastle.pkix.test;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -28,6 +30,7 @@ import junit.framework.TestCase;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.pkix.jcajce.X509RevocationChecker;
 import org.bouncycastle.util.CollectionStore;
+import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.encoders.Base64;
 
 public class RevocationTest
@@ -532,5 +535,85 @@ public class RevocationTest
 //        {
 //            fail(e.getMessage());
 //        }
+    }
+    /**
+     * Fetching a CRL from a distribution point named in the certificate is opt-in: it happens
+     * only when org.bouncycastle.x509.enableCRLDP is set, matching the provider's CertPath
+     * validator and what that property's javadoc describes. A file: distribution point stands in
+     * for the http: one, so the fetch this asserts on touches no network.
+     */
+    public void testCRLDistPointFetchIsOptIn()
+        throws Exception
+    {
+        File tmp = File.createTempFile("bc-revocation-crldp-", ".crl");
+        tmp.deleteOnExit();
+        FileOutputStream out = new FileOutputStream(tmp);
+        out.write(caCrl.getEncoded());          // revokes serial 100, so not our end entity
+        out.close();
+
+        X509Certificate eeCertWithUri = TestUtil.makeEeCertificate(tmp.toURI().toString(), caCert,
+            caKp.getPrivate(), eeKp.getPublic(), "CN=End Entity CRLDP");
+
+        List list = new ArrayList();
+        list.add(caCert);
+        list.add(eeCertWithUri);
+
+        CollectionCertStoreParameters ccsp = new CollectionCertStoreParameters(list);
+        CertStore store = CertStore.getInstance("Collection", ccsp, "BC");
+        Date validDate = new Date(trustCrl.getThisUpdate().getTime() + 60 * 60 * 1000);
+
+        List certchain = new ArrayList();
+        certchain.add(eeCertWithUri);
+        certchain.add(caCert);
+
+        CertPath cp = CertificateFactory.getInstance("X.509", "BC").generateCertPath(certchain);
+        Set trust = new HashSet();
+        trust.add(new TrustAnchor(trustCert, null));
+
+        try
+        {
+            // no CRLs supplied to the checker, so the only way to a decision is the distribution point
+            validateWithNoCrls(cp, trust, store, validDate);
+            fail("distribution point fetched with " + Properties.X509_ENABLE_CRLDP + " unset");
+        }
+        catch (CertPathValidatorException e)
+        {
+            // expected - no CRL could be found for the end entity
+        }
+
+        System.setProperty(Properties.X509_ENABLE_CRLDP, "true");
+        try
+        {
+            PKIXCertPathValidatorResult result = validateWithNoCrls(cp, trust, store, validDate);
+
+            if (!result.getPublicKey().equals(eeCertWithUri.getPublicKey()))
+            {
+                fail("wrong public key returned");
+            }
+        }
+        finally
+        {
+            System.getProperties().remove(Properties.X509_ENABLE_CRLDP);
+            tmp.delete();
+        }
+    }
+
+    private PKIXCertPathValidatorResult validateWithNoCrls(CertPath cp, Set trust, CertStore store, Date validDate)
+        throws Exception
+    {
+        X509RevocationChecker revocationChecker = new X509RevocationChecker
+            .Builder(new TrustAnchor(trustCert, null))
+            .setCheckEndEntityOnly(true)
+            .build();
+
+        CertPathValidator cpv = CertPathValidator.getInstance("PKIX", "BC");
+        PKIXParameters param = new PKIXParameters(trust);
+        param.addCertStore(store);
+        param.setDate(validDate);
+        param.setRevocationEnabled(false);
+
+        param.addCertPathChecker(revocationChecker);
+
+        return (PKIXCertPathValidatorResult)cpv.validate(cp, param);
     }
 }

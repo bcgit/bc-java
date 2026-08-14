@@ -21,6 +21,7 @@ public class AllTests
     {
         TestSuite suite = new TestSuite("PKIX JcaJce Tests");
 
+        suite.addTestSuite(CrlCacheTest.class);
         suite.addTestSuite(ReasonsMaskTest.class);
         suite.addTestSuite(RevocationUtilitiesTest.class);
 

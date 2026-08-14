@@ -105,6 +105,40 @@ public class TestUtil
         return cert;
     }
 
+    /**
+     * An end-entity certificate whose CRL Distribution Points extension names a URI, for the
+     * paths that fetch from a distribution point rather than from a caller-supplied store.
+     */
+    public static X509Certificate makeEeCertificate(String distPointUri, X509Certificate issuer, PrivateKey issuerKey, PublicKey subjectKey, String subject)
+        throws GeneralSecurityException, IOException, OperatorCreationException
+    {
+        X509v3CertificateBuilder v3CertGen = new JcaX509v3CertificateBuilder(
+            issuer.getSubjectX500Principal(),
+            allocateSerialNumber(),
+            new Date(System.currentTimeMillis()),
+            new Date(System.currentTimeMillis() + (1000L * 60 * 60 * 24 * 100)),
+            new X500Principal(subject),
+            subjectKey);
+
+        JcaX509ExtensionUtils extUtils = new JcaX509ExtensionUtils();
+
+        v3CertGen.addExtension(Extension.subjectKeyIdentifier, false, extUtils.createSubjectKeyIdentifier(subjectKey));
+        v3CertGen.addExtension(Extension.authorityKeyIdentifier, false, extUtils.createAuthorityKeyIdentifier(issuer));
+        v3CertGen.addExtension(Extension.basicConstraints, false, new BasicConstraints(false));
+
+        DistributionPoint dp = new DistributionPoint(
+            new DistributionPointName(new GeneralNames(
+                new GeneralName(GeneralName.uniformResourceIdentifier, distPointUri))),
+            null, null);
+
+        v3CertGen.addExtension(Extension.cRLDistributionPoints, false, new CRLDistPoint(new DistributionPoint[]{ dp }));
+
+        JcaContentSignerBuilder contentSignerBuilder = new JcaContentSignerBuilder("SHA256WithRSA").setProvider("BC");
+
+        return new JcaX509CertificateConverter().setProvider("BC")
+            .getCertificate(v3CertGen.build(contentSignerBuilder.build(issuerKey)));
+    }
+
     public static X509Certificate makeEeCertificate(boolean withDistPoint, X509Certificate issuer, PrivateKey issuerKey, PublicKey subjectKey, String subject)
         throws GeneralSecurityException, IOException, OperatorCreationException
     {
