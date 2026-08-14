@@ -279,6 +279,13 @@ class ProvOcspRevocationChecker
                                     {
                                         throw new CertPathValidatorException("OCSP response expired");
                                     }
+                                    // "Responses whose thisUpdate time is later than the local
+                                    // system time SHOULD be considered unreliable" - RFC 6960
+                                    // sec. 4.2.2.1, allowing for clock skew
+                                    if (OcspCache.isFromTheFuture(resp.getThisUpdate(), parameters.getValidDate()))
+                                    {
+                                        throw new CertPathValidatorException("OCSP response not yet valid");
+                                    }
                                     if (certID == null || !isEqualAlgId(certID.getHashAlgorithm(), resp.getCertID().getHashAlgorithm()))
                                     {
                                         org.bouncycastle.asn1.x509.Certificate issuer = extractCert();

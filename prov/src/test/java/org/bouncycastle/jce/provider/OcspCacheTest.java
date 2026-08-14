@@ -1,8 +1,26 @@
 package org.bouncycastle.jce.provider;
 
 import java.io.ByteArrayInputStream;
+import java.math.BigInteger;
+import java.util.Date;
 
 import junit.framework.TestCase;
+import org.bouncycastle.asn1.ASN1GeneralizedTime;
+import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.DERBitString;
+import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
+import org.bouncycastle.asn1.ocsp.BasicOCSPResponse;
+import org.bouncycastle.asn1.ocsp.CertID;
+import org.bouncycastle.asn1.ocsp.CertStatus;
+import org.bouncycastle.asn1.ocsp.ResponderID;
+import org.bouncycastle.asn1.ocsp.ResponseData;
+import org.bouncycastle.asn1.ocsp.SingleResponse;
+import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.io.StreamOverflowException;
@@ -89,5 +107,88 @@ public class OcspCacheTest
         byte[] response = new byte[]{ 0x30, 0x03, 0x0a, 0x01, 0x00 };
 
         assertTrue(Arrays.areEqual(response, OcspCache.readResponse(new ByteArrayInputStream(response), 1024)));
+    }
+    /**
+     * A cached response is only reusable while it states a validity interval covering the time
+     * being validated for. RFC 6960 sec. 4.2.2.1: "if nextUpdate is not set, the responder is
+     * indicating that newer revocation information is available all the time" - so there is no
+     * interval to reuse it over, and the cache must go back to the responder.
+     */
+    public void testResponseWithoutNextUpdateIsNeverCurrent()
+        throws Exception
+    {
+        Date now = new Date();
+        CertID certID = certID();
+
+        BasicOCSPResponse withNextUpdate = response(certID, minutesFromNow(now, -5), minutesFromNow(now, 60));
+        assertTrue("response inside its own validity interval was not current",
+            OcspCache.isCertIDFoundAndCurrent(withNextUpdate, now, certID));
+
+        BasicOCSPResponse expired = response(certID, minutesFromNow(now, -120), minutesFromNow(now, -60));
+        assertFalse("expired response was current", OcspCache.isCertIDFoundAndCurrent(expired, now, certID));
+
+        BasicOCSPResponse noNextUpdate = response(certID, minutesFromNow(now, -5), null);
+        assertFalse("response with no nextUpdate was reused from the cache",
+            OcspCache.isCertIDFoundAndReusable(noNextUpdate, now, certID));
+
+        // however old it is
+        BasicOCSPResponse ancient = response(certID, minutesFromNow(now, -60 * 24 * 365), null);
+        assertFalse("year-old response with no nextUpdate was reused from the cache",
+            OcspCache.isCertIDFoundAndReusable(ancient, now, certID));
+
+        // but nothing is rejected by that: a responder is entitled not to state a nextUpdate, and
+        // the response it just gave us is used for the check it arrived for
+        assertTrue("freshly fetched response with no nextUpdate was refused",
+            OcspCache.isCertIDFoundAndCurrent(noNextUpdate, now, certID));
+
+        // the interval is still honoured where one is stated
+        assertTrue("response inside its validity interval was not reusable",
+            OcspCache.isCertIDFoundAndReusable(withNextUpdate, now, certID));
+        assertFalse("expired response was reusable", OcspCache.isCertIDFoundAndReusable(expired, now, certID));
+    }
+
+    /**
+     * "Responses whose thisUpdate time is later than the local system time SHOULD be considered
+     * unreliable" - RFC 6960 sec. 4.2.2.1. Clock skew between us and the responder is allowed for.
+     */
+    public void testResponseDatedInTheFuture()
+        throws Exception
+    {
+        Date now = new Date();
+        CertID certID = certID();
+
+        BasicOCSPResponse withinSkew = response(certID, minutesFromNow(now, 5), minutesFromNow(now, 60));
+        assertTrue("response inside the clock skew allowance was rejected",
+            OcspCache.isCertIDFoundAndCurrent(withinSkew, now, certID));
+
+        BasicOCSPResponse fromTheFuture = response(certID, minutesFromNow(now, 60), minutesFromNow(now, 120));
+        assertFalse("response dated an hour ahead was current",
+            OcspCache.isCertIDFoundAndCurrent(fromTheFuture, now, certID));
+
+        assertFalse("absent thisUpdate treated as future", OcspCache.isFromTheFuture(null, now));
+    }
+
+    private static ASN1GeneralizedTime minutesFromNow(Date now, int minutes)
+    {
+        return new ASN1GeneralizedTime(new Date(now.getTime() + (minutes * 60 * 1000L)));
+    }
+
+    private static CertID certID()
+    {
+        return new CertID(new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256),
+            new DEROctetString(new byte[32]), new DEROctetString(new byte[32]), new ASN1Integer(BigInteger.ONE));
+    }
+
+    private static BasicOCSPResponse response(CertID certID, ASN1GeneralizedTime thisUpdate,
+        ASN1GeneralizedTime nextUpdate)
+    {
+        SingleResponse single = new SingleResponse(certID, new CertStatus(), thisUpdate, nextUpdate,
+            (Extensions)null);
+
+        ResponseData responseData = new ResponseData(new ResponderID(new X500Name("CN=Test Responder")),
+            thisUpdate, new DERSequence(single), (Extensions)null);
+
+        return new BasicOCSPResponse(responseData, new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256),
+            new DERBitString(new byte[]{ 1 }), (ASN1Sequence)null);
     }
 }
