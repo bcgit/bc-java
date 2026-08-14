@@ -30,6 +30,7 @@ public class AllTests
         suite.addTestSuite(InstanceTest.class);
         suite.addTestSuite(KeyManagerFactoryTest.class);
         suite.addTestSuite(MLDSACredentialsTest.class);
+        suite.addTestSuite(NamedGroupsTest.class);
         suite.addTestSuite(PSSCredentialsTest.class);
         suite.addTestSuite(RequestedServerNamesTest.class);
         suite.addTestSuite(SLHDSACredentialsTest.class);
