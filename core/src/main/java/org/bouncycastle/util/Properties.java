@@ -81,6 +81,25 @@ public class Properties
     public static final String OCSP_MAX_RESPONSE_SIZE = "org.bouncycastle.ocsp.max_response_size";
 
     /**
+     * The longest OpenPGP ASCII armor header line, in bytes, ArmoredInputStream will accumulate.
+     * The headers are parsed when the stream is constructed, so this bounds what merely wrapping
+     * an untrusted stream can allocate: a "header line" that never reaches a line terminator is
+     * refused rather than read until the heap is gone. Default is 4096, far above the short
+     * Version / Comment lines RFC 9580 sec. 6.2 describes; a value of zero or less is ignored and
+     * the default used.
+     */
+    public static final String OPENPGP_MAX_ARMOR_HEADER_LENGTH = "org.bouncycastle.openpgp.max_armor_header_length";
+
+    /**
+     * The largest number of OpenPGP ASCII armor header lines ArmoredInputStream will accept before
+     * the blank line that ends the header block. Bounds the companion case to
+     * {@link #OPENPGP_MAX_ARMOR_HEADER_LENGTH}, where each line is short but they never stop
+     * arriving. Default is 64, counting the armor header line itself; a value of zero or less is
+     * ignored and the default used.
+     */
+    public static final String OPENPGP_MAX_ARMOR_HEADERS = "org.bouncycastle.openpgp.max_armor_headers";
+
+    /**
      * If set to "true", the BC PKCS#12 KeyStore will additionally accept (on load only)
      * SafeBags of type secretBag that use SunJCE's non-standard nested encoding —
      * a SecretBag whose secretTypeId is pkcs8ShroudedKeyBag and whose secretValue is

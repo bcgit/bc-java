@@ -31,6 +31,9 @@ public class Properties
     public static final String X509_CRL_CACHE_TTL = "org.bouncycastle.x509.crl_cache_ttl";
     public static final String X509_ENABLE_CRLDP = "org.bouncycastle.x509.enableCRLDP";
     public static final String X509_CRLDP_PROTOCOLS = "org.bouncycastle.x509.CRLDP_protocols";
+    public static final String OCSP_MAX_RESPONSE_SIZE = "org.bouncycastle.ocsp.max_response_size";
+    public static final String OPENPGP_MAX_ARMOR_HEADER_LENGTH = "org.bouncycastle.openpgp.max_armor_header_length";
+    public static final String OPENPGP_MAX_ARMOR_HEADERS = "org.bouncycastle.openpgp.max_armor_headers";
     public static final String PKCS12_ALLOW_SUN_SECRET_KEYS = "org.bouncycastle.pkcs12.allow_sun_secret_keys";
     public static final String PKCS1_STRICT_DIGESTINFO = "org.bouncycastle.pkcs1.strict_digestinfo";
     public static final String JSSE_HOSTNAME_CHECK_CN_FALLBACK = "org.bouncycastle.jsse.hostname_check_cn_fallback";
