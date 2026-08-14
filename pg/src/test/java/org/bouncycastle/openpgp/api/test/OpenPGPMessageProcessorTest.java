@@ -86,6 +86,7 @@ public class OpenPGPMessageProcessorTest
 
         verifyMessageByRevokedKey(api);
         incompleteMessageProcessing(api);
+        processUnencryptedMessage(api);
     }
 
     private void roundtripUnarmoredPlaintextMessage(OpenPGPApi api)
@@ -710,6 +711,26 @@ public class OpenPGPMessageProcessorTest
         OpenPGPMessageInputStream.Result result = in.getResult();
         OpenPGPSignature.OpenPGPDocumentSignature sig = result.getSignatures().get(0);
         isFalse(sig.isValid());
+    }
+
+    private void processUnencryptedMessage(OpenPGPApi api)
+            throws PGPException, IOException
+    {
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        OpenPGPMessageOutputStream mOut = api.signAndOrEncryptMessage()
+                .open(bOut);
+        mOut.write(PLAINTEXT);
+        mOut.close();
+
+        ByteArrayInputStream bIn = new ByteArrayInputStream(bOut.toByteArray());
+        OpenPGPMessageInputStream mIn = api.decryptAndOrVerifyMessage().process(bIn);
+        byte[] plain = Streams.readAll(mIn);
+        mIn.close();
+        isEncodingEqual(PLAINTEXT, plain);
+
+        OpenPGPMessageInputStream.Result result = mIn.getResult();
+        isTrue(result.getEncryptionMethod().equals(MessageEncryptionMechanism.unencrypted()));
+        isNull(result.getEncryptionMethod().getMode());
     }
 
     private void testVerificationOfSEIPD1MessageWithTamperedCiphertext(OpenPGPApi api)
