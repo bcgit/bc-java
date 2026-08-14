@@ -172,31 +172,104 @@ public class TlsFipsTest
         }
     }
 
+    /**
+     * The pure ML-KEM groups are FIPS-approved but not offered by default (TLS working group
+     * feedback: a key exchange should keep a classical component), so a client asking for one
+     * against an otherwise default server has nothing in common with it and the handshake fails.
+     * The hybrids are defaults, and still complete against the same server.
+     */
+    public void testPureMLKEMGroupsNotOfferedByDefault()
+        throws Exception
+    {
+        Provider tlsProv = ProviderUtils.getProviderBCJSSE();
+        char[] keyPass = "keyPassword".toCharArray();
+
+        KeyPair caKeyPair = TestUtils.generateRSAKeyPair();
+        X509Certificate caCert = TestUtils.generateRootCert(caKeyPair);
+
+        KeyStore ks = KeyStore.getInstance("JKS");
+        ks.load(null, null);
+        ks.setKeyEntry("server", caKeyPair.getPrivate(), keyPass, new X509Certificate[]{ caCert });
+
+        KeyStore ts = KeyStore.getInstance("JKS");
+        ts.load(null, null);
+        ts.setCertificateEntry("ca", caCert);
+
+        assertFalse("MLKEM768 reached a default-configured server", defaultServerAccepts("MLKEM768", tlsProv, ks, ts, keyPass));
+        assertTrue("X25519MLKEM768 refused by a default-configured server",
+            defaultServerAccepts("X25519MLKEM768", tlsProv, ks, ts, keyPass));
+    }
+
+    /**
+     * Run a client restricted to namedGroup against a server left at its defaults, reporting
+     * whether the exchange completed rather than asserting it did.
+     */
+    private static boolean defaultServerAccepts(String namedGroup, Provider tlsProv, KeyStore ks, KeyStore ts,
+        char[] keyPass)
+        throws Exception
+    {
+        KeyManagerFactory keyMgrFact = KeyManagerFactory.getInstance("PKIX", tlsProv);
+        keyMgrFact.init(ks, keyPass);
+
+        SSLContext serverContext = SSLContext.getInstance("TLS", tlsProv);
+        serverContext.init(keyMgrFact.getKeyManagers(), null,
+            SecureRandom.getInstance("DEFAULT", ProviderUtils.PROVIDER_NAME_BC));
+
+        TrustManagerFactory trustMgrFact = TrustManagerFactory.getInstance("PKIX", tlsProv);
+        trustMgrFact.init(ts);
+
+        SSLContext clientContext = SSLContext.getInstance("TLS", tlsProv);
+        clientContext.init(null, trustMgrFact.getTrustManagers(),
+            SecureRandom.getInstance("DEFAULT", ProviderUtils.PROVIDER_NAME_BC));
+
+        int port = PORT_NO.incrementAndGet();
+
+        NamedGroupClient client = new NamedGroupClient(clientContext, port, namedGroup);
+        NamedGroupServer server = new NamedGroupServer(serverContext, port, null);
+
+        TestProtocolUtil.Task serverTask = new TestProtocolUtil.Task(server);
+        Thread serverThread = new Thread(serverTask);
+        serverThread.setDaemon(true);
+        serverThread.start();
+        server.await();
+
+        TestProtocolUtil.Task clientTask = new TestProtocolUtil.Task(client);
+        Thread clientThread = new Thread(clientTask);
+        clientThread.setDaemon(true);
+        clientThread.start();
+        client.await();
+
+        serverThread.join();
+        clientThread.join();
+
+        return serverTask.getResult() == null && clientTask.getResult() == null;
+    }
+
     private static void runNamedGroupTest(String namedGroup, SSLContext clientContext, SSLContext serverContext)
         throws Exception
     {
         int port = PORT_NO.incrementAndGet();
 
         NamedGroupClient client = new NamedGroupClient(clientContext, port, namedGroup);
-        NamedGroupServer server = new NamedGroupServer(serverContext, port);
+        NamedGroupServer server = new NamedGroupServer(serverContext, port, namedGroup);
 
         TestProtocolUtil.runClientAndServer(server, client);
     }
 
     /**
-     * Restricts the client to offering only namedGroup, so the handshake can only succeed if the
-     * server accepts that specific group for key exchange. The server's own named groups are left
-     * at their default (full) set, since narrowing them would also drop the classical EC curve its
-     * signature scheme depends on, e.g. a "MLKEM512"-only server has no usable ecdsa_secp256r1_sha256
-     * credentials because secp256r1 itself is no longer an enabled named group.
+     * Restricts a peer to namedGroup alone, so the handshake can only succeed on that group. Both
+     * ends are restricted: the pure ML-KEM groups are not offered by default (see the note in
+     * NamedGroupInfo), so a default-configured peer would have nothing in common with a client
+     * asking for one. An RSA server credential is used precisely so that narrowing the groups
+     * this way does not also strip the curve an ecdsa_* signature scheme would depend on.
      */
-    private static void restrictToNamedGroup(SSLSocket clientSock, String namedGroup)
+    private static void restrictToNamedGroup(SSLSocket sock, String namedGroup)
     {
-        clientSock.setEnabledProtocols(new String[]{ "TLSv1.3" });
+        sock.setEnabledProtocols(new String[]{ "TLSv1.3" });
 
-        if (clientSock instanceof BCSSLSocket)
+        if (sock instanceof BCSSLSocket)
         {
-            BCSSLSocket bcSock = (BCSSLSocket)clientSock;
+            BCSSLSocket bcSock = (BCSSLSocket)sock;
             BCSSLParameters bcParams = bcSock.getParameters();
             bcParams.setNamedGroups(new String[]{ namedGroup });
             bcSock.setParameters(bcParams);
@@ -250,12 +323,14 @@ public class TlsFipsTest
     {
         private final SSLContext serverContext;
         private final int port;
+        private final String namedGroup;
         private final CountDownLatch latch = new CountDownLatch(1);
 
-        NamedGroupServer(SSLContext serverContext, int port)
+        NamedGroupServer(SSLContext serverContext, int port, String namedGroup)
         {
             this.serverContext = serverContext;
             this.port = port;
+            this.namedGroup = namedGroup;
         }
 
         public Exception call() throws Exception
@@ -271,6 +346,15 @@ public class TlsFipsTest
 
                 SSLSocket sslSock = (SSLSocket)sSock.accept();
                 sslSock.setUseClientMode(false);
+
+                if (namedGroup != null)
+                {
+                    restrictToNamedGroup(sslSock, namedGroup);
+                }
+                else
+                {
+                    sslSock.setEnabledProtocols(new String[]{ "TLSv1.3" });
+                }
 
                 TestProtocolUtil.doServerProtocol(sslSock, "World");
 
