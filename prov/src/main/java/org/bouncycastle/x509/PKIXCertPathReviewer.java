@@ -6,6 +6,7 @@ import java.math.BigInteger;
 import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.URL;
+import java.net.URLConnection;
 import java.security.GeneralSecurityException;
 import java.security.PublicKey;
 import java.security.SignatureException;
@@ -79,6 +80,7 @@ import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Objects;
 import org.bouncycastle.util.Properties;
+import org.bouncycastle.util.Strings;
 
 /**
  * PKIXCertPathReviewer<br>
@@ -2489,29 +2491,56 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
         return urls;
     }
     
+    /**
+     * The protocols a CRL distribution point may name here: http, https and ftp, the set the
+     * provider's CrlCache documents, narrowed further when org.bouncycastle.x509.CRLDP_protocols
+     * names a smaller one. A distribution point using anything else is passed over as before -
+     * this reviewer reports on a path rather than fetching from arbitrary URL handlers.
+     * <p>
+     * ftp is included because a downcast to HttpURLConnection here (removed with this method's
+     * introduction) meant an ftp distribution point was silently skipped, the same defect
+     * github #1867 fixed in CrlCache.
+     * </p>
+     */
+    static boolean isPermittedProtocol(String protocol)
+    {
+        Set permitted = Properties.asKeySet(Properties.X509_CRLDP_PROTOCOLS);
+
+        if (!permitted.isEmpty())
+        {
+            return permitted.contains(protocol);
+        }
+
+        return "http".equals(protocol) || "https".equals(protocol) || "ftp".equals(protocol);
+    }
+
     private X509CRL getCRL(String location) throws CertPathReviewerException
     {
         X509CRL result = null;
         try
         {
             URL url = new URL(location);
-            
-            if (url.getProtocol().equals("http") || url.getProtocol().equals("https"))
+
+            if (isPermittedProtocol(Strings.toLowerCase(url.getProtocol())))
             {
-                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                URLConnection conn = url.openConnection();
                 conn.setUseCaches(false);
-                //conn.setConnectTimeout(2000);
+                // NOTE: URLConnection.setConnectTimeout and setReadTimeout are Java 5, and this
+                // class is still compiled by the jdk1.4 build, so no timeout can be set here.
                 conn.setDoInput(true);
                 conn.connect();
-                if (conn.getResponseCode() == HttpURLConnection.HTTP_OK)
+
+                if (conn instanceof HttpURLConnection)
                 {
-                    CertificateFactory cf = CertificateFactory.getInstance("X.509","BC");
-                    result = (X509CRL) cf.generateCRL(conn.getInputStream());
+                    HttpURLConnection httpConn = (HttpURLConnection)conn;
+                    if (httpConn.getResponseCode() != HttpURLConnection.HTTP_OK)
+                    {
+                        throw new Exception(httpConn.getResponseMessage());
+                    }
                 }
-                else
-                {
-                    throw new Exception(conn.getResponseMessage());
-                }
+
+                CertificateFactory cf = CertificateFactory.getInstance("X.509","BC");
+                result = (X509CRL) cf.generateCRL(conn.getInputStream());
             }
         }
         catch (Exception e)
