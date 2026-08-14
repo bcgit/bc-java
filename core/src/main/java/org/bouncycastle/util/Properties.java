@@ -70,6 +70,17 @@ public class Properties
     public static final String X509_CRLDP_PROTOCOLS = "org.bouncycastle.x509.CRLDP_protocols";
 
     /**
+     * The largest OCSP response, in bytes, the CertPath validator will read from a responder.
+     * A responder's Content-Length can narrow this but never widen it, so a responder declaring
+     * (and sending) hundreds of megabytes is cut off rather than read into the heap. Default is
+     * 64K, which is far above any real response; a value of zero or less is ignored and the
+     * default used, so a mistyped value cannot turn the limit off. Exceeding the limit fails the
+     * OCSP check the same way an unreachable responder does, so a caller with CRLs configured
+     * falls back to those.
+     */
+    public static final String OCSP_MAX_RESPONSE_SIZE = "org.bouncycastle.ocsp.max_response_size";
+
+    /**
      * If set to "true", the BC PKCS#12 KeyStore will additionally accept (on load only)
      * SafeBags of type secretBag that use SunJCE's non-standard nested encoding —
      * a SecretBag whose secretTypeId is pkcs8ShroudedKeyBag and whose secretValue is

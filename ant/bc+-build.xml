@@ -437,6 +437,7 @@
                  <exclude name="org/bouncycastle/tls/**" />
                  <exclude name="org/bouncycastle/jsse/**" />
                  <exclude name="org/bouncycastle/**/CrlCacheTest.java" />
+                 <exclude name="org/bouncycastle/**/OcspCacheTest.java" />
                  <exclude name="org/bouncycastle/**/MultiValuedRDNEmailTest.java" />
              </fileset>
              <fileset dir="${src.dir}">
@@ -565,6 +566,7 @@
                  <exclude name="org/bouncycastle/tls/**" />
                  <exclude name="org/bouncycastle/jsse/**" />
                  <exclude name="org/bouncycastle/**/CrlCacheTest.java" />
+                 <exclude name="org/bouncycastle/**/OcspCacheTest.java" />
                  <exclude name="org/bouncycastle/**/MultiValuedRDNEmailTest.java" />
                  <exclude name="org/apache/**/*.java" />
              </fileset>

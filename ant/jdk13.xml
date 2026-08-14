@@ -393,6 +393,8 @@
                 <exclude name="**/PQCDHTest.java" />
                 <!-- test files using java.net.URI / getCause() / Java 1.4+ crypto spec APIs -->
                 <exclude name="**/jce/provider/CrlCacheTest.java" />
+                <!-- OcspCache is excluded from this build, so its test cannot compile -->
+                <exclude name="**/jce/provider/OcspCacheTest.java" />
                 <exclude name="**/jce/provider/MultiValuedRDNEmailTest.java" />
                 <exclude name="**/jce/provider/test/CrlReasonsMaskTest.java" />
                 <exclude name="**/jce/provider/test/DHIESTest.java" />
