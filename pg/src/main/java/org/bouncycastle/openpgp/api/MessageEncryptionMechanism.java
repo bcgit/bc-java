@@ -53,7 +53,7 @@ public class MessageEncryptionMechanism
     public static MessageEncryptionMechanism unencrypted()
     {
         int none = 0;
-        return new MessageEncryptionMechanism(EncryptedDataPacketType.SEIPDv1,
+        return new MessageEncryptionMechanism(null,
             SymmetricKeyAlgorithmTags.NULL, none);
     }
 
