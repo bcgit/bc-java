@@ -50,11 +50,24 @@ public class SmaugT
             addCipherAlgorithm(provider, "SMAUGT-MODE5", PREFIX + "SmaugTCipherSpi$Mode5", BCObjectIdentifiers.smaugt_mode5);
             addCipherAlgorithm(provider, "SMAUGT-MODET", PREFIX + "SmaugTCipherSpi$ModeT", BCObjectIdentifiers.smaugt_modet);
 
+            addParameterSetNameAliases(provider, "SMAUGT_MODE1", "SMAUGT-MODE1");
+            addParameterSetNameAliases(provider, "SMAUGT_MODE3", "SMAUGT-MODE3");
+            addParameterSetNameAliases(provider, "SMAUGT_MODE5", "SMAUGT-MODE5");
+            addParameterSetNameAliases(provider, "SMAUGT_MODET", "SMAUGT-MODET");
+
             registerOid(provider, BCObjectIdentifiers.pqc_kem_smaugt, "SMAUGT", keyFact);
             provider.addKeyInfoConverter(BCObjectIdentifiers.smaugt_mode1, keyFact);
             provider.addKeyInfoConverter(BCObjectIdentifiers.smaugt_mode3, keyFact);
             provider.addKeyInfoConverter(BCObjectIdentifiers.smaugt_mode5, keyFact);
             provider.addKeyInfoConverter(BCObjectIdentifiers.smaugt_modet, keyFact);
+        }
+
+        private void addParameterSetNameAliases(ConfigurableProvider provider, String alias, String algorithm)
+        {
+            provider.addAlgorithm("Alg.Alias.KeyFactory." + alias, algorithm);
+            provider.addAlgorithm("Alg.Alias.KeyPairGenerator." + alias, algorithm);
+            provider.addAlgorithm("Alg.Alias.KeyGenerator." + alias, algorithm);
+            provider.addAlgorithm("Alg.Alias.Cipher." + alias, algorithm);
         }
     }
 }

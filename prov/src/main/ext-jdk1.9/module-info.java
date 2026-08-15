@@ -192,7 +192,6 @@ module org.bouncycastle.provider
     exports org.bouncycastle.pqc.jcajce.provider.cmce;
     exports org.bouncycastle.pqc.jcajce.provider.falcon;
     exports org.bouncycastle.pqc.jcajce.provider.hqc;
-    exports org.bouncycastle.pqc.jcajce.provider.kyber;
     exports org.bouncycastle.pqc.jcajce.provider.lms;
     exports org.bouncycastle.pqc.jcajce.provider.mayo;
     exports org.bouncycastle.pqc.jcajce.provider.ntru;
@@ -209,7 +208,6 @@ module org.bouncycastle.provider
     exports org.bouncycastle.pqc.jcajce.provider.aimer;
     exports org.bouncycastle.pqc.jcajce.provider.qruov;
     exports org.bouncycastle.pqc.jcajce.provider.sphincs;
-    exports org.bouncycastle.pqc.jcajce.provider.sphincsplus;
     exports org.bouncycastle.pqc.jcajce.provider.sqisign;
     exports org.bouncycastle.pqc.jcajce.provider.util;
     exports org.bouncycastle.pqc.jcajce.provider.xmss;

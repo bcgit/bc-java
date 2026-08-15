@@ -76,7 +76,14 @@ public class HaetaeKeyPairGeneratorSpi
 
         if (name != null && parameters.containsKey(name))
         {
-            param = new HAETAEKeyGenerationParameters(random, (HAETAEParameters)parameters.get(name));
+            HAETAEParameters haetaeParams = (HAETAEParameters)parameters.get(name);
+
+            if (haetaeParameters != null && !haetaeParams.getName().equals(haetaeParameters.getName()))
+            {
+                throw new InvalidAlgorithmParameterException("key pair generator locked to " + getAlgorithm());
+            }
+
+            param = new HAETAEKeyGenerationParameters(random, haetaeParams);
 
             engine.init(param);
             initialised = true;

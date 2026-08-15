@@ -18,10 +18,10 @@ public class SmaugTParameters
     static final int MODE5 = 2;
     static final int MODET = 3;
 
-    public static final SmaugTParameters smaugt_mode1 = new SmaugTParameters("smaugt_mode1", MODE1, 256);
-    public static final SmaugTParameters smaugt_mode3 = new SmaugTParameters("smaugt_mode3", MODE3, 256);
-    public static final SmaugTParameters smaugt_mode5 = new SmaugTParameters("smaugt_mode5", MODE5, 256);
-    public static final SmaugTParameters smaugt_modet = new SmaugTParameters("smaugt_modet", MODET, 256);
+    public static final SmaugTParameters smaugt_mode1 = new SmaugTParameters("smaugt-mode1", MODE1, 256);
+    public static final SmaugTParameters smaugt_mode3 = new SmaugTParameters("smaugt-mode3", MODE3, 256);
+    public static final SmaugTParameters smaugt_mode5 = new SmaugTParameters("smaugt-mode5", MODE5, 256);
+    public static final SmaugTParameters smaugt_modet = new SmaugTParameters("smaugt-modet", MODET, 256);
 
     private final String name;
     private final int mode;

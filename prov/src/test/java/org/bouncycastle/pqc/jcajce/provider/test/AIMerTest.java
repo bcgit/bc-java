@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
@@ -139,6 +140,53 @@ public class AIMerTest
             assertEquals(SPECS[i].getName(), ((AIMerKey)kp.getPublic()).getParameterSpec().getName());
             assertEquals(SPECS[i].getName(), ((AIMerKey)kp.getPrivate()).getParameterSpec().getName());
         }
+    }
+
+    /**
+     * A generator selected by parameter set name must default to that parameter set, not to
+     * the generic generator's default of aimer128f.
+     */
+    public void testNamedKeyPairGenDefaults()
+        throws Exception
+    {
+        for (int i = 0; i != SPECS.length; i++)
+        {
+            KeyPairGenerator kpg = KeyPairGenerator.getInstance(ALG_NAMES[i], "BCPQC");
+
+            KeyPair kp = kpg.generateKeyPair();
+
+            assertEquals(SPECS[i].getName(), ((AIMerKey)kp.getPublic()).getParameterSpec().getName());
+            assertEquals(SPECS[i].getName(), ((AIMerKey)kp.getPrivate()).getParameterSpec().getName());
+        }
+    }
+
+    public void testUnnamedKeyPairGenDefault()
+        throws Exception
+    {
+        KeyPair kp = KeyPairGenerator.getInstance("AIMer", "BCPQC").generateKeyPair();
+
+        assertEquals(AIMerParameterSpec.aimer128f.getName(), ((AIMerKey)kp.getPublic()).getParameterSpec().getName());
+    }
+
+    public void testNamedKeyPairGenLocked()
+        throws Exception
+    {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("AIMer-256f", "BCPQC");
+
+        try
+        {
+            kpg.initialize(AIMerParameterSpec.aimer128f, new SecureRandom());
+            fail("no exception");
+        }
+        catch (InvalidAlgorithmParameterException e)
+        {
+            assertEquals("key pair generator locked to " + kpg.getAlgorithm(), e.getMessage());
+        }
+
+        kpg.initialize(AIMerParameterSpec.aimer256f, new SecureRandom());
+
+        assertEquals(AIMerParameterSpec.aimer256f.getName(),
+            ((AIMerKey)kpg.generateKeyPair().getPublic()).getParameterSpec().getName());
     }
 
     public void testAIMerRandomSig()

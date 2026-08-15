@@ -86,7 +86,14 @@ public class FaestKeyPairGeneratorSpi
 
         if (name != null && parameters.containsKey(name))
         {
-            param = new FaestKeyGenerationParameters(random, (FaestParameters)parameters.get(name));
+            FaestParameters faestParams = (FaestParameters)parameters.get(name);
+
+            if (faestParameters != null && !faestParams.getName().equals(faestParameters.getName()))
+            {
+                throw new InvalidAlgorithmParameterException("key pair generator locked to " + getAlgorithm());
+            }
+
+            param = new FaestKeyGenerationParameters(random, faestParams);
 
             engine.init(param);
             initialised = true;

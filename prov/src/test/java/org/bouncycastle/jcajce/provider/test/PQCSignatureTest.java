@@ -1,6 +1,7 @@
 package org.bouncycastle.jcajce.provider.test;
 
 import java.security.Key;
+import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.Security;
 import java.security.Signature;
@@ -8,6 +9,7 @@ import java.security.Signature;
 import junit.framework.TestCase;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 public class PQCSignatureTest
@@ -61,7 +63,11 @@ public class PQCSignatureTest
         for (int i = 0; i != nistOids.length; i++)
         {
             KeyPairGenerator ml_dsa_kp = KeyPairGenerator.getInstance(nistOids[i].getId(), "BC");
-            Signature ml_dsa_sig = deriveSignatureFromKey(ml_dsa_kp.generateKeyPair().getPrivate());
+            KeyPair kp = ml_dsa_kp.generateKeyPair();
+
+            assertEquals(nistOids[i], SubjectPublicKeyInfo.getInstance(kp.getPublic().getEncoded()).getAlgorithm().getAlgorithm());
+
+            Signature ml_dsa_sig = deriveSignatureFromKey(kp.getPrivate());
         }
     }
 }

@@ -49,6 +49,11 @@ public class SQIsignKeyPairGeneratorSpi
     {
         super(sqisignParameters.getName());
         this.sqisignParameters = sqisignParameters;
+
+        param = new SQIsignKeyGenerationParameters(random, sqisignParameters);
+
+        engine.init(param);
+        initialised = true;
     }
 
     public void initialize(int strength, SecureRandom random)
@@ -63,7 +68,14 @@ public class SQIsignKeyPairGeneratorSpi
 
         if (name != null && parameters.containsKey(name))
         {
-            param = new SQIsignKeyGenerationParameters(random, (SQIsignParameters)parameters.get(name));
+            SQIsignParameters sqisignParams = (SQIsignParameters)parameters.get(name);
+
+            if (sqisignParameters != null && !sqisignParams.getName().equals(sqisignParameters.getName()))
+            {
+                throw new InvalidAlgorithmParameterException("key pair generator locked to " + getAlgorithm());
+            }
+
+            param = new SQIsignKeyGenerationParameters(random, sqisignParams);
 
             engine.init(param);
             initialised = true;

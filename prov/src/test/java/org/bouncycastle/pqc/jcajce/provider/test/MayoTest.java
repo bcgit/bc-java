@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
@@ -221,17 +222,21 @@ public class MayoTest
         assertEquals(spec.getName(), kp.getPublic().getAlgorithm());
         assertEquals(spec.getName(), kp.getPrivate().getAlgorithm());
 
-        //kpg = KeyPairGenerator.getInstance(spec.getName(), "BCPQC");
+        MayoParameterSpec altSpec = (spec == MayoParameterSpec.mayo1)
+            ? MayoParameterSpec.mayo2
+            : MayoParameterSpec.mayo1;
 
-//        try
-//        {
-//            kpg.initialize(altSpec, new SecureRandom());
-//            fail("no exception");
-//        }
-//        catch (InvalidAlgorithmParameterException e)
-//        {
-//            assertEquals("key pair generator locked to " + spec.getName(), e.getMessage());
-//        }
+        kpg = KeyPairGenerator.getInstance(spec.getName(), "BCPQC");
+
+        try
+        {
+            kpg.initialize(altSpec, new SecureRandom());
+            fail("no exception");
+        }
+        catch (InvalidAlgorithmParameterException e)
+        {
+            assertEquals("key pair generator locked to " + spec.getName(), e.getMessage());
+        }
     }
 
     public void testMayoRandomSig()

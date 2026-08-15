@@ -5,6 +5,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -108,6 +109,62 @@ public class SQIsignTest
         Signature.getInstance("sqisign_lvl1", "BCPQC");
         Signature.getInstance("sqisign_lvl3", "BCPQC");
         Signature.getInstance("sqisign_lvl5", "BCPQC");
+    }
+
+    /**
+     * A generator selected by parameter set name must default to that parameter set, not to
+     * the generic generator's default of sqisign_lvl1.
+     */
+    public void testNamedKeyPairGenDefaults()
+        throws Exception
+    {
+        SQIsignParameterSpec[] specs =
+            new SQIsignParameterSpec[]
+                {
+                    SQIsignParameterSpec.sqisign_lvl1,
+                    SQIsignParameterSpec.sqisign_lvl3,
+                    SQIsignParameterSpec.sqisign_lvl5
+                };
+
+        for (int i = 0; i != specs.length; i++)
+        {
+            KeyPairGenerator kpg = KeyPairGenerator.getInstance(specs[i].getName(), "BCPQC");
+
+            KeyPair kp = kpg.generateKeyPair();
+
+            assertEquals(specs[i].getName(), ((SQIsignKey)kp.getPublic()).getParameterSpec().getName());
+            assertEquals(specs[i].getName(), ((SQIsignKey)kp.getPrivate()).getParameterSpec().getName());
+        }
+    }
+
+    public void testUnnamedKeyPairGenDefault()
+        throws Exception
+    {
+        KeyPair kp = KeyPairGenerator.getInstance("SQIsign", "BCPQC").generateKeyPair();
+
+        assertEquals(SQIsignParameterSpec.sqisign_lvl1.getName(),
+            ((SQIsignKey)kp.getPublic()).getParameterSpec().getName());
+    }
+
+    public void testNamedKeyPairGenLocked()
+        throws Exception
+    {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("sqisign_lvl5", "BCPQC");
+
+        try
+        {
+            kpg.initialize(SQIsignParameterSpec.sqisign_lvl1, new SecureRandom());
+            fail("no exception");
+        }
+        catch (InvalidAlgorithmParameterException e)
+        {
+            assertEquals("key pair generator locked to " + kpg.getAlgorithm(), e.getMessage());
+        }
+
+        kpg.initialize(SQIsignParameterSpec.sqisign_lvl5, new SecureRandom());
+
+        assertEquals(SQIsignParameterSpec.sqisign_lvl5.getName(),
+            ((SQIsignKey)kpg.generateKeyPair().getPublic()).getParameterSpec().getName());
     }
 
     public void testKeyFactoryRoundTrip()

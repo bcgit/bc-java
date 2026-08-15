@@ -87,6 +87,10 @@ public class MQOMKeyPairGeneratorSpi
             {
                 throw new InvalidAlgorithmParameterException("unknown parameter set name: " + name);
             }
+            if (mqomParameters != null && !mqomParams.getName().equals(mqomParameters.getName()))
+            {
+                throw new InvalidAlgorithmParameterException("key pair generator locked to " + getAlgorithm());
+            }
             param = new MQOMKeyGenerationParameters(random, mqomParams);
             engine.init(param);
             initialised = true;

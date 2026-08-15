@@ -14,6 +14,7 @@ import java.security.spec.X509EncodedKeySpec;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.jcajce.interfaces.SLHDSAKey;
 import org.bouncycastle.jcajce.interfaces.SLHDSAPrivateKey;
 import org.bouncycastle.jcajce.interfaces.SLHDSAPublicKey;
 import org.bouncycastle.jcajce.spec.SLHDSAParameterSpec;
@@ -217,11 +218,98 @@ public class SLHDSAKeyPairGeneratorTest
                 NISTObjectIdentifiers.id_hash_slh_dsa_shake_256f_with_shake256
             };
 
+        SLHDSAParameterSpec[] specs = new SLHDSAParameterSpec[]
+            {
+                SLHDSAParameterSpec.slh_dsa_sha2_128s,
+                SLHDSAParameterSpec.slh_dsa_sha2_128f,
+                SLHDSAParameterSpec.slh_dsa_shake_128s,
+                SLHDSAParameterSpec.slh_dsa_shake_128f,
+                SLHDSAParameterSpec.slh_dsa_sha2_192s,
+                SLHDSAParameterSpec.slh_dsa_sha2_192f,
+                SLHDSAParameterSpec.slh_dsa_shake_192s,
+                SLHDSAParameterSpec.slh_dsa_shake_192f,
+                SLHDSAParameterSpec.slh_dsa_sha2_256s,
+                SLHDSAParameterSpec.slh_dsa_sha2_256f,
+                SLHDSAParameterSpec.slh_dsa_shake_256s,
+                SLHDSAParameterSpec.slh_dsa_shake_256f,
+                SLHDSAParameterSpec.slh_dsa_sha2_128s_with_sha256,
+                SLHDSAParameterSpec.slh_dsa_sha2_128f_with_sha256,
+                SLHDSAParameterSpec.slh_dsa_shake_128s_with_shake128,
+                SLHDSAParameterSpec.slh_dsa_shake_128f_with_shake128,
+                SLHDSAParameterSpec.slh_dsa_sha2_192s_with_sha512,
+                SLHDSAParameterSpec.slh_dsa_sha2_192f_with_sha512,
+                SLHDSAParameterSpec.slh_dsa_shake_192s_with_shake256,
+                SLHDSAParameterSpec.slh_dsa_shake_192f_with_shake256,
+                SLHDSAParameterSpec.slh_dsa_sha2_256s_with_sha512,
+                SLHDSAParameterSpec.slh_dsa_sha2_256f_with_sha512,
+                SLHDSAParameterSpec.slh_dsa_shake_256s_with_shake256,
+                SLHDSAParameterSpec.slh_dsa_shake_256f_with_shake256
+            };
+
         for (int i = 0; i != nistOids.length; i++)
         {
             KeyPairGenerator ml_dsa_kp = KeyPairGenerator.getInstance(nistOids[i].getId(), "BC");
-            Signature ml_dsa_sig = deriveSignatureFromKey(ml_dsa_kp.generateKeyPair().getPrivate());
+            KeyPair kp = ml_dsa_kp.generateKeyPair();
+
+            assertEquals(specs[i].getName(), ((SLHDSAKey)kp.getPublic()).getParameterSpec().getName());
+            assertEquals(specs[i].getName(), ((SLHDSAKey)kp.getPrivate()).getParameterSpec().getName());
+
+            Signature ml_dsa_sig = deriveSignatureFromKey(kp.getPrivate());
         }
+    }
+
+    /**
+     * A generator selected by parameter set name must default to that parameter set, not to the
+     * generic generator's default of SLH-DSA-SHA2-128F, and must refuse to be re-pointed at a
+     * different one - as the ML-DSA and ML-KEM generators alongside it do.
+     */
+    public void testNamedKeyPairGenDefaults()
+        throws Exception
+    {
+        SLHDSAParameterSpec[] specs = new SLHDSAParameterSpec[]
+            {
+                SLHDSAParameterSpec.slh_dsa_sha2_128f,
+                SLHDSAParameterSpec.slh_dsa_sha2_192f,
+                SLHDSAParameterSpec.slh_dsa_sha2_256f,
+                SLHDSAParameterSpec.slh_dsa_shake_128f,
+                SLHDSAParameterSpec.slh_dsa_shake_192f,
+                SLHDSAParameterSpec.slh_dsa_shake_256f,
+                SLHDSAParameterSpec.slh_dsa_sha2_128f_with_sha256,
+                SLHDSAParameterSpec.slh_dsa_shake_256f_with_shake256
+            };
+
+        for (int i = 0; i != specs.length; i++)
+        {
+            KeyPairGenerator kpg = KeyPairGenerator.getInstance(specs[i].getName(), "BC");
+
+            assertEquals(specs[i].getName(), kpg.getAlgorithm());
+
+            KeyPair kp = kpg.generateKeyPair();
+
+            assertEquals(specs[i].getName(), ((SLHDSAKey)kp.getPublic()).getParameterSpec().getName());
+            assertEquals(specs[i].getName(), ((SLHDSAKey)kp.getPrivate()).getParameterSpec().getName());
+        }
+    }
+
+    public void testNamedKeyPairGenLocked()
+        throws Exception
+    {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance(SLHDSAParameterSpec.slh_dsa_shake_256f.getName(), "BC");
+
+        try
+        {
+            kpg.initialize(SLHDSAParameterSpec.slh_dsa_sha2_128f, new SecureRandom());
+            fail("no exception");
+        }
+        catch (InvalidAlgorithmParameterException e)
+        {
+            assertEquals("key pair generator locked to " + kpg.getAlgorithm(), e.getMessage());
+        }
+
+        kpg.initialize(SLHDSAParameterSpec.slh_dsa_shake_256f, new SecureRandom());
+
+        assertEquals(SLHDSAParameterSpec.slh_dsa_shake_256f.getName(),
+            ((SLHDSAKey)kpg.generateKeyPair().getPublic()).getParameterSpec().getName());
     }
     
     private static Signature deriveSignatureFromKey(Key key)

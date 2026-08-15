@@ -47,7 +47,7 @@ public class SmaugTKeyPairGeneratorSpi
 
     protected SmaugTKeyPairGeneratorSpi(SmaugTParameters smaugTParameters)
     {
-        super(smaugTParameters.getName());
+        super(Strings.toUpperCase(smaugTParameters.getName()));
         this.smaugTParameters = smaugTParameters;
     }
 
@@ -69,12 +69,12 @@ public class SmaugTKeyPairGeneratorSpi
         {
             SmaugTParameters smaugtParams = (SmaugTParameters)parameters.get(name);
 
-            param = new SmaugTKeyGenerationParameters(random, smaugtParams);
-
             if (smaugTParameters != null && !smaugtParams.getName().equals(smaugTParameters.getName()))
             {
-                throw new InvalidAlgorithmParameterException("key pair generator locked to " + Strings.toUpperCase(smaugTParameters.getName()));
+                throw new InvalidAlgorithmParameterException("key pair generator locked to " + getAlgorithm());
             }
+
+            param = new SmaugTKeyGenerationParameters(random, smaugtParams);
 
             engine.init(param);
             initialised = true;

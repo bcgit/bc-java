@@ -40,6 +40,7 @@ public class HQCKeyPairGeneratorSpi
 
     SecureRandom random = CryptoServicesRegistrar.getSecureRandom();
     boolean initialised = false;
+    private HQCParameters hqcParameters;
 
     public HQCKeyPairGeneratorSpi()
     {
@@ -49,6 +50,12 @@ public class HQCKeyPairGeneratorSpi
     protected HQCKeyPairGeneratorSpi(HQCParameterSpec paramSpec)
     {
         super(Strings.toUpperCase(paramSpec.getName()));
+        this.hqcParameters = (HQCParameters)parameters.get(paramSpec.getName());
+
+        param = new HQCKeyGenerationParameters(random, hqcParameters);
+
+        engine.init(param);
+        initialised = true;
     }
 
     public void initialize(
@@ -67,7 +74,18 @@ public class HQCKeyPairGeneratorSpi
 
         if (name != null)
         {
-            param = new HQCKeyGenerationParameters(random, (HQCParameters)parameters.get(name));
+            HQCParameters hqcParams = (HQCParameters)parameters.get(name);
+            if (hqcParams == null)
+            {
+                throw new InvalidAlgorithmParameterException("unknown parameter set name: " + name);
+            }
+
+            if (hqcParameters != null && !hqcParams.getName().equals(hqcParameters.getName()))
+            {
+                throw new InvalidAlgorithmParameterException("key pair generator locked to " + getAlgorithm());
+            }
+
+            param = new HQCKeyGenerationParameters(random, hqcParams);
 
             engine.init(param);
             initialised = true;

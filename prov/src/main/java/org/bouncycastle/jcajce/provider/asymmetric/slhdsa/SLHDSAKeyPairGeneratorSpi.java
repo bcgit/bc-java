@@ -60,6 +60,7 @@ public class SLHDSAKeyPairGeneratorSpi
 
     SecureRandom random = CryptoServicesRegistrar.getSecureRandom();
     boolean initialised = false;
+    private SLHDSAParameters slhdsaParameters;
 
     public SLHDSAKeyPairGeneratorSpi(String name)
     {
@@ -68,9 +69,11 @@ public class SLHDSAKeyPairGeneratorSpi
 
     protected SLHDSAKeyPairGeneratorSpi(SLHDSAParameterSpec paramSpec)
     {
-        super("SLH-DSA" + "-" + Strings.toUpperCase(paramSpec.getName()));
+        super(Strings.toUpperCase(paramSpec.getName()));
 
-        param = new SLHDSAKeyGenerationParameters(random, (SLHDSAParameters)parameters.get(paramSpec.getName()));
+        this.slhdsaParameters = (SLHDSAParameters)parameters.get(paramSpec.getName());
+
+        param = new SLHDSAKeyGenerationParameters(random, slhdsaParameters);
 
         engine.init(param);
         initialised = true;
@@ -97,6 +100,12 @@ public class SLHDSAKeyPairGeneratorSpi
             {
                 throw new InvalidAlgorithmParameterException("unknown parameter set name: " + name);
             }
+
+            if (slhdsaParameters != null && !parameters.getName().equals(slhdsaParameters.getName()))
+            {
+                throw new InvalidAlgorithmParameterException("key pair generator locked to " + getAlgorithm());
+            }
+
             param = new SLHDSAKeyGenerationParameters(random, parameters);
 
             engine.init(param);

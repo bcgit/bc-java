@@ -87,6 +87,10 @@ public class SDitHKeyPairGeneratorSpi
         {
             throw new InvalidAlgorithmParameterException("unknown parameter set name: " + name);
         }
+        if (sdithParameters != null && !resolved.getName().equals(sdithParameters.getName()))
+        {
+            throw new InvalidAlgorithmParameterException("key pair generator locked to " + getAlgorithm());
+        }
         this.param = new SDitHKeyGenerationParameters(random, resolved);
         engine.init(param);
         initialised = true;

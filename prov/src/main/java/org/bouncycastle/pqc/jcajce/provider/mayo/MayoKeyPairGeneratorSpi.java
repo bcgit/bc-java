@@ -55,6 +55,11 @@ public class MayoKeyPairGeneratorSpi
     {
         super(mayoParameters.getName());
         this.mayoParameters = mayoParameters;
+
+        param = new MayoKeyGenerationParameters(random, mayoParameters);
+
+        engine.init(param);
+        initialised = true;
     }
 
     public void initialize(
@@ -73,7 +78,18 @@ public class MayoKeyPairGeneratorSpi
 
         if (name != null)
         {
-            param = new MayoKeyGenerationParameters(random, (MayoParameters)parameters.get(name));
+            MayoParameters mayoParams = (MayoParameters)parameters.get(name);
+            if (mayoParams == null)
+            {
+                throw new InvalidAlgorithmParameterException("unknown parameter set name: " + name);
+            }
+
+            if (mayoParameters != null && !mayoParams.getName().equals(mayoParameters.getName()))
+            {
+                throw new InvalidAlgorithmParameterException("key pair generator locked to " + getAlgorithm());
+            }
+
+            param = new MayoKeyGenerationParameters(random, mayoParams);
 
             engine.init(param);
             initialised = true;

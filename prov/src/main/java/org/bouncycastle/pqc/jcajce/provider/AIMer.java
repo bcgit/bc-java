@@ -44,6 +44,20 @@ public class AIMer
             addSignatureAlgorithm(provider, "AIMer-192s", PREFIX + "SignatureSpi$AIMer_192s", BCObjectIdentifiers.aimer_192s);
             addSignatureAlgorithm(provider, "AIMer-256f", PREFIX + "SignatureSpi$AIMer_256f", BCObjectIdentifiers.aimer_256f);
             addSignatureAlgorithm(provider, "AIMer-256s", PREFIX + "SignatureSpi$AIMer_256s", BCObjectIdentifiers.aimer_256s);
+
+            addParameterSetNameAliases(provider, "AIMer128f", "AIMer-128f");
+            addParameterSetNameAliases(provider, "AIMer128s", "AIMer-128s");
+            addParameterSetNameAliases(provider, "AIMer192f", "AIMer-192f");
+            addParameterSetNameAliases(provider, "AIMer192s", "AIMer-192s");
+            addParameterSetNameAliases(provider, "AIMer256f", "AIMer-256f");
+            addParameterSetNameAliases(provider, "AIMer256s", "AIMer-256s");
+        }
+
+        private void addParameterSetNameAliases(ConfigurableProvider provider, String alias, String algorithm)
+        {
+            provider.addAlgorithm("Alg.Alias.KeyFactory." + alias, algorithm);
+            provider.addAlgorithm("Alg.Alias.KeyPairGenerator." + alias, algorithm);
+            provider.addAlgorithm("Alg.Alias.Signature." + alias, algorithm);
         }
     }
 }

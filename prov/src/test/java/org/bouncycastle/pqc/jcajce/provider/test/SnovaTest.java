@@ -4,6 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
@@ -265,17 +266,66 @@ public class SnovaTest
         assertEquals(spec.getName(), kp.getPublic().getAlgorithm());
         assertEquals(spec.getName(), kp.getPrivate().getAlgorithm());
 
-        //kpg = KeyPairGenerator.getInstance(spec.getName(), "BCPQC");
+        SnovaParameterSpec altSpec = (spec == SnovaParameterSpec.SNOVA_24_5_4_ESK)
+            ? SnovaParameterSpec.SNOVA_24_5_4_SSK
+            : SnovaParameterSpec.SNOVA_24_5_4_ESK;
 
-//        try
-//        {
-//            kpg.initialize(altSpec, new SecureRandom());
-//            fail("no exception");
-//        }
-//        catch (InvalidAlgorithmParameterException e)
-//        {
-//            assertEquals("key pair generator locked to " + spec.getName(), e.getMessage());
-//        }
+        kpg = KeyPairGenerator.getInstance(spec.getName(), "BCPQC");
+
+        try
+        {
+            kpg.initialize(altSpec, new SecureRandom());
+            fail("no exception");
+        }
+        catch (InvalidAlgorithmParameterException e)
+        {
+            assertEquals("key pair generator locked to " + spec.getName(), e.getMessage());
+        }
+    }
+
+    /**
+     * A generator selected by parameter set name must default to that parameter set, not to
+     * the generic generator's default of SNOVA_24_5_4_SSK. One set is checked per (v, o, l)
+     * family — the per-set wiring is otherwise identical and covered by
+     * {@link #testRestrictedKeyPairGen()}.
+     */
+    public void testNamedKeyPairGenDefaults()
+        throws Exception
+    {
+        SnovaParameterSpec[] specs =
+            new SnovaParameterSpec[]
+                {
+                    SnovaParameterSpec.SNOVA_24_5_4_ESK,
+                    SnovaParameterSpec.SNOVA_24_5_5_SSK,
+                    SnovaParameterSpec.SNOVA_25_8_3_SHAKE_SSK,
+                    SnovaParameterSpec.SNOVA_29_6_5_SSK,
+                    SnovaParameterSpec.SNOVA_37_8_4_SSK,
+                    SnovaParameterSpec.SNOVA_37_17_2_SSK,
+                    SnovaParameterSpec.SNOVA_49_11_3_SSK,
+                    SnovaParameterSpec.SNOVA_56_25_2_SSK,
+                    SnovaParameterSpec.SNOVA_60_10_4_SSK,
+                    SnovaParameterSpec.SNOVA_66_15_3_SSK,
+                    SnovaParameterSpec.SNOVA_75_33_2_SSK
+                };
+
+        for (int i = 0; i != specs.length; i++)
+        {
+            KeyPairGenerator kpg = KeyPairGenerator.getInstance(specs[i].getName(), "BCPQC");
+
+            KeyPair kp = kpg.generateKeyPair();
+
+            assertEquals(specs[i].getName(), ((SnovaKey)kp.getPublic()).getParameterSpec().getName());
+            assertEquals(specs[i].getName(), ((SnovaKey)kp.getPrivate()).getParameterSpec().getName());
+        }
+    }
+
+    public void testUnnamedKeyPairGenDefault()
+        throws Exception
+    {
+        KeyPair kp = KeyPairGenerator.getInstance("Snova", "BCPQC").generateKeyPair();
+
+        assertEquals(SnovaParameterSpec.SNOVA_24_5_4_SSK.getName(),
+            ((SnovaKey)kp.getPublic()).getParameterSpec().getName());
     }
 
     public void testSnovaRandomSig()

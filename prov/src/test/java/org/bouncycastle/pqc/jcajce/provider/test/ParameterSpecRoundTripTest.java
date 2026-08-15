@@ -48,7 +48,6 @@ public class ParameterSpecRoundTripTest
             "org.bouncycastle.pqc.jcajce.spec.FalconParameterSpec",
             "org.bouncycastle.pqc.jcajce.spec.HQCParameterSpec",
             "org.bouncycastle.pqc.jcajce.spec.HaetaeParameterSpec",
-            "org.bouncycastle.pqc.jcajce.spec.KyberParameterSpec",
             "org.bouncycastle.pqc.jcajce.spec.MQOMParameterSpec",
             "org.bouncycastle.pqc.jcajce.spec.MayoParameterSpec",
             "org.bouncycastle.pqc.jcajce.spec.NTRULPRimeParameterSpec",
@@ -57,7 +56,6 @@ public class ParameterSpecRoundTripTest
             "org.bouncycastle.pqc.jcajce.spec.SABERParameterSpec",
             "org.bouncycastle.pqc.jcajce.spec.SDitHParameterSpec",
             "org.bouncycastle.pqc.jcajce.spec.SNTRUPrimeParameterSpec",
-            "org.bouncycastle.pqc.jcajce.spec.SPHINCSPlusParameterSpec",
             "org.bouncycastle.pqc.jcajce.spec.SQIsignParameterSpec",
             "org.bouncycastle.pqc.jcajce.spec.SnovaParameterSpec",
             "org.bouncycastle.pqc.jcajce.spec.UOVParameterSpec",
@@ -78,7 +76,7 @@ public class ParameterSpecRoundTripTest
     /**
      * Sweeps every spec class above: for each {@code public static final} instance of the spec
      * type, asserts {@code fromName(instance.getName()) == instance}. This is the property that
-     * {@code Kyber/SABER/HQC/Snova} all violated, and a guard against future regressions.
+     * {@code SABER/HQC/Snova} all violated, and a guard against future regressions.
      */
     public void testSpecFromNameRoundTrip()
         throws Exception

@@ -19,6 +19,11 @@ public class SmaugTParameterSpec
 
     static
     {
+        parameters.put("smaugt-mode1", smaugt_mode1);
+        parameters.put("smaugt-mode3", smaugt_mode3);
+        parameters.put("smaugt-mode5", smaugt_mode5);
+        parameters.put("smaugt-modet", smaugt_modet);
+
         parameters.put("smaugt_mode1", smaugt_mode1);
         parameters.put("smaugt_mode3", smaugt_mode3);
         parameters.put("smaugt_mode5", smaugt_mode5);

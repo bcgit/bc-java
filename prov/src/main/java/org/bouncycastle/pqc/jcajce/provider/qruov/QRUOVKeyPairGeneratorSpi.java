@@ -68,7 +68,14 @@ public class QRUOVKeyPairGeneratorSpi
         String name = getNameFromParams(params);
         if (name != null && parameters.containsKey(name))
         {
-            param = new QRUOVKeyGenerationParameters(random, (QRUOVParameters)parameters.get(name));
+            QRUOVParameters qruovParams = (QRUOVParameters)parameters.get(name);
+
+            if (qruovParameters != null && !qruovParams.getName().equals(qruovParameters.getName()))
+            {
+                throw new InvalidAlgorithmParameterException("key pair generator locked to " + getAlgorithm());
+            }
+
+            param = new QRUOVKeyGenerationParameters(random, qruovParams);
             engine.init(param);
             initialised = true;
         }

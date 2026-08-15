@@ -55,6 +55,11 @@ public class AIMerKeyPairGeneratorSpi
     {
         super(aimerParameters.getName());
         this.aimerParameters = aimerParameters;
+
+        param = new AIMerKeyGenerationParameters(random, aimerParameters);
+
+        engine.init(param);
+        initialised = true;
     }
 
     public void initialize(
@@ -73,7 +78,18 @@ public class AIMerKeyPairGeneratorSpi
 
         if (name != null)
         {
-            param = new AIMerKeyGenerationParameters(random, (AIMerParameters)parameters.get(name));
+            AIMerParameters aimerParams = (AIMerParameters)parameters.get(name);
+            if (aimerParams == null)
+            {
+                throw new InvalidAlgorithmParameterException("unknown parameter set name: " + name);
+            }
+
+            if (aimerParameters != null && !aimerParams.getName().equals(aimerParameters.getName()))
+            {
+                throw new InvalidAlgorithmParameterException("key pair generator locked to " + getAlgorithm());
+            }
+
+            param = new AIMerKeyGenerationParameters(random, aimerParams);
 
             engine.init(param);
             initialised = true;

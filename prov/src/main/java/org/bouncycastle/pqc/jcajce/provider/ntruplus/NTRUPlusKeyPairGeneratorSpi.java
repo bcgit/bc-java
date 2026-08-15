@@ -72,7 +72,7 @@ public class NTRUPlusKeyPairGeneratorSpi
 
             if (ntruplusParameters != null && !ntruplusParams.getName().equals(ntruplusParameters.getName()))
             {
-                throw new InvalidAlgorithmParameterException("key pair generator locked to " + Strings.toUpperCase(ntruplusParameters.getName()));
+                throw new InvalidAlgorithmParameterException("key pair generator locked to " + getAlgorithm());
             }
 
             engine.init(param);
