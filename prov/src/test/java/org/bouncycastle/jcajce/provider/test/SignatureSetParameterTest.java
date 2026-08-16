@@ -1,4 +1,4 @@
-package org.bouncycastle.pqc.jcajce.provider.test;
+package org.bouncycastle.jcajce.provider.test;
 
 import java.security.AlgorithmParameters;
 import java.security.KeyPair;
@@ -6,6 +6,8 @@ import java.security.KeyPairGenerator;
 import java.security.ProviderException;
 import java.security.Security;
 import java.security.Signature;
+import java.security.spec.MGF1ParameterSpec;
+import java.security.spec.PSSParameterSpec;
 
 import junit.framework.TestCase;
 import org.bouncycastle.jcajce.spec.ContextParameterSpec;
@@ -217,6 +219,62 @@ public class SignatureSetParameterTest
         verifier.update(MSG);
 
         assertTrue(verifier.verify(s));
+    }
+
+    /**
+     * getParameters() caches the AlgorithmParameters it builds, so a context set after it has been
+     * asked for once has to clear that cache rather than go on reporting the previous context.
+     * <p>
+     * testResetContext above only asks after the second setParameter, so the cache is never
+     * populated with the first context there and a stale one would go unnoticed.
+     * </p>
+     */
+    public void testGetParametersNotStaleAfterReset()
+        throws Exception
+    {
+        byte[] second = Strings.toByteArray("second context");
+
+        KeyPair kp = KeyPairGenerator.getInstance("ML-DSA-65", "BC").generateKeyPair();
+
+        Signature sig = Signature.getInstance("ML-DSA", "BC");
+
+        sig.setParameter(new ContextParameterSpec(CONTEXT));
+        sig.initSign(kp.getPrivate());
+
+        assertTrue(Arrays.areEqual(CONTEXT,
+            sig.getParameters().getParameterSpec(ContextParameterSpec.class).getContext()));
+
+        sig.setParameter(new ContextParameterSpec(second));
+
+        assertTrue("getParameters() still reported the previous context", Arrays.areEqual(second,
+            sig.getParameters().getParameterSpec(ContextParameterSpec.class).getContext()));
+    }
+
+    /**
+     * The RSASSA-PSS services cache getParameters() the same way, so the same question is asked of
+     * the sibling path this class's contract is modelled on.
+     */
+    public void testPssGetParametersNotStaleAfterReset()
+        throws Exception
+    {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("RSA", "BC");
+
+        kpg.initialize(2048);
+
+        KeyPair kp = kpg.generateKeyPair();
+
+        Signature sig = Signature.getInstance("SHA256withRSAandMGF1", "BC");
+
+        sig.initSign(kp.getPrivate());
+        sig.setParameter(new PSSParameterSpec("SHA-256", "MGF1", MGF1ParameterSpec.SHA256, 32, 1));
+
+        assertEquals(32,
+            ((PSSParameterSpec)sig.getParameters().getParameterSpec(PSSParameterSpec.class)).getSaltLength());
+
+        sig.setParameter(new PSSParameterSpec("SHA-256", "MGF1", MGF1ParameterSpec.SHA256, 20, 1));
+
+        assertEquals("getParameters() still reported the previous salt length", 20,
+            ((PSSParameterSpec)sig.getParameters().getParameterSpec(PSSParameterSpec.class)).getSaltLength());
     }
 
     public void testSetParameterMidUpdateStillRejected()

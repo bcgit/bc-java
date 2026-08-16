@@ -39,6 +39,7 @@ public class AllTests
         suite.addTestSuite(ECRSAKeyDestructionTest.class);
         suite.addTestSuite(SecretKeyUtilTest.class);
         suite.addTestSuite(PKCS12PBMAC1StoreTest.class);
+        suite.addTestSuite(SignatureSetParameterTest.class);
 
         return new BCTestSetup(suite);
     }
