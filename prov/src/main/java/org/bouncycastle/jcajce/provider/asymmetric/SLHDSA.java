@@ -120,14 +120,22 @@ public class SLHDSA
             addSignatureAlgorithm(provider, "HASH-SLH-DSA", PREFIX + "HashSignatureSpi$Direct", (ASN1ObjectIdentifier)null);
             provider.addAlgorithm("Alg.Alias.Signature.HASHWITHSLHDSA", "HASH-SLH-DSA");
 
+            // the parameter-set specific SPIs, so that a Signature obtained by parameter set name
+            // is bound to that parameter set rather than accepting a key of any other
+            String[] spiNames = new String[]
+                {
+                    "Sha2_128s", "Sha2_128f", "Sha2_192s", "Sha2_192f", "Sha2_256s", "Sha2_256f",
+                    "Shake_128s", "Shake_128f", "Shake_192s", "Shake_192f", "Shake_256s", "Shake_256f"
+                };
+
             for (int i = 0; i != algNames.length; i++)
             {
-                provider.addAlgorithm("Alg.Alias.Signature." + algNames[i], "SLH-DSA");
+                addSignatureAlgorithm(provider, algNames[i], PREFIX + "SignatureSpi$" + spiNames[i], (ASN1ObjectIdentifier)null);
             }
 
             for (int i = 0; i != hashAlgNames.length; i++)
             {
-                provider.addAlgorithm("Alg.Alias.Signature." + hashAlgNames[i], "HASH-SLH-DSA");
+                addSignatureAlgorithm(provider, hashAlgNames[i], PREFIX + "HashSignatureSpi$" + spiNames[i], (ASN1ObjectIdentifier)null);
             }
 
             ASN1ObjectIdentifier[] nistOids = new ASN1ObjectIdentifier[]
@@ -148,30 +156,30 @@ public class SLHDSA
 
             for (int i = 0; i != nistOids.length; i++)
             {
-                provider.addAlgorithm("Alg.Alias.Signature." + nistOids[i], "SLH-DSA");
-                provider.addAlgorithm("Alg.Alias.Signature.OID." + nistOids[i], "SLH-DSA");
+                provider.addAlgorithm("Alg.Alias.Signature." + nistOids[i], algNames[i]);
+                provider.addAlgorithm("Alg.Alias.Signature.OID." + nistOids[i], algNames[i]);
             }
 
             nistOids = new ASN1ObjectIdentifier[]
                 {
                     NISTObjectIdentifiers.id_hash_slh_dsa_sha2_128s_with_sha256,
                     NISTObjectIdentifiers.id_hash_slh_dsa_sha2_128f_with_sha256,
-                    NISTObjectIdentifiers.id_hash_slh_dsa_shake_128s_with_shake128,
-                    NISTObjectIdentifiers.id_hash_slh_dsa_shake_128f_with_shake128,
                     NISTObjectIdentifiers.id_hash_slh_dsa_sha2_192s_with_sha512,
                     NISTObjectIdentifiers.id_hash_slh_dsa_sha2_192f_with_sha512,
-                    NISTObjectIdentifiers.id_hash_slh_dsa_shake_192s_with_shake256,
-                    NISTObjectIdentifiers.id_hash_slh_dsa_shake_192f_with_shake256,
                     NISTObjectIdentifiers.id_hash_slh_dsa_sha2_256s_with_sha512,
                     NISTObjectIdentifiers.id_hash_slh_dsa_sha2_256f_with_sha512,
+                    NISTObjectIdentifiers.id_hash_slh_dsa_shake_128s_with_shake128,
+                    NISTObjectIdentifiers.id_hash_slh_dsa_shake_128f_with_shake128,
+                    NISTObjectIdentifiers.id_hash_slh_dsa_shake_192s_with_shake256,
+                    NISTObjectIdentifiers.id_hash_slh_dsa_shake_192f_with_shake256,
                     NISTObjectIdentifiers.id_hash_slh_dsa_shake_256s_with_shake256,
                     NISTObjectIdentifiers.id_hash_slh_dsa_shake_256f_with_shake256
                 };
 
             for (int i = 0; i != nistOids.length; i++)
             {
-                provider.addAlgorithm("Alg.Alias.Signature." + nistOids[i], "HASH-SLH-DSA");
-                provider.addAlgorithm("Alg.Alias.Signature.OID." + nistOids[i], "HASH-SLH-DSA");
+                provider.addAlgorithm("Alg.Alias.Signature." + nistOids[i], hashAlgNames[i]);
+                provider.addAlgorithm("Alg.Alias.Signature.OID." + nistOids[i], hashAlgNames[i]);
             }
         }
     }

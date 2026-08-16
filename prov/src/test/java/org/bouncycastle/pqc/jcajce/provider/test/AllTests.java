@@ -68,6 +68,7 @@ public class AllTests
         suite.addTestSuite(HQCTest.class);
         suite.addTestSuite(NamedKeyPairGeneratorTest.class);
         suite.addTestSuite(NamedKeyFactoryTest.class);
+        suite.addTestSuite(PreHashKeyInteropTest.class);
         suite.addTestSuite(MayoKeyPairGeneratorTest.class);
         suite.addTestSuite(MayoTest.class);
         suite.addTestSuite(SnovaTest.class);

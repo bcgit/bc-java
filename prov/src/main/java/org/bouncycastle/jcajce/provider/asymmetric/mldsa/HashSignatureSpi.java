@@ -56,18 +56,41 @@ public class HashSignatureSpi
 
             this.keyParams = key.getKeyParams();
 
-            if (parameters != null)
-            {
-                String canonicalAlg = MLDSAParameterSpec.fromName(parameters.getName()).getName();
-                if (!canonicalAlg.equals(key.getAlgorithm()))
-                {
-                    throw new InvalidKeyException("signature configured for " + canonicalAlg);
-                }
-            }
+            checkKeyParameters(parameters, key.getKeyParams().getParameters());
         }
         else
         {
             throw new InvalidKeyException("unknown public key passed to ML-DSA");
+        }
+    }
+
+    /**
+     * FIPS 204 sec. 5 defines one key generation algorithm per parameter set, and a key it produces
+     * carries no commitment to pure ML-DSA over HashML-DSA, so a <b>pure</b> key of the matching
+     * parameter set is admissible on this pre-hash path. That matters in practice because a key
+     * recovered from an X.509 certificate carries the pure OID (RFC 9881), and was previously
+     * refused by these SPIs (see <a href="https://github.com/bcgit/bc-java/issues/2397">github
+     * #2397</a>).
+     * <p>
+     * The tolerance is deliberately one way only. A key that already names a HashML-DSA parameter
+     * set has been narrowed to the pre-hash mode, so it stays refused by the pure
+     * {@link SignatureSpi} and is accepted here only when it names this SPI's own pre-hash variant.
+     * A key of a different parameter set is refused either way, which is the check worth having.
+     * </p>
+     */
+    static void checkKeyParameters(MLDSAParameters parameters, MLDSAParameters keyParameters)
+        throws InvalidKeyException
+    {
+        if (parameters == null)
+        {
+            return;
+        }
+
+        if (parameters.getK() != keyParameters.getK()
+            || (keyParameters.isPreHash() && keyParameters.getType() != parameters.getType()))
+        {
+            throw new InvalidKeyException("signature configured for "
+                + MLDSAParameterSpec.fromName(parameters.getName()).getName());
         }
     }
 
@@ -81,14 +104,7 @@ public class HashSignatureSpi
 
             this.keyParams = key.getKeyParams();
 
-            if (parameters != null)
-            {
-                String canonicalAlg = MLDSAParameterSpec.fromName(parameters.getName()).getName();
-                if (!canonicalAlg.equals(key.getAlgorithm()))
-                {
-                    throw new InvalidKeyException("signature configured for " + canonicalAlg);
-                }
-            }
+            checkKeyParameters(parameters, key.getKeyParams().getParameters());
         }
         else
         {
