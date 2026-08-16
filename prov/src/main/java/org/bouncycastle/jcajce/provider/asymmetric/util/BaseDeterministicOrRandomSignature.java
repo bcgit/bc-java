@@ -42,7 +42,6 @@ public abstract class BaseDeterministicOrRandomSignature
         throws InvalidKeyException
     {
         verifyInit(publicKey);
-        paramSpec = ContextParameterSpec.EMPTY_CONTEXT_SPEC;
         isInitState = true;
         reInit();
     }
@@ -54,7 +53,6 @@ public abstract class BaseDeterministicOrRandomSignature
         throws InvalidKeyException
     {
         signInit(privateKey, null);
-        paramSpec = ContextParameterSpec.EMPTY_CONTEXT_SPEC;
         isInitState = true;
         reInit();
     }
@@ -65,7 +63,6 @@ public abstract class BaseDeterministicOrRandomSignature
         throws InvalidKeyException
     {
         signInit(privateKey, random);
-        paramSpec = ContextParameterSpec.EMPTY_CONTEXT_SPEC;
         isInitState = true;
         reInit();
     }
@@ -95,6 +92,17 @@ public abstract class BaseDeterministicOrRandomSignature
 
     protected abstract void updateEngine(byte[] buf, int off, int len) throws SignatureException;
 
+    /**
+     * Set the signature context, either before or after engineInitSign / engineInitVerify.
+     * <p>
+     * Where the signature has a key already the underlying signer is re-initialised with the new
+     * context at once; where it does not the context is recorded and applied when the key arrives,
+     * as the RSASSA-PSS implementation does with its own parameters. Calling this first used to let
+     * a NullPointerException out of a method declared to throw InvalidAlgorithmParameterException,
+     * from dereferencing the key that was not there yet (see
+     * <a href="https://github.com/bcgit/bc-java/issues/2396">github #2396</a>).
+     * </p>
+     */
     protected void engineSetParameter(
         AlgorithmParameterSpec params)
         throws InvalidAlgorithmParameterException
@@ -118,21 +126,30 @@ public abstract class BaseDeterministicOrRandomSignature
 
         if (params instanceof ContextParameterSpec)
         {
-            this.paramSpec = (ContextParameterSpec)params;
-            reInit();
+            setContext((ContextParameterSpec)params);
         }
         else
         {
             byte[] context = SpecUtil.getContextFrom(params);
             if (context != null)
             {                   
-                this.paramSpec = new ContextParameterSpec(context);
-                reInit();
+                setContext(new ContextParameterSpec(context));
             }
             else
             {
                 throw new InvalidAlgorithmParameterException("unknown AlgorithmParameterSpec in signature");
             }
+        }
+    }
+
+    private void setContext(ContextParameterSpec context)
+    {
+        this.paramSpec = context;
+        this.engineParams = null;
+
+        if (keyParams != null)
+        {
+            reInit();
         }
     }
 
