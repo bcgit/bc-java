@@ -75,12 +75,14 @@ public class PqcUnmappedAlgorithmOidTest
     /**
      * Every arc the private-key dispatch used to select with {@code algOID.on(arc)}. An arbitrary
      * undeclared leaf below each of these is matched by the subtree test but has no parameters.
+     * An arc leaves this list when its branch leaves the factories - the round 3 Classic McEliece
+     * arc pqc_kem_mceliece went with the deprecated implementation (its declared OIDs are still in
+     * BCObjectIdentifiers but, like the frodokem ones, deliberately no longer decode).
      */
     private static final ASN1ObjectIdentifier[] DISPATCH_ARCS = new ASN1ObjectIdentifier[]
     {
         BCObjectIdentifiers.sphincsPlus,
         BCObjectIdentifiers.sphincsPlus_interop,
-        BCObjectIdentifiers.pqc_kem_mceliece,
         BCObjectIdentifiers.pqc_kem_saber,
         BCObjectIdentifiers.pqc_kem_ntru,
         BCObjectIdentifiers.pqc_kem_ntrulprime,
@@ -100,8 +102,9 @@ public class PqcUnmappedAlgorithmOidTest
 
     /**
      * Private-key bodies covering the shapes the various branches parse before (or instead of)
-     * reaching the parameters lookup: a bare OCTET STRING, a CMCEPrivateKey-shaped SEQUENCE, and
-     * an NTRU-Prime-shaped SEQUENCE of OCTET STRINGs.
+     * reaching the parameters lookup: a bare OCTET STRING, an integer-led SEQUENCE of OCTET
+     * STRINGs (the shape the removed round 3 Classic McEliece branch parsed), and an
+     * NTRU-Prime-shaped SEQUENCE of OCTET STRINGs.
      */
     private static ASN1Encodable[] privateKeyBodies()
     {
