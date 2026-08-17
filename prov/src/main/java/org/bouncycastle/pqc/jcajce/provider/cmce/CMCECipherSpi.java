@@ -180,10 +180,14 @@ class CMCECipherSpi
 
         if (cmceParameters != null)
         {
-            String canonicalAlgName = Strings.toUpperCase(cmceParameters.getName());
-            if (!canonicalAlgName.equals(key.getAlgorithm()))
+            // the keys report the family name "CMCE", so the parameter-set lock has to look at
+            // the key's own parameter set rather than at getAlgorithm()
+            CMCEParameters keyParameters = (opmode == Cipher.WRAP_MODE)
+                ? wrapKey.getKeyParams().getParameters()
+                : unwrapKey.getKeyParams().getParameters();
+            if (!cmceParameters.getName().equals(keyParameters.getName()))
             {
-                throw new InvalidKeyException("cipher locked to " + canonicalAlgName);
+                throw new InvalidKeyException("cipher locked to " + Strings.toUpperCase(cmceParameters.getName()));
             }
         }
     }

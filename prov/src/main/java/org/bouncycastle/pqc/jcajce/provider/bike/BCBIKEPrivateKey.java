@@ -13,7 +13,6 @@ import org.bouncycastle.pqc.jcajce.interfaces.BIKEKey;
 import org.bouncycastle.pqc.jcajce.spec.BIKEParameterSpec;
 import org.bouncycastle.pqc.legacy.bike.BIKEPrivateKeyParameters;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.Strings;
 
 public class BCBIKEPrivateKey
     implements PrivateKey, BIKEKey
@@ -72,11 +71,11 @@ public class BCBIKEPrivateKey
     }
 
     /**
-     * @return name of the algorithm - "BIKE[128|192|256]"
+     * @return name of the algorithm - "BIKE"
      */
     public final String getAlgorithm()
     {
-        return Strings.toUpperCase(params.getParameters().getName());
+        return "BIKE";
     }
 
     public byte[] getEncoded()

@@ -182,10 +182,14 @@ class BIKECipherSpi
 
         if (bikeParameters != null)
         {
-            String canonicalAlgName = Strings.toUpperCase(bikeParameters.getName());
-            if (!canonicalAlgName.equals(key.getAlgorithm()))
+            // the keys report the family name "BIKE", so the parameter-set lock has to look at
+            // the key's own parameter set rather than at getAlgorithm()
+            BIKEParameters keyParameters = (opmode == Cipher.WRAP_MODE)
+                ? wrapKey.getKeyParams().getParameters()
+                : unwrapKey.getKeyParams().getParameters();
+            if (!bikeParameters.getName().equals(keyParameters.getName()))
             {
-                throw new InvalidKeyException("cipher locked to " + canonicalAlgName + " " + key.getAlgorithm());
+                throw new InvalidKeyException("cipher locked to " + Strings.toUpperCase(bikeParameters.getName()));
             }
         }
     }

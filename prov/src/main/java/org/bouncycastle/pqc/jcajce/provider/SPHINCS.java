@@ -21,6 +21,9 @@ public class SPHINCS
         {
             provider.addAlgorithm("KeyFactory.SPHINCS256", PREFIX + "Sphincs256KeyFactorySpi");
             provider.addAlgorithm("KeyPairGenerator.SPHINCS256", PREFIX + "Sphincs256KeyPairGeneratorSpi");
+            // the name the keys themselves report - so getInstance(key.getAlgorithm()) resolves
+            provider.addAlgorithm("Alg.Alias.KeyFactory.SPHINCS-256", "SPHINCS256");
+            provider.addAlgorithm("Alg.Alias.KeyPairGenerator.SPHINCS-256", "SPHINCS256");
 
             addSignatureAlgorithm(provider, "SHA512", "SPHINCS256", PREFIX + "SignatureSpi$withSha512", PQCObjectIdentifiers.sphincs256_with_SHA512);
             addSignatureAlgorithm(provider, "SHA3-512", "SPHINCS256", PREFIX + "SignatureSpi$withSha3_512", PQCObjectIdentifiers.sphincs256_with_SHA3_512);

@@ -12,7 +12,6 @@ import org.bouncycastle.pqc.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.pqc.jcajce.interfaces.BIKEKey;
 import org.bouncycastle.pqc.jcajce.spec.BIKEParameterSpec;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.Strings;
 
 public class BCBIKEPublicKey
     implements PublicKey, BIKEKey
@@ -72,7 +71,7 @@ public class BCBIKEPublicKey
      */
     public final String getAlgorithm()
     {
-        return Strings.toUpperCase(params.getParameters().getName());
+        return "BIKE";
     }
 
     public byte[] getEncoded()

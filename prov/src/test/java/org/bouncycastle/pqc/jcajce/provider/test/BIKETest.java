@@ -1,5 +1,6 @@
 package org.bouncycastle.pqc.jcajce.provider.test;
 
+import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -157,5 +158,48 @@ public class BIKETest
         assertEquals("AES", secEnc2.getAlgorithm());
 
         assertTrue(Arrays.areEqual(secEnc1.getEncoded(), secEnc2.getEncoded()));
+    }
+
+    /**
+     * The keys report the family name "BIKE" - the only name the family registers a KeyFactory
+     * under - so the parameter-set locked ciphers have to check the key's own parameter set
+     * rather than getAlgorithm(): a key of the cipher's set works, any other set is refused.
+     */
+    public void testParameterSetLockedCipher()
+        throws Exception
+    {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("BIKE", "BCPQC");
+        kpg.initialize(BIKEParameterSpec.bike128, new SecureRandom());
+        KeyPair kp = kpg.generateKeyPair();
+
+        assertEquals("BIKE", kp.getPublic().getAlgorithm());
+        assertEquals("BIKE", kp.getPrivate().getAlgorithm());
+
+        Cipher cipher = Cipher.getInstance("BIKE128", "BCPQC");
+        cipher.init(Cipher.WRAP_MODE, kp.getPublic(), new SecureRandom());
+        byte[] wrapBytes = cipher.wrap(new SecretKeySpec(new byte[16], "AES"));
+        cipher.init(Cipher.UNWRAP_MODE, kp.getPrivate());
+        cipher.unwrap(wrapBytes, "AES", Cipher.SECRET_KEY);
+
+        kpg.initialize(BIKEParameterSpec.bike192, new SecureRandom());
+        KeyPair other = kpg.generateKeyPair();
+        try
+        {
+            cipher.init(Cipher.WRAP_MODE, other.getPublic(), new SecureRandom());
+            fail("no exception");
+        }
+        catch (InvalidKeyException e)
+        {
+            assertEquals("cipher locked to BIKE128", e.getMessage());
+        }
+        try
+        {
+            cipher.init(Cipher.UNWRAP_MODE, other.getPrivate());
+            fail("no exception");
+        }
+        catch (InvalidKeyException e)
+        {
+            assertEquals("cipher locked to BIKE128", e.getMessage());
+        }
     }
 }

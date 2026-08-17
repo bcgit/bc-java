@@ -67,11 +67,11 @@ public class BCSNTRUPrimePublicKey
     }
 
     /**
-     * @return name of the algorithm - "NTRULPRime"
+     * @return name of the algorithm - "SNTRUPrime"
      */
     public final String getAlgorithm()
     {
-        return "NTRULPRime";
+        return "SNTRUPrime";
     }
 
     public byte[] getEncoded()
