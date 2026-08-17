@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.bouncycastle.crypto.agreement.SM9KeyExchange;
+import org.bouncycastle.crypto.kems.SM9KEMExtractor;
 import org.bouncycastle.crypto.params.SM9EncMasterPrivateKeyParameters;
 import org.bouncycastle.crypto.params.SM9EncPrivateKeyParameters;
 import org.bouncycastle.crypto.params.SM9EncUserKeyParametersGenerator;
@@ -26,7 +27,9 @@ import org.bouncycastle.util.test.TestRandomBigInteger;
  * crypto/sm9/sm9_keyexchange_hid03.txt); the hid is the KGC's published
  * choice, taken from the vector file. For each, the master public key, both
  * KGC-derived user keys, both parties' ephemeral values, the shared key and the
- * key-confirmation tags S_A / S_B are reproduced byte-for-byte.
+ * key-confirmation tags S_A / S_B are reproduced byte-for-byte - with party A
+ * running on a key rebuilt through fromEncodedExchangeKey, the import path for
+ * a party holding its KGC-served key but not the master private key.
  */
 public class SM9KeyExchangeTest
     extends SimpleTest
@@ -106,7 +109,15 @@ public class SM9KeyExchangeTest
         isTrue(fileName + " user key deB", Arrays.areEqual(
             deB.getPrivatePoint().getEncoded(), g2(v, "deB_x_hi", "deB_x_lo", "deB_y_hi", "deB_y_lo")));
 
-        SM9KeyExchange a = new SM9KeyExchange(deA, identityB, true);
+        // party A runs on a key rebuilt from its point encoding - the import path a
+        // party served by the KGC uses, no master private key involved - and must
+        // reproduce the exchange byte-for-byte
+        SM9EncPrivateKeyParameters deAImported = SM9EncPrivateKeyParameters.fromEncodedExchangeKey(
+            deA.getEncoded(), master.getPublicKeyParameters(), identityA, hid);
+        isTrue(fileName + " imported deA is an exchange key", deAImported.isExchangeKey());
+        isTrue(fileName + " imported deA records its hid", deAImported.getHid() == hid);
+
+        SM9KeyExchange a = new SM9KeyExchange(deAImported, identityB, true);
         SM9KeyExchange b = new SM9KeyExchange(deB, identityA, false);
         ECPoint ra = a.generateEphemeral(new TestRandomBigInteger(256, hex(v, "rA")));
         ECPoint rb = b.generateEphemeral(new TestRandomBigInteger(256, hex(v, "rB")));
@@ -185,6 +196,36 @@ public class SM9KeyExchangeTest
         catch (IllegalArgumentException e)
         {
             isTrue("SM9 key exchange requires a key-exchange user key from generateExchangeKey".equals(e.getMessage()));
+        }
+
+        // an exchange key rebuilt from its encoding carries the exchange usage,
+        // defaults to the published exchange hid, and is rejected by the KEM side
+        // exactly like a KGC-derived one
+        SM9EncPrivateKeyParameters exchKey = master.generateExchangeKey(identity);
+        SM9EncPrivateKeyParameters imported = SM9EncPrivateKeyParameters.fromEncodedExchangeKey(
+            exchKey.getEncoded(), master.getPublicKeyParameters(), identity);
+        isTrue("imported exchange key claims the exchange usage", imported.isExchangeKey());
+        isTrue("imported exchange key defaults to HID_EXCHANGE",
+            imported.getHid() == SM9EncMasterPrivateKeyParameters.HID_EXCHANGE);
+        try
+        {
+            new SM9KEMExtractor(imported, 128);
+            fail("SM9KEMExtractor accepted an imported key-exchange user key");
+        }
+        catch (IllegalArgumentException e)
+        {
+            isTrue("SM9 KEM decapsulation requires an encryption user key, not a key-exchange key".equals(e.getMessage()));
+        }
+        // and the import validates the hid the same way the derivation does
+        try
+        {
+            SM9EncPrivateKeyParameters.fromEncodedExchangeKey(
+                exchKey.getEncoded(), master.getPublicKeyParameters(), identity, (byte)0x04);
+            fail("fromEncodedExchangeKey accepted hid 0x04");
+        }
+        catch (IllegalArgumentException e)
+        {
+            isTrue("hid must be HID (0x03) or HID_EXCHANGE (0x02)".equals(e.getMessage()));
         }
     }
 

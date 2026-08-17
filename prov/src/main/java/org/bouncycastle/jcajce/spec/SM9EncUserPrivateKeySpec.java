@@ -21,9 +21,11 @@ import org.bouncycastle.util.Arrays;
  * <p>
  * The matching spec is returned by the factory's {@code getKeySpec} method, so a
  * user key round-trips: store {@code getEncoded()} (or ask for this spec), rebuild
- * with {@code generatePrivate}. There is deliberately no key-exchange counterpart,
- * mirroring the lightweight API: an exchange user key is obtained from the master
- * key's derivation instead.
+ * with {@code generatePrivate}. A key-exchange user key rebuilds the same way with
+ * {@code exchangeKey} set - the encoding does not record which usage the KGC
+ * derived the key for, so the flag is the importer's claim, and the consumers
+ * enforce whichever usage the rebuilt key carries ({@code KeyAgreement.SM9}
+ * accepts only exchange keys; the KEM and cipher only non-exchange keys).
  */
 public class SM9EncUserPrivateKeySpec
     extends EncodedKeySpec
@@ -31,8 +33,11 @@ public class SM9EncUserPrivateKeySpec
     private final SM9EncMasterPublicKey masterPublicKey;
     private final byte[] identity;
     private final byte hid;
+    private final boolean exchangeKey;
 
     /**
+     * Base constructor, for a KEM / decryption user key.
+     *
      * @param pkcs8Encoding   the user private key's PKCS#8 encoding, as returned by
      *                        the key's {@code getEncoded()}.
      * @param masterPublicKey the encryption master public key the user key was derived under.
@@ -42,6 +47,23 @@ public class SM9EncUserPrivateKeySpec
      */
     public SM9EncUserPrivateKeySpec(byte[] pkcs8Encoding, SM9EncMasterPublicKey masterPublicKey,
                                     byte[] identity, byte hid)
+    {
+        this(pkcs8Encoding, masterPublicKey, identity, hid, false);
+    }
+
+    /**
+     * @param pkcs8Encoding   the user private key's PKCS#8 encoding, as returned by
+     *                        the key's {@code getEncoded()}.
+     * @param masterPublicKey the encryption master public key the user key was derived under.
+     * @param identity        the user's identity.
+     * @param hid             the private-key generation function identifier the KGC
+     *                        derived the key under.
+     * @param exchangeKey     whether the KGC derived the key for the key exchange
+     *                        (from {@code generateExchangeKeyPair}) rather than for
+     *                        KEM / decryption.
+     */
+    public SM9EncUserPrivateKeySpec(byte[] pkcs8Encoding, SM9EncMasterPublicKey masterPublicKey,
+                                    byte[] identity, byte hid, boolean exchangeKey)
     {
         super(pkcs8Encoding);
         if (masterPublicKey == null)
@@ -55,6 +77,7 @@ public class SM9EncUserPrivateKeySpec
         this.masterPublicKey = masterPublicKey;
         this.identity = Arrays.clone(identity);
         this.hid = hid;
+        this.exchangeKey = exchangeKey;
     }
 
     public SM9EncMasterPublicKey getMasterPublicKey()
@@ -74,6 +97,15 @@ public class SM9EncUserPrivateKeySpec
     public byte getHid()
     {
         return hid;
+    }
+
+    /**
+     * Whether the key rebuilds as a key-exchange user key rather than a KEM /
+     * decryption one.
+     */
+    public boolean isExchangeKey()
+    {
+        return exchangeKey;
     }
 
     public String getFormat()

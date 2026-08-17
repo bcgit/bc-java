@@ -33,8 +33,8 @@ import org.bouncycastle.jcajce.spec.SM9SigUserPrivateKeySpec;
  * key-parameter class's {@code getEncoded()}).
  * <p>
  * A user's identity-based key is <b>not</b> decodable in isolation - it additionally needs
- * the master public key and the identity, and for an encryption key the hid too - so it does
- * not decode from a plain PKCS#8 spec. Rebuild a stored user key from its encoding plus that
+ * the master public key and the identity, and for an encryption key the hid and the usage
+ * (KEM / decryption or key exchange) too - so it does not decode from a plain PKCS#8 spec. Rebuild a stored user key from its encoding plus that
  * context with an {@link org.bouncycastle.jcajce.spec.SM9SigUserPrivateKeySpec} /
  * {@link org.bouncycastle.jcajce.spec.SM9EncUserPrivateKeySpec} (also handed back by
  * {@code getKeySpec}), or derive it afresh from the master private key via the master
@@ -98,10 +98,11 @@ public class KeyFactorySpi
             SM9EncUserPrivateKeySpec userSpec = (SM9EncUserPrivateKeySpec)keySpec;
             try
             {
-                return new BCSM9EncPrivateKey(SM9EncPrivateKeyParameters.fromEncoded(
-                    userKeyOctets(userSpec.getEncoded(), GMObjectIdentifiers.sm9encrypt),
-                    encMasterParameters(userSpec.getMasterPublicKey()),
-                    userSpec.getIdentity(), userSpec.getHid()));
+                byte[] octets = userKeyOctets(userSpec.getEncoded(), GMObjectIdentifiers.sm9encrypt);
+                SM9EncMasterPublicKeyParameters master = encMasterParameters(userSpec.getMasterPublicKey());
+                return new BCSM9EncPrivateKey(userSpec.isExchangeKey()
+                    ? SM9EncPrivateKeyParameters.fromEncodedExchangeKey(octets, master, userSpec.getIdentity(), userSpec.getHid())
+                    : SM9EncPrivateKeyParameters.fromEncoded(octets, master, userSpec.getIdentity(), userSpec.getHid()));
             }
             catch (java.io.IOException e)
             {
@@ -164,7 +165,8 @@ public class KeyFactorySpi
         {
             SM9EncPrivateKeyParameters keyParams = ((BCSM9EncPrivateKey)key).getKeyParameters();
             return new SM9EncUserPrivateKeySpec(key.getEncoded(),
-                new BCSM9EncMasterPublicKey(keyParams.getMasterPublicKey()), keyParams.getIdentity(), keyParams.getHid());
+                new BCSM9EncMasterPublicKey(keyParams.getMasterPublicKey()), keyParams.getIdentity(),
+                keyParams.getHid(), keyParams.isExchangeKey());
         }
         if (keySpec.isAssignableFrom(X509EncodedKeySpec.class) && key instanceof PublicKey && isSM9(key))
         {

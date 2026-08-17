@@ -28,6 +28,7 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.jcajce.interfaces.SM9EncMasterPrivateKey;
 import org.bouncycastle.jcajce.interfaces.SM9EncMasterPublicKey;
+import org.bouncycastle.jcajce.spec.SM9EncUserPrivateKeySpec;
 import org.bouncycastle.jcajce.spec.SM9KeyExchangeSpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Arrays;
@@ -42,8 +43,11 @@ import org.bouncycastle.test.TestResourceFinder;
  * a full two-party agreement over freshly generated keys, both official GM/T
  * 0044.5-2016 Annex B vectors reproduced byte-for-byte through the JCA API (the
  * Chinese edition's hid = 0x02 example and the official English edition's
- * hid = 0x03 one), and rejection of wrong key types, a mismatched hid or master
- * key, a malformed peer ephemeral, a missing spec and out-of-order calls. The
+ * hid = 0x03 one, with party A's key rebuilt through the KeyFactory's
+ * SM9EncUserPrivateKeySpec exchange-key import rather than derived from the
+ * master private key), and rejection of wrong key types, a user key imported
+ * without the exchange usage, a mismatched hid or master key, a malformed peer
+ * ephemeral, a missing spec and out-of-order calls. The
  * ephemeral values are generated inside the provider: the first doPhase names
  * the peer and returns this party's R, the last consumes the peer's.
  */
@@ -170,10 +174,20 @@ public class SM9KeyAgreementTest
         KeyPair deB = masterPriv.generateExchangeKeyPair(identityB, hid);
         SM9EncMasterPublicKey masterPubIface = (SM9EncMasterPublicKey)masterPub;
 
+        // party A runs on a key rebuilt through the KeyFactory from its stored
+        // encoding - the import path a party served by the KGC uses, no master
+        // private key involved - and must reproduce the exchange byte-for-byte
+        PrivateKey deAImported = kf.generatePrivate(new SM9EncUserPrivateKeySpec(
+            deA.getPrivate().getEncoded(), masterPubIface, identityA, hid, true));
+        SM9EncUserPrivateKeySpec roundTrip = (SM9EncUserPrivateKeySpec)kf.getKeySpec(
+            deAImported, SM9EncUserPrivateKeySpec.class);
+        isTrue(fileName + " round-trip spec claims the exchange usage", roundTrip.isExchangeKey());
+        isTrue(fileName + " round-trip spec hid", roundTrip.getHid() == hid);
+
         // the provider generates each ephemeral from the SecureRandom it was given,
         // so the vector's rA / rB drive it through the public API
         KeyAgreement a = KeyAgreement.getInstance("SM9", "BC");
-        a.init(deA.getPrivate(), new SM9KeyExchangeSpec(true, klen),
+        a.init(deAImported, new SM9KeyExchangeSpec(true, klen),
             new TestRandomBigInteger(256, hex(v, "rA")));
         Key ra = a.doPhase(masterPubIface.getUserPublicKey(identityB, hid), false);
 
@@ -220,6 +234,21 @@ public class SM9KeyAgreementTest
         {
             agree.init(kemKey, new SM9KeyExchangeSpec(true), random);
             fail("KeyAgreement.SM9 accepted a KEM/decryption user key");
+        }
+        catch (InvalidKeyException e)
+        {
+            isTrue("SM9 key agreement requires a key-exchange user key from SM9EncMasterPrivateKey.generateExchangeKeyPair(identity)".equals(e.getMessage()));
+        }
+
+        // an exchange key's encoding rebuilt without claiming the exchange usage
+        // yields a KEM/decryption key, rejected at init the same way
+        KeyFactory kf = KeyFactory.getInstance("SM9", "BC");
+        PrivateKey nonExchange = kf.generatePrivate(new SM9EncUserPrivateKeySpec(
+            alice.getPrivate().getEncoded(), masterPub, aliceIdentity, hid));
+        try
+        {
+            agree.init(nonExchange, new SM9KeyExchangeSpec(true), random);
+            fail("KeyAgreement.SM9 accepted an imported user key without the exchange usage");
         }
         catch (InvalidKeyException e)
         {

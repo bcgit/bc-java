@@ -21,6 +21,11 @@ import org.bouncycastle.util.Arrays;
  * security argument assumes is unavailable. Keeping the two usages on separate
  * keys (distinct hid, or distinct master keys as the GM/T 0044.5 examples do)
  * is what makes sharing the master key sound.
+ * <p>
+ * A key rebuilt from its encoding ({@link #fromEncoded} /
+ * {@link #fromEncodedExchangeKey}) carries the usage the importer names - the
+ * point encoding itself does not record which usage the KGC derived it for -
+ * so an importer must claim the usage the key was actually derived under.
  */
 public class SM9EncPrivateKeyParameters
     extends AsymmetricKeyParameter
@@ -98,9 +103,10 @@ public class SM9EncPrivateKeyParameters
     }
 
     /**
-     * Rebuild a KEM / decryption user key from its bare point encoding. There is
-     * deliberately no key-exchange counterpart: nothing needs one yet, and an
-     * exchange user key is obtained from the master key's derivation instead.
+     * Rebuild a KEM / decryption user key from its bare point encoding. For a key
+     * the KGC derived for the key exchange use {@link #fromEncodedExchangeKey}
+     * instead - the usage is the importer's claim (see the class note), and the
+     * consumers enforce whichever is claimed.
      */
     public static SM9EncPrivateKeyParameters fromEncoded(
         byte[] enc, SM9EncMasterPublicKeyParameters masterPublicKey, byte[] identity, byte hid)
@@ -109,6 +115,31 @@ public class SM9EncPrivateKeyParameters
         return new SM9EncPrivateKeyParameters(SM9G2Point.decode(enc), masterPublicKey, Arrays.clone(identity), hid, false);
     }
 
+    /**
+     * Rebuild a key-exchange user key from its bare point encoding, under
+     * {@link SM9EncMasterPrivateKeyParameters#HID_EXCHANGE} - the import path for
+     * an exchange party that received its key from the KGC rather than deriving
+     * it in-process via
+     * {@link SM9EncMasterPrivateKeyParameters#generateExchangeKey(byte[])}.
+     */
+    public static SM9EncPrivateKeyParameters fromEncodedExchangeKey(
+        byte[] enc, SM9EncMasterPublicKeyParameters masterPublicKey, byte[] identity)
+    {
+        return fromEncodedExchangeKey(enc, masterPublicKey, identity, SM9EncMasterPrivateKeyParameters.HID_EXCHANGE);
+    }
+
+    /**
+     * Rebuild a key-exchange user key from its bare point encoding under an
+     * explicit hid, for a KGC whose published exchange hid is not
+     * {@link SM9EncMasterPrivateKeyParameters#HID_EXCHANGE} (the official English
+     * edition's GM/T 0044.5 Annex B example runs the exchange under 0x03).
+     */
+    public static SM9EncPrivateKeyParameters fromEncodedExchangeKey(
+        byte[] enc, SM9EncMasterPublicKeyParameters masterPublicKey, byte[] identity, byte hid)
+    {
+        SM9EncMasterPrivateKeyParameters.checkHid(hid);
+        return new SM9EncPrivateKeyParameters(SM9G2Point.decode(enc), masterPublicKey, Arrays.clone(identity), hid, true);
+    }
 
     /**
      * Destroy this object, dropping its reference to the private point de and
