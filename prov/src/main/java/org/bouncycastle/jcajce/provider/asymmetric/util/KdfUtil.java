@@ -1,5 +1,8 @@
 package org.bouncycastle.jcajce.provider.asymmetric.util;
 
+import java.security.InvalidAlgorithmParameterException;
+import java.security.spec.AlgorithmParameterSpec;
+
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
@@ -21,10 +24,164 @@ import org.bouncycastle.crypto.params.HKDFParameters;
 import org.bouncycastle.crypto.params.KDFParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.jcajce.spec.KEMKDFSpec;
+import org.bouncycastle.jcajce.spec.KTSParameterSpec;
 import org.bouncycastle.util.Arrays;
 
 public class KdfUtil
 {
+    /**
+     * Validate a KTSParameterSpec offered to a KEM, or build the default spec - the shared secret
+     * used as it comes, with no KDF - when the caller supplied none.
+     * <p>
+     * Everything a KEM cannot honour is rejected here rather than at encapsulate/decapsulate time,
+     * where it would surface as an unchecked exception the javax.crypto.KEM API does not declare.
+     * Note that without a KDF the secret is the mechanism's own session key, so the requested size
+     * must be a whole number of bytes no larger than that key: javax.crypto.KEM validates
+     * encapsulate()'s range against secretSize(), so that size has to be honest rather than
+     * quietly shortened the way {@link WrapUtil} shortens a KEK to the secret it has.
+     *
+     * @param spec the caller-supplied spec, or null for the default.
+     * @param algorithmName the KEM's name, used in the exception messages.
+     * @param parameterSetName the name of the key's parameter set, used in the exception messages.
+     * @param sessionKeySize the size in bits of the mechanism's own session key for that set.
+     * @return the spec to use.
+     * @throws InvalidAlgorithmParameterException if the spec cannot be honoured.
+     */
+    public static KTSParameterSpec resolveKemSpec(AlgorithmParameterSpec spec, String algorithmName,
+        String parameterSetName, int sessionKeySize)
+        throws InvalidAlgorithmParameterException
+    {
+        if (spec == null)
+        {
+            // Do not wrap key, no KDF
+            return new KTSParameterSpec.Builder("Generic", sessionKeySize).withNoKdf().build();
+        }
+
+        if (!(spec instanceof KTSParameterSpec))
+        {
+            throw new InvalidAlgorithmParameterException(algorithmName + " can only accept KTSParameterSpec");
+        }
+
+        KTSParameterSpec ktsSpec = (KTSParameterSpec)spec;
+
+        // KTSParameterSpec does not check its own algorithm name, and a null one is only noticed
+        // once it has been substituted for a "Generic" request and handed to the SecretKey.
+        if (ktsSpec.getKeyAlgorithmName() == null)
+        {
+            throw new InvalidAlgorithmParameterException("KTSParameterSpec has no key algorithm name");
+        }
+
+        // Nor does it check its own key size. A size below 8 would yield a zero-length secret key
+        // (makeKeyBytes rounds the byte count up while a KEM's secretSize() rounds it down), one
+        // that is not a whole number of bytes would silently deliver fewer bits than were asked
+        // for, and one within 7 of Integer.MAX_VALUE would overflow the rounding-up itself.
+        int keySize = ktsSpec.getKeySize();
+        if (keySize <= 0 || (keySize % 8) != 0)
+        {
+            throw new InvalidAlgorithmParameterException(
+                "KTSParameterSpec key size must be a positive whole number of bytes: " + keySize);
+        }
+
+        if (ktsSpec.getKdfAlgorithm() == null)
+        {
+            if (keySize > sessionKeySize)
+            {
+                throw new InvalidAlgorithmParameterException("no KDF specified and " + parameterSetName
+                    + " produces a " + sessionKeySize + " bit secret, " + keySize + " requested");
+            }
+        }
+        else if (!isSupportedKdf(ktsSpec.getKdfAlgorithm()))
+        {
+            throw new InvalidAlgorithmParameterException("unsupported KDF: "
+                + ktsSpec.getKdfAlgorithm().getAlgorithm());
+        }
+
+        return ktsSpec;
+    }
+
+    /**
+     * Reconcile the algorithm name passed to a KEM's encapsulate/decapsulate with the one its
+     * KTSParameterSpec names: "Generic" on either side defers to the other, and a genuine mismatch
+     * is refused.
+     *
+     * @param parameterSpec the spec the KEM was created with.
+     * @param algorithm the algorithm name the caller asked for.
+     * @return the algorithm name to label the secret key with.
+     */
+    public static String resolveAlgorithm(KTSParameterSpec parameterSpec, String algorithm)
+    {
+        String keyAlgName = parameterSpec.getKeyAlgorithmName();
+
+        if ("Generic".equals(keyAlgName))
+        {
+            return algorithm;
+        }
+        // if algorithm is Generic then use parameterSpec to wrap key
+        if ("Generic".equals(algorithm))
+        {
+            return keyAlgName;
+        }
+        // check spec algorithm mismatch provided algorithm
+        if (!algorithm.equals(keyAlgName))
+        {
+            throw new UnsupportedOperationException(keyAlgName + " does not match " + algorithm);
+        }
+
+        return algorithm;
+    }
+
+    /**
+     * Return true if makeKeyBytes can service the passed in KDF algorithm identifier.
+     */
+    private static boolean isSupportedKdf(AlgorithmIdentifier kdfAlgorithm)
+    {
+        ASN1ObjectIdentifier kdfOid = kdfAlgorithm.getAlgorithm();
+
+        try
+        {
+            if (X9ObjectIdentifiers.id_kdf_kdf2.equals(kdfOid) || X9ObjectIdentifiers.id_kdf_kdf3.equals(kdfOid))
+            {
+                if (kdfAlgorithm.getParameters() == null)
+                {
+                    return false;
+                }
+
+                ASN1ObjectIdentifier digOid = AlgorithmIdentifier.getInstance(
+                    kdfAlgorithm.getParameters()).getAlgorithm();
+
+                // the digests getDigest() knows
+                return NISTObjectIdentifiers.id_sha256.equals(digOid)
+                    || NISTObjectIdentifiers.id_sha512.equals(digOid)
+                    || NISTObjectIdentifiers.id_shake128.equals(digOid)
+                    || NISTObjectIdentifiers.id_shake256.equals(digOid);
+            }
+
+            if (PKCSObjectIdentifiers.id_alg_hkdf_with_sha256.equals(kdfOid)
+                || PKCSObjectIdentifiers.id_alg_hkdf_with_sha384.equals(kdfOid)
+                || PKCSObjectIdentifiers.id_alg_hkdf_with_sha512.equals(kdfOid))
+            {
+                // HKDF parameter support has not been added
+                return kdfAlgorithm.getParameters() == null;
+            }
+
+            if (NISTObjectIdentifiers.id_Kmac128.equals(kdfOid) || NISTObjectIdentifiers.id_Kmac256.equals(kdfOid))
+            {
+                if (kdfAlgorithm.getParameters() != null)
+                {
+                    ASN1OctetString.getInstance(kdfAlgorithm.getParameters());
+                }
+                return true;
+            }
+
+            return NISTObjectIdentifiers.id_shake256.equals(kdfOid);
+        }
+        catch (IllegalArgumentException e)
+        {
+            // a parameters field that will not decode as the branch requires
+            return false;
+        }
+    }
+
     /**
      * Generate a byte[] secret key from the passed in secret. Note: passed in secret will be erased after use.
      *

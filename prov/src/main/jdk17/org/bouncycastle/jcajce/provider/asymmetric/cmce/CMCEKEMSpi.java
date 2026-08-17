@@ -11,6 +11,7 @@ import javax.crypto.KEMSpi;
 
 import org.bouncycastle.crypto.params.CMCEKeyParameters;
 import org.bouncycastle.crypto.params.CMCEParameters;
+import org.bouncycastle.jcajce.provider.asymmetric.util.KdfUtil;
 import org.bouncycastle.jcajce.spec.KTSParameterSpec;
 
 /**
@@ -64,38 +65,9 @@ public abstract class CMCEKEMSpi
         throws InvalidAlgorithmParameterException
     {
         CMCEParameters keyParameters = key.getParameters();
-        int sessionKeySize = keyParameters.getSessionKeySize();
 
-        if (spec == null)
-        {
-            // Do not wrap key, no KDF
-            return new KTSParameterSpec.Builder("Generic", sessionKeySize).withNoKdf().build();
-        }
-
-        if (!(spec instanceof KTSParameterSpec ktsSpec))
-        {
-            throw new InvalidAlgorithmParameterException("CMCE can only accept KTSParameterSpec");
-        }
-
-        // KTSParameterSpec does not check its own key size, and a non-positive one otherwise fails
-        // as an undeclared unchecked exception out of encapsulate()/decapsulate() rather than here.
-        if (ktsSpec.getKeySize() <= 0)
-        {
-            throw new InvalidAlgorithmParameterException("KTSParameterSpec key size must be positive: "
-                + ktsSpec.getKeySize());
-        }
-
-        // Without a KDF the secret is the session key itself, so a longer one cannot be produced.
-        // javax.crypto.KEM requires secretSize() to be honest - and validates encapsulate()'s range
-        // against it - so refuse the spec here rather than silently shortening the key the way the
-        // KTS wrapping path does (WrapUtil clamps the KEK to the secret it has).
-        if (ktsSpec.getKdfAlgorithm() == null && ktsSpec.getKeySize() > sessionKeySize)
-        {
-            throw new InvalidAlgorithmParameterException("no KDF specified and " + keyParameters.getName()
-                + " produces a " + sessionKeySize + " bit secret, " + ktsSpec.getKeySize() + " requested");
-        }
-
-        return ktsSpec;
+        return KdfUtil.resolveKemSpec(spec, "CMCE", keyParameters.getName(),
+            keyParameters.getSessionKeySize());
     }
 
     private void checkKeyParameters(CMCEKeyParameters key) throws InvalidKeyException

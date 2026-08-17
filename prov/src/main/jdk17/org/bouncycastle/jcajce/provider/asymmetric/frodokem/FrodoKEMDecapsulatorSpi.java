@@ -8,6 +8,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.crypto.kems.FrodoKEMExtractor;
+import org.bouncycastle.crypto.params.FrodoKEMPrivateKeyParameters;
 import org.bouncycastle.jcajce.provider.asymmetric.util.KdfUtil;
 import org.bouncycastle.jcajce.spec.KTSParameterSpec;
 import org.bouncycastle.util.Arrays;
@@ -20,13 +21,15 @@ import org.bouncycastle.util.Arrays;
 class FrodoKEMDecapsulatorSpi
     implements KEMSpi.DecapsulatorSpi
 {
+    private final FrodoKEMPrivateKeyParameters privateKeyParams;
     private final KTSParameterSpec parameterSpec;
-    private final FrodoKEMExtractor kemExt;
+    private final int encapsulationLength;
 
     FrodoKEMDecapsulatorSpi(BCFrodoKEMPrivateKey privateKey, KTSParameterSpec parameterSpec)
     {
+        this.privateKeyParams = privateKey.getKeyParams();
         this.parameterSpec = parameterSpec;
-        this.kemExt = new FrodoKEMExtractor(privateKey.getKeyParams());
+        this.encapsulationLength = privateKeyParams.getParameters().getEncapsulationLength();
     }
 
     @Override
@@ -42,22 +45,12 @@ class FrodoKEMDecapsulatorSpi
             throw new DecapsulateException("incorrect encapsulation size");
         }
 
-        String keyAlgName = parameterSpec.getKeyAlgorithmName();
-        if (!"Generic".equals(keyAlgName))
-        {
-            // if algorithm is Generic then use parameterSpec to wrap key
-            if ("Generic".equals(algorithm))
-            {
-                algorithm = keyAlgName;
-            }
-            // check spec algorithm mismatch provided algorithm
-            else if (!algorithm.equals(keyAlgName))
-            {
-                throw new UnsupportedOperationException(keyAlgName + " does not match " + algorithm);
-            }
-        }
+        algorithm = KdfUtil.resolveAlgorithm(parameterSpec, algorithm);
 
-        byte[] kemSecret = kemExt.extractSecret(encapsulation);
+        // A FrodoKEMExtractor holds one FrodoKEMEngine, whose SHAKE digest is mutable state, so a
+        // shared extractor is not safe for the concurrent use javax.crypto.KEM requires of a
+        // Decapsulator - build one per call, as FrodoKEMCipherSpi.engineUnwrap does.
+        byte[] kemSecret = new FrodoKEMExtractor(privateKeyParams).extractSecret(encapsulation);
         byte[] kdfSecret = KdfUtil.makeKeyBytes(parameterSpec, kemSecret);
 
         try
@@ -79,6 +72,6 @@ class FrodoKEMDecapsulatorSpi
     @Override
     public int engineEncapsulationSize()
     {
-        return kemExt.getEncapsulationLength();
+        return encapsulationLength;
     }
 }

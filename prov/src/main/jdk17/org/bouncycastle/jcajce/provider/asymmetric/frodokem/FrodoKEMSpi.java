@@ -11,6 +11,7 @@ import javax.crypto.KEMSpi;
 
 import org.bouncycastle.crypto.params.FrodoKEMKeyParameters;
 import org.bouncycastle.crypto.params.FrodoKEMParameters;
+import org.bouncycastle.jcajce.provider.asymmetric.util.KdfUtil;
 import org.bouncycastle.jcajce.spec.KTSParameterSpec;
 
 /**
@@ -62,46 +63,17 @@ public abstract class FrodoKEMSpi
     }
 
     /**
-     * Unlike ML-KEM, the FrodoKEM session key size varies with the parameter set, so both the
-     * default "use the shared secret as it comes" spec and the check that a caller-supplied
-     * KDF-less spec is satisfiable have to be taken from the key's own parameters.
+     * Unlike ML-KEM, the FrodoKEM session key size varies with the parameter set - 192 bits for the
+     * 976 sets, 256 for the 1344 sets - so the default spec and the satisfiability of a KDF-less
+     * one both have to be taken from the key's own parameters rather than assumed to be 256.
      */
     private static KTSParameterSpec resolveSpec(AlgorithmParameterSpec spec, FrodoKEMKeyParameters key)
         throws InvalidAlgorithmParameterException
     {
         FrodoKEMParameters keyParameters = key.getParameters();
-        int sessionKeySize = keyParameters.getSessionKeySize();
 
-        if (spec == null)
-        {
-            // Do not wrap key, no KDF
-            return new KTSParameterSpec.Builder("Generic", sessionKeySize).withNoKdf().build();
-        }
-
-        if (!(spec instanceof KTSParameterSpec ktsSpec))
-        {
-            throw new InvalidAlgorithmParameterException("FrodoKEM can only accept KTSParameterSpec");
-        }
-
-        // KTSParameterSpec does not check its own key size, and a non-positive one otherwise fails
-        // as an undeclared unchecked exception out of encapsulate()/decapsulate() rather than here.
-        if (ktsSpec.getKeySize() <= 0)
-        {
-            throw new InvalidAlgorithmParameterException("KTSParameterSpec key size must be positive: "
-                + ktsSpec.getKeySize());
-        }
-
-        // Without a KDF the secret is the session key itself, so a longer one cannot be produced.
-        // javax.crypto.KEM requires secretSize() to be honest - and validates encapsulate()'s range
-        // against it - so refuse the spec here rather than silently shortening the key the way the
-        // KTS wrapping path does (WrapUtil clamps the KEK to the secret it has).
-        if (ktsSpec.getKdfAlgorithm() == null && ktsSpec.getKeySize() > sessionKeySize)
-        {
-            throw new InvalidAlgorithmParameterException("no KDF specified and " + keyParameters.getName()
-                + " produces a " + sessionKeySize + " bit secret, " + ktsSpec.getKeySize() + " requested");
-        }
-
-        return ktsSpec;
+        return KdfUtil.resolveKemSpec(spec, "FrodoKEM", keyParameters.getName(),
+            keyParameters.getSessionKeySize());
     }
 
     private void checkKeyParameters(FrodoKEMKeyParameters key) throws InvalidKeyException

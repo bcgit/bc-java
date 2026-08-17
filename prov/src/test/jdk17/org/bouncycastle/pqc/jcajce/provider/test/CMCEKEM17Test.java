@@ -4,10 +4,13 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.Provider;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.security.spec.AlgorithmParameterSpec;
+import java.util.HashSet;
+import java.util.Set;
 
 import javax.crypto.DecapsulateException;
 import javax.crypto.KEM;
@@ -15,6 +18,10 @@ import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 
 import junit.framework.TestCase;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.internal.asn1.iso.ISOIECObjectIdentifiers;
 import org.bouncycastle.jcajce.SecretKeyWithEncapsulation;
 import org.bouncycastle.jcajce.spec.CMCEParameterSpec;
@@ -27,12 +34,35 @@ import org.bouncycastle.util.Arrays;
 /**
  * javax.crypto.KEM API tests for the standardised Classic McEliece KEM
  * (ISO/IEC 18033-2:2006/Amd 2:2026, Clause 13) - {@code KEM.CMCE} and the parameter-set locked
- * services. Key generation is expensive here, so the operational cases use the smallest code size
- * and one representative of each of the four sizes carries the round-trip sweep.
+ * services. Key generation is expensive here (a few hundred milliseconds per key pair), so the
+ * operational cases share one key pair of the smallest code size, one representative of each of
+ * the four sizes carries the round-trip sweep, and the all-16 registration sweep needs no keys.
  */
 public class CMCEKEM17Test
     extends TestCase
 {
+    private static final CMCEParameterSpec[] SPECS = new CMCEParameterSpec[]{
+        CMCEParameterSpec.mceliece460896, CMCEParameterSpec.mceliece460896f,
+        CMCEParameterSpec.mceliece460896pc, CMCEParameterSpec.mceliece460896pcf,
+        CMCEParameterSpec.mceliece6688128, CMCEParameterSpec.mceliece6688128f,
+        CMCEParameterSpec.mceliece6688128pc, CMCEParameterSpec.mceliece6688128pcf,
+        CMCEParameterSpec.mceliece6960119, CMCEParameterSpec.mceliece6960119f,
+        CMCEParameterSpec.mceliece6960119pc, CMCEParameterSpec.mceliece6960119pcf,
+        CMCEParameterSpec.mceliece8192128, CMCEParameterSpec.mceliece8192128f,
+        CMCEParameterSpec.mceliece8192128pc, CMCEParameterSpec.mceliece8192128pcf
+    };
+
+    private static final ASN1ObjectIdentifier[] OIDS = new ASN1ObjectIdentifier[]{
+        ISOIECObjectIdentifiers.mceliece460896, ISOIECObjectIdentifiers.mceliece460896f,
+        ISOIECObjectIdentifiers.mceliece460896pc, ISOIECObjectIdentifiers.mceliece460896pcf,
+        ISOIECObjectIdentifiers.mceliece6688128, ISOIECObjectIdentifiers.mceliece6688128f,
+        ISOIECObjectIdentifiers.mceliece6688128pc, ISOIECObjectIdentifiers.mceliece6688128pcf,
+        ISOIECObjectIdentifiers.mceliece6960119, ISOIECObjectIdentifiers.mceliece6960119f,
+        ISOIECObjectIdentifiers.mceliece6960119pc, ISOIECObjectIdentifiers.mceliece6960119pcf,
+        ISOIECObjectIdentifiers.mceliece8192128, ISOIECObjectIdentifiers.mceliece8192128f,
+        ISOIECObjectIdentifiers.mceliece8192128pc, ISOIECObjectIdentifiers.mceliece8192128pcf
+    };
+
     public void setUp()
     {
         if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null)
@@ -41,15 +71,19 @@ public class CMCEKEM17Test
         }
     }
 
+    private KeyPair baseKeyPair()
+        throws Exception
+    {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("CMCE", "BC");
+        kpg.initialize(CMCEParameterSpec.mceliece460896, new SecureRandom());
+        return kpg.generateKeyPair();
+    }
+
     public void testKEM()
         throws Exception
     {
         // Receiver side
-        KeyPairGenerator g = KeyPairGenerator.getInstance("CMCE", "BC");
-
-        g.initialize(CMCEParameterSpec.mceliece460896, new SecureRandom());
-
-        KeyPair kp = g.generateKeyPair();
+        KeyPair kp = baseKeyPair();
         PublicKey pkR = kp.getPublic();
 
         // Sender side
@@ -57,7 +91,7 @@ public class CMCEKEM17Test
         KTSParameterSpec ktsSpec = null;
         KEM.Encapsulator e = kemS.newEncapsulator(pkR, ktsSpec, null);
 
-        // all sixteen standardised sets produce a 256-bit session key
+        // mceliece460896's session key is 256-bit, as all sixteen standardised sets' are
         assertEquals(32, e.secretSize());
 
         KEM.Encapsulated enc = e.encapsulate();
@@ -121,9 +155,7 @@ public class CMCEKEM17Test
     public void testNoKdfMatchesKeyGeneratorBridge()
         throws Exception
     {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("CMCE", "BC");
-        kpg.initialize(CMCEParameterSpec.mceliece460896, new SecureRandom());
-        KeyPair kp = kpg.generateKeyPair();
+        KeyPair kp = baseKeyPair();
 
         KTSParameterSpec noKdf = new KTSParameterSpec.Builder("AES", 256).withNoKdf().build();
         KEM.Encapsulator e = KEM.getInstance("CMCE", "BC").newEncapsulator(kp.getPublic(), noKdf, null);
@@ -143,22 +175,33 @@ public class CMCEKEM17Test
     public void testBasicKEMAES()
         throws Exception
     {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("CMCE", "BC");
-        kpg.initialize(CMCEParameterSpec.mceliece460896, new SecureRandom());
-        KeyPair kp = kpg.generateKeyPair();
+        KeyPair kp = baseKeyPair();
 
-        performKEM(kp, new KEMParameterSpec("AES"));
-        performKEM(kp, 0, 16, "AES", new KEMParameterSpec("AES"));
-        performKEM(kp, new KEMParameterSpec("AES-KWP"));
+        performKEM("AES", kp, new KEMParameterSpec("AES"));
+        performKEM("AES sliced", kp, 0, 16, "AES", new KEMParameterSpec("AES"));
+        performKEM("AES-KWP", kp, new KEMParameterSpec("AES-KWP"));
 
         try
         {
-            performKEM(kp, 0, 16, "AES-KWP", new KEMParameterSpec("AES"));
+            performKEM("mismatch", kp, 0, 16, "AES-KWP", new KEMParameterSpec("AES"));
             fail("spec/algorithm mismatch accepted");
         }
         catch (UnsupportedOperationException expected)
         {
+            assertEquals("AES does not match AES-KWP", expected.getMessage());
         }
+    }
+
+    public void testBasicKEMOtherAlgorithms()
+        throws Exception
+    {
+        KeyPair kp = baseKeyPair();
+
+        performKEM("Camellia", kp, new KTSParameterSpec.Builder("Camellia", 256).build());
+        performKEM("Camellia-KWP", kp, new KTSParameterSpec.Builder("Camellia-KWP", 256).build());
+        performKEM("SEED", kp, new KTSParameterSpec.Builder("SEED", 128).build());
+        performKEM("ARIA", kp, new KEMParameterSpec("ARIA"));
+        performKEM("ARIA-KWP", kp, new KEMParameterSpec("ARIA-KWP"));
     }
 
     /**
@@ -169,9 +212,7 @@ public class CMCEKEM17Test
     public void testUnsatisfiableNoKdfSpecRefused()
         throws Exception
     {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("CMCE", "BC");
-        kpg.initialize(CMCEParameterSpec.mceliece460896, new SecureRandom());
-        KeyPair kp = kpg.generateKeyPair();
+        KeyPair kp = baseKeyPair();
 
         KEM kem = KEM.getInstance("CMCE", "BC");
         KTSParameterSpec tooBig = new KTSParameterSpec.Builder("AES", 512).withNoKdf().build();
@@ -196,26 +237,25 @@ public class CMCEKEM17Test
         }
 
         // the same request with a KDF is fine - and 256 bits needs no KDF at all
-        performKEM(kp, new KTSParameterSpec.Builder("AES", 512).build());
-        performKEM(kp, new KTSParameterSpec.Builder("AES", 256).withNoKdf().build());
+        performKEM("512 with KDF", kp, new KTSParameterSpec.Builder("AES", 512).build());
+        performKEM("256 no-KDF", kp, new KTSParameterSpec.Builder("AES", 256).withNoKdf().build());
     }
 
     /**
-     * KTSParameterSpec does not validate its own key size, so a non-positive one has to be rejected
-     * here - otherwise it surfaces as an undeclared unchecked exception (an "Empty key"
-     * IllegalArgumentException at 0, an IndexOutOfBoundsException when negative) out of
-     * encapsulate() / decapsulate() instead of as a spec failure where the caller can act on it.
+     * KTSParameterSpec does not validate its own key size. A size below 8 would yield a
+     * zero-length secret key (makeKeyBytes rounds the byte count up while secretSize() rounds it
+     * down, so SecretKeySpec's own "Empty key" check never fires), one that is not a whole number
+     * of bytes silently delivers fewer bits than were asked for, and one within 7 of
+     * Integer.MAX_VALUE overflows the rounding-up itself.
      */
-    public void testNonPositiveKeySizeRefused()
+    public void testInvalidKeySizeRefused()
         throws Exception
     {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("CMCE", "BC");
-        kpg.initialize(CMCEParameterSpec.mceliece460896, new SecureRandom());
-        KeyPair kp = kpg.generateKeyPair();
+        KeyPair kp = baseKeyPair();
 
         KEM kem = KEM.getInstance("CMCE", "BC");
 
-        int[] sizes = new int[]{0, -8};
+        int[] sizes = new int[]{0, -8, -1, 1, 4, 7, 100, 252, Integer.MAX_VALUE};
         for (int i = 0; i != sizes.length; i++)
         {
             KTSParameterSpec spec = new KTSParameterSpec.Builder("AES", sizes[i]).withNoKdf().build();
@@ -238,34 +278,155 @@ public class CMCEKEM17Test
             {
             }
         }
-    }
 
-    public void testBasicKEMOtherAlgorithms()
-        throws Exception
-    {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("CMCE", "BC");
-        kpg.initialize(CMCEParameterSpec.mceliece460896, new SecureRandom());
-        KeyPair kp = kpg.generateKeyPair();
-
-        performKEM(kp, new KTSParameterSpec.Builder("Camellia", 256).build());
-        performKEM(kp, new KTSParameterSpec.Builder("Camellia-KWP", 256).build());
-        performKEM(kp, new KTSParameterSpec.Builder("SEED", 128).build());
-        performKEM(kp, new KEMParameterSpec("ARIA"));
-        performKEM(kp, new KEMParameterSpec("ARIA-KWP"));
+        performKEM("8 boundary", kp, new KTSParameterSpec.Builder("AES", 8).withNoKdf().build());
     }
 
     /**
-     * The parameter-set locked services accept a key of their own set only, and the ISO/IEC
-     * 18033-2 object identifier resolves as a KEM name - what a caller dispatching on the OID in a
-     * received encoding does.
+     * A KDF the spec is willing to carry but KdfUtil cannot service has to be refused with the
+     * spec, not left to fail as an undeclared unchecked exception from encapsulate().
+     */
+    public void testUnsupportedKdfRefused()
+        throws Exception
+    {
+        KeyPair kp = baseKeyPair();
+
+        AlgorithmIdentifier[] unsupported = new AlgorithmIdentifier[]{
+            new AlgorithmIdentifier(new ASN1ObjectIdentifier("1.2.3.4")),
+            new AlgorithmIdentifier(X9ObjectIdentifiers.id_kdf_kdf2,
+                new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha384)),
+            new AlgorithmIdentifier(X9ObjectIdentifiers.id_kdf_kdf3)
+        };
+
+        KEM kem = KEM.getInstance("CMCE", "BC");
+        for (int i = 0; i != unsupported.length; i++)
+        {
+            KTSParameterSpec spec = new KTSParameterSpec.Builder("AES", 256)
+                .withKdfAlgorithm(unsupported[i]).build();
+
+            try
+            {
+                kem.newEncapsulator(kp.getPublic(), spec, null);
+                fail("encapsulator accepted unsupported KDF " + unsupported[i].getAlgorithm());
+            }
+            catch (InvalidAlgorithmParameterException expected)
+            {
+            }
+
+            try
+            {
+                kem.newDecapsulator(kp.getPrivate(), spec);
+                fail("decapsulator accepted unsupported KDF " + unsupported[i].getAlgorithm());
+            }
+            catch (InvalidAlgorithmParameterException expected)
+            {
+            }
+        }
+
+        performKEM("default KDF", kp, new KTSParameterSpec.Builder("AES", 256).build());
+    }
+
+    /**
+     * A spec with no key algorithm name would be substituted for a "Generic" request and reach
+     * SecretKeySpec as a null, past engineEncapsulate's own requireNonNull guard.
+     */
+    public void testNullKeyAlgorithmNameRefused()
+        throws Exception
+    {
+        KeyPair kp = baseKeyPair();
+
+        KTSParameterSpec spec = new KTSParameterSpec.Builder(null, 256).withNoKdf().build();
+
+        try
+        {
+            KEM.getInstance("CMCE", "BC").newEncapsulator(kp.getPublic(), spec, null);
+            fail("encapsulator accepted a spec with no key algorithm name");
+        }
+        catch (InvalidAlgorithmParameterException expected)
+        {
+        }
+
+        try
+        {
+            KEM.getInstance("CMCE", "BC").newDecapsulator(kp.getPrivate(), spec);
+            fail("decapsulator accepted a spec with no key algorithm name");
+        }
+        catch (InvalidAlgorithmParameterException expected)
+        {
+        }
+    }
+
+    /**
+     * The decapsulator carries its own copy of the spec/algorithm reconciliation, and the
+     * encapsulate-then-decapsulate helpers can never reach it - a mismatch always fails on the
+     * encapsulate leg first. Drive the decapsulate leg directly.
+     */
+    public void testDecapsulatorAlgorithmMismatch()
+        throws Exception
+    {
+        KeyPair kp = baseKeyPair();
+
+        KTSParameterSpec aes = new KEMParameterSpec("AES");
+        KEM.Encapsulated enc = KEM.getInstance("CMCE", "BC")
+            .newEncapsulator(kp.getPublic(), aes, null).encapsulate(0, 16, "AES");
+
+        KEM.Decapsulator d = KEM.getInstance("CMCE", "BC").newDecapsulator(kp.getPrivate(), aes);
+
+        try
+        {
+            d.decapsulate(enc.encapsulation(), 0, 16, "AES-KWP");
+            fail("decapsulator accepted an algorithm its spec does not name");
+        }
+        catch (UnsupportedOperationException expected)
+        {
+            assertEquals("AES does not match AES-KWP", expected.getMessage());
+        }
+
+        assertTrue(Arrays.areEqual(enc.key().getEncoded(),
+            d.decapsulate(enc.encapsulation(), 0, 16, "AES").getEncoded()));
+    }
+
+    /**
+     * Every one of the sixteen parameter-set locked services is registered, is distinct from the
+     * unrestricted one and from its siblings, and its ISO/IEC 18033-2 object identifier resolves
+     * to the same class - the invariant a 16-way copy-paste block can break silently. Costs no
+     * key generation, which is why it can afford to cover all sixteen.
+     */
+    public void testAllLockedServicesRegistered()
+        throws Exception
+    {
+        Provider bc = Security.getProvider("BC");
+
+        String unrestricted = bc.getService("KEM", "CMCE").getClassName();
+        Set<String> seen = new HashSet<String>();
+
+        for (int i = 0; i != SPECS.length; i++)
+        {
+            String name = SPECS[i].getName();
+
+            Provider.Service byName = bc.getService("KEM", name);
+            assertNotNull("no KEM service for " + name, byName);
+            assertFalse(name + " resolved to the unrestricted service",
+                unrestricted.equals(byName.getClassName()));
+            assertTrue(name + " shares a class with an earlier set: " + byName.getClassName(),
+                seen.add(byName.getClassName()));
+
+            Provider.Service byOid = bc.getService("KEM", OIDS[i].getId());
+            assertNotNull("no KEM service for OID " + OIDS[i].getId(), byOid);
+            assertEquals(name + " OID resolves elsewhere",
+                byName.getClassName(), byOid.getClassName());
+        }
+    }
+
+    /**
+     * The parameter-set locked services accept a key of their own set only.
      */
     public void testParameterSetLockedServices()
         throws Exception
     {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("CMCE", "BC");
-        kpg.initialize(CMCEParameterSpec.mceliece460896, new SecureRandom());
-        KeyPair kp = kpg.generateKeyPair();
+        KeyPair kp = baseKeyPair();
 
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("CMCE", "BC");
         kpg.initialize(CMCEParameterSpec.mceliece460896pc, new SecureRandom());
         KeyPair other = kpg.generateKeyPair();
 
@@ -292,18 +453,24 @@ public class CMCEKEM17Test
         {
         }
 
-        // the OID alias resolves to the same locked service
+        // the OID alias is the same locked service, so it refuses the other set's key too
         KEM byOid = KEM.getInstance(ISOIECObjectIdentifiers.mceliece460896.getId(), "BC");
         assertTrue(Arrays.areEqual(enc.key().getEncoded(),
             byOid.newDecapsulator(kp.getPrivate(), null).decapsulate(enc.encapsulation()).getEncoded()));
+        try
+        {
+            byOid.newDecapsulator(other.getPrivate(), null);
+            fail("OID-resolved decapsulator accepted a key of another parameter set");
+        }
+        catch (InvalidKeyException expected)
+        {
+        }
     }
 
     public void testGuards()
         throws Exception
     {
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("CMCE", "BC");
-        kpg.initialize(CMCEParameterSpec.mceliece460896, new SecureRandom());
-        KeyPair kp = kpg.generateKeyPair();
+        KeyPair kp = baseKeyPair();
 
         KEM kem = KEM.getInstance("CMCE", "BC");
 
@@ -339,9 +506,40 @@ public class CMCEKEM17Test
         {
         }
 
-        // a short encapsulation is rejected rather than decoded
-        KEM.Encapsulated enc = kem.newEncapsulator(kp.getPublic(), null, null).encapsulate();
+        KEM.Encapsulator e = kem.newEncapsulator(kp.getPublic(), null, null);
+        KEM.Encapsulated enc = e.encapsulate();
         KEM.Decapsulator d = kem.newDecapsulator(kp.getPrivate(), null);
+
+        // javax.crypto.KEM delegates without validating, so the SPI's own range and null guards
+        // are the only ones there are
+        try
+        {
+            e.encapsulate(0, e.secretSize() + 1, "AES");
+            fail("encapsulate accepted a range past secretSize()");
+        }
+        catch (IndexOutOfBoundsException expected)
+        {
+        }
+
+        try
+        {
+            d.decapsulate(enc.encapsulation(), 0, d.secretSize() + 1, "AES");
+            fail("decapsulate accepted a range past secretSize()");
+        }
+        catch (IndexOutOfBoundsException expected)
+        {
+        }
+
+        try
+        {
+            d.decapsulate(null);
+            fail("decapsulate accepted a null encapsulation");
+        }
+        catch (NullPointerException expected)
+        {
+        }
+
+        // a short encapsulation is rejected rather than decoded
         try
         {
             d.decapsulate(Arrays.copyOfRange(enc.encapsulation(), 0, enc.encapsulation().length - 1));
@@ -352,7 +550,70 @@ public class CMCEKEM17Test
         }
     }
 
-    private void performKEM(KeyPair kp, int from, int to, String algorithm, KTSParameterSpec ktsParameterSpec)
+    /**
+     * javax.crypto.KEM requires a Decapsulator to be safe for concurrent use.
+     */
+    public void testConcurrentDecapsulation()
+        throws Exception
+    {
+        final KeyPair kp = baseKeyPair();
+
+        final int count = 16;
+        final byte[][] encapsulations = new byte[count][];
+        final byte[][] expected = new byte[count][];
+
+        KEM.Encapsulator e = KEM.getInstance("CMCE", "BC").newEncapsulator(kp.getPublic(), null, null);
+        for (int i = 0; i != count; i++)
+        {
+            KEM.Encapsulated enc = e.encapsulate();
+            encapsulations[i] = enc.encapsulation();
+            expected[i] = enc.key().getEncoded();
+        }
+
+        final KEM.Decapsulator d = KEM.getInstance("CMCE", "BC").newDecapsulator(kp.getPrivate(), null);
+        final Throwable[] failure = new Throwable[1];
+        final int[] mismatches = new int[1];
+
+        Thread[] threads = new Thread[4];
+        for (int t = 0; t != threads.length; t++)
+        {
+            threads[t] = new Thread()
+            {
+                public void run()
+                {
+                    for (int i = 0; i != count; i++)
+                    {
+                        try
+                        {
+                            byte[] got = d.decapsulate(encapsulations[i]).getEncoded();
+                            if (!Arrays.areEqual(got, expected[i]))
+                            {
+                                synchronized (mismatches)
+                                {
+                                    mismatches[0]++;
+                                }
+                            }
+                        }
+                        catch (Throwable th)
+                        {
+                            failure[0] = th;
+                        }
+                    }
+                }
+            };
+            threads[t].start();
+        }
+        for (int t = 0; t != threads.length; t++)
+        {
+            threads[t].join();
+        }
+
+        assertNull("concurrent decapsulation threw " + failure[0], failure[0]);
+        assertEquals("concurrent decapsulation produced wrong secrets", 0, mismatches[0]);
+    }
+
+    private void performKEM(String label, KeyPair kp, int from, int to, String algorithm,
+        KTSParameterSpec ktsParameterSpec)
         throws Exception
     {
         // Sender side
@@ -367,12 +628,12 @@ public class CMCEKEM17Test
         SecretKey secR = d.decapsulate(enc.encapsulation(), from, to, algorithm);
 
         // secS and secR will be identical
-        assertEquals(secS.getAlgorithm(), secR.getAlgorithm());
-        assertEquals(to - from, secS.getEncoded().length);
-        assertTrue(Arrays.areEqual(secS.getEncoded(), secR.getEncoded()));
+        assertEquals(label, secS.getAlgorithm(), secR.getAlgorithm());
+        assertEquals(label, to - from, secS.getEncoded().length);
+        assertTrue(label, Arrays.areEqual(secS.getEncoded(), secR.getEncoded()));
     }
 
-    private void performKEM(KeyPair kp, KTSParameterSpec ktsParameterSpec)
+    private void performKEM(String label, KeyPair kp, KTSParameterSpec ktsParameterSpec)
         throws Exception
     {
         // Sender side
@@ -387,7 +648,7 @@ public class CMCEKEM17Test
         SecretKey secR = d.decapsulate(enc.encapsulation());
 
         // secS and secR will be identical
-        assertEquals(secS.getAlgorithm(), secR.getAlgorithm());
-        assertTrue(Arrays.areEqual(secS.getEncoded(), secR.getEncoded()));
+        assertEquals(label, secS.getAlgorithm(), secR.getAlgorithm());
+        assertTrue(label, Arrays.areEqual(secS.getEncoded(), secR.getEncoded()));
     }
 }

@@ -8,6 +8,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.crypto.kems.CMCEKEMExtractor;
+import org.bouncycastle.crypto.params.CMCEPrivateKeyParameters;
 import org.bouncycastle.jcajce.provider.asymmetric.util.KdfUtil;
 import org.bouncycastle.jcajce.spec.KTSParameterSpec;
 import org.bouncycastle.util.Arrays;
@@ -20,13 +21,15 @@ import org.bouncycastle.util.Arrays;
 class CMCEDecapsulatorSpi
     implements KEMSpi.DecapsulatorSpi
 {
+    private final CMCEPrivateKeyParameters privateKeyParams;
     private final KTSParameterSpec parameterSpec;
-    private final CMCEKEMExtractor kemExt;
+    private final int encapsulationLength;
 
     CMCEDecapsulatorSpi(BCCMCEPrivateKey privateKey, KTSParameterSpec parameterSpec)
     {
+        this.privateKeyParams = privateKey.getKeyParams();
         this.parameterSpec = parameterSpec;
-        this.kemExt = new CMCEKEMExtractor(privateKey.getKeyParams());
+        this.encapsulationLength = privateKeyParams.getParameters().getEncapsulationLength();
     }
 
     @Override
@@ -42,22 +45,12 @@ class CMCEDecapsulatorSpi
             throw new DecapsulateException("incorrect encapsulation size");
         }
 
-        String keyAlgName = parameterSpec.getKeyAlgorithmName();
-        if (!"Generic".equals(keyAlgName))
-        {
-            // if algorithm is Generic then use parameterSpec to wrap key
-            if ("Generic".equals(algorithm))
-            {
-                algorithm = keyAlgName;
-            }
-            // check spec algorithm mismatch provided algorithm
-            else if (!algorithm.equals(keyAlgName))
-            {
-                throw new UnsupportedOperationException(keyAlgName + " does not match " + algorithm);
-            }
-        }
+        algorithm = KdfUtil.resolveAlgorithm(parameterSpec, algorithm);
 
-        byte[] kemSecret = kemExt.extractSecret(encapsulation);
+        // CMCEEngine allocates its digest per call so a shared extractor would be safe here, but
+        // one is built per call to match the FrodoKEM sibling, where the engine's digest is
+        // mutable state and sharing it breaks the concurrent use javax.crypto.KEM requires.
+        byte[] kemSecret = new CMCEKEMExtractor(privateKeyParams).extractSecret(encapsulation);
         byte[] kdfSecret = KdfUtil.makeKeyBytes(parameterSpec, kemSecret);
 
         try
@@ -79,6 +72,6 @@ class CMCEDecapsulatorSpi
     @Override
     public int engineEncapsulationSize()
     {
-        return kemExt.getEncapsulationLength();
+        return encapsulationLength;
     }
 }

@@ -26,12 +26,14 @@ class FrodoKEMEncapsulatorSpi
     private final BCFrodoKEMPublicKey publicKey;
     private final KTSParameterSpec parameterSpec;
     private final FrodoKEMGenerator kemGen;
+    private final int encapsulationLength;
 
     FrodoKEMEncapsulatorSpi(BCFrodoKEMPublicKey publicKey, KTSParameterSpec parameterSpec, SecureRandom random)
     {
         this.publicKey = publicKey;
         this.parameterSpec = parameterSpec;
         this.kemGen = new FrodoKEMGenerator(random);
+        this.encapsulationLength = publicKey.getKeyParams().getParameters().getEncapsulationLength();
     }
 
     @Override
@@ -40,20 +42,7 @@ class FrodoKEMEncapsulatorSpi
         Objects.checkFromToIndex(from, to, engineSecretSize());
         Objects.requireNonNull(algorithm, "null algorithm");
 
-        String keyAlgName = parameterSpec.getKeyAlgorithmName();
-        if (!"Generic".equals(keyAlgName))
-        {
-            // if algorithm is Generic then use parameterSpec to wrap key
-            if ("Generic".equals(algorithm))
-            {
-                algorithm = keyAlgName;
-            }
-            // check spec algorithm mismatch provided algorithm
-            else if (!algorithm.equals(keyAlgName))
-            {
-                throw new UnsupportedOperationException(keyAlgName + " does not match " + algorithm);
-            }
-        }
+        algorithm = KdfUtil.resolveAlgorithm(parameterSpec, algorithm);
 
         SecretWithEncapsulation secEnc = kemGen.generateEncapsulated(publicKey.getKeyParams());
 
@@ -92,6 +81,6 @@ class FrodoKEMEncapsulatorSpi
     @Override
     public int engineEncapsulationSize()
     {
-        return publicKey.getKeyParams().getParameters().getEncapsulationLength();
+        return encapsulationLength;
     }
 }
