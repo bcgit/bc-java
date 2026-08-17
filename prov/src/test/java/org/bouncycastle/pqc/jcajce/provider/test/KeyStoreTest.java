@@ -108,9 +108,7 @@ public class KeyStoreTest
         X509Certificate rootCA = createPQSelfSignedCert(nameBuilder.build(), "SHA256WITHXMSSMT", kp);
         X509Certificate[] chain = new X509Certificate[1];
         chain[0] = rootCA;
-        // store root private key
         String alias1 = "xmssmt private";
-        store.setKeyEntry(alias1, kp.getPrivate(), password.toCharArray(), chain);
         // store root certificate
         store.setCertificateEntry("root ca", rootCA);
 
@@ -151,7 +149,11 @@ public class KeyStoreTest
         String alias2 = "private key 1";
         String alias3 = "private key 2";
 
-        // store private keys
+        // store private keys - the XMSSMT root key only now, after its last signature: the
+        // key is stateful, each signature advances it, and BKS/BCFKS snapshot the encoding
+        // at setKeyEntry time, so an entry stored before the certificates were signed would
+        // no longer compare equal to the live key below
+        store.setKeyEntry(alias1, kp.getPrivate(), password.toCharArray(), chain);
         store.setKeyEntry(alias2, ntruKp.getPrivate(), password.toCharArray(), chain1);
         store.setKeyEntry(alias3, sphincsKp.getPrivate(), password.toCharArray(), chain2);
 
@@ -159,7 +161,7 @@ public class KeyStoreTest
         store.setCertificateEntry("cert 1", cert1);
         store.setCertificateEntry("cert 2", cert2);
 
-        // can't restore keys from keystore
+        // the entries as held by the in-memory store
         Key k1 = store.getKey(alias1, password.toCharArray());
 
         assertEquals(kp.getPrivate(), k1);
@@ -180,15 +182,17 @@ public class KeyStoreTest
 
         bcStore.load(new ByteArrayInputStream(bOut.toByteArray()), "fred".toCharArray());
 
-        k1 = store.getKey(alias1, password.toCharArray());
+        // and the entries recovered from the persisted form - this used to query the
+        // in-memory store again, so the round trip through the stored bytes went unasserted
+        k1 = bcStore.getKey(alias1, password.toCharArray());
 
         assertEquals(kp.getPrivate(), k1);
 
-        k2 = store.getKey(alias2, password.toCharArray());
+        k2 = bcStore.getKey(alias2, password.toCharArray());
 
         assertEquals(ntruKp.getPrivate(), k2);
 
-        k3 = store.getKey(alias3, password.toCharArray());
+        k3 = bcStore.getKey(alias3, password.toCharArray());
 
         assertEquals(sphincsKp.getPrivate(), k3);
     }

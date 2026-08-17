@@ -85,6 +85,7 @@ public class AllTests
         suite.addTestSuite(NTRUPlusTest.class);
         suite.addTestSuite(NTRUPlusKeyPairGeneratorTest.class);
         suite.addTestSuite(SmaugTTest.class);
+        suite.addTestSuite(KeyStoreTest.class);
 
         return new BCTestSetup(suite);
     }
