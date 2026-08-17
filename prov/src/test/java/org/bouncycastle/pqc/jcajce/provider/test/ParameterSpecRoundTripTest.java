@@ -43,7 +43,6 @@ public class ParameterSpecRoundTripTest
         {
             "org.bouncycastle.pqc.jcajce.spec.AIMerParameterSpec",
             "org.bouncycastle.pqc.jcajce.spec.BIKEParameterSpec",
-            "org.bouncycastle.pqc.jcajce.spec.CMCEParameterSpec",
             "org.bouncycastle.pqc.jcajce.spec.FaestParameterSpec",
             "org.bouncycastle.pqc.jcajce.spec.FalconParameterSpec",
             "org.bouncycastle.pqc.jcajce.spec.HQCParameterSpec",
@@ -59,6 +58,7 @@ public class ParameterSpecRoundTripTest
             "org.bouncycastle.pqc.jcajce.spec.SQIsignParameterSpec",
             "org.bouncycastle.pqc.jcajce.spec.SnovaParameterSpec",
             "org.bouncycastle.pqc.jcajce.spec.UOVParameterSpec",
+            "org.bouncycastle.jcajce.spec.CMCEParameterSpec",
             "org.bouncycastle.jcajce.spec.MLKEMParameterSpec",
             "org.bouncycastle.jcajce.spec.MLDSAParameterSpec",
             "org.bouncycastle.jcajce.spec.SLHDSAParameterSpec",

@@ -81,7 +81,7 @@ public class BCFrodoKEMPrivateKey
     {
         FrodoKEMEngine engine = FrodoKEMEngine.getInstance(params.getParameters());
         int sBytes = params.getParameters().getSessionKeySize() / 8;
-        byte[] pk = Arrays.copyOfRange(params.getPrivateKey(), sBytes, sBytes + engine.getPublicKeySize());
+        byte[] pk = Arrays.copyOfRange(params.getEncoded(), sBytes, sBytes + engine.getPublicKeySize());
         return new BCFrodoKEMPublicKey(new FrodoKEMPublicKeyParameters(params.getParameters(), pk));
     }
 

@@ -18,13 +18,10 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.internal.asn1.isara.IsaraObjectIdentifiers;
-import org.bouncycastle.pqc.asn1.CMCEPublicKey;
 import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
 import org.bouncycastle.pqc.asn1.SPHINCS256KeyParams;
 import org.bouncycastle.pqc.legacy.bike.BIKEParameters;
 import org.bouncycastle.pqc.legacy.bike.BIKEPublicKeyParameters;
-import org.bouncycastle.pqc.crypto.cmce.CMCEParameters;
-import org.bouncycastle.pqc.crypto.cmce.CMCEPublicKeyParameters;
 import org.bouncycastle.pqc.legacy.crystals.dilithium.DilithiumParameters;
 import org.bouncycastle.pqc.legacy.crystals.dilithium.DilithiumPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconParameters;
@@ -105,16 +102,6 @@ public class PublicKeyFactory
         converters.put(BCObjectIdentifiers.sphincsPlus_shake_256f, new SPHINCSPlusConverter());
         converters.put(new ASN1ObjectIdentifier("1.3.9999.6.4.10"), new SPHINCSPlusConverter());
         
-        converters.put(BCObjectIdentifiers.mceliece348864_r3, new CMCEConverter());
-        converters.put(BCObjectIdentifiers.mceliece348864f_r3, new CMCEConverter());
-        converters.put(BCObjectIdentifiers.mceliece460896_r3, new CMCEConverter());
-        converters.put(BCObjectIdentifiers.mceliece460896f_r3, new CMCEConverter());
-        converters.put(BCObjectIdentifiers.mceliece6688128_r3, new CMCEConverter());
-        converters.put(BCObjectIdentifiers.mceliece6688128f_r3, new CMCEConverter());
-        converters.put(BCObjectIdentifiers.mceliece6960119_r3, new CMCEConverter());
-        converters.put(BCObjectIdentifiers.mceliece6960119f_r3, new CMCEConverter());
-        converters.put(BCObjectIdentifiers.mceliece8192128_r3, new CMCEConverter());
-        converters.put(BCObjectIdentifiers.mceliece8192128f_r3, new CMCEConverter());
         converters.put(BCObjectIdentifiers.lightsaberkem128r3, new SABERConverter());
         converters.put(BCObjectIdentifiers.saberkem128r3, new SABERConverter());
         converters.put(BCObjectIdentifiers.firesaberkem128r3, new SABERConverter());
@@ -333,31 +320,6 @@ public class PublicKeyFactory
                 byte[] keyEnc = keyInfo.getPublicKeyData().getOctets();
 
                 return new SPHINCSPlusPublicKeyParameters(spParams, keyEnc);
-            }
-        }
-    }
-
-    private static class CMCEConverter
-        extends SubjectPublicKeyInfoConverter
-    {
-        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
-            throws IOException
-        {
-            try
-            {
-                byte[] keyEnc = CMCEPublicKey.getInstance(keyInfo.parsePublicKey()).getT();
-
-                CMCEParameters spParams = Utils.mcElieceParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
-
-                return new CMCEPublicKeyParameters(spParams, keyEnc);
-            }
-            catch (Exception e)
-            {        
-                byte[] keyEnc = keyInfo.getPublicKeyData().getOctets();
-
-                CMCEParameters spParams = Utils.mcElieceParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
-
-                return new CMCEPublicKeyParameters(spParams, keyEnc);
             }
         }
     }

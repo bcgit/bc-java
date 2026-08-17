@@ -15,9 +15,8 @@ public class AllTestsCMCE
 
     public static Test suite()
     {
-        TestSuite suite = new TestSuite("Lightweight Classic McEliece Tests");
+        TestSuite suite = new TestSuite("Lightweight Classic McEliece Tests");   // ISO/IEC 18033-2 KEM vectors
 
-        suite.addTestSuite(CMCEVectorTest.class);
         suite.addTestSuite(CMCEKEMVectorTest.class);
 
         return new AllTests.BCTestSetup(suite);

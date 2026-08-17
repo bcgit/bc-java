@@ -29,7 +29,7 @@ public class CMCEKEMExtractor
         }
 
         byte[] session_key = new byte[engine.getSessionKeySize()];
-        engine.kem_dec(session_key, encapsulation, key.getPrivateKey());
+        engine.kem_dec(session_key, encapsulation, key.getEncoded());
         return session_key;
     }
 

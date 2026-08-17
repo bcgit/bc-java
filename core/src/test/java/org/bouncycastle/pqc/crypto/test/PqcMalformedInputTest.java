@@ -8,8 +8,6 @@ import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.pqc.crypto.falcon.FalconParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconSigner;
-import org.bouncycastle.pqc.crypto.cmce.CMCEParameters;
-import org.bouncycastle.pqc.crypto.cmce.CMCEPublicKeyParameters;
 import org.bouncycastle.crypto.params.FrodoKEMParameters;
 import org.bouncycastle.crypto.params.FrodoKEMPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.haetae.HAETAEParameters;
@@ -224,13 +222,6 @@ public class PqcMalformedInputTest
         });
 
         // KEM schemes.
-        expectInvalidLength("Classic McEliece (legacy, non-standardised)", new Runnable()
-        {
-            public void run()
-            {
-                new CMCEPublicKeyParameters(CMCEParameters.mceliece348864r3, tooShort);
-            }
-        });
         expectInvalidLength("Classic McEliece (ISO 18033-2 standardised)", new Runnable()
         {
             public void run()

@@ -25,14 +25,6 @@ public class FrodoKEMPrivateKeyParameters
         this.privateKey = Arrays.clone(privateKey);
     }
 
-    /**
-     * @deprecated use getEncoded()
-     */
-    public byte[] getPrivateKey()
-    {
-        return getEncoded();
-    }
-
     public byte[] getEncoded()
     {
         return cloneWithCheck(privateKey);

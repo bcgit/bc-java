@@ -12,14 +12,11 @@ import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
-import org.bouncycastle.pqc.asn1.CMCEPrivateKey;
-import org.bouncycastle.pqc.asn1.CMCEPublicKey;
 import org.bouncycastle.pqc.asn1.FalconPrivateKey;
 import org.bouncycastle.pqc.asn1.FalconPublicKey;
 import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
 import org.bouncycastle.pqc.asn1.SPHINCS256KeyParams;
 import org.bouncycastle.pqc.legacy.bike.BIKEPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.cmce.CMCEPrivateKeyParameters;
 import org.bouncycastle.pqc.legacy.crystals.dilithium.DilithiumPrivateKeyParameters;
 import org.bouncycastle.pqc.legacy.crystals.dilithium.DilithiumPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconPrivateKeyParameters;
@@ -109,19 +106,6 @@ public class PrivateKeyInfoFactory
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.slhdsaOidLookup(params.getParameters()));
 
             return new PrivateKeyInfo(algorithmIdentifier, params.getEncoded(), attributes);
-        }
-        else if (privateKey instanceof CMCEPrivateKeyParameters)
-        {
-            CMCEPrivateKeyParameters params = (CMCEPrivateKeyParameters)privateKey;
-
-            //todo either make CMCEPrivateKey split the parameters from the private key or
-            // (current) Make CMCEPrivateKey take parts of the private key splitted in the params
-
-            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.mcElieceOidLookup(params.getParameters()));
-
-            CMCEPublicKey cmcePub = new CMCEPublicKey(params.reconstructPublicKey());
-            CMCEPrivateKey cmcePriv = new CMCEPrivateKey(0, params.getDelta(), params.getC(), params.getG(), params.getAlpha(), params.getS(), cmcePub);
-            return new PrivateKeyInfo(algorithmIdentifier, cmcePriv, attributes);
         }
         else if (privateKey instanceof SABERPrivateKeyParameters)
         {

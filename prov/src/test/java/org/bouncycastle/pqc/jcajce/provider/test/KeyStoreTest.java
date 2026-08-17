@@ -40,7 +40,6 @@ import org.bouncycastle.asn1.x509.Time;
 import org.bouncycastle.asn1.x509.V3TBSCertificateGenerator;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
-import org.bouncycastle.pqc.jcajce.spec.CMCEParameterSpec;
 import org.bouncycastle.pqc.jcajce.spec.SPHINCS256KeyGenParameterSpec;
 import org.bouncycastle.pqc.jcajce.spec.XMSSMTParameterSpec;
 
@@ -115,19 +114,17 @@ public class KeyStoreTest
         // store root certificate
         store.setCertificateEntry("root ca", rootCA);
 
-        // McEliece
-        kpg = KeyPairGenerator.getInstance("CMCE", "BCPQC");
-        
-        kpg.initialize(CMCEParameterSpec.mceliece348864);
+        // NTRU
+        kpg = KeyPairGenerator.getInstance("NTRU", "BCPQC");
 
-        KeyPair mcelieceKp = kpg.generateKeyPair();
+        KeyPair ntruKp = kpg.generateKeyPair();
 
         ExtensionsGenerator extGenerator = new ExtensionsGenerator();
         extGenerator.addExtension(Extension.basicConstraints, false, new BasicConstraints(false));
         extGenerator.addExtension(Extension.keyUsage, true, new KeyUsage(KeyUsage.encipherOnly));
 
-        X509Certificate cert1 = createCert(nameBuilder.build(), kp.getPrivate(), new X500Name("CN=meceliece"), "SHA256WITHXMSSMT",
-            extGenerator.generate(), mcelieceKp.getPublic());
+        X509Certificate cert1 = createCert(nameBuilder.build(), kp.getPrivate(), new X500Name("CN=ntru"), "SHA256WITHXMSSMT",
+            extGenerator.generate(), ntruKp.getPublic());
 
         X509Certificate[] chain1 = new X509Certificate[2];
         chain1[1] = rootCA;
@@ -155,7 +152,7 @@ public class KeyStoreTest
         String alias3 = "private key 2";
 
         // store private keys
-        store.setKeyEntry(alias2, mcelieceKp.getPrivate(), password.toCharArray(), chain1);
+        store.setKeyEntry(alias2, ntruKp.getPrivate(), password.toCharArray(), chain1);
         store.setKeyEntry(alias3, sphincsKp.getPrivate(), password.toCharArray(), chain2);
 
         // store certificates
@@ -169,7 +166,7 @@ public class KeyStoreTest
 
         Key k2 = store.getKey(alias2, password.toCharArray());
 
-        assertEquals(mcelieceKp.getPrivate(), k2);
+        assertEquals(ntruKp.getPrivate(), k2);
 
         Key k3 = store.getKey(alias3, password.toCharArray());
 
@@ -189,7 +186,7 @@ public class KeyStoreTest
 
         k2 = store.getKey(alias2, password.toCharArray());
 
-        assertEquals(mcelieceKp.getPrivate(), k2);
+        assertEquals(ntruKp.getPrivate(), k2);
 
         k3 = store.getKey(alias3, password.toCharArray());
 

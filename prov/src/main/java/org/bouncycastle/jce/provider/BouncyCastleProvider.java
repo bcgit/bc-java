@@ -32,7 +32,6 @@ import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
 import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
 import org.bouncycastle.pqc.jcajce.provider.aimer.AIMerKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.bike.BIKEKeyFactorySpi;
-import org.bouncycastle.pqc.jcajce.provider.cmce.CMCEKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.faest.FaestKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.qruov.QRUOVKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.haetae.HaetaeKeyFactorySpi;
@@ -388,11 +387,6 @@ public final class BouncyCastleProvider extends Provider
         addKeyInfoConverter(BCObjectIdentifiers.falcon_512, new FalconKeyFactorySpi(BCObjectIdentifiers.falcon_512));
         addKeyInfoConverter(BCObjectIdentifiers.falcon_1024, new FalconKeyFactorySpi(BCObjectIdentifiers.falcon_1024));
 
-        addKeyInfoConverter(BCObjectIdentifiers.mceliece348864_r3, new CMCEKeyFactorySpi());
-        addKeyInfoConverter(BCObjectIdentifiers.mceliece460896_r3, new CMCEKeyFactorySpi());
-        addKeyInfoConverter(BCObjectIdentifiers.mceliece6688128_r3, new CMCEKeyFactorySpi());
-        addKeyInfoConverter(BCObjectIdentifiers.mceliece6960119_r3, new CMCEKeyFactorySpi());
-        addKeyInfoConverter(BCObjectIdentifiers.mceliece8192128_r3, new CMCEKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.bike128, new BIKEKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.bike192, new BIKEKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.bike256, new BIKEKeyFactorySpi());

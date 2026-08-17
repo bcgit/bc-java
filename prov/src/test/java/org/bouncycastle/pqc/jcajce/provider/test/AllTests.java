@@ -45,7 +45,6 @@ public class AllTests
         suite.addTestSuite(LMSTest.class);
         suite.addTestSuite(SLHDSAKeyPairGeneratorTest.class);
         suite.addTestSuite(SLHDSATest.class);
-        suite.addTestSuite(CMCEKeyPairGeneratorTest.class);
         suite.addTestSuite(CMCEKEMTest.class);
         suite.addTestSuite(FrodoKEMTest.class);
         suite.addTestSuite(SABERTest.class);

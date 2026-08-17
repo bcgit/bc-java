@@ -12,7 +12,8 @@ import org.bouncycastle.util.Arrays;
  * 6960119 and 8192128): a base set, a semi-systematic key-generation variant ("f"), a
  * plaintext-confirmation variant ("pc"), and a combined variant ("pcf"). All sixteen sets use
  * GF(2^13) and produce a 256-bit (32-byte) session key. The non-standardised mceliece348864 size is
- * not provided here; it remains available (deprecated) under {@code org.bouncycastle.pqc.crypto.cmce}.
+ * not provided; the deprecated NIST round 3 implementation that carried it, formerly under
+ * {@code org.bouncycastle.pqc.crypto.cmce}, has been removed.
  */
 public class CMCEParameters
     implements KEMParameters

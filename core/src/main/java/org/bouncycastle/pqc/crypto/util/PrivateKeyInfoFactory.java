@@ -17,8 +17,6 @@ import org.bouncycastle.pqc.crypto.mqom.MQOMPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.sdith.SDitHPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.smaugt.SmaugTPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.uov.UOVPrivateKeyParameters;
-import org.bouncycastle.pqc.asn1.CMCEPrivateKey;
-import org.bouncycastle.pqc.asn1.CMCEPublicKey;
 import org.bouncycastle.pqc.asn1.FalconPrivateKey;
 import org.bouncycastle.pqc.asn1.FalconPublicKey;
 import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
@@ -29,7 +27,6 @@ import org.bouncycastle.pqc.asn1.XMSSMTPrivateKey;
 import org.bouncycastle.pqc.asn1.XMSSPrivateKey;
 import org.bouncycastle.pqc.crypto.aimer.AIMerPrivateKeyParameters;
 import org.bouncycastle.pqc.legacy.bike.BIKEPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.cmce.CMCEPrivateKeyParameters;
 import org.bouncycastle.pqc.legacy.crystals.dilithium.DilithiumPrivateKeyParameters;
 import org.bouncycastle.pqc.legacy.crystals.dilithium.DilithiumPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.faest.FaestPrivateKeyParameters;
@@ -157,19 +154,6 @@ public class PrivateKeyInfoFactory
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.slhdsaOidLookup(params.getParameters()));
 
             return new PrivateKeyInfo(algorithmIdentifier, params.getEncoded(), attributes);
-        }
-        else if (privateKey instanceof CMCEPrivateKeyParameters)
-        {
-            CMCEPrivateKeyParameters params = (CMCEPrivateKeyParameters)privateKey;
-
-            //todo either make CMCEPrivateKey split the parameters from the private key or
-            // (current) Make CMCEPrivateKey take parts of the private key splitted in the params
-
-            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.mcElieceOidLookup(params.getParameters()));
-
-            CMCEPublicKey cmcePub = new CMCEPublicKey(params.reconstructPublicKey());
-            CMCEPrivateKey cmcePriv = new CMCEPrivateKey(0, params.getDelta(), params.getC(), params.getG(), params.getAlpha(), params.getS(), cmcePub);
-            return new PrivateKeyInfo(algorithmIdentifier, cmcePriv, attributes);
         }
         else if (privateKey instanceof XMSSPrivateKeyParameters)
         {

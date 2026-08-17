@@ -154,7 +154,6 @@ module org.bouncycastle.provider
     exports org.bouncycastle.pqc.asn1;
     exports org.bouncycastle.pqc.crypto;
     exports org.bouncycastle.pqc.legacy.bike;
-    exports org.bouncycastle.pqc.crypto.cmce;
     exports org.bouncycastle.pqc.legacy.crystals.dilithium;
     exports org.bouncycastle.pqc.crypto.mldsa;
     exports org.bouncycastle.pqc.crypto.mlkem;
@@ -189,7 +188,6 @@ module org.bouncycastle.provider
     exports org.bouncycastle.pqc.jcajce.interfaces;
     exports org.bouncycastle.pqc.jcajce.provider;
     exports org.bouncycastle.pqc.jcajce.provider.bike;
-    exports org.bouncycastle.pqc.jcajce.provider.cmce;
     exports org.bouncycastle.pqc.jcajce.provider.falcon;
     exports org.bouncycastle.pqc.jcajce.provider.hqc;
     exports org.bouncycastle.pqc.jcajce.provider.lms;
