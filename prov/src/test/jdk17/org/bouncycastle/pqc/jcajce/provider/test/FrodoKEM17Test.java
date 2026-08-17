@@ -218,6 +218,46 @@ public class FrodoKEM17Test
     }
 
     /**
+     * KTSParameterSpec does not validate its own key size, so a non-positive one has to be rejected
+     * here - otherwise it surfaces as an undeclared unchecked exception (an "Empty key"
+     * IllegalArgumentException at 0, an IndexOutOfBoundsException when negative) out of
+     * encapsulate() / decapsulate() instead of as a spec failure where the caller can act on it.
+     */
+    public void testNonPositiveKeySizeRefused()
+        throws Exception
+    {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("FRODOKEM", "BC");
+        kpg.initialize(FrodoKEMParameterSpec.frodokem976shake, new SecureRandom());
+        KeyPair kp = kpg.generateKeyPair();
+
+        KEM kem = KEM.getInstance("FRODOKEM", "BC");
+
+        int[] sizes = new int[]{0, -8};
+        for (int i = 0; i != sizes.length; i++)
+        {
+            KTSParameterSpec spec = new KTSParameterSpec.Builder("AES", sizes[i]).withNoKdf().build();
+
+            try
+            {
+                kem.newEncapsulator(kp.getPublic(), spec, null);
+                fail("encapsulator accepted key size " + sizes[i]);
+            }
+            catch (InvalidAlgorithmParameterException expected)
+            {
+            }
+
+            try
+            {
+                kem.newDecapsulator(kp.getPrivate(), spec);
+                fail("decapsulator accepted key size " + sizes[i]);
+            }
+            catch (InvalidAlgorithmParameterException expected)
+            {
+            }
+        }
+    }
+
+    /**
      * The parameter-set locked services accept a key of their own set only, and the ISO/IEC
      * 18033-2 object identifier resolves as a KEM name - what a caller dispatching on the OID in a
      * received encoding does.

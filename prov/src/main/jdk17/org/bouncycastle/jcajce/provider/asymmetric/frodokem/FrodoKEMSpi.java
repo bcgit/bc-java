@@ -83,6 +83,14 @@ public abstract class FrodoKEMSpi
             throw new InvalidAlgorithmParameterException("FrodoKEM can only accept KTSParameterSpec");
         }
 
+        // KTSParameterSpec does not check its own key size, and a non-positive one otherwise fails
+        // as an undeclared unchecked exception out of encapsulate()/decapsulate() rather than here.
+        if (ktsSpec.getKeySize() <= 0)
+        {
+            throw new InvalidAlgorithmParameterException("KTSParameterSpec key size must be positive: "
+                + ktsSpec.getKeySize());
+        }
+
         // Without a KDF the secret is the session key itself, so a longer one cannot be produced.
         // javax.crypto.KEM requires secretSize() to be honest - and validates encapsulate()'s range
         // against it - so refuse the spec here rather than silently shortening the key the way the

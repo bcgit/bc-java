@@ -200,6 +200,46 @@ public class CMCEKEM17Test
         performKEM(kp, new KTSParameterSpec.Builder("AES", 256).withNoKdf().build());
     }
 
+    /**
+     * KTSParameterSpec does not validate its own key size, so a non-positive one has to be rejected
+     * here - otherwise it surfaces as an undeclared unchecked exception (an "Empty key"
+     * IllegalArgumentException at 0, an IndexOutOfBoundsException when negative) out of
+     * encapsulate() / decapsulate() instead of as a spec failure where the caller can act on it.
+     */
+    public void testNonPositiveKeySizeRefused()
+        throws Exception
+    {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("CMCE", "BC");
+        kpg.initialize(CMCEParameterSpec.mceliece460896, new SecureRandom());
+        KeyPair kp = kpg.generateKeyPair();
+
+        KEM kem = KEM.getInstance("CMCE", "BC");
+
+        int[] sizes = new int[]{0, -8};
+        for (int i = 0; i != sizes.length; i++)
+        {
+            KTSParameterSpec spec = new KTSParameterSpec.Builder("AES", sizes[i]).withNoKdf().build();
+
+            try
+            {
+                kem.newEncapsulator(kp.getPublic(), spec, null);
+                fail("encapsulator accepted key size " + sizes[i]);
+            }
+            catch (InvalidAlgorithmParameterException expected)
+            {
+            }
+
+            try
+            {
+                kem.newDecapsulator(kp.getPrivate(), spec);
+                fail("decapsulator accepted key size " + sizes[i]);
+            }
+            catch (InvalidAlgorithmParameterException expected)
+            {
+            }
+        }
+    }
+
     public void testBasicKEMOtherAlgorithms()
         throws Exception
     {
