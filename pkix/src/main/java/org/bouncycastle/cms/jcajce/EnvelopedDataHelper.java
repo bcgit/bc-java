@@ -631,6 +631,11 @@ public class EnvelopedDataHelper
                     throw new CMSException("parameters generation error: " + e, e);
                 }
             }
+            else
+            {
+                // without this the generator uses a default SecureRandom for the IV/nonce, ignoring rand
+                pGen.init(getStrengthInBits(encKey), rand);
+            }
 
             return pGen.generateParameters();
         }
@@ -642,6 +647,14 @@ public class EnvelopedDataHelper
         {
             throw new CMSException("exception creating algorithm parameter generator: " + e, e);
         }
+    }
+
+    // strength is ignored by the symmetric parameter generators; the fall-back only avoids an NPE for a key with no encoding (e.g. a hardware key)
+    private static int getStrengthInBits(SecretKey encKey)
+    {
+        byte[] keyBytes = encKey.getEncoded();
+
+        return (keyBytes != null) ? keyBytes.length * 8 : 256;
     }
 
     AlgorithmIdentifier getAlgorithmIdentifier(ASN1ObjectIdentifier encryptionOID, AlgorithmParameters params)
