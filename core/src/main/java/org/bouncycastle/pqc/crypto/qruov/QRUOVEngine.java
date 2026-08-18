@@ -204,7 +204,7 @@ class QRUOVEngine
         private final boolean useShake;
         private KeyParameter aesKeyHolder;
 
-        // Per-instance state for yield():
+        // Per-instance state for yieldBytes():
         // - SHAKE: BC's {@link SHAKEDigest#doFinal} resets the state after
         //   squeezing, so consecutive {@code doFinal} calls do NOT produce a
         //   continuous SHAKE stream. We instead use {@link SHAKEDigest#doOutput}
@@ -275,7 +275,7 @@ class QRUOVEngine
          * fresh bytes (the {@code do/while} in {@link #sign} relies on it to find
          * a salt whose hashed message yields a consistent linear system).
          */
-        void yield(int length, byte[] dst, int dstOff)
+        void yieldBytes(int length, byte[] dst, int dstOff)
         {
             if (useShake)
             {
@@ -1305,7 +1305,7 @@ class QRUOVEngine
         PRG ctxR = new PRG(seedR);
         do
         {
-            ctxR.yield(saltLen, sigR, 0);
+            ctxR.yieldBytes(saltLen, sigR, 0);
             hashToM(mu, sigR, msgArr);
             for (int i = 0; i < m; i++)
             {
