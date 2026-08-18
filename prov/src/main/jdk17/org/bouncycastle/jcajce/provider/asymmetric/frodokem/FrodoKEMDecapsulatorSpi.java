@@ -5,13 +5,11 @@ import java.util.Objects;
 import javax.crypto.DecapsulateException;
 import javax.crypto.KEMSpi;
 import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.crypto.kems.FrodoKEMExtractor;
 import org.bouncycastle.crypto.params.FrodoKEMPrivateKeyParameters;
 import org.bouncycastle.jcajce.provider.asymmetric.util.KdfUtil;
 import org.bouncycastle.jcajce.spec.KTSParameterSpec;
-import org.bouncycastle.util.Arrays;
 
 /*
  *  NOTE: Per javadoc for javax.crypto.KEM, "Encapsulator and Decapsulator objects are also immutable. It is safe to
@@ -51,16 +49,8 @@ class FrodoKEMDecapsulatorSpi
         // shared extractor is not safe for the concurrent use javax.crypto.KEM requires of a
         // Decapsulator - build one per call, as FrodoKEMCipherSpi.engineUnwrap does.
         byte[] kemSecret = new FrodoKEMExtractor(privateKeyParams).extractSecret(encapsulation);
-        byte[] kdfSecret = KdfUtil.makeKeyBytes(parameterSpec, kemSecret);
 
-        try
-        {
-            return new SecretKeySpec(kdfSecret, from, to - from, algorithm);
-        }
-        finally
-        {
-            Arrays.clear(kdfSecret);
-        }
+        return KdfUtil.makeSecretKey(parameterSpec, kemSecret, from, to, algorithm);
     }
 
     @Override

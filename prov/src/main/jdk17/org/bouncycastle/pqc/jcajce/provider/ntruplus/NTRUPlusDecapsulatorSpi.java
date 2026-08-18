@@ -5,13 +5,11 @@ import java.util.Objects;
 import javax.crypto.DecapsulateException;
 import javax.crypto.KEMSpi;
 import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.jcajce.provider.asymmetric.util.KdfUtil;
 import org.bouncycastle.jcajce.spec.KTSParameterSpec;
 import org.bouncycastle.pqc.crypto.ntruplus.NTRUPlusKEMExtractor;
 import org.bouncycastle.pqc.crypto.ntruplus.NTRUPlusPrivateKeyParameters;
-import org.bouncycastle.util.Arrays;
 
 /*
  *  NOTE: Per javadoc for javax.crypto.KEM, "Encapsulator and Decapsulator objects are also immutable. It is safe to
@@ -53,16 +51,8 @@ class NTRUPlusDecapsulatorSpi
         // reason. Both engines still want that field made a local, which would let either
         // decapsulator share an extractor and would fix the lightweight extractors too.
         byte[] kemSecret = new NTRUPlusKEMExtractor(privateKeyParams).extractSecret(encapsulation);
-        byte[] kdfSecret = KdfUtil.makeKeyBytes(parameterSpec, kemSecret);
 
-        try
-        {
-            return new SecretKeySpec(kdfSecret, from, to - from, algorithm);
-        }
-        finally
-        {
-            Arrays.clear(kdfSecret);
-        }
+        return KdfUtil.makeSecretKey(parameterSpec, kemSecret, from, to, algorithm);
     }
 
     @Override

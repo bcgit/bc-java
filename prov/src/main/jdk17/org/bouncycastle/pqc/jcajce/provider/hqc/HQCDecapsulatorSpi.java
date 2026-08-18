@@ -5,12 +5,10 @@ import java.util.Objects;
 import javax.crypto.DecapsulateException;
 import javax.crypto.KEMSpi;
 import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.jcajce.spec.KTSParameterSpec;
 import org.bouncycastle.pqc.crypto.hqc.HQCKEMExtractor;
 import org.bouncycastle.jcajce.provider.asymmetric.util.KdfUtil;
-import org.bouncycastle.util.Arrays;
 
 /*
  *  NOTE: Per javadoc for javax.crypto.KEM, "Encapsulator and Decapsulator objects are also immutable. It is safe to
@@ -47,16 +45,8 @@ class HQCDecapsulatorSpi
         algorithm = KdfUtil.resolveAlgorithm(parameterSpec, algorithm);
 
         byte[] kemSecret = kemExt.extractSecret(encapsulation);
-        byte[] kdfSecret = KdfUtil.makeKeyBytes(parameterSpec, kemSecret);
 
-        try
-        {
-            return new SecretKeySpec(kdfSecret, from, to - from, algorithm);
-        }
-        finally
-        {
-            Arrays.clear(kdfSecret);
-        }
+        return KdfUtil.makeSecretKey(parameterSpec, kemSecret, from, to, algorithm);
     }
 
     @Override

@@ -331,6 +331,32 @@ public class NTRULPRimeKEM17Test
         assertEquals("concurrent decapsulation produced wrong secrets", 0, mismatches[0]);
     }
 
+    /**
+     * The from/to slice is honoured and is the length asked for. Worth asserting per family: a
+     * helper that ignored the range would still hand both sides the same bytes, so a test that only
+     * compares the two sides to each other cannot see it.
+     */
+    public void testSecretSlice()
+        throws Exception
+    {
+        KeyPair kp = keyPair();
+        KTSParameterSpec spec = new KTSParameterSpec.Builder("AES", 256).build();
+
+        KEM.Encapsulator e = KEM.getInstance(KEM_NAME, "BCPQC").newEncapsulator(kp.getPublic(), spec, null);
+        KEM.Encapsulated enc = e.encapsulate(0, 16, "AES");
+        assertEquals(16, enc.key().getEncoded().length);
+
+        KEM.Decapsulator d = KEM.getInstance(KEM_NAME, "BCPQC").newDecapsulator(kp.getPrivate(), spec);
+        SecretKey secR = d.decapsulate(enc.encapsulation(), 0, 16, "AES");
+        assertEquals(16, secR.getEncoded().length);
+        assertTrue(Arrays.areEqual(enc.key().getEncoded(), secR.getEncoded()));
+
+        // a later, non-zero window is also honoured, and differs from the leading one
+        SecretKey tail = d.decapsulate(enc.encapsulation(), 16, 32, "AES");
+        assertEquals(16, tail.getEncoded().length);
+        assertFalse(Arrays.areEqual(secR.getEncoded(), tail.getEncoded()));
+    }
+
     private void performKEM(String label, KeyPair kp, KTSParameterSpec spec)
         throws Exception
     {

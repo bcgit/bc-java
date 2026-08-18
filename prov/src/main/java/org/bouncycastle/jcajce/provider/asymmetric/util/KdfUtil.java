@@ -3,6 +3,9 @@ package org.bouncycastle.jcajce.provider.asymmetric.util;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.spec.AlgorithmParameterSpec;
 
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
@@ -51,6 +54,14 @@ public class KdfUtil
         String parameterSetName, int sessionKeySize)
         throws InvalidAlgorithmParameterException
     {
+        // guarded for the benefit of a caller outside the provider: the default spec built below is
+        // only meaningful for a real session key size, and a bad one would surface much later
+        if (sessionKeySize <= 0 || (sessionKeySize % 8) != 0)
+        {
+            throw new IllegalArgumentException(
+                "sessionKeySize must be a positive whole number of bytes: " + sessionKeySize);
+        }
+
         if (spec == null)
         {
             // Do not wrap key, no KDF
@@ -97,6 +108,73 @@ public class KdfUtil
         }
 
         return ktsSpec;
+    }
+
+    /**
+     * Derive a secret key from a KEM's shared secret and return the requested slice of it.
+     * <p>
+     * <b>Note: the passed in secret will be erased</b>, as it is by
+     * {@link #makeKeyBytes(KEMKDFSpec, byte[])}, and so will the derived bytes once the key has
+     * copied them. Take anything else you need from the mechanism's output - the encapsulation in
+     * particular - before calling this, and destroy the SecretWithEncapsulation it came from
+     * afterwards; that is left to the caller so the ordering stays visible at the call site.
+     * <p>
+     * The requested range is validated here rather than left to SecretKeySpec, so that an
+     * out-of-range request cannot reach it after the secret has been erased.
+     *
+     * @param parameterSpec the KDF and output size to derive with.
+     * @param kemSecret the mechanism's shared secret (erased before this returns).
+     * @param from index of the first byte of the derived key to use.
+     * @param to index after the last byte of the derived key to use.
+     * @param algorithm the algorithm name for the returned key - reconcile it with the spec through
+     *                  {@link #resolveAlgorithm(KTSParameterSpec, String)} first.
+     * @return the requested slice of the derived key.
+     */
+    public static SecretKey makeSecretKey(KTSParameterSpec parameterSpec, byte[] kemSecret,
+        int from, int to, String algorithm)
+    {
+        if (parameterSpec == null)
+        {
+            throw new NullPointerException("'parameterSpec' cannot be null");
+        }
+        if (kemSecret == null)
+        {
+            throw new NullPointerException("'kemSecret' cannot be null");
+        }
+        if (algorithm == null)
+        {
+            throw new NullPointerException("'algorithm' cannot be null");
+        }
+
+        // erased on every exit, throws included, matching makeKeyBytes' contract - the clear is
+        // idempotent, so makeKeyBytes having already erased it on the derivation path is harmless
+        try
+        {
+            // the same count makeKeyBytes will derive. Checked before deriving, and spelled out
+            // rather than using Objects.checkFromToIndex, which is newer than this tree's source
+            // floor allows.
+            int derivedLength = (parameterSpec.getKeySize() + 7) / 8;
+            if (from < 0 || to < from || to > derivedLength)
+            {
+                throw new IllegalArgumentException("range [" + from + ", " + to
+                    + ") out of bounds for a " + derivedLength + " byte derived key");
+            }
+
+            byte[] kdfSecret = makeKeyBytes(parameterSpec, kemSecret);
+
+            try
+            {
+                return new SecretKeySpec(kdfSecret, from, to - from, algorithm);
+            }
+            finally
+            {
+                Arrays.clear(kdfSecret);
+            }
+        }
+        finally
+        {
+            Arrays.clear(kemSecret);
+        }
     }
 
     /**
