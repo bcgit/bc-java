@@ -59,4 +59,17 @@ public enum ExtensionType
     {
         return value;
     }
+
+    public static ExtensionType fromValue(short value)
+    {
+        for (ExtensionType element : values())
+        {
+            if (element.value == value)
+            {
+                return element;
+            }
+        }
+
+        throw new IllegalArgumentException("unknown ExtensionType value: " + value);
+    }
 }

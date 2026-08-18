@@ -53,7 +53,7 @@ public class Node
     public Node(MLSInputStream stream)
         throws IOException
     {
-        this.nodeType = NodeType.values()[(byte)stream.read(byte.class)];
+        this.nodeType = NodeType.fromValue((byte)stream.read(byte.class));
         switch (nodeType)
         {
         case leaf:

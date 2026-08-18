@@ -84,13 +84,15 @@ public class Proposal
         this.groupContextExtensions = groupContextExtensions;
     }
 
+    // GREASE values decode by ordinal offset past the named constants (see Grease).
+    @SuppressWarnings("EnumOrdinal")
     public Proposal(MLSInputStream stream)
         throws IOException
     {
         short propType = (short)stream.read(short.class);
         if (Grease.isGrease(propType) == -1)
         {
-            proposalType = ProposalType.values()[propType];
+            proposalType = ProposalType.fromValue(propType);
         }
         else
         {
@@ -345,7 +347,7 @@ public class Proposal
             throws Exception
         {
             group_id = stream.readOpaque();
-            version = ProtocolVersion.values()[(short)stream.read(short.class)];
+            version = ProtocolVersion.fromValue((short)stream.read(short.class));
             cipherSuite = (short)stream.read(short.class);
             suite = MlsCipherSuite.getSuite(cipherSuite);
             extensions = new ArrayList<Extension>();

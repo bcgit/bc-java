@@ -44,4 +44,17 @@ public enum CredentialType
     {
         stream.write(value);
     }
+
+    public static CredentialType fromValue(short value)
+    {
+        for (CredentialType element : values())
+        {
+            if (element.value == value)
+            {
+                return element;
+            }
+        }
+
+        throw new IllegalArgumentException("unknown CredentialType value: " + value);
+    }
 }

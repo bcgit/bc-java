@@ -55,4 +55,17 @@ public enum ProposalType
             stream.write(value);
         }
     }
+
+    public static ProposalType fromValue(short value)
+    {
+        for (ProposalType element : values())
+        {
+            if (element.value == value)
+            {
+                return element;
+            }
+        }
+
+        throw new IllegalArgumentException("unknown ProposalType value: " + value);
+    }
 }

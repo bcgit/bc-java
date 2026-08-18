@@ -92,7 +92,7 @@ public class KeyPackage
     KeyPackage(MLSInputStream stream)
         throws Exception
     {
-        this.version = ProtocolVersion.values()[(short)stream.read(short.class)];
+        this.version = ProtocolVersion.fromValue((short)stream.read(short.class));
         cipher_suite = (short)stream.read(short.class);
         suite = MlsCipherSuite.getSuite(cipher_suite);
         init_key = stream.readOpaque();

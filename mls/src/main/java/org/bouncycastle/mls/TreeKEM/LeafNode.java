@@ -105,7 +105,7 @@ public class LeafNode
         signature_key = stream.readOpaque();
         credential = (Credential)stream.read(Credential.class);
         capabilities = (Capabilities)stream.read(Capabilities.class);
-        leaf_node_source = LeafNodeSource.values()[(byte)stream.read(byte.class)];
+        leaf_node_source = LeafNodeSource.fromValue((byte)stream.read(byte.class));
         switch (leaf_node_source)
         {
         case KEY_PACKAGE:

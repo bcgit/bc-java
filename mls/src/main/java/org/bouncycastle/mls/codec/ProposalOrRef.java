@@ -47,7 +47,7 @@ public class ProposalOrRef
     ProposalOrRef(MLSInputStream stream)
         throws IOException
     {
-        this.type = ProposalOrRefType.values()[(byte)stream.read(byte.class)];
+        this.type = ProposalOrRefType.fromValue((byte)stream.read(byte.class));
         switch (type)
         {
         case PROPOSAL:

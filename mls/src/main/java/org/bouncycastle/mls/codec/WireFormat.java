@@ -25,4 +25,17 @@ public enum WireFormat
     {
         stream.write(value);
     }
+
+    public static WireFormat fromValue(short value)
+    {
+        for (WireFormat element : values())
+        {
+            if (element.value == value)
+            {
+                return element;
+            }
+        }
+
+        throw new IllegalArgumentException("unknown WireFormat value: " + value);
+    }
 }

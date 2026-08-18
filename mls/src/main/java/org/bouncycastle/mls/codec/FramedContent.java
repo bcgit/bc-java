@@ -76,7 +76,7 @@ public class FramedContent
         epoch = (long)stream.read(long.class);
         sender = (Sender)stream.read(Sender.class);
         authenticated_data = stream.readOpaque();
-        contentType = ContentType.values()[(byte)stream.read(byte.class)];
+        contentType = ContentType.fromValue((byte)stream.read(byte.class));
         switch (contentType)
         {
         case APPLICATION:

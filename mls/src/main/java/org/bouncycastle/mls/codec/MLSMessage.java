@@ -72,19 +72,19 @@ public class MLSMessage
     public MLSMessage(MLSInputStream stream)
         throws IOException
     {
-        int versionIndex = (short)stream.read(short.class);
+        short versionIndex = (short)stream.read(short.class);
         if (versionIndex < 0 || versionIndex >= ProtocolVersion.values().length)
         {
             throw new IOException("invalid ProtocolVersion");
         }
-        this.version = ProtocolVersion.values()[versionIndex];
+        this.version = ProtocolVersion.fromValue(versionIndex);
 
-        int wireFormatIndex = (short)stream.read(short.class);
+        short wireFormatIndex = (short)stream.read(short.class);
         if (wireFormatIndex < 0 || wireFormatIndex >= WireFormat.values().length)
         {
             throw new IOException("invalid WireFormat");
         }
-        this.wireFormat = WireFormat.values()[wireFormatIndex];
+        this.wireFormat = WireFormat.fromValue(wireFormatIndex);
 
         switch (wireFormat)
         {
@@ -308,19 +308,19 @@ class FramedContentTBS
     public FramedContentTBS(MLSInputStream stream)
         throws IOException
     {
-        int versionIndex = (short)stream.read(short.class);
+        short versionIndex = (short)stream.read(short.class);
         if (versionIndex < 0 || versionIndex >= ProtocolVersion.values().length)
         {
             throw new IOException("invalid ProtocolVersion");
         }
-        this.version = ProtocolVersion.values()[versionIndex];
+        this.version = ProtocolVersion.fromValue(versionIndex);
 
-        int wireFormatIndex = (short)stream.read(short.class);
+        short wireFormatIndex = (short)stream.read(short.class);
         if (wireFormatIndex < 0 || wireFormatIndex >= WireFormat.values().length)
         {
             throw new IOException("invalid WireFormat");
         }
-        this.wireFormat = WireFormat.values()[wireFormatIndex];
+        this.wireFormat = WireFormat.fromValue(wireFormatIndex);
 
         this.content = (FramedContent)stream.read(FramedContent.class);
         switch (content.sender.senderType)
@@ -409,7 +409,7 @@ class SenderDataAAD
     {
         group_id = stream.readOpaque();
         epoch = (long)stream.read(long.class);
-        this.contentType = ContentType.values()[(byte)stream.read(byte.class)];
+        this.contentType = ContentType.fromValue((byte)stream.read(byte.class));
     }
 
 
@@ -499,7 +499,7 @@ class PrivateContentAAD
     {
         group_id = stream.readOpaque();
         epoch = (long)stream.read(long.class);
-        content_type = ContentType.values()[(byte)stream.read(byte.class)];
+        content_type = ContentType.fromValue((byte)stream.read(byte.class));
         authenticated_data = stream.readOpaque();
     }
 

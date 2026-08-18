@@ -37,7 +37,7 @@ public class PrivateMessage
     {
         group_id = stream.readOpaque();
         epoch = (long)stream.read(long.class);
-        content_type = ContentType.values()[(byte)stream.read(byte.class)];
+        content_type = ContentType.fromValue((byte)stream.read(byte.class));
         authenticated_data = stream.readOpaque();
         encrypted_sender_data = stream.readOpaque();
         ciphertext = stream.readOpaque();

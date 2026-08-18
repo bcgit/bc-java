@@ -30,4 +30,17 @@ public enum ResumptionPSKUsage
     {
         stream.write(value);
     }
+
+    public static ResumptionPSKUsage fromValue(byte value)
+    {
+        for (ResumptionPSKUsage element : values())
+        {
+            if (element.value == value)
+            {
+                return element;
+            }
+        }
+
+        throw new IllegalArgumentException("unknown ResumptionPSKUsage value: " + value);
+    }
 }

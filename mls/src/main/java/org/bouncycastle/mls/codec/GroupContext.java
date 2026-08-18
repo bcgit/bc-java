@@ -49,7 +49,7 @@ public class GroupContext
     public GroupContext(MLSInputStream stream)
         throws Exception
     {
-        this.version = ProtocolVersion.values()[(short)stream.read(short.class)];
+        this.version = ProtocolVersion.fromValue((short)stream.read(short.class));
         this.ciphersuite = (short)stream.read(short.class);
         this.suite = MlsCipherSuite.getSuite(ciphersuite);
         this.groupID = stream.readOpaque();

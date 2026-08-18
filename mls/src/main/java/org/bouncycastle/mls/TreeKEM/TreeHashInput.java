@@ -34,7 +34,7 @@ public class TreeHashInput
     public TreeHashInput(MLSInputStream stream)
         throws IOException
     {
-        nodeType = NodeType.values()[(byte)stream.read(byte.class)];
+        nodeType = NodeType.fromValue((byte)stream.read(byte.class));
         switch (nodeType)
         {
         case leaf:

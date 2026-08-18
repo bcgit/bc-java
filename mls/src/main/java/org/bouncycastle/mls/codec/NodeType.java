@@ -29,4 +29,17 @@ public enum NodeType
     {
         stream.write(value);
     }
+
+    public static NodeType fromValue(byte value)
+    {
+        for (NodeType element : values())
+        {
+            if (element.value == value)
+            {
+                return element;
+            }
+        }
+
+        throw new IllegalArgumentException("unknown NodeType value: " + value);
+    }
 }

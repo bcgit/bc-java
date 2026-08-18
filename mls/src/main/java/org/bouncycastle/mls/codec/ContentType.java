@@ -30,4 +30,17 @@ public enum ContentType
     {
         stream.write(value);
     }
+
+    public static ContentType fromValue(byte value)
+    {
+        for (ContentType element : values())
+        {
+            if (element.value == value)
+            {
+                return element;
+            }
+        }
+
+        throw new IllegalArgumentException("unknown ContentType value: " + value);
+    }
 }

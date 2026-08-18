@@ -57,7 +57,7 @@ public class Sender
     public Sender(MLSInputStream stream)
         throws IOException
     {
-        this.senderType = SenderType.values()[(byte)stream.read(byte.class)];
+        this.senderType = SenderType.fromValue((byte)stream.read(byte.class));
         switch (senderType)
         {
 

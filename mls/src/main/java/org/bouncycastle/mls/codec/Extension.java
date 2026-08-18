@@ -18,12 +18,14 @@ public class Extension
         this.extension_data = extension_data;
     }
 
+    // GREASE values decode by ordinal offset past the named constants (see Grease).
+    @SuppressWarnings("EnumOrdinal")
     public Extension(int extensionType, byte[] extension_data)
     {
         short extType = (short)extensionType;
         if (Grease.isGrease(extType) == -1)
         {
-            this.extensionType = ExtensionType.values()[extType];
+            this.extensionType = ExtensionType.fromValue(extType);
         }
         else
         {
@@ -52,14 +54,15 @@ public class Extension
         return null;
     }
 
-    @SuppressWarnings("unused")
+    // GREASE values decode by ordinal offset past the named constants (see Grease).
+    @SuppressWarnings({"unused", "EnumOrdinal"})
     Extension(MLSInputStream stream)
         throws IOException
     {
         short extType = (short)stream.read(short.class);
         if (Grease.isGrease(extType) == -1)
         {
-            this.extensionType = ExtensionType.values()[extType];
+            this.extensionType = ExtensionType.fromValue(extType);
         }
         else
         {

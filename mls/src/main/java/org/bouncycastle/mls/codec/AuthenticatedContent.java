@@ -94,7 +94,7 @@ public class AuthenticatedContent
     public AuthenticatedContent(MLSInputStream stream)
         throws IOException
     {
-        this.wireFormat = WireFormat.values()[(short)stream.read(short.class)];
+        this.wireFormat = WireFormat.fromValue((short)stream.read(short.class));
         content = (FramedContent)stream.read(FramedContent.class);
         auth = new FramedContentAuthData(stream, content.contentType);
     }
@@ -127,7 +127,7 @@ class ConfirmedTranscriptHashInput
     public ConfirmedTranscriptHashInput(MLSInputStream stream)
         throws IOException
     {
-        this.wireFormat = WireFormat.values()[(short)stream.read(short.class)];
+        this.wireFormat = WireFormat.fromValue((short)stream.read(short.class));
         content = (FramedContent)stream.read(FramedContent.class);
         signature = stream.readOpaque();
     }

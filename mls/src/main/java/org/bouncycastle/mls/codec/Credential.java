@@ -39,14 +39,15 @@ public class Credential
         this.certificates = certificates;
     }
 
-    @SuppressWarnings("unused")
+    // GREASE values decode by ordinal offset past the named constants (see Grease).
+    @SuppressWarnings({"unused", "EnumOrdinal"})
     Credential(MLSInputStream stream)
         throws IOException
     {
         short credType = (short)stream.read(short.class);
         if (Grease.isGrease(credType) == -1)
         {
-            this.credentialType = CredentialType.values()[credType];
+            this.credentialType = CredentialType.fromValue(credType);
         }
         else
         {

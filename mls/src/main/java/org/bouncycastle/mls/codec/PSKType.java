@@ -29,4 +29,17 @@ public enum PSKType
     {
         stream.write(value);
     }
+
+    public static PSKType fromValue(byte value)
+    {
+        for (PSKType element : values())
+        {
+            if (element.value == value)
+            {
+                return element;
+            }
+        }
+
+        throw new IllegalArgumentException("unknown PSKType value: " + value);
+    }
 }

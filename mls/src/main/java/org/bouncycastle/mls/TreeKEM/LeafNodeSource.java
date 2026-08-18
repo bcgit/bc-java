@@ -26,4 +26,17 @@ public enum LeafNodeSource
     {
         stream.write(value);
     }
+
+    public static LeafNodeSource fromValue(byte value)
+    {
+        for (LeafNodeSource element : values())
+        {
+            if (element.value == value)
+            {
+                return element;
+            }
+        }
+
+        throw new IllegalArgumentException("unknown LeafNodeSource value: " + value);
+    }
 }

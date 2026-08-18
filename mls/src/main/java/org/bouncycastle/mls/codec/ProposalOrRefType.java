@@ -29,4 +29,17 @@ public enum ProposalOrRefType
     {
         stream.write(value);
     }
+
+    public static ProposalOrRefType fromValue(byte value)
+    {
+        for (ProposalOrRefType element : values())
+        {
+            if (element.value == value)
+            {
+                return element;
+            }
+        }
+
+        throw new IllegalArgumentException("unknown ProposalOrRefType value: " + value);
+    }
 }

@@ -20,4 +20,17 @@ public enum ProtocolVersion
     {
         stream.write(value);
     }
+
+    public static ProtocolVersion fromValue(short value)
+    {
+        for (ProtocolVersion element : values())
+        {
+            if (element.value == value)
+            {
+                return element;
+            }
+        }
+
+        throw new IllegalArgumentException("unknown ProtocolVersion value: " + value);
+    }
 }

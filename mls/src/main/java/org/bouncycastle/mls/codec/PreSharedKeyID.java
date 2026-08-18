@@ -62,7 +62,7 @@ public class PreSharedKeyID
     public PreSharedKeyID(MLSInputStream stream)
         throws IOException
     {
-        this.pskType = PSKType.values()[(byte)stream.read(byte.class)];
+        this.pskType = PSKType.fromValue((byte)stream.read(byte.class));
 
         switch (this.pskType)
         {
@@ -73,7 +73,7 @@ public class PreSharedKeyID
             break;
 
         case RESUMPTION:
-            ResumptionPSKUsage resumptionPSKUsage = ResumptionPSKUsage.values()[(byte)stream.read(byte.class)];
+            ResumptionPSKUsage resumptionPSKUsage = ResumptionPSKUsage.fromValue((byte)stream.read(byte.class));
             byte[] pskGroupID = stream.readOpaque();
             long pskEpoch = (long)stream.read(long.class);
 

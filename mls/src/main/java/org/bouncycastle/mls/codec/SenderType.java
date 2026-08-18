@@ -24,4 +24,17 @@ public enum SenderType
     {
         stream.write(value);
     }
+
+    public static SenderType fromValue(byte value)
+    {
+        for (SenderType element : values())
+        {
+            if (element.value == value)
+            {
+                return element;
+            }
+        }
+
+        throw new IllegalArgumentException("unknown SenderType value: " + value);
+    }
 }
