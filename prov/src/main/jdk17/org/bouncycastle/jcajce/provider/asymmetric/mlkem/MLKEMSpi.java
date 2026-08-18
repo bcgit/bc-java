@@ -9,6 +9,7 @@ import java.security.spec.AlgorithmParameterSpec;
 
 import javax.crypto.KEMSpi;
 
+import org.bouncycastle.jcajce.provider.asymmetric.util.KdfUtil;
 import org.bouncycastle.jcajce.spec.KTSParameterSpec;
 import org.bouncycastle.crypto.params.MLKEMKeyParameters;
 import org.bouncycastle.crypto.params.MLKEMParameters;
@@ -34,17 +35,9 @@ public abstract class MLKEMSpi
 
         checkKeyParameters(bcPublicKey.getKeyParams());
 
-        if (spec == null)
-        {
-            // Do not wrap key, no KDF
-            spec = new KTSParameterSpec.Builder("Generic", 256).withNoKdf().build();
-        }
-        else if (!(spec instanceof KTSParameterSpec))
-        {
-            throw new InvalidAlgorithmParameterException("ML-KEM can only accept KTSParameterSpec");
-        }
 
-        return new MLKEMEncapsulatorSpi(bcPublicKey, (KTSParameterSpec)spec, secureRandom);
+        return new MLKEMEncapsulatorSpi(bcPublicKey,
+            resolveSpec(spec, bcPublicKey.getKeyParams()), secureRandom);
     }
 
     @Override
@@ -58,17 +51,17 @@ public abstract class MLKEMSpi
 
         checkKeyParameters(bcPrivateKey.getKeyParams());
 
-        if (spec == null)
-        {
-            // Do not unwrap key, no KDF
-            spec = new KTSParameterSpec.Builder("Generic", 256).withNoKdf().build();
-        }
-        else if (!(spec instanceof KTSParameterSpec))
-        {
-            throw new InvalidAlgorithmParameterException("ML-KEM can only accept KTSParameterSpec");
-        }
 
-        return new MLKEMDecapsulatorSpi(bcPrivateKey, (KTSParameterSpec)spec);
+        return new MLKEMDecapsulatorSpi(bcPrivateKey, resolveSpec(spec, bcPrivateKey.getKeyParams()));
+    }
+
+    private static KTSParameterSpec resolveSpec(AlgorithmParameterSpec spec, MLKEMKeyParameters key)
+        throws InvalidAlgorithmParameterException
+    {
+        MLKEMParameters keyParameters = key.getParameters();
+
+        return KdfUtil.resolveKemSpec(spec, "ML-KEM", keyParameters.getName(),
+            keyParameters.getSessionKeySize());
     }
 
     private void checkKeyParameters(MLKEMKeyParameters key) throws InvalidKeyException

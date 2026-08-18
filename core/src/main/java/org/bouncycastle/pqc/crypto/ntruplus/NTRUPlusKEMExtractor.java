@@ -2,6 +2,16 @@ package org.bouncycastle.pqc.crypto.ntruplus;
 
 import org.bouncycastle.crypto.EncapsulatedSecretExtractor;
 
+/**
+ * NTRU+ decapsulation.
+ * <p>
+ * <b>Not thread safe.</b> The NTRUPlusEngine built here keeps one SHAKE instance in a field, so two
+ * threads sharing an extractor interleave its absorb and squeeze phases: the secrets they recover do
+ * not match the sender's, and an IllegalStateException from the digest is also possible. Give each
+ * thread its own extractor - construction is cheap, roughly a thousandth of a decapsulation. The
+ * KEM.Decapsulator that javax.crypto.KEM builds does exactly that, since that API requires
+ * decapsulate to be safe for concurrent use.
+ */
 public class NTRUPlusKEMExtractor
     implements EncapsulatedSecretExtractor
 {

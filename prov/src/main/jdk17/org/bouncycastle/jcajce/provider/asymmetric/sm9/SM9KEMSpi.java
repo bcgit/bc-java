@@ -46,6 +46,21 @@ public class SM9KEMSpi
         {
             throw new InvalidAlgorithmParameterException("SM9-KEM can only accept KTSParameterSpec");
         }
+        else if (((KTSParameterSpec)spec).getKeyAlgorithmName() == null)
+        {
+            // SM9 sizes its secret from the spec itself and so does not go through
+            // KdfUtil.resolveKemSpec, which rejects this for every other KEM: a null name would be
+            // substituted for a "Generic" request and only fail deep inside the derivation.
+            throw new InvalidAlgorithmParameterException("KTSParameterSpec has no key algorithm name");
+        }
+        else if (((KTSParameterSpec)spec).getKeySize() <= 0)
+        {
+            // also checked here rather than by resolveKemSpec. Only positivity: unlike the other
+            // KEMs, SM9's own KDF produces any requested bit length, so a size that is not a whole
+            // number of bytes is a legitimate GM/T 0044.4 request (secretSize() floors it).
+            throw new InvalidAlgorithmParameterException("KTSParameterSpec key size must be positive: "
+                + ((KTSParameterSpec)spec).getKeySize());
+        }
 
         return new SM9EncapsulatorSpi(bcPublicKey, (KTSParameterSpec)spec, secureRandom);
     }
@@ -67,6 +82,21 @@ public class SM9KEMSpi
         else if (!(spec instanceof KTSParameterSpec))
         {
             throw new InvalidAlgorithmParameterException("SM9-KEM can only accept KTSParameterSpec");
+        }
+        else if (((KTSParameterSpec)spec).getKeyAlgorithmName() == null)
+        {
+            // SM9 sizes its secret from the spec itself and so does not go through
+            // KdfUtil.resolveKemSpec, which rejects this for every other KEM: a null name would be
+            // substituted for a "Generic" request and only fail deep inside the derivation.
+            throw new InvalidAlgorithmParameterException("KTSParameterSpec has no key algorithm name");
+        }
+        else if (((KTSParameterSpec)spec).getKeySize() <= 0)
+        {
+            // also checked here rather than by resolveKemSpec. Only positivity: unlike the other
+            // KEMs, SM9's own KDF produces any requested bit length, so a size that is not a whole
+            // number of bytes is a legitimate GM/T 0044.4 request (secretSize() floors it).
+            throw new InvalidAlgorithmParameterException("KTSParameterSpec key size must be positive: "
+                + ((KTSParameterSpec)spec).getKeySize());
         }
 
         return new SM9DecapsulatorSpi(bcPrivateKey, (KTSParameterSpec)spec);

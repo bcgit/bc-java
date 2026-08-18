@@ -4,6 +4,7 @@ import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.util.AsymmetricAlgorithmProvider;
 import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
+import org.bouncycastle.jcajce.util.SpiUtil;
 import org.bouncycastle.pqc.jcajce.provider.smaugt.SmaugTKeyFactorySpi;
 
 public class SmaugT
@@ -60,6 +61,27 @@ public class SmaugT
             provider.addKeyInfoConverter(BCObjectIdentifiers.smaugt_mode3, keyFact);
             provider.addKeyInfoConverter(BCObjectIdentifiers.smaugt_mode5, keyFact);
             provider.addKeyInfoConverter(BCObjectIdentifiers.smaugt_modet, keyFact);
+
+            if (SpiUtil.hasKEM())
+            {
+                addKEMAlgorithm(provider, "SMAUGT", PREFIX + "SmaugTKEMSpi$Base", BCObjectIdentifiers.pqc_kem_smaugt);
+
+                addKEMAlgorithm(provider, "SMAUGT-MODE1", PREFIX + "SmaugTKEMSpi$Mode1", BCObjectIdentifiers.smaugt_mode1);
+                addKEMAlgorithm(provider, "SMAUGT-MODE3", PREFIX + "SmaugTKEMSpi$Mode3", BCObjectIdentifiers.smaugt_mode3);
+                addKEMAlgorithm(provider, "SMAUGT-MODE5", PREFIX + "SmaugTKEMSpi$Mode5", BCObjectIdentifiers.smaugt_mode5);
+                addKEMAlgorithm(provider, "SMAUGT-MODET", PREFIX + "SmaugTKEMSpi$ModeT", BCObjectIdentifiers.smaugt_modet);
+
+                // the underscored spellings the other services alias, for the KEM type only -
+                // addParameterSetNameAliases covers KeyFactory/KeyPairGenerator/KeyGenerator/Cipher
+                // and re-running it here would register those a second time, which addAlgorithm
+                // rejects as a duplicate provider key
+                provider.addAlgorithm("Alg.Alias.KEM.SMAUGT_MODE1", "SMAUGT-MODE1");
+                provider.addAlgorithm("Alg.Alias.KEM.SMAUGT_MODE3", "SMAUGT-MODE3");
+                provider.addAlgorithm("Alg.Alias.KEM.SMAUGT_MODE5", "SMAUGT-MODE5");
+                provider.addAlgorithm("Alg.Alias.KEM.SMAUGT_MODET", "SMAUGT-MODET");
+
+                provider.addAlgorithm("Alg.Alias.KEM.SMAUG-T", "SMAUGT");
+            }
         }
 
         private void addParameterSetNameAliases(ConfigurableProvider provider, String alias, String algorithm)

@@ -154,6 +154,6 @@ public class SNTRUPrimeKEMExtractor
     
     public int getEncapsulationLength()
     {
-        return privateKey.getParameters().getRoundedPolynomialBytes() + 32;
+        return privateKey.getParameters().getEncapsulationLength();
     }
 }

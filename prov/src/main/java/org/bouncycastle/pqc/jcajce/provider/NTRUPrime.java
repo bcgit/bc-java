@@ -56,6 +56,7 @@ public class NTRUPrime
             if (SpiUtil.hasKEM())
             {
                 // TODO Per-parameter-set SPI classes?
+                addKEMAlgorithm(provider, "NTRULPRIME", PREFIX + "NTRULPRimeKEMSpi$NTRULPRime", BCObjectIdentifiers.pqc_kem_ntrulprime);
                 addKEMAlgorithm(provider, "SNTRUPRIME", PREFIX + "SNTRUPrimeKEMSpi$SNTRUPrime", BCObjectIdentifiers.pqc_kem_sntruprime);
             }
         }

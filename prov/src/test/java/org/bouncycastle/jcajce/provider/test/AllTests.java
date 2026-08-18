@@ -24,6 +24,7 @@ public class AllTests
 
         suite.addTestSuite(ECAlgorithmParametersTest.class);
         suite.addTestSuite(GeneralKeyTest.class);
+        suite.addTestSuite(KdfUtilTest.class);
         suite.addTestSuite(LEATest.class);
         suite.addTestSuite(HybridRandomProviderTest.class);
         suite.addTestSuite(PrivateConstructorTest.class);

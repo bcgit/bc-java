@@ -139,4 +139,13 @@ public class NTRULPRimeParameters
         return sharedKeyBytes * 8;
     }
 
+    /**
+     * Return the size in bytes of an encapsulation produced for this parameter set. Kept here so
+     * that a caller holding only a public key - the encapsulating side - derives it from the same
+     * expression NTRULPRimeKEMExtractor uses, rather than repeating it.
+     */
+    public int getEncapsulationLength()
+    {
+        return roundedPolynomialBytes + 128 + 32;
+    }
 }

@@ -8,6 +8,14 @@ import org.bouncycastle.crypto.digests.SHAKEDigest;
 /**
  * Reference implementation of SMAUG-T KEM, translated from the SMAUG-T 1.2.0 C
  * reference code.
+ * <p>
+ * <b>Must remain immutable.</b> SmaugTParameters holds one instance per parameter set for the life
+ * of the JVM and hands it to every extractor, generator and key pair generator, so this class is
+ * shared across threads. javax.crypto.KEM requires a Decapsulator to be safe for concurrent use and
+ * SmaugTKEMExtractor relies on that sharing being safe. Every field here is final and set at
+ * construction, and every operation allocates its own buffers and digests - adding a scratch buffer
+ * or a cached digest field would silently corrupt concurrent users rather than fail. If one is ever
+ * needed, make getEngine() return a new instance instead.
  */
 class SmaugTEngine
 {

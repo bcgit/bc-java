@@ -3,6 +3,9 @@ package org.bouncycastle.jcajce.provider.asymmetric.util;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.spec.AlgorithmParameterSpec;
 
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
+
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
@@ -27,6 +30,16 @@ import org.bouncycastle.jcajce.spec.KEMKDFSpec;
 import org.bouncycastle.jcajce.spec.KTSParameterSpec;
 import org.bouncycastle.util.Arrays;
 
+/**
+ * The KEM secret-key derivation toolkit shared by every KEM in the provider, public so a caller
+ * building its own KEM integration can use the same pieces. The intended sequence is the one the
+ * provider's javax.crypto.KEM services follow: {@link #resolveKemSpec} to validate the caller's
+ * KTSParameterSpec (or build the default) when the encapsulator or decapsulator is created,
+ * {@link #resolveAlgorithm} to reconcile the requested algorithm name with the spec's per
+ * operation, and {@link #makeSecretKey} to derive the key - or {@link #makeKeyBytes} where raw
+ * bytes are wanted, as the KEM KeyGenerator services do. The secret-bearing inputs are erased by
+ * the methods that consume them; each javadoc says exactly when.
+ */
 public class KdfUtil
 {
     /**
@@ -51,6 +64,14 @@ public class KdfUtil
         String parameterSetName, int sessionKeySize)
         throws InvalidAlgorithmParameterException
     {
+        // guarded for the benefit of a caller outside the provider: the default spec built below is
+        // only meaningful for a real session key size, and a bad one would surface much later
+        if (sessionKeySize <= 0 || (sessionKeySize % 8) != 0)
+        {
+            throw new IllegalArgumentException(
+                "sessionKeySize must be a positive whole number of bytes: " + sessionKeySize);
+        }
+
         if (spec == null)
         {
             // Do not wrap key, no KDF
@@ -97,6 +118,75 @@ public class KdfUtil
         }
 
         return ktsSpec;
+    }
+
+    /**
+     * Derive a secret key from a KEM's shared secret and return the requested slice of it.
+     * <p>
+     * <b>Note: the passed in secret will be erased</b>, as it is by
+     * {@link #makeKeyBytes(KEMKDFSpec, byte[])}, and so will the derived bytes once the key has
+     * copied them. Take anything else you need from the mechanism's output - the encapsulation in
+     * particular - before calling this, and destroy the SecretWithEncapsulation it came from
+     * afterwards; that is left to the caller so the ordering stays visible at the call site.
+     * <p>
+     * The requested range is validated before deriving, so an out-of-range request is reported as
+     * the range error it is instead of surfacing from SecretKeySpec - the secret is erased either
+     * way.
+     *
+     * @param parameterSpec the KDF and output size to derive with.
+     * @param kemSecret the mechanism's shared secret (erased before this returns).
+     * @param from index of the first byte of the derived key to use.
+     * @param to index after the last byte of the derived key to use.
+     * @param algorithm the algorithm name for the returned key - reconcile it with the spec through
+     *                  {@link #resolveAlgorithm(KTSParameterSpec, String)} first.
+     * @return the requested slice of the derived key.
+     */
+    public static SecretKey makeSecretKey(KTSParameterSpec parameterSpec, byte[] kemSecret,
+        int from, int to, String algorithm)
+    {
+        // erased on every exit, the argument-check throws included, matching makeKeyBytes' contract -
+        // Arrays.clear is null safe, and the clear is idempotent, so makeKeyBytes having already
+        // erased it on the derivation path is harmless
+        try
+        {
+            if (parameterSpec == null)
+            {
+                throw new NullPointerException("'parameterSpec' cannot be null");
+            }
+            if (kemSecret == null)
+            {
+                throw new NullPointerException("'kemSecret' cannot be null");
+            }
+            if (algorithm == null)
+            {
+                throw new NullPointerException("'algorithm' cannot be null");
+            }
+
+            // the same count makeKeyBytes will derive. Checked before deriving, and spelled out
+            // rather than using Objects.checkFromToIndex, which is newer than this tree's source
+            // floor allows.
+            int derivedLength = (parameterSpec.getKeySize() + 7) / 8;
+            if (from < 0 || to < from || to > derivedLength)
+            {
+                throw new IllegalArgumentException("range [" + from + ", " + to
+                    + ") out of bounds for a " + derivedLength + " byte derived key");
+            }
+
+            byte[] kdfSecret = makeKeyBytes(parameterSpec, kemSecret);
+
+            try
+            {
+                return new SecretKeySpec(kdfSecret, from, to - from, algorithm);
+            }
+            finally
+            {
+                Arrays.clear(kdfSecret);
+            }
+        }
+        finally
+        {
+            Arrays.clear(kemSecret);
+        }
     }
 
     /**
@@ -183,11 +273,14 @@ public class KdfUtil
     }
 
     /**
-     * Generate a byte[] secret key from the passed in secret. Note: passed in secret will be erased after use.
+     * Generate a byte[] secret key from the passed in secret. Note: the passed in secret will be
+     * erased before this returns, on the failure paths included.
      *
      * @param kdfSpec definition of the KDF and the output size to produce.
-     * @param secret  the secret value to initialize the KDF with (erased after secret key generation).
+     * @param secret  the secret value to initialize the KDF with (erased before this returns).
      * @return a generated secret key.
+     * @throws IllegalArgumentException if the spec asks for no KDF and the requested key size is
+     * larger than the shared secret the mechanism produced.
      */
     public static byte[] makeKeyBytes(KEMKDFSpec kdfSpec, byte[] secret)
     {
@@ -219,6 +312,22 @@ public class KdfUtil
 
         if (kdfAlgorithm == null)
         {
+            // With no KDF the shared secret is the key material, so a request for more bits than the
+            // mechanism produced cannot be met. Refuse rather than truncate the request silently: a
+            // caller that asked for a 256-bit key and was handed FrodoKEM-976's 192-bit secret would
+            // have no way of telling. (WrapUtil clamps instead, as there the requested size is only an
+            // upper bound on a wrapping key both sides derive the same way.)
+            //
+            // resolveKemSpec above applies the same rule to a KTSParameterSpec before a
+            // javax.crypto.KEM ever encapsulates, where it can be reported as the spec failure it is.
+            // This is the backstop for the callers that do not pass through it - the KEM KeyGenerator
+            // services, which take a KEMGenerateSpec / KEMExtractSpec and reach makeKeyBytes directly.
+            if (secret.length < keyBytes.length)
+            {
+                throw new IllegalArgumentException("no KDF specified and the shared secret is "
+                    + (secret.length * 8) + " bits, " + keySize + " requested");
+            }
+
             System.arraycopy(secret, 0, keyBytes, 0, keyBytes.length);
         }
         else if (X9ObjectIdentifiers.id_kdf_kdf2.equals(kdfAlgorithm.getAlgorithm()))

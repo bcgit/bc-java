@@ -1,4 +1,4 @@
-package org.bouncycastle.jcajce.provider.asymmetric.cmce;
+package org.bouncycastle.pqc.jcajce.provider.smaugt;
 
 import java.security.SecureRandom;
 import java.util.Objects;
@@ -9,28 +9,28 @@ import javax.crypto.SecretKey;
 import javax.security.auth.DestroyFailedException;
 
 import org.bouncycastle.crypto.SecretWithEncapsulation;
-import org.bouncycastle.crypto.kems.CMCEKEMGenerator;
 import org.bouncycastle.jcajce.provider.asymmetric.util.KdfUtil;
 import org.bouncycastle.jcajce.spec.KTSParameterSpec;
+import org.bouncycastle.pqc.crypto.smaugt.SmaugTKEMGenerator;
 
 /*
  *  NOTE: Per javadoc for javax.crypto.KEM, "Encapsulator and Decapsulator objects are also immutable. It is safe to
  *  invoke multiple encapsulate and decapsulate methods on the same Encapsulator or Decapsulator object at the same
  *  time. Each invocation of encapsulate will generate a new shared secret and key encapsulation message."
  */
-class CMCEEncapsulatorSpi
+class SmaugTEncapsulatorSpi
     implements KEMSpi.EncapsulatorSpi
 {
-    private final BCCMCEPublicKey publicKey;
+    private final BCSmaugTPublicKey publicKey;
     private final KTSParameterSpec parameterSpec;
-    private final CMCEKEMGenerator kemGen;
+    private final SmaugTKEMGenerator kemGen;
     private final int encapsulationLength;
 
-    CMCEEncapsulatorSpi(BCCMCEPublicKey publicKey, KTSParameterSpec parameterSpec, SecureRandom random)
+    SmaugTEncapsulatorSpi(BCSmaugTPublicKey publicKey, KTSParameterSpec parameterSpec, SecureRandom random)
     {
         this.publicKey = publicKey;
         this.parameterSpec = parameterSpec;
-        this.kemGen = new CMCEKEMGenerator(random);
+        this.kemGen = new SmaugTKEMGenerator(random);
         this.encapsulationLength = publicKey.getKeyParams().getParameters().getEncapsulationLength();
     }
 

@@ -6,13 +6,12 @@ import java.util.Objects;
 import javax.crypto.KEM;
 import javax.crypto.KEMSpi;
 import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
+import javax.security.auth.DestroyFailedException;
 
 import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.jcajce.spec.KTSParameterSpec;
 import org.bouncycastle.pqc.crypto.hqc.HQCKEMGenerator;
 import org.bouncycastle.jcajce.provider.asymmetric.util.KdfUtil;
-import org.bouncycastle.util.Arrays;
 
 /*
  *  NOTE: Per javadoc for javax.crypto.KEM, "Encapsulator and Decapsulator objects are also immutable. It is safe to
@@ -39,36 +38,31 @@ class HQCEncapsulatorSpi
         Objects.checkFromToIndex(from, to, engineSecretSize());
         Objects.requireNonNull(algorithm, "null algorithm");
 
-        String keyAlgName = parameterSpec.getKeyAlgorithmName();
-        if (!"Generic".equals(keyAlgName))
-        {
-            // if algorithm is Generic then use parameterSpec to wrap key
-            if ("Generic".equals(algorithm))
-            {
-                algorithm = keyAlgName;
-            }
-            // check spec algorithm mismatch provided algorithm
-            else if (!algorithm.equals(keyAlgName))
-            {
-                throw new UnsupportedOperationException(keyAlgName + " does not match " + algorithm);
-            }
-        }
+        algorithm = KdfUtil.resolveAlgorithm(parameterSpec, algorithm);
 
         SecretWithEncapsulation secEnc = kemGen.generateEncapsulated(publicKey.getKeyParams());
 
-        byte[] encapsulation = secEnc.getEncapsulation();
-
-        byte[] kemSecret = secEnc.getSecret();
-        byte[] kdfSecret = KdfUtil.makeKeyBytes(parameterSpec, kemSecret);
-
         try
         {
-            SecretKey secretKey = new SecretKeySpec(kdfSecret, from, to - from, algorithm);
+            // getEncapsulation()/getSecret() hand back clones, so the originals have to be
+            // destroyed as well - KdfUtil.makeSecretKey only clears the secret clone it is passed.
+            byte[] encapsulation = secEnc.getEncapsulation();
+
+            SecretKey secretKey = KdfUtil.makeSecretKey(parameterSpec, secEnc.getSecret(),
+                from, to, algorithm);
+
             return new KEM.Encapsulated(secretKey, encapsulation, null);
         }
         finally
         {
-            Arrays.clear(kdfSecret);
+            try
+            {
+                secEnc.destroy();
+            }
+            catch (DestroyFailedException e)
+            {
+                // ignore
+            }
         }
     }
 

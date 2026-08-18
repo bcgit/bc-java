@@ -9,6 +9,7 @@ import java.security.spec.AlgorithmParameterSpec;
 
 import javax.crypto.KEMSpi;
 
+import org.bouncycastle.jcajce.provider.asymmetric.util.KdfUtil;
 import org.bouncycastle.jcajce.spec.KTSParameterSpec;
 import org.bouncycastle.pqc.crypto.ntru.NTRUKeyParameters;
 import org.bouncycastle.pqc.crypto.ntru.NTRUParameters;
@@ -34,17 +35,9 @@ public abstract class NTRUKEMSpi
 
         checkKeyParameters(bcPublicKey.getKeyParams());
 
-        if (spec == null)
-        {
-            // Do not wrap key, no KDF
-            spec = new KTSParameterSpec.Builder("Generic", 256).withNoKdf().build();
-        }
-        else if (!(spec instanceof KTSParameterSpec))
-        {
-            throw new InvalidAlgorithmParameterException("NTRU can only accept KTSParameterSpec");
-        }
 
-        return new NTRUEncapsulatorSpi(bcPublicKey, (KTSParameterSpec)spec, secureRandom);
+        return new NTRUEncapsulatorSpi(bcPublicKey,
+            resolveSpec(spec, bcPublicKey.getKeyParams()), secureRandom);
     }
 
     @Override
@@ -58,17 +51,17 @@ public abstract class NTRUKEMSpi
 
         checkKeyParameters(bcPrivateKey.getKeyParams());
 
-        if (spec == null)
-        {
-            // Do not unwrap key, no KDF
-            spec = new KTSParameterSpec.Builder("Generic", 256).withNoKdf().build();
-        }
-        else if (!(spec instanceof KTSParameterSpec))
-        {
-            throw new InvalidAlgorithmParameterException("NTRU can only accept KTSParameterSpec");
-        }
 
-        return new NTRUDecapsulatorSpi(bcPrivateKey, (KTSParameterSpec)spec);
+        return new NTRUDecapsulatorSpi(bcPrivateKey, resolveSpec(spec, bcPrivateKey.getKeyParams()));
+    }
+
+    private static KTSParameterSpec resolveSpec(AlgorithmParameterSpec spec, NTRUKeyParameters key)
+        throws InvalidAlgorithmParameterException
+    {
+        NTRUParameters keyParameters = key.getParameters();
+
+        return KdfUtil.resolveKemSpec(spec, "NTRU", keyParameters.getName(),
+            keyParameters.getSessionKeySize());
     }
 
     private void checkKeyParameters(NTRUKeyParameters key) throws InvalidKeyException

@@ -21,6 +21,9 @@ public class AllTests17
         suite.addTestSuite(HQC17Test.class);
         suite.addTestSuite(MLKEM17Test.class);
         suite.addTestSuite(NTRUKEM17Test.class);
+        suite.addTestSuite(NTRULPRimeKEM17Test.class);
+        suite.addTestSuite(NTRUPlusKEM17Test.class);
+        suite.addTestSuite(SmaugTKEM17Test.class);
         suite.addTestSuite(SNTRUPrimeKEM17Test.class);
         suite.addTestSuite(org.bouncycastle.jce.provider.test.SM9KEM17Test.class);
         return suite;

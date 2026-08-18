@@ -5,13 +5,11 @@ import java.util.Objects;
 import javax.crypto.DecapsulateException;
 import javax.crypto.KEMSpi;
 import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.crypto.kems.CMCEKEMExtractor;
 import org.bouncycastle.crypto.params.CMCEPrivateKeyParameters;
 import org.bouncycastle.jcajce.provider.asymmetric.util.KdfUtil;
 import org.bouncycastle.jcajce.spec.KTSParameterSpec;
-import org.bouncycastle.util.Arrays;
 
 /*
  *  NOTE: Per javadoc for javax.crypto.KEM, "Encapsulator and Decapsulator objects are also immutable. It is safe to
@@ -47,20 +45,13 @@ class CMCEDecapsulatorSpi
 
         algorithm = KdfUtil.resolveAlgorithm(parameterSpec, algorithm);
 
-        // CMCEEngine allocates its digest per call so a shared extractor would be safe here, but
-        // one is built per call to match the FrodoKEM sibling, where the engine's digest is
-        // mutable state and sharing it breaks the concurrent use javax.crypto.KEM requires.
+        // CMCEEngine allocates its digest per call, so a shared extractor would be safe here and
+        // the families whose engines are also safe - NTRU LPRime, SMAUG-T and the four older ones -
+        // do share one. This builds per call only to stay symmetric with the FrodoKEM sibling added
+        // beside it, whose engine keeps a mutable digest; there is no correctness need for it.
         byte[] kemSecret = new CMCEKEMExtractor(privateKeyParams).extractSecret(encapsulation);
-        byte[] kdfSecret = KdfUtil.makeKeyBytes(parameterSpec, kemSecret);
 
-        try
-        {
-            return new SecretKeySpec(kdfSecret, from, to - from, algorithm);
-        }
-        finally
-        {
-            Arrays.clear(kdfSecret);
-        }
+        return KdfUtil.makeSecretKey(parameterSpec, kemSecret, from, to, algorithm);
     }
 
     @Override

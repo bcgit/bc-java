@@ -100,4 +100,14 @@ public class SNTRUPrimeParameters
     {
         return sharedKeyBytes * 8;
     }
+
+    /**
+     * Return the size in bytes of an encapsulation produced for this parameter set, so that the
+     * encapsulating side - which holds only a public key and no extractor - reads it from the same
+     * place SNTRUPrimeKEMExtractor does.
+     */
+    public int getEncapsulationLength()
+    {
+        return roundedPolynomialBytes + 32;
+    }
 }

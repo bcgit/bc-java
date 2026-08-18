@@ -190,6 +190,11 @@ compileJava15Java {
     options.sourcepath = files(['src/main/java', 'src/main/jdk1.15'])
 }
 
+// NOTE: deliberately targetCompatibility/sourceCompatibility rather than options.release, so this
+// tree compiles against the driving JDK's class library. That is what lets the KEM SPIs here
+// implement javax.crypto.KEMSpi (Java 21) while shipping under META-INF/versions/17, where one
+// overlay serves 17 upwards and SpiUtil.hasKEM() keeps them dormant below 21. The consequence is
+// that a JDK 21+ Gradle daemon is required to compile this source set.
 compileJava17Java {
     targetCompatibility = 17
     sourceCompatibility = 17
