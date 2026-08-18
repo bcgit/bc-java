@@ -5,6 +5,7 @@ import org.bouncycastle.jcajce.provider.asymmetric.frodokem.FrodoKEMKeyFactorySp
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.util.AsymmetricAlgorithmProvider;
 import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
+import org.bouncycastle.jcajce.util.SpiUtil;
 
 public class FrodoKEM
 {
@@ -77,6 +78,21 @@ public class FrodoKEM
             provider.addKeyInfoConverter(ISOIECObjectIdentifiers.frodokem1344_aes, keyFact);
             provider.addKeyInfoConverter(ISOIECObjectIdentifiers.efrodokem976_aes, keyFact);
             provider.addKeyInfoConverter(ISOIECObjectIdentifiers.efrodokem1344_aes, keyFact);
+
+            if (SpiUtil.hasKEM())
+            {
+                provider.addAlgorithm("KEM.FRODOKEM", PREFIX + "FrodoKEMSpi$Base");
+                provider.addAlgorithm("Alg.Alias.KEM.FrodoKEM", "FRODOKEM");
+
+                addKEMAlgorithm(provider, "frodokem976shake", PREFIX + "FrodoKEMSpi$Frodokem976Shake", ISOIECObjectIdentifiers.frodokem976_shake);
+                addKEMAlgorithm(provider, "frodokem1344shake", PREFIX + "FrodoKEMSpi$Frodokem1344Shake", ISOIECObjectIdentifiers.frodokem1344_shake);
+                addKEMAlgorithm(provider, "efrodokem976shake", PREFIX + "FrodoKEMSpi$EFrodokem976Shake", ISOIECObjectIdentifiers.efrodokem976_shake);
+                addKEMAlgorithm(provider, "efrodokem1344shake", PREFIX + "FrodoKEMSpi$EFrodokem1344Shake", ISOIECObjectIdentifiers.efrodokem1344_shake);
+                addKEMAlgorithm(provider, "frodokem976aes", PREFIX + "FrodoKEMSpi$Frodokem976Aes", ISOIECObjectIdentifiers.frodokem976_aes);
+                addKEMAlgorithm(provider, "frodokem1344aes", PREFIX + "FrodoKEMSpi$Frodokem1344Aes", ISOIECObjectIdentifiers.frodokem1344_aes);
+                addKEMAlgorithm(provider, "efrodokem976aes", PREFIX + "FrodoKEMSpi$EFrodokem976Aes", ISOIECObjectIdentifiers.efrodokem976_aes);
+                addKEMAlgorithm(provider, "efrodokem1344aes", PREFIX + "FrodoKEMSpi$EFrodokem1344Aes", ISOIECObjectIdentifiers.efrodokem1344_aes);
+            }
         }
     }
 }

@@ -5,6 +5,7 @@ import org.bouncycastle.jcajce.provider.asymmetric.cmce.CMCEKeyFactorySpi;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.util.AsymmetricAlgorithmProvider;
 import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
+import org.bouncycastle.jcajce.util.SpiUtil;
 
 public class CMCE
 {
@@ -117,6 +118,28 @@ public class CMCE
             provider.addKeyInfoConverter(ISOIECObjectIdentifiers.mceliece8192128f, keyFact);
             provider.addKeyInfoConverter(ISOIECObjectIdentifiers.mceliece8192128pc, keyFact);
             provider.addKeyInfoConverter(ISOIECObjectIdentifiers.mceliece8192128pcf, keyFact);
+
+            if (SpiUtil.hasKEM())
+            {
+                provider.addAlgorithm("KEM.CMCE", PREFIX + "CMCEKEMSpi$Base");
+
+                addKEMAlgorithm(provider, "mceliece460896", PREFIX + "CMCEKEMSpi$Mceliece460896", ISOIECObjectIdentifiers.mceliece460896);
+                addKEMAlgorithm(provider, "mceliece460896f", PREFIX + "CMCEKEMSpi$Mceliece460896F", ISOIECObjectIdentifiers.mceliece460896f);
+                addKEMAlgorithm(provider, "mceliece460896pc", PREFIX + "CMCEKEMSpi$Mceliece460896Pc", ISOIECObjectIdentifiers.mceliece460896pc);
+                addKEMAlgorithm(provider, "mceliece460896pcf", PREFIX + "CMCEKEMSpi$Mceliece460896Pcf", ISOIECObjectIdentifiers.mceliece460896pcf);
+                addKEMAlgorithm(provider, "mceliece6688128", PREFIX + "CMCEKEMSpi$Mceliece6688128", ISOIECObjectIdentifiers.mceliece6688128);
+                addKEMAlgorithm(provider, "mceliece6688128f", PREFIX + "CMCEKEMSpi$Mceliece6688128F", ISOIECObjectIdentifiers.mceliece6688128f);
+                addKEMAlgorithm(provider, "mceliece6688128pc", PREFIX + "CMCEKEMSpi$Mceliece6688128Pc", ISOIECObjectIdentifiers.mceliece6688128pc);
+                addKEMAlgorithm(provider, "mceliece6688128pcf", PREFIX + "CMCEKEMSpi$Mceliece6688128Pcf", ISOIECObjectIdentifiers.mceliece6688128pcf);
+                addKEMAlgorithm(provider, "mceliece6960119", PREFIX + "CMCEKEMSpi$Mceliece6960119", ISOIECObjectIdentifiers.mceliece6960119);
+                addKEMAlgorithm(provider, "mceliece6960119f", PREFIX + "CMCEKEMSpi$Mceliece6960119F", ISOIECObjectIdentifiers.mceliece6960119f);
+                addKEMAlgorithm(provider, "mceliece6960119pc", PREFIX + "CMCEKEMSpi$Mceliece6960119Pc", ISOIECObjectIdentifiers.mceliece6960119pc);
+                addKEMAlgorithm(provider, "mceliece6960119pcf", PREFIX + "CMCEKEMSpi$Mceliece6960119Pcf", ISOIECObjectIdentifiers.mceliece6960119pcf);
+                addKEMAlgorithm(provider, "mceliece8192128", PREFIX + "CMCEKEMSpi$Mceliece8192128", ISOIECObjectIdentifiers.mceliece8192128);
+                addKEMAlgorithm(provider, "mceliece8192128f", PREFIX + "CMCEKEMSpi$Mceliece8192128F", ISOIECObjectIdentifiers.mceliece8192128f);
+                addKEMAlgorithm(provider, "mceliece8192128pc", PREFIX + "CMCEKEMSpi$Mceliece8192128Pc", ISOIECObjectIdentifiers.mceliece8192128pc);
+                addKEMAlgorithm(provider, "mceliece8192128pcf", PREFIX + "CMCEKEMSpi$Mceliece8192128Pcf", ISOIECObjectIdentifiers.mceliece8192128pcf);
+            }
         }
     }
 }
