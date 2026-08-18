@@ -149,6 +149,7 @@ configure(allprojects.findAll {it.name != 'bom'}) {
             check('NonOverridingEquals', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
             check('OperatorPrecedence', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
             check('ProtectedMembersInFinalClass', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('RedundantControlFlow', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
             check('ReferenceEquality', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
             check('ReturnFromVoid', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
             check('ShortCircuitBoolean', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
