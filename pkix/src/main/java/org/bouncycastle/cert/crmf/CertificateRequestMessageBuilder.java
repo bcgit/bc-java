@@ -256,6 +256,8 @@ public class CertificateRequestMessageBuilder
         return this;
     }
 
+    // The explicit popRaVerified branch and the default fall-through both yield a raVerified ProofOfPossession.
+    @SuppressWarnings("DuplicateBranches")
     public CertificateRequestMessage build()
         throws CRMFException
     {

@@ -22,6 +22,8 @@ public abstract class BcAsymmetricKeyUnwrapper
         this.privateKey = privateKey;
     }
 
+    // The des-EDE3 branch is a deliberate placeholder for the parity-bit check noted in its TODO.
+    @SuppressWarnings("DuplicateBranches")
     public GenericKey generateUnwrappedKey(AlgorithmIdentifier encryptedKeyAlgorithm, byte[] encryptedKey)
         throws OperatorException
     {

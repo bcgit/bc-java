@@ -66,6 +66,8 @@ public class SignatureSpi
         return expanded;
     }
 
+    // The BCDSTU4145PrivateKey branch is a deliberate placeholder for the parameter support noted in its TODO.
+    @SuppressWarnings("DuplicateBranches")
     protected void engineInitSign(
         PrivateKey privateKey)
         throws InvalidKeyException
