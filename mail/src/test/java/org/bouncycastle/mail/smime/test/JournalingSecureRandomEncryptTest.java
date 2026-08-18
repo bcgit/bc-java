@@ -19,7 +19,6 @@ import java.util.Date;
 
 import junit.framework.TestCase;
 import org.bouncycastle.asn1.x500.X500Name;
-import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
@@ -141,9 +140,6 @@ public class JournalingSecureRandomEncryptTest
 
         OutputEncryptor encryptor = new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES128_CBC).setProvider(BC).setSecureRandom(journaling_1).build();
 
-        AlgorithmIdentifier alg_id = encryptor.getAlgorithmIdentifier();
-
-
         SMIMEEnvelopedWriter envWrt = envBldr_i.build(out_i, encryptor);
 
         OutputStream envOut = envWrt.getContentStream();
@@ -172,7 +168,8 @@ public class JournalingSecureRandomEncryptTest
         // specify encryption certificate
         envBldr_f.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(_encrCert, wrapper_f).setProvider(BC));
 
-        OutputEncryptor encryptor_2 = new JceCMSContentEncryptorBuilder(alg_id).setSecureRandom(journaling_2).build();
+        // regenerate the IV from the replayed journaling random (build from the OID, not the first round's captured AlgorithmIdentifier) so the IV draw stays aligned with the recorded transcript
+        OutputEncryptor encryptor_2 = new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES128_CBC).setProvider(BC).setSecureRandom(journaling_2).build();
 
         SMIMEEnvelopedWriter envWrt_f = envBldr_f.build(out_f, encryptor_2);
 

@@ -165,7 +165,8 @@ public class TestJournalingSecureRandomEncrypt
 
         envBldr_i.setBufferSize(20);
 
-        OutputEncryptor encryptor = new JceCMSContentEncryptorBuilder(journaledAlgorithm.getAlgorithmIdentifier()).setProvider(BC)
+        // regenerate the IV from the replayed journaling random (build from the algorithm OID, not the stored IV-bearing AlgorithmIdentifier) so the IV draw stays aligned with the recorded transcript
+        OutputEncryptor encryptor = new JceCMSContentEncryptorBuilder(new AlgorithmIdentifier(journaledAlgorithm.getAlgorithmIdentifier().getAlgorithm())).setProvider(BC)
             .setSecureRandom(journaledAlgorithm.getJournalingSecureRandom()).build();
 
         SMIMEEnvelopedWriter envWrt = envBldr_i.build(out_i, encryptor);
