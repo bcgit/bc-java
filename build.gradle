@@ -118,6 +118,7 @@ configure(allprojects.findAll {it.name != 'bom'}) {
             check('InconsistentCapitalization', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
             check('InconsistentHashCode', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
             check('IncrementInForLoopAndHeader', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('InlineMeSuggester', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
             check('InputStreamSlowMultibyteRead', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
             check('InstanceOfAndCastMatchWrongType', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
             check('IntLongMath', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
