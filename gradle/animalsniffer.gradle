@@ -1,0 +1,96 @@
+// Android API-level compatibility gate (a modernised github #336).
+//
+// Checks a module's base (--release 8) classes against an Android platform
+// signature with AnimalSniffer, failing the build on a reference to a
+// java.* / javax.* platform API absent from that API level - the class of
+// regression behind the BigIntegers.intValueExact NoSuchMethodError on older
+// Android (github #2369). Only the base classes are checked, never the
+// multi-release overlays, which are selected by JDK version at runtime and
+// never load on Android.
+//
+// The engine is org.codehaus.mojo:animal-sniffer's SignatureChecker, loaded
+// off a dedicated configuration so it never touches the build's own classpath.
+// Two per-module knobs configure it:
+//   ext.androidIgnoredPackages - packages treated as available (the module's
+//       own code and its bundled runtime dependencies), suppressed at source.
+//   ext.androidAllowedRefs     - substrings of the remaining, intentionally
+//       platform-absent references that are permitted (e.g. the optional JNDI
+//       fetchers, or bcmail's legacy java.awt DataFlavor). Anything not covered
+//       by either fails the build.
+
+configurations {
+    animalSnifferTool
+    androidApiSignature
+}
+
+dependencies {
+    animalSnifferTool "org.codehaus.mojo:animal-sniffer:${animalSnifferVersion}"
+    animalSnifferTool "org.ow2.asm:asm:${animalSnifferAsmVersion}"
+    androidApiSignature "net.sf.androidscents.signature:android-api-level-${androidApiLevel}:${androidSignatureVersion}@signature"
+}
+
+def androidApiCheck = tasks.register('androidApiCheck') {
+    group = 'verification'
+    description = "Checks the base classes for Android API level ${androidApiLevel} compatibility"
+    dependsOn tasks.named('classes')
+
+    def toolCp = configurations.animalSnifferTool
+    def signatureCfg = configurations.androidApiSignature
+    def classDirs = sourceSets.main.output.classesDirs
+    def ignoredPackages = (project.findProperty('androidIgnoredPackages') ?: []) as List
+    def allowedRefs = (project.findProperty('androidAllowedRefs') ?: []) as List
+    def apiLevel = androidApiLevel
+    def moduleName = project.name
+
+    inputs.files(toolCp, signatureCfg, classDirs)
+    def marker = layout.buildDirectory.file("animalsniffer/android-api-${androidApiLevel}.ok")
+    outputs.file(marker)
+
+    doLast {
+        def loader = new URLClassLoader(
+            toolCp.files.collect { it.toURI().toURL() } as URL[],
+            (ClassLoader) getClass().classLoader)
+        def checkerClass = loader.loadClass('org.codehaus.mojo.animal_sniffer.SignatureChecker')
+        def loggerClass = loader.loadClass('org.codehaus.mojo.animal_sniffer.logging.Logger')
+
+        def violations = []
+        def logger = java.lang.reflect.Proxy.newProxyInstance(loader, [loggerClass] as Class[],
+            { proxy, method, args ->
+                if (method.name == 'error' && args && args[0] instanceof String) {
+                    violations << (String) args[0]
+                }
+                return null
+            } as java.lang.reflect.InvocationHandler)
+
+        def ignoreSet = new HashSet<String>(ignoredPackages)
+        ignoreSet.addAll(['org.bouncycastle.*',
+                          'org.jvnet.animal_sniffer.*',
+                          'org.codehaus.mojo.animal_sniffer.*',
+                          'org.objectweb.*'])
+
+        signatureCfg.singleFile.withInputStream { sigIn ->
+            def checker = checkerClass
+                .getConstructor(InputStream, Set, loggerClass)
+                .newInstance(sigIn, ignoreSet, logger)
+            classDirs.files.each { dir ->
+                if (dir.isDirectory()) {
+                    checker.getClass().getMethod('process', File).invoke(checker, dir)
+                }
+            }
+        }
+
+        def unexpected = violations.findAll { v -> !allowedRefs.any { a -> v.contains(a) } }
+                                   .toUnique().sort()
+        if (!unexpected.isEmpty()) {
+            throw new GradleException(
+                "Android API level ${apiLevel} incompatibilities in ${moduleName} (${unexpected.size()}):\n  " +
+                unexpected.take(60).join('\n  '))
+        }
+
+        def out = marker.get().asFile
+        out.parentFile.mkdirs()
+        out.text = "Android API ${apiLevel}: OK\n"
+    }
+}
+
+tasks.named('check') { dependsOn androidApiCheck }

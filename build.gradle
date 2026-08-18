@@ -398,3 +398,38 @@ task copyMavenJars(type: Copy) {
 
 apply from: "gradle/cbom.gradle"
 apply from: "gradle/sbom.gradle"
+
+// Android API-level compatibility gate - see gradle/animalsniffer.gradle (github #336).
+// Per jar-producing module: androidIgnored = packages treated as available (the module's
+// own generated code and its bundled runtime dependencies); androidAllowed = substrings of
+// the remaining, intentionally platform-absent references that are permitted.
+def androidApiConfig = [
+    util : [ignored: [],
+            allowed: []],
+    prov : [ignored: [],
+            allowed: ['javax.naming.']],                       // optional LDAP cert-store (JNDI absent on Android)
+    pkix : [ignored: [],
+            allowed: ['javax.naming.']],                       // optional LDAP CRL + DANE fetchers
+    pg   : [ignored: [],
+            allowed: []],
+    tls  : [ignored: [],
+            // A JDK-version-specific SSLSocketFactory.createSocket overload and a ConcurrentHashMap
+            // covariant-return keySet(), both absent from Android 8.0 but not reached on Android in
+            // practice - the createSocket overload is an optional JSSE utility path callers do not invoke.
+            allowed: ['createSocket(java.net.Socket, java.io.InputStream, boolean)',
+                      'java.util.concurrent.ConcurrentHashMap.keySet']],
+    mail : [ignored: ['javax.mail.*', 'javax.activation.*'],
+            allowed: ['java.awt.']],                           // legacy javax.activation 1.x ActivationDataFlavor (github #242)
+    jmail: [ignored: ['jakarta.mail.*', 'jakarta.activation.*'],
+            allowed: []],
+    mls  : [ignored: ['mls_client.*', 'com.google.*', 'io.grpc.*'],
+            allowed: []],
+]
+androidApiConfig.each { moduleName, cfg ->
+    def target = findProject(":${moduleName}")
+    if (target != null) {
+        target.ext.androidIgnoredPackages = cfg.ignored
+        target.ext.androidAllowedRefs = cfg.allowed
+        target.apply from: rootProject.file('gradle/animalsniffer.gradle')
+    }
+}
