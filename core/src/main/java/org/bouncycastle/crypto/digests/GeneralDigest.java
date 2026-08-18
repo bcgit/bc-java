@@ -51,8 +51,7 @@ public abstract class GeneralDigest
 
     protected GeneralDigest(byte[] encodedState)
     {
-        CryptoServicePurpose[] values = CryptoServicePurpose.values();
-        this.purpose = values[encodedState[encodedState.length - 1]];
+        this.purpose = CryptoServicePurpose.forCode(encodedState[encodedState.length - 1]);
 
         System.arraycopy(encodedState, 0, xBuf, 0, xBuf.length);
         xBufOff = Pack.bigEndianToInt(encodedState, 4);

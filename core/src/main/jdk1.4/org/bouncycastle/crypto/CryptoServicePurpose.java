@@ -25,10 +25,28 @@ public final class CryptoServicePurpose
         return ord;
     }
 
+    public int getCode()
+    {
+        return ord;
+    }
+
     private static final CryptoServicePurpose[] vs = new CryptoServicePurpose[] { AGREEMENT, ENCRYPTION, DECRYPTION, KEYGEN, SIGNING, VERIFYING, AUTHENTICATION, VERIFICATION, PRF, ANY };
 
     public static CryptoServicePurpose[] values()
     {
 	return vs;
+    }
+
+    public static CryptoServicePurpose forCode(int code)
+    {
+        for (int i = 0; i != vs.length; i++)
+        {
+            if (vs[i].ord == code)
+            {
+                return vs[i];
+            }
+        }
+
+        throw new IllegalArgumentException("unknown CryptoServicePurpose code: " + code);
     }
 }

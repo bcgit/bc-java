@@ -384,7 +384,7 @@ public class SHA256Digest
             Pack.intToBigEndian(X[i], state, 52 + (i * 4));
         }
 
-        state[state.length - 1] = (byte)purpose.ordinal();
+        state[state.length - 1] = (byte)purpose.getCode();
 
         return state;
     }

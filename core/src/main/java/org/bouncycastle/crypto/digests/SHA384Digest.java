@@ -61,7 +61,7 @@ public class SHA384Digest
      */
     public SHA384Digest(byte[] encodedState)
     {
-        super(CryptoServicePurpose.values()[encodedState[encodedState.length - 1]]);
+        super(CryptoServicePurpose.forCode(encodedState[encodedState.length - 1]));
 
         restoreState(encodedState);
 
@@ -134,7 +134,7 @@ public class SHA384Digest
         byte[] encoded = new byte[getEncodedStateSize() + 1];
         super.populateState(encoded);
 
-        encoded[encoded.length - 1] = (byte)purpose.ordinal();
+        encoded[encoded.length - 1] = (byte)purpose.getCode();
 
         return encoded;
     }

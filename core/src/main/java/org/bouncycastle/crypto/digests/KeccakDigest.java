@@ -105,8 +105,7 @@ public class KeccakDigest
 
     private static CryptoServicePurpose getCryptoServicePurpose(byte b)
     {
-        CryptoServicePurpose[] values = CryptoServicePurpose.values();
-        return values[b];
+        return CryptoServicePurpose.forCode(b);
     }
 
     protected void copyIn(KeccakDigest source)
@@ -533,7 +532,7 @@ public class KeccakDigest
             ensureQueuePacked(rate >>> 3);
         }
 
-        encState[0] = (byte)purpose.ordinal();
+        encState[0] = (byte)purpose.getCode();
 
         int sOff = 1;
         for (int i = 0; i != state.length; i++)

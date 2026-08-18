@@ -68,7 +68,7 @@ public class SHA512tDigest
 
     public SHA512tDigest(byte[] encodedState)
     {
-        this(readDigestLength(encodedState), CryptoServicePurpose.values()[encodedState[encodedState.length - 1]]);
+        this(readDigestLength(encodedState), CryptoServicePurpose.forCode(encodedState[encodedState.length - 1]));
 
         CryptoServicesRegistrar.checkConstraints(cryptoServiceProperties());
 
@@ -237,7 +237,7 @@ public class SHA512tDigest
         populateState(encoded);
         Pack.intToBigEndian(digestLength * 8, encoded, baseSize);
 
-        encoded[encoded.length - 1] = (byte)purpose.ordinal();
+        encoded[encoded.length - 1] = (byte)purpose.getCode();
 
         return encoded;
     }
