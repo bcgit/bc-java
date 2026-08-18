@@ -7,6 +7,7 @@ import javax.crypto.KEM;
 import javax.crypto.KEMSpi;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
+import javax.security.auth.DestroyFailedException;
 
 import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.jcajce.spec.KTSParameterSpec;
@@ -56,19 +57,29 @@ class MLKEMEncapsulatorSpi
 
         SecretWithEncapsulation secEnc = kemGen.generateEncapsulated(publicKey.getKeyParams());
 
-        byte[] encapsulation = secEnc.getEncapsulation();
-
-        byte[] kemSecret = secEnc.getSecret();
-        byte[] kdfSecret = KdfUtil.makeKeyBytes(parameterSpec, kemSecret);
-
+        byte[] kdfSecret = null;
         try
         {
+            // getEncapsulation()/getSecret() hand back clones, so the originals have to be
+            // destroyed as well - KdfUtil.makeKeyBytes only clears the secret clone it is passed.
+            byte[] encapsulation = secEnc.getEncapsulation();
+
+            kdfSecret = KdfUtil.makeKeyBytes(parameterSpec, secEnc.getSecret());
+
             SecretKey secretKey = new SecretKeySpec(kdfSecret, from, to - from, algorithm);
             return new KEM.Encapsulated(secretKey, encapsulation, null);
         }
         finally
         {
             Arrays.clear(kdfSecret);
+            try
+            {
+                secEnc.destroy();
+            }
+            catch (DestroyFailedException e)
+            {
+                // ignore
+            }
         }
     }
 
