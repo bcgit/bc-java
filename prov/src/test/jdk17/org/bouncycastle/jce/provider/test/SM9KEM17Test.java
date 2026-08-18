@@ -151,6 +151,29 @@ public class SM9KEM17Test
         catch (InvalidAlgorithmParameterException expected)
         {
         }
+
+        // a spec with no key algorithm name is refused at construction - SM9 does not go
+        // through KdfUtil.resolveKemSpec, so it carries this check itself; without it the null
+        // is substituted for a "Generic" request and fails deep inside the derivation
+        KTSParameterSpec nullName = new KTSParameterSpec.Builder(null, 256).withNoKdf().build();
+        try
+        {
+            kem.newEncapsulator(bobPublic, nullName, null);
+            fail("encapsulator accepted a spec with no key algorithm name");
+        }
+        catch (InvalidAlgorithmParameterException expected)
+        {
+        }
+
+        try
+        {
+            kem.newDecapsulator(((SM9EncMasterPrivateKey)master.getPrivate())
+                .generateUserKeyPair(bobIdentity, SM9EncMasterPrivateKeyParameters.HID).getPrivate(), nullName);
+            fail("decapsulator accepted a spec with no key algorithm name");
+        }
+        catch (InvalidAlgorithmParameterException expected)
+        {
+        }
     }
 
     /**

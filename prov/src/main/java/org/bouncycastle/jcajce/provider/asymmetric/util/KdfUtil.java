@@ -133,23 +133,24 @@ public class KdfUtil
     public static SecretKey makeSecretKey(KTSParameterSpec parameterSpec, byte[] kemSecret,
         int from, int to, String algorithm)
     {
-        if (parameterSpec == null)
-        {
-            throw new NullPointerException("'parameterSpec' cannot be null");
-        }
-        if (kemSecret == null)
-        {
-            throw new NullPointerException("'kemSecret' cannot be null");
-        }
-        if (algorithm == null)
-        {
-            throw new NullPointerException("'algorithm' cannot be null");
-        }
-
-        // erased on every exit, throws included, matching makeKeyBytes' contract - the clear is
-        // idempotent, so makeKeyBytes having already erased it on the derivation path is harmless
+        // erased on every exit, the argument-check throws included, matching makeKeyBytes' contract -
+        // Arrays.clear is null safe, and the clear is idempotent, so makeKeyBytes having already
+        // erased it on the derivation path is harmless
         try
         {
+            if (parameterSpec == null)
+            {
+                throw new NullPointerException("'parameterSpec' cannot be null");
+            }
+            if (kemSecret == null)
+            {
+                throw new NullPointerException("'kemSecret' cannot be null");
+            }
+            if (algorithm == null)
+            {
+                throw new NullPointerException("'algorithm' cannot be null");
+            }
+
             // the same count makeKeyBytes will derive. Checked before deriving, and spelled out
             // rather than using Objects.checkFromToIndex, which is newer than this tree's source
             // floor allows.

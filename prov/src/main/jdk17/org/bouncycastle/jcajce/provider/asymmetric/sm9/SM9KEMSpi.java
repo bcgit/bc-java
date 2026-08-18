@@ -46,6 +46,13 @@ public class SM9KEMSpi
         {
             throw new InvalidAlgorithmParameterException("SM9-KEM can only accept KTSParameterSpec");
         }
+        else if (((KTSParameterSpec)spec).getKeyAlgorithmName() == null)
+        {
+            // SM9 sizes its secret from the spec itself and so does not go through
+            // KdfUtil.resolveKemSpec, which rejects this for every other KEM: a null name would be
+            // substituted for a "Generic" request and only fail deep inside the derivation.
+            throw new InvalidAlgorithmParameterException("KTSParameterSpec has no key algorithm name");
+        }
 
         return new SM9EncapsulatorSpi(bcPublicKey, (KTSParameterSpec)spec, secureRandom);
     }
@@ -67,6 +74,13 @@ public class SM9KEMSpi
         else if (!(spec instanceof KTSParameterSpec))
         {
             throw new InvalidAlgorithmParameterException("SM9-KEM can only accept KTSParameterSpec");
+        }
+        else if (((KTSParameterSpec)spec).getKeyAlgorithmName() == null)
+        {
+            // SM9 sizes its secret from the spec itself and so does not go through
+            // KdfUtil.resolveKemSpec, which rejects this for every other KEM: a null name would be
+            // substituted for a "Generic" request and only fail deep inside the derivation.
+            throw new InvalidAlgorithmParameterException("KTSParameterSpec has no key algorithm name");
         }
 
         return new SM9DecapsulatorSpi(bcPrivateKey, (KTSParameterSpec)spec);
