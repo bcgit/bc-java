@@ -106,6 +106,7 @@ configure(allprojects.findAll {it.name != 'bom'}) {
             check('CompareToZero', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
             check('DefaultCharset', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
             check('DoubleBraceInitialization', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
+            check('EffectivelyPrivate', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
             check('EmptyBlockTag', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
             check('EmptyCatch', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
             check('EqualsGetClass', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
