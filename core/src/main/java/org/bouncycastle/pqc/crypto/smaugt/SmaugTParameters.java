@@ -46,6 +46,16 @@ public class SmaugTParameters
         return defaultKeySize;
     }
 
+    /**
+     * Return the size in bytes of an encapsulation produced for this parameter set. The engine that
+     * knows it is package private, so this is the only way the encapsulating side - which holds a
+     * public key and no extractor - can obtain it.
+     */
+    public int getEncapsulationLength()
+    {
+        return engine.getCipherTextBytes();
+    }
+
     int getMode()
     {
         return mode;

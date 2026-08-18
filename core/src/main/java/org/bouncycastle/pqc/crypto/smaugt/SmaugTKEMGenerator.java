@@ -2,6 +2,7 @@ package org.bouncycastle.pqc.crypto.smaugt;
 
 import java.security.SecureRandom;
 
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.EncapsulatedSecretGenerator;
 import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
@@ -14,7 +15,7 @@ public class SmaugTKEMGenerator
 
     public SmaugTKEMGenerator(SecureRandom random)
     {
-        this.sr = random;
+        this.sr = CryptoServicesRegistrar.getSecureRandom(random);
     }
 
     public SecretWithEncapsulation generateEncapsulated(AsymmetricKeyParameter recipientKey)
