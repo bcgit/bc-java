@@ -174,6 +174,16 @@ public class SM9KEM17Test
         catch (InvalidAlgorithmParameterException expected)
         {
         }
+        // a non-positive key size is refused at construction too; a size that is not a whole
+        // number of bytes is deliberately allowed - SM9's own KDF produces any bit length
+        try
+        {
+            kem.newEncapsulator(bobPublic, new KTSParameterSpec.Builder("AES", 0).withNoKdf().build(), null);
+            fail("encapsulator accepted a zero key size");
+        }
+        catch (InvalidAlgorithmParameterException expected)
+        {
+        }
     }
 
     /**

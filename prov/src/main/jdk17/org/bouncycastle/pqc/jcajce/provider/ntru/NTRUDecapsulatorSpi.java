@@ -18,13 +18,11 @@ import org.bouncycastle.jcajce.provider.asymmetric.util.KdfUtil;
 class NTRUDecapsulatorSpi
     implements KEMSpi.DecapsulatorSpi
 {
-//    private final BCNTRUPrivateKey privateKey;
     private final KTSParameterSpec parameterSpec;
     private final NTRUKEMExtractor kemExt;
 
     NTRUDecapsulatorSpi(BCNTRUPrivateKey privateKey, KTSParameterSpec parameterSpec)
     {
-//        this.privateKey = privateKey;
         this.parameterSpec = parameterSpec;
         this.kemExt = new NTRUKEMExtractor(privateKey.getKeyParams());
     }

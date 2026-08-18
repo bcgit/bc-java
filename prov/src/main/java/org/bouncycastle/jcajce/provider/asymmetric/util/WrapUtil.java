@@ -105,6 +105,12 @@ public class WrapUtil
     // requested key size is an upper bound, but a KEM shared secret can be shorter than the
     // default 256-bit request (e.g. FrodoKEM-976's secret is 192 bits), so clamp to what the
     // secret actually provides rather than over-reading it.
+    /**
+     * The requested size is only an upper bound here - a wrapping key is derived the same way by
+     * both parties from the same secret, so clamping to the secret is harmless. Do not copy this
+     * shape to a path that hands the caller a key of a size they asked for: KdfUtil.resolveKemSpec
+     * and KdfUtil.makeKeyBytes both refuse such a request instead, and say why.
+     */
     private static int kekLength(KTSParameterSpec ktsSpec, byte[] secret)
     {
         return Math.min((ktsSpec.getKeySize() + 7) / 8, secret.length);

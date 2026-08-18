@@ -30,6 +30,16 @@ import org.bouncycastle.jcajce.spec.KEMKDFSpec;
 import org.bouncycastle.jcajce.spec.KTSParameterSpec;
 import org.bouncycastle.util.Arrays;
 
+/**
+ * The KEM secret-key derivation toolkit shared by every KEM in the provider, public so a caller
+ * building its own KEM integration can use the same pieces. The intended sequence is the one the
+ * provider's javax.crypto.KEM services follow: {@link #resolveKemSpec} to validate the caller's
+ * KTSParameterSpec (or build the default) when the encapsulator or decapsulator is created,
+ * {@link #resolveAlgorithm} to reconcile the requested algorithm name with the spec's per
+ * operation, and {@link #makeSecretKey} to derive the key - or {@link #makeKeyBytes} where raw
+ * bytes are wanted, as the KEM KeyGenerator services do. The secret-bearing inputs are erased by
+ * the methods that consume them; each javadoc says exactly when.
+ */
 public class KdfUtil
 {
     /**
@@ -119,8 +129,9 @@ public class KdfUtil
      * particular - before calling this, and destroy the SecretWithEncapsulation it came from
      * afterwards; that is left to the caller so the ordering stays visible at the call site.
      * <p>
-     * The requested range is validated here rather than left to SecretKeySpec, so that an
-     * out-of-range request cannot reach it after the secret has been erased.
+     * The requested range is validated before deriving, so an out-of-range request is reported as
+     * the range error it is instead of surfacing from SecretKeySpec - the secret is erased either
+     * way.
      *
      * @param parameterSpec the KDF and output size to derive with.
      * @param kemSecret the mechanism's shared secret (erased before this returns).
@@ -262,10 +273,11 @@ public class KdfUtil
     }
 
     /**
-     * Generate a byte[] secret key from the passed in secret. Note: passed in secret will be erased after use.
+     * Generate a byte[] secret key from the passed in secret. Note: the passed in secret will be
+     * erased before this returns, on the failure paths included.
      *
      * @param kdfSpec definition of the KDF and the output size to produce.
-     * @param secret  the secret value to initialize the KDF with (erased after secret key generation).
+     * @param secret  the secret value to initialize the KDF with (erased before this returns).
      * @return a generated secret key.
      * @throws IllegalArgumentException if the spec asks for no KDF and the requested key size is
      * larger than the shared secret the mechanism produced.

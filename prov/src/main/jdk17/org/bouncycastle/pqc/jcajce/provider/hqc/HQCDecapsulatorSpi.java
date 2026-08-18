@@ -18,13 +18,11 @@ import org.bouncycastle.jcajce.provider.asymmetric.util.KdfUtil;
 class HQCDecapsulatorSpi
     implements KEMSpi.DecapsulatorSpi
 {
-//    private final BCHQCPrivateKey privateKey;
     private final KTSParameterSpec parameterSpec;
     private final HQCKEMExtractor kemExt;
 
     HQCDecapsulatorSpi(BCHQCPrivateKey privateKey, KTSParameterSpec parameterSpec)
     {
-//        this.privateKey = privateKey;
         this.parameterSpec = parameterSpec;
         this.kemExt = new HQCKEMExtractor(privateKey.getKeyParams());
     }

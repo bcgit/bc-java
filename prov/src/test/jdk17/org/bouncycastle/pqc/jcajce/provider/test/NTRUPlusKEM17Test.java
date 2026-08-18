@@ -422,6 +422,13 @@ public class NTRUPlusKEM17Test
         SecretKey tail = d.decapsulate(enc.encapsulation(), 16, 32, "AES");
         assertEquals(16, tail.getEncoded().length);
         assertFalse(Arrays.areEqual(secR.getEncoded(), tail.getEncoded()));
+
+        // and the encapsulator honours a non-zero window too - both sides go through the same
+        // helper, but the from/to wiring of each SPI is its own code
+        KEM.Encapsulated tailEnc = e.encapsulate(16, 32, "AES");
+        assertEquals(16, tailEnc.key().getEncoded().length);
+        assertTrue(Arrays.areEqual(tailEnc.key().getEncoded(),
+            d.decapsulate(tailEnc.encapsulation(), 16, 32, "AES").getEncoded()));
     }
 
     private void performKEM(String label, KeyPair kp, KTSParameterSpec spec)
