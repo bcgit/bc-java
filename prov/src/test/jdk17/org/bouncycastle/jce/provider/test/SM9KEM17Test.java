@@ -152,4 +152,53 @@ public class SM9KEM17Test
         {
         }
     }
+
+    /**
+     * The spec/algorithm reconciliation - "Generic" on either side deferring to the other, and a
+     * genuine mismatch being refused - is shared with every other KEM, but nothing here reached it:
+     * testKEM passes a null spec, so both sides are "Generic" and agree whatever the rule does.
+     */
+    public void testAlgorithmReconciliation()
+        throws Exception
+    {
+        KeyPairGenerator g = KeyPairGenerator.getInstance("SM9-ENC", "BC");
+        KeyPair master = g.generateKeyPair();
+
+        byte[] bobIdentity = Strings.toByteArray("Bob");
+        KeyPair bob = ((SM9EncMasterPrivateKey)master.getPrivate()).generateUserKeyPair(bobIdentity, SM9EncMasterPrivateKeyParameters.HID);
+        PublicKey bobPublic = ((SM9EncMasterPublicKey)master.getPublic()).getUserPublicKey(bobIdentity);
+
+        KTSParameterSpec aes = new KTSParameterSpec.Builder("AES", 128).withNoKdf().build();
+
+        // a "Generic" request takes the spec's name, on both sides
+        KEM.Encapsulator e = KEM.getInstance("SM9-KEM", "BC").newEncapsulator(bobPublic, aes, null);
+        KEM.Encapsulated enc = e.encapsulate();
+        assertEquals("AES", enc.key().getAlgorithm());
+
+        KEM.Decapsulator d = KEM.getInstance("SM9-KEM", "BC").newDecapsulator(bob.getPrivate(), aes);
+        SecretKey secR = d.decapsulate(enc.encapsulation());
+        assertEquals("AES", secR.getAlgorithm());
+        assertTrue(Arrays.areEqual(enc.key().getEncoded(), secR.getEncoded()));
+
+        // and a name the spec does not authorise is refused, on both sides
+        try
+        {
+            e.encapsulate(0, 16, "AES-KWP");
+            fail("encapsulator accepted an algorithm its spec does not name");
+        }
+        catch (UnsupportedOperationException expected)
+        {
+            assertEquals("AES does not match AES-KWP", expected.getMessage());
+        }
+
+        try
+        {
+            d.decapsulate(enc.encapsulation(), 0, 16, "AES-KWP");
+            fail("decapsulator accepted an algorithm its spec does not name");
+        }
+        catch (UnsupportedOperationException expected)
+        {
+            assertEquals("AES does not match AES-KWP", expected.getMessage());
+        }
+    }
 }

@@ -45,20 +45,7 @@ class SM9DecapsulatorSpi
             throw new DecapsulateException("incorrect encapsulation size");
         }
 
-        String keyAlgName = parameterSpec.getKeyAlgorithmName();
-        if (!"Generic".equals(keyAlgName))
-        {
-            // if algorithm is Generic then use parameterSpec to wrap key
-            if ("Generic".equals(algorithm))
-            {
-                algorithm = keyAlgName;
-            }
-            // check spec algorithm mismatch provided algorithm
-            else if (!algorithm.equals(keyAlgName))
-            {
-                throw new UnsupportedOperationException(keyAlgName + " does not match " + algorithm);
-            }
-        }
+        algorithm = KdfUtil.resolveAlgorithm(parameterSpec, algorithm);
 
         byte[] kemSecret;
         try
