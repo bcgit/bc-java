@@ -297,7 +297,7 @@ public class CMSEnvelopedDataStreamGenerator
         return new CmsEnvelopedDLDataOutputStream(encryptor, inputLength, octGen, eciGen, envGen, cGen, unprotEnc);
     }
 
-    private class CmsEnvelopedDLDataOutputStream
+    private static class CmsEnvelopedDLDataOutputStream
         extends OutputStream
     {
         private final OutputEncryptor _encryptor;

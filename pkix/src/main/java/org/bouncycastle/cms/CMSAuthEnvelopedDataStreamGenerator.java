@@ -303,7 +303,7 @@ public class CMSAuthEnvelopedDataStreamGenerator
             encryptor, inputLength, enc, octGen, eciGen, aedGen, cGen, authAttrsEnc, unauthAttrsEnc);
     }
 
-    private class CMSAuthEnvelopedDLDataOutputStream
+    private static class CMSAuthEnvelopedDLDataOutputStream
         extends OutputStream
     {
         private final OutputAEADEncryptor _encryptor;
