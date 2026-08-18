@@ -19,7 +19,7 @@ import org.bouncycastle.util.Arrays;
  *   <li>{@link #issuerName()} — the X.500 Name used in the cert's issuer field</li>
  *   <li>{@link #certSerial(long, long)} — a packed {@code (log_number, index)}
  *       cert serial</li>
- *   <li>{@link #authorityInfo(BigInteger)} — the {@link MTCCertificationAuthority}
+ *   <li>{@link #authorityInfo(BigInteger, BigInteger)} — the {@link MTCCertificationAuthority}
  *       extension value the relying party needs out-of-band</li>
  * </ul>
  *
