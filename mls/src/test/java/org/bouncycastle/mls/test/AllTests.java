@@ -22,6 +22,7 @@ public class AllTests
         suite.addTestSuite(ExternalCommitRemoveTest.class);
         suite.addTestSuite(GroupKeySetTest.class);
         suite.addTestSuite(LeafIndexRangeTest.class);
+        suite.addTestSuite(LeafNodeX509BindingTest.class);
         suite.addTestSuite(MessageProtectionTest.class);
         suite.addTestSuite(MLSInputStreamTest.class);
         suite.addTestSuite(NewMemberMessageNPETest.class);

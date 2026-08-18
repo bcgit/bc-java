@@ -13,6 +13,19 @@ public class Certificate
         cert_data = stream.readOpaque();
     }
 
+    /**
+     * @param certData the DER encoding of a single X.509 certificate in the credential's chain.
+     */
+    public Certificate(byte[] certData)
+    {
+        this.cert_data = certData;
+    }
+
+    public byte[] getCertData()
+    {
+        return cert_data;
+    }
+
     @Override
     public void writeTo(MLSOutputStream stream)
         throws IOException

@@ -5,7 +5,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
+import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.mls.codec.Capabilities;
+import org.bouncycastle.mls.codec.Certificate;
 import org.bouncycastle.mls.codec.Credential;
 import org.bouncycastle.mls.codec.CredentialType;
 import org.bouncycastle.mls.codec.Extension;
@@ -208,12 +212,40 @@ public class LeafNode
     public boolean verify(MlsCipherSuite suite, byte[] tbs)
         throws IOException
     {
-        if (getCredentialType() == CredentialType.x509)
+        // RFC 9420 sec. 5.3: the leaf's signature_key must be the public key certified by the
+        // credential's end-entity certificate, otherwise an X.509 credential authenticates nothing -
+        // a signer could present any identity's certificate while signing with its own key.
+        if (getCredentialType() == CredentialType.x509 && !x509CredentialBindsSignatureKey(suite))
         {
-            //TODO: get credential and check if it's signature scheme matches the cipher suite signature scheme
+            return false;
         }
 
         return suite.verifyWithLabel(signature_key, "LeafNodeTBS", tbs, signature);
+    }
+
+    private boolean x509CredentialBindsSignatureKey(MlsCipherSuite suite)
+    {
+        List<Certificate> certificates = credential.getCertificates();
+        if (certificates == null || certificates.isEmpty())
+        {
+            return false;
+        }
+
+        try
+        {
+            // the end-entity certificate is first (RFC 9420 sec. 5.3.3); its subject public key,
+            // serialised in the cipher suite's signature encoding, must equal signature_key
+            SubjectPublicKeyInfo spki = org.bouncycastle.asn1.x509.Certificate.getInstance(
+                certificates.get(0).getCertData()).getSubjectPublicKeyInfo();
+            AsymmetricKeyParameter certKey = PublicKeyFactory.createKey(spki);
+
+            return java.util.Arrays.equals(signature_key, suite.serializeSignaturePublicKey(certKey));
+        }
+        catch (Exception e)
+        {
+            // a malformed certificate, or a key whose type does not match the cipher suite's signer
+            return false;
+        }
     }
 
     public LeafNode forCommit(MlsCipherSuite suite, byte[] groupId, LeafIndex leafIndex, byte[] encKeyIn, byte[] parentHash, Group.LeafNodeOptions options, byte[] sigPriv)

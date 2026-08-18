@@ -22,6 +22,11 @@ public class Credential
         return identity;
     }
 
+    public List<Certificate> getCertificates()
+    {
+        return certificates;
+    }
+
     public static Credential forBasic(byte[] identity)
     {
         return new Credential(CredentialType.basic, identity, new ArrayList<Certificate>());
