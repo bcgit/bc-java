@@ -9,7 +9,6 @@ import javax.crypto.SecretKey;
 import org.bouncycastle.jcajce.provider.asymmetric.util.KdfUtil;
 import org.bouncycastle.jcajce.spec.KTSParameterSpec;
 import org.bouncycastle.pqc.crypto.ntruplus.NTRUPlusKEMExtractor;
-import org.bouncycastle.pqc.crypto.ntruplus.NTRUPlusPrivateKeyParameters;
 
 /*
  *  NOTE: Per javadoc for javax.crypto.KEM, "Encapsulator and Decapsulator objects are also immutable. It is safe to
@@ -19,15 +18,13 @@ import org.bouncycastle.pqc.crypto.ntruplus.NTRUPlusPrivateKeyParameters;
 class NTRUPlusDecapsulatorSpi
     implements KEMSpi.DecapsulatorSpi
 {
-    private final NTRUPlusPrivateKeyParameters privateKeyParams;
     private final KTSParameterSpec parameterSpec;
-    private final int encapsulationLength;
+    private final NTRUPlusKEMExtractor kemExt;
 
     NTRUPlusDecapsulatorSpi(BCNTRUPlusPrivateKey privateKey, KTSParameterSpec parameterSpec)
     {
-        this.privateKeyParams = privateKey.getKeyParams();
         this.parameterSpec = parameterSpec;
-        this.encapsulationLength = privateKeyParams.getParameters().getCiphertextBytes();
+        this.kemExt = new NTRUPlusKEMExtractor(privateKey.getKeyParams());
     }
 
     @Override
@@ -45,12 +42,9 @@ class NTRUPlusDecapsulatorSpi
 
         algorithm = KdfUtil.resolveAlgorithm(parameterSpec, algorithm);
 
-        // An NTRUPlusKEMExtractor builds an NTRUPlusEngine, which keeps one SHAKE instance in a
-        // field, so a shared extractor is not safe for the concurrent use javax.crypto.KEM requires
-        // of a Decapsulator - build one per call, as FrodoKEMDecapsulatorSpi does for the same
-        // reason. Both engines still want that field made a local, which would let either
-        // decapsulator share an extractor and would fix the lightweight extractors too.
-        byte[] kemSecret = new NTRUPlusKEMExtractor(privateKeyParams).extractSecret(encapsulation);
+        // NTRUPlusEngine builds its SHAKE instance per call, so one extractor is safe to share
+        // across the concurrent decapsulate calls javax.crypto.KEM requires.
+        byte[] kemSecret = kemExt.extractSecret(encapsulation);
 
         return KdfUtil.makeSecretKey(parameterSpec, kemSecret, from, to, algorithm);
     }
@@ -64,6 +58,6 @@ class NTRUPlusDecapsulatorSpi
     @Override
     public int engineEncapsulationSize()
     {
-        return encapsulationLength;
+        return kemExt.getEncapsulationLength();
     }
 }

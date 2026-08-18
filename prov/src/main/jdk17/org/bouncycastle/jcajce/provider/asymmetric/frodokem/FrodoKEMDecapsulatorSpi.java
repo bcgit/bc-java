@@ -7,7 +7,6 @@ import javax.crypto.KEMSpi;
 import javax.crypto.SecretKey;
 
 import org.bouncycastle.crypto.kems.FrodoKEMExtractor;
-import org.bouncycastle.crypto.params.FrodoKEMPrivateKeyParameters;
 import org.bouncycastle.jcajce.provider.asymmetric.util.KdfUtil;
 import org.bouncycastle.jcajce.spec.KTSParameterSpec;
 
@@ -19,15 +18,13 @@ import org.bouncycastle.jcajce.spec.KTSParameterSpec;
 class FrodoKEMDecapsulatorSpi
     implements KEMSpi.DecapsulatorSpi
 {
-    private final FrodoKEMPrivateKeyParameters privateKeyParams;
     private final KTSParameterSpec parameterSpec;
-    private final int encapsulationLength;
+    private final FrodoKEMExtractor kemExt;
 
     FrodoKEMDecapsulatorSpi(BCFrodoKEMPrivateKey privateKey, KTSParameterSpec parameterSpec)
     {
-        this.privateKeyParams = privateKey.getKeyParams();
         this.parameterSpec = parameterSpec;
-        this.encapsulationLength = privateKeyParams.getParameters().getEncapsulationLength();
+        this.kemExt = new FrodoKEMExtractor(privateKey.getKeyParams());
     }
 
     @Override
@@ -45,10 +42,9 @@ class FrodoKEMDecapsulatorSpi
 
         algorithm = KdfUtil.resolveAlgorithm(parameterSpec, algorithm);
 
-        // A FrodoKEMExtractor holds one FrodoKEMEngine, whose SHAKE digest is mutable state, so a
-        // shared extractor is not safe for the concurrent use javax.crypto.KEM requires of a
-        // Decapsulator - build one per call, as FrodoKEMCipherSpi.engineUnwrap does.
-        byte[] kemSecret = new FrodoKEMExtractor(privateKeyParams).extractSecret(encapsulation);
+        // FrodoKEMEngine builds its SHAKE instance per call, so one extractor is safe to share
+        // across the concurrent decapsulate calls javax.crypto.KEM requires.
+        byte[] kemSecret = kemExt.extractSecret(encapsulation);
 
         return KdfUtil.makeSecretKey(parameterSpec, kemSecret, from, to, algorithm);
     }
@@ -62,6 +58,6 @@ class FrodoKEMDecapsulatorSpi
     @Override
     public int engineEncapsulationSize()
     {
-        return encapsulationLength;
+        return kemExt.getEncapsulationLength();
     }
 }
