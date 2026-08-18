@@ -664,6 +664,11 @@ class NamedGroupInfo
         {
             result = Arrays.copyOf(result, count);
         }
+        // NOTE: Only complain about an empty result if attempting to configure a non-empty list
+        if (names.length > 0 && count < 1)
+        {
+            LOG.warning("'" + description + "' contained no usable NamedGroup values; no early key_share will be offered");
+        }
         return result;
     }
 
