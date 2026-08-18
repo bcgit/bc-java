@@ -198,7 +198,7 @@ public class CertPathBuilderTest
 
         if (path.getCertificates().size() != 2)
         {
-            fail("wrong number of certs in v0Test path");
+            fail("wrong number of certs in noSigV0Test path");
         }
     }
 
@@ -240,7 +240,7 @@ public class CertPathBuilderTest
 
         if (path.getCertificates().size() != 2)
         {
-            fail("wrong number of certs in v0Test path");
+            fail("wrong number of certs in eeInSelectorTest path");
         }
     }
 
@@ -284,7 +284,7 @@ public class CertPathBuilderTest
 
         if (path.getCertificates().size() != 2)
         {
-            fail("wrong number of certs in v0Test path");
+            fail("wrong number of certs in eeOnlyInSelectorTest path");
         }
     }
 
