@@ -49,7 +49,9 @@ class NTRUPlusDecapsulatorSpi
 
         // An NTRUPlusKEMExtractor builds an NTRUPlusEngine, which keeps one SHAKE instance in a
         // field, so a shared extractor is not safe for the concurrent use javax.crypto.KEM requires
-        // of a Decapsulator - build one per call.
+        // of a Decapsulator - build one per call, as FrodoKEMDecapsulatorSpi does for the same
+        // reason. Both engines still want that field made a local, which would let either
+        // decapsulator share an extractor and would fix the lightweight extractors too.
         byte[] kemSecret = new NTRUPlusKEMExtractor(privateKeyParams).extractSecret(encapsulation);
         byte[] kdfSecret = KdfUtil.makeKeyBytes(parameterSpec, kemSecret);
 

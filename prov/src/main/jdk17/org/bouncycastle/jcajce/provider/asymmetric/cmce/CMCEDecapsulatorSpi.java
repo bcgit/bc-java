@@ -47,9 +47,10 @@ class CMCEDecapsulatorSpi
 
         algorithm = KdfUtil.resolveAlgorithm(parameterSpec, algorithm);
 
-        // CMCEEngine allocates its digest per call so a shared extractor would be safe here, but
-        // one is built per call to match the FrodoKEM sibling, where the engine's digest is
-        // mutable state and sharing it breaks the concurrent use javax.crypto.KEM requires.
+        // CMCEEngine allocates its digest per call, so a shared extractor would be safe here and
+        // the families whose engines are also safe - NTRU LPRime, SMAUG-T and the four older ones -
+        // do share one. This builds per call only to stay symmetric with the FrodoKEM sibling added
+        // beside it, whose engine keeps a mutable digest; there is no correctness need for it.
         byte[] kemSecret = new CMCEKEMExtractor(privateKeyParams).extractSecret(encapsulation);
         byte[] kdfSecret = KdfUtil.makeKeyBytes(parameterSpec, kemSecret);
 

@@ -19,8 +19,11 @@ import org.bouncycastle.pqc.crypto.smaugt.SmaugTParameters;
  * parameter-set locked service per {@link SmaugTParameters} set, mirroring the family's existing
  * Cipher, KeyGenerator and KeyPairGenerator registrations.
  * <p>
- * All four sets produce a 256-bit session key, but the size is taken from the key's own parameters
- * rather than assumed, so a future set with a different one needs no change here.
+ * All four sets produce a 256-bit session key. Note that the size fed to the spec validation comes
+ * from the per-set SmaugTParameters.defaultKeySize while the bytes actually produced come from the
+ * engine's SmaugTEngine.CRYPTO_BYTES, which is mode independent - so a parameter set with a
+ * different session key size has to change both, or the validation will admit a no-KDF size the
+ * extractor cannot fill.
  */
 public abstract class SmaugTKEMSpi
     implements KEMSpi
@@ -66,7 +69,7 @@ public abstract class SmaugTKEMSpi
     {
         SmaugTParameters keyParameters = key.getParameters();
 
-        return KdfUtil.resolveKemSpec(spec, "SMAUG-T", keyParameters.getName(),
+        return KdfUtil.resolveKemSpec(spec, "SMAUGT", keyParameters.getName(),
             keyParameters.getSessionKeySize());
     }
 

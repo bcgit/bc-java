@@ -19,8 +19,10 @@ import org.bouncycastle.pqc.crypto.ntruplus.NTRUPlusParameters;
  * parameter-set locked service per {@link NTRUPlusParameters} set, mirroring the family's existing
  * Cipher, KeyGenerator and KeyPairGenerator registrations.
  * <p>
- * All three sets produce a 256-bit session key, but the size is taken from the key's own parameters
- * rather than assumed, so a future set with a different one needs no change here.
+ * All three sets produce a 256-bit session key. Note that the size fed to the spec validation comes
+ * from NTRUPlusParameters.getSsBytes(), which is a fixed 32, while the bytes actually produced come
+ * from the separate NTRUPlusEngine.SSBytes - so a parameter set with a different session key size
+ * has to change both, or the validation will admit a no-KDF size the extractor cannot fill.
  */
 public abstract class NTRUPlusKEMSpi
     implements KEMSpi

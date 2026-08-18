@@ -17,14 +17,23 @@ import org.bouncycastle.pqc.crypto.ntruprime.NTRULPRimeParameters;
 /**
  * {@link javax.crypto.KEM} support for NTRU LPRime, registered as {@code KEM.NTRULPRIME}. Its
  * SNTRU Prime sibling has had this since the KEM API was first wired up; the two are registered
- * side by side for every other service, so this closes the one gap between them.
+ * side by side for every other service, so this closes the registration gap between them.
  * <p>
- * As with the sibling, the service is family level only - NTRU LPRime's Cipher and KeyGenerator
- * registrations are too, so there is no parameter-set locked variant to mirror.
+ * As with the sibling, only a family level service is registered - NTRU LPRime's Cipher and
+ * KeyGenerator registrations are family level too - so the single nested subclass is unrestricted.
+ * The shape is kept so that acting on the "per-parameter-set SPI classes" note beside both
+ * registrations needs no restructuring here.
  */
-public class NTRULPRimeKEMSpi
+public abstract class NTRULPRimeKEMSpi
     implements KEMSpi
 {
+    private final NTRULPRimeParameters ntrulpRimeParameters;
+
+    NTRULPRimeKEMSpi(NTRULPRimeParameters ntrulpRimeParameters)
+    {
+        this.ntrulpRimeParameters = ntrulpRimeParameters;
+    }
+
     @Override
     public EncapsulatorSpi engineNewEncapsulator(PublicKey publicKey, AlgorithmParameterSpec spec,
         SecureRandom secureRandom) throws InvalidAlgorithmParameterException, InvalidKeyException
@@ -33,6 +42,8 @@ public class NTRULPRimeKEMSpi
         {
             throw new InvalidKeyException("unsupported key type");
         }
+
+        checkKeyParameters(bcPublicKey.getKeyParams());
 
         return new NTRULPRimeEncapsulatorSpi(bcPublicKey, resolveSpec(spec, bcPublicKey.getKeyParams()),
             secureRandom);
@@ -47,6 +58,8 @@ public class NTRULPRimeKEMSpi
             throw new InvalidKeyException("unsupported key type");
         }
 
+        checkKeyParameters(bcPrivateKey.getKeyParams());
+
         return new NTRULPRimeDecapsulatorSpi(bcPrivateKey, resolveSpec(spec, bcPrivateKey.getKeyParams()));
     }
 
@@ -57,5 +70,22 @@ public class NTRULPRimeKEMSpi
 
         return KdfUtil.resolveKemSpec(spec, "NTRULPRime", keyParameters.getName(),
             keyParameters.getSessionKeySize());
+    }
+
+    private void checkKeyParameters(NTRULPRimeKeyParameters key) throws InvalidKeyException
+    {
+        if (ntrulpRimeParameters != null && ntrulpRimeParameters != key.getParameters())
+        {
+            throw new InvalidKeyException("NTRULPRime key mismatch");
+        }
+    }
+
+    public static class NTRULPRime extends NTRULPRimeKEMSpi
+    {
+        public NTRULPRime()
+        {
+            // NOTE: Unrestricted parameters/keys
+            super(null);
+        }
     }
 }

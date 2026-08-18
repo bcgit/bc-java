@@ -58,7 +58,7 @@ public class NTRUPlus
 
             if (SpiUtil.hasKEM())
             {
-                provider.addAlgorithm("KEM.NTRUPLUS", PREFIX + "NTRUPlusKEMSpi$Base");
+                addKEMAlgorithm(provider, "NTRUPLUS", PREFIX + "NTRUPlusKEMSpi$Base", BCObjectIdentifiers.pqc_kem_ntruplus);
 
                 addKEMAlgorithm(provider, "NTRU+KEM768", PREFIX + "NTRUPlusKEMSpi$NTRUPlus768", BCObjectIdentifiers.ntruplus768);
                 addKEMAlgorithm(provider, "NTRU+KEM864", PREFIX + "NTRUPlusKEMSpi$NTRUPlus864", BCObjectIdentifiers.ntruplus864);

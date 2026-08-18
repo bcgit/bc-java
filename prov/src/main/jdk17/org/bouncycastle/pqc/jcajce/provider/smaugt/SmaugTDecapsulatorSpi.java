@@ -21,9 +21,11 @@ class SmaugTDecapsulatorSpi
     implements KEMSpi.DecapsulatorSpi
 {
     private final KTSParameterSpec parameterSpec;
-    // The SmaugTEngine an extractor takes from its parameter set carries no mutable state - every
-    // field is a static constant and each operation allocates its own buffers - so one extractor is
-    // safe to share across the concurrent decapsulate calls javax.crypto.KEM requires.
+    // The SmaugTEngine an extractor takes from its parameter set is immutable - every field is final
+    // and set at construction, and each operation allocates its own buffers - so one extractor is
+    // safe to share across the concurrent decapsulate calls javax.crypto.KEM requires. That engine
+    // is a per-parameter-set singleton shared process wide, so its javadoc records the requirement.
+    // Note the fields are mostly per-instance finals derived from the mode, not static constants.
     private final SmaugTKEMExtractor kemExt;
 
     SmaugTDecapsulatorSpi(BCSmaugTPrivateKey privateKey, KTSParameterSpec parameterSpec)

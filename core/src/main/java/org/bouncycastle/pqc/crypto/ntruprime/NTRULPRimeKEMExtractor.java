@@ -182,6 +182,6 @@ public class NTRULPRimeKEMExtractor
 
     public int getEncapsulationLength()
     {
-        return privateKey.getParameters().getRoundedPolynomialBytes() + 128 + 32;
+        return privateKey.getParameters().getEncapsulationLength();
     }
 }

@@ -61,6 +61,10 @@ public class SmaugTParameters
         return mode;
     }
 
+    /**
+     * Return the engine for this parameter set. One instance is shared by every caller for the life
+     * of the JVM, so SmaugTEngine must stay immutable - see its class javadoc.
+     */
     SmaugTEngine getEngine()
     {
         return engine;

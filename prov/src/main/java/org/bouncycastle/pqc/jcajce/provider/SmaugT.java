@@ -64,7 +64,7 @@ public class SmaugT
 
             if (SpiUtil.hasKEM())
             {
-                provider.addAlgorithm("KEM.SMAUGT", PREFIX + "SmaugTKEMSpi$Base");
+                addKEMAlgorithm(provider, "SMAUGT", PREFIX + "SmaugTKEMSpi$Base", BCObjectIdentifiers.pqc_kem_smaugt);
 
                 addKEMAlgorithm(provider, "SMAUGT-MODE1", PREFIX + "SmaugTKEMSpi$Mode1", BCObjectIdentifiers.smaugt_mode1);
                 addKEMAlgorithm(provider, "SMAUGT-MODE3", PREFIX + "SmaugTKEMSpi$Mode3", BCObjectIdentifiers.smaugt_mode3);
