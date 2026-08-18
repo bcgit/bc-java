@@ -16,7 +16,7 @@ import org.bouncycastle.asn1.x500.style.IETFUtils;
  * Background: RFC 5280 sec. A.1 (and X.520) define commonName as a
  * DirectoryString bounded by {@code ub-common-name = 64}, so the default
  * {@link BCStyle} rejects a longer CN at build time -
- * {@code new X500Name("CN=&lt;80 chars&gt;")} throws
+ * {@code new X500Name("CN=<80 chars>")} throws
  * {@code IllegalArgumentException} from {@code BCStyle.encodeStringValue}
  * (github #750). Note this only affects <b>building</b> a name from its string
  * form; the DER parse path ({@code X500Name.getInstance(byte[])}) never routes

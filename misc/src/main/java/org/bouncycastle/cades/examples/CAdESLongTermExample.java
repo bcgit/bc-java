@@ -69,7 +69,7 @@ import org.bouncycastle.tsp.TimeStampToken;
  * <p>This example uses a single CA-signed signer cert and a CRL from that
  * CA. {@link CAdESLongTermValuesUtil#applyLongTermValues(CMSSignedData,
  * org.bouncycastle.cms.SignerId, List, List, List, AlgorithmIdentifier,
- * DigestCalculatorProvider)} also accepts a {@code List&lt;BasicOCSPResp&gt;}
+ * DigestCalculatorProvider)} also accepts a {@code List<BasicOCSPResp>}
  * for OCSP-based deployments; the assembly logic is identical.</p>
  *
  * <p>{@link CAdESLevelDetector} requires a signature time-stamp to be

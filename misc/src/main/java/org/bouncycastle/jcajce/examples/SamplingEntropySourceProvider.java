@@ -32,7 +32,7 @@ public class SamplingEntropySourceProvider
         return new DevRandomChainedSource(bitsRequired);
     }
 
-    private class DevRandomChainedSource
+    private static class DevRandomChainedSource
         implements EntropySource
     {
         private static final int MAX_SAMPLES = 1000;
