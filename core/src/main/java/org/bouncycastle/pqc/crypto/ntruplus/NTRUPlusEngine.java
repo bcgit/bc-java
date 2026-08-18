@@ -31,7 +31,6 @@ class NTRUPlusEngine
     public short polyBytes;
     public short[] zetas;
     private final NTRUPlusParameters params;
-    private final SHAKEDigest shakeDigest = new SHAKEDigest(256);
 
     public NTRUPlusEngine(NTRUPlusParameters params)
     {
@@ -325,6 +324,10 @@ class NTRUPlusEngine
 
     public void shake256(byte[] output, int outOff, int outLen, byte[] input, int inLen)
     {
+        // a SHAKE instance is mutable state, so it is built per call rather than shared -
+        // an engine may be reached concurrently through a cached extractor
+        SHAKEDigest shakeDigest = new SHAKEDigest(256);
+
         shakeDigest.update(input, 0, inLen);
         shakeDigest.doFinal(output, outOff, outLen);
     }
@@ -683,6 +686,10 @@ class NTRUPlusEngine
      */
     private void shake256(byte[] output, int outOff, int outLen, byte domainSeperation, byte[] input, int inOff, int inLen)
     {
+        // a SHAKE instance is mutable state, so it is built per call rather than shared -
+        // an engine may be reached concurrently through a cached extractor
+        SHAKEDigest shakeDigest = new SHAKEDigest(256);
+
         shakeDigest.update(domainSeperation);
         shakeDigest.update(input, inOff, inLen);
         shakeDigest.doFinal(output, outOff, outLen);

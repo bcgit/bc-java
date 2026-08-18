@@ -56,7 +56,6 @@ public class FrodoKEMEngine
     private final int len_ss_bytes;
     private final int len_salt_bytes;
     //
-    private final Xof digest;
     private final FrodoMatrixGenerator gen;
 
     public static FrodoKEMEngine getInstance(FrodoKEMParameters params)
@@ -110,7 +109,6 @@ public class FrodoKEMEngine
         this.len_sk_bytes = len_s_bytes + len_pk_bytes + (2*n*nbar + len_pkh_bytes);
 
         this.T_chi = (n == 976) ? cdf_table976 : cdf_table1344;
-        this.digest = new SHAKEDigest(256);
         this.gen = useAes
             ? (FrodoMatrixGenerator)new FrodoMatrixGenerator.Aes128MatrixGenerator(n, q)
             : new FrodoMatrixGenerator.Shake128MatrixGenerator(n, q);
@@ -227,6 +225,10 @@ public class FrodoKEMEngine
 
     public void kem_keypair(byte[] pk, byte[] sk, SecureRandom random)
     {
+        // a SHAKE instance is mutable state, so it is built per call rather than shared -
+        // an engine may be reached concurrently through a cached extractor or generator
+        Xof digest = new SHAKEDigest(256);
+
         // 1. Choose uniformly random seeds s || seedSE || z
         byte[] s_seedSE_z = new byte[len_s_bytes + len_seedSE_bytes + len_z_bytes];
         random.nextBytes(s_seedSE_z);
@@ -355,6 +357,10 @@ public class FrodoKEMEngine
 
     public void kem_enc(byte[] ct, byte[] ss, byte[] pk, SecureRandom random)
     {
+        // a SHAKE instance is mutable state, so it is built per call rather than shared -
+        // an engine may be reached concurrently through a cached extractor or generator
+        Xof digest = new SHAKEDigest(256);
+
         // Parse pk = seedA || b
         byte[] b = Arrays.copyOfRange(pk, len_seedA_bytes, len_pk_bytes);
 
@@ -475,6 +481,10 @@ public class FrodoKEMEngine
 
     public void kem_dec(byte[] ss, byte[] ct, byte[] sk)
     {
+        // a SHAKE instance is mutable state, so it is built per call rather than shared -
+        // an engine may be reached concurrently through a cached extractor or generator
+        Xof digest = new SHAKEDigest(256);
+
         // Parse ct = c1 || c2 || salt
         int offset = 0;
         int length = mbar * n * D / 8;
