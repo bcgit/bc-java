@@ -125,6 +125,37 @@ public class CMCEKEMTest
     }
 
     /**
+     * The no-KDF key size check is not a FrodoKEM speciality - it lives in the shared KdfUtil, so
+     * every KEM KeyGenerator gets it. CMCE's secret is 256 bits, which covers the conventional
+     * request but not one above it.
+     */
+    public void testNoKdfRejectsKeySizeAboveSharedSecret()
+        throws Exception
+    {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("CMCE", "BC");
+        kpg.initialize(CMCEParameterSpec.mceliece460896, new SecureRandom());
+        KeyPair kp = kpg.generateKeyPair();
+
+        KeyGenerator keyGen = KeyGenerator.getInstance("CMCE", "BC");
+
+        keyGen.init(new KEMGenerateSpec.Builder(kp.getPublic(), "AES", 256).withNoKdf().build(), new SecureRandom());
+
+        assertEquals(32, keyGen.generateKey().getEncoded().length);
+
+        keyGen.init(new KEMGenerateSpec.Builder(kp.getPublic(), "AES", 512).withNoKdf().build(), new SecureRandom());
+
+        try
+        {
+            keyGen.generateKey();
+            fail("no exception on over-long no-KDF generate");
+        }
+        catch (IllegalArgumentException e)
+        {
+            assertEquals("no KDF specified and the shared secret is 256 bits, 512 requested", e.getMessage());
+        }
+    }
+
+    /**
      * The KEM cipher's data-encapsulation mechanism is caller-selectable; the non-AES wrap
      * algorithms the removed round-3 tests exercised have to keep working here too.
      */

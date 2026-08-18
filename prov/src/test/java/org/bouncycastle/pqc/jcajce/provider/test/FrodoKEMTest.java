@@ -144,6 +144,72 @@ public class FrodoKEMTest
     }
 
     /**
+     * With {@link KEMGenerateSpec.Builder#withNoKdf()} the shared secret is the key material, so a
+     * request for more bits than the parameter set produces cannot be met - frodokem976shake's
+     * secret is 192 bits. Both the generate and the extract side have to say so, rather than
+     * overrunning the secret (which surfaced as an ArrayIndexOutOfBoundsException out of KdfUtil)
+     * and rather than quietly handing back a 192-bit key the caller never asked for.
+     */
+    public void testNoKdfRejectsKeySizeAboveSharedSecret()
+        throws Exception
+    {
+        String expected = "no KDF specified and the shared secret is 192 bits, 256 requested";
+
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("FRODOKEM", "BC");
+        kpg.initialize(FrodoKEMParameterSpec.frodokem976shake, new SecureRandom());
+
+        KeyPair kp = kpg.generateKeyPair();
+
+        KeyGenerator keyGen = KeyGenerator.getInstance("FRODOKEM", "BC");
+
+        keyGen.init(new KEMGenerateSpec.Builder(kp.getPublic(), "AES", 256).withNoKdf().build(), new SecureRandom());
+
+        try
+        {
+            keyGen.generateKey();
+            fail("no exception on over-long no-KDF generate");
+        }
+        catch (IllegalArgumentException e)
+        {
+            assertEquals(expected, e.getMessage());
+        }
+
+        // a request the secret can satisfy is untouched, and both sides still agree on the key.
+        keyGen.init(new KEMGenerateSpec.Builder(kp.getPublic(), "AES", 192).withNoKdf().build(), new SecureRandom());
+
+        SecretKeyWithEncapsulation secEnc1 = (SecretKeyWithEncapsulation)keyGen.generateKey();
+
+        assertEquals(24, secEnc1.getEncoded().length);
+
+        keyGen.init(new KEMExtractSpec.Builder(kp.getPrivate(), secEnc1.getEncapsulation(), "AES", 192).withNoKdf().build());
+
+        SecretKeyWithEncapsulation secEnc2 = (SecretKeyWithEncapsulation)keyGen.generateKey();
+
+        assertTrue(Arrays.areEqual(secEnc1.getEncoded(), secEnc2.getEncoded()));
+
+        keyGen.init(new KEMExtractSpec.Builder(kp.getPrivate(), secEnc1.getEncapsulation(), "AES", 256).withNoKdf().build());
+
+        try
+        {
+            keyGen.generateKey();
+            fail("no exception on over-long no-KDF extract");
+        }
+        catch (IllegalArgumentException e)
+        {
+            assertEquals(expected, e.getMessage());
+        }
+
+        // frodokem1344shake's 256-bit secret does satisfy the conventional 256-bit request.
+        kpg.initialize(FrodoKEMParameterSpec.frodokem1344shake, new SecureRandom());
+
+        KeyPair kp1344 = kpg.generateKeyPair();
+
+        keyGen.init(new KEMGenerateSpec.Builder(kp1344.getPublic(), "AES", 256).withNoKdf().build(), new SecureRandom());
+
+        assertEquals(32, keyGen.generateKey().getEncoded().length);
+    }
+
+    /**
      * The KEM cipher's data-encapsulation mechanism is caller-selectable; the non-AES wrap
      * algorithms the removed round-3 tests exercised have to keep working here too.
      */
