@@ -26,7 +26,6 @@ import org.bouncycastle.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.crypto.util.SubjectPublicKeyInfoFactory;
-import org.bouncycastle.pqc.crypto.util.PQCOtherInfoGenerator;
 import org.bouncycastle.internal.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
@@ -547,29 +546,6 @@ public class MLKEMTest
         byte[] partA = partyU.getSuppPrivInfoPartA();
 
         OtherInfoGenerator.PartyV partyV = new OtherInfoGenerator.PartyV(MLKEMParameters.ml_kem_512,
-            new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1), Hex.decode("beef"), Hex.decode("cafe"), RANDOM);
-
-        byte[] partB = partyV.getSuppPrivInfoPartB(partA);
-
-        DEROtherInfo otherInfoU = partyU.generate(partB);
-
-        DEROtherInfo otherInfoV = partyV.generate();
-
-        assertTrue(Arrays.areEqual(otherInfoU.getEncoded(), otherInfoV.getEncoded()));
-    }
-
-    public void testPqcOtherInfoGeneration()
-        throws IOException
-    {
-        // Exercises org.bouncycastle.pqc.crypto.util.PQCOtherInfoGenerator's ML-KEM branch - a
-        // separate class from org.bouncycastle.crypto.util.OtherInfoGenerator already exercised
-        // above - which, until now, had no test coverage at all (only NTRU's branch was tested).
-        PQCOtherInfoGenerator.PartyU partyU = new PQCOtherInfoGenerator.PartyU(MLKEMParameters.ml_kem_512,
-            new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1), Hex.decode("beef"), Hex.decode("cafe"), RANDOM);
-
-        byte[] partA = partyU.getSuppPrivInfoPartA();
-
-        PQCOtherInfoGenerator.PartyV partyV = new PQCOtherInfoGenerator.PartyV(MLKEMParameters.ml_kem_512,
             new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1), Hex.decode("beef"), Hex.decode("cafe"), RANDOM);
 
         byte[] partB = partyV.getSuppPrivInfoPartB(partA);
