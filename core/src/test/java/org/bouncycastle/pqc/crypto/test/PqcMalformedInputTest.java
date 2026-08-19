@@ -156,14 +156,6 @@ public class PqcMalformedInputTest
                     org.bouncycastle.crypto.params.MLDSAParameters.ml_dsa_44, new byte[1]);
             }
         });
-        expectInvalidLength("ML-DSA (pqc.crypto.mldsa)", new Runnable()
-        {
-            public void run()
-            {
-                new org.bouncycastle.pqc.crypto.mldsa.MLDSAPublicKeyParameters(
-                    org.bouncycastle.pqc.crypto.mldsa.MLDSAParameters.ml_dsa_44, new byte[1]);
-            }
-        });
         expectInvalidLength("Falcon", new Runnable()
         {
             public void run()

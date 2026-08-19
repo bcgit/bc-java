@@ -734,10 +734,6 @@ public class MLDSATest
         // valid lengths for the byte[] encoding are the 32 byte seed and the exact expanded key size.
         MLDSAParameters[] paramSets = new MLDSAParameters[]{
             MLDSAParameters.ml_dsa_44, MLDSAParameters.ml_dsa_65, MLDSAParameters.ml_dsa_87 };
-        org.bouncycastle.pqc.crypto.mldsa.MLDSAParameters[] pqcParamSets = new org.bouncycastle.pqc.crypto.mldsa.MLDSAParameters[]{
-            org.bouncycastle.pqc.crypto.mldsa.MLDSAParameters.ml_dsa_44,
-            org.bouncycastle.pqc.crypto.mldsa.MLDSAParameters.ml_dsa_65,
-            org.bouncycastle.pqc.crypto.mldsa.MLDSAParameters.ml_dsa_87 };
         int[] expandedKeyLengths = new int[]{ 2560, 4032, 4896 };
 
         for (int i = 0; i != paramSets.length; i++)
@@ -747,8 +743,6 @@ public class MLDSATest
             // valid lengths still construct: 32 byte seed and exact expanded key
             new MLDSAPrivateKeyParameters(paramSets[i], new byte[32]);
             new MLDSAPrivateKeyParameters(paramSets[i], new byte[expandedKeyLength]);
-            new org.bouncycastle.pqc.crypto.mldsa.MLDSAPrivateKeyParameters(pqcParamSets[i], new byte[32]);
-            new org.bouncycastle.pqc.crypto.mldsa.MLDSAPrivateKeyParameters(pqcParamSets[i], new byte[expandedKeyLength]);
 
             int[] badLengths = new int[]{
                 0, 31, 33, expandedKeyLength - 1, expandedKeyLength + 1, 32 + expandedKeyLength };
@@ -764,17 +758,48 @@ public class MLDSATest
                 {
                     assertEquals("'encoding' has invalid length", e.getMessage());
                 }
-
-                try
-                {
-                    new org.bouncycastle.pqc.crypto.mldsa.MLDSAPrivateKeyParameters(pqcParamSets[i], bad);
-                    fail("no exception for private key encoding of length " + badLengths[j]);
-                }
-                catch (IllegalArgumentException e)
-                {
-                    assertEquals("'encoding' has invalid length", e.getMessage());
-                }
             }
+        }
+    }
+
+    public void testPqcCryptoUtilFactoryRoundTrip()
+        throws Exception
+    {
+        // Exercises org.bouncycastle.pqc.crypto.util.{PublicKeyFactory,PrivateKeyFactory,
+        // PrivateKeyInfoFactory,SubjectPublicKeyInfoFactory} directly - the ASN.1 codec path used
+        // by callers such as PQCSignedDataTest's certificate parsing. This is a separate factory
+        // family from org.bouncycastle.crypto.util (already exercised elsewhere in this class) and
+        // was, until now, only ever exercised through the deprecated org.bouncycastle.pqc.crypto.mldsa
+        // key classes.
+        SecureRandom random = new SecureRandom();
+        MLDSAKeyPairGenerator kpg = new MLDSAKeyPairGenerator();
+
+        for (int idx = 0; idx != PARAMETER_SETS.length; idx++)
+        {
+            MLDSAParameters parameters = PARAMETER_SETS[idx];
+            kpg.init(new MLDSAKeyGenerationParameters(random, parameters));
+            AsymmetricCipherKeyPair kp = kpg.generateKeyPair();
+
+            MLDSAPublicKeyParameters pubParams = (MLDSAPublicKeyParameters)org.bouncycastle.pqc.crypto.util.PublicKeyFactory.createKey(
+                org.bouncycastle.pqc.crypto.util.SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(kp.getPublic()));
+            MLDSAPrivateKeyParameters privParams = (MLDSAPrivateKeyParameters)org.bouncycastle.pqc.crypto.util.PrivateKeyFactory.createKey(
+                org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory.createPrivateKeyInfo(kp.getPrivate()));
+
+            assertTrue("public key: " + parameters.getName(), Arrays.areEqual(
+                ((MLDSAPublicKeyParameters)kp.getPublic()).getEncoded(), pubParams.getEncoded()));
+            assertTrue("private key: " + parameters.getName(), Arrays.areEqual(
+                ((MLDSAPrivateKeyParameters)kp.getPrivate()).getEncoded(), privParams.getEncoded()));
+
+            Signer signer = parameters.isPreHash() ? (Signer)new HashMLDSASigner() : (Signer)new MLDSASigner();
+            byte[] msg = Strings.toByteArray("pqc.crypto.util factory round trip");
+
+            signer.init(true, new ParametersWithRandom(privParams, random));
+            signer.update(msg, 0, msg.length);
+            byte[] signature = signer.generateSignature();
+
+            signer.init(false, pubParams);
+            signer.update(msg, 0, msg.length);
+            assertTrue("signature verify: " + parameters.getName(), signer.verifySignature(signature));
         }
     }
 

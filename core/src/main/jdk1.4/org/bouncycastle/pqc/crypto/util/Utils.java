@@ -25,7 +25,7 @@ import org.bouncycastle.pqc.legacy.bike.BIKEParameters;
 import org.bouncycastle.pqc.legacy.crystals.dilithium.DilithiumParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCParameters;
-import org.bouncycastle.pqc.crypto.mldsa.MLDSAParameters;
+import org.bouncycastle.crypto.params.MLDSAParameters;
 import org.bouncycastle.pqc.crypto.mlkem.MLKEMParameters;
 import org.bouncycastle.pqc.crypto.ntru.NTRUParameters;
 import org.bouncycastle.pqc.crypto.ntruprime.NTRULPRimeParameters;

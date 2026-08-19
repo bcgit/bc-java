@@ -32,7 +32,7 @@ import org.bouncycastle.pqc.crypto.haetae.HAETAEParameters;
 import org.bouncycastle.pqc.legacy.hawk.HawkParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCParameters;
 import org.bouncycastle.pqc.crypto.mayo.MayoParameters;
-import org.bouncycastle.pqc.crypto.mldsa.MLDSAParameters;
+import org.bouncycastle.crypto.params.MLDSAParameters;
 import org.bouncycastle.pqc.crypto.mlkem.MLKEMParameters;
 import org.bouncycastle.pqc.crypto.ntru.NTRUParameters;
 import org.bouncycastle.pqc.crypto.ntruplus.NTRUPlusParameters;

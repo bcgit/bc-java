@@ -41,23 +41,10 @@ public class PublicKeyLengthValidationTest
     // ML-DSA-44 public key is SeedBytes + k*DilithiumPolyT1PackedBytes = 32 + 4*320 = 1312 bytes.
     public void testMLDSAPublicKeyRejectsMalformedLength()
     {
-        // new public API (org.bouncycastle.crypto.params)
         try
         {
             new MLDSAPublicKeyParameters(MLDSAParameters.ml_dsa_44, SHORT_ENCODING);
             fail("expected IllegalArgumentException for short ML-DSA public key (crypto.params)");
-        }
-        catch (IllegalArgumentException e)
-        {
-            assertEquals("'encoding' has invalid length", e.getMessage());
-        }
-
-        // deprecated decode path still used by PublicKeyFactory (org.bouncycastle.pqc.crypto.mldsa)
-        try
-        {
-            new org.bouncycastle.pqc.crypto.mldsa.MLDSAPublicKeyParameters(
-                org.bouncycastle.pqc.crypto.mldsa.MLDSAParameters.ml_dsa_44, SHORT_ENCODING);
-            fail("expected IllegalArgumentException for short ML-DSA public key (pqc.crypto.mldsa)");
         }
         catch (IllegalArgumentException e)
         {

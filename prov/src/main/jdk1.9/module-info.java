@@ -156,7 +156,6 @@ module org.bouncycastle.provider
     exports org.bouncycastle.pqc.crypto;
     exports org.bouncycastle.pqc.legacy.bike;
     exports org.bouncycastle.pqc.legacy.crystals.dilithium;
-    exports org.bouncycastle.pqc.crypto.mldsa;
     exports org.bouncycastle.pqc.crypto.mlkem;
     exports org.bouncycastle.pqc.crypto.falcon;
     exports org.bouncycastle.pqc.crypto.hqc;
