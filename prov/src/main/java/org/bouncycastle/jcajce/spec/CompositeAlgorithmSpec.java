@@ -7,7 +7,7 @@ import java.util.List;
 
 /**
  * @deprecated creation of new legacy generic composite (id_alg_composite) signatures is no
- * longer supported by {@link org.bouncycastle.operator.jcajce.JcaContentSignerBuilder} - use a
+ * longer supported by {@code org.bouncycastle.operator.jcajce.JcaContentSignerBuilder} - use a
  * modern fixed-algorithm Composite ML-DSA key/signature algorithm instead.
  */
 @Deprecated

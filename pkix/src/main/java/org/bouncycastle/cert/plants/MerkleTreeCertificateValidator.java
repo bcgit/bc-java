@@ -39,7 +39,7 @@ import org.bouncycastle.util.BigIntegers;
  * {@link MTCProof} carried in the certificate's {@code signatureValue},
  * recomputes the entry hash from the TBSCertificate, evaluates the inclusion
  * proof against the supplied {@link MerkleTreeHash}, and then either matches
- * the resulting subtree hash against a {@link ValidationParams.TrustedSubtree}
+ * the resulting subtree hash against a {@link TrustedSubtree}
  * or counts valid cosignatures against the relying party's
  * {@link MTCCosignerVerifierProvider} until {@code minCosignatures} is met.</p>
  */
