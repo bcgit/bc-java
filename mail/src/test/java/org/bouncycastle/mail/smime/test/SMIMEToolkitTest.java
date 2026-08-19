@@ -22,7 +22,6 @@ import javax.mail.internet.MimeBodyPart;
 import javax.mail.internet.MimeMessage;
 import javax.mail.internet.MimeMultipart;
 
-import junit.framework.Assert;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -137,11 +136,11 @@ public class SMIMEToolkitTest
 
         MimeMultipart smm = generateMultiPartRsa("SHA1withRSA", msg, SMIMESignedGenerator.RFC3851_MICALGS);
 
-        Assert.assertTrue(toolkit.isSigned(smm));
+        assertTrue(toolkit.isSigned(smm));
 
         MimeMessage body = makeMimeMessage(smm);
 
-        Assert.assertTrue(toolkit.isSigned(body));
+        assertTrue(toolkit.isSigned(body));
     }
 
     public void testSignedMessageRecognitionEncapsulated()
@@ -151,11 +150,11 @@ public class SMIMEToolkitTest
 
         MimeBodyPart res = generateEncapsulated();
 
-        Assert.assertTrue(toolkit.isSigned(res));
+        assertTrue(toolkit.isSigned(res));
 
         MimeMessage body = makeMimeMessage(res);
 
-        Assert.assertTrue(toolkit.isSigned(body));
+        assertTrue(toolkit.isSigned(body));
     }
 
     public void testEncryptedRecognition()
@@ -170,11 +169,11 @@ public class SMIMEToolkitTest
 
         MimeBodyPart res = gen.generate(msg, new JceCMSContentEncryptorBuilder(CMSAlgorithm.DES_EDE3_CBC).setProvider(BC).build());
 
-        Assert.assertTrue(toolkit.isEncrypted(res));
+        assertTrue(toolkit.isEncrypted(res));
 
         MimeMessage body = makeMimeMessage(res);
 
-        Assert.assertTrue(toolkit.isEncrypted(body));
+        assertTrue(toolkit.isEncrypted(body));
     }
 
     public void testCertificateExtractionEncapsulated()
@@ -220,11 +219,11 @@ public class SMIMEToolkitTest
 
         MimeMultipart smm = generateMultiPartRsa("SHA1withRSA", msg, SMIMESignedGenerator.RFC3851_MICALGS);
 
-        Assert.assertTrue(toolkit.isValidSignature(smm, new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(_signCert)));
+        assertTrue(toolkit.isValidSignature(smm, new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(_signCert)));
 
         MimeMessage body = makeMimeMessage(smm);
 
-        Assert.assertTrue(toolkit.isValidSignature(body, new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(_signCert)));
+        assertTrue(toolkit.isValidSignature(body, new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(_signCert)));
     }
 
     public void testSignedMessageVerificationEncapsulated()
@@ -234,11 +233,11 @@ public class SMIMEToolkitTest
 
         MimeBodyPart res = generateEncapsulated();
 
-        Assert.assertTrue(toolkit.isValidSignature(res, new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(_signCert)));
+        assertTrue(toolkit.isValidSignature(res, new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(_signCert)));
 
         MimeMessage body = makeMimeMessage(res);
 
-        Assert.assertTrue(toolkit.isValidSignature(body, new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(_signCert)));
+        assertTrue(toolkit.isValidSignature(body, new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(_signCert)));
     }
 
     public void testSignedMessageVerificationEncapsulatedWithPKIXIdentity()
@@ -264,12 +263,12 @@ public class SMIMEToolkitTest
 
         // TODO: certificate has expired
         JcaPEMKeyConverter keyConverter = new JcaPEMKeyConverter();
-        Assert.assertTrue(toolkit.isValidSignature(res, new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(keyConverter.getPublicKey(identity.getCertificate().getSubjectPublicKeyInfo()))));
+        assertTrue(toolkit.isValidSignature(res, new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(keyConverter.getPublicKey(identity.getCertificate().getSubjectPublicKeyInfo()))));
 
         MimeMessage body = makeMimeMessage(res);
 
-        Assert.assertTrue(toolkit.isValidSignature(body, new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(keyConverter.getPublicKey(identity.getCertificate().getSubjectPublicKeyInfo()))));
-        Assert.assertTrue(toolkit.isValidSignature(body, new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(identity.getX509Certificate().getPublicKey())));
+        assertTrue(toolkit.isValidSignature(body, new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(keyConverter.getPublicKey(identity.getCertificate().getSubjectPublicKeyInfo()))));
+        assertTrue(toolkit.isValidSignature(body, new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(identity.getX509Certificate().getPublicKey())));
     }
 
     public void testEncryptedMimeBodyPart()
@@ -279,7 +278,7 @@ public class SMIMEToolkitTest
 
         MimeBodyPart res = toolkit.encrypt(msg, new JceCMSContentEncryptorBuilder(NISTObjectIdentifiers.id_aes128_CBC).setProvider(BC).build(), new JceKeyTransRecipientInfoGenerator(_reciCert).setProvider(BC));
 
-        Assert.assertTrue(toolkit.isEncrypted(res));
+        assertTrue(toolkit.isEncrypted(res));
 
         MimeBodyPart dec = toolkit.decrypt(res, new JceKeyTransRecipientId(_reciCert), new JceKeyTransEnvelopedRecipient(_reciKP.getPrivate()).setProvider(BC));
 
@@ -295,7 +294,7 @@ public class SMIMEToolkitTest
 
         MimeBodyPart res = toolkit.encrypt(msg, new JceCMSContentEncryptorBuilder(NISTObjectIdentifiers.id_aes128_CBC).setProvider(BC).build(), new JceKeyTransRecipientInfoGenerator(identity.getX509Certificate()).setProvider(BC));
 
-        Assert.assertTrue(toolkit.isEncrypted(res));
+        assertTrue(toolkit.isEncrypted(res));
 
         MimeBodyPart dec = toolkit.decrypt(res, identity.getRecipientId(), new JceKeyTransEnvelopedRecipient(identity.getPrivateKey()).setProvider(BC));
 
@@ -310,7 +309,7 @@ public class SMIMEToolkitTest
         MimeMessage message = makeMimeMessage(msg);
         MimeBodyPart res = toolkit.encrypt(message, new JceCMSContentEncryptorBuilder(NISTObjectIdentifiers.id_aes128_CBC).setProvider(BC).build(), new JceKeyTransRecipientInfoGenerator(_reciCert).setProvider(BC));
 
-        Assert.assertTrue(toolkit.isEncrypted(res));
+        assertTrue(toolkit.isEncrypted(res));
 
         MimeMessage body = makeMimeMessage(res);
 
@@ -326,15 +325,15 @@ public class SMIMEToolkitTest
 
         MimeBodyPart res = signEncrypt(msg, _signKP.getPrivate(), _signCert, _reciCert);
 
-        Assert.assertTrue(toolkit.isEncrypted(res));
+        assertTrue(toolkit.isEncrypted(res));
 
         MimeMessage body = makeMimeMessage(res);
 
         MimeBodyPart dec = toolkit.decrypt(body, new JceKeyTransRecipientId(_reciCert), new JceKeyTransEnvelopedRecipient(_reciKP.getPrivate()).setProvider(BC));
 
-        Assert.assertTrue(toolkit.isSigned(dec));
+        assertTrue(toolkit.isSigned(dec));
 
-        Assert.assertTrue(toolkit.isValidSignature(dec, new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(_signCert)));
+        assertTrue(toolkit.isValidSignature(dec, new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(_signCert)));
 
         SMIMETestUtil.verifyMessageBytes(msg, (MimeBodyPart)((MimeMultipart)dec.getContent()).getBodyPart(0));
     }
@@ -356,7 +355,7 @@ public class SMIMEToolkitTest
 
          MimeMultipart smm = toolkit.sign(msg, new JcaSimpleSignerInfoGeneratorBuilder().setProvider(BC).build("SHA1withRSA", _signKP.getPrivate(), _signCert));
 
-         Assert.assertTrue(toolkit.isValidSignature(smm, new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(_signCert)));
+         assertTrue(toolkit.isValidSignature(smm, new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(_signCert)));
 
          SMIMESigned smimeSigned = new SMIMESigned(smm);
 
@@ -377,7 +376,7 @@ public class SMIMEToolkitTest
          body.setContent(smm, smm.getContentType());
          body.saveChanges();
 
-         Assert.assertTrue(toolkit.isValidSignature(body, new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(_signCert)));
+         assertTrue(toolkit.isValidSignature(body, new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(_signCert)));
      }
 
      public void testSignedMessageGenerationEncapsulated()
@@ -387,7 +386,7 @@ public class SMIMEToolkitTest
 
          MimeBodyPart res = toolkit.signEncapsulated(msg, new JcaSimpleSignerInfoGeneratorBuilder().setProvider(BC).build("SHA1withRSA", _signKP.getPrivate(), _signCert));
 
-         Assert.assertTrue(toolkit.isValidSignature(res, new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(_signCert)));
+         assertTrue(toolkit.isValidSignature(res, new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(_signCert)));
 
          SMIMESigned smimeSigned = new SMIMESigned(res);
 
@@ -408,7 +407,7 @@ public class SMIMEToolkitTest
          body.setContent(res.getContent(), res.getContentType());
          body.saveChanges();
 
-         Assert.assertTrue(toolkit.isValidSignature(body, new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(_signCert)));
+         assertTrue(toolkit.isValidSignature(body, new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(_signCert)));
      }
 
     private MimeMultipart generateMultiPartRsa(

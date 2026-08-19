@@ -109,16 +109,16 @@ public class VectorTest
                         switch (arrCount)
                         {
                             case 0:
-                                left = (ArrayList<Long>) temp.clone();
+                                left = new ArrayList<Long>(temp);
                                 break;
                             case 1:
-                                right = (ArrayList<Long>) temp.clone();
+                                right = new ArrayList<Long>(temp);
                                 break;
                             case 2:
-                                parent = (ArrayList<Long>) temp.clone();
+                                parent = new ArrayList<Long>(temp);
                                 break;
                             case 3:
-                                sibling = (ArrayList<Long>) temp.clone();
+                                sibling = new ArrayList<Long>(temp);
                                 break;
                         }
                         arrCount = (++arrCount % 4);
@@ -908,7 +908,7 @@ public class VectorTest
                     line = line.trim();
                     if (line.endsWith("STOP"))
                     {
-                        resolution.add((ArrayList<NodeIndex>) temp.clone());
+                        resolution.add(new ArrayList<NodeIndex>(temp));
                         temp.clear();
                         line = bin.readLine().trim();
                         if (line.endsWith("STOP"))
@@ -1146,7 +1146,7 @@ public class VectorTest
                             new LeafIndex(index),
                             encryption_priv,
                             signature_priv,
-                            (List<PathSecretInfo>) plPathSecrets.clone()));
+                            new ArrayList<PathSecretInfo>(plPathSecrets)));
 
                     updatePaths.clear();
                     plPathSecrets.clear();
@@ -1163,7 +1163,7 @@ public class VectorTest
                     updatePaths.add(new UpdatePathInfo(
                             new LeafIndex(sender),
                             (UpdatePath) MLSInputStream.decode(update_path, UpdatePath.class),
-                            (List<PathSecret>) upPathSecrets.clone(),
+                            new ArrayList<PathSecret>(upPathSecrets),
                             commit_secret,
                             tree_hash_after
                     ));

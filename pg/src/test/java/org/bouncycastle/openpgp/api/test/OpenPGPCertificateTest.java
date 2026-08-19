@@ -935,7 +935,7 @@ public class OpenPGPCertificateTest
             PGPPublicKey subkeyWithSig = PGPPublicKey.addCertification(subKeyPair.getPublicKey(), bindingSig);
 
             // 3. Build the ring using insertPublicKey (Java 1.4 compatible)
-            PGPPublicKeyRing ring = new PGPPublicKeyRing(new ArrayList());
+            PGPPublicKeyRing ring = new PGPPublicKeyRing(new ArrayList<PGPPublicKey>());
             ring = PGPPublicKeyRing.insertPublicKey(ring, masterWithSig);
             ring = PGPPublicKeyRing.insertPublicKey(ring, subkeyWithSig);
 
@@ -959,7 +959,7 @@ public class OpenPGPCertificateTest
             isEquals(1, andAttempt.size());
 
             // 6. Correct AND check
-            List bothFlags = new ArrayList();
+            List<OpenPGPCertificate.OpenPGPComponentKey> bothFlags = new ArrayList<OpenPGPCertificate.OpenPGPComponentKey>();
             List encryptionKeys = cert.getEncryptionKeys(evaluationTime);
             for (int i = 0; i < encryptionKeys.size(); i++)
             {
