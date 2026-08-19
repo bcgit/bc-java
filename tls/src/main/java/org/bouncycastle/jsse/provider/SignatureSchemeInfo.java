@@ -506,7 +506,16 @@ class SignatureSchemeInfo
         if (namedGroup13 >= 0)
         {
             namedGroupInfo = NamedGroupInfo.getNamedGroup(ng, namedGroup13);
-            if (null == namedGroupInfo || !namedGroupInfo.isEnabled() || !namedGroupInfo.isSupportedPost13())
+
+            /*
+             * RFC 8446 4.2.7: "supported_groups" applies only to key exchange; signature algorithms
+             * are negotiated independently (see 4.2.3). The availability of the associated named
+             * group therefore places no restriction on a TLS 1.3 signature scheme, EXCEPT that
+             * sm2sig_sm3 is used only as part of the RFC 8998 profile, of which curveSM2 key
+             * exchange is an integral part.
+             */
+            if (SignatureScheme.sm2sig_sm3 == signatureScheme
+                && (null == namedGroupInfo || !namedGroupInfo.isEnabled() || !namedGroupInfo.isSupportedPost13()))
             {
                 disabled13 = true;
             }
@@ -773,15 +782,28 @@ class SignatureSchemeInfo
 
     private boolean isNamedGroupOK(boolean post13Allowed, boolean pre13Allowed, NamedGroupInfo.PerConnection namedGroupInfos)
     {
-        if (null != namedGroupInfo)
+        if (post13Allowed)
         {
-                   // TODO[tls13] NOTE: a "restricted group" scheme actually supporting TLS 1.3 usage 
-            return (post13Allowed && NamedGroupInfo.hasLocal(namedGroupInfos, namedGroupInfo.getNamedGroup()))
-                   // TODO[tls13] NOTE: this can result in a "restricted group" scheme being active, but not actually supporting TLS 1.3 
-                || (pre13Allowed && NamedGroupInfo.hasAnyECDSALocal(namedGroupInfos));
+            /*
+             * RFC 8446 4.2.7: "supported_groups" applies only to key exchange; signature algorithms
+             * are negotiated independently (see 4.2.3). The local named groups therefore place no
+             * restriction on a TLS 1.3 signature scheme, EXCEPT that sm2sig_sm3 is used only as
+             * part of the RFC 8998 profile, of which curveSM2 key exchange is an integral part.
+             */
+            if (SignatureScheme.sm2sig_sm3 != all.signatureScheme
+                || (null != namedGroupInfo
+                    && NamedGroupInfo.hasLocal(namedGroupInfos, namedGroupInfo.getNamedGroup())))
+            {
+                return true;
+            }
         }
 
-        return (post13Allowed || pre13Allowed)
+        /*
+         * RFC 8446 4.2.3: in TLS 1.2 the ECDSA codepoints do not constrain the signing curve; the
+         * peer may sign using any curve we advertised in "supported_groups", so only offer ECDSA
+         * schemes when at least one ECDSA-capable group is advertised.
+         */
+        return pre13Allowed
             && (!isECDSA(all.signatureScheme) || NamedGroupInfo.hasAnyECDSALocal(namedGroupInfos));
     }
 

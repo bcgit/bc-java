@@ -105,6 +105,25 @@ public class ECDSACredentialsTest
         implTestECDSACredentials("TLSv1.3", NamedGroup.secp521r1);
     }
 
+    /*
+     * RFC 8446 4.2.7: "supported_groups" applies only to key exchange; signature algorithms are
+     * negotiated independently. Restricting the named groups to a set with no ECDSA-capable curve
+     * must not prevent the use of ECDSA credentials in TLS 1.3.
+     */
+    public void test13_brainpoolP256r1tls13_x25519Only() throws Exception
+    {
+        System.setProperty(PROPERTY_NAMED_GROUPS, "x25519");
+
+        implTestECDSACredentials("TLSv1.3", NamedGroup.brainpoolP256r1tls13);
+    }
+
+    public void test13_secp256r1_x25519Only() throws Exception
+    {
+        System.setProperty(PROPERTY_NAMED_GROUPS, "x25519");
+
+        implTestECDSACredentials("TLSv1.3", NamedGroup.secp256r1);
+    }
+
     private void implTestECDSACredentials(String protocol, int namedGroup) throws Exception
     {
         char[] keyPass = "keyPassword".toCharArray();
