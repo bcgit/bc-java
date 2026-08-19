@@ -762,47 +762,6 @@ public class MLDSATest
         }
     }
 
-    public void testPqcCryptoUtilFactoryRoundTrip()
-        throws Exception
-    {
-        // Exercises org.bouncycastle.pqc.crypto.util.{PublicKeyFactory,PrivateKeyFactory,
-        // PrivateKeyInfoFactory,SubjectPublicKeyInfoFactory} directly - the ASN.1 codec path used
-        // by callers such as PQCSignedDataTest's certificate parsing. This is a separate factory
-        // family from org.bouncycastle.crypto.util (already exercised elsewhere in this class) and
-        // was, until now, only ever exercised through the deprecated org.bouncycastle.pqc.crypto.mldsa
-        // key classes.
-        SecureRandom random = new SecureRandom();
-        MLDSAKeyPairGenerator kpg = new MLDSAKeyPairGenerator();
-
-        for (int idx = 0; idx != PARAMETER_SETS.length; idx++)
-        {
-            MLDSAParameters parameters = PARAMETER_SETS[idx];
-            kpg.init(new MLDSAKeyGenerationParameters(random, parameters));
-            AsymmetricCipherKeyPair kp = kpg.generateKeyPair();
-
-            MLDSAPublicKeyParameters pubParams = (MLDSAPublicKeyParameters)org.bouncycastle.pqc.crypto.util.PublicKeyFactory.createKey(
-                org.bouncycastle.pqc.crypto.util.SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(kp.getPublic()));
-            MLDSAPrivateKeyParameters privParams = (MLDSAPrivateKeyParameters)org.bouncycastle.pqc.crypto.util.PrivateKeyFactory.createKey(
-                org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory.createPrivateKeyInfo(kp.getPrivate()));
-
-            assertTrue("public key: " + parameters.getName(), Arrays.areEqual(
-                ((MLDSAPublicKeyParameters)kp.getPublic()).getEncoded(), pubParams.getEncoded()));
-            assertTrue("private key: " + parameters.getName(), Arrays.areEqual(
-                ((MLDSAPrivateKeyParameters)kp.getPrivate()).getEncoded(), privParams.getEncoded()));
-
-            Signer signer = parameters.isPreHash() ? (Signer)new HashMLDSASigner() : (Signer)new MLDSASigner();
-            byte[] msg = Strings.toByteArray("pqc.crypto.util factory round trip");
-
-            signer.init(true, new ParametersWithRandom(privParams, random));
-            signer.update(msg, 0, msg.length);
-            byte[] signature = signer.generateSignature();
-
-            signer.init(false, pubParams);
-            signer.update(msg, 0, msg.length);
-            assertTrue("signature verify: " + parameters.getName(), signer.verifySignature(signature));
-        }
-    }
-
     private interface RejectionOperation
     {
         byte[] processSign(MLDSAPrivateKeyParameters privParams, byte[] msg)
