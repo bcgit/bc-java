@@ -18,7 +18,7 @@ public class SpecUtil
             return ((NamedParameterSpec)paramSpec).getName();
         }
 
-        return (String)AccessController.doPrivileged(new PrivilegedAction()
+        return (String)AccessController.doPrivileged(new PrivilegedAction<Object>()
         {
             public Object run()
             {
@@ -40,7 +40,7 @@ public class SpecUtil
 
     public static byte[] getContextFrom(final AlgorithmParameterSpec paramSpec)
     {
-        return (byte[])AccessController.doPrivileged(new PrivilegedAction()
+        return (byte[])AccessController.doPrivileged(new PrivilegedAction<Object>()
         {
             public Object run()
             {

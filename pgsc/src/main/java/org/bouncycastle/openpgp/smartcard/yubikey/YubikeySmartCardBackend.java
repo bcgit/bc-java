@@ -227,6 +227,7 @@ public class YubikeySmartCardBackend
      * @throws NoSuchAlgorithmException if no Provider supports an implementation for the PublicKeyValues algorithm
      * @throws InvalidKeySpecException if the PublicKeyValues specification is inappropriate to produce a public key
      */
+    @SuppressWarnings("deprecation")
     public PGPPublicKey convertPublicKey(PublicKeyValues pkVal,
                                     byte[] storedFingerprint,
                                     Date creationTime)
