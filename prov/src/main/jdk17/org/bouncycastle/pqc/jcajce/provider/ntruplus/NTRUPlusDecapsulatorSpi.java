@@ -1,13 +1,12 @@
 package org.bouncycastle.pqc.jcajce.provider.ntruplus;
 
-import java.util.Objects;
-
 import javax.crypto.DecapsulateException;
 import javax.crypto.KEMSpi;
 import javax.crypto.SecretKey;
 
 import org.bouncycastle.jcajce.provider.asymmetric.util.KdfUtil;
 import org.bouncycastle.jcajce.spec.KTSParameterSpec;
+import org.bouncycastle.jcajce.util.SpiUtil;
 import org.bouncycastle.pqc.crypto.ntruplus.NTRUPlusKEMExtractor;
 
 /*
@@ -31,16 +30,7 @@ class NTRUPlusDecapsulatorSpi
     public SecretKey engineDecapsulate(byte[] encapsulation, int from, int to, String algorithm)
         throws DecapsulateException
     {
-        Objects.checkFromToIndex(from, to, engineSecretSize());
-        Objects.requireNonNull(algorithm, "null algorithm");
-        Objects.requireNonNull(encapsulation, "null encapsulation");
-
-        if (encapsulation.length != engineEncapsulationSize())
-        {
-            throw new DecapsulateException("incorrect encapsulation size");
-        }
-
-        algorithm = KdfUtil.resolveAlgorithm(parameterSpec, algorithm);
+        algorithm = SpiUtil.resolveDecapsulateAlgorithm(encapsulation, from, to, algorithm, engineSecretSize(), engineEncapsulationSize(), parameterSpec);
 
         // NTRUPlusEngine builds its SHAKE instance per call, so one extractor is safe to share
         // across the concurrent decapsulate calls javax.crypto.KEM requires.
