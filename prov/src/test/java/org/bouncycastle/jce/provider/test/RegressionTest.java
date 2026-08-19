@@ -58,6 +58,7 @@ public class RegressionTest
         new GOST3410Test(),
         new GOST3412Test(),
         new HMacTest(),
+        new HardwareKeyInvalidKeyExceptionTest(),
         new IESTest(),
         new ImplicitlyCaTest(),
         new KeccakTest(),

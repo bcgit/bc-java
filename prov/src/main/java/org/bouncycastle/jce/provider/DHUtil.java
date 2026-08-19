@@ -11,6 +11,7 @@ import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.DHParameters;
 import org.bouncycastle.crypto.params.DHPrivateKeyParameters;
 import org.bouncycastle.crypto.params.DHPublicKeyParameters;
+import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 
 /**
  * utility class for converting jce/jca DH objects
@@ -41,10 +42,18 @@ public class DHUtil
         {
             DHPrivateKey    k = (DHPrivateKey)key;
 
-            return new DHPrivateKeyParameters(k.getX(),
-                new DHParameters(k.getParams().getP(), k.getParams().getG(), null, k.getParams().getL()));
+            try
+            {
+                return new DHPrivateKeyParameters(k.getX(),
+                    new DHParameters(k.getParams().getP(), k.getParams().getG(), null, k.getParams().getL()));
+            }
+            catch (RuntimeException e)
+            {
+                throw SecurityExceptions.invalidKeyException(
+                    "cannot recognise DH private key - its parameters are not accessible (a hardware-backed key?): " + e.getMessage(), e);
+            }
         }
-                        
+
         throw new InvalidKeyException("can't identify DH private key.");
     }
 }

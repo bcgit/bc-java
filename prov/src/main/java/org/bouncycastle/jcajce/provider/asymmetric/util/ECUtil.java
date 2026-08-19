@@ -32,6 +32,7 @@ import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.math.ec.FixedPointCombMultiplier;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Fingerprint;
+import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 import org.bouncycastle.util.Strings;
 
 /**
@@ -252,10 +253,18 @@ public class ECUtil
         else if (key instanceof java.security.interfaces.ECPrivateKey)
         {
             java.security.interfaces.ECPrivateKey privKey = (java.security.interfaces.ECPrivateKey)key;
-            ECParameterSpec s = EC5Util.convertSpec(privKey.getParams());
-            return new ECPrivateKeyParameters(
-                            privKey.getS(),
-                            new ECDomainParameters(s.getCurve(), s.getG(), s.getN(), s.getH(), s.getSeed()));
+            try
+            {
+                ECParameterSpec s = EC5Util.convertSpec(privKey.getParams());
+                return new ECPrivateKeyParameters(
+                                privKey.getS(),
+                                new ECDomainParameters(s.getCurve(), s.getG(), s.getN(), s.getH(), s.getSeed()));
+            }
+            catch (RuntimeException e)
+            {
+                throw SecurityExceptions.invalidKeyException(
+                    "cannot recognise EC private key - its parameters are not accessible (a hardware-backed key?): " + e.getMessage(), e);
+            }
         }
         else
         {

@@ -16,6 +16,7 @@ import org.bouncycastle.crypto.params.DSAParameters;
 import org.bouncycastle.crypto.params.DSAPrivateKeyParameters;
 import org.bouncycastle.internal.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 import org.bouncycastle.util.Fingerprint;
 
 /**
@@ -97,10 +98,18 @@ public class DSAUtil
         {
             DSAPrivateKey    k = (DSAPrivateKey)key;
 
-            return new DSAPrivateKeyParameters(k.getX(),
-                new DSAParameters(k.getParams().getP(), k.getParams().getQ(), k.getParams().getG()));
+            try
+            {
+                return new DSAPrivateKeyParameters(k.getX(),
+                    new DSAParameters(k.getParams().getP(), k.getParams().getQ(), k.getParams().getG()));
+            }
+            catch (RuntimeException e)
+            {
+                throw SecurityExceptions.invalidKeyException(
+                    "cannot recognise DSA private key - its parameters are not accessible (a hardware-backed key?): " + e.getMessage(), e);
+            }
         }
-                        
+
         throw new InvalidKeyException("can't identify DSA private key.");
     }
 

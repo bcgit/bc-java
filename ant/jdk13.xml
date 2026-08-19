@@ -273,6 +273,7 @@
                 <exclude name="**/pqc/**/BitStringTest.java" />
                 <exclude name="**/pqc/**/QTESLA*.java" />
                 <exclude name="**/pqc/legacy/**/*.java" />
+                <exclude name="**/jce/provider/test/HardwareKeyInvalidKeyExceptionTest.java" />
                 <exclude name="**/jcajce/provider/test/*.java" />
                 <exclude name="**/jce/provider/test/JceTestUtil.java" />
                 <exclude name="**/speedy/**" />
@@ -382,6 +383,7 @@
                 <exclude name="**/jce/provider/test/AEADTest.java" />
                 <exclude name="**/jce/provider/test/ECEncodingTest.java" />
                 <exclude name="**/jce/provider/test/CertLocaleTest.java" />
+                <exclude name="**/jce/provider/test/HardwareKeyInvalidKeyExceptionTest.java" />
                 <!-- synced from ant/jdk14.xml's prov/src/test/java fileset -->
                 <exclude name="**/jce/provider/test/JcajceParameterSpecTest.java" />
                 <exclude name="**/jce/provider/test/XChaCha20Poly1305Test.java" />
