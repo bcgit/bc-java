@@ -53,10 +53,13 @@ public class SignatureScheme
     public static final int mldsa87 = 0x0906;
 
     /** @deprecated Use 'mldsa44' instead. */
+    @Deprecated
     public static final int DRAFT_mldsa44 = mldsa44;
     /** @deprecated Use 'mldsa65' instead. */
+    @Deprecated
     public static final int DRAFT_mldsa65 = mldsa65;
     /** @deprecated Use 'mldsa87' instead. */
+    @Deprecated
     public static final int DRAFT_mldsa87 = mldsa87;
 
     /*

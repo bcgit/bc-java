@@ -50,6 +50,7 @@ public class DLExternal
      *
      * @deprecated Use {@link #fromSequence(ASN1Sequence)} instead.
      */
+    @Deprecated
     public DLExternal(DLSequence sequence)
     {
         super(sequence);

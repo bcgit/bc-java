@@ -88,6 +88,7 @@ public class Longs
     /**
      * @deprecated Use {@link Nat#xorTo64(int, long[], int, long[], int)} instead.
      */
+    @Deprecated
     public static void xorTo(int len, long[] x, int xOff, long[] z, int zOff)
     {
         Nat.xorTo64(len, x, xOff, z, zOff);
