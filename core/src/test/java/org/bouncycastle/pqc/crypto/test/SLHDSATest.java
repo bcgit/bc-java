@@ -588,18 +588,6 @@ public class SLHDSATest
         checkInitGuards(new HashSLHDSASigner(), "HashSLHDSASigner",
             new SLHDSAPublicKeyParameters(SLHDSAParameters.sha2_128s, pk),
             new SLHDSAPrivateKeyParameters(SLHDSAParameters.sha2_128s, sk));
-
-        checkInitGuards(new org.bouncycastle.pqc.crypto.slhdsa.SLHDSASigner(), "SLHDSASigner",
-            new org.bouncycastle.pqc.crypto.slhdsa.SLHDSAPublicKeyParameters(
-                org.bouncycastle.pqc.crypto.slhdsa.SLHDSAParameters.sha2_128s, pk),
-            new org.bouncycastle.pqc.crypto.slhdsa.SLHDSAPrivateKeyParameters(
-                org.bouncycastle.pqc.crypto.slhdsa.SLHDSAParameters.sha2_128s, sk));
-
-        checkInitGuards(new org.bouncycastle.pqc.crypto.slhdsa.HashSLHDSASigner(), "HashSLHDSASigner",
-            new org.bouncycastle.pqc.crypto.slhdsa.SLHDSAPublicKeyParameters(
-                org.bouncycastle.pqc.crypto.slhdsa.SLHDSAParameters.sha2_128s, pk),
-            new org.bouncycastle.pqc.crypto.slhdsa.SLHDSAPrivateKeyParameters(
-                org.bouncycastle.pqc.crypto.slhdsa.SLHDSAParameters.sha2_128s, sk));
     }
 
     private static void checkInitGuards(MessageSigner signer, String name, CipherParameters pub, CipherParameters priv)
@@ -647,6 +635,34 @@ public class SLHDSATest
         catch (IllegalStateException e)
         {
             assertEquals(name + " not initialised for verification", e.getMessage());
+        }
+    }
+
+    public void testPqcCryptoUtilFactoryRoundTrip()
+        throws Exception
+    {
+        // Exercises org.bouncycastle.pqc.crypto.util.{PublicKeyFactory,PrivateKeyFactory,
+        // PrivateKeyInfoFactory,SubjectPublicKeyInfoFactory} directly - a separate ASN.1 codec
+        // implementation from org.bouncycastle.crypto.util of the same simple names - which had no
+        // SLH-DSA test coverage at all before this, deprecated or otherwise.
+        SecureRandom random = new SecureRandom();
+        SLHDSAKeyPairGenerator kpg = new SLHDSAKeyPairGenerator();
+
+        for (int idx = 0; idx != PARAMETER_SETS.length; idx++)
+        {
+            SLHDSAParameters parameters = PARAMETER_SETS[idx];
+            kpg.init(new SLHDSAKeyGenerationParameters(random, parameters));
+            AsymmetricCipherKeyPair kp = kpg.generateKeyPair();
+
+            SLHDSAPublicKeyParameters pubParams = (SLHDSAPublicKeyParameters)org.bouncycastle.pqc.crypto.util.PublicKeyFactory.createKey(
+                org.bouncycastle.pqc.crypto.util.SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(kp.getPublic()));
+            SLHDSAPrivateKeyParameters privParams = (SLHDSAPrivateKeyParameters)org.bouncycastle.pqc.crypto.util.PrivateKeyFactory.createKey(
+                org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory.createPrivateKeyInfo(kp.getPrivate()));
+
+            assertTrue("public key: " + parameters, Arrays.areEqual(
+                ((SLHDSAPublicKeyParameters)kp.getPublic()).getEncoded(), pubParams.getEncoded()));
+            assertTrue("private key: " + parameters, Arrays.areEqual(
+                ((SLHDSAPrivateKeyParameters)kp.getPrivate()).getEncoded(), privParams.getEncoded()));
         }
     }
 
