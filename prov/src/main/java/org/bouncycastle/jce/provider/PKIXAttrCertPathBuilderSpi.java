@@ -42,6 +42,7 @@ import org.bouncycastle.x509.X509CertStoreSelector;
 public class PKIXAttrCertPathBuilderSpi
     extends CertPathBuilderSpi
 {
+    private AnnotatedException certPathException;
 
     /**
      * Build and validate a CertPath using the given parameter.
@@ -86,6 +87,8 @@ public class PKIXAttrCertPathBuilderSpi
             paramsPKIX = (PKIXExtendedBuilderParameters)params;
         }
 
+        certPathException = null;
+
         Collection targets;
         Iterator targetIter;
         List certPathList = new ArrayList();
@@ -119,11 +122,9 @@ public class PKIXAttrCertPathBuilderSpi
                     "No attribute certificate found matching targetConstraints.");
         }
 
-        CertPathBuilderResult result = null;
-
         // check all potential target certificates
         targetIter = targets.iterator();
-        while (targetIter.hasNext() && result == null)
+        while (targetIter.hasNext())
         {
             cert = (X509AttributeCertificate) targetIter.next();
             
@@ -161,29 +162,23 @@ public class PKIXAttrCertPathBuilderSpi
                     "Public key certificate for attribute certificate cannot be found.");
             }
             Iterator it = issuers.iterator();
-            while (it.hasNext() && result == null)
+            while (it.hasNext())
             {
-                result = build(cert, (X509Certificate)it.next(), paramsPKIX, certPathList);
+                CertPathBuilderResult result = build(cert, (X509Certificate)it.next(), paramsPKIX, certPathList);
+                if (result != null)
+                {
+                    return result;
+                }
             }
         }
 
-        if (result == null && certPathException != null)
+        if (certPathException == null)
         {
-            throw SecurityExceptions.certPathBuilderException(
-                                    "Possible certificate chain could not be validated.",
-                                    certPathException);
+            throw new CertPathBuilderException("Unable to find certificate chain.");
         }
 
-        if (result == null && certPathException == null)
-        {
-            throw new CertPathBuilderException(
-                    "Unable to find certificate chain.");
-        }
-
-        return result;
+        throw new CertPathBuilderException(certPathException.getMessage(), certPathException.getCause());
     }
-
-    private Exception certPathException;
 
     private CertPathBuilderResult build(X509AttributeCertificate attrCert, X509Certificate tbvCert,
             PKIXExtendedBuilderParameters pkixParams, List tbvPath)
@@ -211,12 +206,8 @@ public class PKIXAttrCertPathBuilderSpi
             }
         }
 
-        tbvPath.add(tbvCert);
-
         CertificateFactory cFact;
         CertPathValidator validator;
-        CertPathBuilderResult builderResult = null;
-
         try
         {
             cFact = CertificateFactory.getInstance("X.509", BouncyCastleProvider.PROVIDER_NAME);
@@ -225,9 +216,10 @@ public class PKIXAttrCertPathBuilderSpi
         catch (Exception e)
         {
             // cannot happen
-            throw new RuntimeException(
-                            "Exception creating support classes.");
+            throw new RuntimeException("Exception creating support classes.");
         }
+
+        tbvPath.add(tbvCert);
 
         try
         {
@@ -298,7 +290,7 @@ public class PKIXAttrCertPathBuilderSpi
                 }
 
                 Iterator it = issuers.iterator();
-                while (it.hasNext() && builderResult == null)
+                while (it.hasNext())
                 {
                     X509Certificate issuer = (X509Certificate) it.next();
                     // TODO Use CertPathValidatorUtilities.isSelfIssued(issuer)?
@@ -307,7 +299,12 @@ public class PKIXAttrCertPathBuilderSpi
                     {
                         continue;
                     }
-                    builderResult = build(attrCert, issuer, pkixParams, tbvPath);
+
+                    CertPathBuilderResult builderResult = build(attrCert, issuer, pkixParams, tbvPath);
+                    if (builderResult != null)
+                    {
+                        return builderResult;
+                    }
                 }
             }
         }
@@ -315,11 +312,13 @@ public class PKIXAttrCertPathBuilderSpi
         {
             certPathException = new AnnotatedException("No valid certification path could be build.", e);
         }
-        if (builderResult == null)
+        finally
         {
+            // Undo the add above on every exit from this frame - including the success path (the CertPath was built
+            // from a copy of tbvPath).
             tbvPath.remove(tbvCert);
         }
-        return builderResult;
+        return null;
     }
 
     protected static Collection findCertificates(X509AttributeCertStoreSelector certSelect, List certStores)
