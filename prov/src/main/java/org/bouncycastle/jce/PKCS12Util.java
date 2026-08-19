@@ -38,7 +38,7 @@ import org.bouncycastle.util.Properties;
 /**
  * Utility class for re-encoding PKCS#12 files to definite length.
  *
- * @deprecated Replaced by {@link org.bouncycastle.pkcs.util.PKCS12Util}; this class
+ * @deprecated Replaced by {@code org.bouncycastle.pkcs.util.PKCS12Util}; this class
  * does not understand RFC 9579 PBMAC1-protected PKCS#12 files (it throws
  * UnsupportedOperationException for them) and will be removed in a future
  * release.

@@ -588,18 +588,6 @@ public class SLHDSATest
         checkInitGuards(new HashSLHDSASigner(), "HashSLHDSASigner",
             new SLHDSAPublicKeyParameters(SLHDSAParameters.sha2_128s, pk),
             new SLHDSAPrivateKeyParameters(SLHDSAParameters.sha2_128s, sk));
-
-        checkInitGuards(new org.bouncycastle.pqc.crypto.slhdsa.SLHDSASigner(), "SLHDSASigner",
-            new org.bouncycastle.pqc.crypto.slhdsa.SLHDSAPublicKeyParameters(
-                org.bouncycastle.pqc.crypto.slhdsa.SLHDSAParameters.sha2_128s, pk),
-            new org.bouncycastle.pqc.crypto.slhdsa.SLHDSAPrivateKeyParameters(
-                org.bouncycastle.pqc.crypto.slhdsa.SLHDSAParameters.sha2_128s, sk));
-
-        checkInitGuards(new org.bouncycastle.pqc.crypto.slhdsa.HashSLHDSASigner(), "HashSLHDSASigner",
-            new org.bouncycastle.pqc.crypto.slhdsa.SLHDSAPublicKeyParameters(
-                org.bouncycastle.pqc.crypto.slhdsa.SLHDSAParameters.sha2_128s, pk),
-            new org.bouncycastle.pqc.crypto.slhdsa.SLHDSAPrivateKeyParameters(
-                org.bouncycastle.pqc.crypto.slhdsa.SLHDSAParameters.sha2_128s, sk));
     }
 
     private static void checkInitGuards(MessageSigner signer, String name, CipherParameters pub, CipherParameters priv)

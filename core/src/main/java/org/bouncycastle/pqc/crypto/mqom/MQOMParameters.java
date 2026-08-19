@@ -6,8 +6,8 @@ package org.bouncycastle.pqc.crypto.mqom;
  * convention used by <a href="https://github.com/mqom/mqom-v2">mqom-v2</a>.
  *
  * <p>All 48 standardised parameter sets are declared here. Whether a given set
- * is wired through to a working engine is reported by {@link MQOMEngineSupport}
- * (loaded indirectly through {@code MQOMEngine.getInstance}); declaring the
+ * is wired through to a working engine is reported by
+ * {@link MQOMEngine#getInstance(MQOMParameters) MQOMEngine.getInstance}; declaring the
  * constants up front lets callers reference parameter names independently of
  * the engine roadmap.
  */

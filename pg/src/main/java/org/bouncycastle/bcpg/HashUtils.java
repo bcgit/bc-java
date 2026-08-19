@@ -33,11 +33,12 @@ public class HashUtils
 
     /**
      * Return true, if the encountered saltLength matches the value the specification gives for the hashAlgorithm.
+     * <p>
+     * Note: LibrePGP allows for zero-length signature salt values, so this method only works for IETF OpenPGP v6.
      *
      * @param hashAlgorithm hash algorithm tag
      * @param saltSize encountered salt size
      * @return true if the encountered size matches the spec
-     * @implNote LibrePGP allows for zero-length signature salt values, so this method only works for IETF OpenPGP v6.
      */
     public boolean saltSizeMatchesSpec(int hashAlgorithm, int saltSize)
     {

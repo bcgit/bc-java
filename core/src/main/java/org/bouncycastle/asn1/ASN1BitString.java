@@ -80,6 +80,7 @@ public abstract class ASN1BitString
      * 
      * @deprecated Will be removed
      */
+    @Deprecated
     static protected int getPadBits(int bitString)
     {
         int val = 0;
@@ -130,6 +131,7 @@ public abstract class ASN1BitString
      * 
      * @deprecated Will be removed
      */
+    @Deprecated
     static protected byte[] getBytes(int bitString)
     {
         if (bitString == 0)

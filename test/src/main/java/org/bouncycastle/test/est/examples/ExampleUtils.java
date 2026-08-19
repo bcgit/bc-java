@@ -62,7 +62,7 @@ import org.bouncycastle.util.io.pem.PemWriter;
 public class ExampleUtils
 {
 
-    private static Map algIds = new HashMap();
+    private static Map<String, AlgorithmIdentifier> algIds = new HashMap<String, AlgorithmIdentifier>();
 
     static
     {
@@ -232,7 +232,7 @@ public class ExampleUtils
         certGen.setSubject(subjectDN);
         certGen.setStartDate(new Time(new Date(time - 24 * 60 * 60000)));
         certGen.setEndDate(new Time(new Date(time + 30 * 60 * 60000)));
-        certGen.setSignature((AlgorithmIdentifier)algIds.get(sigName));
+        certGen.setSignature(algIds.get(sigName));
         certGen.setSubjectPublicKeyInfo(subjectPublicKeyInfo);
         certGen.setExtensions(extGenerator.generate());
 
@@ -248,7 +248,7 @@ public class ExampleUtils
         ASN1EncodableVector v = new ASN1EncodableVector();
 
         v.add(tbsCert);
-        v.add((AlgorithmIdentifier)algIds.get(sigName));
+        v.add(algIds.get(sigName));
         v.add(new DERBitString(sig.sign()));
 
         return (X509Certificate)
@@ -291,7 +291,7 @@ public class ExampleUtils
         certGen.setSubject(subjectDN);
         certGen.setStartDate(new Time(new Date(time - 24 * 60 * 60000)));
         certGen.setEndDate(new Time(new Date(time + 30 * 60 * 60000)));
-        certGen.setSignature((AlgorithmIdentifier)algIds.get(sigName));
+        certGen.setSignature(algIds.get(sigName));
         certGen.setSubjectPublicKeyInfo(subjectPublicKeyInfo);
 
 
@@ -306,7 +306,7 @@ public class ExampleUtils
         ASN1EncodableVector v = new ASN1EncodableVector();
 
         v.add(tbsCert);
-        v.add((AlgorithmIdentifier)algIds.get(sigName));
+        v.add(algIds.get(sigName));
         v.add(new DERBitString(sig.sign()));
 
         return (X509Certificate)

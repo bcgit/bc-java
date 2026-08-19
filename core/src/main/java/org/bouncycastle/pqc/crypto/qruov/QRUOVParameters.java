@@ -8,8 +8,8 @@ package org.bouncycastle.pqc.crypto.qruov;
  * F_q with q in {7, 31, 127}, a quotient ring extension F_q^L = F_q[X]/f(X) for
  * a small irreducible f(X) = x^L - fc * x^fe - fc0, and dimensions (v, m).
  * <p>
- * The {@link #qruov_*_shake} constants use SHAKE as the pseudo-random generator
- * (matching the {@code kat_shake} test vectors); the {@link #qruov_*_aes} constants
+ * The {@code qruov_*_shake} constants use SHAKE as the pseudo-random generator
+ * (matching the {@code kat_shake} test vectors); the {@code qruov_*_aes} constants
  * use AES-CTR (matching the {@code kat_aes} test vectors). Algorithm output is
  * otherwise identical apart from the PRG-driven expansions.
  */

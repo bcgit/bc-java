@@ -21,15 +21,11 @@ import org.bouncycastle.pqc.legacy.crystals.dilithium.DilithiumPrivateKeyParamet
 import org.bouncycastle.pqc.legacy.crystals.dilithium.DilithiumPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.mldsa.MLDSAPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.mldsa.MLDSAPublicKeyParameters;
-import org.bouncycastle.pqc.crypto.mlkem.MLKEMPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.newhope.NHPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.ntru.NTRUPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.ntruprime.NTRULPRimePrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.ntruprime.SNTRUPrimePrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.saber.SABERPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.sphincs.SPHINCSPrivateKeyParameters;
 import org.bouncycastle.pqc.legacy.sphincsplus.SPHINCSPlusPrivateKeyParameters;
 import org.bouncycastle.util.Pack;
@@ -99,14 +95,6 @@ public class PrivateKeyInfoFactory
 
             return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(params.getEncoded()), attributes, params.getPublicKey());
         }
-        else if (privateKey instanceof SLHDSAPrivateKeyParameters)
-        {
-            SLHDSAPrivateKeyParameters params = (SLHDSAPrivateKeyParameters)privateKey;
-
-            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.slhdsaOidLookup(params.getParameters()));
-
-            return new PrivateKeyInfo(algorithmIdentifier, params.getEncoded(), attributes);
-        }
         else if (privateKey instanceof SABERPrivateKeyParameters)
         {
             SABERPrivateKeyParameters params = (SABERPrivateKeyParameters)privateKey;
@@ -137,22 +125,6 @@ public class PrivateKeyInfoFactory
             FalconPrivateKey falconPriv = new FalconPrivateKey(0, params.getSpolyf(), params.getG(), params.getSpolyF(), falconPub);
 
             return new PrivateKeyInfo(algorithmIdentifier, falconPriv, attributes);
-        }
-        else if (privateKey instanceof MLKEMPrivateKeyParameters)
-        {
-            MLKEMPrivateKeyParameters params = (MLKEMPrivateKeyParameters)privateKey;
-
-            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.mlkemOidLookup(params.getParameters()));
-
-            if (params.getPreferredFormat() == MLKEMPrivateKeyParameters.SEED_ONLY)
-            {
-                return new PrivateKeyInfo(algorithmIdentifier, new DERTaggedObject(false, 0, new DEROctetString(params.getSeed())), attributes);
-            }
-            else if (params.getPreferredFormat() == MLKEMPrivateKeyParameters.EXPANDED_KEY)
-            {
-                return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(params.getEncoded()), attributes);
-            }
-            return new PrivateKeyInfo(algorithmIdentifier, getBasicPQCEncoding(params.getSeed(), params.getEncoded()), attributes);
         }
         else if (privateKey instanceof NTRULPRimePrivateKeyParameters)
         {
@@ -185,22 +157,6 @@ public class PrivateKeyInfoFactory
 
             return new PrivateKeyInfo(algorithmIdentifier, new DERSequence(v), attributes);
         }
-        else if (privateKey instanceof MLDSAPrivateKeyParameters)
-        {
-            MLDSAPrivateKeyParameters params = (MLDSAPrivateKeyParameters)privateKey;
-
-            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.mldsaOidLookup(params.getParameters()));
-
-            if (params.getPreferredFormat() == MLDSAPrivateKeyParameters.SEED_ONLY)
-            {
-                return new PrivateKeyInfo(algorithmIdentifier, new DERTaggedObject(false, 0, new DEROctetString(params.getSeed())), attributes);
-            }
-            else if (params.getPreferredFormat() == MLDSAPrivateKeyParameters.EXPANDED_KEY)
-            {
-                return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(params.getEncoded()), attributes);
-            }
-            return new PrivateKeyInfo(algorithmIdentifier, getBasicPQCEncoding(params.getSeed(), params.getEncoded()), attributes);
-        }
         else if (privateKey instanceof DilithiumPrivateKeyParameters)
         {
             DilithiumPrivateKeyParameters params = (DilithiumPrivateKeyParameters)privateKey;
@@ -231,14 +187,4 @@ public class PrivateKeyInfoFactory
         }
     }
 
-    private static ASN1Sequence getBasicPQCEncoding(byte[] seed, byte[] expanded)
-    {
-        ASN1EncodableVector v = new ASN1EncodableVector(2);
-
-        v.add(new DEROctetString(seed));
-
-        v.add(new DEROctetString(expanded));
-
-        return new DERSequence(v);
-    }
 }

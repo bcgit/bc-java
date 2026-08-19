@@ -14,7 +14,7 @@ import org.bouncycastle.util.Arrays;
  * </pre>
  *
  * <p>The {@code extension_type} is a uint16 (the draft assigns no concrete
- * values yet) and {@code extension_data} is opaque<0..65535>. Extensions
+ * values yet) and {@code extension_data} is {@code opaque<0..65535>}. Extensions
  * carried inside a {@link MTCProof} or hashed into a log entry MUST appear
  * in ascending order by {@code extension_type} with no duplicates; the
  * {@link MTCProof} encoder/decoder enforces this.</p>

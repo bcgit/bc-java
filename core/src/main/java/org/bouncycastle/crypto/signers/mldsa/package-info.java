@@ -1,6 +1,5 @@
 /**
- * ML-DSA (FIPS 204) bindings of the lightweight signer API. Wraps the primitives in
- * {@link org.bouncycastle.pqc.crypto.mldsa} as {@link org.bouncycastle.crypto.Signer} /
- * {@link org.bouncycastle.crypto.StatefulSigner} implementations.
+ * Internal ML-DSA (FIPS 204) engine backing {@link org.bouncycastle.crypto.signers.MLDSASigner}
+ * and {@link org.bouncycastle.crypto.signers.HashMLDSASigner}.
  */
 package org.bouncycastle.crypto.signers.mldsa;

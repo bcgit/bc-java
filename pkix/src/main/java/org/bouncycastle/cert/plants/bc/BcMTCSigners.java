@@ -14,8 +14,8 @@ import org.bouncycastle.crypto.signers.DSADigestSigner;
 import org.bouncycastle.crypto.signers.ECDSASigner;
 import org.bouncycastle.crypto.signers.Ed25519Signer;
 import org.bouncycastle.crypto.signers.HMacDSAKCalculator;
+import org.bouncycastle.crypto.signers.MLDSASigner;
 import org.bouncycastle.crypto.signers.PlainDSAEncoding;
-import org.bouncycastle.pqc.crypto.mldsa.MLDSASigner;
 
 /**
  * Shared algorithm-string to lightweight {@link Signer} dispatch for the

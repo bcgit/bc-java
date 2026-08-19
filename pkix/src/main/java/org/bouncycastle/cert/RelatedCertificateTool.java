@@ -50,8 +50,8 @@ import org.bouncycastle.util.Arrays;
  * {@code org.bouncycastle.operator}, so both the lightweight (BC) and JCA
  * bindings of those operator interfaces are equally usable. Wrapping /
  * unwrapping the value as a PKCS#9 {@link org.bouncycastle.asn1.pkcs.Attribute}
- * lives on the value class itself — see {@link RequesterCertificate#toAttribute()}
- * and {@link RequesterCertificate#fromAttribute(org.bouncycastle.asn1.pkcs.Attribute)}.
+ * lives on this class itself — see {@link #toAttribute(RequesterCertificate)}
+ * and {@link #fromAttribute(org.bouncycastle.asn1.pkcs.Attribute)}.
  */
 public class RelatedCertificateTool
 {

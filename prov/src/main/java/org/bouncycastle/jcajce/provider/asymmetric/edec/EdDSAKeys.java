@@ -70,7 +70,7 @@ class EdDSAKeys
      * when the request is not one this JDK version bridges - the caller then falls through to
      * its own handling.
      */
-    static KeySpec getKeySpec(Key key, Class spec)
+    static KeySpec getKeySpec(Key key, Class<?> spec)
         throws InvalidKeySpecException
     {
         return null;

@@ -112,17 +112,6 @@ public class MLKEMTest
         {
             assertEquals("'encoding' has invalid length", e.getMessage());
         }
-
-        try
-        {
-            new org.bouncycastle.pqc.crypto.mlkem.MLKEMPrivateKeyParameters(
-                org.bouncycastle.pqc.crypto.mlkem.MLKEMParameters.ml_kem_512, encoding);
-            fail("no exception for private key encoding of length " + encoding.length + " (pqc.crypto.mlkem)");
-        }
-        catch (IllegalArgumentException e)
-        {
-            assertEquals("'encoding' has invalid length", e.getMessage());
-        }
     }
 
     public void testInputs()

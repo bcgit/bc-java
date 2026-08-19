@@ -50,6 +50,7 @@ public class DERExternal
      *
      * @deprecated Use {@link #fromSequence(ASN1Sequence)} instead.
      */
+    @Deprecated
     public DERExternal(DERSequence sequence)
     {
         super(sequence);

@@ -11,12 +11,6 @@ import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.util.DEROtherInfo;
 import org.bouncycastle.pqc.crypto.KEMParameters;
-import org.bouncycastle.pqc.crypto.mlkem.MLKEMExtractor;
-import org.bouncycastle.pqc.crypto.mlkem.MLKEMGenerator;
-import org.bouncycastle.pqc.crypto.mlkem.MLKEMKeyGenerationParameters;
-import org.bouncycastle.pqc.crypto.mlkem.MLKEMKeyPairGenerator;
-import org.bouncycastle.pqc.crypto.mlkem.MLKEMParameters;
-import org.bouncycastle.pqc.crypto.mlkem.MLKEMPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.ntru.NTRUKEMExtractor;
 import org.bouncycastle.pqc.crypto.ntru.NTRUKEMGenerator;
 import org.bouncycastle.pqc.crypto.ntru.NTRUKeyGenerationParameters;
@@ -71,17 +65,7 @@ public class PQCOtherInfoGenerator
         {
             super(algorithmID, partyUInfo, partyVInfo, random);
 
-            if (kemParams instanceof MLKEMParameters)
-            {
-                MLKEMKeyPairGenerator kPg = new MLKEMKeyPairGenerator();
-
-                kPg.init(new MLKEMKeyGenerationParameters(random, (MLKEMParameters)kemParams));
-
-                aKp = kPg.generateKeyPair();
-
-                encSE = new MLKEMExtractor((MLKEMPrivateKeyParameters)aKp.getPrivate());
-            }
-            else if (kemParams instanceof NTRUParameters)
+            if (kemParams instanceof NTRUParameters)
             {
                 NTRUKeyPairGenerator kPg = new NTRUKeyPairGenerator();
 
@@ -144,11 +128,7 @@ public class PQCOtherInfoGenerator
         {
             super(algorithmID, partyUInfo, partyVInfo, random);
 
-            if (kemParams instanceof MLKEMParameters)
-            {
-                encSG = new MLKEMGenerator(random);
-            }
-            else if (kemParams instanceof NTRUParameters)
+            if (kemParams instanceof NTRUParameters)
             {
                 encSG = new NTRUKEMGenerator(random);
             }

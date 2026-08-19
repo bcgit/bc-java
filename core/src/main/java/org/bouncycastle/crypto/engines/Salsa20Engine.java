@@ -36,6 +36,7 @@ public class Salsa20Engine
     }
 
     /** @deprecated */
+    @Deprecated
     protected final static byte[]
         sigma = Strings.toByteArray("expand 32-byte k"),
         tau   = Strings.toByteArray("expand 16-byte k");

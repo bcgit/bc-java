@@ -19,12 +19,8 @@ import org.bouncycastle.pqc.legacy.crystals.dilithium.DilithiumPrivateKeyParamet
 import org.bouncycastle.pqc.legacy.crystals.dilithium.DilithiumPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.mldsa.MLDSAPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.mldsa.MLDSAPublicKeyParameters;
-import org.bouncycastle.pqc.crypto.mlkem.MLKEMPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.newhope.NHPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.saber.SABERPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.sphincs.SPHINCSPrivateKeyParameters;
 import org.bouncycastle.util.Pack;
 
@@ -83,14 +79,6 @@ public class PrivateKeyInfoFactory
 
             return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(octets));
         }
-        else if (privateKey instanceof SLHDSAPrivateKeyParameters)
-        {
-            SLHDSAPrivateKeyParameters params = (SLHDSAPrivateKeyParameters)privateKey;
-
-            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.slhdsaOidLookup(params.getParameters()));
-
-            return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(params.getEncoded()), attributes, params.getPublicKey());
-        }
         else if (privateKey instanceof SABERPrivateKeyParameters)
         {
             SABERPrivateKeyParameters params = (SABERPrivateKeyParameters)privateKey;
@@ -111,42 +99,6 @@ public class PrivateKeyInfoFactory
             FalconPrivateKey falconPriv = new FalconPrivateKey(0, params.getSpolyf(), params.getG(), params.getSpolyF(), falconPub);
 
             return new PrivateKeyInfo(algorithmIdentifier, falconPriv, attributes);
-        }
-        else if (privateKey instanceof MLKEMPrivateKeyParameters)
-        {
-            MLKEMPrivateKeyParameters params = (MLKEMPrivateKeyParameters)privateKey;
-            
-            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.mlkemOidLookup(params.getParameters()));
-
-            byte[] seed = params.getSeed();
-            if (seed == null)
-            {
-                return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(params.getEncoded()), attributes);
-            }
-            else
-            {
-                return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(seed), attributes);
-            }
-        }
-        else if (privateKey instanceof MLDSAPrivateKeyParameters)
-        {
-            MLDSAPrivateKeyParameters params = (MLDSAPrivateKeyParameters)privateKey;
-
-            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.mldsaOidLookup(params.getParameters()));
-
-            byte[] seed = params.getSeed();
-            if (seed == null)
-            {
-                MLDSAPublicKeyParameters pubParams = params.getPublicKeyParameters();
-
-                return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(params.getEncoded()), attributes, pubParams.getEncoded());
-            }
-            else
-            {
-                MLDSAPublicKeyParameters pubParams = params.getPublicKeyParameters();
-
-                return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(params.getSeed()), attributes);
-            }
         }
         else if (privateKey instanceof DilithiumPrivateKeyParameters)
         {

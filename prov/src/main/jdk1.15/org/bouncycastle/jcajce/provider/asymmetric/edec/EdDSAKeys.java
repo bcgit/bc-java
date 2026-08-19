@@ -171,7 +171,7 @@ class EdDSAKeys
      * Return a KeySpec for a version-specific spec type - here the JDK 15+ EdEC key specs -
      * or null when the request is not one this JDK version bridges.
      */
-    static KeySpec getKeySpec(Key key, Class spec)
+    static KeySpec getKeySpec(Key key, Class<?> spec)
         throws InvalidKeySpecException
     {
         if (spec.isAssignableFrom(EdECPrivateKeySpec.class))

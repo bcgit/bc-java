@@ -122,6 +122,7 @@ public class ASN1InputStream
     /**
      * @deprecated No longer used; will be removed
      */
+    @Deprecated
     protected int readLength()
         throws IOException
     {
@@ -136,6 +137,7 @@ public class ASN1InputStream
     /**
      * @deprecated No longer used; will be removed
      */
+    @Deprecated
     protected void readFully(
         byte[]  bytes)
         throws IOException

@@ -15,14 +15,11 @@ import org.bouncycastle.pqc.legacy.bike.BIKEPublicKeyParameters;
 import org.bouncycastle.pqc.legacy.crystals.dilithium.DilithiumPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCPublicKeyParameters;
-import org.bouncycastle.pqc.crypto.mldsa.MLDSAPublicKeyParameters;
-import org.bouncycastle.pqc.crypto.mlkem.MLKEMPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.newhope.NHPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.ntru.NTRUPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.ntruprime.NTRULPRimePublicKeyParameters;
 import org.bouncycastle.pqc.crypto.ntruprime.SNTRUPrimePublicKeyParameters;
 import org.bouncycastle.pqc.crypto.saber.SABERPublicKeyParameters;
-import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.sphincs.SPHINCSPublicKeyParameters;
 import org.bouncycastle.pqc.legacy.sphincsplus.SPHINCSPlusPublicKeyParameters;
 
@@ -60,15 +57,6 @@ public class SubjectPublicKeyInfoFactory
 
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(PQCObjectIdentifiers.newHope);
             return new SubjectPublicKeyInfo(algorithmIdentifier, params.getPubData());
-        }
-        else if (publicKey instanceof SLHDSAPublicKeyParameters)
-        {
-            SLHDSAPublicKeyParameters params = (SLHDSAPublicKeyParameters)publicKey;
-
-            byte[] encoding = params.getEncoded();
-
-            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.slhdsaOidLookup(params.getParameters()));
-            return new SubjectPublicKeyInfo(algorithmIdentifier, encoding);
         }
         else if (publicKey instanceof SPHINCSPlusPublicKeyParameters)
         {
@@ -111,14 +99,6 @@ public class SubjectPublicKeyInfoFactory
 
             return new SubjectPublicKeyInfo(algorithmIdentifier, keyEnc);
         }
-        else if (publicKey instanceof MLKEMPublicKeyParameters)
-        {
-            MLKEMPublicKeyParameters params = (MLKEMPublicKeyParameters)publicKey;
-
-            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.mlkemOidLookup(params.getParameters()));
-
-            return new SubjectPublicKeyInfo(algorithmIdentifier, params.getEncoded());
-        }
         else if (publicKey instanceof NTRULPRimePublicKeyParameters)
         {
             NTRULPRimePublicKeyParameters params = (NTRULPRimePublicKeyParameters)publicKey;
@@ -142,14 +122,6 @@ public class SubjectPublicKeyInfoFactory
             DilithiumPublicKeyParameters params = (DilithiumPublicKeyParameters)publicKey;
 
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.dilithiumOidLookup(params.getParameters()));
-
-            return new SubjectPublicKeyInfo(algorithmIdentifier, params.getEncoded());
-        }
-        else if (publicKey instanceof MLDSAPublicKeyParameters)
-        {
-            MLDSAPublicKeyParameters params = (MLDSAPublicKeyParameters)publicKey;
-
-            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.mldsaOidLookup(params.getParameters()));
 
             return new SubjectPublicKeyInfo(algorithmIdentifier, params.getEncoded());
         }

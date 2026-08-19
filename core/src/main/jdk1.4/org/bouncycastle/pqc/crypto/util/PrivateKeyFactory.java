@@ -32,12 +32,6 @@ import org.bouncycastle.pqc.crypto.falcon.FalconParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.mldsa.MLDSAParameters;
-import org.bouncycastle.pqc.crypto.mldsa.MLDSAPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.mldsa.MLDSAPublicKeyParameters;
-import org.bouncycastle.pqc.crypto.mlkem.MLKEMParameters;
-import org.bouncycastle.pqc.crypto.mlkem.MLKEMPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.mlkem.MLKEMPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.newhope.NHPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.ntru.NTRUParameters;
 import org.bouncycastle.pqc.crypto.ntru.NTRUPrivateKeyParameters;
@@ -47,8 +41,6 @@ import org.bouncycastle.pqc.crypto.ntruprime.SNTRUPrimeParameters;
 import org.bouncycastle.pqc.crypto.ntruprime.SNTRUPrimePrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.saber.SABERParameters;
 import org.bouncycastle.pqc.crypto.saber.SABERPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAParameters;
-import org.bouncycastle.pqc.crypto.slhdsa.SLHDSAPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.sphincs.SPHINCSPrivateKeyParameters;
 import org.bouncycastle.pqc.legacy.sphincsplus.SPHINCSPlusParameters;
 import org.bouncycastle.pqc.legacy.sphincsplus.SPHINCSPlusPrivateKeyParameters;
@@ -139,13 +131,6 @@ public class PrivateKeyFactory
                 return new SPHINCSPlusPrivateKeyParameters(spParams, ASN1OctetString.getInstance(obj).getOctets());
             }
         }
-        else if (Utils.slhdsaParams.containsKey(algOID))
-        {
-            SLHDSAParameters spParams = Utils.slhdsaParamsLookup(algOID);
-            ASN1OctetString slhdsaKey = parseOctetString(keyInfo.getPrivateKey(), spParams.getN() * 4);
-
-            return new SLHDSAPrivateKeyParameters(spParams, slhdsaKey.getOctets());
-        }
         else if (Utils.saberParams.containsKey(algOID))
         {
             byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
@@ -159,42 +144,6 @@ public class PrivateKeyFactory
             NTRUParameters spParams = Utils.ntruParamsLookup(algOID);
 
             return new NTRUPrivateKeyParameters(spParams, keyEnc);
-        }
-        else if (algOID.equals(NISTObjectIdentifiers.id_alg_ml_kem_512) ||
-            algOID.equals(NISTObjectIdentifiers.id_alg_ml_kem_768) ||
-            algOID.equals(NISTObjectIdentifiers.id_alg_ml_kem_1024))
-        {
-            ASN1Primitive mlkemKey = parsePrimitiveString(keyInfo.getPrivateKey(), 64);
-            MLKEMParameters mlkemParams = Utils.mlkemParamsLookup(algOID);
-
-            MLKEMPublicKeyParameters pubParams = null;
-            if (keyInfo.getPublicKeyData() != null)
-            {
-                pubParams = PublicKeyFactory.MLKEMKeyConverter.getPublicKeyParams(mlkemParams, keyInfo.getPublicKeyData());
-            }
-
-            if (mlkemKey instanceof ASN1OctetString)
-            {
-                // TODO This should be explicitly EXPANDED_KEY or SEED (tag already removed) but is length-flexible
-                return new MLKEMPrivateKeyParameters(mlkemParams, ((ASN1OctetString)mlkemKey).getOctets(), pubParams);
-            }
-            else if (mlkemKey instanceof ASN1Sequence)
-            {
-                ASN1Sequence keySeq = (ASN1Sequence)mlkemKey;
-                byte[] seed = ASN1OctetString.getInstance(keySeq.getObjectAt(0)).getOctets();
-                byte[] encoding = ASN1OctetString.getInstance(keySeq.getObjectAt(1)).getOctets();
-
-                // TODO This should only allow seed but is length-flexible
-                MLKEMPrivateKeyParameters mlkemPriv = new MLKEMPrivateKeyParameters(mlkemParams, seed, pubParams);
-                if (!Arrays.constantTimeAreEqual(mlkemPriv.getEncoded(), encoding))
-                {
-                    throw new IllegalArgumentException("inconsistent " + mlkemParams.getName() + " private key");
-                }
-
-                return mlkemPriv;
-            }
-
-            throw new IllegalArgumentException("invalid " + mlkemParams.getName() + " private key");
         }
         else if (Utils.ntruprimeParams.containsKey(algOID))
         {
@@ -220,40 +169,6 @@ public class PrivateKeyFactory
                 ASN1OctetString.getInstance(keyEnc.getObjectAt(2)).getOctets(),
                 ASN1OctetString.getInstance(keyEnc.getObjectAt(3)).getOctets(),
                 ASN1OctetString.getInstance(keyEnc.getObjectAt(4)).getOctets());
-        }
-        else if (Utils.mldsaParams.containsKey(algOID))
-        {
-            ASN1Encodable mldsaKey = parsePrimitiveString(keyInfo.getPrivateKey(), 32);
-            MLDSAParameters mldsaParams = Utils.mldsaParamsLookup(algOID);
-
-            MLDSAPublicKeyParameters pubParams = null;
-            if (keyInfo.getPublicKeyData() != null)
-            {
-                pubParams = PublicKeyFactory.MLDSAConverter.getPublicKeyParams(mldsaParams, keyInfo.getPublicKeyData());
-            }
-
-            if (mldsaKey instanceof ASN1OctetString)
-            {
-                // TODO This should be explicitly EXPANDED_KEY or SEED (tag already removed) but is length-flexible
-                return new MLDSAPrivateKeyParameters(mldsaParams, ((ASN1OctetString)mldsaKey).getOctets(), pubParams);
-            }
-            else if (mldsaKey instanceof ASN1Sequence)
-            {
-                ASN1Sequence keySeq = (ASN1Sequence)mldsaKey;
-                byte[] seed = ASN1OctetString.getInstance(keySeq.getObjectAt(0)).getOctets();
-                byte[] encoding = ASN1OctetString.getInstance(keySeq.getObjectAt(1)).getOctets();
-
-                // TODO This should only allow seed but is length-flexible
-                MLDSAPrivateKeyParameters mldsaPriv = new MLDSAPrivateKeyParameters(mldsaParams, seed, pubParams);
-                if (!Arrays.constantTimeAreEqual(mldsaPriv.getEncoded(), encoding))
-                {
-                    throw new IllegalArgumentException("inconsistent " + mldsaParams.getName() + " private key");
-                }
-
-                return mldsaPriv;
-            }
-
-            throw new IllegalArgumentException("invalid " + mldsaParams.getName() + " private key");
         }
         else if (algOID.equals(BCObjectIdentifiers.dilithium2)
             || algOID.equals(BCObjectIdentifiers.dilithium3) || algOID.equals(BCObjectIdentifiers.dilithium5))

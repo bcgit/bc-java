@@ -64,7 +64,7 @@ public class Properties
      * unrestricted: RFC 5280 sec. 4.2.1.13 requires a distribution point URI to name a protocol
      * but does not limit which, and BC supports http, https, ftp and ldap here, so this is an
      * operator policy for deployments that want a narrower set rather than a default.
-     * <p/>
+     * <p>
      * Note the CRL fetch this governs only happens at all when {@link #X509_ENABLE_CRLDP} is set.
      */
     public static final String X509_CRLDP_PROTOCOLS = "org.bouncycastle.x509.CRLDP_protocols";
@@ -266,7 +266,7 @@ public class Properties
 
     /**
      * Upper bound on the RFC 4211 PKMAC / CMP password-based-MAC iteration count honoured when no
-     * explicit ceiling was supplied to {@link org.bouncycastle.cert.crmf.PKMACBuilder}. The count
+     * explicit ceiling was supplied to {@code org.bouncycastle.cert.crmf.PKMACBuilder}. The count
      * travels in the (unauthenticated) PBMParameter of an incoming CMP message and drives an
      * iterated hash, so an unbounded count makes verifying an attacker-supplied message a
      * CPU-exhaustion vector. Default 10,000,000, generous enough for any legitimate setting. Read
@@ -366,7 +366,7 @@ public class Properties
      * per-entry sealed-key decryption), and is read from the (not-yet-verified) keystore ahead of
      * the HMAC integrity check, so an unbounded value is a pre-integrity CPU-exhaustion vector -
      * the analogue of {@link #BCFKS_MAX_IT_COUNT} / {@link #PKCS12_MAX_IT_COUNT} for the BKS
-     * format (the sibling UBER store already caps its own count). Default 1048576 (1 << 20); the
+     * format (the sibling UBER store already caps its own count). Default 1048576 ({@code 1 << 20}); the
      * BKS writer uses ~1024-2047. Read via {@link #asInteger(String, int)}.
      */
     public static final String BKS_MAX_IT_COUNT = "org.bouncycastle.bks.max_it_count";
@@ -378,7 +378,7 @@ public class Properties
      * pre-integrity CPU-exhaustion vector - the OpenSSH analogue of {@link #BCFKS_MAX_IT_COUNT} /
      * {@link #PKCS12_MAX_IT_COUNT}. A round costs several milliseconds, so the 2^31-1 the wire
      * format allows is worth CPU-months from a key file of a few hundred bytes. Reached only when
-     * a passphrase is supplied, i.e. on the key-import path. Default 1048576 (1 << 20); ssh-keygen
+     * a passphrase is supplied, i.e. on the key-import path. Default 1048576 ({@code 1 << 20}); ssh-keygen
      * defaults to 16 and its -a option is rarely taken far beyond a few hundred. Read via
      * {@link #asInteger(String, int)}.
      */
