@@ -66,17 +66,6 @@ public class PublicKeyLengthValidationTest
         {
             assertEquals("'encoding' has invalid length", e.getMessage());
         }
-
-        try
-        {
-            new org.bouncycastle.pqc.crypto.mlkem.MLKEMPublicKeyParameters(
-                org.bouncycastle.pqc.crypto.mlkem.MLKEMParameters.ml_kem_512, SHORT_ENCODING);
-            fail("expected IllegalArgumentException for short ML-KEM public key (pqc.crypto.mlkem)");
-        }
-        catch (IllegalArgumentException e)
-        {
-            assertEquals("'encoding' has invalid length", e.getMessage());
-        }
     }
 
     public void testFalconPublicKeyRejectsMalformedLength()
