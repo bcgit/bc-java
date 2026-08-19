@@ -18,7 +18,6 @@ import java.security.spec.EdECPublicKeySpec;
 import java.security.spec.NamedParameterSpec;
 import java.util.Base64;
 
-import junit.framework.Assert;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -175,7 +174,7 @@ public class EdDSA15Test
 
         sigBC.update(Strings.toByteArray("Hello, world!"));
 
-        Assert.assertTrue(sigBC.verify(sig));
+        assertTrue(sigBC.verify(sig));
 
         sigBC.initSign(privKey);
 
@@ -187,18 +186,18 @@ public class EdDSA15Test
 
         sigBC.update(Strings.toByteArray("Hello, world!"));
 
-        Assert.assertTrue(sigBC.verify(sig));
+        assertTrue(sigBC.verify(sig));
 
         EdECPrivateKeySpec bcPrivSpec = bcKeyFact.getKeySpec(privKey, EdECPrivateKeySpec.class);
 
-        Assert.assertEquals(privSpec.getParams().getName(), bcPrivSpec.getParams().getName());
-        Assert.assertTrue(Arrays.areEqual(privSpec.getBytes(), bcPrivSpec.getBytes()));
+        assertEquals(privSpec.getParams().getName(), bcPrivSpec.getParams().getName());
+        assertTrue(Arrays.areEqual(privSpec.getBytes(), bcPrivSpec.getBytes()));
 
         EdECPublicKeySpec bcPubSpec = bcKeyFact.getKeySpec(pubKey, EdECPublicKeySpec.class);
 
-        Assert.assertEquals(pubSpec.getParams().getName(), bcPubSpec.getParams().getName());
-        Assert.assertEquals(pubSpec.getPoint().isXOdd(), bcPubSpec.getPoint().isXOdd());
-        Assert.assertEquals(pubSpec.getPoint().getY(), bcPubSpec.getPoint().getY());
+        assertEquals(pubSpec.getParams().getName(), bcPubSpec.getParams().getName());
+        assertEquals(pubSpec.getPoint().isXOdd(), bcPubSpec.getPoint().isXOdd());
+        assertEquals(pubSpec.getPoint().getY(), bcPubSpec.getPoint().getY());
     }
 
     private void implTestInteropCase(KeyPair kp, Signature signer, Signature verifier)

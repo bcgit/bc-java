@@ -1,17 +1,13 @@
 package org.bouncycastle.jcajce.provider.asymmetric.sm9;
 
 import java.security.SecureRandom;
-import java.util.Objects;
 
 import javax.crypto.KEM;
 import javax.crypto.KEMSpi;
-import javax.crypto.SecretKey;
-import javax.security.auth.DestroyFailedException;
 
-import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.crypto.kems.SM9KEMGenerator;
-import org.bouncycastle.jcajce.provider.asymmetric.util.KdfUtil;
 import org.bouncycastle.jcajce.spec.KTSParameterSpec;
+import org.bouncycastle.jcajce.util.SpiUtil;
 
 /*
  *  NOTE: Per javadoc for javax.crypto.KEM, "Encapsulator and Decapsulator objects are also immutable. It is safe to
@@ -38,35 +34,7 @@ class SM9EncapsulatorSpi
     @Override
     public KEM.Encapsulated engineEncapsulate(int from, int to, String algorithm)
     {
-        Objects.checkFromToIndex(from, to, engineSecretSize());
-        Objects.requireNonNull(algorithm, "null algorithm");
-
-        algorithm = KdfUtil.resolveAlgorithm(parameterSpec, algorithm);
-
-        SecretWithEncapsulation secEnc = kemGen.generateEncapsulated(publicKey.getKeyParameters());
-
-        try
-        {
-            // getEncapsulation()/getSecret() hand back clones, so the originals have to be
-            // destroyed as well - KdfUtil.makeSecretKey only clears the secret clone it is passed.
-            byte[] encapsulation = secEnc.getEncapsulation();
-
-            SecretKey secretKey = KdfUtil.makeSecretKey(parameterSpec, secEnc.getSecret(),
-                from, to, algorithm);
-
-            return new KEM.Encapsulated(secretKey, encapsulation, null);
-        }
-        finally
-        {
-            try
-            {
-                secEnc.destroy();
-            }
-            catch (DestroyFailedException e)
-            {
-                // ignore
-            }
-        }
+        return SpiUtil.buildEncapsulated(from, to, algorithm, engineSecretSize(), kemGen, publicKey.getKeyParameters(), parameterSpec);
     }
 
     @Override
