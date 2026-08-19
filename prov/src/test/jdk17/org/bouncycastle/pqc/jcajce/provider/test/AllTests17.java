@@ -18,7 +18,7 @@ public class AllTests17
         TestSuite suite = new TestSuite("PQC JCE Tests (JDK 17)");
         suite.addTestSuite(CMCEKEM17Test.class);
         suite.addTestSuite(FrodoKEM17Test.class);
-        suite.addTestSuite(HQC17Test.class);
+        suite.addTestSuite(HQCKEM17Test.class);
         suite.addTestSuite(MLKEM17Test.class);
         suite.addTestSuite(NTRUKEM17Test.class);
         suite.addTestSuite(NTRULPRimeKEM17Test.class);

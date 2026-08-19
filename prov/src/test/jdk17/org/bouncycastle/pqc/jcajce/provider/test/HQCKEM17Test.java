@@ -18,13 +18,13 @@ import org.bouncycastle.util.Arrays;
 
 import junit.framework.TestCase;
 
-public class HQC17Test
+public class HQCKEM17Test
     extends TestCase
 {
     public static void main(String[] args)
         throws Exception
     {
-        HQC17Test test = new HQC17Test();
+        HQCKEM17Test test = new HQCKEM17Test();
         test.setUp();
         test.testKEM();
     }
