@@ -28,6 +28,7 @@ pg/*.bpg
 pg/*.txt
 
 .idea/
+.vscode/
 
 .DS_Store
 
