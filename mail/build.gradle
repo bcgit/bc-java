@@ -1,5 +1,5 @@
 plugins {
-  id "biz.aQute.bnd.builder" version "7.1.0"
+  id "biz.aQute.bnd.builder" version "7.3.0"
 }
 
 jar.archiveBaseName = "bcmail-$vmrange"
@@ -21,11 +21,11 @@ dependencies {
     implementation project(':util')
     implementation project(':pkix')
 
-    implementation group: 'javax.mail', name: 'mail', version: '1.4'
+    implementation group: 'javax.mail', name: 'mail', version: '1.4.7'
     // javax.mail:mail:1.4 pulls in javax.activation:activation:1.1 transitively - both are
     // needed as automatic modules ("mail", "activation") on the module-info.java compile path,
     // since neither javax.mail nor javax.activation is a JDK-bundled module on Java 11+.
-    mailModulePath group: 'javax.mail', name: 'mail', version: '1.4'
+    mailModulePath group: 'javax.mail', name: 'mail', version: '1.4.7'
 
     java9Implementation files(sourceSets.main.output.classesDirs) {
         builtBy compileJava

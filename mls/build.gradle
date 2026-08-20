@@ -1,10 +1,10 @@
 
 plugins {
 // OSGI
-    id "biz.aQute.bnd.builder" version "7.1.0"
+    id "biz.aQute.bnd.builder" version "7.3.0"
 //     Provide convenience executables for trying out the examples.
     id 'application'
-    id 'com.google.protobuf' version '0.9.4'
+    id 'com.google.protobuf' version '0.10.0'
 //     Generate IntelliJ IDEA's .idea & .iml project files
 //    id 'idea'
 }
@@ -68,8 +68,8 @@ evaluationDependsOn(":prov")
 evaluationDependsOn(":util")
 evaluationDependsOn(":pkix")
 
-def grpcVersion = '1.58.0' // CURRENT_GRPC_VERSION
-def protocVersion = '3.22.3'
+def grpcVersion = '1.83.1' // CURRENT_GRPC_VERSION
+def protocVersion = '3.25.9'
 
 
 checkstyleMain {

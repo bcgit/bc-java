@@ -12,7 +12,7 @@ plugins {
     id "io.spring.nohttp" version "0.0.11"
     id "checkstyle"
     id "jacoco"
-    id "net.ltgt.errorprone" version "4.2.0"
+    id "net.ltgt.errorprone" version "4.4.0"
     id 'maven-publish'
 }
 
@@ -258,8 +258,8 @@ configure(subprojects.findAll {it.name != 'bom'}) {
 
     dependencies {
         checkstyle files("$rootDir/config/checkstyle/lib/methodchecker-1.0.0.jar")
-        checkstyle 'com.puppycrawl.tools:checkstyle:9.0'
-        errorprone "com.google.errorprone:error_prone_core:2.43.0"
+        checkstyle 'com.puppycrawl.tools:checkstyle:9.3'
+        errorprone "com.google.errorprone:error_prone_core:2.50.0"
     }
 
     checkstyle {
