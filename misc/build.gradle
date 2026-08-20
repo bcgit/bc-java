@@ -14,7 +14,7 @@ dependencies {
     implementation project(':mail')
     implementation project(':tls')
 
-    implementation group: 'javax.mail', name: 'mail', version: '1.4'
+    implementation group: 'javax.mail', name: 'mail', version: '1.4.7'
 
     // The example smoke tests (src/test) drive the S/MIME and OpenPGP examples
     // via their main() methods; they need JUnit and the same javax.mail runtime
