@@ -77,6 +77,17 @@ public class AIMerSigner
     @Override
     public boolean verifySignature(byte[] message, byte[] signature)
     {
+        // generateSignature returns the message followed by the signature (the
+        // signed-message envelope), so the signature proper starts at
+        // message.length. Reject anything but exactly that envelope before
+        // slicing it: a shorter buffer would throw
+        // ArrayIndexOutOfBoundsException, and a longer one would have its
+        // trailing bytes ignored, so a valid signature with data appended
+        // would still verify.
+        if (signature.length != message.length + params.getSignatureBytes())
+        {
+            return false;
+        }
         byte[] sig = new byte[params.getSignatureBytes()];
         AIMerEngine engine = new AIMerEngine(params);
         System.arraycopy(signature, message.length, sig, 0, params.getSignatureBytes());
