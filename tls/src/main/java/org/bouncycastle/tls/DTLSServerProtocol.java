@@ -596,6 +596,11 @@ public class DTLSServerProtocol
                 :   server.getServerExtensions();
 
             state.serverExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(sessionServerExtensions);
+
+            if (resumedSession)
+            {
+                TlsExtensionsUtils.removeStatusRequestExtensions(state.serverExtensions);
+            }
         }
 
         server.getServerExtensionsForConnection(state.serverExtensions);

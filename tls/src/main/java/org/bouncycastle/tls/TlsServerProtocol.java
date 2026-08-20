@@ -378,9 +378,11 @@ public class TlsServerProtocol
         securityParameters.truncatedHMac = false;
 
         /*
-         * TODO[tls13] RFC 8446 4.4.2.1. OCSP Status and SCT Extensions.
-         * 
-         * OCSP information is carried in an extension for a CertificateEntry.
+         * RFC 8446 4.4.2.1. OCSP information is carried in an extension of the CertificateEntry the
+         * certificate it answers for is in, so there is nothing to echo here and nothing to send as a
+         * "certificate_status" message; a version of 1 records only that the client asked, which is
+         * what has getCertificateStatus() consulted when the Certificate message is assembled.
+         * "status_request_v2" is not honoured at all - RFC 8446 sec. 4.2.1 leaves it out of TLS 1.3.
          */
         securityParameters.statusRequestVersion = clientHelloExtensions.containsKey(TlsExtensionsUtils.EXT_status_request)
             ? 1 : 0;
@@ -750,6 +752,11 @@ public class TlsServerProtocol
                 :   tlsServer.getServerExtensions();
 
             this.serverExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(sessionServerExtensions);
+
+            if (resumedSession)
+            {
+                TlsExtensionsUtils.removeStatusRequestExtensions(this.serverExtensions);
+            }
         }
 
         tlsServer.getServerExtensionsForConnection(serverExtensions);
@@ -1613,15 +1620,22 @@ public class TlsServerProtocol
             // Certificate
             {
                 /*
-                 * TODO[tls13] Note that we are expecting the TlsServer implementation to take care of e.g.
-                 * adding optional "status_request" extension to each CertificateEntry.
+                 * No CertificateStatus message is sent; TLS 1.3 carries the response in a
+                 * "status_request" extension of the CertificateEntry it answers for, per RFC 8446
+                 * sec. 4.4.2.1. The TlsServer supplies it through the same getCertificateStatus()
+                 * callback either way - see TlsUtils.add13CertificateStatus for how the two shapes it
+                 * may return are distributed over the entries.
+                 *
+                 * TODO[tls13] RFC 8446 4.4.2.1 also has the SCT extension travelling per entry.
                  */
-                /*
-                 * No CertificateStatus message is sent; TLS 1.3 uses per-CertificateEntry "status_request"
-                 * extension instead.
-                 */
-
                 Certificate serverCertificate = serverCredentials.getCertificate();
+
+                if (securityParameters.getStatusRequestVersion() > 0)
+                {
+                    serverCertificate = TlsUtils.add13CertificateStatus(serverCertificate,
+                        tlsServer.getCertificateStatus());
+                }
+
                 send13CertificateMessage(serverCertificate);
                 securityParameters.tlsServerEndPoint = null;
                 this.connection_state = CS_SERVER_CERTIFICATE;

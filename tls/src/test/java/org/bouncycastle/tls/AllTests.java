@@ -20,6 +20,8 @@ public class AllTests
     {
         TestSuite suite = new TestSuite("TLS tests");
 
+        suite.addTestSuite(AbstractTlsServerResetTest.class);
+        suite.addTestSuite(Add13CertificateStatusTest.class);
         suite.addTestSuite(CheckTlsFeaturesExtensionTest.class);
         suite.addTestSuite(DTLSReassemblerTest.class);
 

@@ -23,6 +23,7 @@ import org.bouncycastle.asn1.eac.EACObjectIdentifiers;
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.gm.GMObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
+import org.bouncycastle.asn1.ocsp.OCSPResponse;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.RSASSAPSSparams;
@@ -5693,6 +5694,129 @@ public class TlsUtils
     static TlsCredentialedSigner establish13ServerCredentials(TlsServer server) throws IOException
     {
         return validate13Credentials(server.getCredentials());
+    }
+
+    /**
+     * Attach a TLS 1.3 server's OCSP staples to the certificate they answer for. RFC 8446
+     * sec. 4.4.2.1: "In TLS 1.3, the server's OCSP information is carried in an extension in the
+     * CertificateEntry containing the associated certificate", the body of that "status_request"
+     * extension being an RFC 6066 CertificateStatus - so a single response per entry, rather than the
+     * one "certificate_status" message TLS 1.2 sends for the whole chain.
+     * <p/>
+     * The status a {@link TlsServer} returns is taken in the shape the 1.2 callback already defines:
+     * {@link CertificateStatusType#ocsp} answers for the end-entity certificate alone, and
+     * {@link CertificateStatusType#ocsp_multi} answers positionally, entry <code>i</code> of its list
+     * for certificate <code>i</code> of the chain, with a null entry wherever there is no response.
+     * An entry the server has already given a "status_request" extension of its own is left as it
+     * stands, so an implementation that attaches its staples to the {@link Certificate} its
+     * credentials supply - which was the only way to do this before - keeps working unchanged.
+     * <p/>
+     * A response too large for the entry to carry is dropped rather than attached; see
+     * {@link #fitsCertificateEntry(Hashtable, byte[])}.
+     *
+     * @param certificate       the Certificate message the server is about to send.
+     * @param certificateStatus the status to distribute across it, or null for none.
+     * @return the Certificate to send, which is <code>certificate</code> itself when there is
+     *         nothing to add.
+     */
+    static Certificate add13CertificateStatus(Certificate certificate, CertificateStatus certificateStatus)
+        throws IOException
+    {
+        if (null == certificateStatus || null == certificate || certificate.isEmpty())
+        {
+            return certificate;
+        }
+
+        int certificateCount = certificate.getLength();
+
+        Vector ocspResponseList;
+        switch (certificateStatus.getStatusType())
+        {
+        case CertificateStatusType.ocsp:
+            ocspResponseList = new Vector(1);
+            ocspResponseList.addElement(certificateStatus.getOCSPResponse());
+            break;
+        case CertificateStatusType.ocsp_multi:
+            ocspResponseList = certificateStatus.getOCSPResponseList();
+            break;
+        default:
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        if (ocspResponseList.size() > certificateCount)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error,
+                "'certificateStatus' has more responses than the certificate chain has certificates");
+        }
+
+        CertificateEntry[] certificateEntryList = new CertificateEntry[certificateCount];
+
+        boolean anyStaple = false;
+        for (int i = 0; i < certificateCount; ++i)
+        {
+            CertificateEntry certificateEntry = certificate.getCertificateEntryAt(i);
+            Hashtable extensions = certificateEntry.getExtensions();
+
+            OCSPResponse ocspResponse = i < ocspResponseList.size()
+                ?   (OCSPResponse)ocspResponseList.elementAt(i)
+                :   null;
+
+            if (null != ocspResponse
+                && null == TlsUtils.getExtensionData(extensions, TlsExtensionsUtils.EXT_status_request))
+            {
+                byte[] extensionData = TlsExtensionsUtils.createStatusRequestExtension13(
+                    new CertificateStatus(CertificateStatusType.ocsp, ocspResponse));
+
+                if (fitsCertificateEntry(extensions, extensionData))
+                {
+                    extensions = TlsExtensionsUtils.ensureExtensionsInitialised(
+                        null == extensions ? null : new Hashtable(extensions));
+
+                    extensions.put(TlsExtensionsUtils.EXT_status_request, extensionData);
+
+                    certificateEntry = new CertificateEntry(certificateEntry.getCertificate(), extensions);
+                    anyStaple = true;
+                }
+            }
+
+            certificateEntryList[i] = certificateEntry;
+        }
+
+        if (!anyStaple)
+        {
+            return certificate;
+        }
+
+        return new Certificate(certificate.getCertificateType(), certificate.getCertificateRequestContext(),
+            certificateEntryList);
+    }
+
+    /**
+     * Whether a "status_request" extension with this body can still be added to a CertificateEntry
+     * carrying <code>extensions</code>. {@link Certificate#encode} writes an entry's whole extensions
+     * block with {@link #writeOpaque16}, and each extension costs its body plus four bytes of type
+     * and length, so a large enough OCSP response overflows it.
+     * <p/>
+     * Nothing bounds an OCSP response to a size that would rule this out - the responder chooses what
+     * it sends, and it may carry a certificate chain of its own - so the one that does not fit is a
+     * staple to drop rather than a handshake to fail. Stapling is an optimisation; a handshake
+     * proceeds without it, and failing at encode time would turn an oversized response into a dead
+     * connection.
+     */
+    private static boolean fitsCertificateEntry(Hashtable extensions, byte[] extensionData)
+    {
+        long length = 4L + extensionData.length;
+
+        if (null != extensions)
+        {
+            Enumeration e = extensions.elements();
+            while (e.hasMoreElements())
+            {
+                length += 4L + ((byte[])e.nextElement()).length;
+            }
+        }
+
+        return isValidUint16(length);
     }
 
     static void establishServerSigAlgs(SecurityParameters securityParameters, CertificateRequest certificateRequest)

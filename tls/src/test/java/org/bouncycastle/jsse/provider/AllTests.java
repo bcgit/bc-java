@@ -22,6 +22,8 @@ public class AllTests
         TestSuite suite = new TestSuite("JSSE provider internal tests");
 
         suite.addTestSuite(HostnameUtilTest.class);
+        suite.addTestSuite(OcspStapleCacheTest.class);
+        suite.addTestSuite(OcspStapleHttpFetcherTest.class);
 
         return suite;
     }

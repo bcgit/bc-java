@@ -86,7 +86,8 @@ import org.bouncycastle.util.io.Streams;
  * refreshed out of band, an in-process responder as here) is entirely the application's
  * choice, which is the point of the callback.
  * <p>
- * Two things the callback has to get right, both illustrated below:
+ * Two things the callback has to get right up to (D)TLS 1.2, both illustrated below
+ * (TLS 1.3 reads the shape differently &mdash; see <b>Scope</b>):
  * <ul>
  * <li>Which <i>shape</i> of response to return. Ask
  * {@code context.getSecurityParametersHandshake().getStatusRequestVersion()}: 1 means the
@@ -101,12 +102,20 @@ import org.bouncycastle.util.io.Streams;
  * wants to answer RFC 6961 clients must override it.</li>
  * </ul>
  * <p>
- * <b>Scope:</b> the "certificate_status" handshake message exists only up to (D)TLS 1.2.
- * TLS 1.3 carries the response in a per-CertificateEntry "status_request" extension
- * instead (<a href="https://www.rfc-editor.org/rfc/rfc8446#section-4.4.2.1">RFC 8446 sec.
- * 4.4.2.1</a>) and {@code getCertificateStatus()} is not consulted there; this example
- * therefore negotiates TLS 1.2. Note also that this is the low-level TLS API &mdash; the
- * BCJSSE provider does not currently offer server-side stapling.
+ * <b>Scope:</b> this example negotiates TLS 1.2, where the response travels as one
+ * "certificate_status" handshake message covering the whole chain. That message does not
+ * exist in TLS 1.3, which instead carries each response in a "status_request" extension of
+ * the CertificateEntry holding the certificate it answers for
+ * (<a href="https://www.rfc-editor.org/rfc/rfc8446#section-4.4.2.1">RFC 8446 sec.
+ * 4.4.2.1</a>). The callback is the same one either way &mdash; {@code TlsServerProtocol}
+ * distributes what it returns across those entries &mdash; so the only thing that changes
+ * for an implementation is how the shape is chosen: the status request version is always 1
+ * in TLS 1.3 ("status_request_v2" is left out of it by RFC 8446 sec. 4.2.1), so a server
+ * with responses for the intermediates as well returns the
+ * {@link CertificateStatusType#ocsp_multi} shape there regardless, answering positionally
+ * against the chain. Note also that this is the low-level TLS API; the BCJSSE provider
+ * fetches and staples responses of its own accord, behind the
+ * {@code jdk.tls.server.enableStatusRequestExtension} system property.
  */
 public class OCSPStaplingServerExample
 {

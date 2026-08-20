@@ -38,6 +38,8 @@ final class ContextData
     private final SignatureSchemeInfo.PerContext signatureSchemes;
     private final int maxHandshakeMessageSize;
     private final int handshakeTimeoutMillis;
+    private final boolean serverEnableStatusRequest;
+    private final OcspStapleCache ocspStapleCache;
 
     ContextData(boolean fipsMode, JcaTlsCrypto crypto, BCX509ExtendedKeyManager x509KeyManager,
         BCX509ExtendedTrustManager x509TrustManager, Map<String, CipherSuiteInfo> supportedCipherSuites,
@@ -62,6 +64,15 @@ final class ContextData
             "jdk.tls.maxHandshakeMessageSize", 32768, 1024, Integer.MAX_VALUE);
         this.handshakeTimeoutMillis = PropertyUtils.getIntegerSystemProperty(
             "org.bouncycastle.jsse.handshakeTimeoutMillis", 0, 0, Integer.MAX_VALUE);
+        /*
+         * NOTE: read per context rather than once per class load, unlike the neighbouring jsse
+         * switches. SunJSSE reads this one per context too (an SSLContextImpl instance field), so a
+         * process can host one SSLContext that staples and another that does not.
+         */
+        this.serverEnableStatusRequest = PropertyUtils.getBooleanSystemProperty(
+            "jdk.tls.server.enableStatusRequestExtension", false);
+        // nothing reaches the cache unless a server in this context staples, so don't build one
+        this.ocspStapleCache = serverEnableStatusRequest ? OcspStapleCache.create(crypto.getHelper()) : null;
     }
 
     int[] getActiveCipherSuites(JcaTlsCrypto crypto, ProvSSLParameters sslParameters,
@@ -205,6 +216,29 @@ final class ContextData
     int getHandshakeTimeoutMillis()
     {
         return handshakeTimeoutMillis;
+    }
+
+    /**
+     * Whether a server in this context offers RFC 6066 status_request / RFC 6961 status_request_v2,
+     * from <code>jdk.tls.server.enableStatusRequestExtension</code>. Off unless asked for, since
+     * enabling it has the server make outbound OCSP requests on a client's behalf.
+     */
+    boolean isServerEnableStatusRequest()
+    {
+        return serverEnableStatusRequest;
+    }
+
+    /**
+     * The OCSP responses available for a server in this context to staple. Held per context, as the
+     * JDK holds its own StatusResponseManager, so that connections share it - a cache scoped to a
+     * connection would never see a second hit.
+     *
+     * @return the cache, or null when {@link #isServerEnableStatusRequest()} is false and nothing
+     *         would ever ask it for a response.
+     */
+    OcspStapleCache getOcspStapleCache()
+    {
+        return ocspStapleCache;
     }
 
     NamedGroupInfo.PerConnection getNamedGroupsClient(ProvSSLParameters sslParameters,

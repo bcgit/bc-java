@@ -18,7 +18,9 @@ import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import org.bouncycastle.asn1.ocsp.OCSPResponse;
 import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.jsse.BCSNIMatcher;
 import org.bouncycastle.jsse.BCSNIServerName;
 import org.bouncycastle.jsse.BCX509Key;
@@ -28,10 +30,13 @@ import org.bouncycastle.tls.AlertLevel;
 import org.bouncycastle.tls.Certificate;
 import org.bouncycastle.tls.CertificateRequest;
 import org.bouncycastle.tls.CertificateStatus;
+import org.bouncycastle.tls.CertificateStatusRequestItemV2;
+import org.bouncycastle.tls.CertificateStatusType;
 import org.bouncycastle.tls.ClientCertificateType;
 import org.bouncycastle.tls.DefaultTlsServer;
 import org.bouncycastle.tls.KeyExchangeAlgorithm;
 import org.bouncycastle.tls.NamedGroup;
+import org.bouncycastle.tls.OCSPStatusRequest;
 import org.bouncycastle.tls.ProtocolName;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SecurityParameters;
@@ -70,11 +75,6 @@ class ProvTlsServer
 
     private static final boolean provServerEnableSessionResumption = PropertyUtils
         .getBooleanSystemProperty("org.bouncycastle.jsse.server.enableSessionResumption", true);
-
-    // TODO[jsse] Support status_request and status_request_v2 extensions
-//    private static final boolean provServerEnableStatusRequest = PropertyUtils.getBooleanSystemProperty(
-//        "jdk.tls.server.enableStatusRequestExtension", false);
-    private static final boolean provServerEnableStatusRequest = false;
 
     private static final boolean provServerEnableTrustedCAKeys = PropertyUtils
         .getBooleanSystemProperty("org.bouncycastle.jsse.server.enableTrustedCAKeysExtension", false);
@@ -212,13 +212,21 @@ class ProvTlsServer
     @Override
     protected boolean allowCertificateStatus()
     {
-        return provServerEnableStatusRequest;
+        return manager.getContextData().isServerEnableStatusRequest();
     }
 
+    /**
+     * Echoing "status_request_v2" takes precedence over "status_request" and makes
+     * {@link #getCertificateStatus()} answer from the v2 item list only - so an echo is offered only
+     * when one of those items is actually answerable. Otherwise a client offering both extensions,
+     * with every v2 item naming responders we cannot satisfy, would end up with no staple at all
+     * where its plain "status_request" alone would have been answered.
+     */
     @Override
     protected boolean allowMultiCertStatus()
     {
-        return provServerEnableStatusRequest;
+        return manager.getContextData().isServerEnableStatusRequest()
+            && null != selectStatusRequestItemV2();
     }
 
     @Override
@@ -531,58 +539,253 @@ class ProvTlsServer
         return new CertificateRequest(certificateTypes, serverSigAlgs, certificateAuthorities);
     }
 
+    /**
+     * OCSP responses to staple, for the CertificateStatus handshake message of RFC 6066 sec. 8
+     * (status_request) and RFC 6961 sec. 2.2 (status_request_v2). That message exists up to TLS 1.2
+     * only; in TLS 1.3 the protocol distributes what this returns across the CertificateEntry
+     * "status_request" extensions of RFC 8446 sec. 4.4.2.1, which is why the ocsp_multi shape is
+     * returned there for a chain with more than the end-entity certificate to answer for, despite
+     * the status request version being 1.
+     * <p/>
+     * Returns null rather than a CertificateStatus with nothing in it whenever there is nothing to
+     * staple. A handshake must not fail for want of a staple, and
+     * {@link CertificateStatus#CertificateStatus(short, Object)} rejects a null response.
+     */
     @Override
     public CertificateStatus getCertificateStatus() throws IOException
     {
-        // TODO[jsse] Support status_request and status_request_v2 extensions
-//        SecurityParameters securityParameters = context.getSecurityParametersHandshake();
-//        int statusRequestVersion = securityParameters.getStatusRequestVersion();
-//
-//        if (statusRequestVersion == 2)
-//        {
-//            int count = statusRequestV2.size();
-//            for (int i = 0; i < count; ++i)
-//            {
-//                CertificateStatusRequestItemV2 item = (CertificateStatusRequestItemV2)statusRequestV2.get(i);
-//                short statusType = item.getStatusType();
-//                if (CertificateStatusType.ocsp_multi == statusType)
-//                {
-//                    int chainLength = credentials.getCertificate().getLength();
-//                    Vector ocspResponseList = new Vector(chainLength);
-//                    for (int j = 0; j < chainLength; ++j)
-//                    {
-//                        // TODO Actual OCSP response
-//                        ocspResponseList.add(null);
-//                    }
-//
-//                    return new CertificateStatus(CertificateStatusType.ocsp_multi, ocspResponseList);
-//                }
-//                else if (CertificateStatusType.ocsp == statusType)
-//                {
-//                    // TODO Actual OCSP response
-//                    OCSPResponse ocspResponse;
-//
-//                    return new CertificateStatus(CertificateStatusType.ocsp, ocspResponse);
-//                }
-//            }
-//        }
-//        else if (statusRequestVersion == 1)
-//        {
-//            if (CertificateStatusType.ocsp == certificateStatusRequest.getStatusType())
-//            {
-//                OCSPStatusRequest ocspStatusRequest = certificateStatusRequest.getOCSPStatusRequest();
-//
-//                @SuppressWarnings("unchecked")
-//                Vector<ResponderID> responderIDList = ocspStatusRequest.getResponderIDList();
-//                Extensions requestExtensions = ocspStatusRequest.getRequestExtensions();
-//
-//                X509Certificate eeCert = JsseUtils.getEndEntity(getCrypto(), credentials.getCertificate());
-//
-//                // ...
-//            }
-//        }
+        if (!manager.getContextData().isServerEnableStatusRequest() || null == credentials)
+        {
+            return null;
+        }
+
+        Certificate certificateMessage = credentials.getCertificate();
+
+        /*
+         * Identifying a certificate to a responder takes its issuer, and the chain supplies one for
+         * every certificate but the last - so a chain of one (a server sending no issuers) has
+         * nothing that can be asked about.
+         */
+        int chainLength = certificateMessage.getLength();
+        if (chainLength < 2)
+        {
+            if (LOG.isLoggable(Level.FINER))
+            {
+                LOG.finer(serverID + " no OCSP stapling for a certificate chain of length " + chainLength);
+            }
+            return null;
+        }
+
+        SecurityParameters securityParameters = context.getSecurityParametersHandshake();
+
+        if (TlsUtils.isTLSv13(securityParameters.getNegotiatedVersion()))
+        {
+            return getCertificateStatus13(certificateMessage, chainLength);
+        }
+
+        switch (securityParameters.getStatusRequestVersion())
+        {
+        case 2:
+            return getCertificateStatusV2(certificateMessage, chainLength);
+        case 1:
+            return getCertificateStatusV1(certificateMessage);
+        default:
+            return null;
+        }
+    }
+
+    /**
+     * RFC 8446 sec. 4.4.2.1: "In TLS 1.3, the server's OCSP information is carried in an extension in
+     * the CertificateEntry containing the associated certificate", so every certificate with an
+     * issuer in the chain can be answered for at once - reported here as the positional ocsp_multi
+     * shape the protocol distributes over those entries. status_request_v2 is deprecated in TLS 1.3
+     * and is not honoured, so only the plain status_request is consulted for its extensions.
+     */
+    private CertificateStatus getCertificateStatus13(Certificate certificateMessage, int chainLength)
+        throws IOException
+    {
+        if (null == certificateStatusRequest
+            || CertificateStatusType.ocsp != certificateStatusRequest.getStatusType())
+        {
+            return null;
+        }
+
+        OCSPStatusRequest ocspStatusRequest = certificateStatusRequest.getOCSPStatusRequest();
+        if (!isSupportedOCSPStatusRequest(ocspStatusRequest))
+        {
+            return null;
+        }
+
+        Vector<OCSPResponse> ocspResponseList = getOCSPResponseList(certificateMessage, chainLength,
+            ocspStatusRequest.getRequestExtensions());
+
+        return null == ocspResponseList
+            ?   null
+            :   new CertificateStatus(CertificateStatusType.ocsp_multi, ocspResponseList);
+    }
+
+    /**
+     * RFC 6961 sec. 2.2. The client may ask by several status types at once, and the item list is
+     * "in order of the client's preference" - so the first item that can be answered is the one
+     * answered, rather than ocsp_multi wherever it appears.
+     */
+    private CertificateStatus getCertificateStatusV2(Certificate certificateMessage, int chainLength)
+        throws IOException
+    {
+        CertificateStatusRequestItemV2 item = selectStatusRequestItemV2();
+        if (null == item)
+        {
+            return null;
+        }
+
+        Extensions requestExtensions = item.getOCSPStatusRequest().getRequestExtensions();
+
+        if (CertificateStatusType.ocsp_multi == item.getStatusType())
+        {
+            Vector<OCSPResponse> ocspResponseList = getOCSPResponseList(certificateMessage, chainLength,
+                requestExtensions);
+
+            return null == ocspResponseList
+                ?   null
+                :   new CertificateStatus(CertificateStatusType.ocsp_multi, ocspResponseList);
+        }
+
+        OCSPResponse ocspResponse = getOCSPResponse(certificateMessage, 0, requestExtensions);
+
+        return null == ocspResponse
+            ?   null
+            :   new CertificateStatus(CertificateStatusType.ocsp, ocspResponse);
+    }
+
+    /**
+     * The "status_request_v2" item to answer: the first one this server can answer, taking the list
+     * in the order the client gave it (RFC 6961 sec. 2.2, "in order of the client's preference").
+     * <p/>
+     * Consulted both when deciding whether to echo the extension at all and when the status is
+     * assembled, so the two agree on what was promised.
+     *
+     * @return the item, or null if the client offered none we can answer.
+     */
+    private CertificateStatusRequestItemV2 selectStatusRequestItemV2()
+    {
+        if (null == statusRequestV2)
+        {
+            return null;
+        }
+
+        int count = statusRequestV2.size();
+        for (int i = 0; i < count; ++i)
+        {
+            CertificateStatusRequestItemV2 item = (CertificateStatusRequestItemV2)statusRequestV2.elementAt(i);
+
+            short statusType = item.getStatusType();
+            if (CertificateStatusType.ocsp_multi != statusType && CertificateStatusType.ocsp != statusType)
+            {
+                continue;
+            }
+
+            if (isSupportedOCSPStatusRequest(item.getOCSPStatusRequest()))
+            {
+                return item;
+            }
+        }
 
         return null;
+    }
+
+    /**
+     * RFC 6066 sec. 8. Only the end-entity certificate's status is carried.
+     */
+    private CertificateStatus getCertificateStatusV1(Certificate certificateMessage) throws IOException
+    {
+        if (null == certificateStatusRequest
+            || CertificateStatusType.ocsp != certificateStatusRequest.getStatusType())
+        {
+            return null;
+        }
+
+        OCSPStatusRequest ocspStatusRequest = certificateStatusRequest.getOCSPStatusRequest();
+        if (!isSupportedOCSPStatusRequest(ocspStatusRequest))
+        {
+            return null;
+        }
+
+        OCSPResponse ocspResponse = getOCSPResponse(certificateMessage, 0,
+            ocspStatusRequest.getRequestExtensions());
+
+        return null == ocspResponse
+            ?   null
+            :   new CertificateStatus(CertificateStatusType.ocsp, ocspResponse);
+    }
+
+    /**
+     * A non-empty responder_id_list asks for an answer from one of a named set of responders, which
+     * would mean disregarding the responder the certificate itself names. Not supported, so such a
+     * request is left unanswered rather than answered with something else.
+     */
+    private boolean isSupportedOCSPStatusRequest(OCSPStatusRequest ocspStatusRequest)
+    {
+        if (null == ocspStatusRequest)
+        {
+            return false;
+        }
+
+        Vector responderIDList = ocspStatusRequest.getResponderIDList();
+        if (null != responderIDList && !responderIDList.isEmpty())
+        {
+            if (LOG.isLoggable(Level.FINER))
+            {
+                LOG.finer(serverID + " no OCSP stapling for a status request naming specific responders");
+            }
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * RFC 6961 sec. 2.2: the list "MAY contain fewer OCSP responses than there were certificates",
+     * and an entry "MAY have a length of 0 (zero) bytes if the server does not have the OCSP
+     * response for that particular certificate" - a null element encodes as exactly that. The last
+     * certificate in the chain has no issuer to identify it by, so it gets no entry at all.
+     *
+     * @return the list, or null if not one certificate in the chain produced a response - in which
+     *         case there is no point sending the message.
+     */
+    private Vector<OCSPResponse> getOCSPResponseList(Certificate certificateMessage, int chainLength,
+        Extensions requestExtensions) throws IOException
+    {
+        Vector<OCSPResponse> ocspResponseList = new Vector<OCSPResponse>(chainLength - 1);
+
+        boolean anyResponse = false;
+        for (int i = 0; i < chainLength - 1; ++i)
+        {
+            OCSPResponse ocspResponse = getOCSPResponse(certificateMessage, i, requestExtensions);
+
+            ocspResponseList.addElement(ocspResponse);
+            anyResponse |= (null != ocspResponse);
+        }
+
+        return anyResponse ? ocspResponseList : null;
+    }
+
+    /**
+     * The response for the certificate at <code>index</code>, identified to the responder by the
+     * certificate at <code>index + 1</code>. The certificate_list is ordered so that "each following
+     * certificate [...] certifies the one immediately preceding it" (RFC 5246 sec. 7.4.2).
+     */
+    private OCSPResponse getOCSPResponse(Certificate certificateMessage, int index,
+        Extensions requestExtensions) throws IOException
+    {
+        JcaTlsCrypto crypto = getCrypto();
+
+        X509Certificate cert = JsseUtils.getX509Certificate(crypto,
+            certificateMessage.getCertificateAt(index));
+        X509Certificate issuer = JsseUtils.getX509Certificate(crypto,
+            certificateMessage.getCertificateAt(index + 1));
+
+        return manager.getContextData().getOcspStapleCache().getStapledResponse(cert, issuer,
+            requestExtensions);
     }
 
     @Override

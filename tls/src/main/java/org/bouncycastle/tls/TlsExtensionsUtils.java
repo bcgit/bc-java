@@ -53,6 +53,25 @@ public class TlsExtensionsUtils
     }
 
     /**
+     * Drop the "status_request" / "status_request_v2" echoes a stored session may be carrying, for a
+     * server about to replay that session's extensions on an abbreviated handshake.
+     * <p/>
+     * The echo announces a CertificateStatus message to follow, and an abbreviated handshake sends
+     * neither a Certificate nor a CertificateStatus - so replaying it leaves the client with an
+     * extension that answers nothing, and one the resuming ClientHello may not even have offered.
+     * RFC 5246 sec. 7.4.1.4 has a client abort with unsupported_extension over an extension it did
+     * not request, so this is not something to leave to the client's forbearance.
+     */
+    static void removeStatusRequestExtensions(Hashtable extensions)
+    {
+        if (extensions != null)
+        {
+            extensions.remove(EXT_status_request);
+            extensions.remove(EXT_status_request_v2);
+        }
+    }
+
+    /**
      * @param protocolNameList a {@link Vector} of {@link ProtocolName}
      */
     public static void addALPNExtensionClient(Hashtable extensions, Vector protocolNameList) throws IOException
@@ -902,6 +921,36 @@ public class TlsExtensionsUtils
         return buf.toByteArray();
     }
 
+    /**
+     * The "status_request" extension a server puts on a TLS 1.3 CertificateEntry. RFC 8446
+     * sec. 4.4.2.1: "In TLS 1.3, the server's OCSP information is carried in an extension in the
+     * CertificateEntry containing the associated certificate", and "the body of the "status_request"
+     * extension from the server MUST be a CertificateStatus structure as defined in [RFC6066]" - so
+     * unlike the TLS 1.2 ServerHello echo, which is empty, this one carries the response itself.
+     *
+     * @param certificateStatus the status to carry, which must be of type
+     *                          {@link CertificateStatusType#ocsp} - the ocsp_multi form belongs to
+     *                          the status_request_v2 extension RFC 8446 deprecated.
+     */
+    public static byte[] createStatusRequestExtension13(CertificateStatus certificateStatus)
+        throws IOException
+    {
+        if (certificateStatus == null)
+        {
+            throw new IllegalArgumentException("'certificateStatus' cannot be null");
+        }
+        if (CertificateStatusType.ocsp != certificateStatus.getStatusType())
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        ByteArrayOutputStream buf = new ByteArrayOutputStream();
+
+        certificateStatus.encode(buf);
+
+        return buf.toByteArray();
+    }
+
     public static byte[] createStatusRequestV2Extension(Vector statusRequestV2)
         throws IOException
     {
@@ -1409,6 +1458,36 @@ public class TlsExtensionsUtils
         TlsProtocol.assertEmpty(buf);
 
         return statusRequest;
+    }
+
+    /**
+     * The counterpart of {@link #createStatusRequestExtension13(CertificateStatus)}: the
+     * CertificateStatus a server put on a TLS 1.3 CertificateEntry.
+     * <p/>
+     * RFC 8446 sec. 4.4.2.1 admits only the {@link CertificateStatusType#ocsp} form here, so
+     * anything else - like the ocsp_multi of the deprecated status_request_v2 - is a decode_error
+     * rather than something to pass on.
+     */
+    public static CertificateStatus readStatusRequestExtension13(TlsContext context, byte[] extensionData)
+        throws IOException
+    {
+        if (extensionData == null)
+        {
+            throw new IllegalArgumentException("'extensionData' cannot be null");
+        }
+
+        ByteArrayInputStream buf = new ByteArrayInputStream(extensionData);
+
+        CertificateStatus certificateStatus = CertificateStatus.parse(context, buf);
+
+        TlsProtocol.assertEmpty(buf);
+
+        if (CertificateStatusType.ocsp != certificateStatus.getStatusType())
+        {
+            throw new TlsFatalAlert(AlertDescription.decode_error);
+        }
+
+        return certificateStatus;
     }
 
     public static Vector readStatusRequestV2Extension(byte[] extensionData)

@@ -70,7 +70,8 @@ public class Properties
     public static final String X509_CRLDP_PROTOCOLS = "org.bouncycastle.x509.CRLDP_protocols";
 
     /**
-     * The largest OCSP response, in bytes, the CertPath validator will read from a responder.
+     * The largest OCSP response, in bytes, the CertPath validator - or the JSSE server's OCSP
+     * stapling fetch - will read from a responder.
      * A responder's Content-Length can narrow this but never widen it, so a responder declaring
      * (and sending) hundreds of megabytes is cut off rather than read into the heap. Default is
      * 64K, which is far above any real response; a value of zero or less is ignored and the
