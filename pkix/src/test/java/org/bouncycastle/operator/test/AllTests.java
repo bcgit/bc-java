@@ -46,6 +46,7 @@ import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.generators.MLKEMKeyPairGenerator;
 import org.bouncycastle.crypto.kems.MLKEMExtractor;
+import org.bouncycastle.crypto.params.CMCEParameters;
 import org.bouncycastle.crypto.params.MLKEMKeyGenerationParameters;
 import org.bouncycastle.crypto.params.MLKEMParameters;
 import org.bouncycastle.crypto.params.MLKEMPrivateKeyParameters;
@@ -958,6 +959,74 @@ public class AllTests
             HQCKEMExtractor ext = new HQCKEMExtractor((HQCPrivateKeyParameters)kp.getPrivate());
 
             assertEquals(ext.getEncapsulationLength(), lengthProvider.getEncapsulationLength(new AlgorithmIdentifier(hqcOids[i])));
+        }
+
+        // Classic McEliece keygen is expensive, and the ciphertext size is fixed by the parameter
+        // set, so the parameters are the authority here rather than a generated key.
+        ASN1ObjectIdentifier[] cmceOids = new ASN1ObjectIdentifier[]
+            {
+                ISOIECObjectIdentifiers.mceliece460896,
+                ISOIECObjectIdentifiers.mceliece460896f,
+                ISOIECObjectIdentifiers.mceliece460896pc,
+                ISOIECObjectIdentifiers.mceliece460896pcf,
+                ISOIECObjectIdentifiers.mceliece6688128,
+                ISOIECObjectIdentifiers.mceliece6688128f,
+                ISOIECObjectIdentifiers.mceliece6688128pc,
+                ISOIECObjectIdentifiers.mceliece6688128pcf,
+                ISOIECObjectIdentifiers.mceliece6960119,
+                ISOIECObjectIdentifiers.mceliece6960119f,
+                ISOIECObjectIdentifiers.mceliece6960119pc,
+                ISOIECObjectIdentifiers.mceliece6960119pcf,
+                ISOIECObjectIdentifiers.mceliece8192128,
+                ISOIECObjectIdentifiers.mceliece8192128f,
+                ISOIECObjectIdentifiers.mceliece8192128pc,
+                ISOIECObjectIdentifiers.mceliece8192128pcf
+            };
+
+        CMCEParameters[] cmceParams = new CMCEParameters[]
+            {
+                CMCEParameters.mceliece460896,
+                CMCEParameters.mceliece460896f,
+                CMCEParameters.mceliece460896pc,
+                CMCEParameters.mceliece460896pcf,
+                CMCEParameters.mceliece6688128,
+                CMCEParameters.mceliece6688128f,
+                CMCEParameters.mceliece6688128pc,
+                CMCEParameters.mceliece6688128pcf,
+                CMCEParameters.mceliece6960119,
+                CMCEParameters.mceliece6960119f,
+                CMCEParameters.mceliece6960119pc,
+                CMCEParameters.mceliece6960119pcf,
+                CMCEParameters.mceliece8192128,
+                CMCEParameters.mceliece8192128f,
+                CMCEParameters.mceliece8192128pc,
+                CMCEParameters.mceliece8192128pcf
+            };
+
+        for (int i = 0; i != cmceOids.length; i++)
+        {
+            assertEquals(cmceParams[i].getName(), cmceParams[i].getEncapsulationLength(),
+                lengthProvider.getEncapsulationLength(new AlgorithmIdentifier(cmceOids[i])));
+        }
+
+        // a KEM with no registered encapsulation length must name the algorithm, not throw an NPE.
+        ASN1ObjectIdentifier[] unknownKemOids = new ASN1ObjectIdentifier[]
+            {
+                BCObjectIdentifiers.bike128,
+                new ASN1ObjectIdentifier("1.2.3.4.5.6.7.8.9")
+            };
+
+        for (int i = 0; i != unknownKemOids.length; i++)
+        {
+            try
+            {
+                lengthProvider.getEncapsulationLength(new AlgorithmIdentifier(unknownKemOids[i]));
+                fail("no exception on unknown KEM: " + unknownKemOids[i]);
+            }
+            catch (IllegalArgumentException e)
+            {
+                assertEquals("Unknown KEM algorithm requested: " + unknownKemOids[i], e.getMessage());
+            }
         }
     }
 

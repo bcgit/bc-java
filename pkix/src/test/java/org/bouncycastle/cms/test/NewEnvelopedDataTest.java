@@ -1103,6 +1103,43 @@ public class NewEnvelopedDataTest
     }
 
     /**
+     * A KEM which registers a key wrapping cipher, but has no registered encapsulation
+     * length (BIKE), gets as far as the wrap and then needs to split the encapsulation
+     * off the front of it - the failure needs to name the algorithm.
+     */
+    public void testKemWithoutEncapsulationLength()
+        throws Exception
+    {
+        KeyPair kp = KeyPairGenerator.getInstance("BIKE", BCPQC).generateKeyPair();
+
+        CMSEnvelopedDataGenerator edGen = new CMSEnvelopedDataGenerator();
+
+        edGen.addRecipientInfoGenerator(new JceKEMRecipientInfoGenerator(new byte[]{1, 2, 3}, kp.getPublic(), CMSAlgorithm.AES256_WRAP)
+            .setKDF(CMSAlgorithm.SHA256_HKDF));
+
+        try
+        {
+            edGen.generate(
+                new CMSProcessableByteArray("WallaWallaWashington".getBytes()),
+                new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES256_CBC).setProvider(BC).build());
+
+            fail("no exception");
+        }
+        catch (CMSException e)
+        {
+            Throwable cause = e;
+
+            while (cause.getCause() != null)
+            {
+                cause = cause.getCause();
+            }
+
+            assertTrue(cause instanceof IllegalArgumentException);
+            assertEquals("Unknown KEM algorithm requested: " + BCObjectIdentifiers.bike128, cause.getMessage());
+        }
+    }
+
+    /**
      * RFC 9690 mandatory-to-implement combination: RSA-KEM with KDF3-SHA256 + AES-128-WRAP.
      * The KEMRecipientInfo flow (RFC 9629) carries the RSA encapsulation in {@code kemct}
      * and the AES-wrapped CEK in {@code encryptedKey}.

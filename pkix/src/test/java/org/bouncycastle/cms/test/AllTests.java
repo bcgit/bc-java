@@ -26,6 +26,7 @@ public class AllTests
         suite.addTest(NewEnvelopedDataTest.suite());
         suite.addTestSuite(ContentEncryptorRandomTest.class);
         suite.addTestSuite(FrodoKEMEnvelopedDataTest.class);
+        suite.addTestSuite(CMCEEnvelopedDataTest.class);
         suite.addTestSuite(KEMUkmEnvelopedDataTest.class);
         suite.addTestSuite(CompositeKEMEnvelopedDataTest.class);
         suite.addTestSuite(KEMAuthEnvelopedDataTest.class);
