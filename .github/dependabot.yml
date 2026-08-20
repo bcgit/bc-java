@@ -1,0 +1,50 @@
+# Dependabot version updates.
+#
+# Key reference:
+# https://docs.github.com/en/code-security/dependabot/working-with-dependabot/dependabot-options-reference
+#
+# Notes specific to this repository:
+#
+#  * bcprov and the other published jars have no runtime dependencies. Everything
+#    Dependabot can see here is test-only, compileOnly, example (misc), or build
+#    tooling, so these updates are housekeeping rather than security work - hence
+#    the weekly cadence and the grouping into a single pull request per ecosystem.
+#  * The external dependencies live in the sub-project build files (prov, pkix, pg,
+#    mail, jmail, misc, mls, pgsc, ...), not just the root one, so "directories"
+#    with a glob is used - the singular "directory" key does not support globbing.
+#  * Major-version bumps are ignored deliberately. The Gradle modules compile with
+#    --release 8 (and src/main additionally has to stay inside the Java 4 source
+#    floor for the legacy Ant distributions), so a new major of the bnd builder,
+#    Error Prone, or a mail API is a judgement call about supported Java versions
+#    rather than something to merge on green CI. Raise those by hand.
+#  * The jars pulled in with files()/fileTree() from test/libs and libs (mls, prov)
+#    are invisible to Dependabot; they still have to be refreshed manually.
+
+version: 2
+updates:
+  - package-ecosystem: "gradle"
+    directories:
+      - "/"
+      - "/*"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 3
+    groups:
+      gradle-dependencies:
+        applies-to: version-updates
+        patterns:
+          - "*"
+    ignore:
+      # See the note above on --release 8 / the Java 4 source floor.
+      - dependency-name: "*"
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    groups:
+      github-actions:
+        applies-to: version-updates
+        patterns:
+          - "*"
