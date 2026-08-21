@@ -197,12 +197,14 @@ public class TlsStatusRequestResumptionTest
 
         synchronized boolean sentExtension(int handshake, Integer extensionType)
         {
-            return sentExtensions.get(handshake).contains(extensionType);
+            // NOTE: casts so this still compiles once the jdk1.4 build's preprocessor has stripped
+            // the generics from the field declarations above
+            return ((Set)sentExtensions.get(handshake)).contains(extensionType);
         }
 
         synchronized boolean wasResumed(int handshake)
         {
-            return resumed.get(handshake).booleanValue();
+            return ((Boolean)resumed.get(handshake)).booleanValue();
         }
     }
 }
