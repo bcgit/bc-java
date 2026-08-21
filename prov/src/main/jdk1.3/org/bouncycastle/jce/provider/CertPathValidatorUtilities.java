@@ -1288,18 +1288,6 @@ class CertPathValidatorUtilities
         return certs;
     }
 
-    protected static void verifyX509AttributeCertificate(X509AttributeCertificate attrCert, PublicKey publicKey,
-        String sigProvider) throws GeneralSecurityException
-    {
-        if (sigProvider == null)
-        {
-            attrCert.verify(publicKey, BouncyCastleProvider.PROVIDER_NAME);
-        }
-        else
-        {
-            attrCert.verify(publicKey, sigProvider);
-        }
-    }
 
     protected static void verifyX509Certificate(X509Certificate cert, PublicKey publicKey, String sigProvider)
         throws GeneralSecurityException
