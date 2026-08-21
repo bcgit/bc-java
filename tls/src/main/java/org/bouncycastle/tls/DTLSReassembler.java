@@ -5,17 +5,12 @@ import java.util.Vector;
 class DTLSReassembler
 {
     /*
-     * Bounds the number of gaps tracked for one message. Each interior fragment splits a gap in two,
-     * so an unbounded list lets single-byte fragments at alternating offsets take a 32KiB message to
-     * 16K gaps, at a cost quadratic in the message length - seconds of CPU per message_seq in the
-     * flight, spent before anything about the peer has been verified. A cooperating peer fragments
-     * to the path MTU, so its gap count tracks its fragment count: a 1MiB message in 516-byte
-     * fragments arriving in fully random order peaks at 536 gaps, hence one gap per 512 bytes with a
-     * floor for small messages. At the cap a fragment that would split a gap is ignored for that gap
-     * - and not recorded as received, so a byte already held is still never overwritten - leaving the
-     * peer's normal retransmission of the flight to complete the message once the gaps close.
+     * Bounds the number of gaps tracked for one message.
+     * <p>
+     * Limits the amount of fragmentation a malicious peer can cause. While at the limit a fragment that would
+     * split a range is ignored; retransmission is then relied on to complete the message.
      */
-    private static final int MIN_MAX_MISSING_RANGES = 1024;
+    private static final int MIN_MISSING_RANGES_LIMIT = 64;
 
     /*
      * No 'final' modifiers so that it works in earlier JDKs
@@ -30,7 +25,7 @@ class DTLSReassembler
     {
         this.msg_type = msg_type;
         this.body = new byte[length];
-        this.maxMissingRanges = Math.max(MIN_MAX_MISSING_RANGES, length / 512);
+        this.maxMissingRanges = Math.max(MIN_MISSING_RANGES_LIMIT, length / 1024);
         this.missing.addElement(new Range(0, length));
     }
 
@@ -54,80 +49,74 @@ class DTLSReassembler
             return;
         }
 
+        // NOTE: Empty messages still require an empty fragment to complete it
         if (fragment_length == 0)
         {
-            // NOTE: Empty messages still require an empty fragment to complete it
-            if (fragment_offset == 0 && !missing.isEmpty())
+            if (fragment_offset == 0 && !missing.isEmpty() && ((Range)missing.firstElement()).end == 0)
             {
-                Range firstRange = (Range)missing.firstElement();
-                if (firstRange.getEnd() == 0)
-                {
-                    missing.removeElementAt(0);
-                }
+                missing.removeElementAt(0);
             }
             return;
         }
 
-        for (int i = firstCandidate(fragment_offset); i < missing.size(); ++i)
+        for (int i = findStartIndex(fragment_offset); i < missing.size(); ++i)
         {
             Range range = (Range)missing.elementAt(i);
-            if (range.getStart() >= fragment_end)
+            if (range.start >= fragment_end)
             {
                 break;
             }
-            if (range.getEnd() > fragment_offset)
+            if (range.end <= fragment_offset)
             {
+                continue;
+            }
 
-                int copyStart = Math.max(range.getStart(), fragment_offset);
-                int copyEnd = Math.min(range.getEnd(), fragment_end);
-                int copyLength = copyEnd - copyStart;
+            int copyStart = Math.max(range.start, fragment_offset);
+            int copyEnd = Math.min(range.end, fragment_end);
+            int copyLength = copyEnd - copyStart;
 
-                if (copyStart != range.getStart() && copyEnd != range.getEnd()
-                    && missing.size() >= maxMissingRanges)
+            if (copyStart == range.start)
+            {
+                if (copyEnd == range.end)
                 {
-                    // splitting this range would pass the cap, so ignore the fragment for it
-                    continue;
-                }
-
-                System.arraycopy(buf, off + copyStart - fragment_offset, body, copyStart,
-                    copyLength);
-
-                if (copyStart == range.getStart())
-                {
-                    if (copyEnd == range.getEnd())
-                    {
-                        missing.removeElementAt(i--);
-                    }
-                    else
-                    {
-                        range.setStart(copyEnd);
-                    }
+                    // TODO[tls] It should be possible to handle all removals together at the end (linearly)
+                    missing.removeElementAt(i--);
                 }
                 else
                 {
-                    if (copyEnd != range.getEnd())
-                    {
-                        missing.insertElementAt(new Range(copyEnd, range.getEnd()), ++i);
-                    }
-                    range.setEnd(copyStart);
+                    range.start = copyEnd;
                 }
             }
+            else
+            {
+                if (copyEnd != range.end)
+                {
+                    // Splitting this range would exceed the limit, so ignore the fragment
+                    if (missing.size() >= maxMissingRanges)
+                    {
+                        continue;
+                    }
+
+                    missing.insertElementAt(new Range(copyEnd, range.end), ++i);
+                }
+                range.end = copyStart;
+            }
+
+            System.arraycopy(buf, off + copyStart - fragment_offset, body, copyStart, copyLength);
         }
     }
 
     /**
-     * Index of the first range that can overlap a fragment starting at fragment_offset. The ranges
-     * are sorted and disjoint, so every earlier one ends at or below fragment_offset and could only
-     * be skipped over; searching for the start rather than rescanning from zero is what keeps the
-     * cost of a fragment independent of how many gaps precede it.
+     * Find the index of the first range that might overlap a fragment starting at fragment_offset. The ranges are
+     * sorted and disjoint, so every earlier one ends at or below fragment_offset and could only be skipped over.
      */
-    private int firstCandidate(int fragment_offset)
+    private int findStartIndex(int fragment_offset)
     {
         int lo = 0, hi = missing.size();
         while (lo < hi)
         {
             int mid = (lo + hi) >>> 1;
-            if (((Range)missing.elementAt(mid)).getEnd() > fragment_offset)
+            if (((Range)missing.elementAt(mid)).end > fragment_offset)
             {
                 hi = mid;
             }
@@ -147,31 +136,11 @@ class DTLSReassembler
 
     private static class Range
     {
-        private int start, end;
+        int start, end;
 
         Range(int start, int end)
         {
             this.start = start;
-            this.end = end;
-        }
-
-        int getStart()
-        {
-            return start;
-        }
-
-        void setStart(int start)
-        {
-            this.start = start;
-        }
-
-        int getEnd()
-        {
-            return end;
-        }
-
-        void setEnd(int end)
-        {
             this.end = end;
         }
     }
