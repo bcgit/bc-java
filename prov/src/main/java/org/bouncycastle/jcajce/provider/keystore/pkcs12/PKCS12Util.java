@@ -37,6 +37,20 @@ class PKCS12Util
     private static final BigInteger DEFAULT_MAX_IT_COUNT = BigInteger.valueOf(5000000);
 
     /**
+     * The PBE iteration count used when writing a PKCS#12 file, and half the count used for its
+     * integrity MAC. 600,000 is the OWASP figure for PBKDF2-HMAC-SHA256.
+     */
+    static final int DEFAULT_STORE_IT_COUNT = 600000;
+
+    /**
+     * Largest count {@link Properties#PKCS12_STORE_IT_COUNT} may name. Half of
+     * {@link #DEFAULT_MAX_IT_COUNT} so that the doubled MAC count still passes
+     * {@link #validateIterationCount(BigInteger)} on load: a file BC writes must be one BC can
+     * read back with the read-side cap left at its default.
+     */
+    private static final int MAX_STORE_IT_COUNT = 2500000;
+
+    /**
      * Key sizes (in bits) for the symmetric cipher OIDs that PKCS#12
      * parameter-derivation paths need to know about. Used by both
      * {@link PKCS12KeyStoreSpi} and {@link PKCS12PBMAC1KeyStoreSpi} to
@@ -333,6 +347,25 @@ class PKCS12Util
         }
 
         return BigIntegers.intValueExact(keyLength);
+    }
+
+    /**
+     * The PBE iteration count to write with, {@link #DEFAULT_STORE_IT_COUNT} unless
+     * {@link Properties#PKCS12_STORE_IT_COUNT} names a usable value. A value outside
+     * 1 .. {@link #MAX_STORE_IT_COUNT} is ignored, so a mistyped property fails towards
+     * the default rather than towards a file with no PBE work in it. (A value that is not
+     * a number at all still throws out of {@link Properties#asInteger(String, int)}.)
+     */
+    static int getStoreIterationCount()
+    {
+        int itCount = Properties.asInteger(Properties.PKCS12_STORE_IT_COUNT, DEFAULT_STORE_IT_COUNT);
+
+        if (itCount < 1 || itCount > MAX_STORE_IT_COUNT)
+        {
+            return DEFAULT_STORE_IT_COUNT;
+        }
+
+        return itCount;
     }
 
     static int validateIterationCount(BigInteger ic)

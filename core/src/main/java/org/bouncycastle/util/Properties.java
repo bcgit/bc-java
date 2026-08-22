@@ -37,6 +37,25 @@ public class Properties
     public static final String PKCS12_MAX_IT_COUNT = "org.bouncycastle.pkcs12.max_it_count";
 
     /**
+     * The PBE iteration count the PKCS12 keystore uses when <b>writing</b> a file - the write-side
+     * counterpart of {@link #PKCS12_MAX_IT_COUNT}, which only bounds what is accepted on load.
+     * Default 600,000 for the key and certificate encryption, twice that for the integrity MAC.
+     * <p>
+     * Lowering this trades password-cracking resistance for store/load time, and is only worth
+     * doing where something other than the passphrase carries the confidentiality of the file -
+     * a machine-generated high-entropy password, or a keystore held somewhere already protected.
+     * It is deliberately an operator decision rather than a per-call one: a deployment that wants
+     * cheaper files sets it once at startup for the whole JVM.
+     * <p>
+     * A value outside 1 .. 2,500,000 is ignored and the default used, so a mistyped property fails
+     * towards the default rather than towards a file with no PBE work in it; the upper bound keeps
+     * the doubled MAC count inside the 5,000,000 that {@link #PKCS12_MAX_IT_COUNT} defaults to, so
+     * a file written under this property can always be read back. Read via
+     * {@link #asInteger(String, int)}.
+     */
+    public static final String PKCS12_STORE_IT_COUNT = "org.bouncycastle.pkcs12.store_it_count";
+
+    /**
      * Maximum time, in seconds, that a downloaded CRL is cached by the internal CrlCache used
      * by the CertPath validator and X509RevocationChecker. When set to a positive value, cached
      * entries are evicted whichever expires sooner: the configured TTL or the CRL's own

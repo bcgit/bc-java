@@ -93,7 +93,6 @@ import org.bouncycastle.jcajce.spec.GOST28147ParameterSpec;
 import org.bouncycastle.jcajce.spec.PBKDF2KeySpec;
 import org.bouncycastle.jcajce.util.BCJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
-import org.bouncycastle.jce.PKCS12Util;
 import org.bouncycastle.jce.interfaces.BCKeyStore;
 import org.bouncycastle.jce.interfaces.PKCS12BagAttributeCarrier;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -109,7 +108,6 @@ public class PKCS12KeyStoreSpi
     private final JcaJceHelper helper = new BCJcaJceHelper();
 
     private static final int SALT_SIZE = 20;
-    private static final int MIN_ITERATIONS = 1024;
 
     private static final DefaultSecretKeyProvider keySizeProvider = new DefaultSecretKeyProvider();
 
@@ -141,6 +139,10 @@ public class PKCS12KeyStoreSpi
     private CertificateFactory certFact;
     private ASN1ObjectIdentifier keyAlgorithm;
     private ASN1ObjectIdentifier certAlgorithm;
+
+    // The MAC iteration count: taken from a loaded file so that storing it again preserves it,
+    // and -1 until then, meaning doStore should use the store-time default.
+    private int itCount = -1;
 
     private class CertId
     {
@@ -809,7 +811,7 @@ public class PKCS12KeyStoreSpi
             DigestInfo dInfo = mData.getMac();
             AlgorithmIdentifier algId = dInfo.getAlgorithmId();
             byte[] salt = mData.getSalt();
-            int itCount = PKCS12Util.validateIterationCount(mData.getIterationCount());
+            itCount = PKCS12Util.validateIterationCount(mData.getIterationCount());
 
             byte[] data = PKCS12Util.getContentOctets(info);
 
@@ -1220,6 +1222,10 @@ public class PKCS12KeyStoreSpi
     private void doStore(OutputStream stream, char[] password, boolean useDEREncoding)
         throws IOException
     {
+        int storeItCount = PKCS12Util.getStoreIterationCount();
+        // a file loaded from disk keeps its own MAC count, otherwise twice the PBE count
+        int macItCount = (itCount > 0) ? itCount : 2 * storeItCount;
+
         if (password == null)
         {
             throw new NullPointerException("No password supplied for PKCS#12 KeyStore.");
@@ -1240,7 +1246,7 @@ public class PKCS12KeyStoreSpi
 
             String name = (String)ks.nextElement();
             PrivateKey privKey = (PrivateKey)keys.get(name);
-            PKCS12PBEParams kParams = new PKCS12PBEParams(kSalt, MIN_ITERATIONS);
+            PKCS12PBEParams kParams = new PKCS12PBEParams(kSalt, storeItCount);
             byte[] kBytes = wrapKey(keyAlgorithm.getId(), privKey, kParams, password);
             AlgorithmIdentifier kAlgId = new AlgorithmIdentifier(keyAlgorithm, kParams.toASN1Primitive());
             org.bouncycastle.asn1.pkcs.EncryptedPrivateKeyInfo kInfo = new org.bouncycastle.asn1.pkcs.EncryptedPrivateKeyInfo(kAlgId, kBytes);
@@ -1321,7 +1327,7 @@ public class PKCS12KeyStoreSpi
         random.nextBytes(cSalt);
 
         ASN1EncodableVector certSeq = new ASN1EncodableVector();
-        PKCS12PBEParams cParams = new PKCS12PBEParams(cSalt, MIN_ITERATIONS);
+        PKCS12PBEParams cParams = new PKCS12PBEParams(cSalt, storeItCount);
         AlgorithmIdentifier cAlgId = new AlgorithmIdentifier(certAlgorithm, cParams.toASN1Primitive());
         Hashtable doneCerts = new Hashtable();
 
@@ -1573,7 +1579,6 @@ public class PKCS12KeyStoreSpi
         // create the mac
         //
         byte[] mSalt = new byte[20];
-        int itCount = MIN_ITERATIONS;
 
         random.nextBytes(mSalt);
 
@@ -1583,12 +1588,12 @@ public class PKCS12KeyStoreSpi
 
         try
         {
-            byte[] res = calculatePbeMac(id_SHA1, mSalt, itCount, password, false, data);
+            byte[] res = calculatePbeMac(id_SHA1, mSalt, macItCount, password, false, data);
 
             AlgorithmIdentifier algId = new AlgorithmIdentifier(id_SHA1, DERNull.INSTANCE);
             DigestInfo dInfo = new DigestInfo(algId, res);
 
-            mData = new MacData(dInfo, mSalt, itCount);
+            mData = new MacData(dInfo, mSalt, macItCount);
         }
         catch (Exception e)
         {

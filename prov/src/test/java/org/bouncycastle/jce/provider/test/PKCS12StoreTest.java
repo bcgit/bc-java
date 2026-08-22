@@ -40,6 +40,7 @@ import org.bouncycastle.asn1.pkcs.ContentInfo;
 import org.bouncycastle.asn1.pkcs.EncryptedData;
 import org.bouncycastle.asn1.pkcs.EncryptedPrivateKeyInfo;
 import org.bouncycastle.asn1.pkcs.MacData;
+import org.bouncycastle.asn1.pkcs.PKCS12PBEParams;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.Pfx;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
@@ -2545,6 +2546,137 @@ public class PKCS12StoreTest
         System.clearProperty(Properties.PKCS12_MAX_IT_COUNT);
     }
 
+    private byte[] storeFreshPKCS12()
+        throws Exception
+    {
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("EC", BC);
+        KeyPair kp = kpGen.generateKeyPair();
+        X509Certificate cert = TestUtils.createSelfSignedCert(new X500Name("CN=PKCS12 Iteration Count Test"), "SHA256withECDSA", kp);
+
+        KeyStore keyStore = KeyStore.getInstance("PKCS12", BC);
+
+        keyStore.load(null, null);
+
+        keyStore.setKeyEntry("key", kp.getPrivate(), null, new Certificate[]{cert});
+
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+
+        keyStore.store(bOut, passwd);
+
+        return bOut.toByteArray();
+    }
+
+    private int macIterationCount(byte[] pfxEncoding)
+    {
+        return Pfx.getInstance(pfxEncoding).getMacData().getIterationCount().intValue();
+    }
+
+    private int keyBagIterationCount(byte[] pfxEncoding)
+        throws IOException
+    {
+        Pfx pfx = Pfx.getInstance(pfxEncoding);
+        AuthenticatedSafe authSafe = AuthenticatedSafe.getInstance(
+            ASN1OctetString.getInstance(pfx.getAuthSafe().getContent()).getOctets());
+        ContentInfo[] infos = authSafe.getContentInfo();
+
+        for (int i = 0; i != infos.length; i++)
+        {
+            // the shrouded key bags are the unencrypted SafeContents, the certificates
+            // live in the EncryptedData block alongside them
+            if (!infos[i].getContentType().equals(PKCSObjectIdentifiers.data))
+            {
+                continue;
+            }
+
+            ASN1Sequence bags = ASN1Sequence.getInstance(
+                ASN1OctetString.getInstance(infos[i].getContent()).getOctets());
+
+            for (int j = 0; j != bags.size(); j++)
+            {
+                SafeBag bag = SafeBag.getInstance(bags.getObjectAt(j));
+
+                if (bag.getBagId().equals(PKCSObjectIdentifiers.pkcs8ShroudedKeyBag))
+                {
+                    EncryptedPrivateKeyInfo encInfo = EncryptedPrivateKeyInfo.getInstance(bag.getBagValue());
+                    PKCS12PBEParams pbeParams = PKCS12PBEParams.getInstance(
+                        encInfo.getEncryptionAlgorithm().getParameters());
+
+                    return pbeParams.getIterations().intValue();
+                }
+            }
+        }
+
+        fail("no pkcs8ShroudedKeyBag found");
+
+        return -1;
+    }
+
+    private void testStoreIterationCount()
+        throws Exception
+    {
+        // the test harness itself sets PKCS12_STORE_IT_COUNT low so the suite doesn't spend
+        // its time on the KDF, so put back whatever was there on the way out rather than
+        // assuming the property was unset.
+        String ambient = System.getProperty(Properties.PKCS12_STORE_IT_COUNT);
+
+        try
+        {
+            //
+            // PKCS12_STORE_IT_COUNT is the write-side counterpart of PKCS12_MAX_IT_COUNT:
+            // an operator trading password-cracking resistance for store/load time.
+            //
+            System.setProperty(Properties.PKCS12_STORE_IT_COUNT, "51200");
+
+            byte[] lowered = storeFreshPKCS12();
+
+            isEquals("lowered key bag iteration count", 51200, keyBagIterationCount(lowered));
+            isEquals("lowered MAC iteration count", 102400, macIterationCount(lowered));
+
+            KeyStore inStore = KeyStore.getInstance("PKCS12", BC);
+
+            inStore.load(new ByteArrayInputStream(lowered), passwd);
+
+            isTrue("lowered store did not round trip", inStore.getKey("key", null) != null);
+
+            //
+            // a value outside 1..2,500,000 is ignored - a mistyped property must not be
+            // able to write a file with no PBE work in it at all. This is the one case
+            // that has to pay for a full strength store.
+            //
+            System.setProperty(Properties.PKCS12_STORE_IT_COUNT, "0");
+
+            byte[] ignored = storeFreshPKCS12();
+
+            isEquals("out of range key bag iteration count honoured", 600000, keyBagIterationCount(ignored));
+            isEquals("out of range MAC iteration count honoured", 1200000, macIterationCount(ignored));
+        }
+        finally
+        {
+            if (ambient == null)
+            {
+                System.clearProperty(Properties.PKCS12_STORE_IT_COUNT);
+            }
+            else
+            {
+                System.setProperty(Properties.PKCS12_STORE_IT_COUNT, ambient);
+            }
+        }
+
+        //
+        // a file that arrived with its own MAC count keeps it on the way back out.
+        //
+        KeyStore reStore = KeyStore.getInstance("PKCS12", BC);
+
+        reStore.load(new ByteArrayInputStream(pkcs12), passwd);
+
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+
+        reStore.store(bOut, passwd);
+
+        isEquals("loaded MAC iteration count not preserved",
+            macIterationCount(pkcs12), macIterationCount(bOut.toByteArray()));
+    }
+
     private void testPBMac1PBKdf2()
         throws Exception
     {
@@ -2850,6 +2982,7 @@ public class PKCS12StoreTest
     {
         testPKCS12StoreFriendlyName();
         testIterationCount();
+        testStoreIterationCount();
         testPBMac1PBKdf2();
         testPKCS12Store();
         testGOSTStore();

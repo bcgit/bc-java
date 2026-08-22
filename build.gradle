@@ -311,6 +311,12 @@ configure(subprojects.findAll {it.name != 'bom'}) {
         reports {
             junitXml.outputLocation = layout.buildDirectory.dir("test-results")
         }
+
+        // The PKCS#12 keystore writes with a 600,000 iteration PBE by default, which is
+        // several seconds per store and dominates the wall time of any suite that touches
+        // a keystore. The tests are not measuring the KDF, so write cheap files here. Runs
+        // after testFull's systemProperties assignment above, so it survives it.
+        systemProperty 'org.bouncycastle.pkcs12.store_it_count', '4096'
     }
 
     // Bundle the project LICENSE into META-INF/ of every jar produced.
