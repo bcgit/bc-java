@@ -4,7 +4,30 @@
 // code must not become part of the shipped bc* API surface. Hence no publishing block and
 // no entry in the root build.gradle distModules list.
 
+plugins {
+    // Generates the gRPC service and protobuf message classes the MLS interop harness under
+    // org.bouncycastle.mls.examples.client implements. The harness lives here rather than in the
+    // published mls module because it is a test tool for the RFC 9420 interoperability runner,
+    // not library API: shipping it in bcmls put classes needing io.grpc and com.google.protobuf
+    // into a published jar whose POM and OSGi manifest declared neither.
+    id 'com.google.protobuf' version '0.9.4'
+}
+
+apply plugin: 'com.google.protobuf'
+
+def grpcVersion = '1.58.0' // keep in step with the grpc-* jars under test/libs
+def protocVersion = '3.22.3'
+
 jar.archiveBaseName = "bcmisc-$vmrange"
+
+sourceSets {
+    main {
+        java {
+            srcDirs 'build/generated/source/proto/main/grpc'
+            srcDirs 'build/generated/source/proto/main/java'
+        }
+    }
+}
 
 dependencies {
     implementation project(':prov')
@@ -13,14 +36,62 @@ dependencies {
     implementation project(':pg')
     implementation project(':mail')
     implementation project(':tls')
+    implementation project(':mls')
 
     implementation group: 'javax.mail', name: 'mail', version: '1.4'
+
+    // The MLS interop harness only. These are the jars the mls module used to carry, still
+    // hand-placed under test/libs.
+    implementation(files("../test/libs/annotations-api-6.0.53.jar"))
+    implementation(files("../test/libs/guava-32.0.1-android.jar"))
+    implementation(files("../test/libs/failureaccess-1.0.1.jar"))
+    implementation(files("../test/libs/grpc-api-1.58.0.jar"))
+    implementation(files("../test/libs/grpc-protobuf-1.58.0.jar"))
+    implementation(files("../test/libs/grpc-protobuf-lite-1.58.0.jar"))
+    implementation(files("../test/libs/grpc-stub-1.58.0.jar"))
+    implementation(files("../test/libs/protobuf-java-3.22.3.jar"))
+
+    compileOnly(files("../test/libs/grpc-services-1.58.0.jar"))
+
+    runtimeOnly(files("../test/libs/grpc-core-1.58.0.jar"))
+    runtimeOnly(files("../test/libs/grpc-netty-shaded-1.58.0.jar"))
+    runtimeOnly(files("../test/libs/perfmark-api-0.26.0.jar"))
 
     // The example smoke tests (src/test) drive the S/MIME and OpenPGP examples
     // via their main() methods; they need JUnit and the same javax.mail runtime
     // as the examples themselves. PrintTestResult is carried as a per-module
     // test copy under src/test (as every other module does).
     testImplementation group: 'junit', name: 'junit', version: '4.13.2'
+}
+
+protobuf {
+    protoc {
+        artifact = "com.google.protobuf:protoc:${protocVersion}"
+    }
+    plugins {
+        grpc {
+            artifact = "io.grpc:protoc-gen-grpc-java:${grpcVersion}"
+        }
+    }
+    generateProtoTasks {
+        all()*.plugins {
+            grpc {}
+        }
+    }
+}
+
+// Checkstyle and the example-code conventions apply to what is written by hand, not to the
+// protobuf/gRPC output under build/generated.
+checkstyleMain {
+    source = fileTree('src/main/java')
+}
+
+extractIncludeProto {
+    dependsOn(":prov:jar", ":util:jar")
+}
+
+extractIncludeTestProto {
+    dependsOn(":prov:jar", ":util:jar")
 }
 
 test {

@@ -1,4 +1,4 @@
-package org.bouncycastle.mls.client;
+package org.bouncycastle.mls.examples.client;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.mls.codec.KeyPackage;

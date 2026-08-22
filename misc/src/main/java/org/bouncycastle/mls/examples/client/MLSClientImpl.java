@@ -1,4 +1,4 @@
-package org.bouncycastle.mls.client;
+package org.bouncycastle.mls.examples.client;
 
 import java.io.IOException;
 import java.security.SecureRandom;
