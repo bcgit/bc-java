@@ -167,3 +167,26 @@ include (e.g. `**/crypto/agreement/owl/*Test.java`) so it lands in `bctest` (whe
 same-package/same-classloader test keeps its package-private access to the class in `bcprov`).
 `org.bouncycastle.util.test.{SimpleTest,Test}` legitimately ship in `bcprov` and are not `junit`
 subclasses, so they are not the problem; only `*Test extends junit.framework.TestCase` is.
+
+### `org.bouncycastle.tls`-package tests: a targeted include gets them compiled, not run
+
+The same shallow-include problem applies to `bctls`, with a second twist that makes the miss silent
+in both directions. A test in the `org.bouncycastle.tls` package itself (rather than
+`org.bouncycastle.tls.test`) is reached by **no** bctest include — `**/test/*.java` and
+`**/test/*/*.java` cover the `.test` subpackage only — so it is dropped from the distribution
+entirely: never compiled by the real 1.4 javac, never run. `Add13CertificateStatusTest`,
+`AbstractTlsServerResetTest`, `CheckTlsFeaturesExtensionTest` and `DTLSReassemblerTest` all sit in
+that hole today; `SpreadCertificateStatusTest` was given a targeted include
+(`org/bouncycastle/tls/SpreadCertificateStatusTest.java`, next to the `owl` one) to get it at least
+compiled. The contamination half does *not* fire here — the `build-tls` copy in `bc+-build.xml`
+already carries `<exclude name="**/*Test.java"/>`, so unlike `bcprov` these never leak into the
+shipped `bctls` jar (`unzip -l bctls-jdk14-*.jar | grep -cE 'Test\.class'` should stay 0).
+
+Adding the include compiles the class but does **not** run it: the `test` target's batchtest runs
+`**/AllTests.java` out of the staged bctest source tree, and `ant/jdk14.xml` (around line 283)
+excludes `**/tls/AllTests.java` — the only suite referencing these classes. So a targeted include is
+a *compile-floor* check, which is usually what you want from this build anyway. Making the package's
+tests actually execute means staging its `AllTests` too, which then needs every class it references
+included, none of which have been through 1.4 javac — a bigger change, not a one-liner. Note the
+`.test`-subpackage suite is unaffected and does run: `org/bouncycastle/tls/test/AllTests.java` is not
+excluded, so e.g. `Tls13CertificateStatusTest` is both compiled and executed.
