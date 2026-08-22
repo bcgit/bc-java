@@ -77,6 +77,11 @@ public class AIMerSigner
     @Override
     public boolean verifySignature(byte[] message, byte[] signature)
     {
+        // the envelope is message || signature: any other length would be indexed past its end or leave a trailing tail unread.
+        if (signature.length != message.length + params.getSignatureBytes())
+        {
+            return false;
+        }
         byte[] sig = new byte[params.getSignatureBytes()];
         AIMerEngine engine = new AIMerEngine(params);
         System.arraycopy(signature, message.length, sig, 0, params.getSignatureBytes());
