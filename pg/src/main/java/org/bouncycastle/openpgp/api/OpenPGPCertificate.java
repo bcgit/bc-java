@@ -1800,7 +1800,8 @@ public class OpenPGPCertificate
                     if (KeyIdentifier.matches(
                         rootLink.getSignature().getKeyIdentifiers(),
                         issuerKey.getKeyIdentifier(),
-                        true))
+                        true)
+                        && mayHaveIssued(issuerKey, rootLink.getSignature()))
                     {
                         OpenPGPSignatureChain externalChain = issuerKey.getSelfSignatureChains()
                             .getChainAt(rootLink.getSignature().getCreationTime());
@@ -1811,6 +1812,44 @@ public class OpenPGPCertificate
                 }
             }
             return chainsBy;
+        }
+
+        /**
+         * Return true if the given component key of a third-party certificate is permitted to have
+         * issued the given signature over a component of this certificate.
+         * <p>
+         * A key identifier only says which component key made a signature, not whether that
+         * component was granted the authority to make it. RFC 9580 Section 5.2.3.29 gives the
+         * certification flag ({@link KeyFlags#CERTIFY_OTHER}, "This key may be used to certify
+         * other keys") separately from the data-signing flag ({@link KeyFlags#SIGN_DATA}), which
+         * is what lets a certificate keep an offline certification primary key alongside online
+         * subkeys. Honouring a third-party certification or trust delegation from a subkey that
+         * was never granted the certification flag would hand that subkey the primary key's
+         * authority to bind identities and delegate introducer trust, so such a signature is not
+         * treated as issued by the certificate at all.
+         * <p>
+         * A primary key is accepted whatever its key flags say: it is certification-capable by
+         * construction - it binds the certificate's own user-ids and subkeys - and certificates
+         * that carry no key flags subpacket at all are common, where
+         * {@link OpenPGPComponentKey#isCertificationKey(Date)} answers false for want of a
+         * subpacket to read rather than because authority was withheld.
+         * <p>
+         * Revocations are deliberately outside this rule: declining to honour a third-party
+         * revocation keeps trust alive rather than withdrawing it, which is the more dangerous way
+         * to be wrong.
+         *
+         * @param issuerKey component key of the third-party certificate matching the signature's issuer
+         * @param signature third-party signature over a component of this certificate
+         * @return true if the signature may be attributed to the third-party certificate
+         */
+        private boolean mayHaveIssued(OpenPGPComponentKey issuerKey, OpenPGPComponentSignature signature)
+        {
+            if (issuerKey.isPrimaryKey() || signature.isRevocation())
+            {
+                return true;
+            }
+
+            return issuerKey.isCertificationKey(signature.getCreationTime());
         }
     }
 
