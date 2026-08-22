@@ -209,7 +209,7 @@ public class C509Certificate
             fields.issuer = C509Name.parse(in);
         }
 
-        fields.notBefore = in.readUnsignedInteger();
+        fields.notBefore = checkValiditySeconds(in.readUnsignedInteger(), "validityNotBefore");
         if (in.nextIsNull())
         {
             in.readNull();
@@ -217,7 +217,7 @@ public class C509Certificate
         }
         else
         {
-            fields.notAfter = in.readUnsignedInteger();
+            fields.notAfter = checkValiditySeconds(in.readUnsignedInteger(), "validityNotAfter");
             if (fields.notAfter == NO_EXPIRATION_DATE)
             {
                 throw new IOException("validityNotAfter of 99991231235959Z must be encoded as null");
@@ -232,6 +232,43 @@ public class C509Certificate
         fields.extensions = C509Extensions.parse(in);
 
         return fields;
+    }
+
+    /**
+     * Check a validity value read from an encoding lies in the X.509 time domain. The
+     * C509 validity fields are unbounded CBOR unsigned integers, but the X.509 view of
+     * them, a Time, reaches no further than {@link #NO_EXPIRATION_DATE}, so a larger
+     * value has no X.509 meaning to agree on: converting it to milliseconds overflows,
+     * and the reconstructed date it lands on collides with that of a legitimate value.
+     * Values are rejected here rather than clamped so that the encoding a certificate
+     * was accepted from stays the encoding its X.509 view was built from.
+     */
+    private static long checkValiditySeconds(long seconds, String field)
+        throws IOException
+    {
+        // CBORDecoder.readUnsignedInteger() has already excluded negative values
+        if (seconds > NO_EXPIRATION_DATE)
+        {
+            throw new IOException(field + " is after 99991231235959Z: " + seconds);
+        }
+        return seconds;
+    }
+
+    /**
+     * Convert a C509 validity value in POSIX seconds, as returned by
+     * {@link #getNotBefore()} and {@link #getNotAfter()}, to a Date.
+     *
+     * @param seconds a validity value in POSIX seconds.
+     * @throws IllegalArgumentException if the value lies outside the X.509 time domain,
+     *         which the validity values of a parsed or generated certificate cannot.
+     */
+    public static Date toDate(long seconds)
+    {
+        if (seconds < 0 || seconds > NO_EXPIRATION_DATE)
+        {
+            throw new IllegalArgumentException("validity value outside the X.509 time domain: " + seconds);
+        }
+        return new Date(seconds * 1000);
     }
 
     /**
@@ -366,6 +403,10 @@ public class C509Certificate
         {
             throw new IOException(field + " must not be before 1970-01-01T00:00:00Z");
         }
+        if (seconds > NO_EXPIRATION_DATE)
+        {
+            throw new IOException(field + " must not be after 9999-12-31T23:59:59Z");
+        }
         return seconds;
     }
 
@@ -485,8 +526,8 @@ public class C509Certificate
         tbsGen.setSignature(issuerSignatureAlgorithm.toX509AlgorithmIdentifier());
         X500Name issuerName = issuer == null ? subject.toX500Name() : issuer.toX500Name();
         tbsGen.setIssuer(issuerName);
-        tbsGen.setStartDate(new Time(new Date(notBefore * 1000), Locale.US));
-        tbsGen.setEndDate(new Time(new Date(notAfter * 1000), Locale.US));
+        tbsGen.setStartDate(new Time(toDate(notBefore), Locale.US));
+        tbsGen.setEndDate(new Time(toDate(notAfter), Locale.US));
         tbsGen.setSubject(subject.toX500Name());
         tbsGen.setSubjectPublicKeyInfo(subjectPublicKeyInfo);
         Extensions x509Extensions = extensions.toX509Extensions();

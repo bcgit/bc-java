@@ -608,6 +608,7 @@ CertPath support for implicit DSA parameters and a range of NameConstraints. Add
 <li>Flowdalic &lt;https://github.com/Flowdalic&gt; - initial implementation of an AnimalSniffer-based Android API-level compatibility check for the Gradle build (PR #336).</li>
 <li>hannesa2 &lt;https://github.com/hannesa2&gt; - initial Dependabot configuration for the Gradle and GitHub Actions ecosystems (PR #883).</li>
 <li>vladhuma &lt;https://github.com/vladhuma&gt; - initial implementation of server-side OCSP stapling for the BCJSSE provider, on behalf of Thales Group (PR #1740).</li>
+<li>Bhargava Shastry &lt;bshastry@posteo.de&gt; - reporting, with a self-checking reproducer, that the C509 validity fields were read as unbounded seconds and then given two meanings: displacing a type-3 certificate's validityNotAfter by 2^61 seconds left the reconstructed DER TBSCertificate and the issuer signature untouched, while C509CertificateHolder.isValidOn took the raw value and read an expired certificate as valid.</li>
 </ul>
 </body>
 </html>

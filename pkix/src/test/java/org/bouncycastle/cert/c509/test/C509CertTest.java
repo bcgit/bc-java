@@ -1,5 +1,7 @@
 package org.bouncycastle.cert.c509.test;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -18,6 +20,8 @@ import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.ExtensionsGenerator;
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.cbor.CBORDecoder;
+import org.bouncycastle.cbor.CBOREncoder;
 import org.bouncycastle.cbor.c509.C509Certificate;
 import org.bouncycastle.cbor.c509.C509CertificationRequest;
 import org.bouncycastle.cbor.c509.C509PrivateKey;
@@ -222,6 +226,80 @@ public class C509CertTest
 
         // holder round trip through JcaX509CertificateHolder
         assertTrue(Arrays.areEqual(der, new JcaX509CertificateHolder(jcaCert).getEncoded()));
+    }
+
+    public void testExpiredType3CannotBeRevivedByDisplacingNotAfter()
+        throws Exception
+    {
+        KeyPair issuerKp = generateECKeyPair();
+        KeyPair subjectKp = generateECKeyPair();
+
+        Date notBefore = new Date(1640995200000L);  // 2022-01-01T00:00:00Z
+        Date notAfter = new Date(1672531200000L);   // 2023-01-01T00:00:00Z
+        Date checkTime = new Date(1767225600000L);  // 2026-01-01T00:00:00Z, after expiry
+
+        X509CertificateHolder x509 = new X509v3CertificateBuilder(new X500Name("CN=C509 test CA"),
+            BigInteger.valueOf(4712), notBefore, notAfter, new X500Name("CN=C509 test EE"),
+            SubjectPublicKeyInfo.getInstance(subjectKp.getPublic().getEncoded()))
+            .addExtension(Extension.keyUsage, false, new KeyUsage(KeyUsage.digitalSignature))
+            .build(new JcaContentSignerBuilder("SHA256withECDSA").setProvider("BC").build(issuerKp.getPrivate()));
+
+        C509CertificateHolder holder = new C509CertificateHolder(
+            C509Certificate.fromX509Certificate(x509.getEncoded()));
+        assertTrue(holder.isSignatureValid(new JcaC509ContentVerifierProviderBuilder().setProvider("BC")
+            .build(SubjectPublicKeyInfo.getInstance(issuerKp.getPublic().getEncoded()))));
+        assertEquals(notAfter, holder.getNotAfter());
+        assertFalse(holder.isValidOn(checkTime));
+
+        // displacing notAfter by 2^61 seconds leaves the reconstructed DER, and so the
+        // signed bytes and the issuer signature, untouched; the holder must refuse the
+        // encoding rather than let its validity decision disagree with its own getters
+        long displaced = (notAfter.getTime() / 1000) + (1L << 61);
+        assertEquals(notAfter.getTime(), displaced * 1000);
+        byte[] forged = withValidityField(holder.getEncoded(), 5, displaced);
+        try
+        {
+            new C509CertificateHolder(forged);
+            fail("accepted a notAfter displaced past 99991231235959Z");
+        }
+        catch (IOException e)
+        {
+            assertEquals("validityNotAfter is after 99991231235959Z: " + displaced, e.getMessage());
+        }
+    }
+
+    /**
+     * Re-encode a C509 certificate with the CBOR item at the given index of the
+     * certificate array replaced by an unsigned integer, leaving every other item,
+     * including the issuer signature, exactly as it was.
+     */
+    private static byte[] withValidityField(byte[] encoding, int index, long seconds)
+        throws IOException
+    {
+        CBORDecoder in = new CBORDecoder(encoding);
+        int count = in.readArrayHeader();
+        byte[][] items = new byte[count][];
+        for (int i = 0; i != count; i++)
+        {
+            items[i] = in.readEncodedItem();
+        }
+        in.expectEnd();
+
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        CBOREncoder out = new CBOREncoder(bOut);
+        out.writeArrayHeader(count);
+        for (int i = 0; i != count; i++)
+        {
+            if (i == index)
+            {
+                out.writeUnsignedInteger(seconds);
+            }
+            else
+            {
+                out.writeEncoded(items[i]);
+            }
+        }
+        return bOut.toByteArray();
     }
 
     public void testNativeCertificationRequestBuildAndVerify()

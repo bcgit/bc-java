@@ -1,12 +1,17 @@
 package org.bouncycastle.cbor.c509.test;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigInteger;
+import java.util.Date;
 
 import junit.framework.TestCase;
 import org.bouncycastle.asn1.x509.Certificate;
+import org.bouncycastle.asn1.x509.TBSCertificate;
 import org.bouncycastle.test.TestResourceFinder;
+import org.bouncycastle.cbor.CBORDecoder;
+import org.bouncycastle.cbor.CBOREncoder;
 import org.bouncycastle.cbor.c509.C509AttributeType;
 import org.bouncycastle.cbor.c509.C509Certificate;
 import org.bouncycastle.cbor.c509.C509ConversionOptions;
@@ -269,6 +274,108 @@ public class C509CertificateTest
         System.arraycopy(good, nullIndex + 1, modified, nullIndex + uint9999.length,
             good.length - nullIndex - 1);
         expectRejected(modified, "notAfter 99991231235959Z as uint");
+    }
+
+    public void testValidityOutsideX509TimeDomainRejected()
+        throws Exception
+    {
+        byte[] good = vector("a1_c509_reencoded");
+        C509Certificate cert = C509Certificate.getInstance(good);
+
+        // adding 2^61 seconds moves a validity value by 125 * 2^64 milliseconds, so an
+        // accepted value would convert to the very millisecond the original did: the
+        // reconstructed X.509 date, the signed DER TBSCertificate and the issuer
+        // signature would all be unchanged, while a validity decision taken on the raw
+        // seconds saw an expiry roughly 73 billion years out
+        long wrapDelta = 1L << 61;
+        assertEquals(0L, wrapDelta * 1000);
+        expectRejected(withValidityField(good, 5, cert.getNotAfter() + wrapDelta),
+            "notAfter displaced by 2^61 seconds");
+        expectRejected(withValidityField(good, 4, cert.getNotBefore() + wrapDelta),
+            "notBefore displaced by 2^61 seconds");
+
+        // one second past 99991231235959Z is the first value with no X.509 meaning
+        expectRejected(withValidityField(good, 4, C509Certificate.NO_EXPIRATION_DATE + 1),
+            "notBefore after 99991231235959Z");
+        expectRejected(withValidityField(good, 5, C509Certificate.NO_EXPIRATION_DATE + 1),
+            "notAfter after 99991231235959Z");
+
+        // the largest value CBOR can carry, and the largest a Java long can hold
+        expectRejected(withValidityField(good, 5, Long.MAX_VALUE), "notAfter of 2^63-1");
+
+        // 99991231235959Z itself stays representable as a notBefore; as a notAfter it
+        // must take the null encoding, which testNotAfterMustUseNullFor9999 covers.
+        // The draft states no ordering requirement, so notBefore > notAfter is left to
+        // the validity decision, which simply never holds.
+        C509Certificate atLimit = C509Certificate.getInstance(
+            withValidityField(good, 4, C509Certificate.NO_EXPIRATION_DATE));
+        assertEquals(C509Certificate.NO_EXPIRATION_DATE, atLimit.getNotBefore());
+        assertEquals(253402300799000L, C509Certificate.toDate(C509Certificate.NO_EXPIRATION_DATE).getTime());
+    }
+
+    public void testGeneratedValidityBoundedToX509TimeDomain()
+        throws Exception
+    {
+        // the generation path applies the same bound, so no caller can mint a validity
+        // value the parse path would refuse to read back
+        TBSCertificate tbs = Certificate.getInstance(vector("a1_x509")).getTBSCertificate();
+        try
+        {
+            C509Certificate.createTBSCertificate(C509Certificate.TYPE_REENCODED_X509,
+                tbs.getSerialNumber().getValue(), tbs.getSignature(), tbs.getIssuer(),
+                new Date((C509Certificate.NO_EXPIRATION_DATE + 1) * 1000L), tbs.getEndDate().getDate(),
+                tbs.getSubject(), tbs.getSubjectPublicKeyInfo(), tbs.getExtensions(),
+                C509ConversionOptions.DEFAULT);
+            fail("accepted a validityNotBefore after 99991231235959Z");
+        }
+        catch (IOException e)
+        {
+            assertEquals("validityNotBefore must not be after 9999-12-31T23:59:59Z", e.getMessage());
+        }
+
+        try
+        {
+            C509Certificate.toDate(C509Certificate.NO_EXPIRATION_DATE + 1);
+            fail("converted a validity value outside the X.509 time domain");
+        }
+        catch (IllegalArgumentException e)
+        {
+            assertEquals("validity value outside the X.509 time domain: 253402300800", e.getMessage());
+        }
+    }
+
+    /**
+     * Re-encode a C509 certificate with the CBOR item at the given index of the
+     * certificate array replaced by an unsigned integer, leaving every other item,
+     * including the issuer signature, exactly as it was.
+     */
+    private static byte[] withValidityField(byte[] encoding, int index, long seconds)
+        throws IOException
+    {
+        CBORDecoder in = new CBORDecoder(encoding);
+        int count = in.readArrayHeader();
+        byte[][] items = new byte[count][];
+        for (int i = 0; i != count; i++)
+        {
+            items[i] = in.readEncodedItem();
+        }
+        in.expectEnd();
+
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        CBOREncoder out = new CBOREncoder(bOut);
+        out.writeArrayHeader(count);
+        for (int i = 0; i != count; i++)
+        {
+            if (i == index)
+            {
+                out.writeUnsignedInteger(seconds);
+            }
+            else
+            {
+                out.writeEncoded(items[i]);
+            }
+        }
+        return bOut.toByteArray();
     }
 
     public void testCertificationRequestTemplateRoundTrip()

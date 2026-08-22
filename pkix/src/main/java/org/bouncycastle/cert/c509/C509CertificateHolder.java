@@ -90,7 +90,7 @@ public class C509CertificateHolder
 
     public Date getNotBefore()
     {
-        return new Date(certificate.getNotBefore() * 1000);
+        return C509Certificate.toDate(certificate.getNotBefore());
     }
 
     /**
@@ -99,7 +99,7 @@ public class C509CertificateHolder
      */
     public Date getNotAfter()
     {
-        return new Date(certificate.getNotAfter() * 1000);
+        return C509Certificate.toDate(certificate.getNotAfter());
     }
 
     /**
@@ -111,6 +111,8 @@ public class C509CertificateHolder
         {
             throw new NullPointerException("'date' cannot be null");
         }
+        // the validity values are in the X.509 time domain, so this decision, the dates
+        // the getters return, and the reconstructed X.509 view all agree on their meaning
         long seconds = date.getTime() / 1000;
         return seconds >= certificate.getNotBefore() && seconds <= certificate.getNotAfter();
     }
