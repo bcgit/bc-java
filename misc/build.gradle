@@ -15,8 +15,12 @@ plugins {
 
 apply plugin: 'com.google.protobuf'
 
-def grpcVersion = '1.58.0' // keep in step with the grpc-* jars under test/libs
-def protocVersion = '3.22.3'
+// 1.83.1 clears CVE-2024-7246 (HPACK table poisoning through an HTTP/2 proxy, fixed in 1.58.3)
+// and CVE-2025-55163 (the MadeYouReset HTTP/2 DDoS, fixed in 1.75.0). protobuf-java arrives
+// transitively from grpc-protobuf; protocVersion below tracks it so the generated code and the
+// runtime agree, and is past 3.25.5, which fixed CVE-2024-7254 (recursion on unknown fields).
+def grpcVersion = '1.83.1'
+def protocVersion = '3.25.9'
 
 jar.archiveBaseName = "bcmisc-$vmrange"
 
@@ -40,22 +44,19 @@ dependencies {
 
     implementation group: 'javax.mail', name: 'mail', version: '1.4'
 
-    // The MLS interop harness only. These are the jars the mls module used to carry, still
-    // hand-placed under test/libs.
-    implementation(files("../test/libs/annotations-api-6.0.53.jar"))
-    implementation(files("../test/libs/guava-32.0.1-android.jar"))
-    implementation(files("../test/libs/failureaccess-1.0.1.jar"))
-    implementation(files("../test/libs/grpc-api-1.58.0.jar"))
-    implementation(files("../test/libs/grpc-protobuf-1.58.0.jar"))
-    implementation(files("../test/libs/grpc-protobuf-lite-1.58.0.jar"))
-    implementation(files("../test/libs/grpc-stub-1.58.0.jar"))
-    implementation(files("../test/libs/protobuf-java-3.22.3.jar"))
+    // The MLS interop harness only, and by coordinate rather than as hand-placed jars under
+    // test/libs, which were invisible both to Dependabot (see the note on files()/fileTree()
+    // in .github/dependabot.yml) and to any dependency scanner, so they sat three CVEs behind
+    // without anything to say so. grpc-api, grpc-core, protobuf-java, guava, failureaccess,
+    // perfmark and netty all arrive transitively, at versions consistent with each other.
+    implementation "io.grpc:grpc-protobuf:${grpcVersion}"
+    implementation "io.grpc:grpc-stub:${grpcVersion}"
 
-    compileOnly(files("../test/libs/grpc-services-1.58.0.jar"))
+    // javax.annotation.Generated, referenced by the generated service classes
+    compileOnly "org.apache.tomcat:annotations-api:6.0.53"
+    compileOnly "io.grpc:grpc-services:${grpcVersion}"
 
-    runtimeOnly(files("../test/libs/grpc-core-1.58.0.jar"))
-    runtimeOnly(files("../test/libs/grpc-netty-shaded-1.58.0.jar"))
-    runtimeOnly(files("../test/libs/perfmark-api-0.26.0.jar"))
+    runtimeOnly "io.grpc:grpc-netty-shaded:${grpcVersion}"
 
     // The example smoke tests (src/test) drive the S/MIME and OpenPGP examples
     // via their main() methods; they need JUnit and the same javax.mail runtime
