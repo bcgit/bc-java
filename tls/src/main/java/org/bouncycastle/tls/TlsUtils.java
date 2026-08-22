@@ -4950,12 +4950,28 @@ public class TlsUtils
 
         checkTlsFeatures(serverCertificate, clientExtensions, serverExtensions);
 
-        if (!isTLSv13)
+        CertificateStatus certificateStatus;
+        CertificateStatus[] certificateStatuses;
+
+        if (isTLSv13)
+        {
+            /*
+             * RFC 8446 4.4.2.1: there is no "certificate_status" message - each response arrived in
+             * an extension of the CertificateEntry carrying the certificate it answers for.
+             */
+            certificateStatuses = read13CertificateStatuses(clientContext, serverCertificate);
+            certificateStatus = certificateStatuses.length < 1 ? null : certificateStatuses[0];
+        }
+        else
         {
             keyExchange.processServerCertificate(serverCertificate);
+
+            certificateStatus = serverCertificateStatus;
+            certificateStatuses = spreadCertificateStatus(serverCertificate, serverCertificateStatus);
         }
 
-        clientAuthentication.notifyServerCertificate(new TlsServerCertificateImpl(serverCertificate, serverCertificateStatus));
+        clientAuthentication.notifyServerCertificate(
+            new TlsServerCertificateImpl(serverCertificate, certificateStatus, certificateStatuses));
     }
 
     static SignatureAndHashAlgorithm getCertSigAndHashAlg(TlsCertificate subjectCert, TlsCertificate issuerCert)
@@ -5694,6 +5710,100 @@ public class TlsUtils
     static TlsCredentialedSigner establish13ServerCredentials(TlsServer server) throws IOException
     {
         return validate13Credentials(server.getCredentials());
+    }
+
+    /**
+     * The OCSP staples a TLS 1.3 server attached to its Certificate message, read out per
+     * certificate: the inverse of {@link #add13CertificateStatus(Certificate, CertificateStatus)},
+     * which is how a BC server puts them there.
+     * <p/>
+     * RFC 8446 sec. 4.4.2.1 carries each response in a "status_request" extension of the
+     * CertificateEntry holding the certificate it answers for, so the result is positional -
+     * element <code>i</code> answers for certificate <code>i</code> of the chain, null where that
+     * entry carried no staple.
+     * <p/>
+     * A staple the client did not ask for is ignored rather than made a handshake failure, which is
+     * how this library has always treated an unsolicited one: RFC 8446 sec. 4.2 has a server answer
+     * only the extensions the client sent.
+     *
+     * @param certificate the Certificate message the server sent.
+     * @return one element per certificate of <code>certificate</code>, null where unstapled.
+     * @throws IOException if an entry the client asked about carries something other than an RFC 6066
+     *                     CertificateStatus of type ocsp; RFC 8446 sec. 4.4.2.1 admits nothing else,
+     *                     so this is a decode_error exactly as it is for the TLS 1.2
+     *                     "certificate_status" message.
+     */
+    static CertificateStatus[] read13CertificateStatuses(TlsContext context, Certificate certificate)
+        throws IOException
+    {
+        int certificateCount = certificate.getLength();
+
+        CertificateStatus[] certificateStatuses = new CertificateStatus[certificateCount];
+
+        if (context.getSecurityParametersHandshake().getStatusRequestVersion() < 1)
+        {
+            return certificateStatuses;
+        }
+
+        for (int i = 0; i < certificateCount; ++i)
+        {
+            Hashtable extensions = certificate.getCertificateEntryAt(i).getExtensions();
+
+            byte[] extensionData = getExtensionData(extensions, TlsExtensionsUtils.EXT_status_request);
+            if (null != extensionData)
+            {
+                certificateStatuses[i] = TlsExtensionsUtils.readStatusRequestExtension13(context, extensionData);
+            }
+        }
+
+        return certificateStatuses;
+    }
+
+    /**
+     * The responses of a "certificate_status" message read out per certificate, so that a caller can
+     * pair each one with the certificate it answers for whichever version was negotiated.
+     * {@link CertificateStatusType#ocsp} answers for the end-entity certificate alone, and
+     * {@link CertificateStatusType#ocsp_multi} answers positionally (RFC 6961 sec. 2.2 - the list may
+     * be shorter than the chain, and an element may be absent where no response is held).
+     *
+     * @param certificate       the Certificate message the server sent.
+     * @param certificateStatus the status message it sent, or null for none.
+     * @return one element per certificate of <code>certificate</code>, null where unstapled.
+     */
+    static CertificateStatus[] spreadCertificateStatus(Certificate certificate, CertificateStatus certificateStatus)
+    {
+        int certificateCount = certificate.getLength();
+
+        CertificateStatus[] certificateStatuses = new CertificateStatus[certificateCount];
+
+        if (null != certificateStatus && certificateCount > 0)
+        {
+            switch (certificateStatus.getStatusType())
+            {
+            case CertificateStatusType.ocsp:
+            {
+                certificateStatuses[0] = certificateStatus;
+                break;
+            }
+            case CertificateStatusType.ocsp_multi:
+            {
+                Vector ocspResponseList = certificateStatus.getOCSPResponseList();
+                int count = Math.min(certificateCount, ocspResponseList.size());
+
+                for (int i = 0; i < count; ++i)
+                {
+                    OCSPResponse ocspResponse = (OCSPResponse)ocspResponseList.elementAt(i);
+                    if (null != ocspResponse)
+                    {
+                        certificateStatuses[i] = new CertificateStatus(CertificateStatusType.ocsp, ocspResponse);
+                    }
+                }
+                break;
+            }
+            }
+        }
+
+        return certificateStatuses;
     }
 
     /**

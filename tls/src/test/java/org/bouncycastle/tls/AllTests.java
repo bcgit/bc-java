@@ -24,6 +24,7 @@ public class AllTests
         suite.addTestSuite(Add13CertificateStatusTest.class);
         suite.addTestSuite(CheckTlsFeaturesExtensionTest.class);
         suite.addTestSuite(DTLSReassemblerTest.class);
+        suite.addTestSuite(SpreadCertificateStatusTest.class);
 
         return new BCTestSetup(suite);
     }

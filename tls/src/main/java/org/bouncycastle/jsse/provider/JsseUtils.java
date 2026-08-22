@@ -57,7 +57,7 @@ import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.TlsCredentialedDecryptor;
 import org.bouncycastle.tls.TlsCredentialedSigner;
-import org.bouncycastle.tls.TlsExtensionsUtils;
+import org.bouncycastle.tls.TlsServerCertificate;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.TrustedAuthority;
 import org.bouncycastle.tls.crypto.TlsCertificate;
@@ -621,7 +621,9 @@ abstract class JsseUtils
     /**
      * The stapled responses from a TLS 1.3 Certificate message, where RFC 8446 sec. 4.4.2.1 carries
      * each one in a "status_request" extension of the CertificateEntry it belongs to rather than in a
-     * CertificateStatus handshake message.
+     * CertificateStatus handshake message. The reading of those extensions - including ignoring a
+     * staple the client never asked for - belongs to the TLS layer, which hands them over per
+     * certificate through {@link TlsServerCertificate#getCertificateStatusAt(int)}.
      * <p/>
      * The result is positional: element <code>i</code> answers for certificate <code>i</code> of the
      * chain, with a zero-length element where an entry carried no staple. That is the contract
@@ -631,61 +633,26 @@ abstract class JsseUtils
      *
      * @return the responses, or null if no entry carried one.
      */
-    static List<byte[]> getStatusResponses13(TlsContext context, Certificate certificateMessage)
-        throws IOException
+    static List<byte[]> getStatusResponses13(TlsServerCertificate serverCertificate) throws IOException
     {
-        /*
-         * RFC 8446 4.2: a server does not answer an extension the client did not send. An
-         * unsolicited staple is ignored rather than made a handshake failure, which is how this
-         * library has always treated one.
-         */
-        if (context.getSecurityParametersHandshake().getStatusRequestVersion() < 1)
-        {
-            return null;
-        }
-
-        CertificateEntry[] certificateEntryList = certificateMessage.getCertificateEntryList();
-        int count = certificateEntryList.length;
+        int count = serverCertificate.getCertificate().getLength();
 
         ArrayList<byte[]> statusResponses = new ArrayList<byte[]>(count);
 
         boolean anyStatusResponse = false;
         for (int i = 0; i < count; ++i)
         {
-            byte[] statusResponse = getStatusResponse13(context, certificateEntryList[i]);
+            CertificateStatus certificateStatus = serverCertificate.getCertificateStatusAt(i);
+
+            byte[] statusResponse = null == certificateStatus
+                ?   TlsUtils.EMPTY_BYTES
+                :   getStatusResponse(certificateStatus.getOCSPResponse());
 
             anyStatusResponse |= (statusResponse.length > 0);
             statusResponses.add(statusResponse);
         }
 
         return anyStatusResponse ? Collections.unmodifiableList(statusResponses) : null;
-    }
-
-    private static byte[] getStatusResponse13(TlsContext context, CertificateEntry certificateEntry)
-        throws IOException
-    {
-        Hashtable<?, ?> extensions = certificateEntry.getExtensions();
-        if (null == extensions)
-        {
-            return TlsUtils.EMPTY_BYTES;
-        }
-
-        byte[] extensionData = (byte[])extensions.get(TlsExtensionsUtils.EXT_status_request);
-        if (null == extensionData)
-        {
-            return TlsUtils.EMPTY_BYTES;
-        }
-
-        /*
-         * RFC 8446 4.4.2.1: "the body of the "status_request" extension from the server MUST be a
-         * CertificateStatus structure as defined in [RFC6066]" - so a single response, never the
-         * ocsp_multi form. A malformed one is a decode_error, as it already is for the TLS 1.2
-         * CertificateStatus handshake message.
-         */
-        CertificateStatus certificateStatus = TlsExtensionsUtils.readStatusRequestExtension13(context,
-            extensionData);
-
-        return getStatusResponse(certificateStatus.getOCSPResponse());
     }
 
     static X500Principal[] getTrustedIssuers(Vector<TrustedAuthority> trustedCAKeys) throws IOException
