@@ -5,6 +5,9 @@ import java.security.SecureRandom;
 import junit.framework.TestCase;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.digests.SHA256Digest;
+import org.bouncycastle.pqc.crypto.aimer.AIMerParameters;
+import org.bouncycastle.pqc.crypto.aimer.AIMerPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.aimer.AIMerSigner;
 import org.bouncycastle.pqc.crypto.falcon.FalconParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.falcon.FalconSigner;
@@ -47,6 +50,7 @@ import org.bouncycastle.pqc.crypto.snova.SnovaSigner;
 import org.bouncycastle.pqc.crypto.sphincs.SPHINCSPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.sqisign.SQIsignParameters;
 import org.bouncycastle.pqc.crypto.sqisign.SQIsignPublicKeyParameters;
+import org.bouncycastle.pqc.crypto.sqisign.SQIsignSigner;
 import org.bouncycastle.pqc.crypto.xmss.XMSSKeyGenerationParameters;
 import org.bouncycastle.pqc.crypto.xmss.XMSSKeyPairGenerator;
 import org.bouncycastle.pqc.crypto.xmss.XMSSMTKeyGenerationParameters;
@@ -69,7 +73,10 @@ public class PqcMalformedInputTest
 {
     private static final byte[] MESSAGE = new byte[]{ 0x01, 0x02, 0x03, 0x04 };
 
-    // #15: verifySignature must return false (not throw) on an empty or one-byte signature.
+    // #15: verifySignature must return false (not throw) on an empty or one-byte
+    // signature. The trailing-bytes half of the same rule - a valid signature with
+    // data appended must not verify either - needs a genuine signature to bite and
+    // so lives in PqcSignatureEncodingTest, not here.
     public void testMalformedSignatureReturnsFalse()
         throws Exception
     {
@@ -101,6 +108,21 @@ public class PqcMalformedInputTest
         qruov.init(false, new QRUOVPublicKeyParameters(qruovParams, new byte[qruovParams.getPublicKeyBytes()]));
         assertFalse(qruov.verifySignature(MESSAGE, new byte[0]));
         assertFalse(qruov.verifySignature(MESSAGE, new byte[1]));
+
+        // SQIsign (fixed-size signature).
+        SQIsignParameters sqisignParams = SQIsignParameters.sqisign_lvl1;
+        SQIsignSigner sqisign = new SQIsignSigner();
+        sqisign.init(false, new SQIsignPublicKeyParameters(sqisignParams, new byte[sqisignParams.getPublicKeyLength()]));
+        assertFalse(sqisign.verifySignature(MESSAGE, new byte[0]));
+        assertFalse(sqisign.verifySignature(MESSAGE, new byte[1]));
+
+        // AIMer (fixed-size signature, read at a fixed offset - a short buffer used
+        // to be indexed past its end rather than reported, github #2401).
+        AIMerParameters aimerParams = AIMerParameters.aimer128f;
+        AIMerSigner aimer = new AIMerSigner();
+        aimer.init(false, new AIMerPublicKeyParameters(aimerParams, new byte[aimerParams.getPublicKeyBytes()]));
+        assertFalse(aimer.verifySignature(MESSAGE, new byte[0]));
+        assertFalse(aimer.verifySignature(MESSAGE, new byte[1]));
 
         // XMSS (stateful, parse must not throw out of verify).
         XMSSKeyPairGenerator xmssGen = new XMSSKeyPairGenerator();
