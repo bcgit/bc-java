@@ -6,12 +6,13 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.pqc.crypto.MessageSigner;
-import org.bouncycastle.util.Arrays;
 
 /**
- * QR-UOV signature implementation. Signing outputs the canonical
- * {@code signature || message} envelope per the reference NIST KAT format;
- * verification accepts a signature whose tail can carry the message.
+ * QR-UOV signature implementation. Signing outputs the bare signature,
+ * {@link QRUOVParameters#getSignatureBytes()} of them, and verification
+ * requires exactly that. The reference NIST KAT files record the
+ * {@code signature || message} "sm" envelope instead; that is a property of
+ * the KAT harness rather than of the signature, and the test rebuilds it.
  */
 public class QRUOVSigner
     implements MessageSigner
@@ -79,17 +80,16 @@ public class QRUOVSigner
         byte[] sigBytes = new byte[params.getSignatureBytes()];
         engine.storeSignature(sigR, sigS, sigBytes);
 
-        // The KAT envelope is signature || message
-        return Arrays.concatenate(sigBytes, message);
+        return sigBytes;
     }
 
     public boolean verifySignature(byte[] message, byte[] signature)
     {
-        // Reject a signature shorter than one parameter-set signature: the
-        // signature || message envelope must carry at least the signature, and
-        // a shorter buffer would throw ArrayIndexOutOfBoundsException in the
-        // arraycopy below.
-        if (signature.length < params.getSignatureBytes())
+        // A QR-UOV signature is exactly getSignatureBytes() long, so require
+        // that: a shorter buffer would be indexed past its end, and accepting a
+        // longer one would make the encoding non-unique - trailing bytes could
+        // be added to a valid signature and it would still verify.
+        if (signature.length != params.getSignatureBytes())
         {
             return false;
         }
@@ -110,22 +110,9 @@ public class QRUOVSigner
         byte[][][][] P3 = new byte[m][M][L][M];
         engine.restoreP3(pkBytes, pb, P3);
 
-        // Only the first signatureBytes of `signature` are the actual sig.
-        int sigBytes = params.getSignatureBytes();
-        byte[] sigOnly;
-        if (signature.length == sigBytes)
-        {
-            sigOnly = signature;
-        }
-        else
-        {
-            sigOnly = new byte[sigBytes];
-            System.arraycopy(signature, 0, sigOnly, 0, sigBytes);
-        }
-
         byte[] sigR = new byte[saltLen];
         byte[][] sigS = new byte[N][L];
-        engine.restoreSignature(sigOnly, sigR, sigS);
+        engine.restoreSignature(signature, sigR, sigS);
 
         return engine.verify(seedPk, P3, message, sigR, sigS);
     }

@@ -14,6 +14,7 @@ import org.bouncycastle.pqc.crypto.qruov.QRUOVParameters;
 import org.bouncycastle.pqc.crypto.qruov.QRUOVPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.qruov.QRUOVPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.qruov.QRUOVSigner;
+import org.bouncycastle.util.Arrays;
 
 public class QRUOVTest
     extends TestCase
@@ -149,6 +150,14 @@ public class QRUOVTest
             public MessageSigner getMessageSigner()
             {
                 return new QRUOVSigner();
+            }
+
+            // the KAT files record the NIST crypto_sign "sm" envelope,
+            // signature || message; the signer returns the bare signature.
+            @Override
+            public byte[] toVectorSignature(byte[] signature, byte[] message)
+            {
+                return Arrays.concatenate(signature, message);
             }
         });
         long end = System.currentTimeMillis();

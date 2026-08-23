@@ -101,18 +101,18 @@ public class SnovaSigner
         }
         signDigestCore(signature, hash, salt, keyElements.map1.aAlpha, keyElements.map1.bAlpha, keyElements.map1.qAlpha1, keyElements.map1.qAlpha2,
             keyElements.T12, keyElements.map2.f11, keyElements.map2.f12, keyElements.map2.f21, publicKeySeed, ptPrivateKeySeed);
-        return Arrays.concatenate(signature, message);
+        return signature;
     }
 
     @Override
     public boolean verifySignature(byte[] message, byte[] signature)
     {
-        // Reject a buffer too short to contain a signature before indexing it:
-        // generateSignature returns the signature optionally followed by the
-        // message (the signed-message envelope), and verifySignatureCore reads
-        // only the leading signature bytes; a shorter buffer would throw
-        // ArrayIndexOutOfBoundsException.
-        if (signature.length < ((params.getN() * params.getLsq() + 1) >>> 1) + params.getSaltLength())
+        // A Snova signature is exactly the encoded solution plus the salt, so
+        // require that length: a shorter buffer would be indexed past its end,
+        // and accepting a longer one would make the encoding non-unique -
+        // trailing bytes could be added to a valid signature and it would still
+        // verify.
+        if (signature.length != ((params.getN() * params.getLsq() + 1) >>> 1) + params.getSaltLength())
         {
             return false;
         }

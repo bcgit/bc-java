@@ -95,7 +95,7 @@ public class PqcMalformedInputTest
         assertFalse(snova.verifySignature(MESSAGE, new byte[0]));
         assertFalse(snova.verifySignature(MESSAGE, new byte[1]));
 
-        // QR-UOV (signature || message envelope, must carry at least the signature).
+        // QR-UOV (fixed-size signature).
         QRUOVParameters qruovParams = QRUOVParameters.qruov_1_q127_L3_v156_m54_shake;
         QRUOVSigner qruov = new QRUOVSigner();
         qruov.init(false, new QRUOVPublicKeyParameters(qruovParams, new byte[qruovParams.getPublicKeyBytes()]));

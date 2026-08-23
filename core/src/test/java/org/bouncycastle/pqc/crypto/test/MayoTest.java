@@ -13,6 +13,7 @@ import org.bouncycastle.pqc.crypto.mayo.MayoParameters;
 import org.bouncycastle.pqc.crypto.mayo.MayoPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.mayo.MayoPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.mayo.MayoSigner;
+import org.bouncycastle.util.Arrays;
 
 public class MayoTest
     extends TestCase
@@ -85,6 +86,14 @@ public class MayoTest
             public MessageSigner getMessageSigner()
             {
                 return new MayoSigner();
+            }
+
+            // the KAT files record the NIST crypto_sign "sm" envelope,
+            // signature || message; the signer returns the bare signature.
+            @Override
+            public byte[] toVectorSignature(byte[] signature, byte[] message)
+            {
+                return Arrays.concatenate(signature, message);
             }
         });
         long end = System.currentTimeMillis();

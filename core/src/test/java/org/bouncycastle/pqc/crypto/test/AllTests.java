@@ -58,6 +58,7 @@ public class AllTests
         suite.addTestSuite(AIMerTest.class);
         suite.addTestSuite(PublicKeyLengthValidationTest.class);
         suite.addTestSuite(PqcMalformedInputTest.class);
+        suite.addTestSuite(PqcSignatureEncodingTest.class);
         suite.addTestSuite(PqcUnmappedAlgorithmOidTest.class);
         suite.addTestSuite(SmaugTTest.class);
 

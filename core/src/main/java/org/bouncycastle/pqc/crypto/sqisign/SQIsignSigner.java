@@ -106,8 +106,7 @@ public class SQIsignSigner
         {
             throw new IllegalStateException("SQIsign sign: protocols_sign failed");
         }
-        return org.bouncycastle.util.Arrays.concatenate(
-            SQIsignEncodeLvl1.signatureToBytes(sig), message);
+        return SQIsignEncodeLvl1.signatureToBytes(sig);
     }
 
     private byte[] signLvl3(byte[] message)
@@ -122,8 +121,7 @@ public class SQIsignSigner
         {
             throw new IllegalStateException("SQIsign sign: protocols_sign failed");
         }
-        return org.bouncycastle.util.Arrays.concatenate(
-            SQIsignEncodeLvl3.signatureToBytes(sig), message);
+        return SQIsignEncodeLvl3.signatureToBytes(sig);
     }
 
     private byte[] signLvl5(byte[] message)
@@ -138,8 +136,7 @@ public class SQIsignSigner
         {
             throw new IllegalStateException("SQIsign sign: protocols_sign failed");
         }
-        return org.bouncycastle.util.Arrays.concatenate(
-            SQIsignEncodeLvl5.signatureToBytes(sig), message);
+        return SQIsignEncodeLvl5.signatureToBytes(sig);
     }
 
     public boolean verifySignature(byte[] message, byte[] signature)
@@ -165,7 +162,7 @@ public class SQIsignSigner
 
     private boolean verifyLvl1(byte[] message, byte[] signature)
     {
-        if (signature == null || signature.length < SQIsignEncodeLvl1.SIGNATURE_BYTES)
+        if (signature == null || signature.length != SQIsignEncodeLvl1.SIGNATURE_BYTES)
         {
             return false;
         }
@@ -173,8 +170,6 @@ public class SQIsignSigner
         SQIsignSignatureLvl1 sig;
         try
         {
-            // The first SIGNATURE_BYTES are the signature; any trailing bytes
-            // (e.g. the appended message in NIST "sm" format) are ignored.
             sig = SQIsignEncodeLvl1.signatureFromBytes(signature);
         }
         catch (IllegalArgumentException e)
@@ -193,7 +188,7 @@ public class SQIsignSigner
 
     private boolean verifyLvl3(byte[] message, byte[] signature)
     {
-        if (signature == null || signature.length < SQIsignEncodeLvl3.SIGNATURE_BYTES)
+        if (signature == null || signature.length != SQIsignEncodeLvl3.SIGNATURE_BYTES)
         {
             return false;
         }
@@ -219,7 +214,7 @@ public class SQIsignSigner
 
     private boolean verifyLvl5(byte[] message, byte[] signature)
     {
-        if (signature == null || signature.length < SQIsignEncodeLvl5.SIGNATURE_BYTES)
+        if (signature == null || signature.length != SQIsignEncodeLvl5.SIGNATURE_BYTES)
         {
             return false;
         }

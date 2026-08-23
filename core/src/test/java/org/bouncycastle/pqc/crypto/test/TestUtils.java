@@ -55,6 +55,20 @@ class TestUtils
         {
             return pubParams;
         }
+
+        /**
+         * Rebuild the value the KAT file records from the signature
+         * generateSignature() returned. The default is the identity - the file
+         * records the signature itself. A scheme whose vectors record the NIST
+         * crypto_sign "sm" (signed message) envelope overrides this to wrap the
+         * signature the way the reference harness did, so that the signer itself
+         * can return the bare signature. FalconTest does the same reconstruction
+         * inline, Falcon's envelope being too involved to express here.
+         */
+        public byte[] toVectorSignature(byte[] signature, byte[] message)
+        {
+            return signature;
+        }
     }
 
     public interface KeyEncapsulationOperation
@@ -239,7 +253,7 @@ class TestUtils
 //                                System.out.println(i + " " + sigGenerated[i] + " " + signature[i]);
 //                            }
 //                        }
-                        Assert.assertTrue(Arrays.areEqual(sigGenerated, signature));
+                        Assert.assertTrue(Arrays.areEqual(operation.toVectorSignature(sigGenerated, message), signature));
 
                         if (isSigner)
                         {

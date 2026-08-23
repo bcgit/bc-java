@@ -64,7 +64,7 @@ public class AIMerSigner
     @Override
     public byte[] generateSignature(byte[] message)
     {
-        byte[] sig = new byte[params.getSignatureBytes() + message.length];
+        byte[] sig = new byte[params.getSignatureBytes()];
         AIMerEngine engine = new AIMerEngine(params);
         int result = engine.crypto_sign_signature(sig, message, message.length, privKey.getEncoded(), params, random);
         if (result == 0)
@@ -77,14 +77,15 @@ public class AIMerSigner
     @Override
     public boolean verifySignature(byte[] message, byte[] signature)
     {
-        // the envelope is message || signature: any other length would be indexed past its end or leave a trailing tail unread.
-        if (signature.length != message.length + params.getSignatureBytes())
+        // An AIMer signature is exactly getSignatureBytes() long: a shorter buffer
+        // would be indexed past its end, and accepting a longer one would make the
+        // encoding non-unique - trailing bytes could be added to a valid signature
+        // and it would still verify.
+        if (signature.length != params.getSignatureBytes())
         {
             return false;
         }
-        byte[] sig = new byte[params.getSignatureBytes()];
         AIMerEngine engine = new AIMerEngine(params);
-        System.arraycopy(signature, message.length, sig, 0, params.getSignatureBytes());
-        return engine.crypto_sign_verify(sig, sig.length, message, message.length, pubKey.getEncoded(), params) == 0;
+        return engine.crypto_sign_verify(signature, signature.length, message, message.length, pubKey.getEncoded(), params) == 0;
     }
 }

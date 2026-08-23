@@ -76,13 +76,10 @@ public class MayoRetryTest
             RetryForcingSigner signer = new RetryForcingSigner();
             signer.init(true, new ParametersWithRandom(
                 (MayoPrivateKeyParameters)kp.getPrivate(), random));
-            byte[] sigPlusMsg = signer.generateSignature(message);
+            byte[] sig = signer.generateSignature(message);
 
-            // generateSignature returns sig || message; verifySignature expects the
-            // signature portion only.
-            int sigBytes = parameters.getSigBytes();
-            byte[] sig = new byte[sigBytes];
-            System.arraycopy(sigPlusMsg, 0, sig, 0, sigBytes);
+            assertEquals("signature length for " + parameters,
+                parameters.getSigBytes(), sig.length);
 
             MayoSigner verifier = new MayoSigner();
             verifier.init(false, (MayoPublicKeyParameters)kp.getPublic());

@@ -81,7 +81,7 @@ public class MayoSigner
      * Follows the signature generation process outlined in the MAYO specification document.
      *
      * @param message The message to be signed
-     * @return The signature bytes concatenated with the original message
+     * @return The signature bytes, {@link MayoParameters#getSigBytes()} of them
      * @see <a href="https://pqmayo.org/assets/specs/mayo.pdf">MAYO Spec Algorithm 8 and 10</a>
      */
     @Override
@@ -256,7 +256,7 @@ public class MayoSigner
             GF16.encode(s, sig, nk);
             System.arraycopy(salt, 0, sig, sig.length - saltBytes, saltBytes);
 
-            return Arrays.concatenate(sig, message);
+            return sig;
         }
         finally
         {
@@ -287,12 +287,12 @@ public class MayoSigner
     @Override
     public boolean verifySignature(byte[] message, byte[] signature)
     {
-        // Reject a buffer too short to contain a signature before indexing it:
-        // generateSignature returns the signature optionally followed by the
-        // message (the signed-message envelope), and verify reads only the
-        // leading getSigBytes() bytes (the encoded solution and the salt); a
-        // shorter buffer would throw ArrayIndexOutOfBoundsException.
-        if (signature.length < params.getSigBytes())
+        // A MAYO signature is exactly getSigBytes() long (the encoded solution and
+        // the salt), so require that: a shorter buffer would be indexed past its
+        // end, and accepting a longer one would make the encoding non-unique -
+        // trailing bytes could be added to a valid signature and it would still
+        // verify.
+        if (signature.length != params.getSigBytes())
         {
             return false;
         }

@@ -725,7 +725,7 @@ class AIMerEngine
     /**
      * Generate an AIMER signature
      *
-     * @param sig    Output signature (will be filled)
+     * @param sig    Output signature (will be filled), exactly getSignatureBytes() long
      * @param m      Message to sign
      * @param mlen   Message length
      * @param sk     Secret key
@@ -791,8 +791,7 @@ class AIMerEngine
         //////////////////////////////////////////////////////
         // Phase 5: Opening the views of the MPC protocols. //
         //////////////////////////////////////////////////////
-        System.arraycopy(m, 0, sig, 0, m.length);
-        pos = m.length;
+        pos = 0;
         System.arraycopy(sign.salt, 0, sig, pos, sign.salt.length);
         pos += sign.salt.length;
 

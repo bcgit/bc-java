@@ -98,21 +98,31 @@ public class AIMerTest
             {
                 return new AIMerSigner();
             }
+
+            // the KAT files record the NIST crypto_sign "sm" envelope, which
+            // AIMer's reference harness lays out as message || signature;
+            // the signer returns the bare signature.
+            @Override
+            public byte[] toVectorSignature(byte[] signature, byte[] message)
+            {
+                return Arrays.concatenate(message, signature);
+            }
         });
         long end = System.currentTimeMillis();
         System.out.println("time cost: " + (end - start) + "\n");
     }
 
     /**
-     * verifySignature() is handed the message || signature envelope
-     * generateSignature() produces, so it has to require exactly that length:
-     * a shorter buffer used to be indexed past its end, and a longer one had
-     * its trailing bytes ignored, so a valid signature with data appended
-     * still verified.
+     * verifySignature() takes the bare signature, so it has to require exactly
+     * getSignatureBytes(): a shorter buffer used to be indexed past its end, and
+     * a longer one had its trailing bytes ignored, so a valid signature with data
+     * appended still verified.
      *
-     * The first KAT vector of each parameter set supplies a public key and a
-     * valid envelope, which keeps this off the key generation and signing
-     * paths - a valid envelope is what makes the appended-data cases bite.
+     * The first KAT vector of each parameter set supplies a public key and the
+     * message || signature envelope the reference harness records, which keeps
+     * this off the key generation and signing paths - a valid signature is what
+     * makes the appended-data cases bite. It also pins the envelope itself:
+     * handing verify the whole thing must now fail.
      */
     public void testWrongLengthSignatureRejected()
         throws Exception
@@ -125,22 +135,25 @@ public class AIMerTest
             HashMap vector = readFirstVector(files[fileIndex]);
             byte[] message = Hex.decode((String)vector.get("msg"));
             byte[] pk = Hex.decode((String)vector.get("pk"));
-            byte[] signature = Hex.decode((String)vector.get("sm"));
+            byte[] sm = Hex.decode((String)vector.get("sm"));
 
             AIMerSigner verifier = new AIMerSigner();
             verifier.init(false, new AIMerPublicKeyParameters(parameters, pk));
 
-            assertEquals(name, message.length + parameters.getSignatureBytes(), signature.length);
+            assertEquals(name, message.length + parameters.getSignatureBytes(), sm.length);
+            byte[] signature = Arrays.copyOfRange(sm, message.length, sm.length);
             assertTrue(name, verifier.verifySignature(message, signature));
 
-            // a short envelope must be rejected rather than indexed past its end
+            // a short signature must be rejected rather than indexed past its end
             assertFalse(name, verifier.verifySignature(message, new byte[0]));
-            assertFalse(name, verifier.verifySignature(message, Arrays.copyOf(signature, message.length)));
             assertFalse(name, verifier.verifySignature(message, Arrays.copyOf(signature, signature.length - 1)));
 
             // trailing data must not be silently ignored
             assertFalse(name, verifier.verifySignature(message, Arrays.append(signature, (byte)0)));
             assertFalse(name, verifier.verifySignature(message, Arrays.concatenate(signature, new byte[16])));
+
+            // and the KAT envelope is not itself a signature
+            assertFalse(name, verifier.verifySignature(message, sm));
         }
     }
 

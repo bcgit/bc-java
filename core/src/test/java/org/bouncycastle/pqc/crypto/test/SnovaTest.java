@@ -13,6 +13,7 @@ import org.bouncycastle.pqc.crypto.snova.SnovaParameters;
 import org.bouncycastle.pqc.crypto.snova.SnovaPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.snova.SnovaPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.snova.SnovaSigner;
+import org.bouncycastle.util.Arrays;
 
 
 public class SnovaTest
@@ -165,6 +166,14 @@ public class SnovaTest
             public MessageSigner getMessageSigner()
             {
                 return new SnovaSigner();
+            }
+
+            // the KAT files record the NIST crypto_sign "sm" envelope,
+            // signature || message; the signer returns the bare signature.
+            @Override
+            public byte[] toVectorSignature(byte[] signature, byte[] message)
+            {
+                return Arrays.concatenate(signature, message);
             }
         });
         long end = System.currentTimeMillis();

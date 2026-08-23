@@ -14,6 +14,7 @@ import org.bouncycastle.pqc.crypto.sqisign.SQIsignParameters;
 import org.bouncycastle.pqc.crypto.sqisign.SQIsignPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.sqisign.SQIsignPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.sqisign.SQIsignSigner;
+import org.bouncycastle.util.Arrays;
 
 /**
  * KAT-driven tests for SQIsign. Mirrors the structure of {@link MayoTest}: a
@@ -96,6 +97,14 @@ public class SQIsignTest
                 public MessageSigner getMessageSigner()
                 {
                     return new SQIsignSigner();
+                }
+
+                // the KAT files record the NIST crypto_sign "sm" envelope,
+                // signature || message; the signer returns the bare signature.
+                @Override
+                public byte[] toVectorSignature(byte[] signature, byte[] message)
+                {
+                    return Arrays.concatenate(signature, message);
                 }
             });
         long end = System.currentTimeMillis();
