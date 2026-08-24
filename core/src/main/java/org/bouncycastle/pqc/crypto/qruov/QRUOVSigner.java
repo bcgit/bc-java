@@ -112,7 +112,12 @@ public class QRUOVSigner
 
         byte[] sigR = new byte[saltLen];
         byte[][] sigS = new byte[N][L];
-        engine.restoreSignature(signature, sigR, sigS);
+        // an F_q element outside [0, q), or a set padding bit after the last element, is a second
+        // encoding of a signature that would otherwise verify - see restoreSignature
+        if (!engine.restoreSignature(signature, sigR, sigS))
+        {
+            return false;
+        }
 
         return engine.verify(seedPk, P3, message, sigR, sigS);
     }

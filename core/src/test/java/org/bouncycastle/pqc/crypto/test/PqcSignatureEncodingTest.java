@@ -130,4 +130,137 @@ public class PqcSignatureEncodingTest
         assertFalse(name + ": empty signature must not verify",
             verifier.verifySignature(MESSAGE, new byte[0]));
     }
+
+    /**
+     * Requiring the signature to be exactly the right length pins down what follows it, but not
+     * bits inside it that the decoder never reads. For a SNOVA parameter set whose solution is an
+     * odd number of GF(16) nibbles, the last byte of the solution carries one nibble and the top
+     * four bits are spare - sixteen byte strings used to verify for one signature.
+     */
+    public void testSnovaUnusedNibbleMustBeZero()
+    {
+        // n * l^2 = 33 * 9 = 297, odd. SNOVA_24_5_4 (29 * 16 = 464) has no spare nibble.
+        SnovaParameters parameters = SnovaParameters.SNOVA_25_8_3_SSK;
+        SnovaKeyPairGenerator kpGen = new SnovaKeyPairGenerator();
+        kpGen.init(new SnovaKeyGenerationParameters(new SecureRandom(), parameters));
+        AsymmetricCipherKeyPair kp = kpGen.generateKeyPair();
+
+        int sigNibbles = parameters.getN() * parameters.getLsq();
+        assertTrue("parameter set must have a spare nibble to test", (sigNibbles & 1) != 0);
+        int lastBodyByte = ((sigNibbles + 1) >>> 1) - 1;
+
+        SnovaSigner signer = new SnovaSigner();
+        signer.init(true, new ParametersWithRandom(kp.getPrivate(), new SecureRandom()));
+        byte[] signature = signer.generateSignature(MESSAGE);
+
+        SnovaSigner verifier = new SnovaSigner();
+        verifier.init(false, kp.getPublic());
+        assertTrue("SNOVA: signature must verify", verifier.verifySignature(MESSAGE, signature));
+        assertEquals("SNOVA: the signer must leave the spare nibble zero",
+            0, signature[lastBodyByte] & 0xF0);
+
+        for (int nibble = 1; nibble < 16; nibble++)
+        {
+            byte[] tampered = Arrays.clone(signature);
+            tampered[lastBodyByte] = (byte)((tampered[lastBodyByte] & 0x0F) | (nibble << 4));
+
+            verifier.init(false, kp.getPublic());
+            assertFalse("SNOVA: a set spare nibble (" + nibble + ") must not verify",
+                verifier.verifySignature(MESSAGE, tampered));
+        }
+    }
+
+    /**
+     * QR-UOV stores each F_q element in ceil(log2 q) bits, one more bit pattern than the field has
+     * elements: q itself is representable and is congruent to zero, so every zero element of a
+     * signature had a second encoding that verified. The bits padding the last element out to the
+     * byte boundary were not read either. For the q = 7 sets that is on the order of a hundred
+     * spare bits in a single signature.
+     */
+    public void testQRUOVSignatureMustBeCanonical()
+    {
+        QRUOVParameters parameters = QRUOVParameters.qruov_1_q31_L3_v165_m60_shake;
+        QRUOVKeyPairGenerator kpGen = new QRUOVKeyPairGenerator();
+        kpGen.init(new QRUOVKeyGenerationParameters(new SecureRandom(), parameters));
+        AsymmetricCipherKeyPair kp = kpGen.generateKeyPair();
+
+        QRUOVSigner signer = new QRUOVSigner();
+        signer.init(true, new ParametersWithRandom(kp.getPrivate(), new SecureRandom()));
+
+        int q = parameters.getQ();
+        int elementBits = parameters.getCeilLog2Q();
+        int elements = parameters.getBigN() * parameters.getL();
+        int firstElementBit = parameters.getSaltLen() * 8;
+        int padBits = parameters.getSignatureBytes() * 8 - (firstElementBit + elements * elementBits);
+
+        QRUOVSigner verifier = new QRUOVSigner();
+
+        // a zero element re-encoded as q must not verify; retry because whether a signature has a
+        // zero element at all is chance (about 1 in q per element, so all but certain here)
+        boolean testedAnElement = false;
+        for (int attempt = 0; attempt < 8 && !testedAnElement; attempt++)
+        {
+            byte[] signature = signer.generateSignature(MESSAGE);
+
+            verifier.init(false, kp.getPublic());
+            assertTrue("QR-UOV: signature must verify", verifier.verifySignature(MESSAGE, signature));
+
+            if (padBits > 0)
+            {
+                assertEquals("QR-UOV: the signer must leave the padding bits zero",
+                    0, (signature[signature.length - 1] & 0xFF) >>> (8 - padBits));
+
+                for (int bit = 8 - padBits; bit < 8; bit++)
+                {
+                    byte[] tampered = Arrays.clone(signature);
+                    tampered[tampered.length - 1] ^= (byte)(1 << bit);
+
+                    verifier.init(false, kp.getPublic());
+                    assertFalse("QR-UOV: a set padding bit (" + bit + ") must not verify",
+                        verifier.verifySignature(MESSAGE, tampered));
+                }
+            }
+
+            for (int i = 0; i < elements; i++)
+            {
+                int bitOff = firstElementBit + i * elementBits;
+                if (readBits(signature, bitOff, elementBits) != 0)
+                {
+                    continue;
+                }
+
+                byte[] tampered = Arrays.clone(signature);
+                writeBits(tampered, bitOff, elementBits, q);
+
+                verifier.init(false, kp.getPublic());
+                assertFalse("QR-UOV: element " + i + " encoded as q must not verify",
+                    verifier.verifySignature(MESSAGE, tampered));
+                testedAnElement = true;
+                break;
+            }
+        }
+        assertTrue("QR-UOV: no zero element turned up to re-encode as q", testedAnElement);
+    }
+
+    private static int readBits(byte[] buf, int bitOff, int numBits)
+    {
+        int shift = bitOff & 7;
+        int index = bitOff >>> 3;
+        int x = (buf[index] & 0xFF) | (((shift + numBits > 8) ? (buf[index + 1] & 0xFF) : 0) << 8);
+        return (x >>> shift) & ((1 << numBits) - 1);
+    }
+
+    private static void writeBits(byte[] buf, int bitOff, int numBits, int value)
+    {
+        int shift = bitOff & 7;
+        int index = bitOff >>> 3;
+        int mask = ((1 << numBits) - 1) << shift;
+        int x = (buf[index] & 0xFF) | (((shift + numBits > 8) ? (buf[index + 1] & 0xFF) : 0) << 8);
+        x = (x & ~mask) | ((value << shift) & mask);
+        buf[index] = (byte)(x & 0xFF);
+        if (shift + numBits > 8)
+        {
+            buf[index + 1] = (byte)((x >>> 8) & 0xFF);
+        }
+    }
 }

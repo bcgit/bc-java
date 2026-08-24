@@ -37,6 +37,20 @@ import org.bouncycastle.pqc.crypto.MessageSigner;
  * constant-time formulation of the KLPT / lattice steps; treat it as a usage
  * constraint until constant-time SQIsign techniques mature.
  * </p>
+ * <p>
+ * <b>Signature malleability.</b> A SQIsign signature is <em>not</em> a unique encoding of
+ * (key, message). {@code SQIsignVerify.checkCanonicalBasisChangeMatrix} bounds each entry of the
+ * basis-change matrix by {@code 2^(response length + extra torsion - backtracking)}, but the
+ * verification arithmetic depends on the entry modulo a smaller power of two, so the top permitted
+ * bit of each of the four entries is not pinned down: at least sixteen distinct byte strings verify
+ * for any signature this signer produces. This is a property of the scheme rather than of the port -
+ * SQIsign is proved EUF-CMA but not strongly unforgeable, and the two-dimensional response encoding
+ * has further, deeper sources of non-uniqueness than the matrix (see
+ * <a href="https://eprint.iacr.org/2026/1305">eprint 2026/1305</a>, which shows that canonicalising
+ * the matrix would not be sufficient). So unlike MAYO, SNOVA and QR-UOV, whose encodings this
+ * library does pin down, SQIsign signature bytes must not be used as a unique identifier for a
+ * signature - do not key a replay cache, a de-duplication table or an audit record on them.
+ * </p>
  */
 public class SQIsignSigner
     implements MessageSigner

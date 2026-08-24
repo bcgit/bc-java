@@ -45,9 +45,11 @@ import org.bouncycastle.util.Arrays;
  *       {@code ef.eqnIdx} is secret-derived (an L3 cache-line leak). The
  *       linear system is a fresh random object per signature, so the leaked
  *       structure is per-signature rather than long-term key material; the
- *       same trade-off is made in the QR-UOV reference C and in other UOV-
- *       family signature schemes (UOV, MAYO, Snova) that share this pivot-
- *       search idiom.</li>
+ *       same trade-off is made in the QR-UOV reference C. Note it is not shared
+ *       by the sibling UOV-family schemes in this tree: MAYO's {@code
+ *       MayoSigner.ef} follows the reference's constant-time echelon form and
+ *       Snova's {@code performGaussianElimination} was made branchless, so
+ *       QR-UOV is the one left with a secret-dependent pivot search.</li>
  *   <li>The {@code do { … } while (!consistent(…))} rejection loop in
  *       {@link #sign} retries on rank-deficient systems. The number of
  *       iterations leaks via timing; for the standard parameter sets the
@@ -747,7 +749,20 @@ class QRUOVEngine
         }
     }
 
-    void restoreSignature(byte[] pool, byte[] rOut, byte[][] sOut)
+    /**
+     * Decode a signature, rejecting a non-canonical encoding.
+     * <p>
+     * An F_q element is stored in {@code ceilLog2Q} bits, one more bit pattern than the field has
+     * elements: {@code q} itself is representable and is arithmetically congruent to zero, so
+     * accepting it would give every zero element of a signature a second encoding that verifies
+     * just as well. The bits that pad the last element out to the byte boundary are likewise never
+     * read. Both are the non-unique encoding github #2403 closed for trailing bytes, applied inside
+     * the signature: for the q = 7 parameter sets roughly one element in seven is zero, so a single
+     * signature would otherwise have astronomically many equivalent byte strings.
+     *
+     * @return false if any element is outside {@code [0, q)} or any padding bit is set.
+     */
+    boolean restoreSignature(byte[] pool, byte[] rOut, byte[][] sOut)
     {
         long[] pb = new long[]{0L};
         restoreSalt(pool, pb, rOut);
@@ -755,9 +770,21 @@ class QRUOVEngine
         {
             for (int j = 0; j < L; j++)
             {
-                sOut[i][j] = (byte)restoreFq(pool, pb);
+                int fq = restoreFq(pool, pb);
+                if (fq >= q)
+                {
+                    return false;
+                }
+                sOut[i][j] = (byte)fq;
             }
         }
+
+        int padBits = (pool.length << 3) - (int)pb[0];
+        if (padBits > 0 && (pool[(int)(pb[0] >>> 3)] & 0xFF) >>> (8 - padBits) != 0)
+        {
+            return false;
+        }
+        return true;
     }
 
     // -----------------------------------------------------------------------

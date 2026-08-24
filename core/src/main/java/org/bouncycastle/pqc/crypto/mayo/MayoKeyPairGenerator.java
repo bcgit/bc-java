@@ -140,9 +140,13 @@ public class MayoKeyPairGenerator
         // The number of m-vectors to pack is (param_P3_limbs / m_vec_limbs),
         // and param_m is used as the m value.
         Utils.packMVecs(P3_upper, cpk, pkSeedBytes, p3Limbs / mVecLimbs, m);
-        // Securely clear sensitive data.
+        // Securely clear sensitive data. seed_pk is seed_pk || Encode(O) - its tail is the secret
+        // oil space - and P's P2 half holds P1 * O + P2, so both carry key material as much as O
+        // and P3 do; the reference clears S, O, P2 and P3 (mayo.c mayo_keypair_compact).
+        Arrays.clear(seed_pk);
         Arrays.clear(O);
         Arrays.clear(P3);
+        Arrays.fill(P, p1Limbs, P.length, 0L);
 
         return new AsymmetricCipherKeyPair(new MayoPublicKeyParameters(p, cpk), new MayoPrivateKeyParameters(p, seed_sk));
     }

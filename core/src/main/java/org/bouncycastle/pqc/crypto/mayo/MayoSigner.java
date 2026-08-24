@@ -118,6 +118,8 @@ public class MayoSigner
         byte[] O = new byte[v * o];
         long[] Mtmp = new long[ok * mVecLimbs];
         long[] vPv = new long[k * k * mVecLimbs];
+        long[] Pv = new long[v * k * mVecLimbs];
+        byte[] Ox = new byte[v];
         SHAKEDigest shake = new SHAKEDigest(256);
         try
         {
@@ -187,9 +189,7 @@ public class MayoSigner
             shake.update(tmp, 0, digestBytes + saltBytes);
             shake.doFinal(tenc, 0, params.getMBytes());
             GF16.decode(tenc, t, m);
-            int size = v * k * mVecLimbs;
-            long[] Pv = new long[size];
-            byte[] Ox = new byte[v];
+            boolean solFound = false;
             for (int ctr = 0; ctr <= 255; ctr++)
             {
                 tmp[tmp.length - 1] = (byte)ctr;
@@ -228,6 +228,7 @@ public class MayoSigner
 
                 if (sampleSolution(A, y, r, x))
                 {
+                    solFound = true;
                     break;
                 }
                 else
@@ -241,6 +242,14 @@ public class MayoSigner
                     // stale P1*V^T data and produces a corrupted signature.
                     Arrays.fill(Pv, 0L);
                 }
+            }
+
+            // Every attempt gave a rank-deficient system: there is no solution to encode, so
+            // report it rather than emitting a signature built from the last failed attempt's
+            // state. The reference returns MAYO_ERR here (mayo.c, sol_found).
+            if (!solFound)
+            {
+                throw new IllegalStateException("unable to generate MAYO signature");
             }
 
             // Compute final signature components
@@ -272,6 +281,15 @@ public class MayoSigner
             Arrays.fill(r, (byte)0);
             Arrays.fill(s, (byte)0);
             Arrays.fill(tmp, (byte)0);
+            // O is the secret oil space and P holds L = (P1 + P1^t) * O + P2 derived from it;
+            // Mtmp / vPv / Pv / Ox are intermediates of the secret central map. The reference
+            // clears all of these (mayo.c mayo_sign_signature: sk.O, the whole sk_t, Ox, Mtmp).
+            Arrays.fill(O, (byte)0);
+            Arrays.fill(Ox, (byte)0);
+            Arrays.clear(P);
+            Arrays.clear(Mtmp);
+            Arrays.clear(vPv);
+            Arrays.clear(Pv);
         }
     }
 
@@ -814,6 +832,13 @@ public class MayoSigner
             GF16.decode(bytes, 0, A, outIndex, ncols);
             outIndex += ncols;
         }
+
+        // packedA is the echelon form of the secret linear system and the pivot rows are rows of
+        // it; the reference clears all three plus the unpack buffer (MAYO-C echelon_form.h).
+        Arrays.clear(packedA);
+        Arrays.clear(pivotRow);
+        Arrays.clear(pivotRow2);
+        Arrays.fill(bytes, (byte)0);
     }
 
     /**

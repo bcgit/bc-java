@@ -6,6 +6,7 @@ import junit.framework.TestCase;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.pqc.crypto.aimer.AIMerParameters;
+import org.bouncycastle.pqc.crypto.aimer.AIMerPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.aimer.AIMerPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.aimer.AIMerSigner;
 import org.bouncycastle.pqc.crypto.falcon.FalconParameters;
@@ -29,6 +30,7 @@ import org.bouncycastle.pqc.crypto.lms.LMSParameters;
 import org.bouncycastle.pqc.crypto.lms.LMSSigner;
 import org.bouncycastle.pqc.crypto.lms.LMSigParameters;
 import org.bouncycastle.pqc.crypto.mayo.MayoParameters;
+import org.bouncycastle.pqc.crypto.mayo.MayoPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.mayo.MayoPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.mayo.MayoSigner;
 import org.bouncycastle.pqc.crypto.ntru.NTRUParameters;
@@ -40,15 +42,18 @@ import org.bouncycastle.pqc.crypto.ntruprime.NTRULPRimePublicKeyParameters;
 import org.bouncycastle.pqc.crypto.ntruprime.SNTRUPrimeParameters;
 import org.bouncycastle.pqc.crypto.ntruprime.SNTRUPrimePublicKeyParameters;
 import org.bouncycastle.pqc.crypto.qruov.QRUOVParameters;
+import org.bouncycastle.pqc.crypto.qruov.QRUOVPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.qruov.QRUOVPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.qruov.QRUOVSigner;
 import org.bouncycastle.pqc.crypto.saber.SABERParameters;
 import org.bouncycastle.pqc.crypto.saber.SABERPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.snova.SnovaParameters;
+import org.bouncycastle.pqc.crypto.snova.SnovaPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.snova.SnovaPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.snova.SnovaSigner;
 import org.bouncycastle.pqc.crypto.sphincs.SPHINCSPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.sqisign.SQIsignParameters;
+import org.bouncycastle.pqc.crypto.sqisign.SQIsignPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.sqisign.SQIsignPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.sqisign.SQIsignSigner;
 import org.bouncycastle.pqc.crypto.xmss.XMSSKeyGenerationParameters;
@@ -302,12 +307,83 @@ public class PqcMalformedInputTest
         });
     }
 
+    // The private-key counterpart of testMalformedPublicKeyRejected, for the five schemes of
+    // github #2403. A private key encoding reaches these constructors straight from a PKCS#8 blob,
+    // so a wrong length has to be reported here: SNOVA had no check at all, where a long seed-form
+    // key was silently accepted and signed under a different derived key, and a short expanded-form
+    // key sized the signer's decode buffer negatively.
+    public void testMalformedPrivateKeyRejected()
+    {
+        final byte[] tooShort = new byte[1];
+
+        expectInvalidLength("MAYO", new Runnable()
+        {
+            public void run()
+            {
+                new MayoPrivateKeyParameters(MayoParameters.mayo1, tooShort);
+            }
+        });
+        expectInvalidLength("SNOVA (seed form)", new Runnable()
+        {
+            public void run()
+            {
+                new SnovaPrivateKeyParameters(SnovaParameters.SNOVA_24_5_4_SSK, tooShort);
+            }
+        });
+        expectInvalidLength("SNOVA (expanded form)", new Runnable()
+        {
+            public void run()
+            {
+                new SnovaPrivateKeyParameters(SnovaParameters.SNOVA_24_5_4_ESK, tooShort);
+            }
+        });
+        expectInvalidLength("SNOVA (seed form, too long)", new Runnable()
+        {
+            public void run()
+            {
+                SnovaParameters p = SnovaParameters.SNOVA_24_5_4_SSK;
+                new SnovaPrivateKeyParameters(p, new byte[p.getPrivateKeyLength() + 1]);
+            }
+        });
+        expectInvalidLength("QR-UOV", new Runnable()
+        {
+            public void run()
+            {
+                new QRUOVPrivateKeyParameters(QRUOVParameters.qruov_1_q127_L3_v156_m54_shake, tooShort);
+            }
+        });
+        expectInvalidLength("SQIsign", new Runnable()
+        {
+            public void run()
+            {
+                new SQIsignPrivateKeyParameters(SQIsignParameters.sqisign_lvl1, tooShort);
+            }
+        });
+        expectInvalidLength("AIMer", new Runnable()
+        {
+            public void run()
+            {
+                new AIMerPrivateKeyParameters(AIMerParameters.aimer128f, tooShort);
+            }
+        });
+
+        // A seed-form parameter set's private key is the seed pair, not the expanded central map -
+        // getPrivateKeyLength() has to report the one the constructor will accept.
+        SnovaParameters ssk = SnovaParameters.SNOVA_24_5_4_SSK;
+        SnovaParameters esk = SnovaParameters.SNOVA_24_5_4_ESK;
+        assertEquals("SNOVA seed-form private key length", 48, ssk.getPrivateKeyLength());
+        assertTrue("SNOVA expanded private key is longer than the seed pair",
+            esk.getPrivateKeyLength() > ssk.getPrivateKeyLength());
+        new SnovaPrivateKeyParameters(ssk, new byte[ssk.getPrivateKeyLength()]);
+        new SnovaPrivateKeyParameters(esk, new byte[esk.getPrivateKeyLength()]);
+    }
+
     private void expectInvalidLength(String name, Runnable construct)
     {
         try
         {
             construct.run();
-            fail(name + " accepted a malformed-length public key encoding");
+            fail(name + " accepted a malformed-length key encoding");
         }
         catch (IllegalArgumentException e)
         {

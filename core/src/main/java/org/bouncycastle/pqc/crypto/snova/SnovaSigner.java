@@ -112,7 +112,18 @@ public class SnovaSigner
         // and accepting a longer one would make the encoding non-unique -
         // trailing bytes could be added to a valid signature and it would still
         // verify.
-        if (signature.length != ((params.getN() * params.getLsq() + 1) >>> 1) + params.getSaltLength())
+        int sigNibbles = params.getN() * params.getLsq();
+        int sigBodyBytes = (sigNibbles + 1) >>> 1;
+        if (signature.length != sigBodyBytes + params.getSaltLength())
+        {
+            return false;
+        }
+        // When the solution is an odd number of GF(16) nibbles its last byte carries one nibble
+        // and the top four bits are unused - GF16.decode does not read them. Require them to be
+        // zero, as the signer writes them: ignoring them would leave sixteen distinct byte strings
+        // verifying for the same message and key, the same non-unique encoding github #2403 closed
+        // for trailing bytes.
+        if ((sigNibbles & 1) != 0 && (signature[sigBodyBytes - 1] & 0xF0) != 0)
         {
             return false;
         }
@@ -197,6 +208,7 @@ public class SnovaSigner
 
         int flagRedo;
         byte numSign = 0;
+        int attempts = 0;
         byte valLeft, valB, valA, valRight;
         // Step 1: Create signed hash
         createSignedHash(ptPublicKeySeed, ptPublicKeySeed.length, digest, digest.length,
@@ -209,6 +221,15 @@ public class SnovaSigner
             for (int i = 0; i < Gauss.length; ++i)
             {
                 Arrays.fill(Gauss[i], (byte)0);
+            }
+            // The vinegar values are derived from numSign, a single byte, so only 256 distinct
+            // linear systems can ever be tried: beyond that the same singular systems repeat and
+            // the loop cannot terminate. A key from genuine key generation needs one attempt with
+            // overwhelming probability, but an expanded ("ESK") private key handed in by a caller
+            // need not be a real central map at all, and a degenerate one is singular every time.
+            if (attempts++ == 256)
+            {
+                throw new IllegalStateException("unable to generate SNOVA signature");
             }
             numSign++;
 

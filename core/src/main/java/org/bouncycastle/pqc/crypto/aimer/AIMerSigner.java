@@ -67,11 +67,12 @@ public class AIMerSigner
         byte[] sig = new byte[params.getSignatureBytes()];
         AIMerEngine engine = new AIMerEngine(params);
         int result = engine.crypto_sign_signature(sig, message, message.length, privKey.getEncoded(), params, random);
-        if (result == 0)
+        if (result != 0)
         {
-            return sig;
+            // returning an empty array here would be handed on as if it were a signature
+            throw new IllegalStateException("unable to generate AIMer signature");
         }
-        return new byte[0];
+        return sig;
     }
 
     @Override

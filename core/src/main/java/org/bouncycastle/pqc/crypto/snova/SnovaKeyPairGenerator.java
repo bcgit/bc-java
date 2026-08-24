@@ -74,7 +74,7 @@ public class SnovaKeyPairGenerator
 
         if (params.isSkIsSeed())
         {
-            sk = seedPair;
+            System.arraycopy(seedPair, 0, sk, 0, seedPair.length);
         }
         else
         {

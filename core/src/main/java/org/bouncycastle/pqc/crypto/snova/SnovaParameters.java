@@ -175,7 +175,28 @@ public class SnovaParameters
         return SnovaKeyPairGenerator.publicSeedLength + ((o * o * o * lsq + 1) >>> 1);
     }
 
+    /**
+     * The length of a private key for this parameter set. For an "SSK" parameter set
+     * ({@link #isSkIsSeed()}) the private key is just the seed pair; for an "ESK" set it is the
+     * expanded central map.
+     */
     public int getPrivateKeyLength()
+    {
+        if (skIsSeed)
+        {
+            return SnovaKeyPairGenerator.publicSeedLength + SnovaKeyPairGenerator.privateSeedLength;
+        }
+
+        return getExpandedPrivateKeyLength();
+    }
+
+    /**
+     * The length of the expanded ("ESK") private key encoding - the packed A/B/Q1/Q2, T12 and
+     * F11/F12/F21 of the central map followed by the seed pair. Note this is not the private key
+     * length for a parameter set whose private key is the seed pair, see
+     * {@link #getPrivateKeyLength()}, which is what such a key's encoding is checked against.
+     */
+    int getExpandedPrivateKeyLength()
     {
         return ((lsq * (4 * o * alpha + o * (v * v + v * o + o * v) + v * o) + 1) >> 1)
             + SnovaKeyPairGenerator.privateSeedLength + SnovaKeyPairGenerator.publicSeedLength;
