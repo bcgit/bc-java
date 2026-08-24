@@ -63,14 +63,14 @@ import org.bouncycastle.operator.bc.BcHssLmsContentSignerBuilder;
 import org.bouncycastle.operator.bc.BcHssLmsContentVerifierProviderBuilder;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
-import org.bouncycastle.pqc.crypto.lms.HSSKeyGenerationParameters;
-import org.bouncycastle.pqc.crypto.lms.HSSKeyPairGenerator;
-import org.bouncycastle.pqc.crypto.lms.HSSPublicKeyParameters;
-import org.bouncycastle.pqc.crypto.lms.LMOtsParameters;
-import org.bouncycastle.pqc.crypto.lms.LMSKeyGenerationParameters;
-import org.bouncycastle.pqc.crypto.lms.LMSKeyPairGenerator;
-import org.bouncycastle.pqc.crypto.lms.LMSParameters;
-import org.bouncycastle.pqc.crypto.lms.LMSigParameters;
+import org.bouncycastle.crypto.params.HSSKeyGenerationParameters;
+import org.bouncycastle.crypto.generators.HSSKeyPairGenerator;
+import org.bouncycastle.crypto.params.HSSPublicKeyParameters;
+import org.bouncycastle.crypto.params.LMOtsParameters;
+import org.bouncycastle.crypto.params.LMSKeyGenerationParameters;
+import org.bouncycastle.crypto.generators.LMSKeyPairGenerator;
+import org.bouncycastle.crypto.params.LMSParameters;
+import org.bouncycastle.crypto.params.LMSigParameters;
 import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 import org.bouncycastle.util.Store;
 
@@ -431,7 +431,7 @@ public class PQCSignedDataTest
 
         assertTrue(cert.isSignatureValid(new BcHssLmsContentVerifierProviderBuilder().build(pubKey)));
 
-        AsymmetricKeyParameter certPubKey = org.bouncycastle.pqc.crypto.util.PublicKeyFactory.createKey(cert.getSubjectPublicKeyInfo());
+        AsymmetricKeyParameter certPubKey = org.bouncycastle.crypto.util.PublicKeyFactory.createKey(cert.getSubjectPublicKeyInfo());
 
         assertTrue(cert.isSignatureValid(new BcHssLmsContentVerifierProviderBuilder().build(certPubKey)));
 
@@ -504,7 +504,7 @@ public class PQCSignedDataTest
 
         assertTrue(cert.isSignatureValid(new BcHssLmsContentVerifierProviderBuilder().build(pubKey)));
 
-        AsymmetricKeyParameter certPubKey = ((HSSPublicKeyParameters)org.bouncycastle.pqc.crypto.util.PublicKeyFactory.createKey(cert.getSubjectPublicKeyInfo())).getLMSPublicKey();
+        AsymmetricKeyParameter certPubKey = ((HSSPublicKeyParameters)org.bouncycastle.crypto.util.PublicKeyFactory.createKey(cert.getSubjectPublicKeyInfo())).getLMSPublicKey();
 
         assertTrue(cert.isSignatureValid(new BcHssLmsContentVerifierProviderBuilder().build(certPubKey)));
 

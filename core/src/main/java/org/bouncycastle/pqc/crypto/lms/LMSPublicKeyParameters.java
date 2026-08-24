@@ -9,6 +9,10 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.io.Streams;
 
+/**
+ * @deprecated use {@link org.bouncycastle.crypto.params.LMSPublicKeyParameters} instead.
+ */
+@Deprecated
 public class LMSPublicKeyParameters
     extends LMSKeyParameters
     implements LMSContextBasedVerifier

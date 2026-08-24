@@ -258,6 +258,10 @@ public class PrivateKeyFactory
 
             throw new IllegalArgumentException("invalid " + mldsaParams.getName() + " private key");
         }
+        else if (algOID.equals(PKCSObjectIdentifiers.id_alg_hss_lms_hashsig))
+        {
+            return LmsKeyUtil.createPrivateKey(keyInfo);
+        }
         else if (algOID.equals(ISOIECObjectIdentifiers.frodokem976_shake) ||
             algOID.equals(ISOIECObjectIdentifiers.frodokem1344_shake) ||
             algOID.equals(ISOIECObjectIdentifiers.efrodokem976_shake) ||
@@ -318,7 +322,7 @@ public class PrivateKeyFactory
         else if (Utils.slhdsaParams.containsKey(algOID))
         {
             SLHDSAParameters spParams = Utils.slhdsaParamsLookup(algOID);
-            ASN1OctetString slhdsaKey = parseOctetString(keyInfo.getPrivateKey(), spParams.getN() * 4);
+            ASN1OctetString slhdsaKey = Utils.parseOctetString(keyInfo.getPrivateKey(), spParams.getN() * 4);
 
             return new SLHDSAPrivateKeyParameters(spParams, slhdsaKey.getOctets());
         }
@@ -429,29 +433,6 @@ public class PrivateKeyFactory
     /**
      * So it seems for the new PQC algorithms, there's a couple of approaches to what goes in the OCTET STRING
      */
-    private static ASN1OctetString parseOctetString(ASN1OctetString octStr, int expectedLength)
-        throws IOException
-    {
-        byte[] data = octStr.getOctets();
-        //
-        // it's the right length for a RAW encoding, just return it.
-        //
-        if (data.length == expectedLength)
-        {
-            return octStr;
-        }
-
-        //
-        // possible internal OCTET STRING, possibly long form with or without the internal OCTET STRING
-        ASN1OctetString obj = Utils.parseOctetData(data);
-
-        if (obj != null)
-        {
-            return ASN1OctetString.getInstance(obj);
-        }
-
-        return octStr;
-    }
     
     /**
      * So it seems for the new PQC algorithms, there's a couple of approaches to what goes in the OCTET STRING

@@ -4,6 +4,10 @@ import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
 import org.bouncycastle.crypto.KeyGenerationParameters;
 
+/**
+ * @deprecated use {@link org.bouncycastle.crypto.generators.HSSKeyPairGenerator} instead.
+ */
+@Deprecated
 public class HSSKeyPairGenerator
     implements AsymmetricCipherKeyPairGenerator
 {

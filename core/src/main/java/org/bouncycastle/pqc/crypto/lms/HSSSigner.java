@@ -6,6 +6,10 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.pqc.crypto.MessageSigner;
 import org.bouncycastle.util.Exceptions;
 
+/**
+ * @deprecated use {@link org.bouncycastle.crypto.signers.HSSSigner} instead.
+ */
+@Deprecated
 public class HSSSigner
     implements MessageSigner
 {

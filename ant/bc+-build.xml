@@ -329,6 +329,8 @@
                  <include name="org/bouncycastle/pqc/asn1/**/*.java" />
                  <exclude name="org/bouncycastle/pqc/**/*Tests.java" />
                  <exclude name="org/bouncycastle/pqc/**/AllTests*.java" />
+                 <exclude name="org/bouncycastle/crypto/**/*Tests.java" />
+                 <exclude name="org/bouncycastle/crypto/params/LMSVectorUtils.java" />
                  <exclude name="org/bouncycastle/pqc/**/LMSVectorUtils.java" />
                  <exclude name="org/bouncycastle/crypto/test/AllTestsSlow.java" />
                  <exclude name="org/bouncycastle/crypto/test/AllTestsOpenBSDBCrypt.java" />
@@ -381,6 +383,8 @@
                  <exclude name="org/bouncycastle/util/*Test.java" />
                  <exclude name="org/bouncycastle/pqc/**/*Tests.java" />
                  <exclude name="org/bouncycastle/pqc/**/*Test.java" />
+                 <exclude name="org/bouncycastle/crypto/**/*Tests.java" />
+                 <exclude name="org/bouncycastle/crypto/params/LMSVectorUtils.java" />
                  <exclude name="org/bouncycastle/pqc/**/LMSVectorUtils.java" />
                  <exclude name="**/*.crl" />
                  <exclude name="org/bouncycastle/util/utiltest/**" />
@@ -527,6 +531,8 @@
                  <exclude name="org/bouncycastle/pqc/**/*Tests.java" />
                  <exclude name="org/bouncycastle/pqc/**/*Test.java" />
                  <exclude name="org/bouncycastle/pqc/**/AllTests*.java" />
+                 <exclude name="org/bouncycastle/crypto/**/*Tests.java" />
+                 <exclude name="org/bouncycastle/crypto/params/LMSVectorUtils.java" />
                  <exclude name="org/bouncycastle/pqc/**/LMSVectorUtils.java" />
                  <exclude name="**/*.crl" />
                  <exclude name="**/*.key" />
@@ -579,6 +585,8 @@
                 <exclude name="**/legacy/**/NTRU*.class" />
                 <exclude name="**/legacy/**/ntru/**/*.class" />
                 <exclude name="org/bouncycastle/pqc/**/*Tests.class" />
+                <exclude name="org/bouncycastle/crypto/**/*Tests.class" />
+                <exclude name="org/bouncycastle/crypto/params/LMSVectorUtils.class" />
                 <exclude name="org/bouncycastle/pqc/**/LMSVectorUtils.class" />
                 <include name="**/*.properties"/>
             </jarFileSet>
@@ -1030,6 +1038,7 @@
         </copy>
 
         <delete file="${test.target.src.dir}/org/bouncycastle/pqc/crypto/lms/AllTests.java" />
+        <delete file="${test.target.src.dir}/org/bouncycastle/crypto/params/AllTests.java" />
         <delete file="${test.target.src.dir}/org/bouncycastle/pqc/crypto/mayo/AllTests.java" />
         <delete file="${test.target.src.dir}/org/bouncycastle/est/AllTests.java" />
         <delete file="${test.target.src.dir}/org/bouncycastle/gpg/keybox/AllTests.java" />

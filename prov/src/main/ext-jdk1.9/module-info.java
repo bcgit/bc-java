@@ -83,6 +83,7 @@ module org.bouncycastle.provider
     exports org.bouncycastle.crypto.prng;
     exports org.bouncycastle.crypto.prng.drbg;
     exports org.bouncycastle.crypto.signers;
+    exports org.bouncycastle.crypto.signers.lms;
     exports org.bouncycastle.crypto.signers.mldsa;
     exports org.bouncycastle.crypto.signers.slhdsa;
     exports org.bouncycastle.crypto.threshold;

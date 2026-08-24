@@ -34,7 +34,7 @@ import org.bouncycastle.operator.DigestAlgorithmIdentifierFinder;
 import org.bouncycastle.operator.ExtendedContentSigner;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.RuntimeOperatorException;
-import org.bouncycastle.pqc.crypto.lms.LMSigParameters;
+import org.bouncycastle.crypto.params.LMSigParameters;
 import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.Strings;
 

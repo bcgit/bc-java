@@ -6,7 +6,10 @@ import org.bouncycastle.util.Encodable;
 
 /**
  * Type to assist in build LMS messages.
+ *
+ * @deprecated use {@link org.bouncycastle.crypto.signers.lms.Composer} instead.
  */
+@Deprecated
 public class Composer
 {
     private final ByteArrayOutputStream bos = new ByteArrayOutputStream();

@@ -8,6 +8,10 @@ import java.io.InputStream;
 import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.io.Streams;
 
+/**
+ * @deprecated use {@link org.bouncycastle.crypto.params.HSSPublicKeyParameters} instead.
+ */
+@Deprecated
 public class HSSPublicKeyParameters
     extends LMSKeyParameters
     implements LMSContextBasedVerifier

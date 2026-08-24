@@ -12,6 +12,10 @@ import org.bouncycastle.pqc.crypto.ExhaustedPrivateKeyException;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.io.Streams;
 
+/**
+ * @deprecated use {@link org.bouncycastle.crypto.params.LMSPrivateKeyParameters} instead.
+ */
+@Deprecated
 public class LMSPrivateKeyParameters
     extends LMSKeyParameters
     implements LMSContextBasedSigner

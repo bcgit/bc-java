@@ -22,6 +22,7 @@ import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.asn1.x9.X9ECPoint;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
+import org.bouncycastle.crypto.params.CMCEPublicKeyParameters;
 import org.bouncycastle.crypto.params.DSAParameters;
 import org.bouncycastle.crypto.params.DSAPublicKeyParameters;
 import org.bouncycastle.crypto.params.ECDomainParameters;
@@ -30,9 +31,8 @@ import org.bouncycastle.crypto.params.ECNamedDomainParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.Ed25519PublicKeyParameters;
 import org.bouncycastle.crypto.params.Ed448PublicKeyParameters;
-import org.bouncycastle.crypto.params.CMCEPublicKeyParameters;
-import org.bouncycastle.crypto.params.MLDSAPublicKeyParameters;
 import org.bouncycastle.crypto.params.FrodoKEMPublicKeyParameters;
+import org.bouncycastle.crypto.params.MLDSAPublicKeyParameters;
 import org.bouncycastle.crypto.params.MLKEMPublicKeyParameters;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.params.SLHDSAPublicKeyParameters;
@@ -40,9 +40,6 @@ import org.bouncycastle.crypto.params.X25519PublicKeyParameters;
 import org.bouncycastle.crypto.params.X448PublicKeyParameters;
 import org.bouncycastle.internal.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.internal.asn1.rosstandart.RosstandartObjectIdentifiers;
-import org.bouncycastle.pqc.crypto.lms.Composer;
-import org.bouncycastle.pqc.crypto.lms.HSSPublicKeyParameters;
-import org.bouncycastle.pqc.crypto.lms.LMSPublicKeyParameters;
 import org.bouncycastle.util.Arrays;
 
 /**
@@ -242,23 +239,9 @@ public class SubjectPublicKeyInfoFactory
 
             return new SubjectPublicKeyInfo(new AlgorithmIdentifier(EdECObjectIdentifiers.id_Ed25519), key.getEncoded());
         }
-        else if (publicKey instanceof LMSPublicKeyParameters)
+        else if (LmsKeyUtil.createSubjectPublicKeyInfo(publicKey) != null)
         {
-            LMSPublicKeyParameters params = (LMSPublicKeyParameters)publicKey;
-
-            byte[] encoding = Composer.compose().u32str(1).bytes(params).build();
-
-            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_alg_hss_lms_hashsig);
-            return new SubjectPublicKeyInfo(algorithmIdentifier, encoding);
-        }
-        else if (publicKey instanceof HSSPublicKeyParameters)
-        {
-            HSSPublicKeyParameters params = (HSSPublicKeyParameters)publicKey;
-
-            byte[] encoding = Composer.compose().u32str(params.getL()).bytes(params.getLMSPublicKey()).build();
-
-            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_alg_hss_lms_hashsig);
-            return new SubjectPublicKeyInfo(algorithmIdentifier, encoding);
+            return LmsKeyUtil.createSubjectPublicKeyInfo(publicKey);
         }
         else
         {

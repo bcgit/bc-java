@@ -6,6 +6,10 @@ import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
 import org.bouncycastle.crypto.KeyGenerationParameters;
 
+/**
+ * @deprecated use {@link org.bouncycastle.crypto.generators.LMSKeyPairGenerator} instead.
+ */
+@Deprecated
 public class LMSKeyPairGenerator
     implements AsymmetricCipherKeyPairGenerator
 {

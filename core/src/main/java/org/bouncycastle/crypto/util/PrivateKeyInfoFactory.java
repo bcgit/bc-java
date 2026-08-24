@@ -215,6 +215,10 @@ public class PrivateKeyInfoFactory
             }
             return new PrivateKeyInfo(algorithmIdentifier, getBasicPQCEncoding(params.getSeed(), params.getEncoded()), attributes);
         }
+        else if (LmsKeyUtil.createPrivateKeyInfo(privateKey, attributes) != null)
+        {
+            return LmsKeyUtil.createPrivateKeyInfo(privateKey, attributes);
+        }
         else if (privateKey instanceof CMCEPrivateKeyParameters)
         {
             CMCEPrivateKeyParameters params = (CMCEPrivateKeyParameters)privateKey;

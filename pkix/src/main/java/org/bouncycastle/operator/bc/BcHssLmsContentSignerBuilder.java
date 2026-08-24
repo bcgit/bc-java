@@ -1,6 +1,5 @@
 package org.bouncycastle.operator.bc;
 
-import java.io.ByteArrayOutputStream;
 
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -9,13 +8,12 @@ import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.Signer;
 import org.bouncycastle.operator.OperatorCreationException;
-import org.bouncycastle.pqc.crypto.MessageSigner;
-import org.bouncycastle.pqc.crypto.lms.HSSPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.lms.HSSPublicKeyParameters;
-import org.bouncycastle.pqc.crypto.lms.HSSSigner;
-import org.bouncycastle.pqc.crypto.lms.LMSPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.lms.LMSPublicKeyParameters;
-import org.bouncycastle.pqc.crypto.lms.LMSSigner;
+import org.bouncycastle.crypto.params.HSSPrivateKeyParameters;
+import org.bouncycastle.crypto.params.HSSPublicKeyParameters;
+import org.bouncycastle.crypto.signers.HSSSigner;
+import org.bouncycastle.crypto.params.LMSPrivateKeyParameters;
+import org.bouncycastle.crypto.params.LMSPublicKeyParameters;
+import org.bouncycastle.crypto.signers.LMSSigner;
 
 /**
  * Builder for creating content signers that use the HSS/LMS Hash-Based Signature Algorithm.
@@ -39,11 +37,16 @@ public class BcHssLmsContentSignerBuilder
         return new HssSigner();
     }
 
+    /**
+     * Dispatches to the LMS or the HSS signer according to the key it is initialised with. Both
+     * implement {@link Signer} directly, so this is a delegate rather than the message-buffering
+     * adapter it used to be - the promoted org.bouncycastle.crypto.signers implementations buffer
+     * the message themselves.
+     */
     static class HssSigner
         implements Signer
     {
-        private MessageSigner signer;
-        private final ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        private Signer signer;
 
         public HssSigner()
         {
@@ -71,36 +74,32 @@ public class BcHssLmsContentSignerBuilder
         @Override
         public void update(byte b)
         {
-            stream.write(b);
+            signer.update(b);
         }
 
         @Override
         public void update(byte[] in, int off, int len)
         {
-            stream.write(in, off, len);
+            signer.update(in, off, len);
         }
 
         @Override
         public byte[] generateSignature()
             throws CryptoException, DataLengthException
         {
-            byte[] msg = stream.toByteArray();
-            stream.reset();
-            return signer.generateSignature(msg);
+            return signer.generateSignature();
         }
 
         @Override
         public boolean verifySignature(byte[] signature)
         {
-            byte[] msg = stream.toByteArray();
-            stream.reset();
-            return signer.verifySignature(msg, signature);
+            return signer.verifySignature(signature);
         }
 
         @Override
         public void reset()
         {
-            stream.reset();
+            signer.reset();
         }
     }
 }

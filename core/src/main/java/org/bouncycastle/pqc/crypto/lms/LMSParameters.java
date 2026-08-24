@@ -1,5 +1,9 @@
 package org.bouncycastle.pqc.crypto.lms;
 
+/**
+ * @deprecated use {@link org.bouncycastle.crypto.params.LMSParameters} instead.
+ */
+@Deprecated
 public class LMSParameters
 {
     private final LMSigParameters lmSigParam;

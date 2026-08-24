@@ -10,17 +10,17 @@ import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.KeyGenerationParameters;
-import org.bouncycastle.pqc.crypto.lms.HSSKeyGenerationParameters;
-import org.bouncycastle.pqc.crypto.lms.HSSKeyPairGenerator;
-import org.bouncycastle.pqc.crypto.lms.HSSPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.lms.HSSPublicKeyParameters;
-import org.bouncycastle.pqc.crypto.lms.LMOtsParameters;
-import org.bouncycastle.pqc.crypto.lms.LMSKeyGenerationParameters;
-import org.bouncycastle.pqc.crypto.lms.LMSKeyPairGenerator;
-import org.bouncycastle.pqc.crypto.lms.LMSParameters;
-import org.bouncycastle.pqc.crypto.lms.LMSPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.lms.LMSPublicKeyParameters;
-import org.bouncycastle.pqc.crypto.lms.LMSigParameters;
+import org.bouncycastle.crypto.params.HSSKeyGenerationParameters;
+import org.bouncycastle.crypto.generators.HSSKeyPairGenerator;
+import org.bouncycastle.crypto.params.HSSPrivateKeyParameters;
+import org.bouncycastle.crypto.params.HSSPublicKeyParameters;
+import org.bouncycastle.crypto.params.LMOtsParameters;
+import org.bouncycastle.crypto.params.LMSKeyGenerationParameters;
+import org.bouncycastle.crypto.generators.LMSKeyPairGenerator;
+import org.bouncycastle.crypto.params.LMSParameters;
+import org.bouncycastle.crypto.params.LMSPrivateKeyParameters;
+import org.bouncycastle.crypto.params.LMSPublicKeyParameters;
+import org.bouncycastle.crypto.params.LMSigParameters;
 import org.bouncycastle.pqc.jcajce.spec.LMSHSSKeyGenParameterSpec;
 import org.bouncycastle.pqc.jcajce.spec.LMSHSSParameterSpec;
 import org.bouncycastle.pqc.jcajce.spec.LMSKeyGenParameterSpec;
@@ -57,7 +57,7 @@ public class LMSKeyPairGeneratorSpi
         {
             LMSKeyGenParameterSpec lmsParams = (LMSKeyGenParameterSpec)params;
 
-            param = new LMSKeyGenerationParameters(new LMSParameters(lmsParams.getSigParams(), lmsParams.getOtsParams()), random);
+            param = new LMSKeyGenerationParameters(new LMSParameters(lmsParams.getLMSigParameters(), lmsParams.getLMOtsParameters()), random);
 
             engine = new LMSKeyPairGenerator();
             engine.init(param);
@@ -68,7 +68,7 @@ public class LMSKeyPairGeneratorSpi
             LMSParameters[] hssParams = new LMSParameters[lmsParams.length];
             for (int i = 0; i != lmsParams.length; i++)
             {
-                hssParams[i] = new LMSParameters(lmsParams[i].getSigParams(), lmsParams[i].getOtsParams());
+                hssParams[i] = new LMSParameters(lmsParams[i].getLMSigParameters(), lmsParams[i].getLMOtsParameters());
             }
             param = new HSSKeyGenerationParameters(hssParams, random);
 
@@ -79,7 +79,7 @@ public class LMSKeyPairGeneratorSpi
         {
             LMSParameterSpec lmsParams = (LMSParameterSpec)params;
 
-            param = new LMSKeyGenerationParameters(new LMSParameters(lmsParams.getSigParams(), lmsParams.getOtsParams()), random);
+            param = new LMSKeyGenerationParameters(new LMSParameters(lmsParams.getLMSigParameters(), lmsParams.getLMOtsParameters()), random);
 
             engine = new LMSKeyPairGenerator();
             engine.init(param);
@@ -90,7 +90,7 @@ public class LMSKeyPairGeneratorSpi
             LMSParameters[] hssParams = new LMSParameters[lmsParams.length];
             for (int i = 0; i != lmsParams.length; i++)
             {
-                hssParams[i] = new LMSParameters(lmsParams[i].getSigParams(), lmsParams[i].getOtsParams());
+                hssParams[i] = new LMSParameters(lmsParams[i].getLMSigParameters(), lmsParams[i].getLMOtsParameters());
             }
             param = new HSSKeyGenerationParameters(hssParams, random);
 

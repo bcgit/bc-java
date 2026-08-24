@@ -4,6 +4,10 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.KeyGenerationParameters;
 
+/**
+ * @deprecated use {@link org.bouncycastle.crypto.params.LMSKeyGenerationParameters} instead.
+ */
+@Deprecated
 public class LMSKeyGenerationParameters
     extends KeyGenerationParameters
 {

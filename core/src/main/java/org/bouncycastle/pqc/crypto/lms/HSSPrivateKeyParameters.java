@@ -13,6 +13,10 @@ import org.bouncycastle.util.io.Streams;
 
 import static org.bouncycastle.pqc.crypto.lms.HSS.rangeTestKeys;
 
+/**
+ * @deprecated use {@link org.bouncycastle.crypto.params.HSSPrivateKeyParameters} instead.
+ */
+@Deprecated
 public class HSSPrivateKeyParameters
     extends LMSKeyParameters
     implements LMSContextBasedSigner

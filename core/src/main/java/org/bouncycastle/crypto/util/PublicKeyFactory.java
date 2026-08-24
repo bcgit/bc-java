@@ -130,6 +130,8 @@ public class PublicKeyFactory
         converters.put(ISOIECObjectIdentifiers.efrodokem976_aes, new FrodoKEMConverter());
         converters.put(ISOIECObjectIdentifiers.efrodokem1344_aes, new FrodoKEMConverter());
 
+        converters.put(PKCSObjectIdentifiers.id_alg_hss_lms_hashsig, new LMSConverter());
+
         converters.put(NISTObjectIdentifiers.id_slh_dsa_sha2_128s, new SLHDSAConverter());
         converters.put(NISTObjectIdentifiers.id_slh_dsa_sha2_128f, new SLHDSAConverter());
         converters.put(NISTObjectIdentifiers.id_slh_dsa_sha2_192s, new SLHDSAConverter());
@@ -255,6 +257,16 @@ public class PublicKeyFactory
     {
         abstract AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
             throws IOException;
+    }
+
+    private static class LMSConverter
+        extends SubjectPublicKeyInfoConverter
+    {
+        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
+            throws IOException
+        {
+            return LmsKeyUtil.createPublicKey(keyInfo);
+        }
     }
 
     private static class RSAConverter

@@ -1,6 +1,7 @@
 package org.bouncycastle.crypto.util;
 
 import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -664,6 +665,30 @@ class Utils
         }
 
         return null;
+    }
+
+    static ASN1OctetString parseOctetString(ASN1OctetString octStr, int expectedLength)
+        throws IOException
+    {
+        byte[] data = octStr.getOctets();
+        //
+        // it's the right length for a RAW encoding, just return it.
+        //
+        if (data.length == expectedLength)
+        {
+            return octStr;
+        }
+
+        //
+        // possible internal OCTET STRING, possibly long form with or without the internal OCTET STRING
+        ASN1OctetString obj = Utils.parseOctetData(data);
+
+        if (obj != null)
+        {
+            return ASN1OctetString.getInstance(obj);
+        }
+
+        return octStr;
     }
 
     static ASN1Primitive parseData(byte[] data)

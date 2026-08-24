@@ -6,6 +6,10 @@ import java.util.Map;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 
+/**
+ * @deprecated use {@link org.bouncycastle.crypto.params.LMSigParameters} instead.
+ */
+@Deprecated
 public class LMSigParameters
 {
     public static final LMSigParameters lms_sha256_n32_h5 = new LMSigParameters(0x05, 32, 5, NISTObjectIdentifiers.id_sha256);

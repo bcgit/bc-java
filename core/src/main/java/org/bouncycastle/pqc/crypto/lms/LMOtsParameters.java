@@ -6,6 +6,10 @@ import java.util.Map;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 
+/**
+ * @deprecated use {@link org.bouncycastle.crypto.params.LMOtsParameters} instead.
+ */
+@Deprecated
 public class LMOtsParameters
 {
     public static final int reserved = 0;
