@@ -159,12 +159,12 @@ public class KeyPairGeneratorSpi
         }
     }
 
-    public static final class MLKEM768_ECDH_BP256_SHA3_256
+    public static final class MLKEM768_ECDH_brainpoolP256r1_SHA3_256
         extends KeyPairGeneratorSpi
     {
-        public MLKEM768_ECDH_BP256_SHA3_256()
+        public MLKEM768_ECDH_brainpoolP256r1_SHA3_256()
         {
-            super(IANAObjectIdentifiers.id_MLKEM768_ECDH_BP256_SHA3_256);
+            super(IANAObjectIdentifiers.id_MLKEM768_ECDH_brainpoolP256r1_SHA3_256);
         }
     }
 
@@ -186,12 +186,12 @@ public class KeyPairGeneratorSpi
         }
     }
 
-    public static final class MLKEM1024_ECDH_BP384_SHA3_256
+    public static final class MLKEM1024_ECDH_brainpoolP384r1_SHA3_256
         extends KeyPairGeneratorSpi
     {
-        public MLKEM1024_ECDH_BP384_SHA3_256()
+        public MLKEM1024_ECDH_brainpoolP384r1_SHA3_256()
         {
-            super(IANAObjectIdentifiers.id_MLKEM1024_ECDH_BP384_SHA3_256);
+            super(IANAObjectIdentifiers.id_MLKEM1024_ECDH_brainpoolP384r1_SHA3_256);
         }
     }
 

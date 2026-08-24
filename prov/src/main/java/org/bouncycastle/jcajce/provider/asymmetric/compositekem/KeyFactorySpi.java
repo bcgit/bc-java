@@ -113,14 +113,14 @@ public class KeyFactorySpi
         // ML-KEM-768 + ECDH algorithms
         pairings.put(IANAObjectIdentifiers.id_MLKEM768_ECDH_P256_SHA3_256, new AlgorithmIdentifier[]{mlKem768, ecDHP256});
         pairings.put(IANAObjectIdentifiers.id_MLKEM768_ECDH_P384_SHA3_256, new AlgorithmIdentifier[]{mlKem768, ecDHP384});
-        pairings.put(IANAObjectIdentifiers.id_MLKEM768_ECDH_BP256_SHA3_256, new AlgorithmIdentifier[]{mlKem768, ecDHBrainpoolP256r1});
+        pairings.put(IANAObjectIdentifiers.id_MLKEM768_ECDH_brainpoolP256r1_SHA3_256, new AlgorithmIdentifier[]{mlKem768, ecDHBrainpoolP256r1});
 
         // ML-KEM-1024 + RSA-OAEP algorithms
         pairings.put(IANAObjectIdentifiers.id_MLKEM1024_RSA3072_SHA3_256, new AlgorithmIdentifier[]{mlKem1024, rsaOAEP});
 
         // ML-KEM-1024 + ECDH algorithms
         pairings.put(IANAObjectIdentifiers.id_MLKEM1024_ECDH_P384_SHA3_256, new AlgorithmIdentifier[]{mlKem1024, ecDHP384});
-        pairings.put(IANAObjectIdentifiers.id_MLKEM1024_ECDH_BP384_SHA3_256, new AlgorithmIdentifier[]{mlKem1024, ecDHBrainpoolP384r1});
+        pairings.put(IANAObjectIdentifiers.id_MLKEM1024_ECDH_brainpoolP384r1_SHA3_256, new AlgorithmIdentifier[]{mlKem1024, ecDHBrainpoolP384r1});
 
         // ML-KEM-1024 + X448
         pairings.put(IANAObjectIdentifiers.id_MLKEM1024_X448_SHA3_256, new AlgorithmIdentifier[]{mlKem1024, x448KEM});
@@ -139,14 +139,14 @@ public class KeyFactorySpi
         // ML-KEM-768 + ECDH algorithms
         componentKeySizes.put(IANAObjectIdentifiers.id_MLKEM768_ECDH_P256_SHA3_256, new int[]{1184, 65}); // 1249 - 1184 = 65
         componentKeySizes.put(IANAObjectIdentifiers.id_MLKEM768_ECDH_P384_SHA3_256, new int[]{1184, 97}); // 1281 - 1184 = 97
-        componentKeySizes.put(IANAObjectIdentifiers.id_MLKEM768_ECDH_BP256_SHA3_256, new int[]{1184, 65}); // 1249 - 1184 = 65
+        componentKeySizes.put(IANAObjectIdentifiers.id_MLKEM768_ECDH_brainpoolP256r1_SHA3_256, new int[]{1184, 65}); // 1249 - 1184 = 65
 
         // ML-KEM-1024 + RSA algorithms
         componentKeySizes.put(IANAObjectIdentifiers.id_MLKEM1024_RSA3072_SHA3_256, new int[]{1568, 398}); // 1966 - 1568 = 398
 
         // ML-KEM-1024 + ECDH algorithms
         componentKeySizes.put(IANAObjectIdentifiers.id_MLKEM1024_ECDH_P384_SHA3_256, new int[]{1568, 97}); // 1665 - 1568 = 97
-        componentKeySizes.put(IANAObjectIdentifiers.id_MLKEM1024_ECDH_BP384_SHA3_256, new int[]{1568, 97}); // 1665 - 1568 = 97
+        componentKeySizes.put(IANAObjectIdentifiers.id_MLKEM1024_ECDH_brainpoolP384r1_SHA3_256, new int[]{1568, 97}); // 1665 - 1568 = 97
 
         // ML-KEM-1024 + X448
         componentKeySizes.put(IANAObjectIdentifiers.id_MLKEM1024_X448_SHA3_256, new int[]{1568, 56}); // 1624 - 1568 = 56

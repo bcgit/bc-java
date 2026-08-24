@@ -53,6 +53,15 @@ public class CompositeKEMs
                 provider.addAlgorithm("Alg.Alias.Cipher", oid, algorithmName);
 
                 provider.addKeyInfoConverter(oid, new KeyFactorySpi());
+
+                String[] aliases = CompositeIndex.getAlgorithmAliases(oid);
+                for (int i = 0; i != aliases.length; i++)
+                {
+                    provider.addAlgorithm("Alg.Alias.KeyFactory." + aliases[i], "COMPOSITE");
+                    provider.addAlgorithm("Alg.Alias.KeyPairGenerator." + aliases[i], algorithmName);
+                    provider.addAlgorithm("Alg.Alias.KeyGenerator." + aliases[i], algorithmName);
+                    provider.addAlgorithm("Alg.Alias.Cipher." + aliases[i], algorithmName);
+                }
             }
         }
     }

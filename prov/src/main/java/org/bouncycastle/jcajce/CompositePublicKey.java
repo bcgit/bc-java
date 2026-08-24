@@ -11,6 +11,7 @@ import java.util.List;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
@@ -18,7 +19,9 @@ import org.bouncycastle.asn1.iana.IANAObjectIdentifiers;
 import org.bouncycastle.internal.asn1.misc.MiscObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.asymmetric.compositesignatures.CompositeIndex;
 import org.bouncycastle.jcajce.provider.asymmetric.compositesignatures.KeyFactorySpi;
+import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
 import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Exceptions;
 
@@ -143,12 +146,21 @@ public class CompositePublicKey
         CompositePublicKey publicKeyFromFactory = null;
         try
         {
-            //Check if the public key algorithm specified in SubjectPublicKeyInfo is one of the supported composite signatures.
-            if (!CompositeIndex.isAlgorithmSupported(keyInfoIdentifier))
+            //Check if the public key algorithm specified in SubjectPublicKeyInfo is one of the
+            //supported composite signatures or one of the supported composite KEMs.
+            AsymmetricKeyInfoConverter keyInfoConverter;
+            if (CompositeIndex.isAlgorithmSupported(keyInfoIdentifier))
+            {
+                keyInfoConverter = new KeyFactorySpi();
+            }
+            else if (org.bouncycastle.jcajce.provider.asymmetric.compositekem.CompositeIndex.isCompositeKEMOID(keyInfoIdentifier))
+            {
+                keyInfoConverter = new org.bouncycastle.jcajce.provider.asymmetric.compositekem.KeyFactorySpi();
+            }
+            else
             {
                 throw new IllegalStateException("unable to create CompositePublicKey from SubjectPublicKeyInfo");
             }
-            AsymmetricKeyInfoConverter keyInfoConverter = new KeyFactorySpi();
             publicKeyFromFactory = (CompositePublicKey)keyInfoConverter.generatePublic(keyInfo);
 
             if (publicKeyFromFactory == null)
@@ -217,9 +229,25 @@ public class CompositePublicKey
         return providers;
     }
 
+    /**
+     * Return the name the composite algorithm this key belongs to is registered under, or null if
+     * the key's algorithm is not one of the composite signature or composite KEM parameter sets
+     * (the legacy generic composite key OIDs have no registered name of their own).
+     *
+     * @return the composite algorithm name, e.g. "MLDSA44-Ed25519-SHA512" or "MLKEM768-X25519-SHA3-256".
+     */
     public String getAlgorithm()
     {
-        return CompositeIndex.getAlgorithmName(this.algorithmIdentifier.getAlgorithm());
+        ASN1ObjectIdentifier algOid = this.algorithmIdentifier.getAlgorithm();
+        String algorithmName = CompositeIndex.getAlgorithmName(algOid);
+
+        if (algorithmName == null)
+        {
+            // the composite KEM parameter sets are held in their own index
+            algorithmName = org.bouncycastle.jcajce.provider.asymmetric.compositekem.CompositeIndex.getAlgorithmName(algOid);
+        }
+
+        return algorithmName;
     }
 
     public AlgorithmIdentifier getAlgorithmIdentifier()
@@ -253,9 +281,9 @@ public class CompositePublicKey
         {
             try
             {
-                byte[] mldsaPK = SubjectPublicKeyInfo.getInstance(keys.get(0).getEncoded()).getPublicKeyData().getOctets();
-                byte[] tradPK = SubjectPublicKeyInfo.getInstance(keys.get(1).getEncoded()).getPublicKeyData().getOctets();
-                return new SubjectPublicKeyInfo(algorithmIdentifier, Arrays.concatenate(mldsaPK, tradPK)).getEncoded(ASN1Encoding.DER);
+                byte[] pqcPK = getComponentKeyBytes(keys.get(0));
+                byte[] tradPK = getComponentKeyBytes(keys.get(1));
+                return new SubjectPublicKeyInfo(algorithmIdentifier, Arrays.concatenate(pqcPK, tradPK)).getEncoded(ASN1Encoding.DER);
             }
             catch (IOException e)
             {
@@ -277,7 +305,7 @@ public class CompositePublicKey
             else
             {
                 //component is the value of subjectPublicKey from SubjectPublicKeyInfo
-                v.add(spki.getPublicKeyData());
+                v.add(new DERBitString(getComponentKeyBytes(keys.get(i))));
             }
         }
 
@@ -289,6 +317,21 @@ public class CompositePublicKey
         {
             throw Exceptions.illegalStateException("unable to encode composite public key", e);
         }
+    }
+
+    /**
+     * The bytes a component public key contributes to the composite encoding - the contents of its
+     * SubjectPublicKeyInfo subjectPublicKey BIT STRING - with an EC point normalised to its
+     * uncompressed encoding as section 4 of both composite drafts requires. A component key that
+     * would encode itself compressed therefore no longer produces a composite key that other
+     * implementations reject and whose encoding changed across an encode / decode / encode round
+     * trip. This is a write-side normalisation: a composite key carrying a compressed component is
+     * still decoded, since the component key factories accept either form.
+     */
+    private static byte[] getComponentKeyBytes(PublicKey key)
+    {
+        return ECUtil.getUncompressedSubjectPublicKeyBytes(
+            SubjectPublicKeyInfo.getInstance(key.getEncoded()), BouncyCastleProvider.CONFIGURATION);
     }
 
     public int hashCode()

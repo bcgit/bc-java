@@ -43,6 +43,7 @@ import org.bouncycastle.asn1.pkcs.RSAPublicKey;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X962Parameters;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
@@ -71,7 +72,8 @@ class CompositeMLKEMEngine
     private static final OAEPParameterSpec oaepSpec = new OAEPParameterSpec("SHA-256", "MGF1", MGF1ParameterSpec.SHA256, PSource.PSpecified.DEFAULT);
 
     private final ASN1ObjectIdentifier compositeOID;
-    private final SecureRandom random;
+
+    private SecureRandom random;
 
     CompositeMLKEMEngine(ASN1ObjectIdentifier compositeOID)
     {
@@ -86,6 +88,22 @@ class CompositeMLKEMEngine
         }
         this.compositeOID = compositeOID;
         this.random = random;
+    }
+
+    /**
+     * The randomness source for encapsulation, defaulted on first use so that a null one - which
+     * javax.crypto.KEM.newEncapsulator() documents as a request for the provider's default - does
+     * not reach the component algorithms. Decapsulation needs none, which is why this is resolved
+     * lazily rather than in the constructor.
+     */
+    private SecureRandom getRandom()
+    {
+        if (random == null)
+        {
+            random = CryptoServicesRegistrar.getSecureRandom();
+        }
+
+        return random;
     }
 
     /**
@@ -178,7 +196,7 @@ class CompositeMLKEMEngine
         Provider tradProv = resolveProvider((providers != null && providers.size() > 1) ? providers.get(1) : null);
 
         byte[] mlkemCT;
-        byte[] tradSS = null, tradCT;
+        byte[] mlkemSS = null, tradSS = null, tradCT;
         byte[] tradPKBytes;
 
         try
@@ -188,7 +206,7 @@ class CompositeMLKEMEngine
                 ? KeyGenerator.getInstance("ML-KEM")
                 : KeyGenerator.getInstance("ML-KEM", mlkemProv);
             KEMGenerateSpec genSpec = new KEMGenerateSpec.Builder(mlkemPK, "", 256).withKdfAlgorithm(null).build();
-            kemGen.init(genSpec, random);
+            kemGen.init(genSpec, getRandom());
             SecretKeyWithEncapsulation mlkemResult = (SecretKeyWithEncapsulation)kemGen.generateKey();
             mlkemCT = mlkemResult.getEncapsulation();
 
@@ -200,9 +218,9 @@ class CompositeMLKEMEngine
                 Cipher rsaCipher = (tradProv == null) ? Cipher.getInstance("RSA/NONE/OAEPPadding")
                     : Cipher.getInstance("RSA/NONE/OAEPPadding", tradProv);
 
-                rsaCipher.init(Cipher.ENCRYPT_MODE, tradPK, oaepSpec, random);
+                rsaCipher.init(Cipher.ENCRYPT_MODE, tradPK, oaepSpec, getRandom());
                 tradSS = new byte[32];
-                random.nextBytes(tradSS);
+                getRandom().nextBytes(tradSS);
                 tradCT = rsaCipher.doFinal(tradSS);
                 tradPKBytes = getSubjectPublicKeyBytes(tradPK);
             }
@@ -230,7 +248,7 @@ class CompositeMLKEMEngine
                 }
                 KeyPairGenerator ephemKPG = (tradProv == null) ? KeyPairGenerator.getInstance("ECDH")
                     : KeyPairGenerator.getInstance("ECDH", tradProv);
-                ephemKPG.initialize(new ECGenParameterSpec(curveName), random);
+                ephemKPG.initialize(new ECGenParameterSpec(curveName), getRandom());
                 KeyPair ephemPair = ephemKPG.generateKeyPair();
                 PrivateKey ephemPriv = ephemPair.getPrivate();
                 tradCT = getSubjectPublicKeyBytes(ephemPair.getPublic());
@@ -261,7 +279,9 @@ class CompositeMLKEMEngine
             }
 
             byte[] compositeCT = Arrays.concatenate(mlkemCT, tradCT);
-            return new SecretWithEncapsulationImpl(kemCombiner(mlkemResult.getEncoded(), tradSS, tradCT, tradPKBytes,
+            mlkemSS = mlkemResult.getEncoded();
+
+            return new SecretWithEncapsulationImpl(kemCombiner(mlkemSS, tradSS, tradCT, tradPKBytes,
                 compositeOID), compositeCT);
         }
         catch (Exception e)
@@ -270,6 +290,9 @@ class CompositeMLKEMEngine
         }
         finally
         {
+            // draft sec. 3.5: clear the buffers holding key material, whether or not we succeeded.
+            // getEncoded() hands back a clone, so the copy taken here has to be cleared as well.
+            Arrays.clear(mlkemSS);
             Arrays.clear(tradSS);
         }
     }
@@ -305,7 +328,7 @@ class CompositeMLKEMEngine
         Provider mlkemProv = resolveProvider((providers != null && !providers.isEmpty()) ? providers.get(0) : null);
         Provider tradProv = resolveProvider((providers != null && providers.size() > 1) ? providers.get(1) : null);
 
-        byte[] tradSS = null;
+        byte[] mlkemSS = null, tradSS = null;
         byte[] tradPKBytes;
 
         try
@@ -373,10 +396,15 @@ class CompositeMLKEMEngine
             {
                 throw new NoSuchAlgorithmException("Unsupported traditional algorithm: " + tradAlg);
             }
-            return kemCombiner(mlkemResult.getEncoded(), tradSS, tradCT, tradPKBytes, compositeOID);
+            mlkemSS = mlkemResult.getEncoded();
+
+            return kemCombiner(mlkemSS, tradSS, tradCT, tradPKBytes, compositeOID);
         }
         finally
         {
+            // draft sec. 3.5: clear the buffers holding key material, whether or not we succeeded.
+            // getEncoded() hands back a clone, so the copy taken here has to be cleared as well.
+            Arrays.clear(mlkemSS);
             Arrays.clear(tradSS);
         }
     }
@@ -400,10 +428,20 @@ class CompositeMLKEMEngine
         return (bc != null) ? bc : new BouncyCastleProvider();
     }
 
-    private byte[] getSubjectPublicKeyBytes(PublicKey ecPubKey)
+    /**
+     * The raw component public key bytes, i.e. the contents of the key's SubjectPublicKeyInfo BIT
+     * STRING. Section 4 of the draft requires an EC component - the recipient public key and, since
+     * the ciphertext is encoded the same way, the ephemeral key too - to be carried as an
+     * uncompressed point, so a key that would encode itself compressed is normalised here rather
+     * than taken as it comes. Encapsulation reads the recipient key's own encoding while
+     * decapsulation recomputes the point from the private key, so leaving a compressed key alone
+     * fed the combiner a different tradPK on each side and the two derived different shared secrets
+     * with no error reported. X25519 / X448 keys have a single encoding and pass through unchanged.
+     */
+    private byte[] getSubjectPublicKeyBytes(PublicKey pubKey)
     {
-        SubjectPublicKeyInfo spki = SubjectPublicKeyInfo.getInstance(ecPubKey.getEncoded());
-        return spki.getPublicKeyData().getOctets();
+        return ECUtil.getUncompressedSubjectPublicKeyBytes(
+            SubjectPublicKeyInfo.getInstance(pubKey.getEncoded()), BouncyCastleProvider.CONFIGURATION);
     }
 
     private PublicKey getPublicKeyFromPrivate(PrivateKey privKey, Provider prov)
@@ -489,7 +527,7 @@ class CompositeMLKEMEngine
     {
         KeyPairGenerator ephemKPG = (tradProv == null) ? KeyPairGenerator.getInstance(algorithm)
             : KeyPairGenerator.getInstance(algorithm, tradProv);
-        ephemKPG.initialize(keySize, random);
+        ephemKPG.initialize(keySize, getRandom());
         return ephemKPG.generateKeyPair();
     }
 }

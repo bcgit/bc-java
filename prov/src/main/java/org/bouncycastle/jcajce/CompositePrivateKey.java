@@ -199,11 +199,19 @@ public class CompositePrivateKey
         ASN1ObjectIdentifier keyInfoIdentifier = keyInfo.getPrivateKeyAlgorithm().getAlgorithm();
         try
         {
-            if (!CompositeIndex.isAlgorithmSupported(keyInfoIdentifier))
+            AsymmetricKeyInfoConverter keyInfoConverter;
+            if (CompositeIndex.isAlgorithmSupported(keyInfoIdentifier))
+            {
+                keyInfoConverter = new KeyFactorySpi();
+            }
+            else if (org.bouncycastle.jcajce.provider.asymmetric.compositekem.CompositeIndex.isCompositeKEMOID(keyInfoIdentifier))
+            {
+                keyInfoConverter = new org.bouncycastle.jcajce.provider.asymmetric.compositekem.KeyFactorySpi();
+            }
+            else
             {
                 throw new IllegalStateException("Unable to create CompositePrivateKey from PrivateKeyInfo");
             }
-            AsymmetricKeyInfoConverter keyInfoConverter = new KeyFactorySpi();
             privateKeyFromFactory = (CompositePrivateKey)keyInfoConverter.generatePrivate(keyInfo);
 
             if (privateKeyFromFactory == null)
@@ -241,9 +249,25 @@ public class CompositePrivateKey
         return providers;
     }
 
+    /**
+     * Return the name the composite algorithm this key belongs to is registered under, or null if
+     * the key's algorithm is not one of the composite signature or composite KEM parameter sets
+     * (the legacy generic composite key OIDs have no registered name of their own).
+     *
+     * @return the composite algorithm name, e.g. "MLDSA44-Ed25519-SHA512" or "MLKEM768-X25519-SHA3-256".
+     */
     public String getAlgorithm()
     {
-        return CompositeIndex.getAlgorithmName(this.algorithmIdentifier.getAlgorithm()); // UPDATED
+        ASN1ObjectIdentifier algOid = this.algorithmIdentifier.getAlgorithm();
+        String algorithmName = CompositeIndex.getAlgorithmName(algOid);
+
+        if (algorithmName == null)
+        {
+            // the composite KEM parameter sets are held in their own index
+            algorithmName = org.bouncycastle.jcajce.provider.asymmetric.compositekem.CompositeIndex.getAlgorithmName(algOid);
+        }
+
+        return algorithmName;
     }
 
     public AlgorithmIdentifier getAlgorithmIdentifier()

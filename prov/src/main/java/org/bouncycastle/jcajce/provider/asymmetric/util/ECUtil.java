@@ -14,6 +14,7 @@ import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X962Parameters;
 import org.bouncycastle.asn1.x9.X9ECParameters;
+import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.ECDomainParameters;
@@ -367,6 +368,38 @@ public class ECUtil
         }
 
         return null;
+    }
+
+    /**
+     * Return the {@code subjectPublicKey} bytes of a SubjectPublicKeyInfo with an EC point
+     * normalised to its uncompressed encoding, and the bytes of any other key type unchanged.
+     * <p>
+     * The composite drafts (draft-ietf-lamps-pq-composite-sigs / -kem sec. 4) require an EC
+     * component to be carried as an uncompressed point, so a component key that would encode itself
+     * compressed - a BC EC key whose point format has been set through
+     * {@link org.bouncycastle.jce.interfaces.ECPointEncoder}, or a key from a provider that
+     * preserves a compressed encoding - has to be normalised on the way out rather than passed
+     * through as it came. This is a write-side normalisation only: a compressed component is still
+     * accepted on decode, as the component key factories decode either form.
+     *
+     * @param spki the key to take the component bytes from.
+     * @param configuration provider configuration, consulted only for implicitlyCA and additional
+     *                      curve parameters.
+     * @return the component key bytes, uncompressed if they are an EC point.
+     */
+    public static byte[] getUncompressedSubjectPublicKeyBytes(SubjectPublicKeyInfo spki, ProviderConfiguration configuration)
+    {
+        byte[] keyBytes = spki.getPublicKeyData().getOctets();
+
+        if (!X9ObjectIdentifiers.id_ecPublicKey.equals(spki.getAlgorithm().getAlgorithm()))
+        {
+            return keyBytes;
+        }
+
+        X962Parameters params = X962Parameters.getInstance(spki.getAlgorithm().getParameters());
+        ECDomainParameters domainParameters = getDomainParameters(configuration, params);
+
+        return domainParameters.getCurve().decodePoint(keyBytes).normalize().getEncoded(false);
     }
 
     public static X9ECParameters getNamedCurveByOid(

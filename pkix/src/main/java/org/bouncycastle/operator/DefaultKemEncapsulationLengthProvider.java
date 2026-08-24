@@ -72,10 +72,10 @@ public class DefaultKemEncapsulationLengthProvider
         kemEncapsulationLengths.put(IANAObjectIdentifiers.id_MLKEM768_X25519_SHA3_256, Integers.valueOf(1120));
         kemEncapsulationLengths.put(IANAObjectIdentifiers.id_MLKEM768_ECDH_P256_SHA3_256, Integers.valueOf(1153));
         kemEncapsulationLengths.put(IANAObjectIdentifiers.id_MLKEM768_ECDH_P384_SHA3_256, Integers.valueOf(1185));
-        kemEncapsulationLengths.put(IANAObjectIdentifiers.id_MLKEM768_ECDH_BP256_SHA3_256, Integers.valueOf(1153));
+        kemEncapsulationLengths.put(IANAObjectIdentifiers.id_MLKEM768_ECDH_brainpoolP256r1_SHA3_256, Integers.valueOf(1153));
         kemEncapsulationLengths.put(IANAObjectIdentifiers.id_MLKEM1024_RSA3072_SHA3_256, Integers.valueOf(1952));
         kemEncapsulationLengths.put(IANAObjectIdentifiers.id_MLKEM1024_ECDH_P384_SHA3_256, Integers.valueOf(1665));
-        kemEncapsulationLengths.put(IANAObjectIdentifiers.id_MLKEM1024_ECDH_BP384_SHA3_256, Integers.valueOf(1665));
+        kemEncapsulationLengths.put(IANAObjectIdentifiers.id_MLKEM1024_ECDH_brainpoolP384r1_SHA3_256, Integers.valueOf(1665));
         kemEncapsulationLengths.put(IANAObjectIdentifiers.id_MLKEM1024_X448_SHA3_256, Integers.valueOf(1624));
         kemEncapsulationLengths.put(IANAObjectIdentifiers.id_MLKEM1024_ECDH_P521_SHA3_256, Integers.valueOf(1701));
     }

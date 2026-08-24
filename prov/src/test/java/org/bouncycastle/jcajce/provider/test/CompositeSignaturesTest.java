@@ -37,6 +37,7 @@ import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.iana.IANAObjectIdentifiers;
+import org.bouncycastle.jce.interfaces.ECPointEncoder;
 import org.bouncycastle.jcajce.CompositePrivateKey;
 import org.bouncycastle.jcajce.CompositePublicKey;
 import org.bouncycastle.jcajce.interfaces.MLDSAPrivateKey;
@@ -111,6 +112,48 @@ public class CompositeSignaturesTest
     public void setUp()
     {
         Security.addProvider(new BouncyCastleProvider());
+    }
+
+    /**
+     * CompositePublicKey.getEncoded() now normalises an EC component to an uncompressed point, as
+     * section 4 of the composite signature draft requires. That is a write-side change only: a
+     * composite public key that an earlier release wrote with a compressed EC component - the
+     * shorter body assembled by hand here - must still decode, and must still verify a signature
+     * made by the matching private key. Re-encoding it yields the normalised (longer) form.
+     */
+    public void testCompressedECComponentStillDecodes()
+        throws Exception
+    {
+        KeyPair kp = KeyPairGenerator.getInstance("MLDSA65-ECDSA-P256-SHA512", "BC").generateKeyPair();
+        CompositePublicKey pub = (CompositePublicKey)kp.getPublic();
+
+        byte[] mldsaPK = SubjectPublicKeyInfo.getInstance(pub.getPublicKeys().get(0).getEncoded()).getPublicKeyData().getOctets();
+
+        PublicKey ecPub = pub.getPublicKeys().get(1);
+        ((ECPointEncoder)ecPub).setPointFormat("COMPRESSED");
+        byte[] compressedEC = SubjectPublicKeyInfo.getInstance(ecPub.getEncoded()).getPublicKeyData().getOctets();
+        assertEquals("EC component should be a compressed point", 33, compressedEC.length);
+
+        SubjectPublicKeyInfo legacy = new SubjectPublicKeyInfo(
+            new AlgorithmIdentifier(IANAObjectIdentifiers.id_MLDSA65_ECDSA_P256_SHA512),
+            Arrays.concatenate(mldsaPK, compressedEC));
+
+        PublicKey decoded = KeyFactory.getInstance("MLDSA65-ECDSA-P256-SHA512", "BC")
+            .generatePublic(new X509EncodedKeySpec(legacy.getEncoded()));
+
+        Signature signer = Signature.getInstance("MLDSA65-ECDSA-P256-SHA512", "BC");
+        signer.initSign(kp.getPrivate());
+        signer.update(Strings.toByteArray(messageToBeSigned));
+        byte[] signature = signer.sign();
+
+        Signature verifier = Signature.getInstance("MLDSA65-ECDSA-P256-SHA512", "BC");
+        verifier.initVerify(decoded);
+        verifier.update(Strings.toByteArray(messageToBeSigned));
+        assertTrue("a key decoded from a compressed EC component must still verify", verifier.verify(signature));
+
+        // and the key that comes back re-encodes in the normalised form
+        assertTrue("re-encoding must produce the uncompressed form",
+            Arrays.areEqual(pub.getEncoded(), decoded.getEncoded()));
     }
 
     /**
