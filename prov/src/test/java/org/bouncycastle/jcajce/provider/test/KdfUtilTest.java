@@ -6,8 +6,12 @@ import javax.crypto.SecretKey;
 
 import junit.framework.TestCase;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.asymmetric.util.KdfUtil;
+import org.bouncycastle.jcajce.spec.KEMParameterSpec;
 import org.bouncycastle.jcajce.spec.KTSParameterSpec;
 import org.bouncycastle.util.Arrays;
 
@@ -150,6 +154,80 @@ public class KdfUtilTest
         catch (UnsupportedOperationException expected)
         {
             assertEquals("AES does not match AES-KWP", expected.getMessage());
+        }
+    }
+
+    /**
+     * A spec built through a Builder never carries a null otherInfo, but the KEMKDFSpec
+     * constructor is protected and reachable by a subclass - the deprecated KEMParameterSpec passes
+     * null itself - and three of makeKeyBytes' KDF branches read the otherInfo length without a
+     * guard. So the normalisation belongs in the constructor: kdf2/kdf3 and HKDF happen to tolerate
+     * a null through KDFParameters/HKDFParameters, but KMAC-128, KMAC-256 and SHAKE-256 threw
+     * NullPointerException out of the KEM operation before this.
+     */
+    public void testNullOtherInfoIsNormalised()
+    {
+        AlgorithmIdentifier[] kdfs = new AlgorithmIdentifier[]
+        {
+            // the branches that were null-tolerant already, kept as the compatibility assertion
+            new AlgorithmIdentifier(X9ObjectIdentifiers.id_kdf_kdf2,
+                new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256)),
+            new AlgorithmIdentifier(X9ObjectIdentifiers.id_kdf_kdf3,
+                new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256)),
+            new AlgorithmIdentifier(PKCSObjectIdentifiers.id_alg_hkdf_with_sha256),
+            // and the three that read otherInfo.length directly
+            new AlgorithmIdentifier(NISTObjectIdentifiers.id_Kmac128),
+            new AlgorithmIdentifier(NISTObjectIdentifiers.id_Kmac256),
+            new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake256)
+        };
+
+        for (int i = 0; i != kdfs.length; i++)
+        {
+            AlgorithmIdentifier kdf = kdfs[i];
+            String name = kdf.getAlgorithm().toString();
+
+            assertEquals("otherInfo must be normalised for " + name,
+                0, new NullOtherInfoSpec(kdf).getOtherInfo().length);
+
+            byte[] secret = secret();
+            byte[] keyBytes = KdfUtil.makeKeyBytes(new NullOtherInfoSpec(kdf), secret);
+
+            assertEquals(name + ": derived key size", 32, keyBytes.length);
+            assertTrue(name + ": the secret must still be erased", isErased(secret));
+
+            // and the derived bytes must match what an explicitly empty otherInfo gives, so the
+            // normalisation is not quietly changing anyone's key material
+            byte[] explicit = KdfUtil.makeKeyBytes(new EmptyOtherInfoSpec(kdf), secret());
+            assertTrue(name + ": null and empty otherInfo must derive the same key",
+                Arrays.areEqual(keyBytes, explicit));
+        }
+
+        // the in-tree subclass that passes null itself
+        assertNotNull("KEMParameterSpec must not report a null otherInfo",
+            new KEMParameterSpec("AES", 256).getOtherInfo());
+        assertEquals(0, new KEMParameterSpec("AES", 256).getOtherInfo().length);
+    }
+
+    /**
+     * An out-of-provider subclass reaching the protected constructor with a null otherInfo - the
+     * shape KdfUtil's javadoc invites when it says the helpers are public for callers building
+     * their own KEM integration.
+     */
+    private static class NullOtherInfoSpec
+        extends KTSParameterSpec
+    {
+        NullOtherInfoSpec(AlgorithmIdentifier kdfAlgorithm)
+        {
+            super("AES", 256, null, kdfAlgorithm, null);
+        }
+    }
+
+    private static class EmptyOtherInfoSpec
+        extends KTSParameterSpec
+    {
+        EmptyOtherInfoSpec(AlgorithmIdentifier kdfAlgorithm)
+        {
+            super("AES", 256, null, kdfAlgorithm, new byte[0]);
         }
     }
 }
