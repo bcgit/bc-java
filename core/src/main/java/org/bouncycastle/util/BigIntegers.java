@@ -218,9 +218,9 @@ public final class BigIntegers
      * Fixed-width encoding drops the two's-complement sign byte that {@link BigInteger#toByteArray()}
      * prepends when the most-significant bit is set: without that, two values could serialise to
      * different lengths (e.g. 256 vs 257 bytes for a 2048-bit value) purely according to that high
-     * bit, and the variable-time comparison would leak it. This is not perfectly constant-time —
+     * bit, and the variable-time comparison would leak it. This is not perfectly constant-time -
      * {@code java.math.BigInteger} has no constant-time serialisation, so the underlying
-     * {@code toByteArray()} still runs in time proportional to each value's magnitude — but the
+     * {@code toByteArray()} still runs in time proportional to each value's magnitude - but the
      * comparison no longer differs in length on the value's high bit. Intended for secret key
      * material (RSA {@code d} and the CRT factors, DSA/DH/ElGamal/GOST {@code x}, EC {@code d}),
      * which are all non-negative; the temporary unsigned encodings holding that secret material are
@@ -594,8 +594,30 @@ public final class BigIntegers
      * multiple - for a safe prime that is roughly half of the range-valid bases - and no known-answer
      * test will catch it, since the randomisation is otherwise result-preserving.
      * <p>
-     * The multiple is small (between 128 and 255 times groupOrder), so it lengthens the exponent by
-     * about eight bits rather than doubling the work.
+     * <b>What this does and does not buy.</b> The multiple is small - between 128 and 255 times
+     * groupOrder, drawn from seven random bits - so it lengthens the exponent by exactly eight bits
+     * rather than doubling the work, and every call raises a different exponent of the same length.
+     * That is aimed squarely at what {@link BigInteger#modPow(BigInteger, BigInteger)} leaks about
+     * the exponent it is handed: the bit length and the bit pattern, which drive the number of
+     * squarings and multiplications. After blinding, no single operation is performed on the private
+     * exponent itself, so an adversary reading one trace - or a handful - no longer reads its bits.
+     * <p>
+     * It is not, however, a constant-time exponentiation, and it is not a substitute for one. Two
+     * limits are worth being explicit about:
+     * <ul>
+     * <li>Seven bits give only 128 distinct blinded exponents for a given exponent and order. An
+     * adversary who can measure <em>many</em> operations under the same long-term exponent can
+     * average over that space, which is small enough to enumerate. This raises the cost of a
+     * repeated-measurement attack; it does not remove it. Where an exponent is long lived and the
+     * operation can be triggered and timed at will - static-static agreement, or signing on
+     * demand - treat that as the residual risk, and prefer a primitive with a real constant-time
+     * guarantee if one exists for the algorithm.</li>
+     * <li>Only the exponent is randomised. The base and the modulus reach modPow unchanged, so any
+     * leakage that depends on them - the windowing table modPow builds from the base, for one - is
+     * unaffected. That is the right trade for the protocols this is used in, where the base is a
+     * public or peer-supplied value and the exponent is the secret, but it is not a general
+     * side-channel defence for the exponentiation.</li>
+     * </ul>
      *
      * @param exponent the private exponent to randomise.
      * @param groupOrder an order the base is raised to giving 1 - see above.
