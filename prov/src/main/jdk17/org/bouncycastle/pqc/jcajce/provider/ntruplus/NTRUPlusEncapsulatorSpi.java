@@ -6,7 +6,7 @@ import javax.crypto.KEM;
 import javax.crypto.KEMSpi;
 
 import org.bouncycastle.jcajce.spec.KTSParameterSpec;
-import org.bouncycastle.jcajce.util.SpiUtil;
+import org.bouncycastle.jcajce.provider.asymmetric.util.KemSpiUtil;
 import org.bouncycastle.pqc.crypto.ntruplus.NTRUPlusKEMGenerator;
 
 /*
@@ -33,7 +33,7 @@ class NTRUPlusEncapsulatorSpi
     @Override
     public KEM.Encapsulated engineEncapsulate(int from, int to, String algorithm)
     {
-        return SpiUtil.buildEncapsulated(from, to, algorithm, engineSecretSize(), kemGen, publicKey.getKeyParams(), parameterSpec);
+        return KemSpiUtil.buildEncapsulated(from, to, algorithm, engineSecretSize(), kemGen, publicKey.getKeyParams(), parameterSpec);
     }
 
     @Override

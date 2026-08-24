@@ -8,7 +8,7 @@ import org.bouncycastle.crypto.kems.CMCEKEMExtractor;
 import org.bouncycastle.crypto.params.CMCEPrivateKeyParameters;
 import org.bouncycastle.jcajce.provider.asymmetric.util.KdfUtil;
 import org.bouncycastle.jcajce.spec.KTSParameterSpec;
-import org.bouncycastle.jcajce.util.SpiUtil;
+import org.bouncycastle.jcajce.provider.asymmetric.util.KemSpiUtil;
 
 /*
  *  NOTE: Per javadoc for javax.crypto.KEM, "Encapsulator and Decapsulator objects are also immutable. It is safe to
@@ -33,7 +33,7 @@ class CMCEDecapsulatorSpi
     public SecretKey engineDecapsulate(byte[] encapsulation, int from, int to, String algorithm)
         throws DecapsulateException
     {
-        algorithm = SpiUtil.resolveDecapsulateAlgorithm(encapsulation, from, to, algorithm, engineSecretSize(), engineEncapsulationSize(), parameterSpec);
+        algorithm = KemSpiUtil.resolveDecapsulateAlgorithm(encapsulation, from, to, algorithm, engineSecretSize(), engineEncapsulationSize(), parameterSpec);
 
         // CMCEEngine allocates its digest per call, so a shared extractor would be safe here and
         // the families whose engines are also safe - NTRU LPRime, SMAUG-T and the four older ones -

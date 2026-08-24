@@ -7,7 +7,7 @@ import javax.crypto.SecretKey;
 import org.bouncycastle.crypto.kems.SM9KEMExtractor;
 import org.bouncycastle.jcajce.provider.asymmetric.util.KdfUtil;
 import org.bouncycastle.jcajce.spec.KTSParameterSpec;
-import org.bouncycastle.jcajce.util.SpiUtil;
+import org.bouncycastle.jcajce.provider.asymmetric.util.KemSpiUtil;
 
 /*
  *  NOTE: Per javadoc for javax.crypto.KEM, "Encapsulator and Decapsulator objects are also immutable. It is safe to
@@ -33,7 +33,7 @@ class SM9DecapsulatorSpi
     public SecretKey engineDecapsulate(byte[] encapsulation, int from, int to, String algorithm)
         throws DecapsulateException
     {
-        algorithm = SpiUtil.resolveDecapsulateAlgorithm(encapsulation, from, to, algorithm, engineSecretSize(), engineEncapsulationSize(), parameterSpec);
+        algorithm = KemSpiUtil.resolveDecapsulateAlgorithm(encapsulation, from, to, algorithm, engineSecretSize(), engineEncapsulationSize(), parameterSpec);
 
         byte[] kemSecret;
         try

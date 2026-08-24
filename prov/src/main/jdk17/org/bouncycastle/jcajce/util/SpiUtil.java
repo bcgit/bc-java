@@ -1,18 +1,16 @@
 package org.bouncycastle.jcajce.util;
 
-import org.bouncycastle.crypto.EncapsulatedSecretGenerator;
-import org.bouncycastle.crypto.SecretWithEncapsulation;
-import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
-import org.bouncycastle.jcajce.provider.asymmetric.util.KdfUtil;
 import org.bouncycastle.jcajce.provider.symmetric.util.ClassUtil;
-import org.bouncycastle.jcajce.spec.KTSParameterSpec;
 
-import javax.crypto.DecapsulateException;
-import javax.crypto.KEM;
-import javax.crypto.SecretKey;
-import javax.security.auth.DestroyFailedException;
-import java.util.Objects;
-
+/**
+ * Reports which JDK SPI families the runtime provides, so the registration classes in the base tree
+ * can skip a service the runtime cannot support. One copy per relevant JDK - the base tree answers
+ * no to everything, this jdk17 copy detects {@code javax.crypto.KEMSpi}, and the jdk25 copy answers
+ * yes to both - which is exactly what makes it the wrong place to host anything else: a method
+ * added here is absent from the jdk25 copy, and on a JDK 25 runtime that is the copy that loads.
+ * Shared helper bodies belong on a class with no versioned twin, such as
+ * {@code org.bouncycastle.jcajce.provider.asymmetric.util.KemSpiUtil}.
+ */
 public abstract class SpiUtil
 {
     // In case of unexpected failure, defaulting to true seems the least bad choice
@@ -32,62 +30,11 @@ public abstract class SpiUtil
     {
         try
         {
-            return ClassUtil.loadClass(SpiUtil.class, "javax.crypto.KEMSpi") != null;
+            return ClassUtil.loadClass(SpiUtil.class, className) != null;
         }
         catch (Exception e)
         {
             return defaultResult;
-        }
-    }
-
-    public static String resolveDecapsulateAlgorithm(byte[] encapsulation, int from, int to, String algorithm,
-                                                     int engineSecretSize, int engineEncapsulationSize, KTSParameterSpec parameterSpec)
-            throws DecapsulateException
-    {
-        Objects.checkFromToIndex(from, to, engineSecretSize);
-        Objects.requireNonNull(algorithm, "null algorithm");
-        Objects.requireNonNull(encapsulation, "null encapsulation");
-
-        if (encapsulation.length != engineEncapsulationSize)
-        {
-            throw new DecapsulateException("incorrect encapsulation size");
-        }
-
-        return KdfUtil.resolveAlgorithm(parameterSpec, algorithm);
-    }
-
-    public static KEM.Encapsulated buildEncapsulated(int from, int to, String algorithm, int engineSecretSize,
-                                                     EncapsulatedSecretGenerator kemGen, AsymmetricKeyParameter recipientKey,
-                                                     KTSParameterSpec parameterSpec)
-    {
-        Objects.checkFromToIndex(from, to, engineSecretSize);
-        Objects.requireNonNull(algorithm, "null algorithm");
-
-        algorithm = KdfUtil.resolveAlgorithm(parameterSpec, algorithm);
-
-        SecretWithEncapsulation secEnc = kemGen.generateEncapsulated(recipientKey);
-
-        try
-        {
-            // getEncapsulation()/getSecret() hand back clones, so the originals have to be
-            // destroyed as well - KdfUtil.makeSecretKey only clears the secret clone it is passed.
-            byte[] encapsulation = secEnc.getEncapsulation();
-
-            SecretKey secretKey = KdfUtil.makeSecretKey(parameterSpec, secEnc.getSecret(),
-                    from, to, algorithm);
-
-            return new KEM.Encapsulated(secretKey, encapsulation, null);
-        }
-        finally
-        {
-            try
-            {
-                secEnc.destroy();
-            }
-            catch (DestroyFailedException e)
-            {
-                // ignore
-            }
         }
     }
 }

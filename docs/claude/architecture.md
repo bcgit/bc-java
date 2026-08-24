@@ -36,7 +36,55 @@ Before changing a method in `src/main/java`, check whether that class has a vers
 
 Because MR-jar resolution is per class file, a **base-tree class can call a class that is overlaid** — on JDK ≥ N the versioned copy is loaded even though the caller came from the jar root. `ECUtil.getNameFrom` → `SpecUtil` (jdk1.11 twin adds the `NamedParameterSpec` fast path) was the original example. So when a provider SPI needs version-specific behaviour, don't fork the whole SPI into `src/main/jdk1.N` — keep the SPI (and its registered inner classes) once in the base tree, and route the genuinely version-specific pieces through a small package-private hook class whose jdk1.N twin swaps them. The `edec` package is the worked example after its 2026 de-duplication: the five SPIs exist only in base and delegate key construction/conversion to `XDHKeys` (jdk1.11 twin: `XECKey` integration) and `EdDSAKeys` (jdk1.15 twin: `EdECKey` + JDK `EdDSAParameterSpec` bridging), with shared byte-level helpers in the never-overlaid `EdECUtil`. The pre-restructure whole-SPI forks had accumulated four behavioural drifts (UKM salt ignored, `EMULATE_ORACLE` dead, RFC 8418 registrations missing per github #2131, third-party-key fallback lost) — the hook shape makes that class of drift impossible, and shrinks what must be kept in step to the hook's method set (state the twin-sync rule in both copies' javadoc). Base copies of hook methods that only exist for a newer JDK return null ("not bridged here"), and the base tree must stay Java-4-source-floor clean since new base classes are swept into the legacy Ant builds.
 
+### The mirror-image trap: an overlaid class must not host code a lower overlay calls
+
+The hook pattern above works because resolution is per class file — but that cuts both ways, and the
+reverse direction is a runtime `NoSuchMethodError` rather than silent drift. If class `H` exists in
+`jdk17` **and** `jdk25`, and class `C` exists **only** in `jdk17`, then on a JDK 25 runtime `C` loads
+from `META-INF/versions/17` while `H` loads from `META-INF/versions/25`. A call from `C` to a method
+that only the jdk17 copy of `H` defines compiles fine (javac sees one `H` per source set) and dies at
+the call site on JDK 25 only.
+
+So: **a class that has versioned twins is a version hook and nothing else.** Put the version-varying
+answers on it and nothing more; shared helper bodies belong on a class with *no* twin anywhere above
+the overlay that calls it. `org.bouncycastle.jcajce.util.SpiUtil` is the cautionary example — it
+exists in base/`jdk17`/`jdk25` purely so `hasKDF()` / `hasKEM()` can differ, and when the twenty
+`javax.crypto.KEM` SPI classes (`jdk17`-only) had their shared prologue extracted onto it, every
+encapsulate and decapsulate threw `NoSuchMethodError` on JDK 25 while JDK 21 stayed green. The fix
+was to move the two helpers to `jcajce.provider.asymmetric.util.KemSpiUtil`, a `jdk17`-only class in
+a package with no overlay above the base tree, and to say so in both classes' javadoc.
+
+Checking this is mechanical, and worth doing whenever you add a cross-class call inside an overlay:
+for the callee, `find <module>/src/main -name <Callee>.java` — if that lists a directory whose
+version is **higher** than the caller's, the call is unsafe. Confirm against the built jar rather
+than the source tree, since the jar is what resolves:
+
+```
+unzip -l <module>/build/libs/bcprov-jdk18on-*.jar | grep '<Callee>.class'   # one entry per overlay
+```
+
+Two entries at `versions/17` and `versions/25` for the callee, one at `versions/17` for the caller,
+is the broken shape.
+
 Crucially, the MR overlay's behaviour is **not covered by the normal test suite**. The `test11`/`test15`/`test17`/`test25` tasks run *only* the classes compiled from `src/test/jdk1.N` (their `testClassesDirs`), wired through the `AllTests11`/`AllTests15`/… suites — the base `src/test/java` tests are on the classpath but are **not executed** there. So a base test that would catch the drift never runs against the MR-jar, and the divergence ships undetected. When you touch (or find drift in) an MR-overlaid class, add a `src/test/jdk1.N` test that exercises the overlaid path against the multi-release jar and register it in the matching `AllTestsN` suite. A thin JUnit `TestCase` that runs the relevant base `SimpleTest` via `new XxxTest().perform()` / `assertTrue(result.isSuccessful())` reuses the existing vectors without duplication — see `prov/src/test/jdk1.11|jdk1.15/.../OpenSSHKeyFactoryMRTest.java`, added after the `edec` `KeyFactorySpi` OpenSSH path was found to have drifted (jdk1.11/jdk1.15 lacked passphrase support and threw the wrong exception type, uncaught because no `test11`/`test15` test covered it).
+
+**Which overlay's test tree, though?** Each `testN` task is the *only* one that puts a JDK N runtime
+in front of the multi-release jar, so a test only ever exercises the resolution its own version
+produces. A test under `src/test/jdk17` cannot see a jdk17-vs-jdk25 mismatch at all: there the caller
+and every hook alike come from `versions/17`. So when a class in overlay N calls anything that has a
+copy in a *higher* overlay, the test has to go in the **highest** overlay's test tree — today
+`src/test/jdk25`, run by `test25` (`BC_JDK25` must be exported for it to run at all; each task is
+`onlyIf` its `BC_JDK<N>` env var is set, so an unset one skips silently and prints nothing).
+
+This is exactly how the `SpiUtil` break above shipped: eleven `*KEM17Test` classes covered all ten
+KEM families through `javax.crypto.KEM` under `src/test/jdk17`, and every one passed, while
+`src/test/jdk25` held three KDF tests and nothing else — so the jdk17-only SPIs had no JDK 25
+coverage of any kind. `prov/src/test/jdk25/.../KemSpiMRTest.java` closes it, and is the model: pick
+one class per SPI *package tree* rather than all of them (they share the helper, so one is enough to
+catch a break) and add an `AllTests25` in its package, since `test25`'s filter is
+`includeTestsMatching "AllTest*"`. Note `test25` emits its results as the HTML report plus
+`test-results/test25/binary`, not per-class XML — read
+`prov/build/reports/tests/test25/index.html` for the counts rather than looking for `TEST-*.xml`.
 
 ## Update `module-info.java` when you add or remove package
 

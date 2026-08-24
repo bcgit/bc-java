@@ -6,7 +6,7 @@ import javax.crypto.SecretKey;
 
 import org.bouncycastle.jcajce.provider.asymmetric.util.KdfUtil;
 import org.bouncycastle.jcajce.spec.KTSParameterSpec;
-import org.bouncycastle.jcajce.util.SpiUtil;
+import org.bouncycastle.jcajce.provider.asymmetric.util.KemSpiUtil;
 import org.bouncycastle.pqc.crypto.ntruprime.NTRULPRimeKEMExtractor;
 
 /*
@@ -32,7 +32,7 @@ class NTRULPRimeDecapsulatorSpi
     public SecretKey engineDecapsulate(byte[] encapsulation, int from, int to, String algorithm)
         throws DecapsulateException
     {
-        algorithm = SpiUtil.resolveDecapsulateAlgorithm(encapsulation, from, to, algorithm, engineSecretSize(), engineEncapsulationSize(), parameterSpec);
+        algorithm = KemSpiUtil.resolveDecapsulateAlgorithm(encapsulation, from, to, algorithm, engineSecretSize(), engineEncapsulationSize(), parameterSpec);
 
         byte[] kemSecret = kemExt.extractSecret(encapsulation);
 
