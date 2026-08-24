@@ -6,6 +6,7 @@ import java.security.SecureRandom;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.tls.crypto.SRP6Group;
 import org.bouncycastle.tls.crypto.TlsHash;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 
 /**
@@ -131,7 +132,7 @@ public class SRP6Server
 
         // Compute the own client evidence message 'M1'
         BigInteger computedM1 = SRP6Util.calculateM1(digest, N, A, B, S);
-        if (computedM1.equals(clientM1))
+        if (Arrays.constantTimeAreEqual(computedM1.toByteArray(), clientM1.toByteArray()))
         {
             this.M1 = clientM1;
             return true;

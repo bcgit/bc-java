@@ -7,6 +7,7 @@ import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.params.SRP6GroupParameters;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 
 /**
@@ -133,7 +134,7 @@ public class SRP6Server
 
         // Compute the own client evidence message 'M1'
         BigInteger computedM1 = SRP6Util.calculateM1(digest, N, A, B, S);
-        if (computedM1.equals(clientM1))
+        if (Arrays.constantTimeAreEqual(computedM1.toByteArray(), clientM1.toByteArray()))
         {
             this.M1 = clientM1;
             return true;
