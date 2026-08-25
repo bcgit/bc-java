@@ -3,8 +3,6 @@ package org.bouncycastle.crypto.params;
 import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.KeyGenerationParameters;
-import org.bouncycastle.crypto.signers.lms.LMS;
-import org.bouncycastle.crypto.signers.lms.LmsUtils;
 
 public class HSSKeyGenerationParameters
     extends KeyGenerationParameters
@@ -21,7 +19,7 @@ public class HSSKeyGenerationParameters
         LMSParameters[] lmsParameters,
         SecureRandom random)
     {
-        super(random, LmsUtils.calculateStrength(lmsParameters[0]));
+        super(random, LMSParameters.calculateStrength(lmsParameters[0]));
         if (lmsParameters.length == 0 || lmsParameters.length > 8)  // RFC 8554, Section 6.
         {
             throw new IllegalArgumentException("lmsParameters length should be between 1 and 8 inclusive");

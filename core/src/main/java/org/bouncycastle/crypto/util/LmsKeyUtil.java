@@ -16,8 +16,8 @@ import org.bouncycastle.crypto.params.HSSPrivateKeyParameters;
 import org.bouncycastle.crypto.params.HSSPublicKeyParameters;
 import org.bouncycastle.crypto.params.LMSPrivateKeyParameters;
 import org.bouncycastle.crypto.params.LMSPublicKeyParameters;
-import org.bouncycastle.crypto.signers.lms.Composer;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Pack;
 
 /**
  * The LMS / HSS (RFC 8554) half of the key factories in this package, held apart from them so that
@@ -48,7 +48,7 @@ class LmsKeyUtil
         {
             LMSPublicKeyParameters params = (LMSPublicKeyParameters)publicKey;
 
-            byte[] encoding = Composer.compose().u32str(1).bytes(params).build();
+            byte[] encoding = Arrays.concatenate(Pack.intToBigEndian(1), params.getEncoded());
 
             return new SubjectPublicKeyInfo(algorithmIdentifier, encoding);
         }
@@ -56,7 +56,7 @@ class LmsKeyUtil
         {
             HSSPublicKeyParameters params = (HSSPublicKeyParameters)publicKey;
 
-            byte[] encoding = Composer.compose().u32str(params.getL()).bytes(params.getLMSPublicKey()).build();
+            byte[] encoding = Arrays.concatenate(Pack.intToBigEndian(params.getL()), params.getLMSPublicKey().getEncoded());
 
             return new SubjectPublicKeyInfo(algorithmIdentifier, encoding);
         }
@@ -77,8 +77,8 @@ class LmsKeyUtil
         {
             LMSPrivateKeyParameters params = (LMSPrivateKeyParameters)privateKey;
 
-            byte[] encoding = Composer.compose().u32str(1).bytes(params).build();
-            byte[] pubEncoding = Composer.compose().u32str(1).bytes(params.getPublicKey()).build();
+            byte[] encoding = Arrays.concatenate(Pack.intToBigEndian(1), params.getEncoded());
+            byte[] pubEncoding = Arrays.concatenate(Pack.intToBigEndian(1), params.getPublicKey().getEncoded());
 
             return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(encoding), attributes, pubEncoding);
         }
@@ -86,9 +86,9 @@ class LmsKeyUtil
         {
             HSSPrivateKeyParameters params = (HSSPrivateKeyParameters)privateKey;
 
-            byte[] encoding = Composer.compose().u32str(params.getL()).bytes(params).build();
-            byte[] pubEncoding = Composer.compose().u32str(params.getL())
-                .bytes(params.getPublicKey().getLMSPublicKey()).build();
+            byte[] encoding = Arrays.concatenate(Pack.intToBigEndian(params.getL()), params.getEncoded());
+            byte[] pubEncoding = Arrays.concatenate(Pack.intToBigEndian(params.getL()),
+                params.getPublicKey().getLMSPublicKey().getEncoded());
 
             return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(encoding), attributes, pubEncoding);
         }

@@ -11,7 +11,7 @@ import org.bouncycastle.crypto.params.LMSigParameters;
 /**
  * LMS digest utils provides oid mapping to provider digest name.
  */
-public class DigestUtil
+class DigestUtil
 {
     public static Digest getDigest(LMOtsParameters otsParameters)
     {

@@ -1,6 +1,7 @@
 package org.bouncycastle.crypto.params;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -9,16 +10,11 @@ import java.util.WeakHashMap;
 
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.ExhaustedPrivateKeyException;
-import org.bouncycastle.crypto.signers.LMSContext;
 import org.bouncycastle.crypto.signers.LMSContextBasedSigner;
-import org.bouncycastle.crypto.signers.lms.Composer;
-import org.bouncycastle.crypto.signers.lms.DigestUtil;
-import org.bouncycastle.crypto.signers.lms.HSS;
-import org.bouncycastle.crypto.signers.lms.LMOtsPrivateKey;
-import org.bouncycastle.crypto.signers.lms.LMS;
-import org.bouncycastle.crypto.signers.lms.LM_OTS;
-import org.bouncycastle.crypto.signers.lms.LmsUtils;
+import org.bouncycastle.crypto.signers.lms.LMSContext;
+import org.bouncycastle.crypto.signers.lms.LMSEngine;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.io.Streams;
 
 public class LMSPrivateKeyParameters
@@ -66,7 +62,7 @@ public class LMSPrivateKeyParameters
         this.masterSecret = Arrays.clone(masterSecret);
         this.maxCacheR = 1 << (parameters.getH() + 1);
         this.tCache = new WeakHashMap<CacheKey, byte[]>();
-        this.tDigest = DigestUtil.getDigest(lmsParameter);
+        this.tDigest = LMSEngine.createDigest(lmsParameter);
     }
 
     private LMSPrivateKeyParameters(LMSPrivateKeyParameters parent, int q, int maxQ)
@@ -80,7 +76,7 @@ public class LMSPrivateKeyParameters
         this.masterSecret = parent.masterSecret;
         this.maxCacheR = 1 << parameters.getH();
         this.tCache = parent.tCache;
-        this.tDigest = DigestUtil.getDigest(parameters);
+        this.tDigest = LMSEngine.createDigest(parameters);
         this.publicKey = parent.publicKey;
     }
 
@@ -88,7 +84,7 @@ public class LMSPrivateKeyParameters
         throws IOException
     {
         LMSPrivateKeyParameters pKey = getInstance(privEnc);
-    
+
         pKey.publicKey = LMSPublicKeyParameters.getInstance(pubEnc);
 
         return pKey;
@@ -243,7 +239,14 @@ public class LMSPrivateKeyParameters
         key.primeTreeCache(cachedT);
     }
 
-    LMOtsPrivateKey getCurrentOTSKey()
+    /**
+     * Derive the identifier and master seed of the tree below the current one-time key of this
+     * key (RFC 8554 sec. 6.1) - the child an HSS hierarchy hangs off leaf q. The index is not
+     * advanced.
+     *
+     * @return { I of the child tree, master seed of the child tree }.
+     */
+    byte[][] deriveChildKey()
     {
         synchronized (this)
         {
@@ -251,7 +254,7 @@ public class LMSPrivateKeyParameters
             {
                 throw new ExhaustedPrivateKeyException("ots private keys expired");
             }
-            return new LMOtsPrivateKey(otsParameters, I, q, masterSecret);
+            return LMSEngine.deriveChildKey(otsParameters, I, masterSecret, q);
         }
     }
 
@@ -265,7 +268,7 @@ public class LMSPrivateKeyParameters
         return q;
     }
 
-    public synchronized void incIndex()
+    synchronized void incIndex()
     {
         q++;
     }
@@ -277,8 +280,20 @@ public class LMSPrivateKeyParameters
 
         // Step 2
         int h = lmsParameter.getH();
-        int q = getIndex();
-        LMOtsPrivateKey otsPk = getNextOtsPrivateKey();
+        int q;
+
+        //
+        // The index is claimed before the context is handed out, so a one-time key is never issued
+        // twice even if the caller then abandons the context.
+        //
+        synchronized (this)
+        {
+            if (this.q >= maxQ)
+            {
+                throw new ExhaustedPrivateKeyException("ots private key exhausted");
+            }
+            q = this.q++;
+        }
 
         int i = 0;
         int r = (1 << h) + q;
@@ -292,35 +307,20 @@ public class LMSPrivateKeyParameters
             i++;
         }
 
-        return otsPk.getSignatureContext(this.getSigParameters(), path);
+        return LMSEngine.generateSignContext(lmsParameter, otsParameters, I, q, masterSecret, path);
     }
 
     public byte[] generateSignature(LMSContext context)
     {
         try
         {
-            return LMS.generateSign(context).getEncoded();
+            return LMSEngine.generateSign(context).getEncoded();
         }
         catch (IOException e)
         {
-            throw new IllegalStateException("unable to encode signature: " + e.getMessage(), e);
+            throw Exceptions.illegalStateException("unable to encode signature: " + e.getMessage(), e);
         }
     }
-
-    public LMOtsPrivateKey getNextOtsPrivateKey()
-    {
-        synchronized (this)
-        {
-            if (q >= maxQ)
-            {
-                throw new ExhaustedPrivateKeyException("ots private key exhausted");
-            }
-            LMOtsPrivateKey otsPrivateKey = new LMOtsPrivateKey(otsParameters, I, q, masterSecret);
-            incIndex();
-            return otsPrivateKey;
-        }
-    }
-
 
     /**
      * Return a key that can be used usageCount times.
@@ -431,39 +431,21 @@ public class LMSPrivateKeyParameters
 
         int twoToh = 1 << h;
 
-        byte[] T;
-
         // r is a base 1 index.
 
         if (r >= twoToh)
         {
-            LmsUtils.byteArray(this.getI(), tDigest);
-            LmsUtils.u32str(r, tDigest);
-            LmsUtils.u16str(LMS.D_LEAF, tDigest);
             //
             // These can be pre generated at the time of key generation and held within the private key.
             // However it will cost memory to have them stick around.
             //
-            byte[] K = LM_OTS.lms_ots_generatePublicKey(this.getOtsParameters(), this.getI(), (r - twoToh), this.getMasterSecret());
-
-            LmsUtils.byteArray(K, tDigest);
-            T = new byte[tDigest.getDigestSize()];
-            tDigest.doFinal(T, 0);
-            return T;
+            return LMSEngine.computeLeaf(tDigest, otsParameters, I, r, r - twoToh, masterSecret);
         }
 
         byte[] t2r = findT(2 * r);
         byte[] t2rPlus1 = findT((2 * r + 1));
 
-        LmsUtils.byteArray(this.getI(), tDigest);
-        LmsUtils.u32str(r, tDigest);
-        LmsUtils.u16str(LMS.D_INTR, tDigest);
-        LmsUtils.byteArray(t2r, tDigest);
-        LmsUtils.byteArray(t2rPlus1, tDigest);
-        T = new byte[tDigest.getDigestSize()];
-        tDigest.doFinal(T, 0);
-
-        return T;
+        return LMSEngine.computeNode(tDigest, I, r, t2r, t2rPlus1);
     }
 
     /**
@@ -581,23 +563,24 @@ public class LMSPrivateKeyParameters
 
         int cacheTop = Math.min(internedKeys.length, maxCacheR);
 
-        Composer composer = Composer.compose()
-            .u32str(0) // version
-            .u32str(parameters.getType()) // type
-            .u32str(otsParameters.getType()) // ots type
-            .bytes(I) // I at 16 bytes
-            .u32str(q) // q
-            .u32str(maxQ) // maximum q
-            .u32str(masterSecret.length) // length of master secret.
-            .bytes(masterSecret) // the master secret
-            .u32str(cacheTop - 1); // number of cached tree nodes (nodes 1 .. cacheTop-1)
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+
+        u32str(0, bOut); // version
+        u32str(parameters.getType(), bOut); // type
+        u32str(otsParameters.getType(), bOut); // ots type
+        bytes(I, bOut); // I at 16 bytes
+        u32str(q, bOut); // q
+        u32str(maxQ, bOut); // maximum q
+        u32str(masterSecret.length, bOut); // length of master secret.
+        bytes(masterSecret, bOut); // the master secret
+        u32str(cacheTop - 1, bOut); // number of cached tree nodes (nodes 1 .. cacheTop-1)
 
         for (int r = 1; r < cacheTop; r++)
         {
-            composer.bytes(findT(r)); // top-of-tree node r
+            bytes(findT(r), bOut); // top-of-tree node r
         }
 
-        return composer.build();
+        return bOut.toByteArray();
     }
 
     private static class CacheKey

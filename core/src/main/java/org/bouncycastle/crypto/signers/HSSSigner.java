@@ -1,15 +1,12 @@
 package org.bouncycastle.crypto.signers;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.Signer;
 import org.bouncycastle.crypto.params.HSSPrivateKeyParameters;
 import org.bouncycastle.crypto.params.HSSPublicKeyParameters;
-import org.bouncycastle.crypto.signers.lms.HSS;
-import org.bouncycastle.crypto.signers.lms.HSSSignature;
-import org.bouncycastle.util.Exceptions;
+import org.bouncycastle.crypto.signers.lms.LMSContext;
 
 public class HSSSigner
     implements Signer
@@ -43,14 +40,11 @@ public class HSSSigner
             throw new IllegalStateException("HSSSigner not initialised for signature generation");
         }
 
-        try
-        {
-            return HSS.generateSignature(privKey, message).getEncoded();
-        }
-        catch (IOException e)
-        {
-            throw Exceptions.illegalStateException("unable to encode signature", e);
-        }
+        LMSContext context = privKey.generateLMSContext();
+
+        context.update(message, 0, message.length);
+
+        return privKey.generateSignature(context);
     }
 
     public boolean verifySignature(byte[] message, byte[] signature)
@@ -63,15 +57,16 @@ public class HSSSigner
         }
 
         // A malformed/truncated signature must not throw out of verify: the decode
-        // can fail with IOException (truncation) or a RuntimeException (out-of-range
-        // type fields surface as NullPointerException / NegativeArraySizeException).
+        // can fail on truncation or a level-count mismatch (surfacing as IllegalStateException)
+        // or with another RuntimeException (out-of-range type fields surface as
+        // NullPointerException / NegativeArraySizeException).
         try
         {
-            return HSS.verifySignature(pubKey, HSSSignature.getInstance(signature, pubKey.getL()), message);
-        }
-        catch (IOException e)
-        {
-            return false;
+            LMSContext context = pubKey.generateLMSContext(signature);
+
+            context.update(message, 0, message.length);
+
+            return pubKey.verify(context);
         }
         catch (RuntimeException e)
         {

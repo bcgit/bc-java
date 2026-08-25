@@ -3,21 +3,20 @@ package org.bouncycastle.crypto.signers.lms;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.params.LMOtsParameters;
 import org.bouncycastle.crypto.params.LMSigParameters;
-import org.bouncycastle.crypto.signers.LMSContext;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 
-public class LM_OTS
+class LM_OTS
 {
 
     private static final short D_PBLC = (short)0x8080;
     private static final int ITER_K = 20;
     private static final int ITER_PREV = 23;
     private static final int ITER_J = 22;
-    public static final int SEED_RANDOMISER_INDEX = ~2;
-    public static final int MAX_HASH = 32;
+    static final int SEED_RANDOMISER_INDEX = ~2;
+    static final int MAX_HASH = 32;
 
-    public static final short D_MESG = (short)0x8181;
+    static final short D_MESG = (short)0x8181;
 
 
     public static int coef(byte[] S, int i, int w)
@@ -31,7 +30,7 @@ public class LM_OTS
     }
 
 
-    public static int cksm(byte[] S, int sLen, LMOtsParameters parameters)
+    static int cksm(byte[] S, int sLen, LMOtsParameters parameters)
     {
         int sum = 0;
 

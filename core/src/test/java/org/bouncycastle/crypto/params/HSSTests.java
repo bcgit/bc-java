@@ -16,10 +16,9 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.io.Streams;
-import org.bouncycastle.crypto.signers.lms.Composer;
-import org.bouncycastle.crypto.signers.lms.HSS;
-import org.bouncycastle.crypto.signers.lms.HSSSignature;
-import org.bouncycastle.crypto.signers.lms.LMS;
+import org.bouncycastle.crypto.signers.HSSSigner;
+import org.bouncycastle.crypto.signers.LMSSigner;
+import org.bouncycastle.crypto.signers.lms.LMSEngine;
 import org.bouncycastle.crypto.signers.lms.LMSSignature;
 
 public class HSSTests
@@ -38,14 +37,14 @@ public class HSSTests
         SecureRandom rand = new FixedSecureRandom(fixedSource);
 
 
-        HSSPrivateKeyParameters generatedPrivateKey = HSS.generateHSSKeyPair(
+        HSSPrivateKeyParameters generatedPrivateKey = LMSEngine.generateHSSKeyPair(
             new HSSKeyGenerationParameters(new LMSParameters[]{
                 new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w4),
                 new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w2),
             }, rand)
         );
 
-        HSSSignature sigFromGeneratedPrivateKey = HSS.generateSignature(generatedPrivateKey, Hex.decode("ABCDEF"));
+        byte[] sigFromGeneratedPrivateKey = sign(generatedPrivateKey, Hex.decode("ABCDEF"));
 
         byte[] keyPairEnc = generatedPrivateKey.getEncoded();
 
@@ -65,7 +64,7 @@ public class HSSTests
         //
         // Check the reconstructed key can verify a signature.
         //
-        assertTrue(HSS.verifySignature(reconstructedPrivateKey.getPublicKey(), sigFromGeneratedPrivateKey, Hex.decode("ABCDEF")));
+        assertTrue(verify(reconstructedPrivateKey.getPublicKey(), sigFromGeneratedPrivateKey, Hex.decode("ABCDEF")));
 
     }
 
@@ -90,7 +89,7 @@ public class HSSTests
     {
         HSSPrivateKeyParameters generated = generateKey(d);
 
-        Composer composer = Composer.compose()
+        LMSVectorUtils.Encoder composer = LMSVectorUtils.compose()
             .u32str(0) // version 0: pre-tree-cache component keys
             .u32str(generated.getL())
             .u64str(generated.getIndex())
@@ -103,7 +102,7 @@ public class HSSTests
         }
         for (LMSSignature s : generated.getSig())
         {
-            composer.bytes(s);
+            composer.bytes(s.getEncoded());
         }
 
         HSSPrivateKeyParameters decoded = HSSPrivateKeyParameters.getInstance(composer.build());
@@ -116,8 +115,8 @@ public class HSSTests
             assertFalse("version 0 component key carries no cache", decoded.getKeys().get(t).isTreeCachePrimed());
         }
 
-        HSSSignature signature = HSS.generateSignature(decoded, Hex.decode("ABCDEF"));
-        assertTrue(HSS.verifySignature(generated.getPublicKey(), signature, Hex.decode("ABCDEF")));
+        byte[] signature = sign(decoded, Hex.decode("ABCDEF"));
+        assertTrue(verify(generated.getPublicKey(), signature, Hex.decode("ABCDEF")));
     }
 
     /**
@@ -142,8 +141,8 @@ public class HSSTests
             assertTrue("version 1 component key carries the cache", decoded.getKeys().get(t).isTreeCachePrimed());
         }
 
-        HSSSignature signature = HSS.generateSignature(decoded, Hex.decode("ABCDEF"));
-        assertTrue(HSS.verifySignature(generated.getPublicKey(), signature, Hex.decode("ABCDEF")));
+        byte[] signature = sign(decoded, Hex.decode("ABCDEF"));
+        assertTrue(verify(generated.getPublicKey(), signature, Hex.decode("ABCDEF")));
     }
 
     private static HSSPrivateKeyParameters generateKey(int d)
@@ -154,7 +153,7 @@ public class HSSTests
             lmsParameters[t] = new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w4);
         }
 
-        return HSS.generateHSSKeyPair(new HSSKeyGenerationParameters(lmsParameters, new SecureRandom()));
+        return LMSEngine.generateHSSKeyPair(new HSSKeyGenerationParameters(lmsParameters, new SecureRandom()));
     }
 
     // Exactly what LMSPrivateKeyParameters.getEncoded() produced before the tree-cache feature:
@@ -162,7 +161,7 @@ public class HSSTests
     private static byte[] version0KeyEncoding(LMSPrivateKeyParameters key)
         throws Exception
     {
-        return Composer.compose()
+        return LMSVectorUtils.compose()
             .u32str(0)
             .u32str(key.getSigParameters().getType())
             .u32str(key.getOtsParameters().getType())
@@ -188,8 +187,8 @@ public class HSSTests
 
         HSSPublicKeyParameters publicKey = HSSPublicKeyParameters.getInstance(blocks.get(0));
         byte[] message = blocks.get(1);
-        HSSSignature signature = HSSSignature.getInstance(blocks.get(2), publicKey.getL());
-        assertTrue("Test Case 1 ", HSS.verifySignature(publicKey, signature, message));
+        byte[] signature = blocks.get(2);
+        assertTrue("Test Case 1 ", verify(publicKey, signature, message));
     }
 
     /**
@@ -207,13 +206,11 @@ public class HSSTests
         HSSPublicKeyParameters publicKey = HSSPublicKeyParameters.getInstance(blocks.get(0));
         byte[] message = blocks.get(1);
         byte[] sig = blocks.get(2);
-        HSSSignature signature = HSSSignature.getInstance(sig, publicKey.getL());
-        assertTrue("Test Case 2 Signature", HSS.verifySignature(publicKey, signature, message));
+        byte[] signature = sig;
+        assertTrue("Test Case 2 Signature", verify(publicKey, signature, message));
 
         LMSPublicKeyParameters lmsPub = LMSPublicKeyParameters.getInstance(blocks.get(3));
-        LMSSignature lmsSignature = LMSSignature.getInstance(blocks.get(4));
-
-        assertTrue("Test Case 2 Signature 2", LMS.verifySignature(lmsPub, lmsSignature, message));
+        assertTrue("Test Case 2 Signature 2", verifyLms(lmsPub, blocks.get(4), message));
 
     }
 
@@ -261,7 +258,7 @@ public class HSSTests
 
         byte[] seed = Hex.decode("558b8966c48ae9cb898b423c83443aae014a72f1b1ab5cc85cf1d892903b5439");
         int level = 0;
-        LMSPrivateKeyParameters lmsPrivateKey = LMS.generateKeys(LMSigParameters.getParametersForType(6), LMOtsParameters.getParametersForType(3), level, Hex.decode("d08fabd4a2091ff0a8cb4ed834e74534"), seed);
+        LMSPrivateKeyParameters lmsPrivateKey = lmsKey(LMSigParameters.getParametersForType(6), LMOtsParameters.getParametersForType(3), level, Hex.decode("d08fabd4a2091ff0a8cb4ed834e74534"), seed);
         LMSPublicKeyParameters publicKey = lmsPrivateKey.getPublicKey();
         assertTrue(Arrays.areEqual(publicKey.getT1(), Hex.decode("32a58885cd9ba0431235466bff9651c6c92124404d45fa53cf161c28f1ad5a8e")));
         assertTrue(Arrays.areEqual(publicKey.getI(), Hex.decode("d08fabd4a2091ff0a8cb4ed834e74534")));
@@ -279,7 +276,7 @@ public class HSSTests
 
         byte[] seed = Hex.decode("a1c4696e2608035a886100d05cd99945eb3370731884a8235e2fb3d4d71f2547");
         int level = 1;
-        LMSPrivateKeyParameters lmsPrivateKey = LMS.generateKeys(LMSigParameters.getParametersForType(5), LMOtsParameters.getParametersForType(4), level, Hex.decode("215f83b7ccb9acbcd08db97b0d04dc2b"), seed);
+        LMSPrivateKeyParameters lmsPrivateKey = lmsKey(LMSigParameters.getParametersForType(5), LMOtsParameters.getParametersForType(4), level, Hex.decode("215f83b7ccb9acbcd08db97b0d04dc2b"), seed);
         LMSPublicKeyParameters publicKey = lmsPrivateKey.getPublicKey();
         assertTrue(Arrays.areEqual(publicKey.getT1(), Hex.decode("a1cd035833e0e90059603f26e07ad2aad152338e7a5e5984bcd5f7bb4eba40b7")));
         assertTrue(Arrays.areEqual(publicKey.getI(), Hex.decode("215f83b7ccb9acbcd08db97b0d04dc2b")));
@@ -305,7 +302,7 @@ public class HSSTests
 
         SecureRandom rand = new FixedSecureRandom(fixedSource);
 
-        HSSPrivateKeyParameters keyPair = HSS.generateHSSKeyPair(
+        HSSPrivateKeyParameters keyPair = LMSEngine.generateHSSKeyPair(
             new HSSKeyGenerationParameters(new LMSParameters[]{
                 new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w4),
                 new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w2),
@@ -334,7 +331,7 @@ public class HSSTests
         {
             SecureRandom rand1 = new FixedSecureRandom(fixedSource);
 
-            HSSPrivateKeyParameters regenKeyPair = HSS.generateHSSKeyPair(
+            HSSPrivateKeyParameters regenKeyPair = LMSEngine.generateHSSKeyPair(
                 new HSSKeyGenerationParameters(new LMSParameters[]{
                     new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w4),
                     new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w2),
@@ -375,7 +372,7 @@ public class HSSTests
             // Use a real secure random this time.
             SecureRandom rand1 = new SecureRandom();
 
-            HSSPrivateKeyParameters differentKey = HSS.generateHSSKeyPair(
+            HSSPrivateKeyParameters differentKey = LMSEngine.generateHSSKeyPair(
                 new HSSKeyGenerationParameters(new LMSParameters[]{
                     new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w4),
                     new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w2),
@@ -500,7 +497,7 @@ public class HSSTests
                 //
 
 
-                HSSPrivateKeyParameters keyPair = HSS.generateHSSKeyPair(
+                HSSPrivateKeyParameters keyPair = LMSEngine.generateHSSKeyPair(
                     new HSSKeyGenerationParameters(
                         lmsParams.toArray(new LMSParameters[lmsParams.size()]), fixRnd)
                 );
@@ -519,33 +516,33 @@ public class HSSTests
                 //
                 // Generate a signature using the keypair we generated.
                 //
-                HSSSignature sig = HSS.generateSignature(keyPair, message);
+                byte[] sig = sign(keyPair, message);
 
 
-                if (!Arrays.areEqual(sig.getEncoded(), encodedSigFromVector))
+                if (!Arrays.areEqual(sig, encodedSigFromVector))
                 {
-                    HSSSignature signatureFromVector = HSSSignature.getInstance(encodedSigFromVector, d);
-                    signatureFromVector.equals(sig);
+                    byte[] signatureFromVector = encodedSigFromVector;
+                    Arrays.areEqual(signatureFromVector, sig);
                     // System.out.println();
 
                 }
 
                 // check encoding signature matches.
-                assertTrue(Arrays.areEqual(sig.getEncoded(), encodedSigFromVector));
+                assertTrue(Arrays.areEqual(sig, encodedSigFromVector));
 
                 // Check we can verify our generated signature with the vectors sourced public key.
-                assertTrue(HSS.verifySignature(vectorSourcedPubKey, sig, message));
+                assertTrue(verify(vectorSourcedPubKey, sig, message));
 
                 // Deserialize the signature from the vector.
-                HSSSignature signatureFromVector = HSSSignature.getInstance(encodedSigFromVector, d);
+                byte[] signatureFromVector = encodedSigFromVector;
 
                 // Can we verify signature from vector with public key from vector.
-                assertTrue(HSS.verifySignature(vectorSourcedPubKey, signatureFromVector, message));
+                assertTrue(verify(vectorSourcedPubKey, signatureFromVector, message));
 
                 //
                 // Check our generated signature and the one deserialized from the vector
                 // have value equality.
-                assertTrue(signatureFromVector.equals(sig));
+                assertTrue(Arrays.areEqual(signatureFromVector, sig));
 
 
                 //
@@ -640,7 +637,7 @@ public class HSSTests
             lmsParams.add(new LMSParameters(lmsParameters.get(i), lmOtsParameters.get(i)));
         }
 
-        HSSPrivateKeyParameters keyPair = HSS.generateHSSKeyPair(
+        HSSPrivateKeyParameters keyPair = LMSEngine.generateHSSKeyPair(
             new HSSKeyGenerationParameters(
                 lmsParams.toArray(new LMSParameters[lmsParams.size()]), fixRnd)
         );
@@ -672,7 +669,7 @@ public class HSSTests
             {
                 try
                 {
-                    HSS.incrementIndex(pair);
+                    pair.incrementIndex();
                     fail("shard should be exhausted.");
                 }
                 catch (ExhaustedPrivateKeyException ex)
@@ -688,26 +685,26 @@ public class HSSTests
 
             if (i % 5 == 0)
             {
-                HSSSignature sigCalculated = HSS.generateSignature(pair, message);
-                assertTrue(Arrays.areEqual(sigCalculated.getEncoded(), sigVectors.get(c)));
+                byte[] sigCalculated = sign(pair, message);
+                assertTrue(Arrays.areEqual(sigCalculated, sigVectors.get(c)));
 
-                assertTrue(HSS.verifySignature(pubKeyFromVector, sigCalculated, message));
-                assertTrue(HSS.verifySignature(pubKeyGenerated, sigCalculated, message));
+                assertTrue(verify(pubKeyFromVector, sigCalculated, message));
+                assertTrue(verify(pubKeyGenerated, sigCalculated, message));
 
-                HSSSignature sigFromVector = HSSSignature.getInstance(sigVectors.get(c), pubKeyFromVector.getL());
+                byte[] sigFromVector = sigVectors.get(c);
 
-                assertTrue(HSS.verifySignature(pubKeyFromVector, sigFromVector, message));
-                assertTrue(HSS.verifySignature(pubKeyGenerated, sigFromVector, message));
+                assertTrue(verify(pubKeyFromVector, sigFromVector, message));
+                assertTrue(verify(pubKeyGenerated, sigFromVector, message));
 
 
-                assertTrue(sigCalculated.equals(sigFromVector));
+                assertTrue(Arrays.areEqual(sigCalculated, sigFromVector));
 
 
                 c++;
             }
             else
             {
-                HSS.incrementIndex(pair);
+                pair.incrementIndex();
             }
         }
     }
@@ -722,7 +719,7 @@ public class HSSTests
     public void testRemaining()
         throws Exception
     {
-        HSSPrivateKeyParameters keyPair = HSS.generateHSSKeyPair(
+        HSSPrivateKeyParameters keyPair = LMSEngine.generateHSSKeyPair(
             new HSSKeyGenerationParameters(new LMSParameters[]{
                 new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w2),
                 new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w2)
@@ -736,11 +733,11 @@ public class HSSTests
         //
         assertEquals(1024, keyPair.getUsagesRemaining());
 
-        HSS.incrementIndex(keyPair);
-        HSS.incrementIndex(keyPair);
-        HSS.incrementIndex(keyPair);
-        HSS.incrementIndex(keyPair);
-        HSS.incrementIndex(keyPair);
+        keyPair.incrementIndex();
+        keyPair.incrementIndex();
+        keyPair.incrementIndex();
+        keyPair.incrementIndex();
+        keyPair.incrementIndex();
 
         assertEquals(5, keyPair.getIndex()); // Next key is at index 5!
 
@@ -762,14 +759,14 @@ public class HSSTests
         //
         for (int t = 0; t < 17; t++)
         {
-            HSS.incrementIndex(keyPair);
+            keyPair.incrementIndex();
         }
 
         // We have used 32 keys.
         assertEquals(1024 - 32, keyPair.getUsagesRemaining());
 
 
-        HSS.generateSignature(keyPair, "Foo".getBytes());
+        sign(keyPair, "Foo".getBytes());
 
         //
         // This should trigger the generation of a new key.
@@ -781,7 +778,7 @@ public class HSSTests
     public void testSharding()
         throws Exception
     {
-        HSSPrivateKeyParameters keyPair = HSS.generateHSSKeyPair(
+        HSSPrivateKeyParameters keyPair = LMSEngine.generateHSSKeyPair(
             new HSSKeyGenerationParameters(new LMSParameters[]{
                 new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w2),
                 new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w2)
@@ -792,7 +789,7 @@ public class HSSTests
         assertEquals(1024, keyPair.getIndexLimit());
         assertEquals(0, keyPair.getIndex());
         assertFalse(keyPair.isShard());
-        HSS.incrementIndex(keyPair);
+        keyPair.incrementIndex();
 
 
         //
@@ -810,22 +807,22 @@ public class HSSTests
         int t = 47;
         while (--t >= 0)
         {
-            HSS.incrementIndex(shard);
+            shard.incrementIndex();
         }
 
-        HSSSignature sig = HSS.generateSignature(shard, "Cats".getBytes());
+        byte[] sig = sign(shard, "Cats".getBytes());
 
         //
         // Test it validates and nothing has gone wrong with the public keys.
         //
-        assertTrue(HSS.verifySignature(keyPair.getPublicKey(), sig, "Cats".getBytes()));
-        assertTrue(HSS.verifySignature(shard.getPublicKey(), sig, "Cats".getBytes()));
+        assertTrue(verify(keyPair.getPublicKey(), sig, "Cats".getBytes()));
+        assertTrue(verify(shard.getPublicKey(), sig, "Cats".getBytes()));
 
         // Signing again should fail.
 
         try
         {
-            HSS.generateSignature(shard, "Cats".getBytes());
+            sign(shard, "Cats".getBytes());
             fail();
         }
         catch (Exception ex)
@@ -834,7 +831,7 @@ public class HSSTests
         }
 
         // Should work without throwing.
-        HSS.generateSignature(keyPair, "Cats".getBytes());
+        sign(keyPair, "Cats".getBytes());
 
 
         // System.out.println();
@@ -862,7 +859,7 @@ public class HSSTests
             }
         };
 
-        HSSPrivateKeyParameters keyPair = HSS.generateHSSKeyPair(
+        HSSPrivateKeyParameters keyPair = LMSEngine.generateHSSKeyPair(
             new HSSKeyGenerationParameters(new LMSParameters[]{
                 new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w2),
                 new LMSParameters(LMSigParameters.lms_sha256_n32_h10, LMOtsParameters.sha256_n32_w1),
@@ -895,9 +892,9 @@ public class HSSTests
                     //
 
                     Pack.intToBigEndian(ctr, message, 0);
-                    HSSSignature sig = HSS.generateSignature(keyPair, message);
+                    byte[] sig = sign(keyPair, message);
 
-                    assertEquals(ctr % 1024, sig.getSignature().getQ());
+                    assertEquals(ctr % 1024, leafSignatureQ(keyPair, sig));
 
                     // Check there was a post increment in the tail end LMS key.
                     assertEquals("" + ctr, (ctr % 1024) + 1, keyPair.getKeys().get(keyPair.getL() - 1).getIndex());
@@ -924,21 +921,22 @@ public class HSSTests
                     }
 
 
-                    assertTrue(HSS.verifySignature(pk, sig, message));
-                    assertTrue(sig.getSignature().getParameter().getType() == LMSigParameters.lms_sha256_n32_h10.getType());
+                    assertTrue(verify(pk, sig, message));
+                    assertEquals(LMSigParameters.lms_sha256_n32_h10.getType(), leafSignatureType(keyPair, sig));
 
                     {
                         //
                         // Vandalise hss signature.
                         //
-                        byte[] rawSig = sig.getEncoded();
+                        byte[] rawSig = sig;
                         rawSig[100] ^= 1;
-                        HSSSignature parsedSig = HSSSignature.getInstance(rawSig, pk.getL());
-                        assertFalse(HSS.verifySignature(pk, parsedSig, message));
+                        byte[] parsedSig = rawSig;
+                        assertFalse(verify(pk, parsedSig, message));
 
                         try
                         {
-                            HSSSignature.getInstance(rawSig, 0);
+                            // a key claiming one more level than the signature carries
+                            new HSSPublicKeyParameters(pk.getL() + 1, pk.getLMSPublicKey()).generateLMSContext(rawSig);
                             fail();
                         }
                         catch (IllegalStateException ex)
@@ -955,7 +953,7 @@ public class HSSTests
                         //
                         byte[] newMsg = message.clone();
                         newMsg[1] ^= 1;
-                        assertFalse(HSS.verifySignature(pk, sig, newMsg));
+                        assertFalse(verify(pk, sig, newMsg));
                     }
 
 
@@ -966,13 +964,13 @@ public class HSSTests
                         byte[] pkEnc = pk.getEncoded();
                         pkEnc[35] ^= 1;
                         HSSPublicKeyParameters rebuiltPk = HSSPublicKeyParameters.getInstance(pkEnc);
-                        assertFalse(HSS.verifySignature(rebuiltPk, sig, message));
+                        assertFalse(verify(rebuiltPk, sig, message));
                     }
                 }
                 else
                 {
                     // Skip some keys.
-                    HSS.incrementIndex(keyPair);
+                    keyPair.incrementIndex();
                 }
 
                 ctr++;
@@ -991,5 +989,59 @@ public class HSSTests
     }
 
 
-}
 
+    private static byte[] sign(HSSPrivateKeyParameters key, byte[] message)
+    {
+        HSSSigner signer = new HSSSigner();
+        signer.init(true, key);
+        return signer.generateSignature(message);
+    }
+
+    private static boolean verify(HSSPublicKeyParameters key, byte[] signature, byte[] message)
+    {
+        HSSSigner signer = new HSSSigner();
+        signer.init(false, key);
+        return signer.verifySignature(message, signature);
+    }
+
+    private static boolean verifyLms(LMSPublicKeyParameters key, byte[] signature, byte[] message)
+    {
+        LMSSigner signer = new LMSSigner();
+        signer.init(false, key);
+        return signer.verifySignature(message, signature);
+    }
+
+    // RFC 8554 sec. 5.2, Algorithm 5: an LMS private key positioned at index q.
+    private static LMSPrivateKeyParameters lmsKey(LMSigParameters sigParams, LMOtsParameters otsParams, int q, byte[] I, byte[] seed)
+    {
+        return new LMSPrivateKeyParameters(sigParams, otsParams, q, I, 1 << sigParams.getH(), seed);
+    }
+
+    // The leaf tree's LMS signature is the tail of an HSS signature (RFC 8554 sec. 6.1); its
+    // length follows from the leaf key's parameters (sec. 5.4): u32str(q) || ots_signature ||
+    // u32str(type) || path, where ots_signature is u32str(otstype) || C || y (sec. 4.5).
+    private static int leafSignatureOffset(HSSPrivateKeyParameters key, byte[] hssSignature)
+    {
+        LMSPrivateKeyParameters leaf = key.getKeys().get(key.getL() - 1);
+        int n = leaf.getOtsParameters().getN();
+        int p = leaf.getOtsParameters().getP();
+        int h = leaf.getSigParameters().getH();
+        int m = leaf.getSigParameters().getM();
+
+        return hssSignature.length - (4 + (4 + n + p * n) + 4 + h * m);
+    }
+
+    private static int leafSignatureQ(HSSPrivateKeyParameters key, byte[] hssSignature)
+    {
+        return Pack.bigEndianToInt(hssSignature, leafSignatureOffset(key, hssSignature));
+    }
+
+    private static int leafSignatureType(HSSPrivateKeyParameters key, byte[] hssSignature)
+    {
+        LMSPrivateKeyParameters leaf = key.getKeys().get(key.getL() - 1);
+        int h = leaf.getSigParameters().getH();
+        int m = leaf.getSigParameters().getM();
+
+        return Pack.bigEndianToInt(hssSignature, hssSignature.length - h * m - 4);
+    }
+}

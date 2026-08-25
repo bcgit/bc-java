@@ -1,18 +1,15 @@
 package org.bouncycastle.crypto.params;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.bouncycastle.crypto.signers.LMSContext;
 import org.bouncycastle.crypto.signers.LMSContextBasedVerifier;
-import org.bouncycastle.crypto.signers.lms.Composer;
-import org.bouncycastle.crypto.signers.lms.LMOtsPublicKey;
-import org.bouncycastle.crypto.signers.lms.LMS;
-import org.bouncycastle.crypto.signers.lms.LMSSignature;
+import org.bouncycastle.crypto.signers.lms.LMSContext;
+import org.bouncycastle.crypto.signers.lms.LMSEngine;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.io.Streams;
 
 public class LMSPublicKeyParameters
@@ -121,11 +118,6 @@ public class LMSPublicKeyParameters
         return Arrays.clone(T1);
     }
 
-    public boolean matchesT1(byte[] sig)
-    {
-        return Arrays.constantTimeAreEqual(T1, sig);
-    }
-
     public byte[] getI()
     {
         return Arrays.clone(I);
@@ -175,42 +167,28 @@ public class LMSPublicKeyParameters
         return result;
     }
 
-    public byte[] toByteArray()
+    /**
+     * The RFC 8554 sec. 5.3 encoding: u32str(type) || u32str(otstype) || I || T[1].
+     */
+    byte[] toByteArray()
     {
-        return Composer.compose()
-            .u32str(parameterSet.getType())
-            .u32str(lmOtsType.getType())
-            .bytes(I)
-            .bytes(T1)
-            .build();
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+
+        u32str(parameterSet.getType(), bOut);
+        u32str(lmOtsType.getType(), bOut);
+        bytes(I, bOut);
+        bytes(T1, bOut);
+
+        return bOut.toByteArray();
     }
 
     public LMSContext generateLMSContext(byte[] signature)
     {
-        try
-        {
-            return generateOtsContext(LMSSignature.getInstance(signature));
-        }
-        catch (IOException e)
-        {
-            throw Exceptions.illegalStateException("cannot parse signature", e);
-        }
-    }
-
-    public LMSContext generateOtsContext(LMSSignature S)
-    {
-        int ots_typecode = getOtsParameters().getType();
-        if (S.getOtsSignature().getType().getType() != ots_typecode)
-        {
-            throw new IllegalArgumentException("ots type from lsm signature does not match ots" +
-                " signature type from embedded ots signature");
-        }
-
-        return new LMOtsPublicKey(LMOtsParameters.getParametersForType(ots_typecode), I,  S.getQ(), null).createOtsContext(S);
+        return LMSEngine.generateVerifyContext(this, signature);
     }
 
     public boolean verify(LMSContext context)
     {
-        return LMS.verifySignature(this, context);
+        return LMSEngine.verifySignature(this, context);
     }
 }

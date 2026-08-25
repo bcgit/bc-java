@@ -10,7 +10,7 @@ import org.bouncycastle.crypto.params.LMOtsParameters;
 import org.bouncycastle.util.Encodable;
 import org.bouncycastle.util.io.Streams;
 
-public class LMOtsSignature
+class LMOtsSignature
     implements Encodable
 {
     private final LMOtsParameters type;

@@ -3,8 +3,7 @@ package org.bouncycastle.crypto.params;
 import junit.framework.TestCase;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
-import org.bouncycastle.crypto.signers.lms.LMS;
-import org.bouncycastle.crypto.signers.lms.LMSSignature;
+import org.bouncycastle.crypto.signers.LMSSigner;
 
 public class LMSKeyGenTests
     extends TestCase
@@ -33,7 +32,8 @@ public class LMSKeyGenTests
         int level = 1; // This is the second level, we use this because it signs the message.
 
         // Generate the private key.
-        LMSPrivateKeyParameters lmsPrivateKey = LMS.generateKeys(LMSigParameters.getParametersForType(5), LMOtsParameters.getParametersForType(4), level, I, seed);
+        LMSigParameters sigParams = LMSigParameters.getParametersForType(5);
+        LMSPrivateKeyParameters lmsPrivateKey = new LMSPrivateKeyParameters(sigParams, LMOtsParameters.getParametersForType(4), level, I, 1 << sigParams.getH(), seed);
 
         // This derives the public key.
         LMSPublicKeyParameters publicKey = lmsPrivateKey.getPublicKey();
@@ -49,7 +49,9 @@ public class LMSKeyGenTests
         //
         lmsPrivateKey.extractKeyShard(3);
 
-        LMSSignature signature = LMS.generateSign(lmsPrivateKey, msg);
+        LMSSigner signer = new LMSSigner();
+        signer.init(true, lmsPrivateKey);
+        byte[] signature = signer.generateSignature(msg);
 
         // The expected signature as encoded.
         String sigEnc = "00000004\n" +
@@ -138,11 +140,12 @@ public class LMSKeyGenTests
 
 
         // Check generated signature matches vector.
-        assertTrue(Arrays.areEqual(Hex.decode(sigEnc), signature.getEncoded()));
+        assertTrue(Arrays.areEqual(Hex.decode(sigEnc), signature));
 
 
         // Sanity test
-        assertTrue(LMS.verifySignature(publicKey, signature, msg));
+        signer.init(false, publicKey);
+        assertTrue(signer.verifySignature(msg, signature));
 
 
     }

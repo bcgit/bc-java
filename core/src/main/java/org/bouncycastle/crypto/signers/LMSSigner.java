@@ -1,7 +1,6 @@
 package org.bouncycastle.crypto.signers;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.Signer;
@@ -9,17 +8,16 @@ import org.bouncycastle.crypto.params.HSSPrivateKeyParameters;
 import org.bouncycastle.crypto.params.HSSPublicKeyParameters;
 import org.bouncycastle.crypto.params.LMSPrivateKeyParameters;
 import org.bouncycastle.crypto.params.LMSPublicKeyParameters;
-import org.bouncycastle.crypto.signers.lms.HSS;
-import org.bouncycastle.crypto.signers.lms.LMS;
-import org.bouncycastle.crypto.signers.lms.LMSSignature;
-import org.bouncycastle.util.Exceptions;
+import org.bouncycastle.crypto.signers.lms.LMSContext;
+import org.bouncycastle.util.Arrays;
 
 public class LMSSigner
     implements Signer
 {
     private final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-    private LMSPrivateKeyParameters privKey;
-    private LMSPublicKeyParameters pubKey;
+    private LMSContextBasedSigner privKey;
+    private boolean hssWrapped;
+    private LMSContextBasedVerifier pubKey;
 
     public void init(boolean forSigning, CipherParameters param)
     {
@@ -29,6 +27,7 @@ public class LMSSigner
          // check below leaves the signer unusable rather than holding the previous key.
          this.privKey = null;
          this.pubKey = null;
+         this.hssWrapped = false;
 
          if (forSigning)
          {
@@ -37,7 +36,13 @@ public class LMSSigner
                  HSSPrivateKeyParameters hssPriv = (HSSPrivateKeyParameters)param;
                  if (hssPriv.getL() == 1)
                  {
-                     privKey = hssPriv.getRootKey();
+                     //
+                     // Sign through the HSS key so its index advances with the root tree's, and
+                     // strip the u32str(Nspk = 0) prefix that is all a single-level HSS signature
+                     // adds to the LMS one (RFC 8554 sec. 6.1).
+                     //
+                     privKey = hssPriv;
+                     hssWrapped = true;
                  }
                  else
                  {
@@ -77,14 +82,18 @@ public class LMSSigner
             throw new IllegalStateException("LMSSigner not initialised for signature generation");
         }
 
-        try
+        LMSContext context = privKey.generateLMSContext();
+
+        context.update(message, 0, message.length);
+
+        byte[] signature = privKey.generateSignature(context);
+
+        if (hssWrapped)
         {
-            return LMS.generateSign(privKey, message).getEncoded();
+            return Arrays.copyOfRange(signature, 4, signature.length);
         }
-        catch (IOException e)
-        {
-            throw Exceptions.illegalStateException("unable to encode signature", e);
-        }
+
+        return signature;
     }
 
     public boolean verifySignature(byte[] message, byte[] signature)
@@ -97,15 +106,16 @@ public class LMSSigner
         }
 
         // A malformed/truncated signature must not throw out of verify: the decode
-        // can fail with IOException (truncation) or a RuntimeException (out-of-range
-        // type fields surface as NullPointerException / NegativeArraySizeException).
+        // can fail on truncation (surfacing as IllegalStateException) or with another
+        // RuntimeException (out-of-range type fields surface as NullPointerException /
+        // NegativeArraySizeException).
         try
         {
-            return LMS.verifySignature(pubKey, LMSSignature.getInstance(signature), message);
-        }
-        catch (IOException e)
-        {
-            return false;
+            LMSContext context = pubKey.generateLMSContext(signature);
+
+            context.update(message, 0, message.length);
+
+            return pubKey.verify(context);
         }
         catch (RuntimeException e)
         {

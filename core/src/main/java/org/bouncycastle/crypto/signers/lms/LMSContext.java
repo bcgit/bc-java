@@ -1,14 +1,16 @@
-package org.bouncycastle.crypto.signers;
+package org.bouncycastle.crypto.signers.lms;
 
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.params.LMSigParameters;
-import org.bouncycastle.crypto.signers.lms.LMOtsPrivateKey;
-import org.bouncycastle.crypto.signers.lms.LMOtsPublicKey;
-import org.bouncycastle.crypto.signers.lms.LMSSignedPubKey;
-import org.bouncycastle.crypto.signers.lms.LM_OTS;
 
-import static org.bouncycastle.crypto.signers.lms.LM_OTS.MAX_HASH;
-
+/**
+ * The digest an LMS or HSS message is absorbed into before it is signed or verified, carrying the
+ * one-time key or signature the operation will use. Obtain one from
+ * {@link org.bouncycastle.crypto.signers.LMSContextBasedSigner#generateLMSContext()} or
+ * {@link org.bouncycastle.crypto.signers.LMSContextBasedVerifier#generateLMSContext(byte[])},
+ * feed it the message through the {@link Digest} methods, then hand it back to the key. Its
+ * contents are read by {@link LMSEngine} only.
+ */
 public class LMSContext
     implements Digest
 {
@@ -22,7 +24,7 @@ public class LMSContext
     private LMSSignedPubKey[] signedPubKeys;
     private volatile Digest digest;
 
-    public LMSContext(LMOtsPrivateKey key, LMSigParameters sigParams, Digest digest, byte[] C, byte[][] path)
+    LMSContext(LMOtsPrivateKey key, LMSigParameters sigParams, Digest digest, byte[] C, byte[][] path)
     {
         this.key = key;
         this.sigParams = sigParams;
@@ -33,7 +35,7 @@ public class LMSContext
         this.signature = null;
     }
 
-    public LMSContext(LMOtsPublicKey publicKey, Object signature, Digest digest)
+    LMSContext(LMOtsPublicKey publicKey, Object signature, Digest digest)
     {
         this.publicKey = publicKey;
         this.signature = signature;
@@ -44,14 +46,14 @@ public class LMSContext
         this.path = null;
     }
 
-    public byte[] getC()
+    byte[] getC()
     {
         return C;
     }
 
-    public byte[] getQ()
+    byte[] getQ()
     {
-        byte[] Q = new byte[MAX_HASH + 2];
+        byte[] Q = new byte[LM_OTS.MAX_HASH + 2];
 
         digest.doFinal(Q, 0);
         
@@ -60,37 +62,37 @@ public class LMSContext
         return Q;
     }
 
-    public byte[][] getPath()
+    byte[][] getPath()
     {
         return path;
     }
 
-    public LMOtsPrivateKey getPrivateKey()
+    LMOtsPrivateKey getPrivateKey()
     {
         return key;
     }
 
-    public LMOtsPublicKey getPublicKey()
+    LMOtsPublicKey getPublicKey()
     {
         return publicKey;
     }
 
-    public LMSigParameters getSigParams()
+    LMSigParameters getSigParams()
     {
         return sigParams;
     }
 
-    public Object getSignature()
+    Object getSignature()
     {
         return signature;
     }
 
-    public LMSSignedPubKey[] getSignedPubKeys()
+    LMSSignedPubKey[] getSignedPubKeys()
     {
         return signedPubKeys;
     }
 
-    public LMSContext withSignedPublicKeys(LMSSignedPubKey[] signedPubKeys)
+    LMSContext withSignedPublicKeys(LMSSignedPubKey[] signedPubKeys)
     {
         this.signedPubKeys = signedPubKeys;
 

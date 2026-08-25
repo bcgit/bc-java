@@ -10,6 +10,12 @@ import org.bouncycastle.crypto.params.LMSigParameters;
 import org.bouncycastle.util.Encodable;
 import org.bouncycastle.util.io.Streams;
 
+/**
+ * An LMS signature (RFC 8554 sec. 5.4). Opaque outside this package: decode one with
+ * {@link #getInstance(Object)} and re-encode it with {@link #getEncoded()}. An
+ * {@link org.bouncycastle.crypto.params.HSSPrivateKeyParameters} carries the chaining signatures
+ * of its hierarchy as instances of this class.
+ */
 public class LMSSignature
     implements Encodable
 {
@@ -18,7 +24,7 @@ public class LMSSignature
     private final LMSigParameters parameter;
     private final byte[][] y;
 
-    public LMSSignature(int q, LMOtsSignature otsSignature, LMSigParameters parameter, byte[][] y)
+    LMSSignature(int q, LMOtsSignature otsSignature, LMSigParameters parameter, byte[][] y)
     {
         this.q = q;
         this.otsSignature = otsSignature;
@@ -130,22 +136,22 @@ public class LMSSignature
             .build();
     }
 
-    public int getQ()
+    int getQ()
     {
         return q;
     }
 
-    public LMOtsSignature getOtsSignature()
+    LMOtsSignature getOtsSignature()
     {
         return otsSignature;
     }
 
-    public LMSigParameters getParameter()
+    LMSigParameters getParameter()
     {
         return parameter;
     }
 
-    public byte[][] getY()
+    byte[][] getY()
     {
         return y;
     }

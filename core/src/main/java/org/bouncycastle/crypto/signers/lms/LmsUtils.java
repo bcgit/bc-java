@@ -4,7 +4,7 @@ import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.params.LMSParameters;
 import org.bouncycastle.crypto.params.LMSigParameters;
 
-public class LmsUtils
+class LmsUtils
 {
     public static void u32str(int n, Digest d)
     {

@@ -3,12 +3,11 @@ package org.bouncycastle.crypto.signers.lms;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.params.LMOtsParameters;
 import org.bouncycastle.crypto.params.LMSigParameters;
-import org.bouncycastle.crypto.signers.LMSContext;
 
 import static org.bouncycastle.crypto.signers.lms.LM_OTS.D_MESG;
 import static org.bouncycastle.crypto.signers.lms.LM_OTS.SEED_RANDOMISER_INDEX;
 
-public class LMOtsPrivateKey
+class LMOtsPrivateKey
 {
     private final LMOtsParameters parameter;
     private final byte[] I;

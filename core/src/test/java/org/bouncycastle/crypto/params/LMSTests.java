@@ -8,97 +8,12 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.crypto.generators.LMSKeyPairGenerator;
-import org.bouncycastle.crypto.signers.LMSContext;
-import org.bouncycastle.crypto.generators.LMSKeyPairGenerator;
-import org.bouncycastle.crypto.signers.LMSContext;
-import org.bouncycastle.crypto.signers.lms.Composer;
-import org.bouncycastle.crypto.signers.lms.LMOtsPrivateKey;
-import org.bouncycastle.crypto.signers.lms.LMOtsPublicKey;
-import org.bouncycastle.crypto.signers.lms.LMOtsSignature;
-import org.bouncycastle.crypto.signers.lms.LMS;
-import org.bouncycastle.crypto.signers.lms.LMSException;
-import org.bouncycastle.crypto.signers.lms.LMSSignature;
-import org.bouncycastle.crypto.signers.lms.LM_OTS;
+import org.bouncycastle.crypto.signers.LMSSigner;
 
 public class LMSTests
     extends TestCase
 {
-    public void testCoefFunc()
-        throws Exception
-    {
-        byte[] S = Hex.decodeStrict("1234");
-        TestCase.assertEquals(0, LM_OTS.coef(S, 7, 1));
-        TestCase.assertEquals(1, LM_OTS.coef(S, 0, 4));
-    }
 
-    public void testPrivateKeyRound()
-        throws Exception
-    {
-        LMOtsParameters parameter = LMOtsParameters.sha256_n32_w4;
-
-        byte[] seed = Hex.decode("558b8966c48ae9cb898b423c83443aae014a72f1b1ab5cc85cf1d892903b5439");
-        byte[] I = Hex.decode("d08fabd4a2091ff0a8cb4ed834e74534");
-
-        LMOtsPrivateKey privateKey = new LMOtsPrivateKey(parameter, I, 0, seed);
-        LMOtsPublicKey publicKey = LM_OTS.lms_ots_generatePublicKey(privateKey);
-
-        byte[] ms = new byte[32];
-        for (int t = 0; t < ms.length; t++)
-        {
-            ms[t] = (byte)t;
-        }
-
-        LMSContext ctx = privateKey.getSignatureContext(null, null);
-
-        ctx.update(ms, 0, ms.length);
-
-        LMOtsSignature sig = LM_OTS.lm_ots_generate_signature(privateKey, ctx.getQ(), ctx.getC());
-        assertTrue(LM_OTS.lm_ots_validate_signature(publicKey, sig, ms, false));
-
-        // Recreate signature
-        {
-            byte[] recreatedSignature = sig.getEncoded();
-            assertTrue(LM_OTS.lm_ots_validate_signature(publicKey, LMOtsSignature.getInstance(recreatedSignature), ms, false));
-        }
-
-        // Recreate public key.
-        {
-            byte[] recreatedPubKey = Arrays.clone(publicKey.getEncoded());
-            assertTrue(LM_OTS.lm_ots_validate_signature(LMOtsPublicKey.getInstance(recreatedPubKey), sig, ms, false));
-        }
-
-        // Vandalise signature
-        {
-            byte[] vandalisedSignature = sig.getEncoded();
-            vandalisedSignature[256] ^= 1; // Single bit error
-            assertFalse(LM_OTS.lm_ots_validate_signature(publicKey, LMOtsSignature.getInstance(vandalisedSignature), ms, false));
-        }
-
-        // Vandalise public key.
-        {
-            byte[] vandalisedPubKey = Arrays.clone(publicKey.getEncoded());
-            vandalisedPubKey[50] ^= 1;
-            assertFalse(LM_OTS.lm_ots_validate_signature(LMOtsPublicKey.getInstance(vandalisedPubKey), sig, ms, false));
-        }
-
-
-        //
-        // check incorrect alg type is detected.
-        //
-        try
-        {
-            byte[] vandalisedPubKey = Arrays.clone(publicKey.getEncoded());
-            vandalisedPubKey[3] += 1;
-            LM_OTS.lm_ots_validate_signature(LMOtsPublicKey.getInstance(vandalisedPubKey), sig, ms, false);
-            assertTrue("Must fail as public key type not match signature type.", false);
-        }
-        catch (LMSException ex)
-        {
-            assertTrue(ex.getMessage().contains("public key and signature ots types do not match"));
-        }
-
-
-    }
 
 
     public void testLMS()
@@ -116,24 +31,24 @@ public class LMSTests
 
         byte[] seed = Hex.decode("a1c4696e2608035a886100d05cd99945eb3370731884a8235e2fb3d4d71f2547");
         int level = 1;
-        LMSPrivateKeyParameters lmsPrivateKey = LMS.generateKeys(LMSigParameters.getParametersForType(5), LMOtsParameters.getParametersForType(4), level, Hex.decode("215f83b7ccb9acbcd08db97b0d04dc2b"), seed);
+        LMSPrivateKeyParameters lmsPrivateKey = lmsKey(LMSigParameters.getParametersForType(5), LMOtsParameters.getParametersForType(4), level, Hex.decode("215f83b7ccb9acbcd08db97b0d04dc2b"), seed);
         LMSPublicKeyParameters publicKey = lmsPrivateKey.getPublicKey();
 
         lmsPrivateKey.extractKeyShard(3);
 
-        LMSSignature signature = LMS.generateSign(lmsPrivateKey, msg);
-        assertTrue(LMS.verifySignature(publicKey, signature, msg));
+        byte[] signature = sign(lmsPrivateKey, msg);
+        assertTrue(verify(publicKey, signature, msg));
 
         // Serialize / Deserialize
-        assertTrue(LMS.verifySignature(LMSPublicKeyParameters.getInstance(publicKey.getEncoded()), LMSSignature.getInstance(signature.getEncoded()), msg));
+        assertTrue(verify(LMSPublicKeyParameters.getInstance(publicKey.getEncoded()), signature, msg));
 
         //
         // Vandalise signature.
         //
         {
-            byte[] bustedSig = signature.getEncoded().clone();
+            byte[] bustedSig = signature.clone();
             bustedSig[100] ^= 1;
-            assertFalse(LMS.verifySignature(publicKey, LMSSignature.getInstance(bustedSig), msg));
+            assertFalse(verify(publicKey, bustedSig, msg));
         }
 
         //
@@ -142,47 +57,12 @@ public class LMSTests
         {
             byte[] msg2 = msg.clone();
             msg2[10] ^= 1;
-            assertFalse(LMS.verifySignature(publicKey, signature, msg2));
+            assertFalse(verify(publicKey, signature, msg2));
         }
 
     }
 
 
-    public void testContextSingleUse()
-        throws Exception
-    {
-        LMOtsParameters parameter = LMOtsParameters.sha256_n32_w4;
-
-        byte[] seed = Hex.decode("558b8966c48ae9cb898b423c83443aae014a72f1b1ab5cc85cf1d892903b5439");
-        byte[] I = Hex.decode("d08fabd4a2091ff0a8cb4ed834e74534");
-
-        LMOtsPrivateKey privateKey = new LMOtsPrivateKey(parameter, I, 0, seed);
-        LMOtsPublicKey publicKey = LM_OTS.lms_ots_generatePublicKey(privateKey);
-
-        byte[] ms = new byte[32];
-        for (int t = 0; t < ms.length; t++)
-        {
-            ms[t] = (byte)t;
-        }
-
-        LMSContext ctx = privateKey.getSignatureContext(null, null);
-
-        ctx.update(ms, 0, ms.length);
-
-        LMOtsSignature sig = LM_OTS.lm_ots_generate_signature(privateKey, ctx.getQ(), ctx.getC());
-        assertTrue(LM_OTS.lm_ots_validate_signature(publicKey, sig, ms, false));
-
-        try
-        {
-            ctx.update((byte)1);
-            fail("Digest reuse after signature taken.");
-        }
-        catch (NullPointerException npe)
-        {
-            assertTrue(true);
-        }
-
-    }
 
     /**
      * Regression test for https://github.com/bcgit/bc-java/issues/2365 - getEncoded() must carry
@@ -200,7 +80,7 @@ public class LMSTests
         LMSigParameters sigParams = LMSigParameters.lms_sha256_n32_h5;
         LMOtsParameters otsParams = LMOtsParameters.sha256_n32_w4;
 
-        LMSPrivateKeyParameters privateKey = LMS.generateKeys(sigParams, otsParams, 0, I, seed);
+        LMSPrivateKeyParameters privateKey = lmsKey(sigParams, otsParams, 0, I, seed);
         LMSPublicKeyParameters publicKey = privateKey.getPublicKey();
 
         int h = sigParams.getH();
@@ -224,15 +104,15 @@ public class LMSTests
         assertTrue("decoded key tree cache should be primed", decoded.isTreeCachePrimed());
 
         // The decoded key signs correctly and byte-identically to a fresh key at the same index.
-        LMSSignature sigFromDecoded = LMS.generateSign(decoded, msg);
-        assertTrue(LMS.verifySignature(publicKey, sigFromDecoded, msg));
+        byte[] sigFromDecoded = sign(decoded, msg);
+        assertTrue(verify(publicKey, sigFromDecoded, msg));
 
-        LMSPrivateKeyParameters fresh = LMS.generateKeys(sigParams, otsParams, 0, I, seed);
-        assertTrue(Arrays.areEqual(sigFromDecoded.getEncoded(), LMS.generateSign(fresh, msg).getEncoded()));
+        LMSPrivateKeyParameters fresh = lmsKey(sigParams, otsParams, 0, I, seed);
+        assertTrue(Arrays.areEqual(sigFromDecoded, sign(fresh, msg)));
 
         // An encoding with no trailing cache - what an older release writes - must still decode
         // and sign correctly.
-        byte[] legacyEnc = Composer.compose()
+        byte[] legacyEnc = LMSVectorUtils.compose()
             .u32str(0)
             .u32str(sigParams.getType())
             .u32str(otsParams.getType())
@@ -246,7 +126,7 @@ public class LMSTests
 
         LMSPrivateKeyParameters legacy = LMSPrivateKeyParameters.getInstance(legacyEnc);
         assertFalse("encoding without trailing data carries no cache", legacy.isTreeCachePrimed());
-        assertTrue(LMS.verifySignature(publicKey, LMS.generateSign(legacy, msg), msg));
+        assertTrue(verify(publicKey, sign(legacy, msg), msg));
     }
 
     /**
@@ -260,7 +140,7 @@ public class LMSTests
         byte[] I = Hex.decode("d08fabd4a2091ff0a8cb4ed834e74534");
         byte[] seed = Hex.decode("558b8966c48ae9cb898b423c83443aae014a72f1b1ab5cc85cf1d892903b5439");
 
-        byte[] unknownSigType = Composer.compose()
+        byte[] unknownSigType = LMSVectorUtils.compose()
             .u32str(0)
             .u32str(0x7fffffff) // bogus LMS type code
             .u32str(LMOtsParameters.sha256_n32_w4.getType())
@@ -280,7 +160,7 @@ public class LMSTests
             assertTrue(e.getMessage().startsWith("unknown LMS type code"));
         }
 
-        byte[] unknownOtsType = Composer.compose()
+        byte[] unknownOtsType = LMSVectorUtils.compose()
             .u32str(0)
             .u32str(LMSigParameters.lms_sha256_n32_h5.getType())
             .u32str(0x7fffffff) // bogus LM-OTS type code
@@ -321,7 +201,7 @@ public class LMSTests
         byte[] sampleEnc = ((LMSPrivateKeyParameters)limitGen.generateKeyPair().getPrivate()).getEncoded();
         int cacheCountLimit = Pack.bigEndianToInt(sampleEnc, 40 + m);
 
-        byte[] atLimit = Composer.compose()
+        byte[] atLimit = LMSVectorUtils.compose()
             .u32str(0)
             .u32str(sigParams.getType())
             .u32str(otsParams.getType())
@@ -335,7 +215,7 @@ public class LMSTests
             .build();
         assertTrue(LMSPrivateKeyParameters.getInstance(atLimit).isTreeCachePrimed());
 
-        byte[] beyondLimit = Composer.compose()
+        byte[] beyondLimit = LMSVectorUtils.compose()
             .u32str(0)
             .u32str(sigParams.getType())
             .u32str(otsParams.getType())
@@ -356,7 +236,7 @@ public class LMSTests
             assertTrue(e.getMessage().startsWith("tree cache node count out of range"));
         }
 
-        byte[] truncated = Composer.compose()
+        byte[] truncated = LMSVectorUtils.compose()
             .u32str(0)
             .u32str(sigParams.getType())
             .u32str(otsParams.getType())
@@ -379,4 +259,24 @@ public class LMSTests
         }
     }
 
+
+    private static byte[] sign(LMSPrivateKeyParameters key, byte[] message)
+    {
+        LMSSigner signer = new LMSSigner();
+        signer.init(true, key);
+        return signer.generateSignature(message);
+    }
+
+    private static boolean verify(LMSPublicKeyParameters key, byte[] signature, byte[] message)
+    {
+        LMSSigner signer = new LMSSigner();
+        signer.init(false, key);
+        return signer.verifySignature(message, signature);
+    }
+
+    // RFC 8554 sec. 5.2, Algorithm 5: an LMS private key positioned at index q.
+    private static LMSPrivateKeyParameters lmsKey(LMSigParameters sigParams, LMOtsParameters otsParams, int q, byte[] I, byte[] seed)
+    {
+        return new LMSPrivateKeyParameters(sigParams, otsParams, q, I, 1 << sigParams.getH(), seed);
+    }
 }

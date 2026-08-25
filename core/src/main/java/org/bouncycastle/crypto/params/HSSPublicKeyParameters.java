@@ -1,19 +1,14 @@
 package org.bouncycastle.crypto.params;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-import org.bouncycastle.crypto.signers.LMSContext;
 import org.bouncycastle.crypto.signers.LMSContextBasedVerifier;
-import org.bouncycastle.crypto.signers.lms.Composer;
-import org.bouncycastle.crypto.signers.lms.HSS;
-import org.bouncycastle.crypto.signers.lms.HSSSignature;
-import org.bouncycastle.crypto.signers.lms.LMS;
-import org.bouncycastle.crypto.signers.lms.LMSSignature;
-import org.bouncycastle.crypto.signers.lms.LMSSignedPubKey;
-import org.bouncycastle.util.Exceptions;
+import org.bouncycastle.crypto.signers.lms.LMSContext;
+import org.bouncycastle.crypto.signers.lms.LMSEngine;
 import org.bouncycastle.util.io.Streams;
 
 public class HSSPublicKeyParameters
@@ -122,58 +117,21 @@ public class HSSPublicKeyParameters
     public byte[] getEncoded()
         throws IOException
     {
-        return Composer.compose().u32str(l)
-            .bytes(lmsPublicKey.getEncoded())
-            .build();
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+
+        u32str(l, bOut);
+        bytes(lmsPublicKey.getEncoded(), bOut);
+
+        return bOut.toByteArray();
     }
 
     public LMSContext generateLMSContext(byte[] sigEnc)
     {
-        HSSSignature signature;
-        try
-        {
-            signature = HSSSignature.getInstance(sigEnc, getL());
-        }
-        catch (IOException e)
-        {
-            throw Exceptions.illegalStateException("cannot parse signature", e);
-        }
-     
-        LMSSignedPubKey[] signedPubKeys = signature.getSignedPubKey();
-        LMSPublicKeyParameters key;
-        if (signedPubKeys.length != 0)
-        {
-            key = signedPubKeys[signedPubKeys.length - 1].getPublicKey();
-        }
-        else
-        {
-            key = this.getLMSPublicKey();
-        }
-
-        return key.generateOtsContext(signature.getSignature()).withSignedPublicKeys(signedPubKeys);
+        return LMSEngine.generateHSSVerifyContext(this, sigEnc);
     }
 
     public boolean verify(LMSContext context)
     {
-        boolean passed = true;
-
-        LMSSignedPubKey[] sigKeys = context.getSignedPubKeys();
-
-        if (sigKeys.length != getL() - 1)
-        {
-            return false;
-        }
-
-        LMSPublicKeyParameters key = getLMSPublicKey();
-
-        for (int i = 0; i < sigKeys.length; i++)
-        {
-            LMSSignature sig = sigKeys[i].getSignature();
-            byte[] msg = sigKeys[i].getPublicKey().toByteArray();
-            passed &= LMS.verifySignature(key, sig, msg);
-            key = sigKeys[i].getPublicKey();
-        }
-
-        return passed & key.verify(context);
+        return LMSEngine.verifyHSSSignature(this, context);
     }
 }

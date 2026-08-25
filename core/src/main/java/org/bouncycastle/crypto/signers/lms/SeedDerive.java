@@ -2,7 +2,7 @@ package org.bouncycastle.crypto.signers.lms;
 
 import org.bouncycastle.crypto.Digest;
 
-public class SeedDerive
+class SeedDerive
 {
     private final byte[] I;
     private final byte[] masterSeed;
@@ -28,11 +28,6 @@ public class SeedDerive
         this.q = q;
     }
 
-    public int getJ()
-    {
-        return j;
-    }
-
     public void setJ(int j)
     {
         this.j = j;
@@ -41,11 +36,6 @@ public class SeedDerive
     public byte[] getI()
     {
         return I;
-    }
-
-    public byte[] getMasterSeed()
-    {
-        return masterSeed;
     }
 
 

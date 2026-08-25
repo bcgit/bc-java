@@ -5,7 +5,7 @@ import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
 import org.bouncycastle.crypto.KeyGenerationParameters;
 import org.bouncycastle.crypto.params.HSSKeyGenerationParameters;
 import org.bouncycastle.crypto.params.HSSPrivateKeyParameters;
-import org.bouncycastle.crypto.signers.lms.HSS;
+import org.bouncycastle.crypto.signers.lms.LMSEngine;
 
 public class HSSKeyPairGenerator
     implements AsymmetricCipherKeyPairGenerator
@@ -19,7 +19,7 @@ public class HSSKeyPairGenerator
 
     public AsymmetricCipherKeyPair generateKeyPair()
     {
-        HSSPrivateKeyParameters privKey = HSS.generateHSSKeyPair(param);
+        HSSPrivateKeyParameters privKey = LMSEngine.generateHSSKeyPair(param);
 
         return new AsymmetricCipherKeyPair(privKey.getPublicKey(), privKey);
     }

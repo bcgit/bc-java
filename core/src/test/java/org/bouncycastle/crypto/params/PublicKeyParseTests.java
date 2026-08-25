@@ -6,9 +6,6 @@ import java.io.IOException;
 
 import junit.framework.TestCase;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.crypto.signers.lms.Composer;
-import org.bouncycastle.crypto.signers.lms.HSS;
-import org.bouncycastle.crypto.signers.lms.LMS;
 
 /**
  * Well-formedness checks on LMS / HSS public key parsing, RFC 8554:
@@ -23,7 +20,7 @@ public class PublicKeyParseTests
     // lms_sha256_n32_h5 (5) / sha256_n32_w8 (4), I = 16 bytes, T[1] = 32 bytes.
     private static byte[] validLmsPublicKey()
     {
-        return Composer.compose()
+        return LMSVectorUtils.compose()
             .u32str(LMSigParameters.lms_sha256_n32_h5.getType())
             .u32str(LMOtsParameters.sha256_n32_w8.getType())
             .bytes(new byte[16])
@@ -33,7 +30,7 @@ public class PublicKeyParseTests
 
     private static byte[] validHssPublicKey(int l)
     {
-        return Composer.compose().u32str(l).bytes(validLmsPublicKey()).build();
+        return LMSVectorUtils.compose().u32str(l).bytes(validLmsPublicKey()).build();
     }
 
     public void testValidKeysParse()

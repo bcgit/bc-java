@@ -76,7 +76,6 @@
                 <exclude name="**/crypto/generators/LMSKeyPairGenerator.java" />
                 <exclude name="**/crypto/signers/HSSSigner.java" />
                 <exclude name="**/crypto/signers/LMSSigner.java" />
-                <exclude name="**/crypto/signers/LMSContext.java" />
                 <exclude name="**/crypto/signers/LMSContextBasedSigner.java" />
                 <exclude name="**/crypto/signers/LMSContextBasedVerifier.java" />
                 <exclude name="**/asymmetric/DSTU*.java" />

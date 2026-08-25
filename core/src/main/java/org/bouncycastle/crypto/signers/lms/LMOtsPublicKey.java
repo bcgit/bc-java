@@ -7,7 +7,6 @@ import java.io.InputStream;
 
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.params.LMOtsParameters;
-import org.bouncycastle.crypto.signers.LMSContext;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Encodable;
 import org.bouncycastle.util.Objects;
@@ -15,7 +14,7 @@ import org.bouncycastle.util.io.Streams;
 
 import static org.bouncycastle.crypto.signers.lms.LM_OTS.D_MESG;
 
-public class LMOtsPublicKey
+class LMOtsPublicKey
     implements Encodable
 {
     private final LMOtsParameters parameter;

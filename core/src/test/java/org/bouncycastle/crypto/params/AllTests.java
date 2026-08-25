@@ -5,7 +5,6 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.bouncycastle.test.PrintTestResult;
-import org.bouncycastle.crypto.signers.lms.LMS;
 
 public class AllTests
     extends TestCase

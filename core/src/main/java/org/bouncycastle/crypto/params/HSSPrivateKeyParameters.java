@@ -1,6 +1,7 @@
 package org.bouncycastle.crypto.params;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -9,19 +10,12 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import org.bouncycastle.crypto.signers.LMSContext;
+import org.bouncycastle.crypto.ExhaustedPrivateKeyException;
 import org.bouncycastle.crypto.signers.LMSContextBasedSigner;
-import org.bouncycastle.crypto.signers.lms.Composer;
-import org.bouncycastle.crypto.signers.lms.DigestUtil;
-import org.bouncycastle.crypto.signers.lms.HSS;
-import org.bouncycastle.crypto.signers.lms.LMOtsPrivateKey;
-import org.bouncycastle.crypto.signers.lms.LMS;
+import org.bouncycastle.crypto.signers.lms.LMSContext;
+import org.bouncycastle.crypto.signers.lms.LMSEngine;
 import org.bouncycastle.crypto.signers.lms.LMSSignature;
-import org.bouncycastle.crypto.signers.lms.LMSSignedPubKey;
-import org.bouncycastle.crypto.signers.lms.SeedDerive;
 import org.bouncycastle.util.io.Streams;
-
-import static org.bouncycastle.crypto.signers.lms.HSS.rangeTestKeys;
 
 public class HSSPrivateKeyParameters
     extends LMSKeyParameters
@@ -190,9 +184,20 @@ public class HSSPrivateKeyParameters
         return parms;
     }
 
-    public synchronized void incIndex()
+    synchronized void incIndex()
     {
         index++;
+    }
+
+    /**
+     * Advance the key past its current index without signing with it, replacing exhausted lower
+     * trees as a signature would. Used by the tests to walk a key through the RFC 8554 vectors.
+     */
+    synchronized void incrementIndex()
+    {
+        rangeTestKeys();
+        incIndex();
+        keys.get(l - 1).incIndex();
     }
 
     private static HSSPrivateKeyParameters makeCopy(HSSPrivateKeyParameters privateKeyParameters)
@@ -216,11 +221,18 @@ public class HSSPrivateKeyParameters
         }
     }
 
+    /**
+     * Return true if this key was split off another with {@link #extractKeyShard(int)} and so
+     * covers a sub-range of that key's indexes.
+     */
     public boolean isShard()
     {
         return isShard;
     }
 
+    /**
+     * Return the index one past the last this key may sign with.
+     */
     public long getIndexLimit()
     {
         return indexLimit;
@@ -231,7 +243,7 @@ public class HSSPrivateKeyParameters
         return getIndexLimit() - getIndex();
     }
 
-    public LMSPrivateKeyParameters getRootKey()
+    LMSPrivateKeyParameters getRootKey()
     {
         return keys.get(0);
     }
@@ -276,12 +288,12 @@ public class HSSPrivateKeyParameters
         }
     }
 
-    public synchronized List<LMSPrivateKeyParameters> getKeys()
+    synchronized List<LMSPrivateKeyParameters> getKeys()
     {
         return keys;
     }
 
-    public synchronized List<LMSSignature> getSig()
+    synchronized List<LMSSignature> getSig()
     {
         return sig;
     }
@@ -321,7 +333,7 @@ public class HSSPrivateKeyParameters
         //
         if (keys[0].getIndex() - 1 != qTreePath[0])
         {
-            keys[0] = LMS.generateKeys(
+            keys[0] = generateKey(
                 originalRootKey.getSigParameters(),
                 originalRootKey.getOtsParameters(),
                 (int)qTreePath[0], originalRootKey.getI(), originalRootKey.getMasterSecret());
@@ -333,21 +345,14 @@ public class HSSPrivateKeyParameters
         {
 
             LMSPrivateKeyParameters intermediateKey = keys[i - 1];
-            int n = intermediateKey.getOtsParameters().getN();
 
-            byte[] childI = new byte[16];
-            byte[] childSeed = new byte[n];
-            SeedDerive derive = new SeedDerive(
+            byte[][] child = LMSEngine.deriveChildKey(
+                intermediateKey.getOtsParameters(),
                 intermediateKey.getI(),
                 intermediateKey.getMasterSecret(),
-                DigestUtil.getDigest(intermediateKey.getOtsParameters()));
-            derive.setQ((int)qTreePath[i - 1]);
-            derive.setJ(~1);
-
-            derive.deriveSeed(childSeed, true);
-            byte[] postImage = new byte[n];
-            derive.deriveSeed(postImage, false);
-            System.arraycopy(postImage, 0, childI, 0, childI.length);
+                (int)qTreePath[i - 1]);
+            byte[] childI = child[0];
+            byte[] childSeed = child[1];
 
             //
             // Q values in LMS keys post increment after they are used.
@@ -370,7 +375,7 @@ public class HSSPrivateKeyParameters
                 //
                 // This means the parent has changed.
                 //
-                keys[i] = LMS.generateKeys(
+                keys[i] = generateKey(
                     originalKeys.get(i).getSigParameters(),
                     originalKeys.get(i).getOtsParameters(),
                     (int)qTreePath[i], childI, childSeed);
@@ -378,7 +383,7 @@ public class HSSPrivateKeyParameters
                 //
                 // Ensure post increment occurs on parent and the new public key is signed.
                 //
-                sig[i - 1] = LMS.generateSign(keys[i - 1], keys[i].getPublicKey().toByteArray());
+                sig[i - 1] = signPublicKey(keys[i - 1], keys[i].getPublicKey());
                 changed = true;
             }
             else if (!lmsQMatch)
@@ -388,7 +393,7 @@ public class HSSPrivateKeyParameters
                 // Q is different so we can generate a new private key but it will have the same public
                 // key so we do not need to sign it again.
                 //
-                keys[i] = LMS.generateKeys(
+                keys[i] = generateKey(
                     originalKeys.get(i).getSigParameters(),
                     originalKeys.get(i).getOtsParameters(),
                     (int)qTreePath[i], childI, childSeed);
@@ -411,20 +416,52 @@ public class HSSPrivateKeyParameters
         return new HSSPublicKeyParameters(l, getRootKey().getPublicKey());
     }
 
-    public void replaceConsumedKey(int d)
+    /**
+     * Check the key has an index left to sign with, and replace every lower tree that has used
+     * all of its one-time keys with the next one its parent derives (RFC 8554 sec. 6.1).
+     */
+    private void rangeTestKeys()
     {
+        synchronized (this)
+        {
+            if (index >= indexLimit)
+            {
+                throw new ExhaustedPrivateKeyException(
+                    "hss private key" +
+                        ((isShard) ? " shard" : "") +
+                        " is exhausted");
+            }
 
-        LMOtsPrivateKey currentOTSKey = keys.get(d - 1).getCurrentOTSKey();
-        int n = currentOTSKey.getParameter().getN();
 
-        SeedDerive deriver = currentOTSKey.getDerivationFunction();
-        deriver.setJ(~1);
-        byte[] childRootSeed = new byte[n];
-        deriver.deriveSeed(childRootSeed, true);
-        byte[] postImage = new byte[n];
-        deriver.deriveSeed(postImage, false);
-        byte[] childI = new byte[16];
-        System.arraycopy(postImage, 0, childI, 0, childI.length);
+            int L = l;
+            int d = L;
+            List<LMSPrivateKeyParameters> prv = keys;
+            while (prv.get(d - 1).getIndex() == 1 << (prv.get(d - 1).getSigParameters().getH()))
+            {
+                d = d - 1;
+                if (d == 0)
+                {
+                    throw new ExhaustedPrivateKeyException(
+                        "hss private key" +
+                            ((isShard) ? " shard" : "") +
+                            " is exhausted the maximum limit for this HSS private key");
+                }
+            }
+
+
+            while (d < L)
+            {
+                replaceConsumedKey(d);
+                d = d + 1;
+            }
+        }
+    }
+
+    private void replaceConsumedKey(int d)
+    {
+        byte[][] child = keys.get(d - 1).deriveChildKey();
+        byte[] childI = child[0];
+        byte[] childRootSeed = child[1];
 
         List<LMSPrivateKeyParameters> newKeys = new ArrayList<LMSPrivateKeyParameters>(keys);
 
@@ -434,16 +471,47 @@ public class HSSPrivateKeyParameters
         LMSPrivateKeyParameters oldPk = keys.get(d);
 
 
-        newKeys.set(d, LMS.generateKeys(oldPk.getSigParameters(), oldPk.getOtsParameters(), 0, childI, childRootSeed));
+        newKeys.set(d, generateKey(oldPk.getSigParameters(), oldPk.getOtsParameters(), 0, childI, childRootSeed));
 
         List<LMSSignature> newSig = new ArrayList<LMSSignature>(sig);
 
-        newSig.set(d - 1, LMS.generateSign(newKeys.get(d - 1), newKeys.get(d).getPublicKey().toByteArray()));
+        newSig.set(d - 1, signPublicKey(newKeys.get(d - 1), newKeys.get(d).getPublicKey()));
 
 
         this.keys = Collections.unmodifiableList(newKeys);
         this.sig = Collections.unmodifiableList(newSig);
 
+    }
+
+    /**
+     * An LMS private key positioned at index q (RFC 8554 sec. 5.2, Algorithm 5).
+     */
+    private static LMSPrivateKeyParameters generateKey(LMSigParameters parameterSet, LMOtsParameters lmOtsParameters, int q, byte[] I, byte[] rootSeed)
+    {
+        //
+        // RFC 8554 recommends that digest used in LMS and LMOTS be of the same strength to protect against
+        // attackers going after the weaker of the two digests. This is not enforced here!
+        //
+        if (rootSeed == null || rootSeed.length < parameterSet.getM())
+        {
+            throw new IllegalArgumentException("root seed is less than " + parameterSet.getM());
+        }
+
+        return new LMSPrivateKeyParameters(parameterSet, lmOtsParameters, q, I, 1 << parameterSet.getH(), rootSeed);
+    }
+
+    /**
+     * The chaining signature of an HSS hierarchy: a tree signs the public key of the tree below
+     * it, consuming one of its one-time keys.
+     */
+    private static LMSSignature signPublicKey(LMSPrivateKeyParameters signer, LMSPublicKeyParameters publicKey)
+    {
+        LMSContext context = signer.generateLMSContext();
+
+        byte[] encoded = publicKey.toByteArray();
+        context.update(encoded, 0, encoded.length);
+
+        return LMSEngine.generateSign(context);
     }
 
     @Override
@@ -494,24 +562,25 @@ public class HSSPrivateKeyParameters
         // Version 1: the component keys carry the mandatory tree-cache field their getEncoded
         // appends; a version 0 encoding (any release before the tree cache) carries them without
         // it. The version dispatch in getInstance is what keeps the shared stream unambiguous.
-        Composer composer = Composer.compose()
-            .u32str(1) // Version.
-            .u32str(l)
-            .u64str(index)
-            .u64str(indexLimit)
-            .bool(isShard); // Depth
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+
+        u32str(1, bOut); // Version.
+        u32str(l, bOut);
+        u64str(index, bOut);
+        u64str(indexLimit, bOut);
+        bOut.write(isShard ? 1 : 0); // Depth
 
         for (LMSPrivateKeyParameters key : keys)
         {
-            composer.bytes(key);
+            bytes(key.getEncoded(), bOut);
         }
 
         for (LMSSignature s : sig)
         {
-            composer.bytes(s);
+            bytes(s.getEncoded(), bOut);
         }
 
-        return composer.build();
+        return bOut.toByteArray();
     }
 
     @Override
@@ -529,13 +598,14 @@ public class HSSPrivateKeyParameters
 
     public LMSContext generateLMSContext()
     {
-        LMSSignedPubKey[] signed_pub_key;
+        LMSSignature[] signatures;
+        LMSPublicKeyParameters[] publicKeys;
         LMSPrivateKeyParameters nextKey;
         int L = this.getL();
 
         synchronized (this)
         {
-            rangeTestKeys(this);
+            rangeTestKeys();
 
             List<LMSPrivateKeyParameters> keys = this.getKeys();
             List<LMSSignature> sig = this.getSig();
@@ -544,12 +614,12 @@ public class HSSPrivateKeyParameters
 
             // Step 2. Stand in for sig[L-1]
             int i = 0;
-            signed_pub_key = new LMSSignedPubKey[L - 1];
+            signatures = new LMSSignature[L - 1];
+            publicKeys = new LMSPublicKeyParameters[L - 1];
             while (i < L - 1)
             {
-                signed_pub_key[i] = new LMSSignedPubKey(
-                    sig.get(i),
-                    keys.get(i + 1).getPublicKey());
+                signatures[i] = sig.get(i);
+                publicKeys[i] = keys.get(i + 1).getPublicKey();
                 i = i + 1;
             }
 
@@ -559,18 +629,11 @@ public class HSSPrivateKeyParameters
             this.incIndex();
         }
 
-        return nextKey.generateLMSContext().withSignedPublicKeys(signed_pub_key);
+        return LMSEngine.withSignedPublicKeys(nextKey.generateLMSContext(), signatures, publicKeys);
     }
 
     public byte[] generateSignature(LMSContext context)
     {
-        try
-        {
-            return HSS.generateSignature(getL(), context).getEncoded();
-        }
-        catch (IOException e)
-        {
-            throw new IllegalStateException("unable to encode signature: " + e.getMessage(), e);
-        }
+        return LMSEngine.generateHSSSignature(getL(), context);
     }
 }

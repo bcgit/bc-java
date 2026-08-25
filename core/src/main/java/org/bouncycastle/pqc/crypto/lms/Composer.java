@@ -7,7 +7,7 @@ import org.bouncycastle.util.Encodable;
 /**
  * Type to assist in build LMS messages.
  *
- * @deprecated use {@link org.bouncycastle.crypto.signers.lms.Composer} instead.
+ * @deprecated the promoted implementation in org.bouncycastle.crypto.signers.lms keeps its encoding helpers internal; scheduled for removal with the rest of this package.
  */
 @Deprecated
 public class Composer

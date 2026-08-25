@@ -8,7 +8,6 @@ import org.bouncycastle.crypto.KeyGenerationParameters;
 import org.bouncycastle.crypto.params.LMSKeyGenerationParameters;
 import org.bouncycastle.crypto.params.LMSPrivateKeyParameters;
 import org.bouncycastle.crypto.params.LMSigParameters;
-import org.bouncycastle.crypto.signers.lms.LMS;
 
 public class LMSKeyPairGenerator
     implements AsymmetricCipherKeyPairGenerator
@@ -31,7 +30,9 @@ public class LMSKeyPairGenerator
         byte[] rootSecret = new byte[sigParameter.getM()];
         source.nextBytes(rootSecret);
 
-        LMSPrivateKeyParameters privKey = LMS.generateKeys(sigParameter, param.getParameters().getLMOTSParam(), 0, I, rootSecret);
+        // RFC 8554 sec. 5.2, Algorithm 5: a fresh tree starts at q = 0 and has 2^h one-time keys.
+        LMSPrivateKeyParameters privKey = new LMSPrivateKeyParameters(
+            sigParameter, param.getParameters().getLMOTSParam(), 0, I, 1 << sigParameter.getH(), rootSecret);
 
         return new AsymmetricCipherKeyPair(privKey.getPublicKey(), privKey);
     }

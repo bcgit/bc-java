@@ -1,6 +1,6 @@
 package org.bouncycastle.crypto.signers.lms;
 
-public class LMSException extends Exception
+class LMSException extends Exception
 {
     public LMSException()
     {
@@ -19,10 +19,5 @@ public class LMSException extends Exception
     public LMSException(Throwable cause)
     {
         super(cause);
-    }
-
-    public LMSException(String message, Throwable cause, boolean enableSuppression, boolean writableStackTrace)
-    {
-        super(message, cause, enableSuppression, writableStackTrace);
     }
 }

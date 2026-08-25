@@ -7,7 +7,7 @@ import org.bouncycastle.util.Encodable;
 /**
  * Type to assist in build LMS messages.
  */
-public class Composer
+class Composer
 {
     private final ByteArrayOutputStream bos = new ByteArrayOutputStream();
 
@@ -78,24 +78,6 @@ public class Composer
         return this;
     }
 
-    public Composer pad(int v, int len)
-    {
-        for (; len >= 0; len--)
-        {
-            try
-            {
-
-                bos.write(v);
-
-            }
-            catch (Exception ex)
-            {
-                throw new RuntimeException(ex.getMessage(), ex);
-            }
-        }
-
-        return this;
-    }
 
     public Composer bytes(byte[][] arrays)
     {
