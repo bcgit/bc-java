@@ -38,6 +38,7 @@ public class AllTests
         suite.addTestSuite(PRFTest.class);
         suite.addTestSuite(Tls13CertificateStatusTest.class);
         suite.addTestSuite(Tls13PSKProtocolTest.class);
+        suite.addTestSuite(TlsHandshakeTimeoutTest.class);
         suite.addTestSuite(TlsProtocolNonBlockingTest.class);
         suite.addTestSuite(TlsProtocolTest.class);
         suite.addTestSuite(TlsPSKProtocolTest.class);

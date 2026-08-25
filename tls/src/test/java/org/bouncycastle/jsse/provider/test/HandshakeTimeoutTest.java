@@ -3,6 +3,7 @@ package org.bouncycastle.jsse.provider.test;
 import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.net.SocketTimeoutException;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 
@@ -121,6 +122,76 @@ public class HandshakeTimeoutTest
         });
 
         assertTimesOut(ss);
+    }
+
+    /**
+     * A caller that sets a per-read SO_TIMEOUT tighter than the handshake budget, and treats the
+     * resulting {@link SocketTimeoutException} as resumable (the BCJSSE blocking sockets always
+     * start a resumable handshake, so an interrupted read leaves the connection intact and the
+     * caller may retry). The total handshake deadline has to survive the interruption, otherwise
+     * the retry loop is unbounded even though a handshake timeout was configured.
+     */
+    public void testResumedHandshakeStillTimesOut()
+        throws Exception
+    {
+        System.setProperty(HANDSHAKE_TIMEOUT_PROPERTY, Integer.toString(HANDSHAKE_TIMEOUT_MS));
+
+        final ServerSocket ss = new ServerSocket(0);
+        ss.setSoTimeout(30000);
+
+        startDaemon(new Runnable()
+        {
+            public void run()
+            {
+                try
+                {
+                    Socket s = ss.accept();
+                    // Hold the connection open without ever responding to the ClientHello.
+                    Thread.sleep(10L * HANDSHAKE_TIMEOUT_MS);
+                    s.close();
+                }
+                catch (Exception ignored)
+                {
+                }
+            }
+        });
+
+        SSLSocket cSock = createClientSocket(ss.getLocalPort());
+        try
+        {
+            cSock.setSoTimeout(HANDSHAKE_TIMEOUT_MS / 5);
+
+            long start = System.currentTimeMillis();
+            long limit = start + 5L * HANDSHAKE_TIMEOUT_MS;
+
+            for (;;)
+            {
+                try
+                {
+                    cSock.startHandshake();
+                    fail("handshake should have timed out");
+                }
+                catch (SocketTimeoutException e)
+                {
+                    // The per-read timeout fired, not the handshake deadline; resume as a caller would
+                    if (System.currentTimeMillis() >= limit)
+                    {
+                        fail("total handshake deadline never fired across the resumed handshake");
+                    }
+                    continue;
+                }
+                catch (Exception e)
+                {
+                    assertTrue("expected a TlsTimeoutException, got: " + e, isTimeout(e));
+                    break;
+                }
+            }
+        }
+        finally
+        {
+            closeQuietly(cSock);
+            ss.close();
+        }
     }
 
     private void assertTimesOut(ServerSocket ss)

@@ -137,6 +137,7 @@ public abstract class TlsProtocol
     final Object recordWriteLock = new Object();
 
     private int maxHandshakeMessageSize = -1;
+    private Timeout handshakeTimeout = null;
 
     TlsHandshakeHash handshakeHash;
 
@@ -425,7 +426,30 @@ public abstract class TlsProtocol
                 throw new TlsFatalAlert(AlertDescription.internal_error);
             }
 
+            checkHandshakeTimeout();
+
             safeReadRecord();
+        }
+    }
+
+    /**
+     * Abandon the handshake once {@link TlsPeer#getHandshakeTimeoutMillis()} has elapsed since
+     * {@link #beginHandshake(boolean)}.
+     * <p>
+     * NOTE: this bounds the handshake at record boundaries only. A plain {@link InputStream} has no
+     * timed read, so a peer that stalls part way through a record blocks in the read itself, where
+     * only the transport's own read timeout can intervene (the (BC)JSSE provider supplies one for
+     * blocking sockets, shrinking SO_TIMEOUT to the remaining handshake budget).
+     */
+    private void checkHandshakeTimeout() throws IOException
+    {
+        if (Timeout.hasExpired(handshakeTimeout, System.currentTimeMillis()))
+        {
+            TlsTimeoutException cause = new TlsTimeoutException("Handshake timed out");
+
+            handleException(AlertDescription.internal_error, "Handshake timed out", cause);
+
+            throw cause;
         }
     }
 
@@ -436,6 +460,7 @@ public abstract class TlsProtocol
         TlsPeer peer = getPeer();
 
         this.maxHandshakeMessageSize = TlsUtils.getMaxHandshakeMessageSize(peer);
+        this.handshakeTimeout = Timeout.forWaitMillis(peer.getHandshakeTimeoutMillis(), System.currentTimeMillis());
 
         this.handshakeHash = new DeferredHash(context);
         this.connection_state = CS_START;
@@ -476,6 +501,7 @@ public abstract class TlsProtocol
         this.selectedPSK13 = false;
         this.receivedChangeCipherSpec = false;
         this.expectSessionTicket = false;
+        this.handshakeTimeout = null;
     }
 
     protected void completeHandshake()

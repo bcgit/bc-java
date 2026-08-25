@@ -27,12 +27,15 @@ public interface TlsPeer
 
     /**
      * <p>
-     * NOTE: Respected by DTLS protocols, and by the (BC)JSSE provider for blocking sockets (see
-     * the {@code org.bouncycastle.jsse.handshakeTimeoutMillis} system property). It is not
-     * respected by the blocking {@link TlsClientProtocol} / {@link TlsServerProtocol} stream API,
-     * which reads from a caller-supplied stream with no timed-read primitive; callers needing a
-     * handshake deadline there should drive the non-blocking API and enforce it in their own I/O
-     * loop.
+     * NOTE: Respected by the DTLS protocols, by the blocking {@link TlsClientProtocol} /
+     * {@link TlsServerProtocol} stream API, and by the (BC)JSSE provider for blocking sockets (see
+     * the {@code org.bouncycastle.jsse.handshakeTimeoutMillis} system property). The stream API
+     * enforces it at record boundaries: a caller-supplied {@link java.io.InputStream} has no
+     * timed-read primitive, so a peer that stalls part way through a record blocks in the read
+     * itself, where only the transport's own read timeout can intervene - the (BC)JSSE provider
+     * supplies one for blocking sockets by shrinking SO_TIMEOUT to the remaining handshake budget.
+     * The non-blocking API is driven by the caller's own I/O loop, which is where a deadline for it
+     * belongs.
      * </p>
      * <p>
      * Specify the timeout, in milliseconds, to use for the complete handshake process. Negative

@@ -20,7 +20,11 @@ import org.bouncycastle.tls.TlsTimeoutException;
  * before each read, so the elapsed handshake time cannot exceed the configured deadline.
  * <p>
  * Once the handshake completes (or fails) {@link #deactivate()} restores the caller's original
- * {@code SO_TIMEOUT} and the stream becomes a transparent pass-through for application data.
+ * {@code SO_TIMEOUT} and the stream becomes a transparent pass-through for application data. A
+ * handshake merely interrupted part way - the blocking sockets always start a resumable handshake,
+ * so a read cut short by the caller's own per-read {@code SO_TIMEOUT} leaves the connection intact
+ * for the caller to resume - is settled with {@link #suspend()} instead, which restores
+ * {@code SO_TIMEOUT} but leaves the deadline armed, so resuming cannot extend the total budget.
  */
 class HandshakeTimeoutInputStream
     extends FilterInputStream
@@ -84,21 +88,43 @@ class HandshakeTimeoutInputStream
         }
     }
 
+    /**
+     * Settle an interrupted handshake that the caller may resume: the caller's original
+     * {@code SO_TIMEOUT} is restored, but the deadline stays armed, so the reads of a resumed
+     * handshake continue to count against the original total budget.
+     */
+    void suspend()
+    {
+        if (active)
+        {
+            restoreSoTimeout();
+        }
+    }
+
+    /**
+     * Settle a handshake that has completed or failed: the caller's original {@code SO_TIMEOUT} is
+     * restored and the stream becomes a transparent pass-through for application data.
+     */
     void deactivate()
     {
         if (active)
         {
             active = false;
 
-            try
-            {
-                socket.setSoTimeout(savedSoTimeout);
-            }
-            catch (IOException e)
-            {
-                // Best-effort restore: if the handshake failed the socket may already be closed,
-                // in which case there is nothing to restore and we must not mask the real cause.
-            }
+            restoreSoTimeout();
+        }
+    }
+
+    private void restoreSoTimeout()
+    {
+        try
+        {
+            socket.setSoTimeout(savedSoTimeout);
+        }
+        catch (IOException e)
+        {
+            // Best-effort restore: if the handshake failed the socket may already be closed,
+            // in which case there is nothing to restore and we must not mask the real cause.
         }
     }
 }
