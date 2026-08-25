@@ -1082,9 +1082,11 @@
                 </fileset>
             </classpath>
             <sysproperty key="test.java.version.prefix" value="${env.JAVA_VERSION_PREFIX}" />
-            <!-- the PKCS#12 keystore writes with a 600,000 iteration PBE by default, several
-                 seconds per store; the tests are not measuring the KDF, so write cheap files -->
+            <!-- the PKCS#12 keystore writes with a 600,000 iteration PBE by default and BCFKS
+                 with a 51,200 iteration PBKDF2, several seconds per store; the tests are not
+                 measuring the KDF, so write cheap files -->
             <sysproperty key="org.bouncycastle.pkcs12.store_it_count" value="4096" />
+            <sysproperty key="org.bouncycastle.bcfks.store_it_count" value="1024" />
 
             <formatter type="xml" />
             <batchtest todir="${artifacts.reports.xml.dir}" unless="testcase">
@@ -1114,9 +1116,11 @@
                 </fileset>
             </classpath>
 
-            <!-- the PKCS#12 keystore writes with a 600,000 iteration PBE by default, several
-                 seconds per store; the tests are not measuring the KDF, so write cheap files -->
+            <!-- the PKCS#12 keystore writes with a 600,000 iteration PBE by default and BCFKS
+                 with a 51,200 iteration PBKDF2, several seconds per store; the tests are not
+                 measuring the KDF, so write cheap files -->
             <sysproperty key="org.bouncycastle.pkcs12.store_it_count" value="4096" />
+            <sysproperty key="org.bouncycastle.bcfks.store_it_count" value="1024" />
 
             <formatter type="xml" />
             <test name="${testcase}" todir="${artifacts.reports.xml.dir}" if="testcase" />

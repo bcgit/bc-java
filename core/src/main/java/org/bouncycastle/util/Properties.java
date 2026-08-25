@@ -263,6 +263,23 @@ public class Properties
     public static final String BCFKS_MAX_SCRYPT_MEMORY = "org.bouncycastle.bcfks.max_scrypt_memory";
 
     /**
+     * The PBKDF2 iteration count the BCFKS keystore uses when <b>writing</b> a file through the
+     * plain {@code KeyStore.store(OutputStream, char[])} path - the write-side counterpart of
+     * {@link #BCFKS_MAX_IT_COUNT}, which only bounds what is accepted on load, and the BCFKS
+     * analogue of {@link #PKCS12_STORE_IT_COUNT}. Default 51,200 (PBKDF2-HMAC-SHA512), applied to
+     * the integrity MAC key and to the key-encryption keys of the entries. A caller supplying a
+     * {@code BCFKSLoadStoreParameter} with its own {@code PBKDFConfig} is unaffected.
+     * <p>
+     * Lowering this trades password-cracking resistance for store/load time, and is only worth
+     * doing where something other than the passphrase carries the confidentiality of the file.
+     * A value outside 1 .. 5,000,000 is ignored and the default used, so a mistyped property fails
+     * towards the default rather than towards a file with no PBE work in it; the upper bound is
+     * the {@link #BCFKS_MAX_IT_COUNT} default, so a file written under this property can always
+     * be read back. Read via {@link #asInteger(String, int)}.
+     */
+    public static final String BCFKS_STORE_IT_COUNT = "org.bouncycastle.bcfks.store_it_count";
+
+    /**
      * Upper bound on the PBKDF2 iteration count honoured when BC takes that count from an
      * untrusted encoding: decrypting a PBES2-protected PKCS#8 / PEM private key or PKCS#12
      * bag, verifying an RFC 9579 PBMAC1, unwrapping a CMS password recipient, and the raw JCA

@@ -390,6 +390,10 @@ configurations {
 
 
 test {
+    // Every AllTest* class already runs in its own JVM (forkEvery = 1 from the root build), so
+    // the forks share no System/Security property state; run them alongside each other as the
+    // other modules' test tasks and prov's own test8 / test11 / test15 / test17 / test25 do.
+    maxParallelForks = 8;
     jvmArgs = ['-Dtest.java.version.prefix=any']
 }
 

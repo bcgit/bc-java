@@ -216,11 +216,11 @@ public class XMSSTest
         throws Exception
     {
         KeyPairGenerator shaKpg = KeyPairGenerator.getInstance("XMSS", "BCPQC");
-        shaKpg.initialize(new XMSSParameterSpec(10, XMSSParameterSpec.SHA256), new SecureRandom());
+        shaKpg.initialize(new XMSSParameterSpec(4, XMSSParameterSpec.SHA256), new SecureRandom());
         KeyPair shaKp = shaKpg.generateKeyPair();
 
         KeyPairGenerator shakeKpg = KeyPairGenerator.getInstance("XMSS", "BCPQC");
-        shakeKpg.initialize(new XMSSParameterSpec(10, XMSSParameterSpec.SHAKE256), new SecureRandom());
+        shakeKpg.initialize(new XMSSParameterSpec(4, XMSSParameterSpec.SHAKE256), new SecureRandom());
         KeyPair shakeKp = shakeKpg.generateKeyPair();
 
         // a SHA256 key handed to a SHAKE256-named signer is rejected on both init paths
@@ -275,7 +275,7 @@ public class XMSSTest
 
         // SP 800-208 SHAKE256/256 keys (tree digest id-shake256-len) are within the SHAKE256 family
         KeyPairGenerator sp800Kpg = KeyPairGenerator.getInstance("XMSS", "BCPQC");
-        sp800Kpg.initialize(new XMSSParameterSpec(10, XMSSParameterSpec.SHAKE256_256), new SecureRandom());
+        sp800Kpg.initialize(new XMSSParameterSpec(4, XMSSParameterSpec.SHAKE256_256), new SecureRandom());
         KeyPair sp800Kp = sp800Kpg.generateKeyPair();
 
         Signature sp800Sig = Signature.getInstance("XMSS-SHAKE256", "BCPQC");
@@ -288,7 +288,7 @@ public class XMSSTest
 
         // and SHA-256/192 keys are within the SHA256 family
         KeyPairGenerator sha192Kpg = KeyPairGenerator.getInstance("XMSS", "BCPQC");
-        sha192Kpg.initialize(new XMSSParameterSpec(10, XMSSParameterSpec.SHA256_192), new SecureRandom());
+        sha192Kpg.initialize(new XMSSParameterSpec(4, XMSSParameterSpec.SHA256_192), new SecureRandom());
         KeyPair sha192Kp = sha192Kpg.generateKeyPair();
 
         Signature sha192Sig = Signature.getInstance("XMSS-SHA256", "BCPQC");
@@ -326,7 +326,7 @@ public class XMSSTest
     {
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("XMSS", "BCPQC");
 
-        kpg.initialize(new XMSSParameterSpec(10, XMSSParameterSpec.SHA256), new SecureRandom());
+        kpg.initialize(new XMSSParameterSpec(5, XMSSParameterSpec.SHA256), new SecureRandom());
 
         KeyPair kp = kpg.generateKeyPair();
 
@@ -350,7 +350,7 @@ public class XMSSTest
     {
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("XMSS", "BCPQC");
 
-        kpg.initialize(new XMSSParameterSpec(10, XMSSParameterSpec.SHA512), new SecureRandom());
+        kpg.initialize(new XMSSParameterSpec(5, XMSSParameterSpec.SHA512), new SecureRandom());
 
         KeyPair kp = kpg.generateKeyPair();
 
@@ -422,7 +422,7 @@ public class XMSSTest
     {
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("XMSS", "BCPQC");
 
-        kpg.initialize(new XMSSParameterSpec(10, XMSSParameterSpec.SHA256), new SecureRandom());
+        kpg.initialize(new XMSSParameterSpec(4, XMSSParameterSpec.SHA256), new SecureRandom());
 
         KeyPair kp = kpg.generateKeyPair();
 
@@ -497,7 +497,7 @@ public class XMSSTest
     {
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("XMSS", "BCPQC");
 
-        kpg.initialize(new XMSSParameterSpec(10, XMSSParameterSpec.SHA512), new SecureRandom());
+        kpg.initialize(new XMSSParameterSpec(4, XMSSParameterSpec.SHA512), new SecureRandom());
 
         KeyPair kp = kpg.generateKeyPair();
 
@@ -511,10 +511,10 @@ public class XMSSTest
 
         assertEquals(kp.getPublic(), pubKey);
 
-        assertEquals(10, privKey.getHeight());
+        assertEquals(4, privKey.getHeight());
         assertEquals(XMSSParameterSpec.SHA512, privKey.getTreeDigest());
 
-        assertEquals(10, pubKey.getHeight());
+        assertEquals(4, pubKey.getHeight());
         assertEquals(XMSSParameterSpec.SHA512, pubKey.getTreeDigest());
     }
 
@@ -523,7 +523,7 @@ public class XMSSTest
     {
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("XMSS", "BCPQC");
 
-        kpg.initialize(new XMSSParameterSpec(10, XMSSParameterSpec.SHAKE128), new SecureRandom());
+        kpg.initialize(new XMSSParameterSpec(4, XMSSParameterSpec.SHAKE128), new SecureRandom());
 
         KeyPair kp = kpg.generateKeyPair();
 
@@ -537,10 +537,10 @@ public class XMSSTest
 
         assertEquals(kp.getPublic(), pubKey);
 
-        assertEquals(10, privKey.getHeight());
+        assertEquals(4, privKey.getHeight());
         assertEquals(XMSSParameterSpec.SHAKE128, privKey.getTreeDigest());
 
-        assertEquals(10, pubKey.getHeight());
+        assertEquals(4, pubKey.getHeight());
         assertEquals(XMSSParameterSpec.SHAKE128, pubKey.getTreeDigest());
     }
 
@@ -549,7 +549,7 @@ public class XMSSTest
     {
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("XMSS", "BCPQC");
 
-        kpg.initialize(new XMSSParameterSpec(10, XMSSParameterSpec.SHAKE256), new SecureRandom());
+        kpg.initialize(new XMSSParameterSpec(4, XMSSParameterSpec.SHAKE256), new SecureRandom());
 
         KeyPair kp = kpg.generateKeyPair();
 
@@ -563,10 +563,10 @@ public class XMSSTest
 
         assertEquals(kp.getPublic(), pubKey);
 
-        assertEquals(10, privKey.getHeight());
+        assertEquals(4, privKey.getHeight());
         assertEquals(XMSSParameterSpec.SHAKE256, privKey.getTreeDigest());
 
-        assertEquals(10, pubKey.getHeight());
+        assertEquals(4, pubKey.getHeight());
         assertEquals(XMSSParameterSpec.SHAKE256, pubKey.getTreeDigest());
     }
 
@@ -595,7 +595,7 @@ public class XMSSTest
     {
         KeyPairGenerator kpg = KeyPairGenerator.getInstance("XMSS", "BCPQC");
 
-        kpg.initialize(new XMSSParameterSpec(10, XMSSParameterSpec.SHA256), new SecureRandom());
+        kpg.initialize(new XMSSParameterSpec(4, XMSSParameterSpec.SHA256), new SecureRandom());
 
         KeyPair kp = kpg.generateKeyPair();
 

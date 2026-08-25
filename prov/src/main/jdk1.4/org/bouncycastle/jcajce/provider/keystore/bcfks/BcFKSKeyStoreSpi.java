@@ -94,6 +94,18 @@ import org.bouncycastle.util.Strings;
 class BcFKSKeyStoreSpi
     extends KeyStoreSpi
 {
+    /**
+     * The PBKDF2-HMAC-SHA512 iteration count written by default, for the integrity MAC key and
+     * the entry key-encryption keys.
+     */
+    private static final int DEFAULT_STORE_IT_COUNT = 50 * 1024;
+
+    /**
+     * Largest count {@link Properties#BCFKS_STORE_IT_COUNT} may name - the default read-side cap
+     * {@link Properties#BCFKS_MAX_IT_COUNT} applies, so a file BC writes is one BC can read back.
+     */
+    private static final int MAX_STORE_IT_COUNT = 5000000;
+
     private static final Map<String, ASN1ObjectIdentifier> oidMap = new HashMap<String, ASN1ObjectIdentifier>();
     private static final Map<ASN1ObjectIdentifier, String> publicAlgMap = new HashMap<ASN1ObjectIdentifier, String>();
 
@@ -1187,12 +1199,31 @@ class BcFKSKeyStoreSpi
 
         if (PKCSObjectIdentifiers.id_PBKDF2.equals(derivationAlgorithm))
         {
-            return new KeyDerivationFunc(PKCSObjectIdentifiers.id_PBKDF2, new PBKDF2Params(pbkdSalt, 50 * 1024, keySizeInBytes, new AlgorithmIdentifier(PKCSObjectIdentifiers.id_hmacWithSHA512, DERNull.INSTANCE)));
+            return new KeyDerivationFunc(PKCSObjectIdentifiers.id_PBKDF2, new PBKDF2Params(pbkdSalt, getStoreIterationCount(), keySizeInBytes, new AlgorithmIdentifier(PKCSObjectIdentifiers.id_hmacWithSHA512, DERNull.INSTANCE)));
         }
         else
         {
             throw new IllegalStateException("unknown derivation algorithm: " + derivationAlgorithm);
         }
+    }
+
+    /**
+     * The PBKDF2 iteration count to write with on the default path - the integrity MAC key and
+     * the entry key-encryption keys when no {@link BCFKSLoadStoreParameter} names a KDF -
+     * {@link #DEFAULT_STORE_IT_COUNT} unless {@link Properties#BCFKS_STORE_IT_COUNT} names a
+     * usable value. A value outside 1 .. {@link #MAX_STORE_IT_COUNT} is ignored, so a mistyped
+     * property fails towards the default rather than towards a file with no PBE work in it.
+     */
+    private static int getStoreIterationCount()
+    {
+        int itCount = Properties.asInteger(Properties.BCFKS_STORE_IT_COUNT, DEFAULT_STORE_IT_COUNT);
+
+        if (itCount < 1 || itCount > MAX_STORE_IT_COUNT)
+        {
+            return DEFAULT_STORE_IT_COUNT;
+        }
+
+        return itCount;
     }
 
     public static class Std
