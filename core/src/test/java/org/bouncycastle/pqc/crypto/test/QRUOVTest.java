@@ -79,20 +79,66 @@ public class QRUOVTest
         "qruov5q7L10v1490m190",
     };
 
+    // The KATs are split by PRG and by security category into four methods, each run from
+    // its own AllTestsQRUOV* suite so they can run as separate (parallel) forks: even sampled,
+    // the category 5 sets alone are minutes of key generation. Indices 0-7 of the parameter
+    // arrays are the category 1 and 3 sets, 8-11 the category 5 ones.
+    private static final int CAT5_START = 8;
+
     public void testTestVectorsShake()
         throws Exception
     {
-        // SHAKE variant is OID-mapped, so round-trip the keys through
-        // PublicKeyFactory / PrivateKeyFactory as a side-check.
-        runKats(ALL_SHAKE_PARAMS, buildFilenames(ALL_PARAM_SET_DIRS, "kat_shake", "refs"), true);
+        runShakeKats(0, CAT5_START);
+    }
+
+    public void testTestVectorsShakeCat5()
+        throws Exception
+    {
+        runShakeKats(CAT5_START, ALL_SHAKE_PARAMS.length);
     }
 
     public void testTestVectorsAes()
         throws Exception
     {
+        runAesKats(0, CAT5_START);
+    }
+
+    public void testTestVectorsAesCat5()
+        throws Exception
+    {
+        runAesKats(CAT5_START, ALL_AES_PARAMS.length);
+    }
+
+    private static void runShakeKats(int from, int to)
+        throws Exception
+    {
+        // SHAKE variant is OID-mapped, so round-trip the keys through
+        // PublicKeyFactory / PrivateKeyFactory as a side-check.
+        runKats(slice(ALL_SHAKE_PARAMS, from, to),
+            buildFilenames(slice(ALL_PARAM_SET_DIRS, from, to), "kat_shake", "refs"), true);
+    }
+
+    private static void runAesKats(int from, int to)
+        throws Exception
+    {
         // AES PRG variants are intentionally not OID-mapped (the canonical JCE
         // surface uses SHAKE), so we don't round-trip the keys through the factory.
-        runKats(ALL_AES_PARAMS, buildFilenames(ALL_PARAM_SET_DIRS, "kat_aes", "refa"), false);
+        runKats(slice(ALL_AES_PARAMS, from, to),
+            buildFilenames(slice(ALL_PARAM_SET_DIRS, from, to), "kat_aes", "refa"), false);
+    }
+
+    private static QRUOVParameters[] slice(QRUOVParameters[] all, int from, int to)
+    {
+        QRUOVParameters[] rv = new QRUOVParameters[to - from];
+        System.arraycopy(all, from, rv, 0, rv.length);
+        return rv;
+    }
+
+    private static String[] slice(String[] all, int from, int to)
+    {
+        String[] rv = new String[to - from];
+        System.arraycopy(all, from, rv, 0, rv.length);
+        return rv;
     }
 
     private static String[] buildFilenames(String[] dirs, String prgDir, String refDir)

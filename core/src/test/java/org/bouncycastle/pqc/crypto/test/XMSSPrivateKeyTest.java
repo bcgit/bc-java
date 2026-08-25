@@ -29,7 +29,8 @@ public class XMSSPrivateKeyTest
     private void parsingTest(Digest digest)
         throws ClassNotFoundException, IOException
     {
-        XMSSParameters params = new XMSSParameters(10, digest);
+        // the height only sizes the tree that is rebuilt from the exported key, not what is checked
+        XMSSParameters params = new XMSSParameters(4, digest);
         byte[] root = generateRoot(digest);
         XMSSPrivateKeyParameters privateKey = new XMSSPrivateKeyParameters.Builder(params).withRoot(root)
             .withPublicSeed(new byte[digest.getDigestSize()]).withSecretKeySeed(new byte[digest.getDigestSize()]).build();

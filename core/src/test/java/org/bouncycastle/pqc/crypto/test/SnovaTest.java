@@ -23,7 +23,10 @@ public class SnovaTest
         throws Exception
     {
         SnovaTest test = new SnovaTest();
-        test.testTestVectors();
+        test.testTestVectorsESK();
+        test.testTestVectorsSSK();
+        test.testTestVectorsShakeESK();
+        test.testTestVectorsShakeSSK();
     }
 
     private static final SnovaParameters[] PARAMETER_SETS = new SnovaParameters[]
@@ -122,11 +125,67 @@ public class SnovaTest
     };
 
 
-    public void testTestVectors()
+    // The KATs are split by secret key form (expanded ESK / seed SSK) and hash (SHAKE or not)
+    // into four methods, each run from its own AllTestsSnova* suite so they can run as
+    // separate (parallel) forks.
+    public void testTestVectorsESK()
         throws Exception
     {
+        runKats("_ESK.rsp", false);
+    }
+
+    public void testTestVectorsSSK()
+        throws Exception
+    {
+        runKats("_SSK.rsp", false);
+    }
+
+    public void testTestVectorsShakeESK()
+        throws Exception
+    {
+        runKats("_SHAKE_ESK.rsp", true);
+    }
+
+    public void testTestVectorsShakeSSK()
+        throws Exception
+    {
+        runKats("_SHAKE_SSK.rsp", true);
+    }
+
+    private static boolean selected(String file, String suffix, boolean shake)
+    {
+        return file.endsWith(suffix) && (file.indexOf("_SHAKE_") >= 0) == shake;
+    }
+
+    /**
+     * Run the KAT files whose names end in the given suffix and do (or do not) name the SHAKE
+     * variant.
+     */
+    private static void runKats(String suffix, boolean shake)
+        throws Exception
+    {
+        int n = 0;
+        for (int i = 0; i != files.length; i++)
+        {
+            if (selected(files[i], suffix, shake))
+            {
+                n++;
+            }
+        }
+        final SnovaParameters[] paramSets = new SnovaParameters[n];
+        String[] katFiles = new String[n];
+        n = 0;
+        for (int i = 0; i != files.length; i++)
+        {
+            if (selected(files[i], suffix, shake))
+            {
+                paramSets[n] = PARAMETER_SETS[i];
+                katFiles[n++] = files[i];
+            }
+        }
+
         long start = System.currentTimeMillis();
-        TestUtils.testTestVector(true, true, false, "pqc/crypto/snova", files, new TestUtils.SignerOperation()
+        TestUtils.testTestVector(true, true, false, "pqc/crypto/snova", katFiles, new TestUtils.SignerOperation()
         {
             @Override
             public SecureRandom getSecureRandom(byte[] seed)
@@ -137,7 +196,7 @@ public class SnovaTest
             @Override
             public AsymmetricCipherKeyPairGenerator getAsymmetricCipherKeyPairGenerator(int fileIndex, SecureRandom random)
             {
-                SnovaParameters parameters = PARAMETER_SETS[fileIndex];
+                SnovaParameters parameters = paramSets[fileIndex];
 
                 SnovaKeyPairGenerator kpGen = new SnovaKeyPairGenerator();
                 kpGen.init(new SnovaKeyGenerationParameters(random, parameters));

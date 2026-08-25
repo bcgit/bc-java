@@ -58,10 +58,32 @@ public class MQOMKatTest
         MQOMParameters.mqom2_cat5_gf256_short_r3, MQOMParameters.mqom2_cat5_gf256_short_r5
     };
 
-    public void testAllVariants()
+    // twelve variants per security category, run from separate AllTestsMQOM* suites so the
+    // three categories, each minutes of signing, run as separate (parallel) forks.
+    private static final int VARIANTS_PER_CATEGORY = 12;
+
+    public void testCat1Variants()
         throws IOException
     {
-        for (int i = 0; i < ALL_VARIANTS.length; i++)
+        runVariants(0, VARIANTS_PER_CATEGORY);
+    }
+
+    public void testCat3Variants()
+        throws IOException
+    {
+        runVariants(VARIANTS_PER_CATEGORY, 2 * VARIANTS_PER_CATEGORY);
+    }
+
+    public void testCat5Variants()
+        throws IOException
+    {
+        runVariants(2 * VARIANTS_PER_CATEGORY, ALL_VARIANTS.length);
+    }
+
+    private void runVariants(int from, int to)
+        throws IOException
+    {
+        for (int i = from; i < to; i++)
         {
             MQOMParameters params = ALL_VARIANTS[i];
             String filename = params.getName() + ".rsp";

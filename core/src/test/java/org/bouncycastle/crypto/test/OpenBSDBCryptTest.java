@@ -142,6 +142,13 @@ public class OpenBSDBCryptTest
 
 
 
+        // the root password's hash for each salt, computed once rather than per candidate
+        String[] rootHashes = new String[salts.length];
+        for (int k = 0; k != salts.length; k++)
+        {
+            rootHashes[k] = OpenBSDBCrypt.generate(rootPassword, salts[k], 4);
+        }
+
         //
         // Permutation, starting with a shorter array, same length then one longer.
         //
@@ -166,7 +173,7 @@ public class OpenBSDBCryptTest
                     for (int k = 0; k != salts.length; k++)
                     {
                         byte[] salt = salts[k];
-                        String expected = OpenBSDBCrypt.generate(rootPassword, salt, 4);
+                        String expected = rootHashes[k];
                         String testValue = OpenBSDBCrypt.generate(candidate, salt, 4);
 
                         //

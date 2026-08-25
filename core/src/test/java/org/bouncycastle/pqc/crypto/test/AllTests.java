@@ -53,7 +53,7 @@ public class AllTests
         // Hawk tests split out into AllTestsHawk so they can run as a separate (parallel) fork.
         suite.addTestSuite(UOVTest.class);
         // MQOM tests split out into AllTestsMQOM so they can run as a separate (parallel) fork.
-        suite.addTestSuite(SQIsignTest.class);
+        // SQIsign tests split out into AllTestsSQIsign / AllTestsSQIsignLvl5 so they can run as separate (parallel) forks.
         suite.addTestSuite(HAETAETest.class);
         suite.addTestSuite(SDitHTest.class);
         suite.addTestSuite(AIMerTest.class);

@@ -5,7 +5,7 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.bouncycastle.test.PrintTestResult;
 
-public class AllTestsSnova
+public class AllTestsSQIsignLvl5
     extends TestCase
 {
     public static void main(String[] args)
@@ -15,11 +15,10 @@ public class AllTestsSnova
 
     public static Test suite()
     {
-        TestSuite suite = new TestSuite("Lightweight SNOVA Tests (ESK)");
+        TestSuite suite = new TestSuite("Lightweight SQIsign Tests (level 5)");
 
-        // the other SnovaTest KAT methods run from AllTestsSnovaSSK / AllTestsSnovaShake /
-        // AllTestsSnovaShakeSSK so the four quarters, each minutes of KATs, run as separate (parallel) forks.
-        suite.addTest(TestSuite.createTest(SnovaTest.class, "testTestVectorsESK"));
+        // see AllTestsSQIsign.
+        suite.addTest(TestSuite.createTest(SQIsignTest.class, "testTestVectorsLvl5"));
 
         return new AllTests.BCTestSetup(suite);
     }

@@ -170,6 +170,10 @@ public class SLHDSATest
         InputStream src = TestResourceFinder.findTestResource("pqc/crypto/slhdsa", "SLH-DSA-sigGen.txt");
         BufferedReader bin = new BufferedReader(new InputStreamReader(src));
 
+        // 204 vectors, 84 of them for the slow 's' parameter sets; sample them the way
+        // testSigGen samples the per-parameter-set files (-Dtest.full=true runs them all).
+        TestSampler sampler = new TestSampler();
+
         String line = null;
         HashMap<String, String> buf = new HashMap<String, String>();
         while ((line = bin.readLine()) != null)
@@ -182,7 +186,7 @@ public class SLHDSATest
             }
             if (line.length() == 0)
             {
-                if (buf.size() > 0)
+                if (buf.size() > 0 && !sampler.skipTest((String)buf.get("tcId")))
                 {
                     boolean deterministic = !buf.containsKey("additionalRandomness");
                     byte[] sk = Hex.decode((String)buf.get("sk"));

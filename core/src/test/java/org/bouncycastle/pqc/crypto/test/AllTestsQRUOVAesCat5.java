@@ -5,7 +5,7 @@ import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.bouncycastle.test.PrintTestResult;
 
-public class AllTestsSnova
+public class AllTestsQRUOVAesCat5
     extends TestCase
 {
     public static void main(String[] args)
@@ -15,11 +15,10 @@ public class AllTestsSnova
 
     public static Test suite()
     {
-        TestSuite suite = new TestSuite("Lightweight SNOVA Tests (ESK)");
+        TestSuite suite = new TestSuite("Lightweight QR-UOV Tests (AES PRG, category 5)");
 
-        // the other SnovaTest KAT methods run from AllTestsSnovaSSK / AllTestsSnovaShake /
-        // AllTestsSnovaShakeSSK so the four quarters, each minutes of KATs, run as separate (parallel) forks.
-        suite.addTest(TestSuite.createTest(SnovaTest.class, "testTestVectorsESK"));
+        // one quarter of the QRUOVTest KATs; see AllTestsQRUOV.
+        suite.addTest(TestSuite.createTest(QRUOVTest.class, "testTestVectorsAesCat5"));
 
         return new AllTests.BCTestSetup(suite);
     }

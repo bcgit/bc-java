@@ -248,6 +248,10 @@ configure(subprojects.findAll {it.name != 'bom'}) {
 
         filter {
             includeTestsMatching "AllTest*"
+            // the pattern also matches the nested TestCase classes some suites declare
+            // (AllTestsSlow$RegressionTestTest etc.), which would then run standalone as
+            // well as through their suite() - only run them through the suite.
+            excludeTestsMatching "*\$*"
             if (project.hasProperty('excludeTests')) {
                 excludeTestsMatching "${excludeTests}"
             }

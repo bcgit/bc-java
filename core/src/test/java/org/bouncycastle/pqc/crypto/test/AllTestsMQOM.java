@@ -18,7 +18,9 @@ public class AllTestsMQOM
         TestSuite suite = new TestSuite("Lightweight MQOM Tests");
 
         suite.addTestSuite(MQOMTest.class);
-        suite.addTestSuite(MQOMKatTest.class);
+        // the category 3 and 5 MQOMKatTest KATs run from AllTestsMQOMCat3 / AllTestsMQOMCat5
+        // so the three categories, each minutes of signing, run as separate (parallel) forks.
+        suite.addTest(TestSuite.createTest(MQOMKatTest.class, "testCat1Variants"));
 
         return new AllTests.BCTestSetup(suite);
     }

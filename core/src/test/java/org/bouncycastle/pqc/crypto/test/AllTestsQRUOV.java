@@ -15,9 +15,11 @@ public class AllTestsQRUOV
 
     public static Test suite()
     {
-        TestSuite suite = new TestSuite("Lightweight QR-UOV Tests");
+        TestSuite suite = new TestSuite("Lightweight QR-UOV Tests (SHAKE PRG, categories 1 and 3)");
 
-        suite.addTestSuite(QRUOVTest.class);
+        // the other QRUOVTest KAT methods run from AllTestsQRUOVCat5 / AllTestsQRUOVAes /
+        // AllTestsQRUOVAesCat5 so the four halves, each minutes of KATs, run as separate (parallel) forks.
+        suite.addTest(TestSuite.createTest(QRUOVTest.class, "testTestVectorsShake"));
 
         return new AllTests.BCTestSetup(suite);
     }
