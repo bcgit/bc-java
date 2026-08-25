@@ -1,8 +1,15 @@
 package org.bouncycastle.mail.smime.examples.test;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.PrintStream;
+import java.io.PrintWriter;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.security.KeyStore;
 import java.util.Enumeration;
 
@@ -91,8 +98,137 @@ public class AllTests
             }
         }
 
-        SendSignedAndEncryptedMail.main(new String[]{"id.p12", "hello world", keyAlias, "smtp.gmail.com", "recipient@example.com"});
+        // SendSignedAndEncryptedMail ends with Transport.send(), so the test must not point it
+        // at a real mail host: JavaMail has no connect timeout by default, and where outbound
+        // port 25 is silently dropped rather than refused the connect blocked the whole
+        // :misc:test run indefinitely (github #2407). Deliver to a loopback SMTP stub instead,
+        // with timeouts as a backstop; the example reads the mail.smtp.* settings from the
+        // system properties.
+        SmtpStub smtp = new SmtpStub();
+        smtp.start();
+        try
+        {
+            System.setProperty("mail.smtp.port", Integer.toString(smtp.getPort()));
+            System.setProperty("mail.smtp.connectiontimeout", "10000");
+            System.setProperty("mail.smtp.timeout", "10000");
+            System.setProperty("mail.smtp.writetimeout", "10000");
+
+            SendSignedAndEncryptedMail.main(new String[]{"id.p12", "hello world", keyAlias, "127.0.0.1", "recipient@example.com"});
+        }
+        finally
+        {
+            smtp.close();
+        }
+        assertTrue("SMTP stub did not receive the message: " + _currentErr, smtp.receivedMessage());
+
         ValidateSignedMail.main(null);
+    }
+
+    /**
+     * Minimal single-connection SMTP responder on a loopback port: greets, answers every command
+     * with 250, accepts one DATA body, and records that a message was delivered.
+     */
+    private static class SmtpStub
+        extends Thread
+    {
+        private final ServerSocket serverSocket;
+        private volatile boolean received;
+
+        SmtpStub()
+            throws IOException
+        {
+            serverSocket = new ServerSocket(0, 1, InetAddress.getByName("127.0.0.1"));
+            serverSocket.setSoTimeout(30000);
+            setDaemon(true);
+        }
+
+        int getPort()
+        {
+            return serverSocket.getLocalPort();
+        }
+
+        boolean receivedMessage()
+        {
+            return received;
+        }
+
+        public void run()
+        {
+            try
+            {
+                Socket socket = serverSocket.accept();
+                try
+                {
+                    socket.setSoTimeout(30000);
+                    BufferedReader in = new BufferedReader(new InputStreamReader(socket.getInputStream(), "ISO-8859-1"));
+                    PrintWriter out = new PrintWriter(socket.getOutputStream(), true);
+
+                    out.print("220 localhost ESMTP stub\r\n");
+                    out.flush();
+
+                    boolean inData = false;
+                    String line;
+                    while ((line = in.readLine()) != null)
+                    {
+                        if (inData)
+                        {
+                            if (line.equals("."))
+                            {
+                                inData = false;
+                                received = true;
+                                out.print("250 OK\r\n");
+                                out.flush();
+                            }
+                            continue;
+                        }
+
+                        String cmd = line.toUpperCase();
+                        if (cmd.startsWith("EHLO") || cmd.startsWith("HELO"))
+                        {
+                            out.print("250 localhost\r\n");
+                        }
+                        else if (cmd.startsWith("DATA"))
+                        {
+                            inData = true;
+                            out.print("354 End data with <CR><LF>.<CR><LF>\r\n");
+                        }
+                        else if (cmd.startsWith("QUIT"))
+                        {
+                            out.print("221 Bye\r\n");
+                            out.flush();
+                            break;
+                        }
+                        else
+                        {
+                            out.print("250 OK\r\n");
+                        }
+                        out.flush();
+                    }
+                }
+                finally
+                {
+                    socket.close();
+                }
+            }
+            catch (IOException e)
+            {
+                // accept timed out or the client went away: receivedMessage() reports the result
+            }
+        }
+
+        void close()
+            throws IOException
+        {
+            serverSocket.close();
+            try
+            {
+                join(30000);
+            }
+            catch (InterruptedException e)
+            {
+                Thread.currentThread().interrupt();
+            }
+        }
     }
 
     public static void main(String[] args)
