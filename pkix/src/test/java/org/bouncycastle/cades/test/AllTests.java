@@ -1,9 +1,14 @@
 package org.bouncycastle.cades.test;
 
+import java.security.Security;
+
+import junit.extensions.TestSetup;
 import junit.framework.Test;
+import junit.framework.TestCase;
 import junit.framework.TestSuite;
 
 public class AllTests
+    extends TestCase
 {
     public static void main(String[] args)
     {
@@ -19,6 +24,25 @@ public class AllTests
         suite.addTestSuite(CAdESLTTest.class);
         suite.addTestSuite(CAdESLTATest.class);
 
-        return suite;
+        return new BCTestSetup(suite);
+    }
+
+    static class BCTestSetup
+        extends TestSetup
+    {
+        public BCTestSetup(Test test)
+        {
+            super(test);
+        }
+
+        protected void setUp()
+        {
+            Security.addProvider(new org.bouncycastle.jce.provider.BouncyCastleProvider());
+        }
+
+        protected void tearDown()
+        {
+            Security.removeProvider("BC");
+        }
     }
 }
