@@ -39,6 +39,7 @@ import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
+import org.bouncycastle.cert.plants.ListMerkleTreeNodeSource;
 import org.bouncycastle.cert.plants.MTCCertAuth;
 import org.bouncycastle.cert.plants.MTCContentSigner;
 import org.bouncycastle.cert.plants.MTCCosignedMessage;
@@ -49,6 +50,7 @@ import org.bouncycastle.cert.plants.MTCSignatureVerifierProvider;
 import org.bouncycastle.cert.plants.MerkleTreeCertEntryExtension;
 import org.bouncycastle.cert.plants.MerkleTreeCertificateValidator;
 import org.bouncycastle.cert.plants.MerkleTreeHash;
+import org.bouncycastle.cert.plants.MerkleTreeNodeSource;
 import org.bouncycastle.cert.plants.MerkleTreePrimitives;
 import org.bouncycastle.cert.plants.bc.BcMTCCosigner;
 import org.bouncycastle.cert.plants.bc.BcMTCCosignerVerifierProvider;
@@ -126,7 +128,7 @@ public class MerkleTreeCertificatesTest
             leaves.add(hashFunc.hashLeaf(("leaf" + i).getBytes()));
         }
 
-        byte[] root = computeMTH(leaves, 0, 8, hashFunc);
+        byte[] root = MerkleTreePrimitives.computeMerkleTreeHash(leaves, 0, 8, hashFunc);
 
         // Inclusion proof for leaf 3 in [0, 8): siblings going up are leaf 2,
         // hash(leaf 0, leaf 1), and hash([4, 6), [6, 8)).
@@ -188,11 +190,11 @@ public class MerkleTreeCertificatesTest
         {
             leaves.add(hashFunc.hashLeaf(("leaf" + i).getBytes()));
         }
-        byte[] root14 = computeMTH(leaves, 0, 14, hashFunc);
-        byte[] subtreeHash48 = computeMTH(leaves, 4, 8, hashFunc);
+        byte[] root14 = MerkleTreePrimitives.computeMerkleTreeHash(leaves, 0, 14, hashFunc);
+        byte[] subtreeHash48 = MerkleTreePrimitives.computeMerkleTreeHash(leaves, 4, 8, hashFunc);
 
-        byte[] hash04 = computeMTH(leaves, 0, 4, hashFunc);
-        byte[] hash814 = computeMTH(leaves, 8, 14, hashFunc);
+        byte[] hash04 = MerkleTreePrimitives.computeMerkleTreeHash(leaves, 0, 4, hashFunc);
+        byte[] hash814 = MerkleTreePrimitives.computeMerkleTreeHash(leaves, 8, 14, hashFunc);
         List<byte[]> proof = Arrays.asList(hash04, hash814);
 
         isTrue("Consistency proof valid", MerkleTreePrimitives.verifySubtreeConsistencyProof(
@@ -206,11 +208,11 @@ public class MerkleTreeCertificatesTest
         // contained in the tree -- exercises the LSB-of-sn shift path in
         // Section 4.4.3 step 7.2.3, which is where the previous implementation
         // had the loop condition reversed.
-        byte[] subtreeHash813 = computeMTH(leaves, 8, 13, hashFunc);
+        byte[] subtreeHash813 = MerkleTreePrimitives.computeMerkleTreeHash(leaves, 8, 13, hashFunc);
         byte[] hashD12 = leaves.get(12);
         byte[] hashD13 = leaves.get(13);
-        byte[] hash812 = computeMTH(leaves, 8, 12, hashFunc);
-        byte[] hash08 = computeMTH(leaves, 0, 8, hashFunc);
+        byte[] hash812 = MerkleTreePrimitives.computeMerkleTreeHash(leaves, 8, 12, hashFunc);
+        byte[] hash08 = MerkleTreePrimitives.computeMerkleTreeHash(leaves, 0, 8, hashFunc);
         List<byte[]> proof813 = Arrays.asList(hashD12, hashD13, hash812, hash08);
 
         isTrue("Consistency proof for partial subtree valid",
@@ -222,9 +224,9 @@ public class MerkleTreeCertificatesTest
         // so step 7.2.3's "until LSB(sn) is set" shift must still apply with
         // fn == sn -- a guard that stopped shifting once the paths merged
         // rejected this spec-valid proof.
-        byte[] root6 = computeMTH(leaves, 0, 6, hashFunc);
-        byte[] subtreeHash46 = computeMTH(leaves, 4, 6, hashFunc);
-        List<byte[]> proof46 = Collections.singletonList(computeMTH(leaves, 0, 4, hashFunc));
+        byte[] root6 = MerkleTreePrimitives.computeMerkleTreeHash(leaves, 0, 6, hashFunc);
+        byte[] subtreeHash46 = MerkleTreePrimitives.computeMerkleTreeHash(leaves, 4, 6, hashFunc);
+        List<byte[]> proof46 = Collections.singletonList(MerkleTreePrimitives.computeMerkleTreeHash(leaves, 0, 4, hashFunc));
 
         isTrue("Consistency proof valid when f- and s-paths merge at an even node",
             MerkleTreePrimitives.verifySubtreeConsistencyProof(
@@ -233,6 +235,299 @@ public class MerkleTreeCertificatesTest
         isTrue("Tampered merged-path consistency proof rejected",
             !MerkleTreePrimitives.verifySubtreeConsistencyProof(
                 4, 6, 6, subtreeHash46, root6, Collections.singletonList(badHash), hashFunc));
+    }
+
+    public void testProofGeneration()
+    {
+        List<byte[]> leaves = new ArrayList<byte[]>();
+        for (int i = 0; i < 14; i++)
+        {
+            leaves.add(hashFunc.hashLeaf(("leaf" + i).getBytes()));
+        }
+
+        // computeMerkleTreeHash against a hand-built tree of size 8 (RFC 9162 Section 2.1.1).
+        byte[] node01 = hashFunc.hashNode(leaves.get(0), leaves.get(1));
+        byte[] node23 = hashFunc.hashNode(leaves.get(2), leaves.get(3));
+        byte[] node45 = hashFunc.hashNode(leaves.get(4), leaves.get(5));
+        byte[] node67 = hashFunc.hashNode(leaves.get(6), leaves.get(7));
+        byte[] node03 = hashFunc.hashNode(node01, node23);
+        byte[] node47 = hashFunc.hashNode(node45, node67);
+        isTrue("MTH of size-8 tree", areEqual(hashFunc.hashNode(node03, node47),
+            MerkleTreePrimitives.computeMerkleTreeHash(leaves, 0, 8, hashFunc)));
+        isTrue("MTH of a single entry is the entry hash", areEqual(leaves.get(5),
+            MerkleTreePrimitives.computeMerkleTreeHash(leaves, 5, 6, hashFunc)));
+        // Unbalanced range: k is the largest power of two below the size (4 for [8, 14)).
+        isTrue("MTH of unbalanced range", areEqual(
+            hashFunc.hashNode(
+                MerkleTreePrimitives.computeMerkleTreeHash(leaves, 8, 12, hashFunc),
+                hashFunc.hashNode(leaves.get(12), leaves.get(13))),
+            MerkleTreePrimitives.computeMerkleTreeHash(leaves, 8, 14, hashFunc)));
+
+        // Inclusion proof for leaf 3 in [0, 8) matches the hand-built one in testInclusionProofEvaluation.
+        List<byte[]> incl = MerkleTreePrimitives.generateSubtreeInclusionProof(3, 0, 8, leaves, hashFunc);
+        isTrue("Inclusion proof length", incl.size() == 3);
+        isTrue("Inclusion proof sibling 0", areEqual(leaves.get(2), incl.get(0)));
+        isTrue("Inclusion proof sibling 1", areEqual(node01, incl.get(1)));
+        isTrue("Inclusion proof sibling 2", areEqual(node47, incl.get(2)));
+        isTrue("Size-one subtree has an empty inclusion proof",
+            MerkleTreePrimitives.generateSubtreeInclusionProof(3, 3, 4, leaves, hashFunc).isEmpty());
+
+        // Consistency proofs match the hand-built Figure 7 / Figure 8 proofs in
+        // testSubtreeConsistencyProofVerification.
+        List<byte[]> cons48 = MerkleTreePrimitives.generateSubtreeConsistencyProof(4, 8, 14, leaves, hashFunc);
+        isTrue("Consistency proof [4, 8) in 14", cons48.size() == 2
+            && areEqual(MerkleTreePrimitives.computeMerkleTreeHash(leaves, 0, 4, hashFunc), cons48.get(0))
+            && areEqual(MerkleTreePrimitives.computeMerkleTreeHash(leaves, 8, 14, hashFunc), cons48.get(1)));
+        List<byte[]> cons813 = MerkleTreePrimitives.generateSubtreeConsistencyProof(8, 13, 14, leaves, hashFunc);
+        isTrue("Consistency proof [8, 13) in 14", cons813.size() == 4
+            && areEqual(leaves.get(12), cons813.get(0))
+            && areEqual(leaves.get(13), cons813.get(1))
+            && areEqual(MerkleTreePrimitives.computeMerkleTreeHash(leaves, 8, 12, hashFunc), cons813.get(2))
+            && areEqual(MerkleTreePrimitives.computeMerkleTreeHash(leaves, 0, 8, hashFunc), cons813.get(3)));
+        isTrue("Whole tree has an empty consistency proof",
+            MerkleTreePrimitives.generateSubtreeConsistencyProof(0, 14, 14, leaves, hashFunc).isEmpty());
+
+        // Generate-then-verify round trips over every valid subtree of every tree size up to 14,
+        // and every entry of every subtree.
+        byte[] badHash = hashFunc.hashLeaf("bad".getBytes());
+        for (int n = 1; n <= 14; n++)
+        {
+            byte[] root = MerkleTreePrimitives.computeMerkleTreeHash(leaves, 0, n, hashFunc);
+            for (int start = 0; start < n; start++)
+            {
+                for (int end = start + 1; end <= n; end++)
+                {
+                    if (!MerkleTreePrimitives.isValidSubtree(start, end))
+                    {
+                        continue;
+                    }
+                    byte[] subtreeHash = MerkleTreePrimitives.computeMerkleTreeHash(leaves, start, end, hashFunc);
+
+                    List<byte[]> cons = MerkleTreePrimitives.generateSubtreeConsistencyProof(
+                        start, end, n, leaves, hashFunc);
+                    isTrue("Consistency round trip [" + start + ", " + end + ") in " + n,
+                        MerkleTreePrimitives.verifySubtreeConsistencyProof(
+                            start, end, n, subtreeHash, root, cons, hashFunc));
+                    if (!cons.isEmpty())
+                    {
+                        List<byte[]> tampered = new ArrayList<byte[]>(cons);
+                        tampered.set(tampered.size() - 1, badHash);
+                        isTrue("Tampered consistency proof [" + start + ", " + end + ") in " + n,
+                            !MerkleTreePrimitives.verifySubtreeConsistencyProof(
+                                start, end, n, subtreeHash, root, tampered, hashFunc));
+                    }
+
+                    for (int index = start; index < end; index++)
+                    {
+                        List<byte[]> proof = MerkleTreePrimitives.generateSubtreeInclusionProof(
+                            index, start, end, leaves, hashFunc);
+                        isTrue("Inclusion round trip " + index + " in [" + start + ", " + end + ")",
+                            MerkleTreePrimitives.verifySubtreeInclusionProof(
+                                index, start, end, leaves.get(index), subtreeHash, proof, hashFunc));
+                        if (start == 0 && end == n)
+                        {
+                            // Section 4.4.1: SUBTREE_PROOF(start, start + 1, D_n) = PATH(start, D_n).
+                            List<byte[]> single = MerkleTreePrimitives.generateSubtreeConsistencyProof(
+                                index, index + 1, n, leaves, hashFunc);
+                            isTrue("Size-one consistency proof equals inclusion proof for " + index + " in " + n,
+                                single.size() == proof.size());
+                            for (int i = 0; i != proof.size(); i++)
+                            {
+                                isTrue("Size-one consistency proof element " + i,
+                                    areEqual(proof.get(i), single.get(i)));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Argument checking.
+        final List<byte[]> fLeaves = leaves;
+        testException("Invalid subtree interval or index", "IllegalArgumentException", new TestExceptionOperation()
+        {
+            public void operation()
+            {
+                MerkleTreePrimitives.generateSubtreeInclusionProof(3, 3, 5, fLeaves, hashFunc); // not a subtree
+            }
+        });
+        testException("Invalid subtree interval or index", "IllegalArgumentException", new TestExceptionOperation()
+        {
+            public void operation()
+            {
+                MerkleTreePrimitives.generateSubtreeInclusionProof(8, 0, 8, fLeaves, hashFunc); // index outside
+            }
+        });
+        testException("Invalid subtree interval or tree size", "IllegalArgumentException", new TestExceptionOperation()
+        {
+            public void operation()
+            {
+                MerkleTreePrimitives.generateSubtreeConsistencyProof(4, 8, 6, fLeaves, hashFunc); // end > n
+            }
+        });
+        testException("is empty or not covered by", "IllegalArgumentException", new TestExceptionOperation()
+        {
+            public void operation()
+            {
+                MerkleTreePrimitives.generateSubtreeConsistencyProof(4, 8, 16, fLeaves, hashFunc); // n > entries
+            }
+        });
+        testException("is empty or not covered by", "IllegalArgumentException", new TestExceptionOperation()
+        {
+            public void operation()
+            {
+                MerkleTreePrimitives.computeMerkleTreeHash(fLeaves, 5, 5, hashFunc);
+            }
+        });
+    }
+
+    public void testNodeSourceProofGeneration()
+    {
+        final List<byte[]> leaves = new ArrayList<byte[]>();
+        for (int i = 0; i < 14; i++)
+        {
+            leaves.add(hashFunc.hashLeaf(("leaf" + i).getBytes()));
+        }
+
+        isTrue("isFullSubtree [0, 8)", MerkleTreePrimitives.isFullSubtree(0, 8));
+        isTrue("isFullSubtree [8, 12)", MerkleTreePrimitives.isFullSubtree(8, 12));
+        isTrue("isFullSubtree [5, 6)", MerkleTreePrimitives.isFullSubtree(5, 6));
+        isTrue("isFullSubtree [4, 6)", MerkleTreePrimitives.isFullSubtree(4, 6));
+        isTrue("!isFullSubtree [2, 6)", !MerkleTreePrimitives.isFullSubtree(2, 6));
+        isTrue("!isFullSubtree [0, 6)", !MerkleTreePrimitives.isFullSubtree(0, 6));
+        isTrue("!isFullSubtree [3, 3)", !MerkleTreePrimitives.isFullSubtree(3, 3));
+
+        // A stand-in for a storage-backed log: only the full subtrees a log stores are
+        // available, requests for anything else fail, and requests are counted.
+        final java.util.Map<String, byte[]> stored = new java.util.HashMap<String, byte[]>();
+        for (int size = 1; size <= 8; size <<= 1)
+        {
+            for (int start = 0; start + size <= 14; start += size)
+            {
+                stored.put(start + ":" + (start + size),
+                    MerkleTreePrimitives.computeMerkleTreeHash(leaves, start, start + size, hashFunc));
+            }
+        }
+        final int[] requests = new int[1];
+        MerkleTreeNodeSource log = new MerkleTreeNodeSource()
+        {
+            public byte[] getFullSubtreeHash(long start, long end)
+            {
+                requests[0]++;
+                if (!MerkleTreePrimitives.isFullSubtree(start, end))
+                {
+                    fail("non-full subtree requested: [" + start + ", " + end + ")");
+                }
+                byte[] node = stored.get(start + ":" + end);
+                if (node == null)
+                {
+                    throw new IllegalArgumentException("not stored: [" + start + ", " + end + ")");
+                }
+                return node;
+            }
+        };
+
+        // Every hash and proof from the storage-backed source equals the in-memory one.
+        for (int n = 1; n <= 14; n++)
+        {
+            isTrue("root " + n, areEqual(
+                MerkleTreePrimitives.computeMerkleTreeHash(leaves, 0, n, hashFunc),
+                MerkleTreePrimitives.computeMerkleTreeHash(log, 0, n, hashFunc)));
+            for (int start = 0; start < n; start++)
+            {
+                for (int end = start + 1; end <= n; end++)
+                {
+                    isTrue("range [" + start + ", " + end + ")", areEqual(
+                        MerkleTreePrimitives.computeMerkleTreeHash(leaves, start, end, hashFunc),
+                        MerkleTreePrimitives.computeMerkleTreeHash(log, start, end, hashFunc)));
+                    if (!MerkleTreePrimitives.isValidSubtree(start, end))
+                    {
+                        continue;
+                    }
+                    isTrue("consistency [" + start + ", " + end + ") in " + n, sameHashes(
+                        MerkleTreePrimitives.generateSubtreeConsistencyProof(start, end, n, leaves, hashFunc),
+                        MerkleTreePrimitives.generateSubtreeConsistencyProof(start, end, n, log, hashFunc)));
+                    for (int index = start; index < end; index++)
+                    {
+                        isTrue("inclusion " + index + " in [" + start + ", " + end + ")", sameHashes(
+                            MerkleTreePrimitives.generateSubtreeInclusionProof(index, start, end, leaves, hashFunc),
+                            MerkleTreePrimitives.generateSubtreeInclusionProof(index, start, end, log, hashFunc)));
+                    }
+                }
+            }
+        }
+
+        // A proof over [8, 13) in 14 needs the nodes 12, 13, [8, 12) and [0, 8): four requests,
+        // one per proof element, none of them below a stored node.
+        requests[0] = 0;
+        MerkleTreePrimitives.generateSubtreeConsistencyProof(8, 13, 14, log, hashFunc);
+        isTrue("consistency proof made " + requests[0] + " requests", requests[0] == 4);
+
+        // The tree size is the caller's statement; a node beyond what the source holds
+        // surfaces as the source's own exception.
+        testException("not stored", "IllegalArgumentException", new TestExceptionOperation()
+        {
+            public void operation()
+            {
+                MerkleTreePrimitives.generateSubtreeConsistencyProof(8, 12, 16, log, hashFunc);
+            }
+        });
+        // A null from the source is rejected rather than passed into the hash.
+        testException("returned no hash", "IllegalArgumentException", new TestExceptionOperation()
+        {
+            public void operation()
+            {
+                MerkleTreePrimitives.computeMerkleTreeHash(new MerkleTreeNodeSource()
+                {
+                    public byte[] getFullSubtreeHash(long start, long end)
+                    {
+                        return null;
+                    }
+                }, 0, 4, hashFunc);
+            }
+        });
+        testException("is empty", "IllegalArgumentException", new TestExceptionOperation()
+        {
+            public void operation()
+            {
+                MerkleTreePrimitives.computeMerkleTreeHash(log, 4, 4, hashFunc);
+            }
+        });
+        testException("nodes must not be null", "IllegalArgumentException", new TestExceptionOperation()
+        {
+            public void operation()
+            {
+                MerkleTreePrimitives.generateSubtreeInclusionProof(0, 0, 4, (MerkleTreeNodeSource)null, hashFunc);
+            }
+        });
+
+        // The list adapter is what the list overloads use, and checks its bounds.
+        final ListMerkleTreeNodeSource adapted = new ListMerkleTreeNodeSource(leaves, hashFunc);
+        isTrue("adapter size", adapted.size() == 14);
+        isTrue("adapter node", areEqual(stored.get("8:12"), adapted.getFullSubtreeHash(8, 12)));
+        testException("not covered by", "IllegalArgumentException", new TestExceptionOperation()
+        {
+            public void operation()
+            {
+                adapted.getFullSubtreeHash(8, 16);
+            }
+        });
+    }
+
+    private boolean sameHashes(List<byte[]> a, List<byte[]> b)
+    {
+        if (a.size() != b.size())
+        {
+            return false;
+        }
+        for (int i = 0; i < a.size(); i++)
+        {
+            if (!areEqual(a.get(i), b.get(i)))
+            {
+                return false;
+            }
+        }
+        return true;
     }
 
     public void testFindCoveringSubtrees()
@@ -1424,29 +1719,6 @@ public class MerkleTreeCertificatesTest
         return out;
     }
 
-    private static byte[] computeMTH(List<byte[]> leaves, int start, int end, MerkleTreeHash hashFunc)
-    {
-        int len = end - start;
-        if (len == 1)
-        {
-            return leaves.get(start);
-        }
-        int k = largestPowerOfTwoLessThan(len);
-        byte[] left = computeMTH(leaves, start, start + k, hashFunc);
-        byte[] right = computeMTH(leaves, start + k, end, hashFunc);
-        return hashFunc.hashNode(left, right);
-    }
-
-    private static int largestPowerOfTwoLessThan(int n)
-    {
-        int k = 1;
-        while (k < n)
-        {
-            k <<= 1;
-        }
-        return k >> 1;
-    }
-
     private static final byte[] SUBTREE_LABEL = new byte[]{
         's', 'u', 'b', 't', 'r', 'e', 'e', '/', 'v', '1', (byte)0x0A, (byte)0x00
     };
@@ -1580,6 +1852,8 @@ public class MerkleTreeCertificatesTest
         setup();
         testInclusionProofEvaluation();
         testSubtreeConsistencyProofVerification();
+        testProofGeneration();
+        testNodeSourceProofGeneration();
         testFindCoveringSubtrees();
         testValidSubtreeCheck();
         testCosignatureVerificationECDSA();
