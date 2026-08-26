@@ -312,12 +312,6 @@ public final class Kangaroo
                            final int pOutOffset,
                            final int pOutLen)
         {
-            /* Check that we are not already outputting */
-            if (squeezing)
-            {
-                throw new IllegalStateException("Already outputting");
-            }
-
             /* Build the required output */
             final int length = doOutput(pOut, pOutOffset, pOutLen);
 
