@@ -379,19 +379,11 @@ class ProvTlsClient
                 String authType = JsseUtils.getAuthTypeServer(
                     context.getSecurityParametersHandshake().getKeyExchangeAlgorithm());
 
-                if (TlsUtils.isTLSv13(context))
-                {
-                    /*
-                     * RFC 8446 4.4.2.1: TLS 1.3 has no CertificateStatus handshake message - the
-                     * server's OCSP information rides in an extension of each CertificateEntry.
-                     */
-                    jsseSecurityParameters.statusResponses = JsseUtils.getStatusResponses13(serverCertificate);
-                }
-                else
-                {
-                    jsseSecurityParameters.statusResponses = JsseUtils.getStatusResponses(
-                        serverCertificate.getCertificateStatus());
-                }
+                /*
+                 * The status responses (if any) must be set before the checkServerTrusted call: the TrustManager
+                 * accesses them during chain validation via getStatusResponses on the handshake session.
+                 */
+                jsseSecurityParameters.statusResponses = JsseUtils.getStatusResponses(context, serverCertificate);
 
                 manager.checkServerTrusted(chain, authType);
             }

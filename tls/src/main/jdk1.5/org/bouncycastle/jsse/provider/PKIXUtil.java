@@ -27,6 +27,7 @@ abstract class PKIXUtil
     {
         if (null != pkixRevocationCheckerClass)
         {
+            // Note that this method internally uses PKIXRevocationChecker, which is available "since 1.8"
             JsseUtils_8.addStatusResponses(pkixBuilder, pkixParameters, statusResponseMap);
         }
     }

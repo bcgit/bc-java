@@ -564,7 +564,17 @@ class ProvTlsServer
         /*
          * Identifying a certificate to a responder takes its issuer, and the chain supplies one for
          * every certificate but the last - so a chain of one (a server sending no issuers) has
-         * nothing that can be asked about.
+         * nothing that can be asked about. The RFC 6960 CertID needs the issuer's public key (for
+         * issuerKeyHash), which the subject certificate does not carry, so the issuer DN alone is
+         * not enough; see OcspStapleCache.createCertID. Two gaps follow: an end-entity certificate
+         * issued directly by a trust anchor (a chain of one) gets no staple at all, even if marked
+         * must-staple, and the last certificate sent gets none in the multi-staple shapes - both
+         * permitted (RFC 6961 sec. 2.2, RFC 8446 sec. 4.4.2.1) and both shared with SunJSSE, whose
+         * StatusResponseManager also requires a chain of 2 and pairs adjacent entries. A CertID is
+         * fully determined by the subject certificate plus the issuing public key (invariant across
+         * cross-signs, so no knowledge of the client's trust anchors is involved), meaning the gaps
+         * could be closed by sourcing that key - or just its hash - from somewhere other than the
+         * chain being sent; the wire format constrains nothing here.
          */
         int chainLength = certificateMessage.getLength();
         if (chainLength < 2)
@@ -1059,6 +1069,14 @@ class ProvTlsServer
         else
         {
             X509Certificate[] chain = JsseUtils.getX509CertificateChain(getCrypto(), clientCertificate);
+
+            /*
+             * TODO[tls13] Client stapling (RFC 8446 4.4.2.1: a client may staple OCSP responses to
+             * its CertificateEntry list when the CertificateRequest solicited them). If supported,
+             * any status responses must be set before the checkClientTrusted call: the TrustManager
+             * accesses them during chain validation via getStatusResponses on the handshake session
+             * (as ProvTlsClient.notifyServerCertificate already does for the server's staples).
+             */
 
             /*
              * We never try to continue the handshake with an untrusted client certificate (although it could
