@@ -173,11 +173,15 @@ Extends `java.security.KeyPairGenerator`. Contains:
 - `generateKeyPair()` runs the engine, wraps in BC key classes, returns a `KeyPair`.
 - **One public static inner class per parameter set** calling `super(<Alg>Parameters.<paramset>)`.
 
+If the SPI has an uninitialised-default branch in `generateKeyPair()` (`if (!initialised) { … }`), treat it as a second, parallel initialisation path: it must set **every** field `initialize(spec, random)` sets, not just `param`, and its parameters must actually be constructible. Both halves went wrong in the older XMSS/XMSS^MT generators (github #2408) — XMSS^MT defaulted to a height/layer pair that is not a legal parameter set, so the call threw outright, and both left `treeDigest` null, so a default-generated key threw `NullPointerException` from `equals()` / `hashCode()` / `getTreeDigest()`. Cover it with a test that calls `KeyPairGenerator.getInstance("<Alg>", "BCPQC").generateKeyPair()` with no `initialize()`, round-trips the key through its `KeyFactory` and compares it to itself.
+
 ### Step 10 — `prov/.../pqc/jcajce/provider/<alg>/SignatureSpi.java`
 
 Extends `java.security.Signature`. Contains a `ByteArrayOutputStream bOut` for message accumulation, the standard `engineInitSign` / `engineInitVerify` / `engineUpdate` / `engineSign` / `engineVerify` overrides, a `Base` inner class with no parameter binding (used when the caller selects via `"Faest"` and the actual parameter set comes from the key), and **one public static inner class per parameter set** that hard-pins the parameter check.
 
 In `engineInitVerify` / `engineInitSign`, when the SPI was constructed with a specific parameter set, verify the key's algorithm matches the SPI's parameter set with an exact-message error — `"signature configured for " + canonicalAlg`. Tests in other algorithms assert on that exact string, so the message format is part of the contract; copy it verbatim from SNOVA's `SignatureSpi`.
+
+`engineVerify` must never let an unchecked exception out: a signature that will not decode is `false`, one this engine cannot process is a `SignatureException` (built through `SecurityExceptions.signatureException`), and the accumulated message is cleared in a `finally` so the object survives a rejection. The lightweight signer throws unchecked for malformed input by design — translating that is the SPI's job. Full contract, and the malformed-signature battery to check it with, in the `Signature.verify()` section of `docs/claude/conventions.md`.
 
 ### Step 11 — `prov/.../pqc/jcajce/provider/<Alg>.java` (the Mappings class)
 

@@ -477,6 +477,36 @@ public class XMSSMTTest
         }
     }
 
+    /**
+     * generateKeyPair() without a preceding initialize() has to produce a usable key. The layer
+     * count has to divide the total height, so the (height 10, layers 20) this used to default to
+     * was not a constructible parameter set at all and the call threw; the default is now
+     * XMSSMT-SHA2_20/2_512 (RFC 8391 sec. 5.4), with its tree digest set (github #2408).
+     */
+    public void testDefaultKeyPairGeneration()
+        throws Exception
+    {
+        KeyPair kp = KeyPairGenerator.getInstance("XMSSMT", "BCPQC").generateKeyPair();
+
+        XMSSMTKey pubKey = (XMSSMTKey)kp.getPublic();
+
+        assertEquals(20, pubKey.getHeight());
+        assertEquals(2, pubKey.getLayers());
+        assertEquals(XMSSMTParameterSpec.SHA512, pubKey.getTreeDigest());
+        assertEquals(kp.getPublic(), kp.getPublic());
+        assertEquals(kp.getPublic().hashCode(), kp.getPublic().hashCode());
+
+        KeyFactory kFact = KeyFactory.getInstance("XMSSMT", "BCPQC");
+
+        assertEquals(kp.getPublic(), kFact.generatePublic(new X509EncodedKeySpec(kp.getPublic().getEncoded())));
+
+        assertEquals(kp.getPrivate(), kFact.generatePrivate(new PKCS8EncodedKeySpec(kp.getPrivate().getEncoded())));
+
+        // no sign/verify round trip here on purpose: the first signature at height 20 spends ~13s
+        // building the lower layer's BDS state, and the signing path is covered by the
+        // testXMSSMTSha512Signature battery. What is specific to the default is the key itself.
+    }
+
     public void testSignerKeyDigestFamilyEnforcement()
         throws Exception
     {

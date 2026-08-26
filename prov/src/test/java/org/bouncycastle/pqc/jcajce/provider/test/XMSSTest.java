@@ -212,6 +212,76 @@ public class XMSSTest
         }
     }
 
+    /**
+     * An XMSS signature is the fixed-size encoding of RFC 8391 sec. 4.1.8, so a valid signature
+     * carrying trailing data is not a signature - XMSS used to read its fields at their fixed
+     * offsets and ignore the tail, where XMSS^MT already checked the total length (github #2408).
+     */
+    public void testSignatureWithTrailingBytesRejected()
+        throws Exception
+    {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("XMSS", "BCPQC");
+
+        kpg.initialize(new XMSSParameterSpec(4, XMSSParameterSpec.SHA256), new SecureRandom());
+
+        KeyPair kp = kpg.generateKeyPair();
+
+        Signature signer = Signature.getInstance("XMSS-SHA256", "BCPQC");
+
+        signer.initSign(kp.getPrivate());
+        signer.update(msg, 0, msg.length);
+
+        byte[] sig = signer.sign();
+
+        signer.initVerify(kp.getPublic());
+        signer.update(msg, 0, msg.length);
+
+        assertTrue(signer.verify(sig));
+
+        signer.initVerify(kp.getPublic());
+        signer.update(msg, 0, msg.length);
+
+        assertFalse("signature with trailing data accepted", signer.verify(Arrays.append(sig, (byte)0x2a)));
+
+        signer.initVerify(kp.getPublic());
+        signer.update(msg, 0, msg.length);
+
+        assertFalse("truncated signature accepted", signer.verify(Arrays.copyOfRange(sig, 0, sig.length - 1)));
+    }
+
+    /**
+     * generateKeyPair() without a preceding initialize() has to produce a usable key - one whose
+     * tree digest is set, so equals()/hashCode()/getTreeDigest() work on it (github #2408).
+     */
+    public void testDefaultKeyPairGeneration()
+        throws Exception
+    {
+        KeyPair kp = KeyPairGenerator.getInstance("XMSS", "BCPQC").generateKeyPair();
+
+        XMSSKey pubKey = (XMSSKey)kp.getPublic();
+
+        assertEquals(10, pubKey.getHeight());
+        assertEquals(XMSSParameterSpec.SHA512, pubKey.getTreeDigest());
+        assertEquals(kp.getPublic(), kp.getPublic());
+        assertEquals(kp.getPublic().hashCode(), kp.getPublic().hashCode());
+
+        KeyFactory kFact = KeyFactory.getInstance("XMSS", "BCPQC");
+
+        assertEquals(kp.getPublic(), kFact.generatePublic(new X509EncodedKeySpec(kp.getPublic().getEncoded())));
+
+        Signature signer = Signature.getInstance("XMSS", "BCPQC");
+
+        signer.initSign(kp.getPrivate());
+        signer.update(msg, 0, msg.length);
+
+        byte[] sig = signer.sign();
+
+        signer.initVerify(kp.getPublic());
+        signer.update(msg, 0, msg.length);
+
+        assertTrue(signer.verify(sig));
+    }
+
     public void testSignerKeyDigestFamilyEnforcement()
         throws Exception
     {

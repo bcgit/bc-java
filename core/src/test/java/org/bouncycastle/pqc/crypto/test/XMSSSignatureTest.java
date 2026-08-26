@@ -41,6 +41,39 @@ public class XMSSSignatureTest
         assertEquals(true, Arrays.areEqual(sig1, sig3));
     }
 
+    /**
+     * An XMSS signature is a (4 + n + (len + h) * n)-byte string (RFC 8391 sec. 4.1.8), so a
+     * signature carrying trailing data - or a truncated one - is not a signature for these
+     * parameters. XMSSMTSignature has always checked this way (github #2408).
+     */
+    public void testSignatureWrongSizeRejected()
+    {
+        XMSSParameters params = new XMSSParameters(10, new SHA256Digest());
+        XMSS xmss = new XMSS(params, new NullPRNG());
+        xmss.generateKeys();
+        byte[] sig = xmss.sign(new byte[1024]);
+
+        byte[][] wrongSize = new byte[][]
+            {
+                Arrays.append(sig, (byte)0x2a),
+                Arrays.copyOfRange(sig, 0, sig.length - 1),
+                new byte[0]
+            };
+
+        for (int i = 0; i != wrongSize.length; i++)
+        {
+            try
+            {
+                new XMSSSignature.Builder(params).withSignature(wrongSize[i]).build();
+                fail("no exception on signature of wrong size: " + i);
+            }
+            catch (IllegalArgumentException e)
+            {
+                assertEquals("signature has wrong size", e.getMessage());
+            }
+        }
+    }
+
     public void testConstructor()
     {
         XMSSParameters params = new XMSSParameters(10, new SHA256Digest());

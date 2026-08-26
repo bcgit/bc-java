@@ -59,6 +59,107 @@ public class LMSTest
         trySigning(new KeyPair(lmsPublicKey, lmsPrivateKey));
     }
 
+    /**
+     * A signature that does not decode is an invalid signature, not an error: Signature.verify()
+     * has to answer false for it rather than let the lightweight API's IllegalStateException
+     * escape the JCA boundary, as ML-DSA, SLH-DSA, XMSS and XMSS^MT all do (github #2408).
+     */
+    public void testMalformedSignatureVerifyReturnsFalse()
+        throws Exception
+    {
+        byte[] msg = Strings.toByteArray("Hello, world!");
+
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("LMS", "BC");
+
+        kpGen.initialize(new LMSKeyGenParameterSpec(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w1), new SecureRandom());
+
+        KeyPair kp = kpGen.generateKeyPair();
+
+        Signature signer = Signature.getInstance("LMS", "BC");
+
+        signer.initSign(kp.getPrivate());
+        signer.update(msg);
+
+        byte[] sig = signer.sign();
+
+        byte[][] malformed = new byte[][]
+            {
+                new byte[0],
+                new byte[]{ 1, 2, 3 },
+                new byte[sig.length],
+                Arrays.append(sig, (byte)0x2a),                 // trailing data
+                Arrays.copyOfRange(sig, 0, sig.length - 1)      // truncated
+            };
+
+        for (int i = 0; i != malformed.length; i++)
+        {
+            signer.initVerify(kp.getPublic());
+            signer.update(msg);
+
+            assertFalse("malformed signature " + i + " accepted", signer.verify(malformed[i]));
+        }
+
+        // ...and a rejected signature must not leave the signer holding the data fed to it
+        signer.initVerify(kp.getPublic());
+        signer.update(Strings.toByteArray("not the message"));
+
+        assertFalse(signer.verify(new byte[]{ 1, 2, 3 }));
+
+        signer.update(msg);
+
+        assertTrue(signer.verify(sig));
+    }
+
+    /**
+     * A signature that does decode but names an OTS type other than the one the verifying key was
+     * generated for is something this engine cannot process, which the JCA reports as a
+     * SignatureException - not as a plain verification failure, and not as the lightweight API's
+     * unchecked IllegalArgumentException (github #2408).
+     */
+    public void testSignatureFromDifferentOtsTypeThrows()
+        throws Exception
+    {
+        byte[] msg = Strings.toByteArray("Hello, world!");
+
+        KeyPairGenerator w1Gen = KeyPairGenerator.getInstance("LMS", "BC");
+
+        w1Gen.initialize(new LMSKeyGenParameterSpec(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w1), new SecureRandom());
+
+        KeyPair w1Kp = w1Gen.generateKeyPair();
+
+        KeyPairGenerator w2Gen = KeyPairGenerator.getInstance("LMS", "BC");
+
+        w2Gen.initialize(new LMSKeyGenParameterSpec(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w2), new SecureRandom());
+
+        KeyPair w2Kp = w2Gen.generateKeyPair();
+
+        Signature signer = Signature.getInstance("LMS", "BC");
+
+        signer.initSign(w2Kp.getPrivate());
+        signer.update(msg);
+
+        byte[] sig = signer.sign();
+
+        signer.initVerify(w1Kp.getPublic());
+        signer.update(msg);
+
+        try
+        {
+            signer.verify(sig);
+            fail("no exception on signature naming a different OTS type");
+        }
+        catch (SignatureException e)
+        {
+            assertEquals("ots type from lsm signature does not match ots signature type from embedded ots signature", e.getMessage());
+        }
+
+        // ...and the signer is still usable afterwards
+        signer.initVerify(w2Kp.getPublic());
+        signer.update(msg);
+
+        assertTrue(signer.verify(sig));
+    }
+
     public void testKeyPairGenerators()
         throws Exception
     {

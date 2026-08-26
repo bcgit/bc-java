@@ -101,6 +101,9 @@ public class XMSSKeyPairGeneratorSpi
     {
         if (!initialised)
         {
+            // the tree digest has to be set here as well, otherwise the key returned carries none
+            // and its equals()/hashCode()/getTreeDigest() fail on it.
+            treeDigest = NISTObjectIdentifiers.id_sha512;
             param = new XMSSKeyGenerationParameters(new XMSSParameters(10, new SHA512Digest()), random);
 
             engine.init(param);

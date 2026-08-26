@@ -153,6 +153,33 @@ Practical checklist when porting a new PQC algorithm — easy to leave any of th
 - Tests in `prov/src/test/java/org/bouncycastle/pqc/jcajce/provider/test/<Alg>Test.java` plus an entry in `AllTests.java`, and the signature-encoding assertions above in `core`'s `PqcSignatureEncodingTest` / `PqcMalformedInputTest`. Include a `testBcProviderKeyInfoConverter`-style case that exercises `BouncyCastleProvider.getPublicKey(SubjectPublicKeyInfo)` and `getPrivateKey(PrivateKeyInfo)` against every parameter set, proving the `loadPQCKeys()` registration works.
 - `docs/releasenotes.html` — one `<li>` under the current unreleased version's "Additional Features and Functionality" block.
 
+### Two JCA-boundary details the checklist does not spell out
+
+Both were found in the stateful hash-based signers (github #2408), which predate the contract the
+newer signers settled on — but neither is specific to them, and neither is caught by a
+sign-then-verify round trip.
+
+- **A fixed-size signature encoding has to be length-checked when it is parsed.** If the parse
+  reads its fields at fixed offsets and never looks at the total length, appending arbitrary bytes
+  to a valid signature yields a second, different encoding that still verifies — encoding
+  uniqueness gone, for a scheme whose signature the spec defines as an exact byte count.
+  `XMSSSignature.Builder.withSignature()` had this and `XMSSMTSignature` did not, so the same
+  library disagreed with itself: RFC 8391 sec. 4.1.8 fixes an XMSS signature at
+  `4 + n + (len + h) * n` bytes and the check is a three-line `if`. Assert the appended *and* the
+  truncated case; the truncated one often already fails for an unrelated reason, which is what
+  makes the appended one easy to miss. See also the `Signature.verify()` contract in
+  `conventions.md`.
+- **`generateKeyPair()` with no preceding `initialize()` must return a fully-formed key.** The
+  uninitialised branch is a second, parallel initialisation path, and it has to set *everything*
+  `initialize(spec, random)` sets — not just `param`. Check its parameters are actually
+  constructible (XMSS^MT defaulted to height 10 with 20 layers, which is not a legal parameter set
+  at all, so the call simply threw), and check every *other* field the SPI carries: both the XMSS
+  and XMSS^MT generators left `treeDigest` null there, so a default-generated key threw
+  `NullPointerException` from `equals()`, `hashCode()` and `getTreeDigest()`. Grep the SPI for
+  fields assigned in `initialize` and confirm the default branch assigns each one. A one-line
+  `KeyPairGenerator.getInstance("<Alg>").generateKeyPair()` test that then round-trips the key
+  through its `KeyFactory` and compares it to itself covers both failures.
+
 ## PQC engines should stay package-private — drive KATs through the public API
 
 The lightweight `<Alg>Engine` produced when porting a reference C/Rust implementation tends to expose low-level entry points (`engine.keyGen(seedKey, sk, pk)`, `engine.sign(sk, msg, salt, mseed)`) that KAT vectors need but legitimate callers never touch. Resist the urge to make `<Alg>Engine` public just so `<Alg>KatTest` can poke at internals — that leaks the engine into the published `bcprov` API surface where it becomes load-bearing, and any future internal refactor has to preserve the engine signature too.

@@ -91,7 +91,7 @@ is usually a sign the mapping is wrong.
 
 Many tests assert on exact exception message text (e.g. `isTrue(e.getMessage().equals("..."))` or `getCause().getMessage()` checks). Changing the wording of a thrown exception — even something as small as adding a colon, rewording for clarity, or wrapping with `Exceptions.illegalArgumentException(...)` — will silently break tests in another module. Before modifying any exception message, grep the whole tree for the existing string and update every matching assertion in lockstep.
 
-## Cause-chaining via `SecurityExceptions` for cause-less JDK exceptions
+## Cause-chaining via `SecurityExceptions`
 
 A handful of `java.security` / `javax.crypto` exceptions ship only a `(String)` constructor — no `(String, Throwable)` form — including `UnrecoverableKeyException`, `IllegalBlockSizeException`, `BadPaddingException`, `NoSuchPaddingException`, `NoSuchProviderException`, `CertificateExpiredException`, `CertificateNotYetValidException`, `InvalidParameterSpecException`, `ShortBufferException`, and `AEADBadTagException`. When wrapping a caught exception with one of these inside a `catch (… e)` block, do not fold the underlying text into the new exception's string and discard the cause:
 
@@ -111,9 +111,50 @@ catch (Exception e)
 }
 ```
 
-Factories exist today for `unrecoverableKeyException`, `illegalBlockSizeException` and `badPaddingException`. Add a new factory there (same one-line shape — `return (X) new X(message).initCause(cause);`) when migrating throws of any other cause-less class above; do **not** roll `new X(msg).initCause(e)` ad-hoc at the throw site. The migration is purely additive: keep the existing message text verbatim (it is almost certainly under test assertions per the previous section) and add `e` as the second argument — callers that do not care still see the same exception type and message, while callers that do can walk `getCause()`.
+**The class covers more than the cause-less exceptions**, and that second group is the one people miss. `SignatureException`, `InvalidKeySpecException`, `InvalidAlgorithmParameterException`, `CertPathValidatorException` and friends *do* have a `(String, Throwable)` constructor — but only from **Java 5**, so using it directly breaks the Java-4 source floor (see `build-jdk14.md`). The factories exist for those too, and several carry a comment saying exactly that ("only exists from Java 5; initCause keeps the legacy (Java 4) builds compiling, so do not 'simplify' this to the two-arg constructor"). So the rule is simply: **in `prov`, never write `new X(msg, cause)` for a `java.security` / `javax.crypto` exception — call the factory.** A file that today sits behind an `ant/jdk14.xml` exclude is not an argument for the two-arg form; the excludes move.
+
+Factories exist today for `invalidKeySpecException`, `generalSecurityException`, `invalidKeyException`, `invalidAlgorithmParameterException`, `noSuchAlgorithmException`, `signatureException`, `unrecoverableKeyException`, `illegalBlockSizeException`, `badPaddingException`, `certPathValidatorException`, `certPathBuilderException` and `certificateEncodingException`. Add a new factory there (same one-line shape — `return (X) new X(message).initCause(cause);`) when you need one; do **not** roll `new X(msg).initCause(e)` ad-hoc at the throw site. The migration is purely additive: keep the existing message text verbatim (it is almost certainly under test assertions per the previous section) and add `e` as the second argument — callers that do not care still see the same exception type and message, while callers that do can walk `getCause()`.
+
+**There is a `prov/src/main/jdk1.3` overlay of this class**, and it rots like every other overlay: a new factory has to be added there too, or a 1.3-reachable caller fails to compile in that build. It is one factory behind today (`invalidAlgorithmParameterException` is missing) — latent only because nothing calls that one yet.
 
 Throw sites *outside* a `catch` block — value-check branches like `if (x.size() == 0) throw new UnrecoverableKeyException("…")` — have nothing to chain and stay as plain `new X(msg)`. The audit grep when adding a factory is `grep -rnE "new $Cls\(" prov/src/main/java` filtered by which lines contain `e.getMessage()` / `e.toString()` (the cause-folding pattern); pure-literal throws are not candidates.
+
+## `Signature.verify()` reports; it never throws unchecked
+
+A provider `Signature` / `SignatureSpi` has exactly three answers at the JCA boundary, and an
+unchecked exception is none of them:
+
+- **Well-formed but does not verify** — return `false`.
+- **Will not decode at all** (empty, truncated, trailing data, garbage) — also return `false`. That
+  is an invalid signature, not an error.
+- **Decodes, but this engine cannot process it** — it names a different algorithm, parameter set or
+  OTS type than the key — throw `SignatureException` (via `SecurityExceptions.signatureException`,
+  per the section above).
+
+The lightweight `org.bouncycastle.crypto.*` signers and their `*Signature` / `*Context` parse
+helpers throw unchecked for malformed input *by design*; translating that is the SPI's job. The
+whole provider was measured against one malformed-signature battery (empty / 3 bytes / zeroed /
+signature+1 / signature-1) for github #2408: ML-DSA, SLH-DSA, Falcon, XMSS, XMSS^MT, Ed25519 and
+RSA all answer `false`, and ECDSA throws `SignatureException` on the DER decode failure, which is
+the JCA's own documented behaviour and equally fine. LMS was the sole outlier, letting
+`IllegalStateException("cannot parse signature")` straight out through `Signature.verify()`. Run
+that battery against any signer you touch — it is a dozen lines and it is the only thing that
+surfaces this class of gap.
+
+Two details that are easy to get wrong when adding the translation:
+
+- **Scope the catch to the decode call, not the whole method.** Past the parse, BC's verifiers are
+  written to report an inconsistent signature by returning `false` rather than by throwing — see
+  the "these two can get out of sync with an invalid signature, we'll try and fail gracefully"
+  branch in `LMSEngine.verifySignature`. A `catch (RuntimeException)` around the entire body
+  therefore catches nothing extra today, while silently converting any *future* internal error into
+  a quiet `false`. Read the engine before widening.
+- **Reset the accumulated message in a `finally`.** However `engineVerify` leaves, the object must
+  go back to the state `engineInitVerify` left it in, or the next `update()` appends to stale data
+  and the *following* verify fails for no visible reason. `slhdsa/SignatureSpi` is the model
+  (`try { … } finally { bOut.reset(); }`) and `lms/LMSSignatureSpi` now follows it. On the success
+  path the digest's `doFinal` has usually reset it already, so the `finally` is a no-op there —
+  which is fine, and far safer than one `reset()` per exit that the next branch will forget.
 
 ## System / security property constants
 
@@ -221,6 +262,13 @@ note and the `relates to github #NNNN` in the commit message are the credit for 
 of older entries do read "Reported ..." for findings that came with substantial analysis, so it is
 not an absolute rule — but the default is no entry, and adding one for a bare report is a change
 dgh should make rather than something to assume. Ask if unsure.
+
+**Sustained auditing is the standing exception**, and dgh initiates it. Someone who works through a
+subsystem and turns up several confirmed defects gets an entry describing the audit rather than a
+patch — `Arpan Sharma`'s reads "initial audit of BCPQC provider consistency starting with HQC ..."
+and was extended in the same house style when a later sweep produced github #2408. Note the shape:
+it names the area swept and what the sweep led to, not the individual bugs, and it was **appended to
+the existing entry**. Still don't add one unprompted — wait for dgh to ask.
 
 When an entry is warranted it goes at the end of the list in the house form
 `<li>name-or-handle &lt;email-or-github-url&gt; - what they contributed (PR #NNNN).</li>`; a bare

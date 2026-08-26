@@ -82,6 +82,14 @@ public final class XMSSSignature
             int randomSize = n;
             int signatureSize = len * n;
             int authPathSize = height * n;
+            int totalSize = indexSize + randomSize + signatureSize + authPathSize;
+            if (val.length != totalSize)
+            {
+                /* an XMSS signature is a fixed-size encoding - anything longer or shorter, in
+                 * particular a valid signature carrying trailing data, is not a signature for
+                 * these parameters (RFC 8391 sec. 4.1.8). XMSSMTSignature checks the same way. */
+                throw new IllegalArgumentException("signature has wrong size");
+            }
             int position = 0;
             /* extract index */
             index = Pack.bigEndianToInt(val, position);

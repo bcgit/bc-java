@@ -102,7 +102,11 @@ public class XMSSMTKeyPairGeneratorSpi
     {
         if (!initialised)
         {
-            param = new XMSSMTKeyGenerationParameters(new XMSSMTParameters(10, 20, new SHA512Digest()), random);
+            // XMSSMT-SHA2_20/2_512 (RFC 8391 sec. 5.4) - the layer count has to divide the total
+            // height, so the (10, 20) this used to default to was not a constructible parameter
+            // set at all. The tree digest has to be set here too, or the key returned has none.
+            treeDigest = NISTObjectIdentifiers.id_sha512;
+            param = new XMSSMTKeyGenerationParameters(new XMSSMTParameters(20, 2, new SHA512Digest()), random);
 
             engine.init(param);
             initialised = true;
