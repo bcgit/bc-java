@@ -446,7 +446,7 @@ public abstract class ECCurve
             break;
         }
         default:
-            throw new IllegalArgumentException("Invalid point encoding 0x" + Integer.toString(type, 16));
+            throw new IllegalArgumentException("Invalid point encoding type: 0x" + Integer.toString(type, 16));
         }
 
         if (type != 0x00 && p.isInfinity())
