@@ -104,9 +104,6 @@ public class ECMQVBasicAgreement
          * depends on them. Two constant-time multiplications and an addition instead; that gives
          * up Shamir's trick, so this is roughly twice the point arithmetic it was.
          */
-        ECPoint p1 = ECAlgorithms.multiplySecret(q1v, Q2VBar.multiply(hs).mod(n), n);
-        ECPoint p2 = ECAlgorithms.multiplySecret(q2v, hs, n);
-
-        return p1.add(p2);
+        return ECAlgorithms.sumOfTwoMultipliesSecret(q1v, Q2VBar.multiply(hs).mod(n), q2v, hs, n);
     }
 }

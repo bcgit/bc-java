@@ -1,7 +1,9 @@
 package org.bouncycastle.crypto.test;
 
+import org.bouncycastle.crypto.Xof;
 import org.bouncycastle.crypto.digests.Kangaroo.KangarooParameters;
 import org.bouncycastle.crypto.digests.Kangaroo.KangarooTwelve;
+import org.bouncycastle.crypto.digests.Kangaroo.MarsupilamiFourteen;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
@@ -36,6 +38,76 @@ public class KangarooTest
         throws Exception
     {
         new Kangaroo12Test().checkDigests(this);
+
+        testMultiPartOutput("KangarooTwelve", new KangarooTwelve(), new KangarooTwelve());
+        testMultiPartOutput("MarsupilamiFourteen", new MarsupilamiFourteen(), new MarsupilamiFourteen());
+        testAbsorbAfterSqueezeRejected("KangarooTwelve", new KangarooTwelve());
+        testAbsorbAfterSqueezeRejected("MarsupilamiFourteen", new MarsupilamiFourteen());
+    }
+
+    /**
+     * A squeeze split across several doOutput() calls, terminated by doFinal(), has to produce the
+     * same stream as a single doFinal() of the total length - the behaviour SHAKE, Blake3 and
+     * AsconXof already have. Kangaroo used to reject the second call outright, because
+     * switchToSqueezing() never recorded that it had run (github PR #2409).
+     *
+     * @param pName the digest name
+     * @param pSingle the digest used for the one-shot result
+     * @param pSplit the digest used for the split result
+     */
+    void testMultiPartOutput(final String pName,
+                             final Xof pSingle,
+                             final Xof pSplit)
+    {
+        final byte[] myMsg = new byte[137];
+        buildStdBuffer(myMsg);
+
+        /* One-shot: a single doFinal() covering the whole stream */
+        final byte[] myExpected = new byte[64];
+        pSingle.update(myMsg, 0, myMsg.length);
+        isTrue(pName + ": one-shot length", 64 == pSingle.doFinal(myExpected, 0, 64));
+
+        /* Split: two doOutput() calls, then a doFinal() for the tail */
+        final byte[] myActual = new byte[64];
+        pSplit.update(myMsg, 0, myMsg.length);
+        pSplit.doOutput(myActual, 0, 16);
+        pSplit.doOutput(myActual, 16, 16);
+        isTrue(pName + ": doFinal length", 32 == pSplit.doFinal(myActual, 32, 32));
+
+        isTrue(pName + ": split output mismatch", Arrays.areEqual(myExpected, myActual));
+
+        /* doFinal() resets, so the digest is reusable and repeats the one-shot result */
+        final byte[] myReused = new byte[64];
+        pSplit.update(myMsg, 0, myMsg.length);
+        pSplit.doFinal(myReused, 0, 64);
+
+        isTrue(pName + ": not reset by doFinal", Arrays.areEqual(myExpected, myReused));
+    }
+
+    /**
+     * Absorbing more data once squeezing has started stays refused.
+     *
+     * @param pName the digest name
+     * @param pDigest the digest
+     */
+    void testAbsorbAfterSqueezeRejected(final String pName,
+                                        final Xof pDigest)
+    {
+        final byte[] myMsg = new byte[64];
+        buildStdBuffer(myMsg);
+
+        pDigest.update(myMsg, 0, myMsg.length);
+        pDigest.doOutput(new byte[32], 0, 32);
+
+        try
+        {
+            pDigest.update(myMsg, 0, myMsg.length);
+            fail(pName + ": absorb after squeeze was accepted");
+        }
+        catch (IllegalStateException e)
+        {
+            isTrue(pName + ": wrong message", "attempt to absorb while squeezing".equals(e.getMessage()));
+        }
     }
 
     /**

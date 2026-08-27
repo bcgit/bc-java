@@ -312,12 +312,6 @@ public final class Kangaroo
                            final int pOutOffset,
                            final int pOutLen)
         {
-            /* Check that we are not already outputting */
-            if (squeezing)
-            {
-                throw new IllegalStateException("Already outputting");
-            }
-
             /* Build the required output */
             final int length = doOutput(pOut, pOutOffset, pOutLen);
 
@@ -467,6 +461,11 @@ public final class Kangaroo
             {
                 switchFinal();
             }
+
+            /* Record that we are now squeezing. Without this doOutput() re-runs this method on
+             * every call and the second one fails absorbing into an already-squeezing sponge, so
+             * neither repeated doOutput() nor doFinal() after doOutput() was possible. */
+            squeezing = true;
         }
 
         /**
