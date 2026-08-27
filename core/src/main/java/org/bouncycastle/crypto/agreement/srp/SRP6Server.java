@@ -132,8 +132,8 @@ public class SRP6Server
         }
 
         // Compute the own client evidence message 'M1'
-        BigInteger computedM1 = SRP6Util.calculateM1(digest, N, A, B, S);
-        if (computedM1.equals(clientM1))
+        byte[] computedM1 = SRP6Util.calculateM1Encoded(digest, N, A, B, S);
+        if (SRP6Util.constantTimeEquals(computedM1, clientM1))
         {
             this.M1 = clientM1;
             return true;

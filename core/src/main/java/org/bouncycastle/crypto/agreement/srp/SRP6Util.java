@@ -5,6 +5,7 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 
 public class SRP6Util
@@ -74,8 +75,7 @@ public class SRP6Util
      */
     public static BigInteger calculateM1(Digest digest, BigInteger N, BigInteger A, BigInteger B, BigInteger S)
     {
-        BigInteger M1 = hashPaddedTriplet(digest, N, A, B, S);
-        return M1;
+        return new BigInteger(1, calculateM1Encoded(digest, N, A, B, S));
     }
 
     /**
@@ -91,8 +91,7 @@ public class SRP6Util
      */
     public static BigInteger calculateM2(Digest digest, BigInteger N, BigInteger A, BigInteger M1, BigInteger S)
     {
-        BigInteger M2 = hashPaddedTriplet(digest, N, A, M1, S);
-        return M2;
+        return new BigInteger(1, calculateM2Encoded(digest, N, A, M1, S));
     }
 
     /**
@@ -114,7 +113,25 @@ public class SRP6Util
         return new BigInteger(1, output);
     }
 
-    private static BigInteger hashPaddedTriplet(Digest digest, BigInteger N, BigInteger n1, BigInteger n2, BigInteger n3)
+    /**
+     * As {@link #calculateM1(Digest, BigInteger, BigInteger, BigInteger, BigInteger)}, but leaving
+     * the result in the digest's own fixed-width output form for {@link #constantTimeEquals}.
+     */
+    static byte[] calculateM1Encoded(Digest digest, BigInteger N, BigInteger A, BigInteger B, BigInteger S)
+    {
+        return hashPaddedTriplet(digest, N, A, B, S);
+    }
+
+    /**
+     * As {@link #calculateM2(Digest, BigInteger, BigInteger, BigInteger, BigInteger)}, but leaving
+     * the result in the digest's own fixed-width output form for {@link #constantTimeEquals}.
+     */
+    static byte[] calculateM2Encoded(Digest digest, BigInteger N, BigInteger A, BigInteger M1, BigInteger S)
+    {
+        return hashPaddedTriplet(digest, N, A, M1, S);
+    }
+
+    private static byte[] hashPaddedTriplet(Digest digest, BigInteger N, BigInteger n1, BigInteger n2, BigInteger n3)
     {
         int padLength = (N.bitLength() + 7) / 8;
 
@@ -129,7 +146,7 @@ public class SRP6Util
         byte[] output = new byte[digest.getDigestSize()];
         digest.doFinal(output, 0);
 
-        return new BigInteger(1, output);
+        return output;
     }
 
     private static BigInteger hashPaddedPair(Digest digest, BigInteger N, BigInteger n1, BigInteger n2)
@@ -159,4 +176,35 @@ public class SRP6Util
         }
         return bs;
     }
+
+    /**
+     * Constant-time comparison of an evidence message received from the peer against the locally
+     * computed one.
+     * <p>
+     * The expected value is kept in its raw digest-output form so the comparison runs over a fixed
+     * number of bytes: read back as a BigInteger its encoding is minimal, so the length alone would
+     * vary with the secret-derived value. The supplied value is a non-negative digest output too,
+     * so one that is negative or too large to be one cannot match and is rejected before any
+     * comparison - a decision taken purely on what the peer sent, which reveals nothing.
+     *
+     * @param expectedEnc the locally computed evidence message, as the digest produced it.
+     * @param supplied the evidence message received from the peer.
+     * @return true if the two are equal.
+     */
+    static boolean constantTimeEquals(byte[] expectedEnc, BigInteger supplied)
+    {
+        if (supplied.signum() < 0 || supplied.bitLength() > expectedEnc.length * 8)
+        {
+            return false;
+        }
+
+        byte[] suppliedEnc = BigIntegers.asUnsignedByteArray(expectedEnc.length, supplied);
+
+        boolean rv = Arrays.constantTimeAreEqual(expectedEnc, suppliedEnc);
+
+        Arrays.fill(suppliedEnc, (byte)0);
+
+        return rv;
+    }
+
 }

@@ -139,6 +139,62 @@ public class JPAKEUtilTest
         }
     }
 
+    /**
+     * The MacTag comparison encodes both sides to the MAC's fixed width so its running time does
+     * not depend on the expected - secret-derived - value. calculateMacTag reads the MAC output
+     * with the <i>signed</i> BigInteger(byte[]) constructor, so a tag is negative about half the
+     * time, and about one tag in 240 has a two's-complement encoding shorter than the MAC. Those
+     * are the tags a zero-padding fixed-width encoding (BigIntegers.asUnsignedByteArray) fails to
+     * round-trip, so enough tags are exercised here to include some, and every one of them has to
+     * validate. A tag too wide to be one is rejected.
+     */
+    public void testValidateMacTagEncoding()
+        throws CryptoException
+    {
+        JPAKEPrimeOrderGroup pg1 = JPAKEPrimeOrderGroups.SUN_JCE_1024;
+
+        Digest digest = SHA256Digest.newInstance();
+
+        BigInteger gx1 = BigInteger.valueOf(11);
+        BigInteger gx2 = BigInteger.valueOf(22);
+        BigInteger gx3 = BigInteger.valueOf(33);
+        BigInteger gx4 = BigInteger.valueOf(44);
+
+        int shortEncodings = 0;
+
+        for (int i = 0; i != 4096; i++)
+        {
+            BigInteger keyingMaterial = BigInteger.valueOf(i + 1);
+
+            BigInteger macTag = JPAKEUtil.calculateMacTag(
+                "participantId", "partnerParticipantId", gx1, gx2, gx3, gx4, keyingMaterial, digest);
+
+            if (macTag.toByteArray().length != digest.getDigestSize())
+            {
+                shortEncodings++;
+            }
+
+            /* the tag the partner computed must always validate */
+            JPAKEUtil.validateMacTag("partnerParticipantId", "participantId",
+                gx3, gx4, gx1, gx2, keyingMaterial, digest, macTag);
+
+            /* and a tag too wide to be one must not */
+            try
+            {
+                JPAKEUtil.validateMacTag("partnerParticipantId", "participantId",
+                    gx3, gx4, gx1, gx2, keyingMaterial, digest,
+                    macTag.add(BigInteger.ONE.shiftLeft(8 * digest.getDigestSize())));
+                fail("oversized MacTag accepted");
+            }
+            catch (CryptoException e)
+            {
+                // pass
+            }
+        }
+
+        assertTrue("no short-encoding MacTags were exercised", shortEncodings > 0);
+    }
+
     public void testValidateNotNull()
     {
         JPAKEUtil.validateNotNull("a", "description");

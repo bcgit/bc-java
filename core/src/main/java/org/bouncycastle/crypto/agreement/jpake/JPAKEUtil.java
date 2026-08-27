@@ -461,6 +461,25 @@ public class JPAKEUtil
         BigInteger keyingMaterial,
         Digest digest)
     {
+        return new BigInteger(calculateMacTagEncoded(
+            participantId, partnerParticipantId, gx1, gx2, gx3, gx4, keyingMaterial, digest));
+    }
+
+    /**
+     * As {@link #calculateMacTag}, but leaving the result in the MAC's own fixed-width output form
+     * for {@link #constantTimeEquals}. Read back as a BigInteger the encoding is minimal, so its
+     * length would vary with the value.
+     */
+    private static byte[] calculateMacTagEncoded(
+        String participantId,
+        String partnerParticipantId,
+        BigInteger gx1,
+        BigInteger gx2,
+        BigInteger gx3,
+        BigInteger gx4,
+        BigInteger keyingMaterial,
+        Digest digest)
+    {
         byte[] macKey = calculateMacKey(
             keyingMaterial,
             digest);
@@ -484,8 +503,7 @@ public class JPAKEUtil
 
         Arrays.fill(macKey, (byte)0);
 
-        return new BigInteger(macOutput);
-
+        return macOutput;
     }
 
     /**
@@ -537,7 +555,7 @@ public class JPAKEUtil
          *            x1 <-> x3
          *            x2 <-> x4
          */
-        BigInteger expectedMacTag = calculateMacTag(
+        byte[] expectedMacTag = calculateMacTagEncoded(
             partnerParticipantId,
             participantId,
             gx3,
@@ -547,12 +565,54 @@ public class JPAKEUtil
             keyingMaterial,
             digest);
 
-        if (!Arrays.constantTimeAreEqual(expectedMacTag.toByteArray(), partnerMacTag.toByteArray()))
+        if (!constantTimeEquals(expectedMacTag, partnerMacTag))
         {
             throw new CryptoException(
                 "Partner MacTag validation failed. "
                     + "Therefore, the password, MAC, or digest algorithm of each participant does not match.");
         }
+    }
+
+    /**
+     * Constant-time comparison of the partner's MacTag against the expected one.
+     * <p>
+     * The expected value is kept in the MAC's own output form so the comparison runs over a fixed
+     * number of bytes; read back as a BigInteger its encoding is minimal, so the length alone would
+     * vary with the secret-derived value. Note calculateMacTag reads the MAC output with the
+     * <i>signed</i> BigInteger(byte[]) constructor, so a MacTag is negative about half the time and
+     * the supplied value has to be encoded two's-complement and sign-extended to match:
+     * BigIntegers.asUnsignedByteArray zero-pads instead, which does not round-trip a negative tag.
+     * A value too wide to be a MacTag cannot match and is rejected before any comparison, a
+     * decision taken purely on what the partner sent.
+     *
+     * @param expectedEnc the locally computed MacTag, as the MAC produced it.
+     * @param supplied the MacTag received from the partner.
+     * @return true if the two are equal.
+     */
+    private static boolean constantTimeEquals(byte[] expectedEnc, BigInteger supplied)
+    {
+        int length = expectedEnc.length;
+
+        if (supplied.bitLength() >= length * 8)
+        {
+            return false;
+        }
+
+        byte[] suppliedEnc = new byte[length];
+        if (supplied.signum() < 0)
+        {
+            Arrays.fill(suppliedEnc, (byte)0xFF);
+        }
+
+        byte[] minimal = supplied.toByteArray();
+        System.arraycopy(minimal, 0, suppliedEnc, length - minimal.length, minimal.length);
+
+        boolean rv = Arrays.constantTimeAreEqual(expectedEnc, suppliedEnc);
+
+        Arrays.fill(minimal, (byte)0);
+        Arrays.fill(suppliedEnc, (byte)0);
+
+        return rv;
     }
 
     private static void updateDigest(Digest digest, BigInteger bigInteger)

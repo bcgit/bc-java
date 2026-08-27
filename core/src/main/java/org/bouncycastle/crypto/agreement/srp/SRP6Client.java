@@ -153,8 +153,8 @@ public class SRP6Client
         }
 
         // Compute the own server evidence message 'M2'
-        BigInteger computedM2 = SRP6Util.calculateM2(digest, N, A, M1, S);
-        if (computedM2.equals(serverM2))
+        byte[] computedM2 = SRP6Util.calculateM2Encoded(digest, N, A, M1, S);
+        if (SRP6Util.constantTimeEquals(computedM2, serverM2))
         {
             this.M2 = serverM2;
             return true;

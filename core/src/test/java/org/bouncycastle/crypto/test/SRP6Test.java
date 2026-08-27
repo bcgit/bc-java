@@ -39,6 +39,7 @@ public class SRP6Test extends SimpleTest
         rfc5054AppendixBTestVectors();
 
         testMutualVerification(SRP6StandardGroups.rfc5054_1024);
+        testEvidenceMessageVerification(SRP6StandardGroups.rfc5054_1024);
         testClientCatchesBadB(SRP6StandardGroups.rfc5054_1024);
         testServerCatchesBadA(SRP6StandardGroups.rfc5054_1024);
 
@@ -285,6 +286,94 @@ public class SRP6Test extends SimpleTest
         if (!clientS.equals(serverS))
         {
             fail("SRP agreement failed - client/server calculated different secrets");
+        }
+    }
+
+    /**
+     * Exercises the evidence-message (M1/M2) verification path, which is where the received
+     * keyed authenticators are checked. A correct M1/M2 must be accepted and a tampered one
+     * rejected, whether the tampering leaves the encoded length the same or shortens it.
+     */
+    private void testEvidenceMessageVerification(SRP6GroupParameters group) throws CryptoException
+    {
+        byte[] I = "username".getBytes();
+        byte[] P = "password".getBytes();
+        byte[] s = new byte[16];
+        random.nextBytes(s);
+
+        SRP6VerifierGenerator gen = new SRP6VerifierGenerator();
+        gen.init(group, SHA256Digest.newInstance());
+        BigInteger v = gen.generateVerifier(s, I, P);
+
+        SRP6Client client = new SRP6Client();
+        client.init(group, SHA256Digest.newInstance(), random);
+
+        SRP6Server server = new SRP6Server();
+        server.init(group, v, SHA256Digest.newInstance(), random);
+
+        BigInteger A = client.generateClientCredentials(s, I, P);
+        BigInteger B = server.generateServerCredentials();
+
+        client.calculateSecret(B);
+        server.calculateSecret(A);
+
+        BigInteger clientM1 = client.calculateClientEvidenceMessage();
+
+        if (!server.verifyClientEvidenceMessage(clientM1))
+        {
+            fail("server rejected the correct client evidence message M1");
+        }
+        if (server.verifyClientEvidenceMessage(clientM1.add(BigInteger.valueOf(1))))
+        {
+            fail("server accepted a tampered client evidence message M1");
+        }
+        if (server.verifyClientEvidenceMessage(clientM1.shiftRight(8)))
+        {
+            fail("server accepted a truncated client evidence message M1");
+        }
+
+        BigInteger serverM2 = server.calculateServerEvidenceMessage();
+
+        if (!client.verifyServerEvidenceMessage(serverM2))
+        {
+            fail("client rejected the correct server evidence message M2");
+        }
+        if (client.verifyServerEvidenceMessage(serverM2.add(BigInteger.valueOf(1))))
+        {
+            fail("client accepted a tampered server evidence message M2");
+        }
+        if (client.verifyServerEvidenceMessage(serverM2.shiftRight(8)))
+        {
+            fail("client accepted a truncated server evidence message M2");
+        }
+
+        // M1/M2 are digest outputs read as non-negative integers, so a negative value, or one too
+        // large to be a digest output, is rejected rather than reaching the fixed-width encoding
+        if (server.verifyClientEvidenceMessage(clientM1.negate()))
+        {
+            fail("server accepted a negative client evidence message M1");
+        }
+        if (server.verifyClientEvidenceMessage(clientM1.shiftLeft(256)))
+        {
+            fail("server accepted an oversized client evidence message M1");
+        }
+        if (client.verifyServerEvidenceMessage(serverM2.negate()))
+        {
+            fail("client accepted a negative server evidence message M2");
+        }
+        if (client.verifyServerEvidenceMessage(serverM2.shiftLeft(256)))
+        {
+            fail("client accepted an oversized server evidence message M2");
+        }
+
+        // ...and the correct values still verify afterwards
+        if (!server.verifyClientEvidenceMessage(clientM1))
+        {
+            fail("server rejected the correct client evidence message M1 on retry");
+        }
+        if (!client.verifyServerEvidenceMessage(serverM2))
+        {
+            fail("client rejected the correct server evidence message M2 on retry");
         }
     }
 
