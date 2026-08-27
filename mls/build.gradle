@@ -1,7 +1,7 @@
 
 plugins {
 // OSGI
-    id "biz.aQute.bnd.builder" version "7.1.0"
+    id "biz.aQute.bnd.builder" version "7.4.0"
 //     Generate IntelliJ IDEA's .idea & .iml project files
 //    id 'idea'
 }

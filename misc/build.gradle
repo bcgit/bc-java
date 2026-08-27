@@ -10,7 +10,7 @@ plugins {
     // published mls module because it is a test tool for the RFC 9420 interoperability runner,
     // not library API: shipping it in bcmls put classes needing io.grpc and com.google.protobuf
     // into a published jar whose POM and OSGi manifest declared neither.
-    id 'com.google.protobuf' version '0.9.4'
+    id 'com.google.protobuf' version '0.10.0'
 }
 
 apply plugin: 'com.google.protobuf'
@@ -42,7 +42,7 @@ dependencies {
     implementation project(':tls')
     implementation project(':mls')
 
-    implementation group: 'javax.mail', name: 'mail', version: '1.4'
+    implementation group: 'javax.mail', name: 'mail', version: '1.4.7'
 
     // The MLS interop harness only, and by coordinate rather than as hand-placed jars under
     // test/libs, which were invisible both to Dependabot (see the note on files()/fileTree()

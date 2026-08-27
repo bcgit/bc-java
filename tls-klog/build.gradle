@@ -1,5 +1,5 @@
 plugins {
-  id "biz.aQute.bnd.builder" version "7.1.0"
+  id "biz.aQute.bnd.builder" version "7.4.0"
 }
 
 // bctls-klog is the RFC 9850 (SSLKEYLOGFILE) key-logging build of the TLS API: bctls with the
