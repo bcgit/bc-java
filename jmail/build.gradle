@@ -1,6 +1,6 @@
 
 plugins {
-  id "biz.aQute.bnd.builder" version "7.1.0"
+  id "biz.aQute.bnd.builder" version "7.4.0"
 }
 
 jar.archiveBaseName = "bcjmail-$vmrange"
@@ -25,8 +25,8 @@ dependencies {
     implementation project(':util')
     implementation project(':pkix')
 
-    implementation group: 'jakarta.mail', name: 'jakarta.mail-api', version: '2.0.1'
-    implementation group: 'jakarta.activation', name: 'jakarta.activation-api', version: '2.0.0'
+    implementation group: 'jakarta.mail', name: 'jakarta.mail-api', version: '2.1.5'
+    implementation group: 'jakarta.activation', name: 'jakarta.activation-api', version: '2.1.4'
 
     java9Implementation files(sourceSets.main.output.classesDirs) {
         builtBy compileJava
@@ -63,7 +63,7 @@ compileJava9Java {
     def pkix_jar="${project(":pkix").jar.outputs.files.getFiles().getAt(0)}"
 
     options.compilerArgs += [
-            '--module-path', "$prov_jar${File.pathSeparator}$util_jar${File.pathSeparator}$pkix_jar${File.pathSeparator}${rootProject.projectDir}/libs/jakarta.mail-2.0.1.jar${File.pathSeparator}${rootProject.projectDir}/libs/jakarta.activation-api-2.0.0.jar"
+            '--module-path', "$prov_jar${File.pathSeparator}$util_jar${File.pathSeparator}$pkix_jar${File.pathSeparator}${rootProject.projectDir}/libs/jakarta.mail-2.1.5.jar${File.pathSeparator}${rootProject.projectDir}/libs/jakarta.activation-api-2.1.4.jar"
     ]
     options.sourcepath = files(['build/src/main/java', 'src/main/jdk1.9'])
 
