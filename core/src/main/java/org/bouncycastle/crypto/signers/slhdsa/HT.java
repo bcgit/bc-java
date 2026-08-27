@@ -11,8 +11,6 @@ class HT
     SLHDSAEngine engine;
     WotsPlus wots;
 
-    final byte[] htPubKey;
-
     public HT(SLHDSAEngine engine, byte[] skSeed, byte[] pkSeed)
     {
         this.skSeed = skSeed;
@@ -20,19 +18,21 @@ class HT
 
         this.engine = engine;
         this.wots = new WotsPlus(engine);
+    }
 
+    /**
+     * Compute the hypertree public key (PK.root): the root of the top-layer XMSS tree.
+     * <p>
+     * Only key generation needs this. Signing already knows PK.root, so it must not be recomputed there:
+     * it costs a full XMSS tree build, i.e. about 1/d of the signing work.
+     */
+    byte[] pkGen()
+    {
         ADRS adrs = new ADRS();
         adrs.setLayerAddress(engine.D - 1);
         adrs.setTreeAddress(0);
 
-        if (skSeed != null)
-        {
-            htPubKey = xmss_PKgen(skSeed, pkSeed, adrs);
-        }
-        else
-        {
-            htPubKey = null;
-        }
+        return xmss_PKgen(skSeed, pkSeed, adrs);
     }
 
     byte[] sign(byte[] M, long idx_tree, int idx_leaf)
