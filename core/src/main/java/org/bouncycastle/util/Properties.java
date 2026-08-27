@@ -208,8 +208,31 @@ public class Properties
      * fails (github #1973 / #1986). BER serialization is unaffected. Programmatically
      * constructing a time from a {@code Date} always produces DER content, so this setting
      * only matters for primitives whose contents arrived non-conformant from the wire.
+     * <p>
+     * "Lenient" here means legal-but-non-DER formatting. Structurally malformed content is a
+     * separate matter, rejected on read since 1.85 unless {@link #ASN1_ALLOW_MALFORMED_TIME} is set.
      */
     public static final String ASN1_ALLOW_NON_DER_TIME = "org.bouncycastle.asn1.allow_non_der_time";
+
+    /**
+     * Fall back to the legacy lenient decoding of ASN.1 {@code UTCTime} / {@code GeneralizedTime}
+     * values. Since 1.85 the decoder rejects structurally malformed time content - non-digit or
+     * out-of-range fields, an illegal length, a missing or garbage zone terminator - with
+     * "invalid UTCTime format" / "invalid GeneralizedTime format". That is raised while the
+     * enclosing structure is being read, so a single such field fails the whole parse: a CMS
+     * SignedData whose signing-time attribute lacks its trailing "Z" cannot be loaded at all,
+     * let alone have the rest of its content examined (github #2411). When this property is set
+     * the pre-1.85 behaviour is restored: any content whose leading year digits are digits decodes
+     * into a time object, which can be inspected ({@code toString()} / {@code getTimeString()})
+     * and re-encoded unchanged, while {@code getDate()} interprets it exactly as it always did -
+     * a zone-less value is taken as GMT, and genuinely nonsensical content throws
+     * {@code ParseException} or yields a rolled-over date. This is a read-side safety valve for
+     * processing data already in circulation, not a recommended mode: the legal lenient forms
+     * (missing seconds, numeric offset, fractional seconds) parse regardless of this setting, and
+     * generation is unaffected. It is independent of {@link #ASN1_ALLOW_NON_DER_TIME}, which
+     * governs writing rather than reading. Read via {@link #isOverrideSet(String)}.
+     */
+    public static final String ASN1_ALLOW_MALFORMED_TIME = "org.bouncycastle.asn1.allow_malformed_time";
 
     /**
      * Maximum depth of nested constructed ASN.1 objects the parser will descend before failing

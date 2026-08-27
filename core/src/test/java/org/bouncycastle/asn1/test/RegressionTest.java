@@ -12,6 +12,7 @@ public class RegressionTest
         new SetTest(),
         new ASN1IntegerTest(),
         new AllowNonDerTimeTest(),
+        new AllowMalformedTimeTest(),
         new DERUTF8StringTest(),
         new CertificateTest(),
         new GenerationTest(),

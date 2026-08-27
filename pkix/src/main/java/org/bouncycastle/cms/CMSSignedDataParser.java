@@ -359,6 +359,13 @@ public class CMSSignedDataParser
             {
                 throw new CMSException("io exception: " + e.getMessage(), e);
             }
+            catch (IllegalStateException e)
+            {
+                // toASN1Primitive() on a stream parser surfaces the IOException of loading the
+                // SignerInfo this way - e.g. a malformed time in a signed attribute (github #2411);
+                // report it as the CMSException this method declares rather than letting it escape.
+                throw new CMSException("io exception: " + e.getMessage(), e);
+            }
 
             _signerInfoStore = new SignerInformationStore(signerInfos);
         }
