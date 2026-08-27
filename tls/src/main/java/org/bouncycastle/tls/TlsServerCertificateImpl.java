@@ -35,6 +35,11 @@ class TlsServerCertificateImpl
 
     public CertificateStatus getCertificateStatusAt(int index)
     {
+        if (index < 0 || index >= certificateStatuses.length)
+        {
+            return null;
+        }
+
         return certificateStatuses[index];
     }
 }

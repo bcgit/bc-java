@@ -35,9 +35,8 @@ public interface TlsServerCertificate
      * response is held).
      *
      * @param index the index into {@link #getCertificate()} of the certificate in question.
-     * @return the status answering for that certificate, or null.
-     * @throws IndexOutOfBoundsException if <code>index</code> is not an index of
-     *                                   {@link #getCertificate()}.
+     * @return the status answering for that certificate, or null - also where <code>index</code> is
+     *         not an index of {@link #getCertificate()}, since no certificate there has a status.
      */
     CertificateStatus getCertificateStatusAt(int index);
 }

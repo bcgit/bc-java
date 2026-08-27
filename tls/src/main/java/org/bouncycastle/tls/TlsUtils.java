@@ -5843,8 +5843,7 @@ public class TlsUtils
         switch (certificateStatus.getStatusType())
         {
         case CertificateStatusType.ocsp:
-            ocspResponseList = new Vector(1);
-            ocspResponseList.addElement(certificateStatus.getOCSPResponse());
+            ocspResponseList = vectorOfOne(certificateStatus.getOCSPResponse());
             break;
         case CertificateStatusType.ocsp_multi:
             ocspResponseList = certificateStatus.getOCSPResponseList();

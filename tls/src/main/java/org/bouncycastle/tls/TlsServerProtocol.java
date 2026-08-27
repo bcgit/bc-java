@@ -381,7 +381,7 @@ public class TlsServerProtocol
          * RFC 8446 4.4.2.1. OCSP information is carried in an extension of the CertificateEntry the
          * certificate it answers for is in, so there is nothing to echo here and nothing to send as a
          * "certificate_status" message; a version of 1 records only that the client asked, which is
-         * what has getCertificateStatus() consulted when the Certificate message is assembled.
+         * what getCertificateStatus() consults when the Certificate message is assembled.
          * "status_request_v2" is not honoured at all - RFC 8446 sec. 4.2.1 leaves it out of TLS 1.3.
          */
         securityParameters.statusRequestVersion = clientHelloExtensions.containsKey(TlsExtensionsUtils.EXT_status_request)

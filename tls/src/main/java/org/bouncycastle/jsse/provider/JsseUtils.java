@@ -618,6 +618,21 @@ abstract class JsseUtils
         return null;
     }
 
+    static List<byte[]> getStatusResponses(TlsContext context, TlsServerCertificate serverCertificate)
+        throws IOException
+    {
+        if (TlsUtils.isTLSv13(context))
+        {
+            /*
+             * RFC 8446 4.4.2.1: TLS 1.3 has no CertificateStatus handshake message - the server's
+             * OCSP information rides in an extension of each CertificateEntry.
+             */
+            return getStatusResponses13(serverCertificate);
+        }
+
+        return getStatusResponses(serverCertificate.getCertificateStatus());
+    }
+
     /**
      * The stapled responses from a TLS 1.3 Certificate message, where RFC 8446 sec. 4.4.2.1 carries
      * each one in a "status_request" extension of the CertificateEntry it belongs to rather than in a

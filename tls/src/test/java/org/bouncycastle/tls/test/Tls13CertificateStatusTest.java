@@ -29,7 +29,6 @@ import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsAuthentication;
 import org.bouncycastle.tls.TlsClientProtocol;
 import org.bouncycastle.tls.TlsCredentials;
-import org.bouncycastle.tls.TlsCredentialedSigner;
 import org.bouncycastle.tls.TlsExtensionsUtils;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsServerCertificate;
@@ -57,12 +56,6 @@ public class Tls13CertificateStatusTest
 {
     private static final String[] CERT_CHAIN = new String[]{ "x509-server-rsa-sign.pem", "x509-ca-rsa.pem" };
     private static final String KEY_RESOURCE = "x509-server-key-rsa-sign.pem";
-
-    /**
-     * Whatever the client leg of the last handshake failed with, for a case where that is the
-     * informative one - see the rethrow in {@link #runHandshake}.
-     */
-    private Exception lastClientFailure = null;
 
     public void testOcspMultiIsDistributedAcrossCertificateEntries()
         throws Exception
@@ -179,6 +172,29 @@ public class Tls13CertificateStatusTest
     }
 
     /**
+     * An index that is not an index of getCertificate() names no certificate, so it has no status:
+     * null, rather than an exception, since the interface gives a caller no count to check against
+     * other than the chain's own length.
+     */
+    public void testClientReadsNullOutsideTheChain()
+        throws Exception
+    {
+        Vector ocspResponseList = new Vector();
+        ocspResponseList.addElement(ocspResponse("end-entity"));
+        ocspResponseList.addElement(ocspResponse("intermediate"));
+
+        TlsServerCertificate serverCertificate = runHandshake(
+            new CertificateStatus(CertificateStatusType.ocsp_multi, ocspResponseList), false, true)
+            .serverCertificate;
+
+        int length = serverCertificate.getCertificate().getLength();
+        assertEquals(2, length);
+        assertNull(serverCertificate.getCertificateStatusAt(-1));
+        assertNull(serverCertificate.getCertificateStatusAt(length));
+        assertNull(serverCertificate.getCertificateStatusAt(Integer.MAX_VALUE));
+    }
+
+    /**
      * RFC 8446 sec. 4.2: a server answers only the extensions the client sent, so a staple the client
      * never asked for is ignored - not read, and not a reason to fail the handshake. The staple has to
      * be attached to the Certificate by hand here, the protocol declining to consult
@@ -208,9 +224,11 @@ public class Tls13CertificateStatusTest
     public void testMalformedStapleFailsTheHandshake()
         throws Exception
     {
+        CapturingTlsClient client = new CapturingTlsClient(true);
+
         try
         {
-            runHandshake(null, false, true, Strings.toByteArray("not a CertificateStatus"));
+            runHandshake(client, null, false, Strings.toByteArray("not a CertificateStatus"));
             fail("expected a decode_error");
         }
         catch (Exception e)
@@ -219,9 +237,8 @@ public class Tls13CertificateStatusTest
              * The client's own exception is the one that says why: runHandshake rethrows the server's
              * in preference, and all the server saw was the pipe closing under it.
              */
-            assertTrue("client failed with " + lastClientFailure, lastClientFailure instanceof TlsFatalAlert);
-            assertEquals(AlertDescription.decode_error,
-                ((TlsFatalAlert)lastClientFailure).getAlertDescription());
+            assertTrue("client failed with " + client.failure, client.failure instanceof TlsFatalAlert);
+            assertEquals(AlertDescription.decode_error, ((TlsFatalAlert)client.failure).getAlertDescription());
         }
     }
 
@@ -250,6 +267,18 @@ public class Tls13CertificateStatusTest
     private CapturingTlsClient runHandshake(CertificateStatus certificateStatus, boolean attachToSecondEntry,
         boolean requestStatus, byte[] malformedExtension) throws Exception
     {
+        CapturingTlsClient capturingTlsClient = new CapturingTlsClient(requestStatus);
+        runHandshake(capturingTlsClient, certificateStatus, attachToSecondEntry, malformedExtension);
+        return capturingTlsClient;
+    }
+
+    /**
+     * Drives a handshake with a caller-supplied client, so that where it fails the caller still has
+     * the client - and its {@link CapturingTlsClient#failure} - in hand.
+     */
+    private void runHandshake(CapturingTlsClient client, CertificateStatus certificateStatus,
+        boolean attachToSecondEntry, byte[] malformedExtension) throws Exception
+    {
         PipedInputStream clientRead = TlsTestUtils.createPipedInputStream();
         PipedInputStream serverRead = TlsTestUtils.createPipedInputStream();
         PipedOutputStream clientWrite = new PipedOutputStream(serverRead);
@@ -258,7 +287,6 @@ public class Tls13CertificateStatusTest
         TlsClientProtocol clientProtocol = new TlsClientProtocol(clientRead, clientWrite);
         TlsServerProtocol serverProtocol = new TlsServerProtocol(serverRead, serverWrite);
 
-        CapturingTlsClient client = new CapturingTlsClient(requestStatus);
         StatusStaplingTlsServer server = new StatusStaplingTlsServer(certificateStatus, attachToSecondEntry,
             malformedExtension);
 
@@ -284,7 +312,7 @@ public class Tls13CertificateStatusTest
             clientFailure = e;
         }
 
-        this.lastClientFailure = clientFailure;
+        client.failure = clientFailure;
 
         serverThread.join();
 
@@ -300,8 +328,6 @@ public class Tls13CertificateStatusTest
         }
 
         assertNotNull("no server Certificate message was seen", client.certificateEntryList);
-
-        return client;
     }
 
     /**
@@ -429,6 +455,12 @@ public class Tls13CertificateStatusTest
 
         CertificateEntry[] certificateEntryList = null;
         TlsServerCertificate serverCertificate = null;
+
+        /**
+         * Whatever the client leg of the handshake failed with, for a case where that is the
+         * informative one - see the rethrow in {@link Tls13CertificateStatusTest#runHandshake}.
+         */
+        Exception failure = null;
 
         CapturingTlsClient(boolean requestStatus)
         {
