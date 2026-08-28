@@ -4,6 +4,7 @@ import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
@@ -889,6 +890,230 @@ public class CompositeSignaturesTest
 
         signature.update(Strings.toUTF8ByteArray(messageToBeSigned));
         TestCase.assertTrue(signature.verify(signatureValue));
+    }
+
+    /**
+     * A spec that is not one of the composite provider's own but carries a context the way the
+     * ML-DSA specs of other providers do, which SpecUtil.getContextFrom picks up reflectively.
+     */
+    public static class ForeignContextSpec
+        implements AlgorithmParameterSpec
+    {
+        private final byte[] context;
+
+        public ForeignContextSpec(byte[] context)
+        {
+            this.context = context;
+        }
+
+        public byte[] getContext()
+        {
+            return context;
+        }
+    }
+
+    /**
+     * The context may be set either side of initSign / initVerify, as it may be for the base
+     * ML-DSA and SLH-DSA services (github #2396). Setting it first used to let a
+     * NullPointerException out of engineSetParameter, which is declared to throw
+     * InvalidAlgorithmParameterException, from dereferencing the key that was not there yet -
+     * with no key the intent is unknowable, so the null key fell into the signing branch and every
+     * one of the composite services failed identically (github #2412).
+     */
+    public void testSetParameterBeforeInit()
+        throws Exception
+    {
+        String[] algorithms = new String[]
+            {
+                "MLDSA44-ECDSA-P256-SHA256",
+                "MLDSA65-Ed25519-SHA512",
+                "MLDSA44-ECDSA-P256-SHA256-PREHASH"
+            };
+
+        // the -PREHASH services are handed the digest of the message rather than the message
+        String[] preHashDigests = new String[]{ null, null, "SHA256" };
+
+        byte[] context = Strings.toByteArray("Hello, world!");
+
+        for (int i = 0; i != algorithms.length; i++)
+        {
+            String algorithm = algorithms[i];
+
+            byte[] msg = Strings.toUTF8ByteArray(messageToBeSigned);
+
+            if (preHashDigests[i] != null)
+            {
+                msg = MessageDigest.getInstance(preHashDigests[i], "BC").digest(msg);
+            }
+
+            // only the plain names carry a KeyPairGenerator; the -PREHASH service takes the same key
+            String keyAlgorithm = algorithm.endsWith("-PREHASH")
+                ? algorithm.substring(0, algorithm.length() - "-PREHASH".length()) : algorithm;
+
+            KeyPair kp = KeyPairGenerator.getInstance(keyAlgorithm, "BC").generateKeyPair();
+
+            Signature before = Signature.getInstance(algorithm, "BC");
+
+            before.setParameter(new ContextParameterSpec(context));
+            before.initSign(kp.getPrivate());
+            before.update(msg);
+
+            byte[] sigBefore = before.sign();
+
+            Signature verifier = Signature.getInstance(algorithm, "BC");
+
+            verifier.setParameter(new ContextParameterSpec(context));
+            verifier.initVerify(kp.getPublic());
+            verifier.update(msg);
+
+            assertTrue(algorithm, verifier.verify(sigBefore));
+
+            // the context has to have reached the signer rather than been dropped on the way
+            Signature noContext = Signature.getInstance(algorithm, "BC");
+
+            noContext.initVerify(kp.getPublic());
+            noContext.update(msg);
+
+            assertFalse(algorithm + ": verified without the context", noContext.verify(sigBefore));
+
+            // and a signature made with the context set afterwards has to verify against it
+            Signature after = Signature.getInstance(algorithm, "BC");
+
+            after.initSign(kp.getPrivate());
+            after.setParameter(new ContextParameterSpec(context));
+            after.update(msg);
+
+            Signature check = Signature.getInstance(algorithm, "BC");
+
+            check.setParameter(new ContextParameterSpec(context));
+            check.initVerify(kp.getPublic());
+            check.update(msg);
+
+            assertTrue(algorithm + ": context set before init differs from after", check.verify(after.sign()));
+        }
+    }
+
+    /**
+     * The generic COMPOSITE service takes its algorithm from the key, so before initialisation it
+     * has neither a key nor a digest - both of the parameter specs it accepts dereferenced one of
+     * them.
+     */
+    public void testSetParameterBeforeInitOnGenericService()
+        throws Exception
+    {
+        byte[] context = Strings.toByteArray("Hello, world!");
+        byte[] msg = Strings.toUTF8ByteArray(messageToBeSigned);
+
+        KeyPair kp = KeyPairGenerator.getInstance("MLDSA65-Ed25519-SHA512", "BC").generateKeyPair();
+
+        Signature signer = Signature.getInstance("COMPOSITE", "BC");
+
+        signer.setParameter(new ContextParameterSpec(context));
+        signer.initSign(kp.getPrivate());
+        signer.update(msg);
+
+        byte[] sig = signer.sign();
+
+        Signature verifier = Signature.getInstance("COMPOSITE", "BC");
+
+        verifier.setParameter(new ContextParameterSpec(context));
+        verifier.initVerify(kp.getPublic());
+        verifier.update(msg);
+
+        assertTrue(verifier.verify(sig));
+
+        // the pre-hash choice likewise has to survive until the key names the algorithm
+        Signature prehashSigner = Signature.getInstance("COMPOSITE", "BC");
+
+        prehashSigner.setParameter(new CompositeSignatureSpec(true, new ContextParameterSpec(context)));
+        prehashSigner.initSign(kp.getPrivate());
+
+        MessageDigest digest = MessageDigest.getInstance("SHA512", "BC");
+
+        prehashSigner.update(digest.digest(msg));
+
+        byte[] prehashSig = prehashSigner.sign();
+
+        Signature prehashVerifier = Signature.getInstance("MLDSA65-Ed25519-SHA512-PREHASH", "BC");
+
+        prehashVerifier.setParameter(new ContextParameterSpec(context));
+        prehashVerifier.initVerify(kp.getPublic());
+        prehashVerifier.update(digest.digest(msg));
+
+        assertTrue(prehashVerifier.verify(prehashSig));
+    }
+
+    /**
+     * getParameters() caches the AlgorithmParameters it builds, so a context set after it has been
+     * asked for once has to clear that cache rather than go on reporting the previous context.
+     */
+    public void testGetParametersNotStaleAfterReset()
+        throws Exception
+    {
+        byte[] first = Strings.toByteArray("first context");
+        byte[] second = Strings.toByteArray("second context");
+
+        KeyPair kp = KeyPairGenerator.getInstance("MLDSA44-ECDSA-P256-SHA256", "BC").generateKeyPair();
+
+        Signature sig = Signature.getInstance("MLDSA44-ECDSA-P256-SHA256", "BC");
+
+        // init first, so this isolates the cache rather than tripping over the set-before-init path
+        sig.initSign(kp.getPrivate());
+        sig.setParameter(new ContextParameterSpec(first));
+
+        assertTrue(Arrays.areEqual(first,
+            sig.getParameters().getParameterSpec(ContextParameterSpec.class).getContext()));
+
+        sig.setParameter(new ContextParameterSpec(second));
+
+        assertTrue("getParameters() still reported the previous context", Arrays.areEqual(second,
+            sig.getParameters().getParameterSpec(ContextParameterSpec.class).getContext()));
+    }
+
+    /**
+     * A spec carrying a context that is not one of the provider's own is accepted, as it is by the
+     * base ML-DSA services. It used to be applied and then reported as rejected by the same call,
+     * so a caller that took the exception at its word went on to produce signatures bound to a
+     * context it believed had not been set.
+     */
+    public void testForeignContextSpecAccepted()
+        throws Exception
+    {
+        byte[] context = Strings.toByteArray("Hello, world!");
+        byte[] msg = Strings.toUTF8ByteArray(messageToBeSigned);
+
+        KeyPair kp = KeyPairGenerator.getInstance("MLDSA44-ECDSA-P256-SHA256", "BC").generateKeyPair();
+
+        Signature signer = Signature.getInstance("MLDSA44-ECDSA-P256-SHA256", "BC");
+
+        signer.initSign(kp.getPrivate());
+        signer.setParameter(new ForeignContextSpec(context));
+        signer.update(msg);
+
+        byte[] sig = signer.sign();
+
+        Signature verifier = Signature.getInstance("MLDSA44-ECDSA-P256-SHA256", "BC");
+
+        verifier.initVerify(kp.getPublic());
+        verifier.setParameter(new ContextParameterSpec(context));
+        verifier.update(msg);
+
+        assertTrue(verifier.verify(sig));
+
+        // a spec carrying no context at all is still rejected
+        Signature unknown = Signature.getInstance("MLDSA44-ECDSA-P256-SHA256", "BC");
+
+        unknown.initSign(kp.getPrivate());
+
+        try
+        {
+            unknown.setParameter(new ECGenParameterSpec("P-256"));
+            fail("no exception");
+        }
+        catch (InvalidAlgorithmParameterException e)
+        {
+            assertEquals("unknown parameterSpec passed to composite signature", e.getMessage());
+        }
     }
 
     public void compositeSignaturesTest(List<Map<String, Object>> testVectors)

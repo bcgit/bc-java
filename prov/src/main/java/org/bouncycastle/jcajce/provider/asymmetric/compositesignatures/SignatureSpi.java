@@ -33,6 +33,7 @@ import org.bouncycastle.asn1.iana.IANAObjectIdentifiers;
 import org.bouncycastle.jcajce.CompositePrivateKey;
 import org.bouncycastle.jcajce.CompositePublicKey;
 import org.bouncycastle.jcajce.interfaces.BCKey;
+import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 import org.bouncycastle.jcajce.spec.CompositeSignatureSpec;
 import org.bouncycastle.jcajce.spec.ContextParameterSpec;
 import org.bouncycastle.jcajce.util.BCJcaJceHelper;
@@ -116,6 +117,12 @@ public class SignatureSpi
 
     private boolean unprimed = true;
 
+    // a CompositeSignatureSpec can arrive before the composite algorithm is known, in which case
+    // there is no baseDigest yet to build the pre-hash digest from - its choice is recorded here
+    // and applied when the key names the algorithm.
+    private boolean prehashOverride;
+    private boolean prehashOverrideSet;
+
     SignatureSpi(ASN1ObjectIdentifier algorithm, Digest preHashDigest)
     {
         this(algorithm, preHashDigest, false);
@@ -161,7 +168,7 @@ public class SignatureSpi
 
             this.algorithm = sigAlgorithm;
             this.baseDigest = CompositeIndex.getDigest(sigAlgorithm);
-            this.preHashDigest = isPrehash ? new NullDigest(baseDigest.getDigestSize()) : baseDigest;
+            setPreHashDigest();
             this.domain = domainSeparators.get(sigAlgorithm);
             this.algs = CompositeIndex.getPairing(sigAlgorithm);
             this.componentSignatures = new Signature[algs.length];
@@ -207,7 +214,7 @@ public class SignatureSpi
 
             this.algorithm = sigAlgorithm;
             this.baseDigest = CompositeIndex.getDigest(sigAlgorithm);
-            this.preHashDigest = isPrehash ? new NullDigest(baseDigest.getDigestSize()) : baseDigest;
+            setPreHashDigest();
             this.domain = domainSeparators.get(sigAlgorithm);
             this.algs = CompositeIndex.getPairing(sigAlgorithm);
             this.componentSignatures = new Signature[algs.length];
@@ -274,6 +281,13 @@ public class SignatureSpi
             this.componentSignatures[i].initSign(compositePrivateKey.getPrivateKeys().get(i));
         }
         this.unprimed = true;
+    }
+
+    private void setPreHashDigest()
+    {
+        boolean prehash = prehashOverrideSet ? prehashOverride : isPrehash;
+
+        this.preHashDigest = prehash ? new NullDigest(baseDigest.getDigestSize()) : baseDigest;
     }
 
     private void baseSigInit()
@@ -379,7 +393,7 @@ public class SignatureSpi
         }
         catch (IllegalStateException e)
         {
-            throw new SignatureException(e.getMessage());
+            throw SecurityExceptions.signatureException(e.getMessage(), e);
         }
 
         // M' = Prefix || Label || len(ctx) || ctx || PH(M) per sec. 2.2 of
@@ -467,6 +481,14 @@ public class SignatureSpi
         return !fail;
     }
 
+    /**
+     * Set the signature context, either before or after engineInitSign / engineInitVerify. Where
+     * the signature has a key already the component signatures are re-initialised with the new
+     * context at once; where it does not the context is recorded and applied when the key arrives,
+     * as the base ML-DSA and SLH-DSA engines do (see github #2396). Calling this first used to let
+     * a NullPointerException out of a method declared to throw InvalidAlgorithmParameterException,
+     * from dereferencing the key that was not there yet (github #2412).
+     */
     protected void engineSetParameter(AlgorithmParameterSpec algorithmParameterSpec)
         throws InvalidAlgorithmParameterException
     {
@@ -477,7 +499,66 @@ public class SignatureSpi
 
         if (algorithmParameterSpec instanceof ContextParameterSpec)
         {
-            contextSpec = (ContextParameterSpec)algorithmParameterSpec;
+            setContext((ContextParameterSpec)algorithmParameterSpec);
+        }
+        else if (algorithmParameterSpec instanceof CompositeSignatureSpec)
+        {
+            CompositeSignatureSpec compositeSignatureSpec = (CompositeSignatureSpec)algorithmParameterSpec;
+
+            prehashOverrideSet = true;
+            prehashOverride = compositeSignatureSpec.isPrehashMode();
+
+            if (baseDigest != null)
+            {
+                setPreHashDigest();
+            }
+
+            AlgorithmParameterSpec secondarySpec = compositeSignatureSpec.getSecondarySpec();
+
+            if (secondarySpec == null || secondarySpec instanceof ContextParameterSpec)
+            {
+                setContext((ContextParameterSpec)secondarySpec);
+            }
+            else
+            {
+                byte[] context = SpecUtil.getContextFrom(secondarySpec);
+                if (context != null)
+                {
+                    setContext(new ContextParameterSpec(context));
+                }
+                else
+                {
+                    throw new InvalidAlgorithmParameterException("unknown parameterSpec passed to composite signature");
+                }
+            }
+        }
+        else
+        {
+            byte[] context = SpecUtil.getContextFrom(algorithmParameterSpec);
+            if (context != null)
+            {
+                setContext(new ContextParameterSpec(context));
+            }
+            else
+            {
+                // this throw used to be unconditional, so a spec that did carry a context had it
+                // applied and was then reported as rejected by the same call.
+                throw new InvalidAlgorithmParameterException("unknown parameterSpec passed to composite signature");
+            }
+        }
+    }
+
+    private void setContext(ContextParameterSpec context)
+        throws InvalidAlgorithmParameterException
+    {
+        this.contextSpec = context;
+        this.engineParams = null;
+
+        // the context itself is only consumed when the message is assembled, so the re-init is
+        // just to hand the component signatures a clean state - there is nothing to reset, and no
+        // key to reset it with, before initSign / initVerify has been called.
+        if (compositeKey != null)
+        {
             try
             {
                 if (compositeKey instanceof PublicKey)
@@ -491,64 +572,8 @@ public class SignatureSpi
             }
             catch (InvalidKeyException e)
             {
-                throw new InvalidAlgorithmParameterException("keys invalid on reset: " + e.getMessage(), e);
+                throw SecurityExceptions.invalidAlgorithmParameterException("keys invalid on reset: " + e.getMessage(), e);
             }
-        }
-        else if (algorithmParameterSpec instanceof CompositeSignatureSpec)
-        {
-            CompositeSignatureSpec compositeSignatureSpec = (CompositeSignatureSpec)algorithmParameterSpec;
-
-            if (compositeSignatureSpec.isPrehashMode())
-            {
-                this.preHashDigest = new NullDigest(baseDigest.getDigestSize());
-            }
-            else
-            {
-                this.preHashDigest = this.baseDigest;
-            }
-            AlgorithmParameterSpec secondarySpec = compositeSignatureSpec.getSecondarySpec();
-
-            if (secondarySpec == null || secondarySpec instanceof ContextParameterSpec)
-            {
-                this.contextSpec = (ContextParameterSpec)compositeSignatureSpec.getSecondarySpec();
-            }
-            else
-            {
-                byte[] context = SpecUtil.getContextFrom(secondarySpec);
-                if (context != null)
-                {
-                    contextSpec = new ContextParameterSpec(context);
-                }
-                else
-                {
-                    throw new InvalidAlgorithmParameterException("unknown parameterSpec passed to composite signature");
-                }
-            }
-        }
-        else
-        {
-            byte[] context = SpecUtil.getContextFrom(algorithmParameterSpec);
-            if (context != null)
-            {
-                contextSpec = new ContextParameterSpec(context);
-                try
-                {
-                    if (compositeKey instanceof PublicKey)
-                    {
-                        sigInitVerify();
-                    }
-                    else
-                    {
-                        sigInitSign();
-                    }
-                }
-                catch (InvalidKeyException e)
-                {
-                    throw new InvalidAlgorithmParameterException("keys invalid on reset: " + e.getMessage(), e);
-                }
-            }
-
-            throw new InvalidAlgorithmParameterException("unknown parameterSpec passed to composite signature");
         }
     }
 

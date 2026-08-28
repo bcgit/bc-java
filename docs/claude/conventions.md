@@ -156,6 +156,40 @@ Two details that are easy to get wrong when adding the translation:
   path the digest's `doFinal` has usually reset it already, so the `finally` is a no-op there —
   which is fine, and far safer than one `reset()` per exit that the next branch will forget.
 
+## `Signature.setParameter()` takes the context on either side of init
+
+`engineSetParameter` is declared `throws InvalidAlgorithmParameterException`, so it must not let an
+unchecked exception out — and the way it does is always the same: applying a context means
+re-initialising the signer with the key the object holds, and before `initSign` / `initVerify`
+there is no key. The base engines were fixed for github #2396
+(`BaseDeterministicOrRandomSignature.setContext`: record the context, clear `engineParams`,
+re-initialise **only** `if (keyParams != null)`), and the composite ML-DSA SPI — a separate class
+that never extended them — repeated the defect verbatim for github #2412. So when an SPI carries
+its **own** `engineSetParameter` rather than inheriting one, check it against that shape; a whole
+family can fail identically because they share one parent (37 composite services here).
+
+Three things travel with that guard, and the first two are easy to miss because nothing fails
+loudly:
+
+- **Clear the cached `AlgorithmParameters`.** `engineGetParameters()` builds it lazily and keeps
+  it, so a context set after it has been asked for once goes on being reported as the old one.
+  Assert the `set` / `get` / `set` / `get` sequence — a test that only asks *after* the second set
+  never populates the cache and cannot see this.
+- **Don't mutate and then throw in the same branch.** The composite's fall-through
+  `SpecUtil.getContextFrom` branch applied the context it extracted and then fell into an
+  unconditional `throw new InvalidAlgorithmParameterException("unknown parameterSpec…")`, so a
+  caller that took the exception at its word went on signing with a context it believed unset. The
+  base shape — `if (context != null) { setContext(…); } else { throw …; }` — is what makes the two
+  outcomes exclusive.
+- **Anything else the spec sets before the algorithm is known has to be recorded too.** For the
+  generic `COMPOSITE` service the algorithm arrives with the key, so a `CompositeSignatureSpec` set
+  first dereferenced the absent digest; the pre-hash choice is now held in a field and applied at
+  init alongside the context.
+
+The measurement that finds all of this is one loop over every registered service in the family:
+`getInstance(name)` then `setParameter(new ContextParameterSpec(…))` with no init, counting
+unchecked throws. It is a dozen lines and it is what turned "one code path" into "36 of 36".
+
 ## System / security property constants
 
 Any system or security property that controls BC behaviour belongs in `core/src/main/java/org/bouncycastle/util/Properties.java` as a `public static final String`, e.g. `Properties.PKCS12_MAX_IT_COUNT`, `Properties.PKCS12_IGNORE_USELESS_PASSWD`, `Properties.EMULATE_ORACLE`. Callers should reference the constant rather than inlining the literal `"org.bouncycastle.…"` name — both in production code and in tests that flip the property via `System.setProperty`. New properties should be added to `Properties` with the same naming pattern (`org.bouncycastle.<area>.<flag>`).
