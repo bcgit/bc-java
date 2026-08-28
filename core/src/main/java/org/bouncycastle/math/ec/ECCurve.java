@@ -18,6 +18,7 @@ import org.bouncycastle.math.raw.Nat;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Properties;
+import org.bouncycastle.util.Strings;
 
 /**
  * base class for an elliptic curve
@@ -467,7 +468,8 @@ public abstract class ECCurve
             break;
         }
         default:
-            throw new IllegalArgumentException("Invalid point encoding type: 0x" + String.format("%02X", type));
+            throw new IllegalArgumentException("Invalid point encoding type: 0x"
+                + Strings.toUpperCase(Integer.toHexString(0x100 | (type & 0xFF)).substring(1)));
         }
 
         if (type != 0x00 && p.isInfinity())

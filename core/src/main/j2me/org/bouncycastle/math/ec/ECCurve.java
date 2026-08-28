@@ -18,6 +18,7 @@ import org.bouncycastle.math.raw.Nat;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Properties;
+import org.bouncycastle.util.Strings;
 
 /**
  * base class for an elliptic curve
@@ -381,6 +382,14 @@ public abstract class ECCurve
         ECPoint p = null;
         int expectedLength = (this.getFieldSize() + 7) / 8;
 
+        if (encoded == null || encoded.length < 1)
+        {
+            // An empty (or null) encoding must be reported as a malformed encoding, not leak an
+            // ArrayIndexOutOfBoundsException out of the point decoder to every caller that decodes
+            // an untrusted point (EC key parse, ECDH/ECIES/TLS ephemeral points).
+            throw new IllegalArgumentException("Invalid point encoding: empty");
+        }
+
         byte type = encoded[0];
         switch (type)
         {
@@ -446,7 +455,8 @@ public abstract class ECCurve
             break;
         }
         default:
-            throw new IllegalArgumentException("Invalid point encoding type: 0x" + Integer.toString(type, 16));
+            throw new IllegalArgumentException("Invalid point encoding type: 0x"
+                + Strings.toUpperCase(Integer.toHexString(0x100 | (type & 0xFF)).substring(1)));
         }
 
         if (type != 0x00 && p.isInfinity())

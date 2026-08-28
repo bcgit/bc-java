@@ -9,6 +9,7 @@ import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.math.ec.ECCurve;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.io.Streams;
 
 public class ECIESPublicKeyParser
@@ -50,7 +51,7 @@ public class ECIESPublicKeyParser
 
         default:
             throw new IOException("Sender's public key has invalid point encoding type: 0x"
-                + String.format("%02X", first));
+                + Strings.toUpperCase(Integer.toHexString(0x100 | first).substring(1)));
         }
 
         ECCurve curve = ecParams.getCurve();
