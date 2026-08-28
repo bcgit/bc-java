@@ -95,6 +95,22 @@ public class ECAlgorithms
         return implCheckResult(implShamirsTrickWNaf(P, a, Q, b));
     }
 
+    public static ECPoint sumOfTwoMultipliesSecret(ECPoint P, BigInteger a, ECPoint Q, BigInteger b)
+    {
+        // TODO[ec] Replace with constant-time Straus ladder
+        ECPoint R1 = multiplySecret(P, a);
+        ECPoint R2 = multiplySecret(Q, b);
+        return R1.add(R2);
+    }
+
+    public static ECPoint sumOfTwoMultipliesSecret(ECPoint P, BigInteger a, ECPoint Q, BigInteger b, BigInteger order)
+    {
+        // TODO[ec] Replace with constant-time Straus ladder
+        ECPoint R1 = multiplySecret(P, a, order);
+        ECPoint R2 = multiplySecret(Q, b, order);
+        return R1.add(R2);
+    }
+
     /*
      * "Shamir's Trick", originally due to E. G. Straus
      * (Addition chains of vectors. American Mathematical Monthly,
@@ -208,6 +224,11 @@ public class ECAlgorithms
             }
         }
         return k.signum() < 0 ? q.negate() : q;
+    }
+
+    public static ECPoint multiply(ECPoint p, BigInteger k)
+    {
+        return p.multiply(k);
     }
 
     /**

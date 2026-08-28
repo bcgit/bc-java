@@ -18,11 +18,32 @@ import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.math.ec.ECAlgorithms;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.math.ec.FixedPointCombMultiplier;
+import org.bouncycastle.util.BigIntegers;
 
 public class ECAlgorithmsTest extends TestCase
 {
     private static final int SCALE = 4;
     private static final SecureRandom RND = new SecureRandom();
+
+    public void testMultiply()
+    {
+        X9ECParameters x9 = CustomNamedCurves.getByName("secp256r1");
+        assertNotNull(x9);
+        doTestMultiply(x9);
+    }
+
+    // TODO Ideally, mark this test not to run by default
+    public void testMultiplyComplete()
+    {
+        List x9s = getTestCurves();
+        Iterator it = x9s.iterator();
+        while (it.hasNext())
+        {
+            X9ECParameters x9 = (X9ECParameters)it.next();
+            doTestMultiply(x9);
+        }
+    }
 
     public void testSumOfMultiplies()
     {
@@ -62,6 +83,27 @@ public class ECAlgorithmsTest extends TestCase
         }
     }
 
+    private void doTestMultiply(X9ECParameters x9)
+    {
+        for (int i = 0; i < SCALE; ++i)
+        {
+            ECPoint p = getRandomPoint(x9);
+            BigInteger a = getRandomScalar(x9);
+
+            ECPoint u = referenceMultiply(p, a);
+            ECPoint v1 = ECAlgorithms.multiply(p, a);
+            ECPoint v2 = ECAlgorithms.multiplySecret(p, a);
+            ECPoint v3 = ECAlgorithms.multiplySecret(p, a, x9.getN());
+
+            ECPoint[] results = new ECPoint[]{ u, v1, v2, v3 };
+            x9.getCurve().normalizeAll(results);
+
+            assertPointsEqual("ECAlgorithms.multiply is incorrect", results[0], results[1]);
+            assertPointsEqual("ECAlgorithms.multiplySecret is incorrect", results[0], results[2]);
+            assertPointsEqual("ECAlgorithms.multiplySecret (w/ order) is incorrect", results[0], results[3]);
+        }
+    }
+
     private void doTestSumOfMultiplies(X9ECParameters x9)
     {
         ECPoint[] points = new ECPoint[SCALE];
@@ -75,7 +117,7 @@ public class ECAlgorithmsTest extends TestCase
         ECPoint u = x9.getCurve().getInfinity();
         for (int i = 0; i < SCALE; ++i)
         {
-            u = u.add(points[i].multiply(scalars[i]));
+            u = u.add(referenceMultiply(points[i], scalars[i]));
 
             ECPoint v = ECAlgorithms.sumOfMultiplies(copyPoints(points, i + 1), copyScalars(scalars, i + 1));
 
@@ -95,16 +137,20 @@ public class ECAlgorithmsTest extends TestCase
         {
             ECPoint q = getRandomPoint(x9);
             BigInteger b = getRandomScalar(x9);
-            
-            ECPoint u = p.multiply(a).add(q.multiply(b));
-            ECPoint v = ECAlgorithms.shamirsTrick(p, a, q, b);
-            ECPoint w = ECAlgorithms.sumOfTwoMultiplies(p, a, q, b);
 
-            ECPoint[] results = new ECPoint[]{ u, v, w };
+            ECPoint u = referenceMultiply(p, a).add(referenceMultiply(q, b));
+            ECPoint v1 = ECAlgorithms.shamirsTrick(p, a, q, b);
+            ECPoint v2 = ECAlgorithms.sumOfTwoMultiplies(p, a, q, b);
+            ECPoint v3 = ECAlgorithms.sumOfTwoMultipliesSecret(p, a, q, b);
+            ECPoint v4 = ECAlgorithms.sumOfTwoMultipliesSecret(p, a, q, b, x9.getN());
+
+            ECPoint[] results = new ECPoint[]{ u, v1, v2, v3, v4 };
             x9.getCurve().normalizeAll(results);
 
             assertPointsEqual("ECAlgorithms.shamirsTrick is incorrect", results[0], results[1]);
             assertPointsEqual("ECAlgorithms.sumOfTwoMultiplies is incorrect", results[0], results[2]);
+            assertPointsEqual("ECAlgorithms.sumOfTwoMultipliesSecret is incorrect", results[0], results[3]);
+            assertPointsEqual("ECAlgorithms.sumOfTwoMultipliesSecret (w/ order) is incorrect", results[0], results[4]);
 
             p = q;
             a = b;
@@ -132,12 +178,12 @@ public class ECAlgorithmsTest extends TestCase
 
     private ECPoint getRandomPoint(X9ECParameters x9)
     {
-        return x9.getG().multiply(getRandomScalar(x9));
+        return new FixedPointCombMultiplier().multiply(x9.getG(), getRandomScalar(x9));
     }
 
     private BigInteger getRandomScalar(X9ECParameters x9)
     {
-        return new BigInteger(x9.getN().bitLength(), RND);
+        return BigIntegers.createRandomBigInteger(x9.getN().bitLength(), RND);
     }
 
     private List getTestCurves()
@@ -184,6 +230,11 @@ public class ECAlgorithmsTest extends TestCase
                 x9s.add(new X9ECParameters(c, new X9ECPoint(c.importPoint(x9.getG()), false), x9.getN(), x9.getH()));
             }
         }
+    }
+
+    private static ECPoint referenceMultiply(ECPoint p, BigInteger k)
+    {
+        return ECAlgorithms.referenceMultiply(p, k);
     }
 
     public static Test suite()

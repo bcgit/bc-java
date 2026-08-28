@@ -19,6 +19,7 @@ import java.security.cert.X509Certificate;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -26,6 +27,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TimeZone;
 
 import junit.framework.Assert;
 import junit.framework.Test;
@@ -40,6 +42,7 @@ import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.ASN1UTCTime;
 import org.bouncycastle.asn1.ASN1Util;
 import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERNull;
@@ -54,6 +57,7 @@ import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.cms.SignedData;
 import org.bouncycastle.asn1.cms.SignerInfo;
+import org.bouncycastle.asn1.cms.Time;
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.asn1.ess.ESSCertIDv2;
 import org.bouncycastle.asn1.ess.SigningCertificateV2;
@@ -116,7 +120,9 @@ import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
 import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.CollectionStore;
+import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.Store;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.io.Streams;
 import org.bouncycastle.util.io.pem.PemObject;
@@ -1532,6 +1538,138 @@ public class NewSignedDataTest
 
         verifySignatures(s, md.digest("Hello world!".getBytes()));
         verifyRSASignatures(s, md.digest("Hello world!".getBytes()));
+    }
+
+    public void testSigningTimeMalformedUTCTime()
+        throws Exception
+    {
+        // github #2411: a SignedData in circulation carries the zone-less UTCTime "150612153520"
+        // (seconds present, no trailing "Z") as its signing-time attribute. Since 1.85 the ASN.1
+        // decoder rejects that as structurally malformed while the signerInfos are being read, so
+        // the whole message fails to load; Properties.ASN1_ALLOW_MALFORMED_TIME restores the legacy
+        // lenient read so the message can still be examined, and getSignerInfos() reports the
+        // strict-mode failure as the CMSException it declares rather than an IllegalStateException.
+        byte[] rawTime = Strings.toByteArray("150612153520");
+        byte[] utcNoZone = new byte[2 + rawTime.length];
+        utcNoZone[0] = BERTags.UTC_TIME;
+        utcNoZone[1] = (byte)rawTime.length;
+        System.arraycopy(rawTime, 0, utcNoZone, 2, rawTime.length);
+
+        CMSTypedData msg = new CMSProcessableByteArray("Hello world!".getBytes());
+        byte[] encoded;
+
+        // the lenient read is the only way to obtain such a primitive - use it to build the message
+        // the way the reporter's producer must have.
+        System.setProperty(Properties.ASN1_ALLOW_MALFORMED_TIME, "true");
+        try
+        {
+            ASN1EncodableVector v = new ASN1EncodableVector();
+            v.add(new Attribute(CMSAttributes.signingTime,
+                new DERSet(Time.getInstance(ASN1UTCTime.getInstance(utcNoZone)))));
+
+            List certList = new ArrayList();
+            certList.add(_origCert);
+            certList.add(_signCert);
+
+            CMSSignedDataGenerator gen = new CMSSignedDataGenerator();
+            gen.addSignerInfoGenerator(new JcaSimpleSignerInfoGeneratorBuilder().setProvider(BC)
+                .setSignedAttributeGenerator(new DefaultSignedAttributeTableGenerator(new AttributeTable(v)))
+                .build("SHA256withRSA", _origKP.getPrivate(), _origCert));
+            gen.addCertificates(new JcaCertStore(certList));
+
+            encoded = gen.generate(msg, true).getEncoded();
+        }
+        finally
+        {
+            System.getProperties().remove(Properties.ASN1_ALLOW_MALFORMED_TIME);
+        }
+
+        // the attribute went out exactly as supplied
+        assertTrue("zone-less signing time not present in the encoding", indexOf(encoded, utcNoZone) >= 0);
+
+        // default: the message cannot be loaded, whichever way it is read
+        try
+        {
+            new CMSSignedData(encoded);
+            fail("malformed signing time loaded by default");
+        }
+        catch (CMSException e)
+        {
+            assertMentions(e, "invalid UTCTime format");
+        }
+
+        CMSSignedDataParser sp = new CMSSignedDataParser(new JcaDigestCalculatorProviderBuilder().setProvider(BC).build(), encoded);
+        sp.getSignedContent().drain();
+        try
+        {
+            sp.getSignerInfos();
+            fail("malformed signing time loaded by default (parser)");
+        }
+        catch (CMSException e)
+        {
+            assertMentions(e, "invalid UTCTime format");
+        }
+
+        // property set: the message loads and verifies, and the attribute reads as GMT as it did before 1.85
+        System.setProperty(Properties.ASN1_ALLOW_MALFORMED_TIME, "true");
+        try
+        {
+            CMSSignedData s = new CMSSignedData(encoded);
+
+            // verify against the key rather than the certificate: a certificate-bound verifier also
+            // checks validity at the signing time, and 2015 predates the test certificate.
+            SignerInformation signer = (SignerInformation)s.getSignerInfos().getSigners().iterator().next();
+            assertTrue(signer.verify(new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(_origKP.getPublic())));
+
+            Attribute attr = signer.getSignedAttributes().get(CMSAttributes.signingTime);
+            Time signingTime = Time.getInstance(attr.getAttrValues().getObjectAt(0));
+
+            assertEquals("150612153520", signingTime.toASN1Primitive().toString());
+            assertEquals("20150612153520GMT+00:00", signingTime.getTime());
+
+            Calendar cal = Calendar.getInstance(TimeZone.getTimeZone("GMT"));
+            cal.clear();
+            cal.set(2015, Calendar.JUNE, 12, 15, 35, 20);
+            assertEquals(cal.getTime(), signingTime.getDate());
+
+            sp = new CMSSignedDataParser(new JcaDigestCalculatorProviderBuilder().setProvider(BC).build(), encoded);
+            sp.getSignedContent().drain();
+            signer = (SignerInformation)sp.getSignerInfos().getSigners().iterator().next();
+            assertTrue(signer.verify(new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(_origKP.getPublic())));
+            assertEquals("150612153520", signer.getSignedAttributes().get(CMSAttributes.signingTime).getAttrValues().getObjectAt(0).toString());
+        }
+        finally
+        {
+            System.getProperties().remove(Properties.ASN1_ALLOW_MALFORMED_TIME);
+        }
+    }
+
+    private static void assertMentions(CMSException e, String text)
+    {
+        String message = e.getMessage();
+        Exception underlying = e.getUnderlyingException();
+        if (underlying != null)
+        {
+            message = message + " / " + underlying.getMessage();
+        }
+        assertTrue(message, message.indexOf(text) >= 0);
+    }
+
+    private static int indexOf(byte[] data, byte[] pattern)
+    {
+        for (int i = 0; i + pattern.length <= data.length; i++)
+        {
+            int j = 0;
+            while (j != pattern.length && data[i + j] == pattern[j])
+            {
+                j++;
+            }
+            if (j == pattern.length)
+            {
+                return i;
+            }
+        }
+        return -1;
     }
 
     public void testCMSAlgorithmProtection()

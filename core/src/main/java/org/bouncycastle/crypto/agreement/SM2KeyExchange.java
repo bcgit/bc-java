@@ -177,10 +177,7 @@ public class SM2KeyExchange
          * depends on them. Two constant-time multiplications and an addition instead; that gives
          * up Shamir's trick, so this is roughly twice the point arithmetic it was.
          */
-        ECPoint u1 = ECAlgorithms.multiplySecret(p1, k1, ecParams.getN());
-        ECPoint u2 = ECAlgorithms.multiplySecret(p2, k2, ecParams.getN());
-
-        return u1.add(u2).normalize();
+        return ECAlgorithms.sumOfTwoMultipliesSecret(p1, k1, p2, k2, ecParams.getN()).normalize();
     }
 
     private byte[] kdf(ECPoint u, byte[] za, byte[] zb, int klen)

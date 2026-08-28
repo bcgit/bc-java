@@ -455,9 +455,11 @@ public abstract class SLHDSAEngine
 
         engine.init(pkSeed);
 
+        byte[] pkRoot = new HT(engine, skSeed, pkSeed).pkGen();
+
         return new AsymmetricCipherKeyPair(
-            new SLHDSAPublicKeyParameters(params, Arrays.concatenate(pkSeed, new HT(engine, skSeed, pkSeed).htPubKey)),
-            new SLHDSAPrivateKeyParameters(params, skSeed, skPrf, pkSeed, new HT(engine, skSeed, pkSeed).htPubKey));
+            new SLHDSAPublicKeyParameters(params, Arrays.concatenate(pkSeed, pkRoot)),
+            new SLHDSAPrivateKeyParameters(params, skSeed, skPrf, pkSeed, pkRoot));
     }
 
     public static boolean internalVerifySignature(SLHDSAParameters params, byte[] pkSeed, byte[] pkRoot, byte[] msgPrefix, byte[] msg,

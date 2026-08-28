@@ -49,7 +49,8 @@ public class ECIESPublicKeyParser
             break;
 
         default:
-            throw new IOException("Sender's public key has invalid point encoding 0x" + Integer.toString(first, 16));
+            throw new IOException("Sender's public key has invalid point encoding type: 0x"
+                + String.format("%02X", first));
         }
 
         ECCurve curve = ecParams.getCurve();

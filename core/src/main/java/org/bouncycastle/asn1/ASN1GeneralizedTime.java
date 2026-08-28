@@ -508,7 +508,12 @@ public class ASN1GeneralizedTime
         // that getDate() would turn into a nonsensical Date or fail on. Programmatic construction
         // (String/Date constructors) and DER re-encoding (toDERObject) do not pass through here.
         // The message deliberately omits the raw content (it may carry control characters).
-        if (!ASN1TimeFormat.isValidGeneralizedTime(contents))
+        // Setting Properties.ASN1_ALLOW_MALFORMED_TIME restores the pre-1.85 lenient read for data
+        // already in circulation (github #2411): the constructor's minimal leading-digits check
+        // still applies, and getDate() then interprets or rejects the content as it always did.
+        // The property is consulted only on the failure path, so well-formed values cost nothing.
+        if (!ASN1TimeFormat.isValidGeneralizedTime(contents)
+            && !Properties.isOverrideSet(Properties.ASN1_ALLOW_MALFORMED_TIME))
         {
             throw new IllegalArgumentException("invalid GeneralizedTime format");
         }
