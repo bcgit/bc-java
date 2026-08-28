@@ -1540,48 +1540,28 @@ public class NewSignedDataTest
         verifyRSASignatures(s, md.digest("Hello world!".getBytes()));
     }
 
-    public void testSigningTimeMalformedUTCTime()
+    public void testSigningTimeZoneLessUTCTime()
         throws Exception
     {
         // github #2411: a SignedData in circulation carries the zone-less UTCTime "150612153520"
         // (seconds present, no trailing "Z") as its signing-time attribute. Since 1.85 the ASN.1
-        // decoder rejects that as structurally malformed while the signerInfos are being read, so
-        // the whole message fails to load; Properties.ASN1_ALLOW_MALFORMED_TIME restores the legacy
-        // lenient read so the message can still be examined, and getSignerInfos() reports the
-        // strict-mode failure as the CMSException it declares rather than an IllegalStateException.
-        byte[] rawTime = Strings.toByteArray("150612153520");
-        byte[] utcNoZone = new byte[2 + rawTime.length];
-        utcNoZone[0] = BERTags.UTC_TIME;
-        utcNoZone[1] = (byte)rawTime.length;
-        System.arraycopy(rawTime, 0, utcNoZone, 2, rawTime.length);
-
-        CMSTypedData msg = new CMSProcessableByteArray("Hello world!".getBytes());
+        // decoder rejects that while the signerInfos are being read, so the whole message fails to
+        // load; Properties.ASN1_ALLOW_ZONELESS_UTCTIME admits that one value, so the message can be
+        // examined, and getSignerInfos() reports the default-mode failure as the CMSException it
+        // declares rather than letting an IllegalStateException out.
+        byte[] utcNoZone = utcTime("150612153520");
         byte[] encoded;
 
-        // the lenient read is the only way to obtain such a primitive - use it to build the message
-        // the way the reporter's producer must have.
-        System.setProperty(Properties.ASN1_ALLOW_MALFORMED_TIME, "true");
+        // the value only decodes with the property set, so building the message needs it too - the
+        // way the producer of one must have.
+        System.setProperty(Properties.ASN1_ALLOW_ZONELESS_UTCTIME, "true");
         try
         {
-            ASN1EncodableVector v = new ASN1EncodableVector();
-            v.add(new Attribute(CMSAttributes.signingTime,
-                new DERSet(Time.getInstance(ASN1UTCTime.getInstance(utcNoZone)))));
-
-            List certList = new ArrayList();
-            certList.add(_origCert);
-            certList.add(_signCert);
-
-            CMSSignedDataGenerator gen = new CMSSignedDataGenerator();
-            gen.addSignerInfoGenerator(new JcaSimpleSignerInfoGeneratorBuilder().setProvider(BC)
-                .setSignedAttributeGenerator(new DefaultSignedAttributeTableGenerator(new AttributeTable(v)))
-                .build("SHA256withRSA", _origKP.getPrivate(), _origCert));
-            gen.addCertificates(new JcaCertStore(certList));
-
-            encoded = gen.generate(msg, true).getEncoded();
+            encoded = signedDataWithSigningTime(utcNoZone);
         }
         finally
         {
-            System.getProperties().remove(Properties.ASN1_ALLOW_MALFORMED_TIME);
+            System.getProperties().remove(Properties.ASN1_ALLOW_ZONELESS_UTCTIME);
         }
 
         // the attribute went out exactly as supplied
@@ -1591,7 +1571,7 @@ public class NewSignedDataTest
         try
         {
             new CMSSignedData(encoded);
-            fail("malformed signing time loaded by default");
+            fail("zone-less signing time loaded by default");
         }
         catch (CMSException e)
         {
@@ -1603,15 +1583,15 @@ public class NewSignedDataTest
         try
         {
             sp.getSignerInfos();
-            fail("malformed signing time loaded by default (parser)");
+            fail("zone-less signing time loaded by default (parser)");
         }
         catch (CMSException e)
         {
             assertMentions(e, "invalid UTCTime format");
         }
 
-        // property set: the message loads and verifies, and the attribute reads as GMT as it did before 1.85
-        System.setProperty(Properties.ASN1_ALLOW_MALFORMED_TIME, "true");
+        // property set: the message loads and verifies, and the attribute reads as GMT
+        System.setProperty(Properties.ASN1_ALLOW_ZONELESS_UTCTIME, "true");
         try
         {
             CMSSignedData s = new CMSSignedData(encoded);
@@ -1640,8 +1620,94 @@ public class NewSignedDataTest
         }
         finally
         {
-            System.getProperties().remove(Properties.ASN1_ALLOW_MALFORMED_TIME);
+            System.getProperties().remove(Properties.ASN1_ALLOW_ZONELESS_UTCTIME);
         }
+    }
+
+    public void testSigningTimeMalformedUTCTime()
+        throws Exception
+    {
+        // A signing time that could denote no instant at all - month 13 - is not what
+        // Properties.ASN1_ALLOW_ZONELESS_UTCTIME admits: the property covers the zone-less
+        // "YYMMDDHHMMSS" and nothing else (github #2411), so such a message stays unreadable
+        // whether it is set or not.
+        // no supported call builds such a message any more, so generate a well-formed one and
+        // patch the month in place - same length, so nothing else in the encoding shifts. The
+        // signature no longer matches, which does not matter: the parse fails long before it.
+        byte[] utcGoodMonth = utcTime("151212153520Z");
+        byte[] utcBadMonth = utcTime("151312153520Z");
+        byte[] encoded = signedDataWithSigningTime(utcGoodMonth);
+
+        int at = indexOf(encoded, utcGoodMonth);
+        assertTrue("signing time not present in the encoding", at >= 0);
+        System.arraycopy(utcBadMonth, 0, encoded, at, utcBadMonth.length);
+
+        for (int i = 0; i != 2; i++)
+        {
+            if (i == 1)
+            {
+                System.setProperty(Properties.ASN1_ALLOW_ZONELESS_UTCTIME, "true");
+            }
+
+            try
+            {
+                try
+                {
+                    new CMSSignedData(encoded);
+                    fail("malformed signing time loaded, property set: " + (i == 1));
+                }
+                catch (CMSException e)
+                {
+                    assertMentions(e, "invalid UTCTime format");
+                }
+
+                CMSSignedDataParser sp = new CMSSignedDataParser(new JcaDigestCalculatorProviderBuilder().setProvider(BC).build(), encoded);
+                sp.getSignedContent().drain();
+                try
+                {
+                    sp.getSignerInfos();
+                    fail("malformed signing time loaded by the parser, property set: " + (i == 1));
+                }
+                catch (CMSException e)
+                {
+                    assertMentions(e, "invalid UTCTime format");
+                }
+            }
+            finally
+            {
+                System.getProperties().remove(Properties.ASN1_ALLOW_ZONELESS_UTCTIME);
+            }
+        }
+    }
+
+    private byte[] signedDataWithSigningTime(byte[] encodedTime)
+        throws Exception
+    {
+        ASN1EncodableVector v = new ASN1EncodableVector();
+        v.add(new Attribute(CMSAttributes.signingTime,
+            new DERSet(Time.getInstance(ASN1UTCTime.getInstance(encodedTime)))));
+
+        List certList = new ArrayList();
+        certList.add(_origCert);
+        certList.add(_signCert);
+
+        CMSSignedDataGenerator gen = new CMSSignedDataGenerator();
+        gen.addSignerInfoGenerator(new JcaSimpleSignerInfoGeneratorBuilder().setProvider(BC)
+            .setSignedAttributeGenerator(new DefaultSignedAttributeTableGenerator(new AttributeTable(v)))
+            .build("SHA256withRSA", _origKP.getPrivate(), _origCert));
+        gen.addCertificates(new JcaCertStore(certList));
+
+        return gen.generate(new CMSProcessableByteArray("Hello world!".getBytes()), true).getEncoded();
+    }
+
+    private static byte[] utcTime(String value)
+    {
+        byte[] raw = Strings.toByteArray(value);
+        byte[] enc = new byte[2 + raw.length];
+        enc[0] = BERTags.UTC_TIME;
+        enc[1] = (byte)raw.length;    // all values used here are short form (< 128 bytes)
+        System.arraycopy(raw, 0, enc, 2, raw.length);
+        return enc;
     }
 
     private static void assertMentions(CMSException e, String text)

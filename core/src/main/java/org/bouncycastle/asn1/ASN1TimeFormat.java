@@ -43,7 +43,9 @@ class ASN1TimeFormat
      * Legal forms (X.680 sec. 47.3): {@code YYMMDDHHMMZ},
      * {@code YYMMDDHHMMSSZ}, {@code YYMMDDHHMM(+|-)HHMM},
      * {@code YYMMDDHHMMSS(+|-)HHMM}. A zone (either {@code Z} or a numeric
-     * offset) is mandatory.
+     * offset) is mandatory - item c) of the clause - unlike GeneralizedTime,
+     * where a zone-less local time is legal. The one zone-less UTCTime BC will
+     * decode, and only on request, is covered by {@link #isZoneLessUTCTime(byte[])}.
      *
      * @param contents the raw content octets (ASCII), as held by {@link ASN1UTCTime}.
      * @return true iff {@code contents} is a structurally valid UTCTime value.
@@ -77,6 +79,36 @@ class ASN1TimeFormat
         default:
             return false;
         }
+    }
+
+    /**
+     * Is this the zone-less {@code YYMMDDHHMMSS} UTCTime?
+     * <p>
+     * The value is <b>not</b> a legal UTCTime - X.680 sec. 47.3 makes the zone
+     * mandatory - so {@link #isValidUTCTime(byte[])} rejects it and BC does not
+     * decode it by default. It is singled out here because it is the one
+     * zone-less form BC can make sense of and the one found in the field, in CMS
+     * signing-time attributes among others (github #2411):
+     * {@link ASN1UTCTime#getTime()} carries an explicit branch that reads a
+     * zone-less value as GMT, so twelve digits denote a real instant and
+     * re-encode unchanged. Setting {@code Properties.ASN1_ALLOW_ZONELESS_UTCTIME}
+     * admits exactly this form, and nothing else.
+     * <p>
+     * The zone-less {@code YYMMDDHHMM} (no seconds) is deliberately not included:
+     * {@code getTime()}'s branch indexes twelve characters unconditionally, so a
+     * ten-character value has never yielded a date, only a
+     * {@code StringIndexOutOfBoundsException}.
+     *
+     * @param contents the raw content octets (ASCII), as held by {@link ASN1UTCTime}.
+     * @return true iff {@code contents} is a well-formed zone-less UTCTime.
+     */
+    static boolean isZoneLessUTCTime(byte[] contents)
+    {
+        return contents.length == 12
+            && isDigits(contents, 0, 10)
+            && validMonthDayHour(contents, 2)
+            && twoDigit(contents, 8) <= 59
+            && validSeconds(contents, 10);
     }
 
     /**

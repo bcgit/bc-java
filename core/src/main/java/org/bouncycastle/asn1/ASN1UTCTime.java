@@ -335,12 +335,14 @@ public class ASN1UTCTime
         // that getDate() would turn into a nonsensical Date or fail on. Programmatic construction
         // (String/Date constructors) and DER re-encoding (toDERObject) do not pass through here.
         // The message deliberately omits the raw content (it may carry control characters).
-        // Setting Properties.ASN1_ALLOW_MALFORMED_TIME restores the pre-1.85 lenient read for data
-        // already in circulation (github #2411): the constructor's minimal leading-digits check
-        // still applies, and getDate() then interprets or rejects the content as it always did.
-        // The property is consulted only on the failure path, so well-formed values cost nothing.
+        // Setting Properties.ASN1_ALLOW_ZONELESS_UTCTIME widens this by exactly one value - the
+        // zone-less "YYMMDDHHMMSS", which is not legal UTCTime but which getTime() has always read
+        // as GMT and which turns up in CMS signing-time attributes in circulation (github #2411).
+        // Nothing else is admitted by it, and the property has to be set for even that much. Both
+        // extra tests are on the failure path, so well-formed values cost nothing.
         if (!ASN1TimeFormat.isValidUTCTime(contents)
-            && !Properties.isOverrideSet(Properties.ASN1_ALLOW_MALFORMED_TIME))
+            && !(ASN1TimeFormat.isZoneLessUTCTime(contents)
+                && Properties.isOverrideSet(Properties.ASN1_ALLOW_ZONELESS_UTCTIME)))
         {
             throw new IllegalArgumentException("invalid UTCTime format");
         }

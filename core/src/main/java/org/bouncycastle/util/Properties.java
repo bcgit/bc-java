@@ -210,29 +210,37 @@ public class Properties
      * only matters for primitives whose contents arrived non-conformant from the wire.
      * <p>
      * "Lenient" here means legal-but-non-DER formatting. Structurally malformed content is a
-     * separate matter, rejected on read since 1.85 unless {@link #ASN1_ALLOW_MALFORMED_TIME} is set.
+     * separate matter, rejected on read since 1.85 - see {@link #ASN1_ALLOW_ZONELESS_UTCTIME}, which
+     * makes an exception of exactly one such value.
      */
     public static final String ASN1_ALLOW_NON_DER_TIME = "org.bouncycastle.asn1.allow_non_der_time";
 
     /**
-     * Fall back to the legacy lenient decoding of ASN.1 {@code UTCTime} / {@code GeneralizedTime}
-     * values. Since 1.85 the decoder rejects structurally malformed time content - non-digit or
-     * out-of-range fields, an illegal length, a missing or garbage zone terminator - with
-     * "invalid UTCTime format" / "invalid GeneralizedTime format". That is raised while the
-     * enclosing structure is being read, so a single such field fails the whole parse: a CMS
-     * SignedData whose signing-time attribute lacks its trailing "Z" cannot be loaded at all,
-     * let alone have the rest of its content examined (github #2411). When this property is set
-     * the pre-1.85 behaviour is restored: any content whose leading year digits are digits decodes
-     * into a time object, which can be inspected ({@code toString()} / {@code getTimeString()})
-     * and re-encoded unchanged, while {@code getDate()} interprets it exactly as it always did -
-     * a zone-less value is taken as GMT, and genuinely nonsensical content throws
-     * {@code ParseException} or yields a rolled-over date. This is a read-side safety valve for
-     * processing data already in circulation, not a recommended mode: the legal lenient forms
-     * (missing seconds, numeric offset, fractional seconds) parse regardless of this setting, and
-     * generation is unaffected. It is independent of {@link #ASN1_ALLOW_NON_DER_TIME}, which
-     * governs writing rather than reading. Read via {@link #isOverrideSet(String)}.
+     * Decode the zone-less ASN.1 {@code UTCTime} {@code "YYMMDDHHMMSS"}.
+     * <p>
+     * X.680 sec. 47.3 makes the zone mandatory for a UTCTime, so a twelve-digit value carrying
+     * none is not a legal one and, since 1.85, the decoder rejects it along with the rest of the
+     * structurally malformed time content it screens out - non-digit or out-of-range fields, an
+     * illegal length, a missing or garbage zone terminator - with "invalid UTCTime format". That
+     * is raised while the enclosing structure is being read, so a single such field fails the whole
+     * parse: a CMS SignedData whose signing-time attribute lacks its trailing "Z" cannot be loaded
+     * at all, let alone have the rest of its content examined (github #2411).
+     * <p>
+     * That one value is nonetheless readable - {@link org.bouncycastle.asn1.ASN1UTCTime#getTime()}
+     * has always carried an explicit branch taking a zone-less value as GMT, so it denotes a real
+     * instant, and it re-encodes unchanged - and it is produced by tools in the field. Setting this
+     * property admits it, and admits nothing else: every other malformed value is still rejected
+     * with the property set, and the zone-less {@code "YYMMDDHHMM"} (no seconds) is not admitted
+     * either, {@code getTime()} having never been able to read one. {@code GeneralizedTime} is
+     * unaffected, its zone being optional to begin with.
+     * <p>
+     * The property has to be set for the value to decode: the default is to reject it. Generation
+     * is unaffected, as is DER conformance - the value is still not DER, so writing it through a
+     * {@code DEROutputStream} is refused when {@link #ASN1_ALLOW_NON_DER_TIME} is "false". This
+     * property is independent of that one, which governs writing rather than reading. Read via
+     * {@link #isOverrideSet(String)}.
      */
-    public static final String ASN1_ALLOW_MALFORMED_TIME = "org.bouncycastle.asn1.allow_malformed_time";
+    public static final String ASN1_ALLOW_ZONELESS_UTCTIME = "org.bouncycastle.asn1.allow_zoneless_utctime";
 
     /**
      * Maximum depth of nested constructed ASN.1 objects the parser will descend before failing
