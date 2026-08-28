@@ -151,7 +151,7 @@ Practical checklist when porting a new PQC algorithm — easy to leave any of th
 - `prov/.../jce/provider/BouncyCastleProvider.java` — in `loadPQCKeys()`, `addKeyInfoConverter(BCObjectIdentifiers.<alg>_<param>, new <Alg>KeyFactorySpi())` for every OID. **This is the BCPQC→BC bridge; skip it and certs / PKCS#8 work fine through BCPQC but break through BC.** Test it.
 - `prov/src/main/jdk1.9/module-info.java` — `opens org.bouncycastle.pqc.jcajce.provider.<alg> to java.base;` plus `exports org.bouncycastle.pqc.crypto.<alg>;` plus `exports org.bouncycastle.pqc.jcajce.provider.<alg>;`. Mirror `pqc.crypto.<alg>` into `prov/src/main/ext-jdk1.9/module-info.java` (the legacy distribution does not export the JCE-side `provider.<alg>` packages).
 - Tests in `prov/src/test/java/org/bouncycastle/pqc/jcajce/provider/test/<Alg>Test.java` plus an entry in `AllTests.java`, and the signature-encoding assertions above in `core`'s `PqcSignatureEncodingTest` / `PqcMalformedInputTest`. Include a `testBcProviderKeyInfoConverter`-style case that exercises `BouncyCastleProvider.getPublicKey(SubjectPublicKeyInfo)` and `getPrivateKey(PrivateKeyInfo)` against every parameter set, proving the `loadPQCKeys()` registration works.
-- `docs/releasenotes.html` — one `<li>` under the current unreleased version's "Additional Features and Functionality" block.
+- `docs/releasenotes.md` — one `-` bullet under the current unreleased version's "Additional Features and Functionality" block.
 
 ### Two JCA-boundary details the checklist does not spell out
 

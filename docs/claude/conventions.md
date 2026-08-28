@@ -274,7 +274,7 @@ a probe rather than by reading — a two-minute check saved shipping a redundant
 
 ## Release notes
 
-Defects fixed and additional features go into `docs/releasenotes.html` under the **current** unreleased version block (e.g. section 2.1 with header "Release: 1.85"). Each entry is a single `<li>...</li>` referencing the GitHub issue number where applicable. The file is hand-edited HTML; preserve the existing prose style and `<ul>` structure.
+Defects fixed and additional features go into `docs/releasenotes.md` under the **current** unreleased version block (e.g. section 2.1 with header "Release: 1.85"). Each entry is a single `-` bullet on one line, referencing the GitHub issue number where applicable. The file is hand-edited GitHub-flavoured markdown; preserve the existing prose style and list structure, and keep one entry per line — the entries are long, and one-line-per-entry is what keeps release-branch merges of this file tractable. The per-version `<a id="r1rvNN"></a>` anchors above the version headings are deep-link targets, carried over from the HTML so an old `releasenotes.html#r1rv86` link needs only its extension changed, and are deliberately raw HTML rather than relying on GFM's generated heading slugs: the section numbers renumber every cycle (the newest release is always 2.1.x, so 1.86's `#211-version` becomes 1.87's when that cycle opens), whereas `#r1rv86` keeps naming 1.86. Opening a new version block means adding the next `<a id="r1rv<NN>"></a>`.
 
 A CVE-bearing fix appears **twice** in its release's block: once as the "Defects Fixed" entry describing what was wrong, and once in the "Security Advisories" `<ul>` (`Release <ver> deals with the following CVEs:`) as `<li>CVE-YYYY-NNNNN - <one-line summary>.</li>`, kept in ascending CVE-number order. **Cross-reference the two**: close the Defects Fixed entry with a trailing `(CVE-YYYY-NNNNN)` before the `</li>` so a reader of the defect list can find the advisory, and vice versa. Historically the two lists were left unlinked; the 1.78 block was brought into line retroactively in `b1e21a374d` and is the worked example of the finished shape — all five of its advisory CVEs now carry a cross-reference in both directions. Do the same for new entries from now on. If an advisory has no matching Defects Fixed entry at all, that is a gap to fill rather than a case for skipping the cross-reference: 1.78 was missing entries for both CVE-2024-14041 (KyberSlash) and CVE-2024-29857 (crafted F2m EC parameters), and the fix is to write the defect entry from what the commits actually changed — for CVE-2024-29857, the `m` bound added to `ECCurve.F2m.buildField` in `efc498ca4c` / `fee80dd230` — not to paraphrase the advisory line.
 
@@ -287,7 +287,7 @@ Changing the BC version (opening a dev cycle, cutting a release) is a fixed, mul
 - The JCE providers — the `info` string (`"...Security Provider v<ver>[-SNAPSHOT]"`) and the `super(PROVIDER_NAME, 1.<yy>99, info)` version double, in **every** copy: `prov/src/main/java/.../jce/provider/BouncyCastleProvider.java`, `prov/src/main/jdk1.1/.../BouncyCastleProvider.java`, `prov/src/main/jdk1.4/.../BouncyCastleProvider.java`, and `prov/src/main/java/.../pqc/jcajce/provider/BouncyCastlePQCProvider.java`. The dev-cycle double is `1.<prev>99` (e.g. `1.8599` while developing 1.86) and the `info`/label use `<next>-SNAPSHOT`; historically `v<ver>b` was standardised to `v<ver>-SNAPSHOT` mid-cycle (see git of `b7eaf8f5ad` / `c93b376083`).
 - **The OpenPGP ASCII-armor version stamp** — `ArmoredOutputStream.DEFAULT_VERSION` (`public static final String DEFAULT_VERSION = "BCPG v<ver>"`, written as the `Version:` header of every armored PGP output), in both `pg/src/main/java/org/bouncycastle/bcpg/ArmoredOutputStream.java` **and** its legacy overlay `pg/src/main/jdk1.4/org/bouncycastle/bcpg/ArmoredOutputStream.java`. This lives in `pg`, away from the provider/build files, so it is the one most often forgotten. The pg tests that assert on the emitted armor `Version:` header (`BCPGOutputStreamTest`, `ArmoredInputStreamTest`, `PGPArmoredTest`, `ECDSAKeyPairTest`, `PGPv6SignatureTest`) then need updating in lockstep.
 
-## `CONTRIBUTORS.html` is for contributed code, not for reporting a bug
+## `CONTRIBUTORS.md` is for contributed code, not for reporting a bug
 
 An entry is normally added when someone **opened a PR or otherwise supplied code** — including when
 their patch was reworked or discarded, in which case the entry says "initial implementation of ...".
@@ -305,11 +305,23 @@ it names the area swept and what the sweep led to, not the individual bugs, and 
 the existing entry**. Still don't add one unprompted — wait for dgh to ask.
 
 When an entry is warranted it goes at the end of the list in the house form
-`<li>name-or-handle &lt;email-or-github-url&gt; - what they contributed (PR #NNNN).</li>`; a bare
+`- name-or-handle \<email-or-github-url\> - what they contributed (PR #NNNN).`; a bare
 GitHub handle with `https://github.com/<handle>` in place of an email is well established. When a
 contributor appears more than once, **append to their existing entry** rather than adding a second
-`<li>` (see `rootvector2`). Cite the source the work came from — everything historic says
+bullet (see `rootvector2`). Cite the source the work came from — everything historic says
 `(PR #NNNN)`, so a contribution that arrived on an issue rather than a pull request is `(issue #NNNN)`.
+
+Two things about the markdown form, both of which the file's 340-odd existing entries follow:
+
+- **The `@` of an email address is written `&#064;`, never literally.** That is anti-harvesting
+  obfuscation inherited from the HTML — GFM passes the entity through to the renderer, so the page
+  shows `@` while the raw file contains none. A handful of entries had been added with a plain `@`
+  before the conversion and were folded into the same form; keep it that way, and grep for a stray
+  literal `@` before committing an addition.
+- **The angle brackets around the address are escaped**, `\<...\>`. Unescaped, GFM would read
+  `<name@example.com>` as an autolink and emit a `mailto:` — which both defeats the obfuscation and
+  differs from every other entry. A bare URL inside the brackets does get auto-linked, which is
+  fine and matches what GitHub does with any bare URL.
 
 ## Commit messages
 
@@ -317,7 +329,7 @@ Existing convention: a short imperative sentence ending with `relates to github 
 
 ## URLs in source, docs, and Javadoc must be checked before they ship
 
-Any URL you add to a source file, Javadoc, `releasenotes.html`, `README.md`, or any other tracked document has to actually resolve to the page you're citing — and the page has to still say what you're citing it for. Hallucinated paths, rotted spec URLs, and "I made up an OID page on iana.org" all read identically when reviewed by eye; the only way to catch them is to fetch the URL and confirm. The model fetches I have available are good enough to do this — use them, before committing.
+Any URL you add to a source file, Javadoc, `releasenotes.md`, `README.md`, or any other tracked document has to actually resolve to the page you're citing — and the page has to still say what you're citing it for. Hallucinated paths, rotted spec URLs, and "I made up an OID page on iana.org" all read identically when reviewed by eye; the only way to catch them is to fetch the URL and confirm. The model fetches I have available are good enough to do this — use them, before committing.
 
 Two non-obvious failure modes worth pre-empting:
 - **The URL works but the cited section number is wrong.** When citing "RFC 5280 sec. 4.2.1.12" or "RFC 9162 sec. 7.1", confirm the linked section actually contains the wording you're paraphrasing. RFC errata, RFC obsoletions, and section-number drift in IETF drafts all surface here.

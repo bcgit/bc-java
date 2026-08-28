@@ -31,4 +31,4 @@ constraint port (`915e7f3ffb`).
   shape, real test names, how it was verified). It's a living record, not a frozen proposal.
 - **The `UPSTREAM-*.md` file itself stays out of the commit.** dgh keeps these local in the working
   tree — unstage one if it's in the index — and the commit carries only code, tests and
-  `docs/releasenotes.html`, with the usual single-line message (see the commit conventions).
+  `docs/releasenotes.md`, with the usual single-line message (see the commit conventions).

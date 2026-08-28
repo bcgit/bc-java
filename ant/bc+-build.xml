@@ -287,11 +287,14 @@
                 <copy toDir="@{toDir}">
                      <fileset dir="${basedir}">
                          <include name="*.html" />
+                         <include name="CONTRIBUTORS.md" />
                      </fileset>
                 </copy>
                 <copy toDir="@{toDir}/docs">
                      <fileset dir="${basedir}/docs">
-                         <include name="**/*.html" />
+                         <include name="index.md" />
+                         <include name="releasenotes.md" />
+                         <include name="specifications.md" />
                      </fileset>
                 </copy>
             </sequential>

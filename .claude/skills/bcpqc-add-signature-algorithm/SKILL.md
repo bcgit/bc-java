@@ -257,7 +257,7 @@ Add `suite.addTestSuite(<Alg>Test.class);` to `prov/src/test/java/org/bouncycast
 
 ### Step 16 — Release notes
 
-Add a single `<li>` to `docs/releasenotes.html` under the current unreleased version's "Additional Features and Functionality" block. Mention: the algorithm name and spec version, the parameter sets supported, that `BouncyCastlePQCProvider` exposes `KeyPairGenerator.<Alg>` / `Signature.<Alg>` / `KeyFactory.<Alg>` plus per-parameter-set aliases, and that `BouncyCastleProvider.loadPQCKeys()` registers the OIDs so the standard `BC` provider can decode certificates and PKCS#8 keys.
+Add a single `-` bullet to `docs/releasenotes.md` under the current unreleased version's "Additional Features and Functionality" block. Mention: the algorithm name and spec version, the parameter sets supported, that `BouncyCastlePQCProvider` exposes `KeyPairGenerator.<Alg>` / `Signature.<Alg>` / `KeyFactory.<Alg>` plus per-parameter-set aliases, and that `BouncyCastleProvider.loadPQCKeys()` registers the OIDs so the standard `BC` provider can decode certificates and PKCS#8 keys.
 
 ## Verification commands
 
@@ -314,6 +314,6 @@ When in doubt, mimic these files for the corresponding step:
 | 14 | `prov/src/main/jdk1.9/module-info.java` snova entries |
 | 15 | `prov/src/test/java/org/bouncycastle/pqc/jcajce/provider/test/SnovaTest.java` (mostly — but add a `testBcProviderKeyInfoConverter`; SNOVA's existing test doesn't cover that path, but FAEST's does) |
 | 15 (encoding) | `core/src/test/java/org/bouncycastle/pqc/crypto/test/PqcSignatureEncodingTest.java` `testSnova` + `checkBareSignature`, and the SNOVA block in `PqcMalformedInputTest.testMalformedSignatureReturnsFalse` |
-| 16 | `docs/releasenotes.html` — look at the FAEST entry under 1.85 for the prose template |
+| 16 | `docs/releasenotes.md` — look at the FAEST entry under 1.85 for the prose template |
 
 The FAEST entries (added in 1.85 alongside the introduction of this skill) are the most recent worked example of the full pipeline and are a useful cross-check.
