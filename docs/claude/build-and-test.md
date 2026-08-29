@@ -69,7 +69,24 @@ find <module>/build -name "*.xml" -path "*test-result*" -printf "%TH:%TM %p\n" |
 
 `ls`-ing the results directory is not enough — the directory mtime updates even when nothing is
 rewritten, and `find -newermt "-30 minutes"` is *not* valid relative syntax (it silently matches
-nothing; use `-newermt "30 minutes ago"`). When in doubt force it: `:<module>:cleanTest :<module>:test`.
+nothing; use `-newermt "30 minutes ago"`).
+
+**Where core and prov write their results is not where the docs above imply.** `:core:test` puts
+its XML straight into `core/build/test-results/TEST-<fqcn>.xml` — there is no `test-results/test/`
+subdirectory — and it runs individual test classes, not only the `AllTest*` wrappers the
+per-module tasks filter on (so `crypto.params.LMSTests` appears, `crypto.params.AllTests` does not).
+`:prov:test` is the same shape: all 79 per-class XML files sit at `prov/build/test-results/*.xml` while
+the per-task subdirectories (`test8/`, `test11/`, …) hold only a `binary/` directory, with each task's
+totals in `prov/build/reports/tests/<task>/index.html`.
+
+Globbing the documented `<module>/build/test-results/test/*.xml` path against either therefore returns
+zero files after a run that did execute 135 suites, which looks exactly like the skipped-tests trap
+above. Check `core/build/reports/tests/test/index.html` for the totals, or glob `TEST-*.xml` one
+level up. On this machine a clean full `:core:test` is ~8 minutes and 787 tests.
+
+Note also that `find` here is `bfs`, not GNU find: it rejects `-newermt "30 minutes ago"` outright
+("Invalid timestamp") and wants an ISO-8601 stamp, so relative-time filtering needs a different
+approach than the one above. When in doubt force it: `:<module>:cleanTest :<module>:test`.
 
 **HEAD moves while a suite runs.** dgh pulls into this clone during a session, so a long
 `:core:test` / `:prov:test` can straddle a merge and describe a tree that no longer exists. This

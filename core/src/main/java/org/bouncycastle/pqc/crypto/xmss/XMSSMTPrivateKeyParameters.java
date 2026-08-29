@@ -73,10 +73,11 @@ public final class XMSSMTPrivateKeyParameters
 
             try
             {
-                BDSStateMap bdsImport = (BDSStateMap)XMSSUtil.deserialize(bdsStateBinary, BDSStateMap.class);
+                BDSStateMap bdsImport = (BDSStateMap)XMSSUtil.deserialize(bdsStateBinary, BDSStateMap.class, publicSeed);
 
                 bdsState = bdsImport.withWOTSDigest(builder.xmss.getTreeDigestOID(), builder.xmss.getTreeDigestSize());
-                bdsState.validate(params);
+                bdsState.validate(params, index);
+                bdsState.validateRoot(params, root);
             }
             catch (IOException e)
             {
@@ -172,7 +173,13 @@ public final class XMSSMTPrivateKeyParameters
             }
             try
             {
-                bdsState.validate(params);
+                bdsState.validate(params, builder.index);
+                if (builder.bdsState != null)
+                {
+                    // only a restored state carries a root worth comparing: one built here is
+                    // computed from the seeds, and a key built without a root carries zeros
+                    bdsState.validateRoot(params, builder.root);
+                }
             }
             catch (IllegalStateException e)
             {
@@ -309,7 +316,7 @@ public final class XMSSMTPrivateKeyParameters
             /* concatenate bdsState */
             try
             {
-                return Arrays.concatenate(out, XMSSUtil.serialize(bdsState));
+                return Arrays.concatenate(out, XMSSUtil.serialize(bdsState, publicSeed));
             }
             catch (IOException e)
             {

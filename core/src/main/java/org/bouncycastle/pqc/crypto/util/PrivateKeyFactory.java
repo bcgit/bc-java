@@ -337,7 +337,7 @@ public class PrivateKeyFactory
 
                 if (xmssPrivateKey.getBdsState() != null)
                 {
-                    BDS bds = (BDS)XMSSUtil.deserialize(xmssPrivateKey.getBdsState(), BDS.class);
+                    BDS bds = (BDS)XMSSUtil.deserialize(xmssPrivateKey.getBdsState(), BDS.class, xmssPrivateKey.getPublicSeed());
                     keyBuilder.withBDSState(bds.withWOTSDigest(treeDigest));
                 }
 
@@ -372,7 +372,7 @@ public class PrivateKeyFactory
 
                 if (xmssMtPrivateKey.getBdsState() != null)
                 {
-                    BDSStateMap bdsState = (BDSStateMap)XMSSUtil.deserialize(xmssMtPrivateKey.getBdsState(), BDSStateMap.class);
+                    BDSStateMap bdsState = (BDSStateMap)XMSSUtil.deserialize(xmssMtPrivateKey.getBdsState(), BDSStateMap.class, xmssMtPrivateKey.getPublicSeed());
                     keyBuilder.withBDSState(bdsState.withWOTSDigest(treeDigest));
                 }
 

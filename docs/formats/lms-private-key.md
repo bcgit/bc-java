@@ -25,7 +25,7 @@ are concatenated in order.
 | 8 | 4 | `otstype` | LM-OTS parameter-set typecode, per the "LM-OTS Signatures" IANA registry of RFC 8554 sec. 8 (e.g. `0x03` = LMOTS_SHA256_N32_W4). Resolved via `LMOtsParameters`; an unknown code is rejected with an `IOException`. |
 | 12 | 16 | `I` | The key-pair identifier, exactly 16 bytes (RFC 8554 sec. 5.3). The same `I` appears in the public key and in every signature's OTS component. |
 | 28 | 4 | `q` | Index of the next unused OTS leaf. `0` for a fresh key; incremented by each signature. LMS is stateful: this field is why an updated private key must be re-persisted after signing. |
-| 32 | 4 | `maxQ` | Exclusive upper bound on `q`. `2`<sup>`h`</sup> for a freshly generated key; a key shard produced by `extractKeyShard()` carries the sub-range it may use, so `q` and `maxQ` describe the shard's remaining allocation. The key is exhausted when `q == maxQ`. |
+| 32 | 4 | `maxQ` | Exclusive upper bound on `q`. `2`<sup>`h`</sup> for a freshly generated key; a key shard produced by `extractKeyShard()` carries the sub-range it may use, so `q` and `maxQ` describe the shard's remaining allocation. The key is exhausted when `q == maxQ`. Both are range checked at decode — `q` and `maxQ` non-negative, `maxQ` no greater than `2`<sup>`h`</sup> and `q` no greater than `maxQ` — because a stored value outside the tree otherwise signs with a one-time key the public key does not commit to. |
 | 36 | 4 | `secretLen` | Length in bytes of the master secret that follows: `m` for the parameter set in use (32 for the n32 sets, 24 for the n24 sets). Checked against the remaining input before allocation. |
 | 40 | `secretLen` | `masterSecret` | The seed all per-leaf LM-OTS private keys are derived from deterministically. This is the only secret material in the encoding. |
 | 40 + `secretLen` | 4 | `cacheCount` | *Optional trailer.* Number of cached top-of-tree nodes that follow (`n`, in the range 0..63). May be absent entirely — the encoding simply ends after `masterSecret` — which is how every release before 1.86 wrote the key. |
@@ -41,7 +41,15 @@ first signature. Its properties:
   master secret (a key written by 1.85 or earlier, which then rebuilds the tree on first use),
   and a release predating the cache reads a 1.86+ encoding successfully because its decoder
   returns at the end of the master secret and never examines the trailing bytes. This is why
-  the cache is appended rather than announced by a new version number. Note this
+  the cache is appended rather than announced by a new version number. The cached node values are
+  verified at decode, not merely counted: each cached interior node is recomputed from its two
+  cached children and the key rejected on a mismatch, which catches every single-node
+  corruption since every cached node has a cached parent and `T[1]` is recomputed from `T[2]`
+  and `T[3]`. Only interior nodes are recomputed — a cached node at or beyond `2^h` is a leaf,
+  and deriving one costs an LM-OTS public key, which is the work the cache exists to avoid.
+  Unlike the XMSS BDS state, which carries a checksum because its nodes cannot be recomputed
+  cheaply, this is a semantic check: it establishes the nodes are the right nodes, not merely
+  that they are unchanged since they were written. Note this
   trailing-data inference only works for a key that owns its whole encoding: for the component
   keys inside an HSS private key, which share one stream, the presence of the cache field is
   dictated by the HSS encoding's version instead — see "HSS private keys" below.

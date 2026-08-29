@@ -1074,6 +1074,101 @@ public class HSSTests
         }
     }
 
+    /**
+     * An HSS private key's declared index and its component keys' one-time indices are two records of
+     * the same position, and a decoded key whose records disagree is refused. RFC 8554 sec. 1 requires
+     * each one-time key to be used once; until this check a key whose index had been rolled back while
+     * its component keys stayed advanced was accepted and signed again under a used one-time key, and
+     * that signature verified.
+     */
+    public void testIndexRollbackRejected()
+        throws Exception
+    {
+        HSSPrivateKeyParameters key = genHssKey();
+        HSSSigner signer = new HSSSigner();
+        signer.init(true, key);
+        for (int i = 0; i != 5; i++)
+        {
+            signer.generateSignature(Hex.decode("48656c6c6f"));
+        }
+
+        byte[] enc = key.getEncoded();
+        assertEquals(5L, Pack.bigEndianToLong(enc, 8));
+
+        // roll the declared index back, leaving the component keys advanced
+        for (int roll = 0; roll != 5; roll++)
+        {
+            byte[] rolled = Arrays.clone(enc);
+            Pack.longToBigEndian((long)roll, rolled, 8);
+            try
+            {
+                HSSPrivateKeyParameters.getInstance(rolled);
+                fail("no exception on index rolled back to " + roll);
+            }
+            catch (java.io.IOException e)
+            {
+                assertTrue(e.getMessage(), e.getMessage().startsWith("HSS private key index " + roll
+                    + " does not match the component key indices"));
+            }
+        }
+
+        // and the other direction: roll a component key's q back, leaving the declared index alone
+        int secretLen = Pack.bigEndianToInt(enc, 25 + 28 + 8);
+        int cacheCount = Pack.bigEndianToInt(enc, 25 + 40 + secretLen);
+        int m = LMSigParameters.lms_sha256_n32_h5.getM();
+        int componentSize = 4 + 4 + 4 + 16 + 4 + 4 + 4 + secretLen + 4 + cacheCount * m;
+        int lastQOff = 25 + componentSize + 28;
+        assertTrue("component q should be advanced", Pack.bigEndianToInt(enc, lastQOff) > 0);
+
+        byte[] qRolled = Arrays.clone(enc);
+        Pack.intToBigEndian(0, qRolled, lastQOff);
+        try
+        {
+            HSSPrivateKeyParameters.getInstance(qRolled);
+            fail("no exception on component key q rolled back");
+        }
+        catch (java.io.IOException e)
+        {
+            assertTrue(e.getMessage(), e.getMessage().startsWith("HSS private key index"));
+        }
+
+        // the untouched encoding still decodes and signs verifiably
+        HSSPrivateKeyParameters decoded = HSSPrivateKeyParameters.getInstance(enc);
+        assertEquals(5L, decoded.getIndex());
+        byte[] msg = Hex.decode("48656c6c6f");
+        assertTrue(verify(key.getPublicKey(), sign(decoded, msg), msg));
+    }
+
+    /**
+     * Encode and decode across a subtree boundary, and round-trip a shard - the compatibility half of
+     * testIndexRollbackRejected. A level above the last carries a q that has already advanced past the
+     * subtree it signed, so the identity the check applies has to account for that; walking across the
+     * boundary where the lower tree is replaced is what proves it does.
+     */
+    public void testIndexRoundTripsAcrossSubtreeBoundary()
+        throws Exception
+    {
+        HSSPrivateKeyParameters key = genHssKey();
+        HSSPublicKeyParameters pub = key.getPublicKey();
+        HSSSigner signer = new HSSSigner();
+        byte[] msg = Hex.decode("48656c6c6f");
+
+        // 2^5 = 32 signatures per tree, so 40 crosses the boundary and rebuilds the lower tree
+        for (int i = 0; i != 40; i++)
+        {
+            HSSPrivateKeyParameters decoded = HSSPrivateKeyParameters.getInstance(key.getEncoded());
+            assertEquals(key.getIndex(), decoded.getIndex());
+            assertTrue("index " + key.getIndex(), verify(pub, sign(decoded, msg), msg));
+
+            signer.init(true, key);
+            signer.generateSignature(msg);
+        }
+
+        HSSPrivateKeyParameters shard = key.extractKeyShard(4);
+        HSSPrivateKeyParameters decodedShard = HSSPrivateKeyParameters.getInstance(shard.getEncoded());
+        assertEquals(shard.getIndex(), decodedShard.getIndex());
+    }
+
     private static HSSPrivateKeyParameters genHssKey()
     {
         HSSKeyPairGenerator gen = new HSSKeyPairGenerator();

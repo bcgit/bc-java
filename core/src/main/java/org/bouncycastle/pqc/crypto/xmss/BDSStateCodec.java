@@ -13,6 +13,9 @@ import java.util.Map;
 import java.util.Stack;
 import java.util.TreeMap;
 
+import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.digests.SHA256Digest;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Integers;
 
@@ -35,6 +38,7 @@ final class BDSStateCodec
     private static final int MAX_DIGEST_SIZE = 64;
     private static final int MAX_STATE_MAP_ENTRIES = 64;
     private static final int MAX_NODES = 4096;
+    private static final int CHECKSUM_SIZE = 32;
 
     private BDSStateCodec()
     {
@@ -50,7 +54,7 @@ final class BDSStateCodec
         return hasMagic(encoding, BDS_STATE_MAP_MAGIC);
     }
 
-    static byte[] encode(BDS state)
+    static byte[] encode(BDS state, byte[] publicSeed)
         throws IOException
     {
         ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
@@ -59,10 +63,10 @@ final class BDSStateCodec
         dataOut.writeInt(STATE_VERSION);
         writeBDS(dataOut, state);
         dataOut.flush();
-        return checkedEncoding(byteOut.toByteArray());
+        return checkedEncoding(withChecksum(byteOut.toByteArray(), publicSeed));
     }
 
-    static byte[] encode(BDSStateMap stateMap)
+    static byte[] encode(BDSStateMap stateMap, byte[] publicSeed)
         throws IOException
     {
         ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
@@ -84,25 +88,27 @@ final class BDSStateCodec
             writeBDS(dataOut, states.get(layer));
         }
         dataOut.flush();
-        return checkedEncoding(byteOut.toByteArray());
+        return checkedEncoding(withChecksum(byteOut.toByteArray(), publicSeed));
     }
 
-    static BDS decodeBDS(byte[] encoding)
+    static BDS decodeBDS(byte[] encoding, byte[] publicSeed)
         throws IOException
     {
         checkEncodingSize(encoding);
-        DataInputStream dataIn = new DataInputStream(new ByteArrayInputStream(encoding));
+        DataInputStream dataIn = new DataInputStream(new ByteArrayInputStream(
+            encoding, 0, checkedBodyLength(encoding, publicSeed)));
         readHeader(dataIn, BDS_STATE_MAGIC);
         BDS state = readBDS(dataIn, new NodeBudget());
         checkFinished(dataIn);
         return state;
     }
 
-    static BDSStateMap decodeBDSStateMap(byte[] encoding)
+    static BDSStateMap decodeBDSStateMap(byte[] encoding, byte[] publicSeed)
         throws IOException
     {
         checkEncodingSize(encoding);
-        DataInputStream dataIn = new DataInputStream(new ByteArrayInputStream(encoding));
+        DataInputStream dataIn = new DataInputStream(new ByteArrayInputStream(
+            encoding, 0, checkedBodyLength(encoding, publicSeed)));
         readHeader(dataIn, BDS_STATE_MAP_MAGIC);
 
         long maxIndex = dataIn.readLong();
@@ -385,6 +391,76 @@ final class BDSStateCodec
         byte[] value = new byte[valueSize];
         dataIn.readFully(value);
         return new XMSSNode(height, value);
+    }
+
+    /**
+     * The trailing checksum over the encoded state, with the key's public seed hashed in front of it.
+     * <p>
+     * <b>This is an error-detecting code, not integrity protection.</b> Anyone able to rewrite the
+     * stored private key can recompute it, so it authenticates nothing; what it catches is accidental
+     * corruption - bit rot, a partial write, a truncated record - of the node values inside the state,
+     * which cannot be checked any other way. A BDS authentication path, stack, retain or keep node does
+     * not have its children stored beside it, so recomputing one means rebuilding a subtree, which is
+     * the work this state exists to avoid. It therefore only establishes that the state is unchanged
+     * since it was written, never that it was right when written.
+     * <p>
+     * The public seed is hashed in because the state's own root and index are inside the encoding and so
+     * are already covered: binding the seed as well ties the state to the key it belongs to, so a state
+     * transplanted between two keys of the same parameters fails here even though it is internally
+     * consistent. The seed is a public value, deliberately - hashing the secret seed or the PRF key
+     * instead would make the stored checksum a commitment to secret material for no gain in detection,
+     * and the PRF key does not influence the state at all.
+     * <p>
+     * The digest is SHA-256 whatever the parameter set's tree digest is: this is a checksum over an
+     * implementation-detail encoding, not part of any scheme.
+     *
+     * @param publicSeed the key's public seed, or null to bind nothing.
+     */
+    private static byte[] checksum(byte[] encoding, int length, byte[] publicSeed)
+    {
+        Digest digest = new SHA256Digest();
+
+        if (publicSeed != null)
+        {
+            digest.update(publicSeed, 0, publicSeed.length);
+        }
+        digest.update(encoding, 0, length);
+
+        byte[] rv = new byte[digest.getDigestSize()];
+        digest.doFinal(rv, 0);
+
+        return rv;
+    }
+
+    private static byte[] withChecksum(byte[] body, byte[] publicSeed)
+    {
+        return Arrays.concatenate(body, checksum(body, body.length, publicSeed));
+    }
+
+    /**
+     * Verify the trailing checksum and return the length of the body it covers, so the caller can read
+     * the body in place rather than copying it out.
+     */
+    private static int checkedBodyLength(byte[] encoding, byte[] publicSeed)
+        throws IOException
+    {
+        if (encoding.length < CHECKSUM_SIZE + 8)
+        {
+            throw new IOException("BDS state encoding size out of bounds");
+        }
+
+        int bodyLength = encoding.length - CHECKSUM_SIZE;
+        byte[] expected = checksum(encoding, bodyLength, publicSeed);
+
+        for (int i = 0; i != CHECKSUM_SIZE; i++)
+        {
+            if (expected[i] != encoding[bodyLength + i])
+            {
+                throw new IOException("BDS state checksum does not match");
+            }
+        }
+
+        return bodyLength;
     }
 
     private static void readHeader(DataInputStream dataIn, int expectedMagic)

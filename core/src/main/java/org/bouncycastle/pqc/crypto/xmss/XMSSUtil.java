@@ -315,23 +315,57 @@ public class XMSSUtil
      * still accepted by {@link #deserialize(byte[], Class)} for keys written by earlier releases,
      * but is no longer generated.
      */
+    /**
+     * Encode a BDS state, binding it to nothing. Prefer serialize(Object, byte[]): the encoded state
+     * carries a checksum, and passing the owning key's public seed ties the state to that key, so a
+     * state transplanted between two keys of the same parameters is detected (github #2414).
+     */
     public static byte[] serialize(Object obj)
+        throws IOException
+    {
+        return serialize(obj, null);
+    }
+
+    /**
+     * Encode a BDS state, binding its checksum to the public seed of the key it belongs to.
+     *
+     * @param obj        the BDS or BDSStateMap to encode.
+     * @param publicSeed the owning key's public seed, or null to bind nothing.
+     */
+    public static byte[] serialize(Object obj, byte[] publicSeed)
         throws IOException
     {
         if (obj instanceof BDS)
         {
-            return BDSStateCodec.encode((BDS)obj);
+            return BDSStateCodec.encode((BDS)obj, publicSeed);
         }
         if (obj instanceof BDSStateMap)
         {
-            return BDSStateCodec.encode((BDSStateMap)obj);
+            return BDSStateCodec.encode((BDSStateMap)obj, publicSeed);
         }
 
         throw new IllegalArgumentException("unsupported BDS state type: "
             + (obj != null ? obj.getClass().getName() : "null"));
     }
 
+    /**
+     * Decode a BDS state whose checksum was bound to nothing. Prefer
+     * deserialize(byte[], Class, byte[]) - see serialize(Object, byte[]).
+     */
     public static Object deserialize(byte[] data, final Class clazz)
+        throws IOException, ClassNotFoundException
+    {
+        return deserialize(data, clazz, null);
+    }
+
+    /**
+     * Decode a BDS state, checking its checksum against the public seed of the key it belongs to.
+     *
+     * @param data       the encoded state.
+     * @param clazz      BDS or BDSStateMap.
+     * @param publicSeed the owning key's public seed, or null if nothing was bound.
+     */
+    public static Object deserialize(byte[] data, final Class clazz, byte[] publicSeed)
         throws IOException, ClassNotFoundException
     {
         if (clazz == BDS.class || clazz == BDSStateMap.class)
@@ -343,7 +377,7 @@ public class XMSSUtil
                 {
                     throw new IOException("unexpected BDS state encoding");
                 }
-                return BDSStateCodec.decodeBDS(data);
+                return BDSStateCodec.decodeBDS(data, publicSeed);
             }
             if (BDSStateCodec.isBDSStateMapEncoding(data))
             {
@@ -351,7 +385,7 @@ public class XMSSUtil
                 {
                     throw new IOException("unexpected BDS state map encoding");
                 }
-                return BDSStateCodec.decodeBDSStateMap(data);
+                return BDSStateCodec.decodeBDSStateMap(data, publicSeed);
             }
         }
 

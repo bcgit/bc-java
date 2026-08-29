@@ -411,7 +411,7 @@ public class PrivateKeyInfoFactory
         BDS bds = null;
         try
         {
-            bds = (BDS)XMSSUtil.deserialize(bdsStateBinary, BDS.class);
+            bds = (BDS)XMSSUtil.deserialize(bdsStateBinary, BDS.class, publicSeed);
         }
         catch (ClassNotFoundException e)
         {
@@ -461,7 +461,7 @@ public class PrivateKeyInfoFactory
         BDSStateMap bds = null;
         try
         {
-            bds = (BDSStateMap)XMSSUtil.deserialize(bdsStateBinary, BDSStateMap.class);
+            bds = (BDSStateMap)XMSSUtil.deserialize(bdsStateBinary, BDSStateMap.class, publicSeed);
         }
         catch (ClassNotFoundException e)
         {

@@ -103,6 +103,46 @@ public class HSSPrivateKeyParameters
         return pKey;
     }
 
+    /**
+     * The HSS index and the component keys' one-time indices are two records of the same position in
+     * the key, and a decoded key whose records disagree is refused. RFC 8554 sec. 1 requires each
+     * one-time key to be used once; a stored key whose index has been rolled back while its
+     * component keys stayed advanced - a partial write, a restore from backup, a buggy storage layer
+     * - would otherwise sign a second message under a one-time key already used, and that signature
+     * would verify, so nothing would surface it. The check is the identity the two records satisfy:
+     * a level below the last contributes (q - 1) leaves of the levels beneath it, because its q has
+     * already advanced past the subtree it signed, and the last level contributes its q directly.
+     * Verified against every index of a two-level key and across a level boundary of a three-level
+     * one (github #2414).
+     * <p>
+     * Applied at decode only. The constructor is also reached from the hierarchy update, which
+     * rebuilds lower levels and is momentarily inconsistent by design; corrupt stored state can only
+     * arrive here.
+     */
+    private static void checkIndexAgainstKeys(int d, List keys, long index)
+        throws IOException
+    {
+        long implied = ((LMSPrivateKeyParameters)keys.get(d - 1)).getIndex();
+        int shift = 0;
+
+        for (int i = d - 2; i >= 0; i--)
+        {
+            shift += ((LMSPrivateKeyParameters)keys.get(i + 1)).getSigParameters().getH();
+            if (shift >= 63)
+            {
+                // taller than the 64-bit index can address, so the two records cannot be compared
+                return;
+            }
+            implied += (((long)((LMSPrivateKeyParameters)keys.get(i)).getIndex()) - 1L) << shift;
+        }
+
+        if (implied != index)
+        {
+            throw new IOException("HSS private key index " + index
+                + " does not match the component key indices, which imply " + implied);
+        }
+    }
+
     public static HSSPrivateKeyParameters getInstance(Object src)
         throws IOException
     {
@@ -148,6 +188,8 @@ public class HSSPrivateKeyParameters
             {
                 signatures.add(LMSSignature.getInstance(src));
             }
+
+            checkIndexAgainstKeys(d, keys, index);
 
             return new HSSPrivateKeyParameters(d, keys, signatures, index, maxIndex, limited);
         }

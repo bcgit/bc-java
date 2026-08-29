@@ -14,6 +14,8 @@ import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.util.Strings;
+import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
 import org.bouncycastle.pqc.asn1.XMSSMTPrivateKey;
@@ -110,6 +112,110 @@ public class XMSSStateEncodingTest
         assertXmssMtSigns(recovered, kp);
     }
 
+    /**
+     * Recompute the trailing checksum of the BDS state inside an XMSS private key encoding, after the
+     * body has been altered. SHA-256 over the key's public seed followed by the state body, per
+     * BDSStateCodec.
+     */
+    /**
+     * The encoded BDS state carries a checksum over itself, bound to the owning key's public seed, and a
+     * key whose state does not match it is refused. The node values inside a BDS state cannot be checked
+     * any other way - a path, stack, retain or keep node does not have its children stored beside it, so
+     * recomputing one means rebuilding a subtree, which is the work the state exists to avoid - so before
+     * this a corrupted state was accepted and then produced signatures that silently did not verify.
+     * <p>
+     * Note what this is and is not: an error-detecting code against bit rot, partial writes and truncated
+     * records, not integrity protection. Anyone able to rewrite the stored key recomputes it (github #2414).
+     */
+    public void testStateChecksumRejectsCorruption()
+        throws Exception
+    {
+        XMSSParameters params = new XMSSParameters(4, new SHA256Digest());
+        int n = params.getTreeDigestSize();
+        AsymmetricCipherKeyPair kp = generateXmssKeyPair(params);
+        byte[] encoding = ((XMSSPrivateKeyParameters)kp.getPrivate()).getEncoded();
+        int stateOffset = 4 + 4 * n;
+
+        //
+        // Every single-byte corruption of the state is caught. Past the 8-byte magic and version it is
+        // the checksum that catches it - which is the whole state body and the checksum itself. A
+        // corruption inside the magic is not recognised as a codec encoding at all and falls through to
+        // the legacy Java-serialization reader, which rejects it for its own reasons.
+        //
+        for (int i = stateOffset + 8; i != encoding.length; i++)
+        {
+            byte[] corrupt = Arrays.clone(encoding);
+            corrupt[i] ^= 0x01;
+            try
+            {
+                new XMSSPrivateKeyParameters.Builder(params).withPrivateKey(corrupt).build();
+                fail("no exception on corrupt state byte " + i);
+            }
+            catch (IllegalArgumentException e)
+            {
+                assertEquals("byte " + i, "BDS state checksum does not match", e.getMessage());
+            }
+        }
+
+        for (int i = stateOffset; i != stateOffset + 8; i++)
+        {
+            byte[] corrupt = Arrays.clone(encoding);
+            corrupt[i] ^= 0x01;
+            try
+            {
+                new XMSSPrivateKeyParameters.Builder(params).withPrivateKey(corrupt).build();
+                fail("no exception on corrupt state header byte " + i);
+            }
+            catch (IllegalArgumentException e)
+            {
+                // rejected, by the magic/version check or by the legacy reader it falls through to
+            }
+        }
+
+        // a state transplanted from another key of the same parameters is caught by the seed binding,
+        // even though it is internally consistent and brings its own matching root
+        byte[] other = ((XMSSPrivateKeyParameters)generateXmssKeyPair(params).getPrivate()).getEncoded();
+        assertEquals(encoding.length, other.length);
+        byte[] transplant = Arrays.clone(encoding);
+        System.arraycopy(other, 4 + 3 * n, transplant, 4 + 3 * n, other.length - (4 + 3 * n));
+        try
+        {
+            new XMSSPrivateKeyParameters.Builder(params).withPrivateKey(transplant).build();
+            fail("state from a different key accepted");
+        }
+        catch (IllegalArgumentException e)
+        {
+            assertEquals("BDS state checksum does not match", e.getMessage());
+        }
+
+        // and the untouched encoding still decodes and signs verifiably
+        XMSSPrivateKeyParameters decoded =
+            new XMSSPrivateKeyParameters.Builder(params).withPrivateKey(encoding).build();
+        XMSSSigner signer = new XMSSSigner();
+        signer.init(true, decoded);
+        byte[] sig = signer.generateSignature(Strings.toByteArray("message"));
+        XMSSSigner verifier = new XMSSSigner();
+        verifier.init(false, kp.getPublic());
+        assertTrue(verifier.verifySignature(Strings.toByteArray("message"), sig));
+    }
+
+    private static void refreshStateChecksum(byte[] encoding, XMSSParameters params)
+    {
+        int n = params.getTreeDigestSize();
+        int publicSeedOffset = 4 + 2 * n;
+        int stateOffset = 4 + 4 * n;
+        int bodyEnd = encoding.length - 32;
+
+        Digest digest = new SHA256Digest();
+        digest.update(encoding, publicSeedOffset, n);
+        digest.update(encoding, stateOffset, bodyEnd - stateOffset);
+
+        byte[] sum = new byte[digest.getDigestSize()];
+        digest.doFinal(sum, 0);
+
+        System.arraycopy(sum, 0, encoding, bodyEnd, sum.length);
+    }
+
     public void testStateCollectionCountIsBoundedBeforeAllocation()
         throws Exception
     {
@@ -120,6 +226,13 @@ public class XMSSStateEncodingTest
         int authenticationPathCountOffset = stateOffset + 8 + 4 * 4 + 1 + 1 + 4 + 4
             + params.getTreeDigestSize();
         Pack.intToBigEndian(params.getHeight() + 1, encoding, authenticationPathCountOffset);
+        //
+        // The encoded state carries a checksum, which is verified before anything is parsed - so a
+        // crafted encoding has to carry a valid one to reach the allocation bounds at all. That is the
+        // real shape of the case these bounds guard against: the checksum detects corruption, it is not
+        // authentication, so anyone crafting an encoding simply recomputes it (github #2414).
+        //
+        refreshStateChecksum(encoding, params);
 
         try
         {

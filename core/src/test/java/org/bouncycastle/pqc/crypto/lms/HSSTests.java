@@ -986,5 +986,46 @@ public class HSSTests
     }
 
 
+
+    /**
+     * The deprecated copy carries the same index / component-index binding as
+     * org.bouncycastle.crypto.params.HSSTests.testIndexRollbackRejected, which has the detail
+     * (github #2414).
+     */
+    public void testIndexRollbackRejected()
+        throws Exception
+    {
+        HSSKeyPairGenerator gen = new HSSKeyPairGenerator();
+        gen.init(new HSSKeyGenerationParameters(new LMSParameters[]{
+            new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w1),
+            new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w1) },
+            new SecureRandom()));
+        HSSPrivateKeyParameters key = (HSSPrivateKeyParameters)gen.generateKeyPair().getPrivate();
+
+        HSSSigner signer = new HSSSigner();
+        signer.init(true, key);
+        for (int i = 0; i != 5; i++)
+        {
+            signer.generateSignature(Hex.decode("48656c6c6f"));
+        }
+
+        byte[] enc = key.getEncoded();
+        assertEquals(5L, Pack.bigEndianToLong(enc, 8));
+
+        byte[] rolled = Arrays.clone(enc);
+        Pack.longToBigEndian(0L, rolled, 8);
+        try
+        {
+            HSSPrivateKeyParameters.getInstance(rolled);
+            fail("no exception on rolled back index");
+        }
+        catch (java.io.IOException e)
+        {
+            assertTrue(e.getMessage(), e.getMessage().startsWith("HSS private key index 0"));
+        }
+
+        assertEquals(5L, HSSPrivateKeyParameters.getInstance(enc).getIndex());
+    }
+
 }
 

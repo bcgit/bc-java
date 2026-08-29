@@ -15,7 +15,7 @@ releases but not an interchange format defined by any standard.
 XMSS is stateful: the private key advances with every signature, and the caller must persist
 the updated key each time. All of the encodings below capture a key *at a particular index*,
 and their length is not constant — the traversal state grows and shrinks as the tree walk
-proceeds (the example key below is 1106 raw bytes at index 0 and 1150 at index 1).
+proceeds (the example key below is 1138 raw bytes at index 0 and 1182 at index 1).
 
 ## Raw key: `XMSSPrivateKeyParameters.getEncoded()`
 
@@ -75,12 +75,27 @@ u32   treeHashCount      exactly treeHeight - k
 u32   keepCount          at most treeHeight entries, heights strictly increasing
         u32  height          0 .. treeHeight - 2
         node node
+byte  checksum[32]       SHA-256 over the owning key's publicSeed followed by every byte
+                         of this state above; see below
 ```
 
-Decoding is defensive: the whole state is capped at 4 MiB, the total node count at 4096, node
-values at 64 bytes, every count is validated against the bounds above before allocation, and
-trailing data after the `keep` map is rejected. After decoding, the state is cross-checked
-against the key's XMSS parameters (heights, `k`, digest size) before the key can be used.
+Decoding is defensive: the trailing checksum is verified before anything else is parsed, the
+whole state is capped at 4 MiB, the total node count at 4096, node values at 64 bytes, every
+count is validated against the bounds above before allocation, and trailing data after the
+`keep` map is rejected. After decoding, the state is cross-checked against the key's XMSS
+parameters (heights, `k`, digest size), its `index` against the enclosing key's, and its
+`root` against the enclosing key's `root` field, before the key can be used.
+
+The checksum exists because a BDS node value cannot be verified any other way: an
+authentication path, stack, retain or keep node does not have its children stored beside it, so
+recomputing one means rebuilding a subtree — the work this state exists to avoid. The owning
+key's `publicSeed` is hashed in front of the state so that a state transplanted between two
+keys of the same parameter set fails the check even though it is internally consistent. **It is
+an error-detecting code, not integrity protection**: anyone able to rewrite the stored key
+recomputes it, so it establishes only that the state is unchanged since it was written, never
+that it was correct when written — which is why the allocation bounds above still matter. Note
+it is SHA-256 whatever the parameter set's tree digest is; this is a checksum over a BC
+encoding, not part of any scheme.
 
 An XMSS^MT private key stores a map of BDS states, one per populated layer, under its own
 header: magic `0x42444d00` ("BDM\0"), `u32` version 1, `u64` maxIndex, `u32` state count, then
@@ -130,11 +145,11 @@ obviously non-secret seed material so the example is reproducible: the generator
 byte sequences `000102...1f`, `202122...3f` and `404142...5f`. **This is a published example —
 never use this key.**
 
-The complete fresh PKCS#8 encoding is 1137 bytes (the raw key is 1106: the 132-byte fixed
-portion plus a 974-byte BDS state):
+The complete fresh PKCS#8 encoding is 1169 bytes (the raw key is 1138: the 132-byte fixed
+portion plus a 1006-byte BDS state):
 
 ```
-3082046d020100300a06082b060105050706220482045a0482045600000001000000000001020304
+3082048d020100300a06082b060105050706220482047a0482047600000001000000000001020304
 05060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f202122232425262728292a2b2c
 2d2e2f303132333435363738393a3b3c3d3e3f404142434445464748494a4b4c4d4e4f5051525354
 55565758595a5b5c5d5e5f85055d10d75c7d9f50d5d90dd43827a90fbcf397b76d3877ba85bfbde1
@@ -162,18 +177,19 @@ efa4e4000000020000000200000000000101000000020000002097988034c44f4964156ce4fc7ddb
 2d47780643bd1c908925e4f7104ea1f6195f0d1a3a465f0000000600000006000000000001010000
 0006000000201b20cd7e03af01c8c3c02541b0a987021031e3c5104c5077fd3bc8f4a097462d0000
 000700000007000000000001010000000700000020f0be26c249b7362ec7b7445c2740c32610f97b
-ff061f424a7e55168fe8ce5b5000000000
+ff061f424a7e55168fe8ce5b5000000000c81fa7f8cd65e71c31cc33e6ef65708f1648986d7b6d04
+ce8d700db77e493173
 ```
 
 The outer layers:
 
 ```
-3082046d                            SEQUENCE, 1133 bytes (PrivateKeyInfo)
+3082048d                            SEQUENCE, 1165 bytes (PrivateKeyInfo)
   020100                            INTEGER 0 (v1 - no public key attached)
   300a06082b06010505070622          AlgorithmIdentifier 1.3.6.1.5.5.7.6.34, absent parameters
-  0482045a 04820456                 OCTET STRING within OCTET STRING, 1110 bytes:
+  0482047a 04820476                 OCTET STRING within OCTET STRING, 1142 bytes:
     00000001                        parameter set XMSS-SHA2_10_256
-    <1106 bytes>                    the raw key
+    <1138 bytes>                    the raw key
 ```
 
 The raw key:
@@ -185,7 +201,7 @@ The raw key:
 404142...5f                         publicSeed    (32 bytes)
 85055d10d75c7d9f50d5d90dd43827a9
 0fbcf397b76d3877ba85bfbde1ba9cc4    root
-<974 bytes>                         binary BDS state
+<1006 bytes>                        binary BDS state
 ```
 
 And the head of the BDS state, offset 132 of the raw key:
@@ -206,9 +222,9 @@ And the head of the BDS state, offset 132 of the raw key:
 
 The remainder of this particular state holds one retained node at height 8, an empty stack,
 eight treeHash instances (heights 0..7, each finished with a tail node), and an empty keep
-map — 974 bytes in all, in the layout given above. After one signature the raw key differs
-first at byte offset 3 (`index` becomes 1) and re-encodes at 1150 bytes, the state having
-grown by the nodes the traversal now keeps in flight.
+map, and the trailing checksum — 1006 bytes in all, in the layout given above. After one
+signature the raw key differs first at byte offset 3 (`index` becomes 1) and re-encodes at
+1182 bytes, the state having grown by the nodes the traversal now keeps in flight.
 
 The corresponding RFC 9802-style public key body (`parameter set || root || publicSeed`):
 

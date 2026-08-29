@@ -13,6 +13,7 @@ import java.util.Stack;
 import java.util.TreeMap;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.util.Arrays;
 
 /**
  * BDS.
@@ -596,6 +597,31 @@ public final class BDS
                 throw new IllegalStateException("keep height in BDS state out of bounds");
             }
             validateRequiredNode(keep.get(height), digestSize, height.intValue(), height.intValue());
+        }
+    }
+
+    /**
+     * Confirm the root this state carries is the one the enclosing private key declares. The two are
+     * independent copies of the same value in one encoding and always agree on a genuine key, so a
+     * disagreement means the stored key has been corrupted. Left unchecked, a corrupted root is
+     * accepted and then poisons every signature the key makes - the root is hashed into the message
+     * digest, so the signature simply does not verify, with nothing to say why (github #2414).
+     * <p>
+     * A null root on either side is not compared: BDS.validate tolerates an absent root node, and a
+     * key built without one carries zeros.
+     *
+     * @param expectedRoot the root the private key declares.
+     */
+    void validateRoot(byte[] expectedRoot)
+    {
+        if (root == null || expectedRoot == null)
+        {
+            return;
+        }
+
+        if (!Arrays.areEqual(root.getValue(), expectedRoot))
+        {
+            throw new IllegalStateException("BDS state root does not match the private key root");
         }
     }
 

@@ -117,6 +117,12 @@ JAVA_HOME=/opt/jdk1.4.2 ant -f ant/jdk14.xml test-signed   # NOT "test" — see 
   `/opt/jdk1.4.2/bin/java -Xmx1536m -cp <jars> <test class>` (SimpleTests print
   `<Name>: Okay`); the full pipeline is ~25 minutes, this loop is ~2.
 
+Worth knowing before chasing a legacy-build risk: **LMS/HSS and XMSS/XMSS^MT are both excluded
+from this build** (`**/lms/**`, `**/xmss/**` plus the individual `crypto/params/LMS*` and
+`crypto/signers/LMS*` excludes in `ant/jdk14.xml`), and so from jdk1.3, so changes confined to
+those packages cannot break either. `PrivateKeyFactory` / `PrivateKeyInfoFactory` do have
+jdk1.1 and jdk1.4 overlays, but neither overlay references XMSS or the BDS state.
+
 Tests that genuinely cannot run on 1.4 (post-1.4 JCA APIs, algorithms excluded from the
 distribution) get an `ant/jdk14.xml` exclude — but check the suite wiring first: a
 `TestCase` referenced from a compiled `AllTests` needs either a jdk1.4 `AllTests` overlay

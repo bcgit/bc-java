@@ -156,6 +156,82 @@ Two details that are easy to get wrong when adding the translation:
   path the digest's `doFinal` has usually reset it already, so the `finally` is a no-op there —
   which is fine, and far safer than one `reset()` per exit that the next branch will forget.
 
+## Stateful hash-based private keys: the position is stored twice, so cross-check it
+
+An LMS/HSS or XMSS/XMSS^MT private key records where it has got to in **two** independent places,
+and until github #2414 nothing compared them:
+
+- HSS: the top-level `index`, and each component key's one-time index `q`.
+- XMSS^MT: the global `index`, and the per-layer BDS traversal states.
+- XMSS: the `index` field and the BDS state's own index (this one was already checked, which is
+  what made the omission in the other two visible).
+
+Two records of one value that are never compared is the shape to look for, and it recurs: the same
+key also stores the tree `root` twice (its own field and the BDS state's root node), also
+uncompared. The consequence is the worst one a stateful scheme has: a stored key whose index was
+rolled back while its state stayed advanced signs a second message under a one-time key it has
+already used, **and that signature verifies**, so nothing surfaces it. RFC 8554 sec. 1 and RFC 8391
+sec. 1.1 both exist to prevent exactly that. Bit rot, a partial write and a restore-from-backup are
+all ordinary non-adversarial ways to get there, so "an attacker who can rewrite the key already has
+the seed" is not a reason to skip the check.
+
+**Derive the invariant by enumeration, not by reading the code.** These relationships have
+boundary cases that reasoning misses and that a wrong check turns into false rejections of
+legitimate keys - worse than the bug. Walk a small key across its whole index space and print both
+records at every step:
+
+- HSS came out exact, no exception: `index == sum over levels i<d-1 of (q_i - 1) * 2^(heights below i) + q_last`
+  (a level above the last has already advanced past the subtree it signed, hence the `- 1`).
+- XMSS^MT needed one allowance: when a layer's expected leaf index is 0 its state legitimately
+  still holds the previous subtree's final index (`2^h - 1`), because `updateState` skips the
+  advance on a subtree's last leaf and the signer rebuilds the state when it next signs there.
+  Absent layers are skipped - they are built lazily.
+
+So **every such test needs a compatibility half, and it matters more than the rejection half**:
+walk every index a key can reach, encode/decode at each, and assert the decoded key still signs
+verifiably. 912 XMSS^MT indices across five parameter sets and 2124 HSS indices, plus a shard,
+is what made the allowances above trustworthy.
+
+### What "validated" can mean differs by scheme - say which you have
+
+The LMS tree cache and the XMSS BDS state look like the same problem and are not:
+
+- **LMS**: every cached node's children are also cached, so the interior nodes can be *recomputed*
+  from them - 31 hashes, ~20us, independent of `h`. That is a **semantic** check: it establishes
+  the nodes are the *right* nodes.
+- **XMSS**: a BDS authentication path, stack, retain or keep node does **not** have its children
+  stored beside it, so recomputing one means rebuilding a subtree - the work the state exists to
+  avoid. The state therefore carries a **checksum** instead (SHA-256 over the owning key's
+  `publicSeed` followed by the state). That is only an **error-detecting code**: unchanged since
+  written, never right when written. Anyone able to rewrite the key recomputes it, so it
+  authenticates nothing and the allocation bounds on the encoding still carry the DoS load.
+
+Bind the *public* seed, not the secret one: the state's own root and index are inside the encoding
+and so already covered, hashing secret material would make the stored checksum a commitment to it
+for no gain in detection, and `secretKeyPRF` does not influence the state at all (corrupting it
+yields a different but still valid signature, since `r` travels in the signature).
+
+Two traps that came with it:
+
+- **A checksum verified before parsing changes which error a crafted encoding hits.** Verify-first
+  is right - it rejects before any allocation - but it makes the specific bound messages
+  unreachable for hand-crafted input, so a test asserting `"BDS authentication path size out of
+  bounds"` has to recompute the checksum after patching. That is also the honest threat shape.
+- **`docs/formats/{lms,xmss}-private-key.md` document these encodings byte by byte, with worked
+  hex examples generated from fixed seeds.** A format change means regenerating them - reproduce
+  the example, confirm a known value (the root) still matches so you know the reproduction is
+  exact, then update the hex and every byte count. The XMSS checksum moved four sizes and the
+  whole dump.
+
+## A compatibility retry must not report its own exception
+
+`HSSPrivateKeyParameters.getInstance(byte[])` retries a failed parse as a pre-HSS single LMS key,
+and reported *that* retry's failure. So every new field check on the HSS path surfaced as
+`"expected version 0 lms private key"` - the checks looked absent through the byte-array entry
+point, which is the one the JCA uses. Keep the original exception and throw it when the retry
+fails too; the fallback is for encodings that predate the format, not a reason to lose the reason.
+Whenever a decoder has a `catch` that tries a second interpretation, check which exception escapes.
+
 ## `Signature.setParameter()` takes the context on either side of init
 
 `engineSetParameter` is declared `throws InvalidAlgorithmParameterException`, so it must not let an
