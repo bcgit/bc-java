@@ -9,6 +9,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.io.Streams;
 
 import static org.bouncycastle.pqc.crypto.lms.HSS.rangeTestKeys;
@@ -81,7 +82,23 @@ public class HSSPrivateKeyParameters
     {
         HSSPrivateKeyParameters pKey = getInstance(privEnc);
 
-        pKey.publicKey = HSSPublicKeyParameters.getInstance(pubEnc);
+        HSSPublicKeyParameters pubKey = HSSPublicKeyParameters.getInstance(pubEnc);
+
+        // The public key that arrived alongside the private one is authoritative, so where the root
+        // tree already carries its root node in the cache it costs nothing to confirm the two agree.
+        // That catches a tree cache which is internally consistent but belongs to a different key -
+        // the one corruption the node-by-node check in LMSPrivateKeyParameters cannot see. It is
+        // deliberately skipped when the root is not cached: recomputing it there means rebuilding the
+        // whole tree, which is the work the cache exists to avoid (github #2414).
+        byte[] cachedRoot = pKey.getRootKey().peekRootT();
+
+        if (cachedRoot != null && !org.bouncycastle.util.Arrays.areEqual(
+                cachedRoot, pubKey.getLMSPublicKey().getT1()))
+        {
+            throw new IOException("HSS private key tree cache does not match the public key");
+        }
+
+        pKey.publicKey = pubKey;
 
         return pKey;
     }
@@ -101,8 +118,17 @@ public class HSSPrivateKeyParameters
                 throw new IllegalStateException("unknown version for hss private key");
             }
             int d = ((DataInputStream)src).readInt();
+            if (d < 1 || d > 8)    // RFC 8554, Section 6.
+            {
+                throw new IOException("d value of HSS private key out of range: " + d);
+            }
             long index = ((DataInputStream)src).readLong();
             long maxIndex = ((DataInputStream)src).readLong();
+            if (index < 0 || maxIndex < 0 || index > maxIndex)
+            {
+                throw new IOException(
+                    "HSS private key index out of range: index=" + index + " maxIndex=" + maxIndex);
+            }
             boolean limited = ((DataInputStream)src).readBoolean();
 
             ArrayList<LMSPrivateKeyParameters> keys = new ArrayList<LMSPrivateKeyParameters>();
@@ -131,15 +157,40 @@ public class HSSPrivateKeyParameters
             try // 1.5 / 1.6 compatibility
             {
                 in = new DataInputStream(new ByteArrayInputStream((byte[])src));
+                Exception hssFailure;
+
                 try
                 {
                     return getInstance(in);
                 }
                 catch (Exception e)
                 {
+                    hssFailure = e;
+                }
+
+                try
+                {
                     // old style single LMS key.
                     LMSPrivateKeyParameters lmsKey = LMSPrivateKeyParameters.getInstance(src);
                     return new HSSPrivateKeyParameters(lmsKey, lmsKey.getIndex(), lmsKey.getIndexLimit());
+                }
+                catch (Exception e)
+                {
+                    //
+                    // Neither shape parsed. The retry as a single LMS key is a compatibility path for
+                    // encodings that predate HSS, so when it fails too the HSS failure is the one worth
+                    // reporting - it is what the field checks raise - rather than the retry complaining
+                    // about a version field it was never going to match (github #2414).
+                    //
+                    if (hssFailure instanceof RuntimeException)
+                    {
+                        throw (RuntimeException)hssFailure;
+                    }
+                    if (hssFailure instanceof IOException)
+                    {
+                        throw (IOException)hssFailure;
+                    }
+                    throw Exceptions.ioException(hssFailure.getMessage(), hssFailure);
                 }
             }
             finally

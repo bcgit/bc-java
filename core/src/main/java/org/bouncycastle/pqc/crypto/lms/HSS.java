@@ -105,7 +105,9 @@ class HSS
             int L = keyPair.getL();
             int d = L;
             List<LMSPrivateKeyParameters> prv = keyPair.getKeys();
-            while (prv.get(d - 1).getIndex() == 1 << (prv.get(d - 1).getSigParameters().getH()))
+            // >= rather than ==: an index above 2^h steps straight over an equality test
+            // (github #2414). Decode now rejects such a q, so this is belt and braces.
+            while (prv.get(d - 1).getIndex() >= 1 << (prv.get(d - 1).getSigParameters().getH()))
             {
                 d = d - 1;
                 if (d == 0)

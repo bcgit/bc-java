@@ -201,6 +201,17 @@ public class LMSPrivateKeyParameters
 
         int q = dIn.readInt();
         int maxQ = dIn.readInt();
+        // q selects the LM-OTS leaf and maxQ bounds it, so a stored value outside the tree is not
+        // a harmless oddity: the key signs with a one-time key the public key does not commit to,
+        // and the signature simply does not verify (github #2414). RFC 8554 sec. 5.3 has
+        // 0 <= q < 2^h; maxQ is 2^h for a whole key and lower for a shard (extractKeyShard), and
+        // q == maxQ is the legitimate exhausted state.
+        int twoToH = 1 << parameter.getH();
+        if (q < 0 || maxQ < 0 || maxQ > twoToH || q > maxQ)
+        {
+            throw new IOException(
+                "LMS private key q/maxQ out of range: q=" + q + " maxQ=" + maxQ + " 2^h=" + twoToH);
+        }
         int l = dIn.readInt();
         if (l < 0)
         {
@@ -235,7 +246,44 @@ public class LMSPrivateKeyParameters
             cachedT[r] = new byte[m];
             dIn.readFully(cachedT[r]);
         }
+        validateTreeCache(key, cachedT, cacheCount);
         key.primeTreeCache(cachedT);
+    }
+
+    /**
+     * Check the cached nodes are consistent with one another before they are trusted. Every node is
+     * a deterministic function of I, the master secret and the parameters, so a corrupt cache is
+     * detectable without rebuilding the tree: each cached interior node must be the hash of its two
+     * children, and for every node up to cacheCount / 2 both children are themselves cached. A
+     * single altered node therefore always fails its own parent's recomputation - including node 1,
+     * the root, whose children 2 and 3 are cached (github #2414).
+     * <p>
+     * Only interior nodes are recomputed. A cached node at or beyond 2^h is a leaf, and deriving one
+     * costs an LM-OTS public key - which is the work the cache exists to avoid; a corrupt leaf is
+     * still caught, by its cached parent.
+     */
+    private static void validateTreeCache(LMSPrivateKeyParameters key, byte[][] cachedT, int cacheCount)
+        throws IOException
+    {
+        int twoToH = 1 << key.getSigParameters().getH();
+        Digest H = DigestUtil.getDigest(key.getSigParameters());
+
+        for (int r = 1; r < twoToH && 2 * r + 1 <= cacheCount; r++)
+        {
+            LmsUtils.byteArray(key.getI(), H);
+            LmsUtils.u32str(r, H);
+            LmsUtils.u16str(LMS.D_INTR, H);
+            LmsUtils.byteArray(cachedT[2 * r], H);
+            LmsUtils.byteArray(cachedT[2 * r + 1], H);
+
+            byte[] node = new byte[H.getDigestSize()];
+            H.doFinal(node, 0);
+
+            if (!Arrays.areEqual(node, cachedT[r]))
+            {
+                throw new IOException("LMS private key tree cache inconsistent at node " + r);
+            }
+        }
     }
 
     LMOtsPrivateKey getCurrentOTSKey()
@@ -489,6 +537,19 @@ public class LMSPrivateKeyParameters
      * a version 0 encoding (see getEncoded). Used by the regression tests that verify tree-cache
      * persistence.
      */
+    /**
+     * The root node if it is already in the cache, otherwise null. Unlike getPublicKey() this never
+     * computes it, so a caller can cross-check the root against an authoritative public key without
+     * paying for a tree rebuild when there is nothing cached (github #2414).
+     */
+    byte[] peekRootT()
+    {
+        synchronized (tCache)
+        {
+            return (byte[])tCache.get(T1);
+        }
+    }
+
     boolean isTreeCachePrimed()
     {
         synchronized (tCache)

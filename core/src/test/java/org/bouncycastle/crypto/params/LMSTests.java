@@ -201,19 +201,14 @@ public class LMSTests
         byte[] sampleEnc = ((LMSPrivateKeyParameters)limitGen.generateKeyPair().getPrivate()).getEncoded();
         int cacheCountLimit = Pack.bigEndianToInt(sampleEnc, 40 + m);
 
-        byte[] atLimit = LMSVectorUtils.compose()
-            .u32str(0)
-            .u32str(sigParams.getType())
-            .u32str(otsParams.getType())
-            .bytes(I)
-            .u32str(0)
-            .u32str(1 << sigParams.getH())
-            .u32str(seed.length)
-            .bytes(seed)
-            .u32str(cacheCountLimit)
-            .bytes(new byte[cacheCountLimit * m])
-            .build();
-        assertTrue(LMSPrivateKeyParameters.getInstance(atLimit).isTreeCachePrimed());
+        //
+        // A cache at the limit is accepted. The node values have to be the real ones: they are a
+        // deterministic function of I, the master secret and the parameters, and are now checked
+        // against each other at decode (github #2414), so the sample key's own encoding is used
+        // rather than a run of dummy bytes.
+        //
+        assertEquals(cacheCountLimit, Pack.bigEndianToInt(sampleEnc, 40 + m));
+        assertTrue(LMSPrivateKeyParameters.getInstance(sampleEnc).isTreeCachePrimed());
 
         byte[] beyondLimit = LMSVectorUtils.compose()
             .u32str(0)
@@ -257,6 +252,145 @@ public class LMSTests
         {
             assertTrue(e.getMessage().startsWith("tree cache length exceeded"));
         }
+
+        //
+        // A cache whose count and length are both in range but whose node values are not the ones
+        // the key derives is refused rather than primed into the tree. Every cached node has its
+        // parent recomputed from it, so a single altered byte anywhere in the cache is caught -
+        // swept over the whole cache below in testTreeCacheCorruptionRejected.
+        //
+        byte[] zeroed = LMSVectorUtils.compose()
+            .u32str(0)
+            .u32str(sigParams.getType())
+            .u32str(otsParams.getType())
+            .bytes(I)
+            .u32str(0)
+            .u32str(1 << sigParams.getH())
+            .u32str(seed.length)
+            .bytes(seed)
+            .u32str(cacheCountLimit)
+            .bytes(new byte[cacheCountLimit * m])
+            .build();
+        try
+        {
+            LMSPrivateKeyParameters.getInstance(zeroed);
+            fail("no exception on a tree cache that does not match the key");
+        }
+        catch (IOException e)
+        {
+            assertTrue(e.getMessage().startsWith("LMS private key tree cache inconsistent at node"));
+        }
+    }
+
+    /**
+     * Every single-byte corruption of the tree cache is rejected at decode. Before github #2414 the
+     * cached node values were read but never checked, so a corrupt cache was primed into the tree:
+     * altering the root changed the public key the key reported (and survived a re-encode), and
+     * altering other nodes produced signatures that did not verify - both silently.
+     */
+    public void testTreeCacheCorruptionRejected()
+        throws Exception
+    {
+        LMSigParameters sigParams = LMSigParameters.lms_sha256_n32_h5;
+        LMOtsParameters otsParams = LMOtsParameters.sha256_n32_w1;
+        int m = sigParams.getM();
+
+        LMSKeyPairGenerator gen = new LMSKeyPairGenerator();
+        gen.init(new LMSKeyGenerationParameters(new LMSParameters(sigParams, otsParams), new SecureRandom()));
+        LMSPrivateKeyParameters priv = (LMSPrivateKeyParameters)gen.generateKeyPair().getPrivate();
+        byte[] enc = priv.getEncoded();
+
+        int countOff = 40 + Pack.bigEndianToInt(enc, 36);
+        int cacheCount = Pack.bigEndianToInt(enc, countOff);
+        int cacheOff = countOff + 4;
+        assertTrue("expected a primed cache to corrupt", cacheCount > 0);
+
+        for (int r = 1; r <= cacheCount; r++)
+        {
+            for (int b = 0; b < m; b++)
+            {
+                byte[] corrupt = Arrays.clone(enc);
+                corrupt[cacheOff + (r - 1) * m + b] ^= 0x01;
+                try
+                {
+                    LMSPrivateKeyParameters.getInstance(corrupt);
+                    fail("no exception on corrupt cache node " + r + " byte " + b);
+                }
+                catch (IOException e)
+                {
+                    assertTrue(e.getMessage().startsWith("LMS private key tree cache inconsistent at node"));
+                }
+            }
+        }
+
+        // the untouched encoding still decodes, primes and signs verifiably
+        LMSPrivateKeyParameters decoded = LMSPrivateKeyParameters.getInstance(enc);
+        assertTrue(decoded.isTreeCachePrimed());
+        byte[] msg = Hex.decode("48656c6c6f");
+        assertTrue(verify(priv.getPublicKey(), sign(decoded, msg), msg));
+    }
+
+    /**
+     * The one-time index q and its limit maxQ are range checked at decode. Before github #2414 they
+     * were read with no check at all: q past the tree size gave a key that signed with an LM-OTS
+     * leaf outside its own tree - the signature did not verify - and a negative q threw
+     * NullPointerException / ArrayIndexOutOfBoundsException out of the signing call instead.
+     */
+    public void testPrivateKeyIndexRangeChecked()
+        throws Exception
+    {
+        LMSigParameters sigParams = LMSigParameters.lms_sha256_n32_h5;
+        LMOtsParameters otsParams = LMOtsParameters.sha256_n32_w1;
+        byte[] I = Hex.decode("d08fabd4a2091ff0a8cb4ed834e74534");
+        byte[] seed = Hex.decode("558b8966c48ae9cb898b423c83443aae014a72f1b1ab5cc85cf1d892903b5439");
+        int twoToH = 1 << sigParams.getH();
+
+        // q, maxQ pairs that must be refused
+        int[][] bad = {
+            { twoToH + 1, 1000 },           // q past the tree, maxQ raised past it
+            { -1, twoToH },                 // negative q
+            { Integer.MIN_VALUE, twoToH },  // negative q, wrapping
+            { 0, twoToH + 1 },              // maxQ past the tree
+            { 0, -1 },                      // negative maxQ
+            { 4, 3 },                       // q past its own limit
+        };
+        for (int i = 0; i != bad.length; i++)
+        {
+            byte[] enc = coreKey(sigParams, otsParams, I, seed, bad[i][0], bad[i][1]);
+            try
+            {
+                LMSPrivateKeyParameters.getInstance(enc);
+                fail("no exception on q=" + bad[i][0] + " maxQ=" + bad[i][1]);
+            }
+            catch (IOException e)
+            {
+                assertTrue(e.getMessage().startsWith("LMS private key q/maxQ out of range"));
+            }
+        }
+
+        // and the legitimate states still decode: unused, part-used, exhausted, and a shard
+        int[][] good = { { 0, twoToH }, { 7, twoToH }, { twoToH, twoToH }, { 4, 8 } };
+        for (int i = 0; i != good.length; i++)
+        {
+            LMSPrivateKeyParameters key = LMSPrivateKeyParameters.getInstance(
+                coreKey(sigParams, otsParams, I, seed, good[i][0], good[i][1]));
+            assertEquals(good[i][0], key.getIndex());
+        }
+    }
+
+    private static byte[] coreKey(LMSigParameters sigParams, LMOtsParameters otsParams, byte[] I,
+                                  byte[] seed, int q, int maxQ)
+    {
+        return LMSVectorUtils.compose()
+            .u32str(0)
+            .u32str(sigParams.getType())
+            .u32str(otsParams.getType())
+            .bytes(I)
+            .u32str(q)
+            .u32str(maxQ)
+            .u32str(seed.length)
+            .bytes(seed)
+            .build();
     }
 
 

@@ -16,6 +16,7 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.io.Streams;
+import org.bouncycastle.crypto.generators.HSSKeyPairGenerator;
 import org.bouncycastle.crypto.signers.HSSSigner;
 import org.bouncycastle.crypto.signers.LMSSigner;
 import org.bouncycastle.crypto.signers.lms.LMSEngine;
@@ -989,6 +990,99 @@ public class HSSTests
     }
 
 
+
+    /**
+     * The level count d and the index pair are range checked at decode. Before github #2414 only the
+     * version was guarded, so d = 0 decoded and the empty key list then threw an unchecked
+     * IndexOutOfBoundsException out of the signing call rather than being refused as a bad key.
+     */
+    public void testPrivateKeyLevelCountRangeChecked()
+        throws Exception
+    {
+        HSSPrivateKeyParameters key = genHssKey();
+        byte[] enc = key.getEncoded();
+
+        // d sits at offset 4, after the version
+        int[] badD = { 0, -1, 9, Integer.MIN_VALUE, Integer.MAX_VALUE };
+        for (int i = 0; i != badD.length; i++)
+        {
+            byte[] corrupt = Arrays.clone(enc);
+            Pack.intToBigEndian(badD[i], corrupt, 4);
+            try
+            {
+                HSSPrivateKeyParameters.getInstance(corrupt);
+                fail("no exception on d = " + badD[i]);
+            }
+            catch (java.io.IOException e)
+            {
+                assertTrue(e.getMessage().startsWith("d value of HSS private key out of range"));
+            }
+        }
+
+        // index at offset 8, maxIndex at 16, both u64
+        long[][] badIndex = { { -1L, 1024L }, { 0L, -1L }, { 100L, 10L } };
+        for (int i = 0; i != badIndex.length; i++)
+        {
+            byte[] corrupt = Arrays.clone(enc);
+            Pack.longToBigEndian(badIndex[i][0], corrupt, 8);
+            Pack.longToBigEndian(badIndex[i][1], corrupt, 16);
+            try
+            {
+                HSSPrivateKeyParameters.getInstance(corrupt);
+                fail("no exception on index = " + badIndex[i][0] + " maxIndex = " + badIndex[i][1]);
+            }
+            catch (java.io.IOException e)
+            {
+                assertTrue(e.getMessage().startsWith("HSS private key index out of range"));
+            }
+        }
+
+        // the genuine encoding still decodes and signs verifiably
+        HSSPrivateKeyParameters decoded = HSSPrivateKeyParameters.getInstance(enc);
+        byte[] msg = Hex.decode("48656c6c6f");
+        assertTrue(verify(key.getPublicKey(), sign(decoded, msg), msg));
+    }
+
+    /**
+     * getInstance(privEnc, pubEnc) cross-checks the root against the public key it is handed, which
+     * catches a tree cache that is self-consistent but belongs to a different key. Before github
+     * #2414 the parsed public key was assigned to a field that was never read.
+     */
+    public void testPrivateKeyCheckedAgainstSuppliedPublicKey()
+        throws Exception
+    {
+        HSSPrivateKeyParameters keyA = genHssKey();
+        HSSPrivateKeyParameters keyB = genHssKey();
+
+        byte[] privA = keyA.getEncoded();
+        byte[] pubA = keyA.getPublicKey().getEncoded();
+        byte[] pubB = keyB.getPublicKey().getEncoded();
+
+        // matching pair: accepted, and the parsed public key is the one returned
+        HSSPrivateKeyParameters decoded = HSSPrivateKeyParameters.getInstance(privA, pubA);
+        assertTrue(Arrays.areEqual(pubA, decoded.getPublicKey().getEncoded()));
+
+        // another key's public key: refused
+        try
+        {
+            HSSPrivateKeyParameters.getInstance(privA, pubB);
+            fail("no exception on a public key from a different private key");
+        }
+        catch (java.io.IOException e)
+        {
+            assertTrue(e.getMessage().startsWith("HSS private key tree cache does not match"));
+        }
+    }
+
+    private static HSSPrivateKeyParameters genHssKey()
+    {
+        HSSKeyPairGenerator gen = new HSSKeyPairGenerator();
+        gen.init(new HSSKeyGenerationParameters(new LMSParameters[]{
+            new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w1),
+            new LMSParameters(LMSigParameters.lms_sha256_n32_h5, LMOtsParameters.sha256_n32_w1) },
+            new SecureRandom()));
+        return (HSSPrivateKeyParameters)gen.generateKeyPair().getPrivate();
+    }
 
     private static byte[] sign(HSSPrivateKeyParameters key, byte[] message)
     {
