@@ -17,6 +17,7 @@ public class RegressionTest
         new OpenPGPKeyReaderTest(),
         new OpenPGPMessageGeneratorTest(),
         new OpenPGPMessageProcessorTest(),
+        new OpenPGPMissingCrossCertificationTest(),
         new OpenPGPSubkeyExpiryForgeryTest(),
         new OpenPGPThirdPartyCertificationAuthorityTest(),
         new OpenPGPV4KeyGenerationTest(),

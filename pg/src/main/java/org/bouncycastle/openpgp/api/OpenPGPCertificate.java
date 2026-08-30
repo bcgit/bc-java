@@ -1753,6 +1753,12 @@ public class OpenPGPCertificate
             PGPSignatureSubpacketVector hashedSubpackets = keySignature.getSignature().getHashedSubPackets();
             if (hashedSubpackets == null || !hashedSubpackets.hasSubpacket(subpacketType))
             {
+                if (subpacketType == SignatureSubpacketTags.KEY_FLAGS && this instanceof OpenPGPSubkey)
+                {
+                    // Key Flags apply to the key their signature refers to (RFC9580, section 5.2.3.29) - not inherited
+                    return null;
+                }
+
                 // If the subkey binding signature doesn't carry the desired subpacket,
                 //  check direct-key or primary uid sig instead
                 OpenPGPSignatureChain preferenceBinding = getCertificate().getPreferenceSignature(evaluationTime);
