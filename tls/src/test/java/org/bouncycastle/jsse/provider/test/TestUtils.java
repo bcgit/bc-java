@@ -44,6 +44,7 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.gm.GMObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.RSASSAPSSparams;
@@ -112,6 +113,7 @@ class TestUtils
         algIDs.put("SHA1withECDSA", new AlgorithmIdentifier(X9ObjectIdentifiers.ecdsa_with_SHA1));
         algIDs.put("SHA224withECDSA", new AlgorithmIdentifier(X9ObjectIdentifiers.ecdsa_with_SHA224));
         algIDs.put("SHA256withECDSA", new AlgorithmIdentifier(X9ObjectIdentifiers.ecdsa_with_SHA256));
+        algIDs.put("SM3withSM2", new AlgorithmIdentifier(GMObjectIdentifiers.sm2sign_with_sm3));
         algIDs.put("Ed25519", new AlgorithmIdentifier(TestOIDs.id_Ed25519));
         algIDs.put("Ed448", new AlgorithmIdentifier(TestOIDs.id_Ed448));
         algIDs.put("ML-DSA-44", new AlgorithmIdentifier(NISTObjectIdentifiers.id_ml_dsa_44));
