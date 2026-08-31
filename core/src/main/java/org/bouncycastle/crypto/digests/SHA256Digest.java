@@ -28,7 +28,7 @@ public class SHA256Digest
 
     private int     H1, H2, H3, H4, H5, H6, H7, H8;
 
-    private int[]   X = new int[64];
+    private int[]   X = new int[16];
     private int     xOff;
 
     public static SavableDigest newInstance()
@@ -212,76 +212,104 @@ public class SHA256Digest
 
     protected void processBlock()
     {
-        //
-        // expand 16 word block into 64 word blocks.
-        //
-        for (int t = 16; t <= 63; t++)
-        {
-            X[t] = Theta1(X[t - 2]) + X[t - 7] + Theta0(X[t - 15]) + X[t - 16];
-        }
+        int[] X = this.X;
 
-        //
-        // set up working variables.
-        //
-        int     a = H1;
-        int     b = H2;
-        int     c = H3;
-        int     d = H4;
-        int     e = H5;
-        int     f = H6;
-        int     g = H7;
-        int     h = H8;
+        // The message schedule lives in 16 rotating locals instead of a 64/80-word array: no bounds
+        // checks or memory traffic for the expansion, and the array only ever holds the 16 input words.
+        int x00 = X[0], x01 = X[1], x02 = X[2], x03 = X[3];
+        int x04 = X[4], x05 = X[5], x06 = X[6], x07 = X[7];
+        int x08 = X[8], x09 = X[9], x10 = X[10], x11 = X[11];
+        int x12 = X[12], x13 = X[13], x14 = X[14], x15 = X[15];
 
-        int t = 0;     
-        for(int i = 0; i < 8; i ++)
+        int a = H1, b = H2, c = H3, d = H4, e = H5, f = H6, g = H7, h = H8;
+
+        for (int t = 0; ; t += 16)
         {
-            // t = 8 * i
-            h += Sum1(e) + Ch(e, f, g) + K[t] + X[t];
+            h += Sum1(e) + Ch(e, f, g) + K[t] + x00;
             d += h;
             h += Sum0(a) + Maj(a, b, c);
-            ++t;
 
-            // t = 8 * i + 1
-            g += Sum1(d) + Ch(d, e, f) + K[t] + X[t];
+            g += Sum1(d) + Ch(d, e, f) + K[t + 1] + x01;
             c += g;
             g += Sum0(h) + Maj(h, a, b);
-            ++t;
 
-            // t = 8 * i + 2
-            f += Sum1(c) + Ch(c, d, e) + K[t] + X[t];
+            f += Sum1(c) + Ch(c, d, e) + K[t + 2] + x02;
             b += f;
             f += Sum0(g) + Maj(g, h, a);
-            ++t;
 
-            // t = 8 * i + 3
-            e += Sum1(b) + Ch(b, c, d) + K[t] + X[t];
+            e += Sum1(b) + Ch(b, c, d) + K[t + 3] + x03;
             a += e;
             e += Sum0(f) + Maj(f, g, h);
-            ++t;
 
-            // t = 8 * i + 4
-            d += Sum1(a) + Ch(a, b, c) + K[t] + X[t];
+            d += Sum1(a) + Ch(a, b, c) + K[t + 4] + x04;
             h += d;
             d += Sum0(e) + Maj(e, f, g);
-            ++t;
 
-            // t = 8 * i + 5
-            c += Sum1(h) + Ch(h, a, b) + K[t] + X[t];
+            c += Sum1(h) + Ch(h, a, b) + K[t + 5] + x05;
             g += c;
             c += Sum0(d) + Maj(d, e, f);
-            ++t;
 
-            // t = 8 * i + 6
-            b += Sum1(g) + Ch(g, h, a) + K[t] + X[t];
+            b += Sum1(g) + Ch(g, h, a) + K[t + 6] + x06;
             f += b;
             b += Sum0(c) + Maj(c, d, e);
-            ++t;
 
-            // t = 8 * i + 7
-            a += Sum1(f) + Ch(f, g, h) + K[t] + X[t];
+            a += Sum1(f) + Ch(f, g, h) + K[t + 7] + x07;
             e += a;
             a += Sum0(b) + Maj(b, c, d);
-            ++t;
+
+            h += Sum1(e) + Ch(e, f, g) + K[t + 8] + x08;
+            d += h;
+            h += Sum0(a) + Maj(a, b, c);
+
+            g += Sum1(d) + Ch(d, e, f) + K[t + 9] + x09;
+            c += g;
+            g += Sum0(h) + Maj(h, a, b);
+
+            f += Sum1(c) + Ch(c, d, e) + K[t + 10] + x10;
+            b += f;
+            f += Sum0(g) + Maj(g, h, a);
+
+            e += Sum1(b) + Ch(b, c, d) + K[t + 11] + x11;
+            a += e;
+            e += Sum0(f) + Maj(f, g, h);
+
+            d += Sum1(a) + Ch(a, b, c) + K[t + 12] + x12;
+            h += d;
+            d += Sum0(e) + Maj(e, f, g);
+
+            c += Sum1(h) + Ch(h, a, b) + K[t + 13] + x13;
+            g += c;
+            c += Sum0(d) + Maj(d, e, f);
+
+            b += Sum1(g) + Ch(g, h, a) + K[t + 14] + x14;
+            f += b;
+            b += Sum0(c) + Maj(c, d, e);
+
+            a += Sum1(f) + Ch(f, g, h) + K[t + 15] + x15;
+            e += a;
+            a += Sum0(b) + Maj(b, c, d);
+
+            if (t == 48)
+                break;
+
+            // W[t+16+j] = sigma1(W[t+14+j]) + W[t+9+j] + sigma0(W[t+1+j]) + W[t+j]; wrapped indices refer to
+            // words already updated in this pass, which is exactly the required schedule.
+            x00 += Theta1(x14) + x09 + Theta0(x01);
+            x01 += Theta1(x15) + x10 + Theta0(x02);
+            x02 += Theta1(x00) + x11 + Theta0(x03);
+            x03 += Theta1(x01) + x12 + Theta0(x04);
+            x04 += Theta1(x02) + x13 + Theta0(x05);
+            x05 += Theta1(x03) + x14 + Theta0(x06);
+            x06 += Theta1(x04) + x15 + Theta0(x07);
+            x07 += Theta1(x05) + x00 + Theta0(x08);
+            x08 += Theta1(x06) + x01 + Theta0(x09);
+            x09 += Theta1(x07) + x02 + Theta0(x10);
+            x10 += Theta1(x08) + x03 + Theta0(x11);
+            x11 += Theta1(x09) + x04 + Theta0(x12);
+            x12 += Theta1(x10) + x05 + Theta0(x13);
+            x13 += Theta1(x11) + x06 + Theta0(x14);
+            x14 += Theta1(x12) + x07 + Theta0(x15);
+            x15 += Theta1(x13) + x08 + Theta0(x00);
         }
 
         H1 += a;
@@ -303,16 +331,15 @@ public class SHA256Digest
         }
     }
 
-    /* SHA-256 functions */
     private static int Ch(int x, int y, int z)
     {
-        return (x & y) ^ ((~x) & z);
-//        return z ^ (x & (y ^ z));
+        //return (x & y) ^ (z & ~x);
+        return z ^ (x & (y ^ z));
     }
 
     private static int Maj(int x, int y, int z)
     {
-//        return (x & y) ^ (x & z) ^ (y & z);
+        //return (x & y) ^ (x & z) ^ (y & z);
         return (x & y) | (z & (x ^ y));
     }
 
@@ -336,9 +363,9 @@ public class SHA256Digest
         return ((x >>> 17) | (x << 15)) ^ ((x >>> 19) | (x << 13)) ^ (x >>> 10);
     }
 
-    /* SHA-256 Constants
-     * (represent the first 32 bits of the fractional parts of the
-     * cube roots of the first sixty-four prime numbers)
+    /**
+     * SHA-256 Constants (represent the first 32 bits of the fractional parts of the cube roots of the first sixty-four
+     * prime numbers)
      */
     static final int K[] = {
         0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
