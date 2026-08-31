@@ -295,7 +295,7 @@ public class LMSPrivateKeyParameters
         {
             if (q >= maxQ)
             {
-                throw new ExhaustedPrivateKeyException("ots private keys expired");
+                throw new ExhaustedPrivateKeyException("ots private key exhausted");
             }
             return LMSEngine.deriveChildKey(otsParameters, I, masterSecret, q);
         }
