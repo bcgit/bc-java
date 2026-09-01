@@ -35,6 +35,7 @@ public class AllTests
         suite.addTestSuite(PSSCredentialsTest.class);
         suite.addTestSuite(RequestedServerNamesTest.class);
         suite.addTestSuite(SLHDSACredentialsTest.class);
+        suite.addTestSuite(SM2CredentialsTest.class);
         suite.addTestSuite(SSLServerSocketTest.class);
         suite.addTestSuite(SSLSocketTest.class);
         suite.addTestSuite(TlsFipsTest.class);

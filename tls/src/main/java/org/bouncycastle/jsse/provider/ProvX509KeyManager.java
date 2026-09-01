@@ -179,6 +179,8 @@ class ProvX509KeyManager
         addECFilter13(filters, NamedGroup.brainpoolP384r1tls13);
         addECFilter13(filters, NamedGroup.brainpoolP512r1tls13);
 
+        addECFilter13(filters, NamedGroup.curveSM2);
+
         addECFilter13(filters, NamedGroup.secp256r1);
         addECFilter13(filters, NamedGroup.secp384r1);
         addECFilter13(filters, NamedGroup.secp521r1);
@@ -220,6 +222,8 @@ class ProvX509KeyManager
         addECFilter13(filters, NamedGroup.brainpoolP256r1tls13);
         addECFilter13(filters, NamedGroup.brainpoolP384r1tls13);
         addECFilter13(filters, NamedGroup.brainpoolP512r1tls13);
+
+        addECFilter13(filters, NamedGroup.curveSM2);
 
         addECFilter13(filters, NamedGroup.secp256r1);
         addECFilter13(filters, NamedGroup.secp384r1);
