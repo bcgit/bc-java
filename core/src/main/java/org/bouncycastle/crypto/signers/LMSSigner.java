@@ -73,10 +73,28 @@ public class LMSSigner
                  pubKey = (LMSPublicKeyParameters)param;
              }
          }
+
+         reset();
     }
 
+    /**
+     * Sign the passed in message. This is the one-shot form; it must not be mixed with the
+     * buffered form, so a call made with data already absorbed through {@link #update(byte)} is
+     * refused rather than silently discarding it - call {@link #reset()} first, or use
+     * {@link #generateSignature()} to sign what was buffered.
+     *
+     * @param message the message to be signed.
+     * @return the signature.
+     * @throws IllegalStateException if a buffered message is present, or the signer is not
+     * initialised for signing.
+     */
     public byte[] generateSignature(byte[] message)
     {
+        if (buffer.size() != 0)
+        {
+            throw new IllegalStateException("buffered message present: call reset() or use generateSignature()");
+        }
+
         if (privKey == null)
         {
             throw new IllegalStateException("LMSSigner not initialised for signature generation");
@@ -96,8 +114,26 @@ public class LMSSigner
         return signature;
     }
 
+    /**
+     * Verify the passed in signature against the passed in message. This is the one-shot form; it
+     * must not be mixed with the buffered form, so a call made with data already absorbed through
+     * {@link #update(byte)} is refused rather than silently discarding it - call
+     * {@link #reset()} first, or use {@link #verifySignature(byte[])} to verify what was
+     * buffered.
+     *
+     * @param message the message the signature is claimed to be over.
+     * @param signature the candidate signature.
+     * @return true if the signature verifies, false otherwise.
+     * @throws IllegalStateException if a buffered message is present, or the signer is not
+     * initialised for verification.
+     */
     public boolean verifySignature(byte[] message, byte[] signature)
     {
+        if (buffer.size() != 0)
+        {
+            throw new IllegalStateException("buffered message present: call reset() or use verifySignature(byte[])");
+        }
+
         // checked before the catch-all below so a missing init is reported rather than
         // being folded into "signature did not verify"
         if (pubKey == null)

@@ -18,6 +18,7 @@ public class AllTests
     {
         TestSuite suite = new TestSuite("LMS engine tests");
 
+        suite.addTestSuite(BufferedMessageTests.class);
         suite.addTestSuite(LMOtsTests.class);
         suite.addTestSuite(TypeTests.class);
 
