@@ -15,6 +15,7 @@ import org.bouncycastle.crypto.signers.lms.LMSContext;
 import org.bouncycastle.crypto.signers.lms.LMSEngine;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Exceptions;
+import org.bouncycastle.util.Objects;
 import org.bouncycastle.util.io.Streams;
 
 public class LMSPrivateKeyParameters
@@ -40,7 +41,6 @@ public class LMSPrivateKeyParameters
     private final byte[] masterSecret;
     private final Map<CacheKey, byte[]> tCache;
     private final int maxCacheR;
-    private final Digest tDigest;
 
     private int q;
 
@@ -62,7 +62,6 @@ public class LMSPrivateKeyParameters
         this.masterSecret = Arrays.clone(masterSecret);
         this.maxCacheR = 1 << (parameters.getH() + 1);
         this.tCache = new WeakHashMap<CacheKey, byte[]>();
-        this.tDigest = LMSEngine.createDigest(lmsParameter);
     }
 
     private LMSPrivateKeyParameters(LMSPrivateKeyParameters parent, int q, int maxQ)
@@ -76,7 +75,6 @@ public class LMSPrivateKeyParameters
         this.masterSecret = parent.masterSecret;
         this.maxCacheR = 1 << parameters.getH();
         this.tCache = parent.tCache;
-        this.tDigest = LMSEngine.createDigest(parameters);
         this.publicKey = parent.publicKey;
     }
 
@@ -85,7 +83,10 @@ public class LMSPrivateKeyParameters
     {
         LMSPrivateKeyParameters pKey = getInstance(privEnc);
 
-        pKey.publicKey = LMSPublicKeyParameters.getInstance(pubEnc);
+        synchronized (pKey)
+        {
+            pKey.publicKey = LMSPublicKeyParameters.getInstance(pubEnc);
+        }
 
         return pKey;
     }
@@ -291,14 +292,16 @@ public class LMSPrivateKeyParameters
      */
     byte[][] deriveChildKey()
     {
+        int q;
         synchronized (this)
         {
+            q = this.q;
             if (q >= maxQ)
             {
                 throw new ExhaustedPrivateKeyException("ots private key exhausted");
             }
-            return LMSEngine.deriveChildKey(otsParameters, I, masterSecret, q);
         }
+        return LMSEngine.deriveChildKey(otsParameters, I, masterSecret, q);
     }
 
     /**
@@ -470,7 +473,11 @@ public class LMSPrivateKeyParameters
 
     private byte[] calcT(int r)
     {
-        int h = this.getSigParameters().getH();
+        LMSigParameters sigParameters = getSigParameters();
+
+        Digest tDigest = LMSEngine.createDigest(sigParameters);
+
+        int h = sigParameters.getH();
 
         int twoToh = 1 << h;
 
@@ -554,43 +561,37 @@ public class LMSPrivateKeyParameters
 
         LMSPrivateKeyParameters that = (LMSPrivateKeyParameters)o;
 
-        if (q != that.q)
-        {
-            return false;
-        }
-        if (maxQ != that.maxQ)
-        {
-            return false;
-        }
-        if (!Arrays.areEqual(I, that.I))
-        {
-            return false;
-        }
-        if (parameters != null ? !parameters.equals(that.parameters) : that.parameters != null)
-        {
-            return false;
-        }
-        if (otsParameters != null ? !otsParameters.equals(that.otsParameters) : that.otsParameters != null)
-        {
-            return false;
-        }
-        if (!Arrays.constantTimeAreEqual(masterSecret, that.masterSecret))
-        {
-            return false;
-        }
-
-        return true;
+        return this.getIndex() == that.getIndex()
+            && this.maxQ == that.maxQ
+            && Arrays.areEqual(this.I, that.I)
+            && Objects.areEqual(this.parameters, that.parameters)
+            && Objects.areEqual(this.otsParameters, that.otsParameters)
+            && Arrays.constantTimeAreEqual(this.masterSecret, that.masterSecret);
     }
 
     @Override
     public int hashCode()
     {
-        return getPublicKey().hashCode();
+        //
+        // Deliberately not getPublicKey().hashCode(): the root is only there if the tree cache
+        // holds it, so on a freshly generated or decoded key that builds the whole Merkle tree -
+        // 2^h LM-OTS public keys - from an implicit call no caller expects to cost anything. It is
+        // also independent of q, so a key's hash does not move as it signs, and of the master
+        // secret, so no function of the seed is handed out. Equal keys agree on every field used
+        // here, so the equals() contract holds.
+        //
+        int hc = Objects.hashCode(parameters);
+        hc = 31 * hc + Objects.hashCode(otsParameters);
+        hc = 31 * hc + maxQ;
+        hc = 31 * hc + Arrays.hashCode(I);
+        return hc;
     }
 
     public byte[] getEncoded()
         throws IOException
     {
+        int q = getIndex();
+
         //
         // NB there is no formal specification for the encoding of private keys.
         // It is implementation dependent.

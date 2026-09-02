@@ -3,7 +3,6 @@ package org.bouncycastle.pqc.jcajce.provider.lms;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.security.PrivateKey;
 
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
@@ -14,21 +13,26 @@ import org.bouncycastle.crypto.params.LMSPrivateKeyParameters;
 import org.bouncycastle.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.pqc.jcajce.interfaces.LMSPrivateKey;
-import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.Exceptions;
 
 public class BCLMSPrivateKey
-    implements PrivateKey, LMSPrivateKey
+    implements LMSPrivateKey
 {
     private static final long serialVersionUID = 8568701712864512338L;
 
-    private transient LMSKeyParameters keyParams;
+    private transient HSSPrivateKeyParameters keyParams;
     private transient ASN1Set attributes;
 
-    public BCLMSPrivateKey(
-        LMSKeyParameters keyParams)
+    public BCLMSPrivateKey(LMSKeyParameters keyParams)
     {
-        this.keyParams = (keyParams instanceof HSSPrivateKeyParameters) ? (HSSPrivateKeyParameters)keyParams : new HSSPrivateKeyParameters((LMSPrivateKeyParameters)keyParams, ((LMSPrivateKeyParameters)keyParams).getIndex(), ((LMSPrivateKeyParameters)keyParams).getIndex() + ((LMSPrivateKeyParameters)keyParams).getUsagesRemaining());
+        if (keyParams instanceof HSSPrivateKeyParameters)
+        {
+            this.keyParams = (HSSPrivateKeyParameters)keyParams;
+        }
+        else
+        {
+            LMSPrivateKeyParameters lms = (LMSPrivateKeyParameters)keyParams;
+            this.keyParams = new HSSPrivateKeyParameters(lms, lms.getIndex(), lms.getIndex() + lms.getUsagesRemaining());
+        }
     }
 
     public BCLMSPrivateKey(PrivateKeyInfo keyInfo)
@@ -41,7 +45,7 @@ public class BCLMSPrivateKey
         throws IOException
     {
         this.attributes = keyInfo.getAttributes();
-        this.keyParams = (LMSKeyParameters)PrivateKeyFactory.createKey(keyInfo);
+        this.keyParams = (HSSPrivateKeyParameters)PrivateKeyFactory.createKey(keyInfo);
     }
 
     public long getIndex()
@@ -51,29 +55,17 @@ public class BCLMSPrivateKey
             throw new IllegalStateException("key exhausted");
         }
 
-        if (keyParams instanceof LMSPrivateKeyParameters)
-        {
-            return ((LMSPrivateKeyParameters)keyParams).getIndex();
-        }
-        return ((HSSPrivateKeyParameters)keyParams).getIndex();
+        return keyParams.getIndex();
     }
 
     public long getUsagesRemaining()
     {
-        if (keyParams instanceof LMSPrivateKeyParameters)
-        {
-            return ((LMSPrivateKeyParameters)keyParams).getUsagesRemaining();
-        }
-        return ((HSSPrivateKeyParameters)keyParams).getUsagesRemaining();
+        return keyParams.getUsagesRemaining();
     }
 
     public LMSPrivateKey extractKeyShard(int usageCount)
     {
-        if (keyParams instanceof LMSPrivateKeyParameters)
-        {
-            return new BCLMSPrivateKey(((LMSPrivateKeyParameters)keyParams).extractKeyShard(usageCount));
-        }
-        return new BCLMSPrivateKey(((HSSPrivateKeyParameters)keyParams).extractKeyShard(usageCount));
+        return new BCLMSPrivateKey(keyParams.extractKeyShard(usageCount));
     }
 
     public String getAlgorithm()
@@ -109,16 +101,7 @@ public class BCLMSPrivateKey
 
         if (o instanceof BCLMSPrivateKey)
         {
-            BCLMSPrivateKey otherKey = (BCLMSPrivateKey)o;
-
-            try
-            {
-                return Arrays.constantTimeAreEqual(keyParams.getEncoded(), otherKey.keyParams.getEncoded());
-            }
-            catch (IOException e)
-            {
-                throw Exceptions.illegalStateException("unable to perform equals", e);     // should never happen.
-            }
+            return keyParams.equals(((BCLMSPrivateKey)o).keyParams);
         }
 
         return false;
@@ -126,7 +109,7 @@ public class BCLMSPrivateKey
 
     public int hashCode()
     {
-        return new BCLMSPublicKey(((HSSPrivateKeyParameters)keyParams).getPublicKey()).hashCode();
+        return keyParams.hashCode();
     }
 
     CipherParameters getKeyParams()
@@ -136,14 +119,7 @@ public class BCLMSPrivateKey
 
     public int getLevels()
     {
-        if (keyParams instanceof LMSPrivateKeyParameters)
-        {
-            return 1;
-        }
-        else
-        {
-            return ((HSSPrivateKeyParameters)keyParams).getL();
-        }
+        return keyParams.getL();
     }
 
     private void readObject(
