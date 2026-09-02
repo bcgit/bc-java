@@ -21,6 +21,7 @@ import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.bcpg.FingerprintUtil;
 import org.bouncycastle.bcpg.KeyIdentifier;
 import org.bouncycastle.bcpg.PacketFormat;
+import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.PublicKeyUtils;
 import org.bouncycastle.bcpg.SignatureSubpacket;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
@@ -718,7 +719,9 @@ public class OpenPGPCertificate
         boolean isPrimaryKey = component == getPrimaryKey();
         if (isPrimaryKey && chainsForComponent.getCertificationAt(evaluationDate) == null)
         {
-            // If cert has no direct-key signatures, consider primary UID bindings instead
+            // If cert has no direct-key signatures, consider primary UID bindings instead.
+            // A version 6 key never reaches this fallback: isBoundBy() refuses the certificate
+            // outright unless a valid Direct Key signature is present (RFC 9580, section 5.2.3.10).
             OpenPGPUserId primaryUserId = getPrimaryUserId(evaluationDate);
             if (primaryUserId != null)
             {
@@ -849,6 +852,21 @@ public class OpenPGPCertificate
                               OpenPGPComponentKey root,
                               Date evaluationTime)
     {
+        // RFC 9580, section 5.2.3.10: "An implementation MUST ensure that a valid Direct Key signature is
+        // present before using a version 6 key. This prevents certain attacks where an adversary strips a
+        // self-signature specifying a Key Expiration Time or certain preferences."
+        // The certificate grammar says the same structurally: the Direct Key signature is mandatory in the
+        // version 6 structure of section 10.1.1 and optional in the version 4 one of section 10.1.3.
+        // A version 6 certificate carries the key expiration, the features and the algorithm preferences on
+        // the Direct Key signature rather than on a User ID self-signature, so treating a User ID binding as
+        // a substitute - which is correct for a version 4 key, where that information legitimately lives on
+        // the User ID self-signature - would let that single packet be stripped from a published certificate
+        // without the loss of what it carried being noticed.
+        if (requiresDirectKeySignature() && !hasValidDirectKeySignature(evaluationTime))
+        {
+            return false;
+        }
+
         OpenPGPSignature.OpenPGPSignatureSubpacket keyExpiration =
             component.getApplyingSubpacket(evaluationTime, SignatureSubpacketTags.KEY_EXPIRE_TIME);
         if (keyExpiration != null)
@@ -884,6 +902,46 @@ public class OpenPGPCertificate
 
             // Signature is not correct
             return false;
+        }
+        catch (PGPException e)
+        {
+            // Signature verification failed (signature broken?)
+            return false;
+        }
+    }
+
+    /**
+     * Return true, if RFC 9580 requires the primary key of this certificate to carry a valid Direct Key
+     * self-signature before any of its components may be used (section 5.2.3.10). This is the case for
+     * version 6 keys.
+     *
+     * @return true if a Direct Key self-signature is mandatory for this certificate
+     */
+    private boolean requiresDirectKeySignature()
+    {
+        return getPrimaryKey().getVersion() == PublicKeyPacket.VERSION_6;
+    }
+
+    /**
+     * Return true, if the primary key carries a Direct Key self-signature which is - at evaluation time -
+     * both effective and cryptographically valid.
+     * A Direct Key revocation does not satisfy this, since it is not a certification.
+     *
+     * @param evaluationTime evaluation time
+     * @return true if a valid Direct Key self-signature is present at evaluation time
+     */
+    private boolean hasValidDirectKeySignature(Date evaluationTime)
+    {
+        OpenPGPSignatureChain directKeyChain = getSelfSignatureChainsFor(getPrimaryKey())
+            .getCertificationAt(evaluationTime);
+        if (directKeyChain == null)
+        {
+            return false;
+        }
+
+        try
+        {
+            return directKeyChain.isValid(implementation.pgpContentVerifierBuilderProvider(), policy);
         }
         catch (PGPException e)
         {

@@ -21,6 +21,7 @@ public class RegressionTest
         new OpenPGPSubkeyExpiryForgeryTest(),
         new OpenPGPThirdPartyCertificationAuthorityTest(),
         new OpenPGPV4KeyGenerationTest(),
+        new OpenPGPV6DirectKeySignatureTest(),
         new OpenPGPV6KeyGeneratorTest(),
         new StaticV6OpenPGPMessageGeneratorTest(),
     };
