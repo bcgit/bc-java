@@ -13,6 +13,7 @@ import org.bouncycastle.crypto.params.HSSPublicKeyParameters;
 import org.bouncycastle.crypto.signers.HSSSigner;
 import org.bouncycastle.crypto.params.LMSPrivateKeyParameters;
 import org.bouncycastle.crypto.params.LMSPublicKeyParameters;
+import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.signers.LMSSigner;
 
 /**
@@ -55,6 +56,12 @@ public class BcHssLmsContentSignerBuilder
         @Override
         public void init(boolean forSigning, CipherParameters param)
         {
+            // BcContentSignerBuilder wraps the key when setSecureRandom() was called; see through it
+            if (param instanceof ParametersWithRandom)
+            {
+                param = ((ParametersWithRandom)param).getParameters();
+            }
+
             if (param instanceof HSSPublicKeyParameters || param instanceof HSSPrivateKeyParameters)
             {
                 signer = new HSSSigner();

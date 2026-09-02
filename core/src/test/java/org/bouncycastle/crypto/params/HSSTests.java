@@ -1,12 +1,15 @@
 package org.bouncycastle.crypto.params;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import junit.framework.TestCase;
 import org.bouncycastle.crypto.prng.FixedSecureRandom;
@@ -17,8 +20,10 @@ import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.io.Streams;
 import org.bouncycastle.crypto.generators.HSSKeyPairGenerator;
+import org.bouncycastle.crypto.generators.LMSKeyPairGenerator;
 import org.bouncycastle.crypto.signers.HSSSigner;
 import org.bouncycastle.crypto.signers.LMSSigner;
+import org.bouncycastle.crypto.signers.lms.LMSContext;
 import org.bouncycastle.crypto.signers.lms.LMSEngine;
 import org.bouncycastle.crypto.signers.lms.LMSSignature;
 
@@ -1232,5 +1237,224 @@ public class HSSTests
         int m = leaf.getSigParameters().getM();
 
         return Pack.bigEndianToInt(hssSignature, hssSignature.length - h * m - 4);
+    }
+
+    /**
+     * Wrapping an LMS key as a single level HSS key keeps the key it was given, rather than
+     * regenerating it. resetKeyToIndex compares each level's q against the value derived from the
+     * HSS index, and an intermediate level reads one past that value because it has already post
+     * incremented past the leaf it signed - but the last level reads the derived value itself, and
+     * when the hierarchy has one level the root is the last level. Applying the intermediate rule
+     * there made the comparison always fail, so every wrap rebuilt the whole Merkle tree: this is
+     * what BCLMSPrivateKey does for every LMS key pair the JCE produces, so the tree was built
+     * twice - once to get the public key, once here - and the node cache the first build filled
+     * was discarded with it.
+     */
+    public void testSingleLevelWrapKeepsTheKey()
+        throws Exception
+    {
+        LMSigParameters sigParams = LMSigParameters.lms_sha256_n32_h5;
+        LMOtsParameters otsParams = LMOtsParameters.sha256_n32_w2;
+
+        LMSKeyPairGenerator gen = new LMSKeyPairGenerator();
+        gen.init(new LMSKeyGenerationParameters(new LMSParameters(sigParams, otsParams), new SecureRandom()));
+        LMSPrivateKeyParameters lms = (LMSPrivateKeyParameters)gen.generateKeyPair().getPrivate();
+
+        byte[] rootT1 = lms.getPublicKey().getT1();
+        assertTrue("expected the generator to leave the cache primed", lms.isTreeCachePrimed());
+
+        // exactly the call BCLMSPrivateKey(LMSKeyParameters) makes
+        HSSPrivateKeyParameters wrapped = new HSSPrivateKeyParameters(
+            lms, lms.getIndex(), lms.getIndex() + lms.getUsagesRemaining());
+
+        assertSame("the wrap regenerated the root key", lms, wrapped.getRootKey());
+        assertTrue("the wrap discarded the tree cache", wrapped.getRootKey().isTreeCachePrimed());
+        assertTrue("the wrap changed the public key",
+            Arrays.areEqual(rootT1, wrapped.getPublicKey().getLMSPublicKey().getT1()));
+
+        // and again from a position part way through the key
+        LMSSigner lmsSigner = new LMSSigner();
+        lmsSigner.init(true, lms);
+        for (int i = 0; i != 3; i++)
+        {
+            lmsSigner.generateSignature(Hex.decode("48656c6c6f"));
+        }
+        assertEquals(3, lms.getIndex());
+
+        HSSPrivateKeyParameters advanced = new HSSPrivateKeyParameters(
+            lms, lms.getIndex(), lms.getIndex() + lms.getUsagesRemaining());
+
+        assertSame("the wrap regenerated an advanced root key", lms, advanced.getRootKey());
+        assertEquals("the wrap moved the index", 3, advanced.getIndex());
+
+        // the reset itself still works: asked for a different position, it does reposition
+        HSSPrivateKeyParameters moved = new HSSPrivateKeyParameters(lms, 1, 1 << sigParams.getH());
+
+        assertNotSame("the reset failed to reposition to a different index", lms, moved.getRootKey());
+        assertEquals(1, moved.getRootKey().getIndex());
+        assertTrue("repositioning changed the public key",
+            Arrays.areEqual(rootT1, moved.getPublicKey().getLMSPublicKey().getT1()));
+
+        // a signature from the wrapped key still verifies under the original public key
+        byte[] msg = Hex.decode("6162636465");
+        HSSSigner signer = new HSSSigner();
+        signer.init(true, advanced);
+        byte[] sig = signer.generateSignature(msg);
+
+        HSSSigner verifier = new HSSSigner();
+        verifier.init(false, advanced.getPublicKey());
+        assertTrue("wrapped key produced a signature that does not verify", verifier.verifySignature(msg, sig));
+    }
+
+    /**
+     * The HSS index and the bottom key's one-time index q are claimed together. They are two
+     * records of the same position - checkIndexAgainstKeys requires them to agree at decode - and
+     * they used to be claimed under two different monitors: incIndex() under the HSS key's, then
+     * the bottom key's q under its own after the HSS monitor had been released. A getEncoded()
+     * issued in between therefore produced an encoding this implementation's own decoder rejects,
+     * and two signers meeting at a bottom-tree boundary could both pass rangeTestKeys() and claim
+     * the same q, leaving the HSS index permanently one ahead of the position the component keys
+     * imply - after which the key could not be encoded, cloned or sharded again.
+     * <p>
+     * The window is a few hundred nanoseconds, so it is held open here with a bottom key that
+     * parks on a latch on its way into generateLMSContext().
+     */
+    public void testIndexAndComponentIndexClaimedTogether()
+        throws Exception
+    {
+        LMSigParameters sigParams = LMSigParameters.lms_sha256_n32_h5;
+        LMOtsParameters otsParams = LMOtsParameters.sha256_n32_w8;
+        int twoToH = 1 << sigParams.getH();
+
+        byte[] I = Hex.decode("000102030405060708090a0b0c0d0e0f");
+        byte[] seed = Hex.decode("0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20");
+
+        LMSPrivateKeyParameters root = new LMSPrivateKeyParameters(sigParams, otsParams, 0, I, twoToH, seed);
+        byte[][] child = LMSEngine.deriveChildKey(otsParams, I, seed, 0);
+        GatedKey bottom = new GatedKey(sigParams, otsParams, 0, child[0], twoToH, child[1]);
+
+        // the root signs the bottom key's public key, which advances the root's q to 1 - the
+        // position resetKeyToIndex expects of an intermediate level, so the key is kept as built
+        LMSSigner rootSigner = new LMSSigner();
+        rootSigner.init(true, root);
+        LMSSignature chain = LMSSignature.getInstance(
+            rootSigner.generateSignature(bottom.getPublicKey().getEncoded()));
+
+        List<LMSPrivateKeyParameters> keys = new ArrayList<LMSPrivateKeyParameters>();
+        keys.add(root);
+        keys.add(bottom);
+        List<LMSSignature> sigs = new ArrayList<LMSSignature>();
+        sigs.add(chain);
+
+        final HSSPrivateKeyParameters hss =
+            new HSSPrivateKeyParameters(2, keys, sigs, 0, (long)twoToH * twoToH);
+
+        assertSame("the bottom key was regenerated, so the latch is not in the hierarchy",
+            bottom, hss.getKeys().get(1));
+
+        final byte[] msg = Hex.decode("48656c6c6f");
+
+        // sanity: an ordinary signature verifies and the key round-trips
+        HSSSigner warmUp = new HSSSigner();
+        warmUp.init(true, hss);
+        byte[] warmSig = warmUp.generateSignature(msg);
+        HSSSigner warmVerifier = new HSSSigner();
+        warmVerifier.init(false, hss.getPublicKey());
+        assertTrue(warmVerifier.verifySignature(msg, warmSig));
+        HSSPrivateKeyParameters.getInstance(hss.getEncoded());
+
+        // park a signer on its way into the bottom key's claim
+        bottom.gated = true;
+
+        Thread signer = new Thread(new Runnable()
+        {
+            public void run()
+            {
+                HSSSigner s = new HSSSigner();
+                s.init(true, hss);
+                s.generateSignature(msg);
+            }
+        });
+        signer.start();
+        assertTrue("signer never reached the bottom key", bottom.entered.await(10, TimeUnit.SECONDS));
+
+        // an encoding taken while a signature is in flight must decode - or not be handed out at
+        // all, which is what happens now that both claims are made under the one monitor
+        final byte[][] snapshot = new byte[1][];
+        Thread encoder = new Thread(new Runnable()
+        {
+            public void run()
+            {
+                try
+                {
+                    snapshot[0] = hss.getEncoded();
+                }
+                catch (IOException e)
+                {
+                    // left null
+                }
+            }
+        });
+        encoder.start();
+        encoder.join(1000);
+
+        if (snapshot[0] != null)
+        {
+            try
+            {
+                HSSPrivateKeyParameters.getInstance(snapshot[0]);
+            }
+            catch (IOException e)
+            {
+                fail("encoding taken during a signature does not decode: " + e.getMessage());
+            }
+        }
+
+        bottom.release.countDown();
+        signer.join(10000);
+        encoder.join(10000);
+        assertFalse("signer did not finish", signer.isAlive());
+
+        // the key is still usable afterwards: it encodes, decodes and shards
+        HSSPrivateKeyParameters.getInstance(hss.getEncoded());
+        hss.extractKeyShard(1);
+    }
+
+    /**
+     * An LMS key that parks on its way into generateLMSContext(), to hold open the window between
+     * the HSS index claim and the bottom key's.
+     */
+    private static class GatedKey
+        extends LMSPrivateKeyParameters
+    {
+        final CountDownLatch entered = new CountDownLatch(1);
+        final CountDownLatch release = new CountDownLatch(1);
+
+        volatile boolean gated = false;
+
+        GatedKey(LMSigParameters sigParams, LMOtsParameters otsParams, int q, byte[] I, int maxQ, byte[] seed)
+        {
+            super(sigParams, otsParams, q, I, maxQ, seed);
+        }
+
+        public LMSContext generateLMSContext()
+        {
+            if (gated)
+            {
+                gated = false;
+                entered.countDown();
+                try
+                {
+                    release.await();
+                }
+                catch (InterruptedException e)
+                {
+                    Thread.currentThread().interrupt();
+                    throw new IllegalStateException("interrupted");
+                }
+            }
+
+            return super.generateLMSContext();
+        }
     }
 }

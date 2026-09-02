@@ -28,7 +28,7 @@ are concatenated in order.
 | 32 | 4 | `maxQ` | Exclusive upper bound on `q`. `2`<sup>`h`</sup> for a freshly generated key; a key shard produced by `extractKeyShard()` carries the sub-range it may use, so `q` and `maxQ` describe the shard's remaining allocation. The key is exhausted when `q == maxQ`. Both are range checked at decode — `q` and `maxQ` non-negative, `maxQ` no greater than `2`<sup>`h`</sup> and `q` no greater than `maxQ` — because a stored value outside the tree otherwise signs with a one-time key the public key does not commit to. |
 | 36 | 4 | `secretLen` | Length in bytes of the master secret that follows: `m` for the parameter set in use (32 for the n32 sets, 24 for the n24 sets). Checked against the remaining input before allocation. |
 | 40 | `secretLen` | `masterSecret` | The seed all per-leaf LM-OTS private keys are derived from deterministically. This is the only secret material in the encoding. |
-| 40 + `secretLen` | 4 | `cacheCount` | *Optional trailer.* Number of cached top-of-tree nodes that follow (`n`, in the range 0..63). May be absent entirely — the encoding simply ends after `masterSecret` — which is how every release before 1.86 wrote the key. |
+| 40 + `secretLen` | 4 | `cacheCount` | *Optional trailer.* Number of cached top-of-tree nodes that follow (`n`). Must be `0` or a complete top of tree — `2`<sup>`k`</sup>` - 1` nodes for some `k` >= 2, i.e. one of 3, 7, 15, 31, 63 — and no greater than 63; any other count is rejected, because the decode-time consistency check below only covers every node at those shapes. This writer emits 63, or 31 for a height-5 shard. May be absent entirely — the encoding simply ends after `masterSecret` — which is how every release before 1.86 wrote the key. |
 | 44 + `secretLen` | `n` × `m` | `T[1] .. T[n]` | The top `n` nodes of the Merkle tree, `m` bytes each, in node-number order. Node numbering follows RFC 8554 sec. 5.3: `T[1]` is the root (the public key's node value), `T[r]` has children `T[2r]` and `T[2r+1]`. |
 
 ## The tree-cache trailer
@@ -44,8 +44,13 @@ first signature. Its properties:
   the cache is appended rather than announced by a new version number. The cached node values are
   verified at decode, not merely counted: each cached interior node is recomputed from its two
   cached children and the key rejected on a mismatch, which catches every single-node
-  corruption since every cached node has a cached parent and `T[1]` is recomputed from `T[2]`
-  and `T[3]`. Only interior nodes are recomputed — a cached node at or beyond `2^h` is a leaf,
+  corruption: at the complete-top-of-tree counts the decoder accepts, every cached node is
+  either recomputed from its two cached children or is an input to its own parent's
+  recomputation, `T[1]` included since `T[2]` and `T[3]` are always present. This is why the
+  count is restricted — at a count of 1 or 2 the root would be read but never recomputed, and at
+  any even count the last node's parent would need the sibling the count stops one short of, so
+  a corrupted node there would be primed into the tree and (for the root) reported as the
+  public key. Only interior nodes are recomputed — a cached node at or beyond `2^h` is a leaf,
   and deriving one costs an LM-OTS public key, which is the work the cache exists to avoid.
   Unlike the XMSS BDS state, which carries a checksum because its nodes cannot be recomputed
   cheaply, this is a semantic check: it establishes the nodes are the right nodes, not merely

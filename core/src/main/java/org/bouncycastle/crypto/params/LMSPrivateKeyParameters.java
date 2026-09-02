@@ -54,6 +54,28 @@ public class LMSPrivateKeyParameters
     public LMSPrivateKeyParameters(LMSigParameters lmsParameter, LMOtsParameters otsParameters, int q, byte[] I, int maxQ, byte[] masterSecret)
     {
         super(true);
+
+        // the checks the decoder applies, so a key built directly is not one it would refuse
+        if (lmsParameter == null || otsParameters == null)
+        {
+            throw new IllegalArgumentException("LMS private key needs both parameter sets");
+        }
+        if (I == null || I.length != 16)
+        {
+            throw new IllegalArgumentException("LMS key identifier I must be 16 bytes");
+        }
+        if (masterSecret == null || masterSecret.length < lmsParameter.getM())
+        {
+            throw new IllegalArgumentException("master secret is less than " + lmsParameter.getM());
+        }
+
+        int twoToH = 1 << lmsParameter.getH();
+        if (q < 0 || maxQ < 0 || maxQ > twoToH || q > maxQ)
+        {
+            throw new IllegalArgumentException(
+                "LMS private key q/maxQ out of range: q=" + q + " maxQ=" + maxQ + " 2^h=" + twoToH);
+        }
+
         this.parameters = lmsParameter;
         this.otsParameters = otsParameters;
         this.q = q;
@@ -61,6 +83,26 @@ public class LMSPrivateKeyParameters
         this.maxQ = maxQ;
         this.masterSecret = Arrays.clone(masterSecret);
         this.maxCacheR = 1 << (parameters.getH() + 1);
+        this.tCache = new WeakHashMap<CacheKey, byte[]>();
+    }
+
+    /**
+     * A key with no position, identifier or seed of its own - the placeholder an HSS hierarchy is
+     * built with for the levels below the root, each of which resetKeyToIndex replaces from the
+     * level above before the key is used. The sentinel values are deliberately ones the public
+     * constructor refuses, so a placeholder can never be mistaken for a key that was merely built
+     * carelessly; a subclass using this must not present the result as a usable key.
+     */
+    protected LMSPrivateKeyParameters(LMSigParameters lmsParameter, LMOtsParameters otsParameters, int maxQ)
+    {
+        super(true);
+        this.parameters = lmsParameter;
+        this.otsParameters = otsParameters;
+        this.q = -1;
+        this.I = new byte[0];
+        this.maxQ = maxQ;
+        this.masterSecret = new byte[0];
+        this.maxCacheR = 1 << (lmsParameter.getH() + 1);
         this.tCache = new WeakHashMap<CacheKey, byte[]>();
     }
 
@@ -83,9 +125,26 @@ public class LMSPrivateKeyParameters
     {
         LMSPrivateKeyParameters pKey = getInstance(privEnc);
 
+        LMSPublicKeyParameters pubKey = LMSPublicKeyParameters.getInstance(pubEnc);
+
+        // cross-check rather than adopt, as the HSS twin does; the root only where it is cached
+        if (!Arrays.areEqual(pKey.getI(), pubKey.getI())
+            || pKey.getSigParameters().getType() != pubKey.getSigParameters().getType()
+            || pKey.getOtsParameters().getType() != pubKey.getOtsParameters().getType())
+        {
+            throw new IOException("LMS public key does not match the private key");
+        }
+
+        byte[] cachedRoot = pKey.peekRootT();
+
+        if (cachedRoot != null && !Arrays.areEqual(cachedRoot, pubKey.getT1()))
+        {
+            throw new IOException("LMS private key tree cache does not match the public key");
+        }
+
         synchronized (pKey)
         {
-            pKey.publicKey = LMSPublicKeyParameters.getInstance(pubEnc);
+            pKey.publicKey = pubKey;
         }
 
         return pKey;
@@ -183,7 +242,7 @@ public class LMSPrivateKeyParameters
 
         if (dIn.readInt() != 0)
         {
-            throw new IllegalStateException("expected version 0 lms private key");
+            throw new IOException("expected version 0 lms private key");
         }
 
         int sigType = dIn.readInt();
@@ -215,9 +274,10 @@ public class LMSPrivateKeyParameters
                 "LMS private key q/maxQ out of range: q=" + q + " maxQ=" + maxQ + " 2^h=" + twoToH);
         }
         int l = dIn.readInt();
-        if (l < 0)
+        if (l < parameter.getM())
         {
-            throw new IllegalStateException("secret length less than zero");
+            // SP 800-208 sec. 6.1 requires SEED to be n bytes; generateKey has always required m
+            throw new IOException("secret length less than " + parameter.getM() + ": " + l);
         }
         if (l > dIn.available())
         {
@@ -236,6 +296,10 @@ public class LMSPrivateKeyParameters
         if (cacheCount < 0 || cacheCount >= internedKeys.length)
         {
             throw new IOException("tree cache node count out of range: " + cacheCount);
+        }
+        if (cacheCount != 0 && (cacheCount < 3 || ((cacheCount + 1) & cacheCount) != 0))
+        {
+            throw new IOException("tree cache node count is not a complete top of tree: " + cacheCount);
         }
         int m = key.getSigParameters().getM();
         if ((long)cacheCount * m > dIn.available())
@@ -261,6 +325,15 @@ public class LMSPrivateKeyParameters
      * the root, whose children 2 and 3 are cached - so bit rot or a partial write in the stored key
      * is refused here rather than primed into the tree, where it would change the public key the
      * key reports or yield a signature that does not verify (github #2414).
+     * <p>
+     * That every node is covered holds only because the caller has already refused any node count
+     * that is not a complete top of tree - 2^k - 1 nodes, k at least 2. A node with no cached
+     * sibling pair above it is read but never recomputed: at a count of 1 or 2 that is the root
+     * itself, and at any even count it is the last node, whose parent would need the sibling the
+     * count stops one short of. Every node of a complete top of tree is either recomputed from its
+     * two children or is an input to its own parent's recomputation, so the guarantee above is
+     * exact. This writer emits 63, or 31 for a height-5 shard, so the restriction refuses nothing
+     * it produces.
      * <p>
      * Only interior nodes are recomputed. A cached node at or beyond 2^h is a leaf, and deriving one
      * costs an LM-OTS public key - which is the work the cache exists to avoid; a corrupt leaf is

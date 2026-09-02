@@ -31,7 +31,7 @@ class LMOtsPublicKey
     }
 
     public static LMOtsPublicKey getInstance(Object src)
-        throws Exception
+        throws IOException
     {
         if (src instanceof LMOtsPublicKey)
         {
@@ -39,7 +39,12 @@ class LMOtsPublicKey
         }
         else if (src instanceof DataInputStream)
         {
-            LMOtsParameters parameter = LMOtsParameters.getParametersForType(((DataInputStream)src).readInt());
+            int otsType = ((DataInputStream)src).readInt();
+            LMOtsParameters parameter = LMOtsParameters.getParametersForType(otsType);
+            if (parameter == null)
+            {
+                throw new IOException("unknown LM-OTS type code: " + otsType);
+            }
             byte[] I = new byte[16];
             ((DataInputStream)src).readFully(I);
             int q = ((DataInputStream)src).readInt();

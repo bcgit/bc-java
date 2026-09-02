@@ -2,8 +2,11 @@ package org.bouncycastle.crypto.params;
 
 import java.io.IOException;
 import java.security.SecureRandom;
+import java.util.ArrayList;
+import java.util.List;
 
 import junit.framework.TestCase;
+import org.bouncycastle.crypto.signers.lms.LMSSignature;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.encoders.Hex;
@@ -328,6 +331,170 @@ public class LMSTests
         assertTrue(decoded.isTreeCachePrimed());
         byte[] msg = Hex.decode("48656c6c6f");
         assertTrue(verify(priv.getPublicKey(), sign(decoded, msg), msg));
+    }
+
+    /**
+     * The key parameter constructors apply the checks the decoder applies, so a key built directly
+     * cannot be one the decoder would refuse. LMSPrivateKeyParameters accepted an identifier of any
+     * length although the decoder reads exactly 16 bytes - such a key encoded but could not be read
+     * back - and left q, maxQ and the seed length unchecked although all three are checked at
+     * decode; HSSPrivateKeyParameters checked neither its level count nor that it had been given a
+     * component key and a chaining signature per level, and then indexed both lists.
+     */
+    public void testKeyParameterConstructorsValidate()
+        throws Exception
+    {
+        LMSigParameters sigParams = LMSigParameters.lms_sha256_n32_h5;
+        LMOtsParameters otsParams = LMOtsParameters.sha256_n32_w1;
+        int twoToH = 1 << sigParams.getH();
+        byte[] I = new byte[16];
+        byte[] seed = new byte[sigParams.getM()];
+
+        // the well-formed case is unaffected
+        assertNotNull(new LMSPrivateKeyParameters(sigParams, otsParams, 0, I, twoToH, seed));
+
+        expectBadArgument("LMS key identifier I must be 16 bytes", sigParams, otsParams, 0, new byte[15], twoToH, seed);
+        expectBadArgument("LMS key identifier I must be 16 bytes", sigParams, otsParams, 0, new byte[17], twoToH, seed);
+        expectBadArgument("LMS key identifier I must be 16 bytes", sigParams, otsParams, 0, null, twoToH, seed);
+        expectBadArgument("LMS private key needs both parameter sets", sigParams, null, 0, I, twoToH, seed);
+        expectBadArgument("master secret is less than " + sigParams.getM(),
+            sigParams, otsParams, 0, I, twoToH, new byte[1]);
+        expectBadArgument("LMS private key q/maxQ out of range: q=-1 maxQ=" + twoToH + " 2^h=" + twoToH,
+            sigParams, otsParams, -1, I, twoToH, seed);
+        expectBadArgument("LMS private key q/maxQ out of range: q=0 maxQ=" + (twoToH + 1) + " 2^h=" + twoToH,
+            sigParams, otsParams, 0, I, twoToH + 1, seed);
+        expectBadArgument("LMS private key q/maxQ out of range: q=5 maxQ=4 2^h=" + twoToH,
+            sigParams, otsParams, 5, I, 4, seed);
+
+        // and a key that survives the constructor round-trips through the decoder
+        LMSPrivateKeyParameters key = new LMSPrivateKeyParameters(sigParams, otsParams, 0, I, twoToH, seed);
+        assertNotNull(LMSPrivateKeyParameters.getInstance(key.getEncoded()));
+
+        // HSS: level count, list sizes and the index pair
+        List<LMSPrivateKeyParameters> one = new ArrayList<LMSPrivateKeyParameters>();
+        one.add(key);
+        List<LMSSignature> none = new ArrayList<LMSSignature>();
+
+        expectBadHss("L value of HSS private key out of range: 0", 0, one, none, 0, twoToH);
+        expectBadHss("L value of HSS private key out of range: 9", 9, one, none, 0, twoToH);
+        expectBadHss("HSS private key needs one component key per level", 2, one, none, 0, twoToH);
+        expectBadHss("HSS private key index out of range: index=5 indexLimit=4", 1, one, none, 5, 4);
+        expectBadHss("HSS private key index out of range: index=-1 indexLimit=4", 1, one, none, -1, 4);
+
+        // the well-formed single-level case still builds
+        assertNotNull(new HSSPrivateKeyParameters(1, one, none, 0, twoToH));
+    }
+
+    private static void expectBadArgument(String message, LMSigParameters sigParams, LMOtsParameters otsParams,
+        int q, byte[] I, int maxQ, byte[] seed)
+    {
+        try
+        {
+            new LMSPrivateKeyParameters(sigParams, otsParams, q, I, maxQ, seed);
+            fail("no exception for: " + message);
+        }
+        catch (IllegalArgumentException e)
+        {
+            assertEquals(message, e.getMessage());
+        }
+    }
+
+    private static void expectBadHss(String message, int l, List<LMSPrivateKeyParameters> keys,
+        List<LMSSignature> sig, long index, long indexLimit)
+    {
+        try
+        {
+            new HSSPrivateKeyParameters(l, keys, sig, index, indexLimit);
+            fail("no exception for: " + message);
+        }
+        catch (IllegalArgumentException e)
+        {
+            assertEquals(message, e.getMessage());
+        }
+    }
+
+    /**
+     * A tree cache node count that is not a complete top of tree - 2^k - 1 nodes - is refused at
+     * decode. The consistency check recomputes a cached node from its two cached children, so a
+     * node with no cached sibling pair above it would be read but never checked: at a count of 1
+     * or 2 that is the root itself, so a corrupted root was primed and the key reported the wrong
+     * public key, and at any even count it is the last node, so a corrupted one survived and was
+     * carried forward by the next getEncoded(). This writer only ever emits 63, or 31 for a
+     * height-5 shard.
+     */
+    public void testTreeCacheIncompleteTopOfTreeRejected()
+        throws Exception
+    {
+        LMSigParameters sigParams = LMSigParameters.lms_sha256_n32_h5;
+        LMOtsParameters otsParams = LMOtsParameters.sha256_n32_w1;
+        int m = sigParams.getM();
+
+        LMSKeyPairGenerator gen = new LMSKeyPairGenerator();
+        gen.init(new LMSKeyGenerationParameters(new LMSParameters(sigParams, otsParams), new SecureRandom()));
+        LMSPrivateKeyParameters priv = (LMSPrivateKeyParameters)gen.generateKeyPair().getPrivate();
+        byte[] enc = priv.getEncoded();
+
+        int countOff = 40 + Pack.bigEndianToInt(enc, 36);
+        int cacheCount = Pack.bigEndianToInt(enc, countOff);
+        assertEquals("this writer should emit a full top of tree", 63, cacheCount);
+
+        int[] incomplete = new int[]{ 1, 2, 4, 5, 6, 8, 30, 62 };
+        for (int i = 0; i != incomplete.length; i++)
+        {
+            int count = incomplete[i];
+            try
+            {
+                LMSPrivateKeyParameters.getInstance(withNodeCount(enc, countOff, m, count));
+                fail("no exception on an incomplete tree cache of " + count + " nodes");
+            }
+            catch (IOException e)
+            {
+                assertEquals("tree cache node count is not a complete top of tree: " + count, e.getMessage());
+            }
+        }
+
+        // the shapes this writer produces, and an absent cache, are still accepted
+        int[] complete = new int[]{ 0, 3, 7, 15, 31, 63 };
+        for (int i = 0; i != complete.length; i++)
+        {
+            LMSPrivateKeyParameters decoded =
+                LMSPrivateKeyParameters.getInstance(withNodeCount(enc, countOff, m, complete[i]));
+            assertTrue("complete top of tree of " + complete[i] + " nodes was refused",
+                Arrays.areEqual(priv.getPublicKey().getEncoded(), decoded.getPublicKey().getEncoded()));
+        }
+
+        // a corrupted node in each refused shape is what the restriction is there to stop reaching
+        // the tree: at count 1 and 2 the root, at count 62 the last node
+        int[][] corruptCases = new int[][]{ { 1, 1 }, { 2, 1 }, { 62, 62 } };
+        for (int i = 0; i != corruptCases.length; i++)
+        {
+            byte[] truncated = withNodeCount(enc, countOff, m, corruptCases[i][0]);
+            truncated[countOff + 4 + (corruptCases[i][1] - 1) * m] ^= 0x01;
+            try
+            {
+                LMSPrivateKeyParameters.getInstance(truncated);
+                fail("corrupt node " + corruptCases[i][1] + " accepted at count " + corruptCases[i][0]);
+            }
+            catch (IOException e)
+            {
+                assertEquals("tree cache node count is not a complete top of tree: " + corruptCases[i][0],
+                    e.getMessage());
+            }
+        }
+    }
+
+    /**
+     * The passed in encoding with its tree cache cut down to the first nodeCount nodes.
+     */
+    private static byte[] withNodeCount(byte[] enc, int countOff, int m, int nodeCount)
+    {
+        byte[] rebuilt = new byte[countOff + 4 + nodeCount * m];
+
+        System.arraycopy(enc, 0, rebuilt, 0, countOff);
+        Pack.intToBigEndian(nodeCount, rebuilt, countOff);
+        System.arraycopy(enc, countOff + 4, rebuilt, countOff + 4, nodeCount * m);
+
+        return rebuilt;
     }
 
     /**

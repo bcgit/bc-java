@@ -43,6 +43,18 @@ public class LMSKeyGenParameterSpec
         otsParameters.put("sha256-n32-w2", LMOtsParameters.sha256_n32_w2);
         otsParameters.put("sha256-n32-w4", LMOtsParameters.sha256_n32_w4);
         otsParameters.put("sha256-n32-w8", LMOtsParameters.sha256_n32_w8);
+        otsParameters.put("sha256-n24-w1", LMOtsParameters.sha256_n24_w1);
+        otsParameters.put("sha256-n24-w2", LMOtsParameters.sha256_n24_w2);
+        otsParameters.put("sha256-n24-w4", LMOtsParameters.sha256_n24_w4);
+        otsParameters.put("sha256-n24-w8", LMOtsParameters.sha256_n24_w8);
+        otsParameters.put("shake256-n32-w1", LMOtsParameters.shake256_n32_w1);
+        otsParameters.put("shake256-n32-w2", LMOtsParameters.shake256_n32_w2);
+        otsParameters.put("shake256-n32-w4", LMOtsParameters.shake256_n32_w4);
+        otsParameters.put("shake256-n32-w8", LMOtsParameters.shake256_n32_w8);
+        otsParameters.put("shake256-n24-w1", LMOtsParameters.shake256_n24_w1);
+        otsParameters.put("shake256-n24-w2", LMOtsParameters.shake256_n24_w2);
+        otsParameters.put("shake256-n24-w4", LMOtsParameters.shake256_n24_w4);
+        otsParameters.put("shake256-n24-w8", LMOtsParameters.shake256_n24_w8);
     }
 
     private final LMSigParameters lmSigParams;

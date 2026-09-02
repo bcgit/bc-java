@@ -21,6 +21,7 @@ public class AllTests
         suite.addTestSuite(BufferedMessageTests.class);
         suite.addTestSuite(LMOtsTests.class);
         suite.addTestSuite(TypeTests.class);
+        suite.addTestSuite(VerifyContextTests.class);
 
         return new BCTestSetup(suite);
     }

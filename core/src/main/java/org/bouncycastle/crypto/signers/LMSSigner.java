@@ -8,6 +8,7 @@ import org.bouncycastle.crypto.params.HSSPrivateKeyParameters;
 import org.bouncycastle.crypto.params.HSSPublicKeyParameters;
 import org.bouncycastle.crypto.params.LMSPrivateKeyParameters;
 import org.bouncycastle.crypto.params.LMSPublicKeyParameters;
+import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.signers.lms.LMSContext;
 import org.bouncycastle.util.Arrays;
 
@@ -19,6 +20,17 @@ public class LMSSigner
     private boolean hssWrapped;
     private LMSContextBasedVerifier pubKey;
 
+    /**
+     * Initialise for signing or verification. A {@link ParametersWithRandom} wrapper is accepted
+     * and unwrapped, so a caller that supplies a random - as the operator builders do whenever
+     * setSecureRandom() has been called - is not refused; the random itself is not used. The
+     * message randomiser C is derived from the key's seed and the one-time index (RFC 8554
+     * sec. 4.2, following the reference implementation), so it is deterministic and cannot repeat
+     * while q does not.
+     *
+     * @param forSigning true for signing, false for verification.
+     * @param param the key, optionally wrapped in {@link ParametersWithRandom}.
+     */
     public void init(boolean forSigning, CipherParameters param)
     {
          // clear both first: a re-init only assigned the key for the mode being set, so a signer
@@ -28,6 +40,11 @@ public class LMSSigner
          this.privKey = null;
          this.pubKey = null;
          this.hssWrapped = false;
+
+         if (param instanceof ParametersWithRandom)
+         {
+             param = ((ParametersWithRandom)param).getParameters();
+         }
 
          if (forSigning)
          {
@@ -141,22 +158,21 @@ public class LMSSigner
             throw new IllegalStateException("LMSSigner not initialised for verification");
         }
 
-        // A malformed/truncated signature must not throw out of verify: the decode
-        // can fail on truncation (surfacing as IllegalStateException) or with another
-        // RuntimeException (out-of-range type fields surface as NullPointerException /
-        // NegativeArraySizeException).
+        // a malformed signature must not throw out of verify; scoped to the decode alone, since
+        // past it the engine reports an inconsistent signature by returning false
+        LMSContext context;
         try
         {
-            LMSContext context = pubKey.generateLMSContext(signature);
-
-            context.update(message, 0, message.length);
-
-            return pubKey.verify(context);
+            context = pubKey.generateLMSContext(signature);
         }
         catch (RuntimeException e)
         {
             return false;
         }
+
+        context.update(message, 0, message.length);
+
+        return pubKey.verify(context);
     }
 
     /**

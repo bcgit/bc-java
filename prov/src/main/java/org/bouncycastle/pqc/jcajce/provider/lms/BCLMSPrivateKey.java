@@ -50,12 +50,16 @@ public class BCLMSPrivateKey
 
     public long getIndex()
     {
-        if (getUsagesRemaining() == 0)
+        // both reads under the key's own monitor, so a signature in between cannot split them
+        synchronized (keyParams)
         {
-            throw new IllegalStateException("key exhausted");
-        }
+            if (keyParams.getUsagesRemaining() == 0)
+            {
+                throw new IllegalStateException("key exhausted");
+            }
 
-        return keyParams.getIndex();
+            return keyParams.getIndex();
+        }
     }
 
     public long getUsagesRemaining()

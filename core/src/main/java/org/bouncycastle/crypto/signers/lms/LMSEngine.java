@@ -171,8 +171,33 @@ public final class LMSEngine
         }
     }
 
+    /**
+     * The typecode and leaf-number checks RFC 8554 sec. 5.4.2 requires before a signature is
+     * processed: step 2g refuses a signature whose LMS typecode is not the one from the public key,
+     * and step 2i refuses a leaf number q outside the tree. Without the first, the path computation
+     * below took its height and tree digest from the parameter set the signature named rather than
+     * the key's, so a signature claiming h25 drove a 25-level computation against an h5 key; without
+     * the second, an out-of-range q flowed into the node arithmetic and was left to be caught by the
+     * candidate-root comparison. Neither was a forgery under a secure hash - the domain separation
+     * and the final comparison saw to that - but both are work the specification says to refuse up
+     * front.
+     */
     static LMSContext generateVerifyContext(LMSPublicKeyParameters publicKey, LMSSignature S)
     {
+        LMSigParameters sigParameters = publicKey.getSigParameters();
+        if (S.getParameter().getType() != sigParameters.getType())
+        {
+            throw new IllegalArgumentException("lms type from lms signature does not match lms type" +
+                " from public key");
+        }
+
+        int q = S.getQ();
+        if (q < 0 || q >= (1 << sigParameters.getH()))
+        {
+            throw new IllegalArgumentException("lms leaf number q from lms signature is outside the" +
+                " public key's tree");
+        }
+
         int ots_typecode = publicKey.getOtsParameters().getType();
         if (S.getOtsSignature().getType().getType() != ots_typecode)
         {
@@ -357,8 +382,6 @@ public final class LMSEngine
         // index of zero. Rather than repeat the same reset-to-index logic in this static method.
         //
 
-        byte[] zero = new byte[0];
-
         long hssKeyMaxIndex = 1;
         for (int t = 0; t < keys.length; t++)
         {
@@ -377,10 +400,7 @@ public final class LMSEngine
                 keys[t] = new PlaceholderLMSPrivateKey(
                     parameters.getLmsParameters()[t].getLMSigParam(),
                     parameters.getLmsParameters()[t].getLMOTSParam(),
-                    -1,
-                    zero,
-                    1 << parameters.getLmsParameters()[t].getLMSigParam().getH(),
-                    zero);
+                    1 << parameters.getLmsParameters()[t].getLMSigParam().getH());
             }
             hssKeyMaxIndex *= 1 << parameters.getLmsParameters()[t].getLMSigParam().getH();
         }
@@ -426,9 +446,9 @@ public final class LMSEngine
     private static class PlaceholderLMSPrivateKey
         extends LMSPrivateKeyParameters
     {
-        PlaceholderLMSPrivateKey(LMSigParameters lmsParameter, LMOtsParameters otsParameters, int q, byte[] I, int maxQ, byte[] masterSecret)
+        PlaceholderLMSPrivateKey(LMSigParameters lmsParameter, LMOtsParameters otsParameters, int maxQ)
         {
-            super(lmsParameter, otsParameters, q, I, maxQ, masterSecret);
+            super(lmsParameter, otsParameters, maxQ);
         }
 
         public LMSContext generateLMSContext()

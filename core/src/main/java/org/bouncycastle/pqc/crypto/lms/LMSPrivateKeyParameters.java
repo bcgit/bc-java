@@ -181,7 +181,7 @@ public class LMSPrivateKeyParameters
 
         if (dIn.readInt() != 0)
         {
-            throw new IllegalStateException("expected version 0 lms private key");
+            throw new IOException("expected version 0 lms private key");
         }
 
         int sigType = dIn.readInt();
@@ -215,7 +215,7 @@ public class LMSPrivateKeyParameters
         int l = dIn.readInt();
         if (l < 0)
         {
-            throw new IllegalStateException("secret length less than zero");
+            throw new IOException("secret length less than zero");
         }
         if (l > dIn.available())
         {
@@ -234,6 +234,10 @@ public class LMSPrivateKeyParameters
         if (cacheCount < 0 || cacheCount >= internedKeys.length)
         {
             throw new IOException("tree cache node count out of range: " + cacheCount);
+        }
+        if (cacheCount != 0 && (cacheCount < 3 || ((cacheCount + 1) & cacheCount) != 0))
+        {
+            throw new IOException("tree cache node count is not a complete top of tree: " + cacheCount);
         }
         int m = key.getSigParameters().getM();
         if ((long)cacheCount * m > dIn.available())
@@ -257,6 +261,13 @@ public class LMSPrivateKeyParameters
      * children, and for every node up to cacheCount / 2 both children are themselves cached. A
      * single altered node therefore always fails its own parent's recomputation - including node 1,
      * the root, whose children 2 and 3 are cached (github #2414).
+     * <p>
+     * That every node is covered holds only because the caller has already refused any node count
+     * that is not a complete top of tree - 2^k - 1 nodes, k at least 2. A node with no cached
+     * sibling pair above it is read but never recomputed: at a count of 1 or 2 that is the root
+     * itself, and at any even count it is the last node, whose parent would need the sibling the
+     * count stops one short of. This writer emits 63, or 31 for a height-5 shard, so the
+     * restriction refuses nothing it produces.
      * <p>
      * Only interior nodes are recomputed. A cached node at or beyond 2^h is a leaf, and deriving one
      * costs an LM-OTS public key - which is the work the cache exists to avoid; a corrupt leaf is

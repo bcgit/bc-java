@@ -12,7 +12,6 @@ import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.NullDigest;
 import org.bouncycastle.crypto.ExhaustedPrivateKeyException;
 import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
-import org.bouncycastle.pqc.crypto.MessageSigner;
 import org.bouncycastle.crypto.signers.lms.LMSContext;
 import org.bouncycastle.crypto.signers.LMSContextBasedSigner;
 import org.bouncycastle.crypto.signers.LMSContextBasedVerifier;
@@ -26,8 +25,6 @@ public class LMSSignatureSpi
     }
 
     private Digest digest;
-    private MessageSigner signer;
-    private SecureRandom random;
 
     private LMSContextBasedSigner lmOtsSigner;
     private LMSContextBasedVerifier lmOtsVerifier;
@@ -58,7 +55,7 @@ public class LMSSignatureSpi
     protected void engineInitSign(PrivateKey privateKey, SecureRandom random)
         throws InvalidKeyException
     {
-        this.random = random;
+        // the random is not used: LMS derives its message randomiser from the seed and q
         engineInitSign(privateKey);
     }
 
@@ -80,6 +77,14 @@ public class LMSSignatureSpi
         }
     }
 
+    /**
+     * Note the one-time key this signature will use is claimed here, at the first update(), rather
+     * than at sign(): getSigner() takes the signing context from the key, which advances its index.
+     * A Signature that is initialised and updated and then abandoned therefore spends an index
+     * without producing a signature. That is the safe direction for a one-time scheme - the
+     * alternative risks issuing the same one-time key twice - but it is worth knowing when
+     * budgeting a key's usages.
+     */
     protected void engineUpdate(byte b)
         throws SignatureException
     {

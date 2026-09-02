@@ -155,7 +155,7 @@ public class HSSPrivateKeyParameters
             int version = ((DataInputStream)src).readInt();
             if (version != 0 && version != 1)
             {
-                throw new IllegalStateException("unknown version for hss private key");
+                throw new IOException("unknown version for hss private key");
             }
             int d = ((DataInputStream)src).readInt();
             if (d < 1 || d > 8)    // RFC 8554, Section 6.
@@ -404,9 +404,14 @@ public class HSSPrivateKeyParameters
 
 
         //
-        // We need to replace the root key to a new q value.
+        // We need to replace the root key to a new q value; the last level reads the derived
+        // value itself, which for a single level hierarchy is the root.
         //
-        if (keys[0].getIndex() - 1 != qTreePath[0])
+        boolean rootQMatch = (qTreePath.length > 1)
+            ? qTreePath[0] == keys[0].getIndex() - 1
+            : qTreePath[0] == keys[0].getIndex();
+
+        if (!rootQMatch)
         {
             keys[0] = LMS.generateKeys(
                 originalRootKey.getSigParameters(),
@@ -617,9 +622,11 @@ public class HSSPrivateKeyParameters
     public LMSContext generateLMSContext()
     {
         LMSSignedPubKey[] signed_pub_key;
-        LMSPrivateKeyParameters nextKey;
+        LMSContext context;
         int L = this.getL();
 
+        // the HSS index and the bottom key's q are two records of one position: claim both here,
+        // bottom key first so an exhausted one leaves each untouched.
         synchronized (this)
         {
             rangeTestKeys(this);
@@ -627,7 +634,7 @@ public class HSSPrivateKeyParameters
             List<LMSPrivateKeyParameters> keys = this.getKeys();
             List<LMSSignature> sig = this.getSig();
 
-            nextKey = this.getKeys().get(L - 1);
+            LMSPrivateKeyParameters nextKey = keys.get(L - 1);
 
             // Step 2. Stand in for sig[L-1]
             int i = 0;
@@ -640,13 +647,15 @@ public class HSSPrivateKeyParameters
                 i = i + 1;
             }
 
+            context = nextKey.generateLMSContext();
+
             //
             // increment the index.
             //
             this.incIndex();
         }
 
-        return nextKey.generateLMSContext().withSignedPublicKeys(signed_pub_key);
+        return context.withSignedPublicKeys(signed_pub_key);
     }
 
     public byte[] generateSignature(LMSContext context)

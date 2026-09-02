@@ -50,6 +50,26 @@ public class HSSPrivateKeyParameters
     {
         super(true);
 
+        // the same shape the decoder requires; resetKeyToIndex below indexes both lists against l
+        if (l < 1 || l > 8)    // RFC 8554, Section 6.
+        {
+            throw new IllegalArgumentException("L value of HSS private key out of range: " + l);
+        }
+        if (keys.size() != l)
+        {
+            throw new IllegalArgumentException("HSS private key needs one component key per level");
+        }
+        if (sig.size() != l - 1)
+        {
+            throw new IllegalArgumentException(
+                "HSS private key needs one chaining signature per level below the root");
+        }
+        if (index < 0 || indexLimit < 0 || index > indexLimit)
+        {
+            throw new IllegalArgumentException(
+                "HSS private key index out of range: index=" + index + " indexLimit=" + indexLimit);
+        }
+
         this.l = l;
         this.keys = Collections.unmodifiableList(new ArrayList<LMSPrivateKeyParameters>(keys));
         this.sig = Collections.unmodifiableList(new ArrayList<LMSSignature>(sig));
@@ -61,6 +81,12 @@ public class HSSPrivateKeyParameters
         // Correct Intermediate LMS values will be constructed during reset to index.
         //
         resetKeyToIndex();
+
+        // a null level is legitimate on the way in, for the reset above to fill, but not on the way out
+        if (this.keys.contains(null) || this.sig.contains(null))
+        {
+            throw new IllegalArgumentException("HSS private key has a level that was left unconstructed");
+        }
     }
 
     private HSSPrivateKeyParameters(int l, List<LMSPrivateKeyParameters> keys, List<LMSSignature> sig, long index, long indexLimit, boolean isShard)
@@ -153,7 +179,7 @@ public class HSSPrivateKeyParameters
             int version = ((DataInputStream)src).readInt();
             if (version != 0 && version != 1)
             {
-                throw new IllegalStateException("unknown version for hss private key");
+                throw new IOException("unknown version for hss private key");
             }
             int d = ((DataInputStream)src).readInt();
             if (d < 1 || d > 8)    // RFC 8554, Section 6.
@@ -426,9 +452,14 @@ public class HSSPrivateKeyParameters
 
 
         //
-        // We need to replace the root key to a new q value.
+        // We need to replace the root key to a new q value; the last level reads the derived
+        // value itself, which for a single level hierarchy is the root.
         //
-        if (keys[0].getIndex() - 1 != qTreePath[0])
+        boolean rootQMatch = (qTreePath.length > 1)
+            ? qTreePath[0] == keys[0].getIndex() - 1
+            : qTreePath[0] == keys[0].getIndex();
+
+        if (!rootQMatch)
         {
             keys[0] = generateKey(
                 originalRootKey.getSigParameters(),
@@ -725,9 +756,11 @@ public class HSSPrivateKeyParameters
     {
         LMSSignature[] signatures;
         LMSPublicKeyParameters[] publicKeys;
-        LMSPrivateKeyParameters nextKey;
+        LMSContext context;
         int L = this.getL();
 
+        // the HSS index and the bottom key's q are two records of one position: claim both here,
+        // bottom key first so an exhausted one leaves each untouched.
         synchronized (this)
         {
             rangeTestKeys();
@@ -735,7 +768,7 @@ public class HSSPrivateKeyParameters
             List<LMSPrivateKeyParameters> keys = this.getKeys();
             List<LMSSignature> sig = this.getSig();
 
-            nextKey = this.getKeys().get(L - 1);
+            LMSPrivateKeyParameters nextKey = keys.get(L - 1);
 
             // Step 2. Stand in for sig[L-1]
             int i = 0;
@@ -748,13 +781,15 @@ public class HSSPrivateKeyParameters
                 i = i + 1;
             }
 
+            context = nextKey.generateLMSContext();
+
             //
             // increment the index.
             //
             this.incIndex();
         }
 
-        return LMSEngine.withSignedPublicKeys(nextKey.generateLMSContext(), signatures, publicKeys);
+        return LMSEngine.withSignedPublicKeys(context, signatures, publicKeys);
     }
 
     public byte[] generateSignature(LMSContext context)
