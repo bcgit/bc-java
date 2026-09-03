@@ -41,7 +41,7 @@ final class ProvSSLParameters
     private List<BCSNIMatcher> sniMatchers;
     // Changed to true in Java 13, then subsequently backported to 8, 11
     private boolean useCipherSuitesOrder = true;
-    private boolean useNamedGroupsOrder = false;
+    private boolean useNamedGroupsOrder;
     private boolean enableRetransmissions = true;
     private int maximumPacketSize = 0;
     private String[] applicationProtocols = TlsUtils.EMPTY_STRINGS;
@@ -60,6 +60,7 @@ final class ProvSSLParameters
 
         this.cipherSuites = cipherSuites;
         this.protocols = protocols;
+        this.useNamedGroupsOrder = contextData.getDefaultUseNamedGroupsOrder();
     }
 
     ProvSSLParameters copy()

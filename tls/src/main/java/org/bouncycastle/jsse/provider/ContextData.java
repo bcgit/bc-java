@@ -40,6 +40,7 @@ final class ContextData
     private final int handshakeTimeoutMillis;
     private final boolean serverEnableStatusRequest;
     private final OcspStapleCache ocspStapleCache;
+    private final boolean defaultUseNamedGroupsOrder;
 
     ContextData(boolean fipsMode, JcaTlsCrypto crypto, BCX509ExtendedKeyManager x509KeyManager,
         BCX509ExtendedTrustManager x509TrustManager, Map<String, CipherSuiteInfo> supportedCipherSuites,
@@ -73,6 +74,13 @@ final class ContextData
             "jdk.tls.server.enableStatusRequestExtension", false);
         // nothing reaches the cache unless a server in this context staples, so don't build one
         this.ocspStapleCache = serverEnableStatusRequest ? OcspStapleCache.create(crypto.getHelper()) : null;
+        /*
+         * NOTE: also read per context (see above), so that an SSLContext initialised after the
+         * property is set honours it and one initialised before is unaffected. It only seeds the
+         * default in ProvSSLParameters; a value set on the connection's BCSSLParameters still wins.
+         */
+        this.defaultUseNamedGroupsOrder = PropertyUtils.getBooleanSystemProperty(
+            "org.bouncycastle.jsse.useNamedGroupsOrder", false);
     }
 
     int[] getActiveCipherSuites(JcaTlsCrypto crypto, ProvSSLParameters sslParameters,
@@ -239,6 +247,15 @@ final class ContextData
     OcspStapleCache getOcspStapleCache()
     {
         return ocspStapleCache;
+    }
+
+    /**
+     * The initial value of {@link ProvSSLParameters#getUseNamedGroupsOrder()} for parameters created
+     * in this context, from <code>org.bouncycastle.jsse.useNamedGroupsOrder</code> (default false).
+     */
+    boolean getDefaultUseNamedGroupsOrder()
+    {
+        return defaultUseNamedGroupsOrder;
     }
 
     NamedGroupInfo.PerConnection getNamedGroupsClient(ProvSSLParameters sslParameters,
