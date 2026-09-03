@@ -109,15 +109,21 @@ public class TestCertificateGen
     public static X509Certificate createCert(X500Name signerName, PrivateKey signerKey, X500Name dn, String sigName, Extensions extensions, PublicKey pubKey)
         throws Exception
     {
-        V3TBSCertificateGenerator certGen = new V3TBSCertificateGenerator();
-
         long time = System.currentTimeMillis();
+
+        return createCert(signerName, signerKey, dn, sigName, new Date(time - 5000), new Date(time + 30 * 60 * 1000), extensions, pubKey);
+    }
+
+    public static X509Certificate createCert(X500Name signerName, PrivateKey signerKey, X500Name dn, String sigName, Date notBefore, Date notAfter, Extensions extensions, PublicKey pubKey)
+        throws Exception
+    {
+        V3TBSCertificateGenerator certGen = new V3TBSCertificateGenerator();
 
         certGen.setSerialNumber(ASN1Integer.valueOf(getSerialNumber()));
         certGen.setIssuer(signerName);
         certGen.setSubject(dn);
-        certGen.setStartDate(new Time(new Date(time - 5000)));
-        certGen.setEndDate(new Time(new Date(time + 30 * 60 * 1000)));
+        certGen.setStartDate(new Time(notBefore));
+        certGen.setEndDate(new Time(notAfter));
         certGen.setSignature((AlgorithmIdentifier)algIds.get(sigName));
         certGen.setSubjectPublicKeyInfo(SubjectPublicKeyInfo.getInstance(pubKey.getEncoded()));
         certGen.setExtensions(extensions);

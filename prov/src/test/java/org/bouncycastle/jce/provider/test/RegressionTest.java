@@ -111,6 +111,7 @@ public class RegressionTest
         new SM9SignatureTest(),
         new ThreefishTest(),
         new TLSKDFTest(),
+        new ValidityModelTest(),
         new WrapTest(),
         new X509CertificatePairTest(),
         new X509LDAPCertStoreTest(),

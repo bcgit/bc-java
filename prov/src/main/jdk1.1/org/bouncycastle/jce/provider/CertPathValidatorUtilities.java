@@ -1262,16 +1262,18 @@ class CertPathValidatorUtilities
                 byte[] extBytes = issuedCert.getExtensionValue(ISISMTTObjectIdentifiers.id_isismtt_at_dateOfCertGen.getId());
                 if (extBytes != null)
                 {
-                    dateOfCertgen = ASN1GeneralizedTime.getInstance(ASN1Primitive.fromByteArray(extBytes));
+                    // getExtensionValue returns the DER encoding of the extnValue OCTET STRING
+                    byte[] extValue = ASN1OctetString.getInstance(extBytes).getOctets();
+                    dateOfCertgen = ASN1GeneralizedTime.getInstance(ASN1Primitive.fromByteArray(extValue));
                 }
             }
             catch (IOException e)
             {
-                throw new AnnotatedException("Date of cert gen extension could not be read.");
+                throw new AnnotatedException("Date of cert gen extension could not be read.", e);
             }
             catch (IllegalArgumentException e)
             {
-                throw new AnnotatedException("Date of cert gen extension could not be read.");
+                throw new AnnotatedException("Date of cert gen extension could not be read.", e);
             }
             if (dateOfCertgen != null)
             {
