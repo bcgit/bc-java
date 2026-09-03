@@ -36,6 +36,7 @@ public final class BCSSLParameters
     private BCAlgorithmConstraints algorithmConstraints;
     private List<BCSNIServerName> serverNames;
     private List<BCSNIMatcher> sniMatchers;
+    // Defaults to false, mirroring SSLParameters - but actual socket/engine default is true (via ProvSSLParameters)
     private boolean useCipherSuitesOrder;
     private boolean useNamedGroupsOrder;
     private boolean enableRetransmissions = true;

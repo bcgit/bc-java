@@ -39,7 +39,8 @@ final class ProvSSLParameters
     private BCAlgorithmConstraints algorithmConstraints = ProvAlgorithmConstraints.DEFAULT;
     private List<BCSNIServerName> sniServerNames;
     private List<BCSNIMatcher> sniMatchers;
-    private boolean useCipherSuitesOrder = false;
+    // Changed to true in Java 13, then subsequently backported to 8, 11
+    private boolean useCipherSuitesOrder = true;
     private boolean useNamedGroupsOrder = false;
     private boolean enableRetransmissions = true;
     private int maximumPacketSize = 0;
