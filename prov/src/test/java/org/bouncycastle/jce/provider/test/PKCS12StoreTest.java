@@ -9,19 +9,25 @@ import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.KeyStore;
+import java.security.KeyStoreException;
+import java.security.KeyStoreSpi;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.Security;
 import java.security.Signature;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.Certificate;
+import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.spec.RSAPrivateCrtKeySpec;
 import java.security.spec.RSAPublicKeySpec;
+import java.util.Date;
 import java.util.Enumeration;
 
 import org.bouncycastle.asn1.ASN1BMPString;
+import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1OctetString;
@@ -29,6 +35,7 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1StreamParser;
 import org.bouncycastle.asn1.DERBMPString;
+import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
@@ -50,8 +57,13 @@ import org.bouncycastle.asn1.x500.X500NameBuilder;
 import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.KeyPurposeId;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.asn1.x509.Time;
+import org.bouncycastle.asn1.x509.V1TBSCertificateGenerator;
 import org.bouncycastle.internal.asn1.misc.MiscObjectIdentifiers;
 import org.bouncycastle.jcajce.PKCS12StoreParameter;
+import org.bouncycastle.jcajce.provider.keystore.pkcs12.PKCS12KeyStoreSpi;
+import org.bouncycastle.jcajce.provider.keystore.pkcs12.PKCS12PBMAC1KeyStoreSpi;
 import org.bouncycastle.jcajce.spec.MLDSAParameterSpec;
 import org.bouncycastle.jce.PKCS12Util;
 import org.bouncycastle.jce.interfaces.PKCS12BagAttributeCarrier;
@@ -2930,6 +2942,89 @@ public class PKCS12StoreTest
         isTrue(storeType + " alias found for absent certificate after reload", inStore.getCertificateAlias(absent) == null);
     }
 
+    private void testNullPublicKeyCertificate()
+        throws Exception
+    {
+        implNullPublicKeyCertificate("PKCS12", new PKCS12KeyStoreSpi.BCPKCS12KeyStore());
+        implNullPublicKeyCertificate("PKCS12-PBMAC1", new PKCS12PBMAC1KeyStoreSpi.BCPKCS12KeyStore());
+    }
+
+    private void implNullPublicKeyCertificate(String storeType, KeyStoreSpi storeSpi)
+        throws Exception
+    {
+        // a certificate naming an algorithm the provider has no key info converter for has a null public key (github #2419)
+        X509Certificate cert = createUnknownAlgorithmCertificate();
+
+        isTrue("public key resolved for unknown algorithm", cert.getPublicKey() == null);
+
+        KeyPair kp = KeyPairGenerator.getInstance("RSA", BC).generateKeyPair();
+
+        KeyStore store = KeyStore.getInstance(storeType, BC);
+
+        store.load(null, null);
+
+        try
+        {
+            store.setKeyEntry("key", kp.getPrivate(), passwd, new Certificate[]{cert});
+            fail(storeType + ": no exception on null public key in chain");
+        }
+        catch (KeyStoreException e)
+        {
+            isEquals("unable to resolve public key for certificate 0 in chain", e.getMessage());
+        }
+
+        isTrue(storeType + ": entry left behind by rejected chain", !store.containsAlias("key"));
+
+        try
+        {
+            store.setCertificateEntry("cert", cert);
+            fail(storeType + ": no exception on null public key certificate");
+        }
+        catch (KeyStoreException e)
+        {
+            isEquals("unable to resolve public key for certificate", e.getMessage());
+        }
+
+        isTrue(storeType + ": entry left behind by rejected certificate", !store.containsAlias("cert"));
+
+        // KeyStore.setKeyEntry screens an empty chain itself, so the SPI is exercised directly here
+        try
+        {
+            storeSpi.engineSetKeyEntry("key", kp.getPrivate(), passwd, new Certificate[0]);
+            fail(storeType + ": no exception on empty chain");
+        }
+        catch (KeyStoreException e)
+        {
+            isEquals("no certificate chain for private key", e.getMessage());
+        }
+    }
+
+    private X509Certificate createUnknownAlgorithmCertificate()
+        throws Exception
+    {
+        AlgorithmIdentifier algId = new AlgorithmIdentifier(new ASN1ObjectIdentifier("1.2.3.4.5.6.7.8"));
+
+        V1TBSCertificateGenerator tbsGen = new V1TBSCertificateGenerator();
+
+        tbsGen.setSerialNumber(new ASN1Integer(BigInteger.ONE));
+        tbsGen.setIssuer(new X500Name("CN=Test"));
+        tbsGen.setSubject(new X500Name("CN=Test"));
+        tbsGen.setStartDate(new Time(new Date(System.currentTimeMillis() - 50000)));
+        tbsGen.setEndDate(new Time(new Date(System.currentTimeMillis() + 50000)));
+        tbsGen.setSignature(algId);
+        tbsGen.setSubjectPublicKeyInfo(new SubjectPublicKeyInfo(algId, new byte[]{1, 2, 3, 4}));
+
+        ASN1EncodableVector v = new ASN1EncodableVector();
+
+        v.add(tbsGen.generateTBSCertificate());
+        v.add(algId);
+        v.add(new DERBitString(new byte[]{0, 0, 0, 0}));
+
+        byte[] certEnc = org.bouncycastle.asn1.x509.Certificate.getInstance(new DERSequence(v)).getEncoded();
+
+        return (X509Certificate)CertificateFactory.getInstance("X.509", BC).generateCertificate(new ByteArrayInputStream(certEnc));
+    }
+
     private void testStoreType(String storeType, boolean isMacExpected)
         throws Exception
     {
@@ -2991,6 +3086,7 @@ public class PKCS12StoreTest
         testCertsOnly();
         testJKS();
         testCertificateAliasConsistency();
+        testNullPublicKeyCertificate();
         testLoadRepeatedLocalKeyID();
         testDilithiumStore();
         testFalconStore();

@@ -551,6 +551,11 @@ public class PKCS12PBMAC1KeyStoreSpi
             throw new KeyStoreException("There is a key entry with the name " + alias + ".");
         }
 
+        if (cert.getPublicKey() == null)
+        {
+            throw new KeyStoreException("unable to resolve public key for certificate");
+        }
+
         certs.put(alias, cert);
         chainCerts.put(new CertId(cert.getPublicKey()), cert);
     }
@@ -576,9 +581,21 @@ public class PKCS12PBMAC1KeyStoreSpi
             throw new KeyStoreException("PKCS12 does not support non-PrivateKeys");
         }
 
-        if ((key instanceof PrivateKey) && (chain == null))
+        if ((key instanceof PrivateKey) && (chain == null || chain.length == 0))
         {
             throw new KeyStoreException("no certificate chain for private key");
+        }
+
+        // a certificate whose algorithm has no key info converter has a null public key and so no CertId - reject before storing anything (github #2419)
+        if (chain != null)
+        {
+            for (int i = 0; i != chain.length; i++)
+            {
+                if (chain[i].getPublicKey() == null)
+                {
+                    throw new KeyStoreException("unable to resolve public key for certificate " + i + " in chain");
+                }
+            }
         }
 
         if (keys.get(alias) != null)
@@ -587,7 +604,7 @@ public class PKCS12PBMAC1KeyStoreSpi
         }
 
         keys.put(alias, key);
-        if (chain != null)
+        if (chain != null && chain.length != 0)
         {
             certs.put(alias, chain[0]);
 
