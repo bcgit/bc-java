@@ -81,88 +81,99 @@ public class CMSAuthEnvelopedDataParser
     {
         super(envelopedData);
 
-        authAttrNotRead = true;
-        unauthAttrNotRead = true;
-        authEvnData = new AuthEnvelopedDataParser((ASN1SequenceParser)_contentInfo.getContent(BERTags.SEQUENCE));
-
-        OriginatorInfo info = authEvnData.getOriginatorInfo();
-
-        if (info != null)
+        try
         {
-            this.originatorInfo = new OriginatorInformation(info);
+            authAttrNotRead = true;
+            unauthAttrNotRead = true;
+            authEvnData = new AuthEnvelopedDataParser((ASN1SequenceParser)_contentInfo.getContent(BERTags.SEQUENCE));
+
+            OriginatorInfo info = authEvnData.getOriginatorInfo();
+
+            if (info != null)
+            {
+                this.originatorInfo = new OriginatorInformation(info);
+            }
+            //
+            // read the recipients
+            //
+            ASN1Set recipientInfos = ASN1Set.getInstance(authEvnData.getRecipientInfos().toASN1Primitive());
+
+            final EncryptedContentInfoParser encInfo = authEvnData.getAuthEncryptedContentInfo();
+
+            encAlg = encInfo.getContentEncryptionAlgorithm();
+            localMacProvider = new LocalMacProvider(authEvnData, this);
+
+            final CMSReadable readable = new CMSProcessableInputStream(new InputStreamWithMAC(
+                ((ASN1OctetStringParser)encInfo.getEncryptedContent(BERTags.OCTET_STRING)).getOctetStream(), localMacProvider));
+
+            CMSSecureReadableWithAAD secureReadable = new CMSSecureReadableWithAAD()
+            {
+                private OutputStream aadStream;
+
+                @Override
+                public ASN1ObjectIdentifier getContentType()
+                {
+                    return encInfo.getContentType();
+                }
+
+                @Override
+                public InputStream getInputStream()
+                    throws IOException, CMSException
+                {
+                    return readable.getInputStream();
+                }
+
+                @Override
+                public ASN1Set getAuthAttrSet()
+                {
+                    return authAttrSet;
+                }
+
+                @Override
+                public void setAuthAttrSet(ASN1Set set)
+                {
+
+                }
+
+                @Override
+                public boolean hasAdditionalData()
+                {
+                    return true;
+                }
+
+                @Override
+                public void setAADStream(OutputStream stream)
+                {
+                    aadStream = stream;
+                }
+
+                @Override
+                public OutputStream getAADStream()
+                {
+                    return aadStream;
+                }
+
+                @Override
+                public byte[] getMAC()
+                {
+                    return Arrays.clone(localMacProvider.getMAC());
+                }
+            };
+
+            localMacProvider.setSecureReadable(secureReadable);
+            //
+            // build the RecipientInformationStore
+            //
+            this.recipientInfoStore = CMSEnvelopedHelper.buildRecipientInformationStore(recipientInfos, this.encAlg, secureReadable);
         }
-        //
-        // read the recipients
-        //
-        ASN1Set recipientInfos = ASN1Set.getInstance(authEvnData.getRecipientInfos().toASN1Primitive());
-
-        final EncryptedContentInfoParser encInfo = authEvnData.getAuthEncryptedContentInfo();
-        
-        encAlg = encInfo.getContentEncryptionAlgorithm();
-        localMacProvider = new LocalMacProvider(authEvnData, this);
-
-        final CMSReadable readable = new CMSProcessableInputStream(new InputStreamWithMAC(
-            ((ASN1OctetStringParser)encInfo.getEncryptedContent(BERTags.OCTET_STRING)).getOctetStream(), localMacProvider));
-
-        CMSSecureReadableWithAAD secureReadable = new CMSSecureReadableWithAAD()
+        catch (ClassCastException e)
         {
-            private OutputStream aadStream;
-
-            @Override
-            public ASN1ObjectIdentifier getContentType()
-            {
-                return encInfo.getContentType();
-            }
-
-            @Override
-            public InputStream getInputStream()
-                throws IOException, CMSException
-            {
-                return readable.getInputStream();
-            }
-
-            @Override
-            public ASN1Set getAuthAttrSet()
-            {
-                return authAttrSet;
-            }
-
-            @Override
-            public void setAuthAttrSet(ASN1Set set)
-            {
-
-            }
-
-            @Override
-            public boolean hasAdditionalData()
-            {
-                return true;
-            }
-
-            @Override
-            public void setAADStream(OutputStream stream)
-            {
-                aadStream = stream;
-            }
-
-            @Override
-            public OutputStream getAADStream()
-            {
-                return aadStream;
-            }
-
-            @Override
-            public byte[] getMAC()
-            {
-                return Arrays.clone(localMacProvider.getMAC());
-            }
-        };
-
-        localMacProvider.setSecureReadable(secureReadable);
-        //
-        // build the RecipientInformationStore
-        //
-        this.recipientInfoStore = CMSEnvelopedHelper.buildRecipientInformationStore(recipientInfos, this.encAlg, secureReadable);
+            throw new CMSException("Malformed content.", e);
+        }
+        catch (IllegalArgumentException e)
+        {
+            throw new CMSException("Malformed content.", e);
+        }
     }
 
     /**

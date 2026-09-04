@@ -83,39 +83,50 @@ public class CMSEnvelopedDataParser
     {
         super(envelopedData);
 
-        this.attrNotRead = true;
-        this.envelopedData = new EnvelopedDataParser((ASN1SequenceParser)_contentInfo.getContent(BERTags.SEQUENCE));
-
-        // TODO Validate version?
-        //ASN1Integer version = this._envelopedData.getVersion();
-
-        OriginatorInfo info = this.envelopedData.getOriginatorInfo();
-
-        if (info != null)
+        try
         {
-            this.originatorInfo = new OriginatorInformation(info);
+            this.attrNotRead = true;
+            this.envelopedData = new EnvelopedDataParser((ASN1SequenceParser)_contentInfo.getContent(BERTags.SEQUENCE));
+
+            // TODO Validate version?
+            //ASN1Integer version = this._envelopedData.getVersion();
+
+            OriginatorInfo info = this.envelopedData.getOriginatorInfo();
+
+            if (info != null)
+            {
+                this.originatorInfo = new OriginatorInformation(info);
+            }
+
+            //
+            // read the recipients
+            //
+            ASN1Set recipientInfos = ASN1Set.getInstance(this.envelopedData.getRecipientInfos().toASN1Primitive());
+
+            //
+            // read the encrypted content info
+            //
+            EncryptedContentInfoParser encInfo = this.envelopedData.getEncryptedContentInfo();
+            this.encAlg = encInfo.getContentEncryptionAlgorithm();
+            CMSReadable readable = new CMSProcessableInputStream(
+                ((ASN1OctetStringParser)encInfo.getEncryptedContent(BERTags.OCTET_STRING)).getOctetStream());
+            CMSSecureReadable secureReadable = new CMSEnvelopedHelper.CMSAuthEnveSecureReadable(
+                this.encAlg, encInfo.getContentType(), readable);
+
+            //
+            // build the RecipientInformationStore
+            //
+            this.recipientInfoStore = CMSEnvelopedHelper.buildRecipientInformationStore(
+                recipientInfos, this.encAlg, secureReadable);
         }
-
-        //
-        // read the recipients
-        //
-        ASN1Set recipientInfos = ASN1Set.getInstance(this.envelopedData.getRecipientInfos().toASN1Primitive());
-
-        //
-        // read the encrypted content info
-        //
-        EncryptedContentInfoParser encInfo = this.envelopedData.getEncryptedContentInfo();
-        this.encAlg = encInfo.getContentEncryptionAlgorithm();
-        CMSReadable readable = new CMSProcessableInputStream(
-            ((ASN1OctetStringParser)encInfo.getEncryptedContent(BERTags.OCTET_STRING)).getOctetStream());
-        CMSSecureReadable secureReadable = new CMSEnvelopedHelper.CMSAuthEnveSecureReadable(
-            this.encAlg, encInfo.getContentType(), readable);
-
-        //
-        // build the RecipientInformationStore
-        //
-        this.recipientInfoStore = CMSEnvelopedHelper.buildRecipientInformationStore(
-            recipientInfos, this.encAlg, secureReadable);
+        catch (ClassCastException e)
+        {
+            throw new CMSException("Malformed content.", e);
+        }
+        catch (IllegalArgumentException e)
+        {
+            throw new CMSException("Malformed content.", e);
+        }
     }
 
     /**

@@ -280,7 +280,7 @@ class CMSUtils
         }
         else
         {
-            throw new IllegalArgumentException("unknown wrap algorithm");
+            throw new IllegalArgumentException("unknown wrap algorithm: " + symWrapAlg);
         }
     }
 }

@@ -1,5 +1,7 @@
 package org.bouncycastle.asn1.cms;
 
+import java.math.BigInteger;
+
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
@@ -10,6 +12,7 @@ import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.util.BigIntegers;
 
 /**
  * <p>
@@ -31,6 +34,8 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 public class KEMRecipientInfo
     extends ASN1Object
 {
+    private static final BigInteger MAX_KEK_LENGTH = BigInteger.valueOf(65535);
+
     private final ASN1Integer cmsVersion;
     private final RecipientIdentifier rid;
     private final AlgorithmIdentifier kem;
@@ -52,14 +57,7 @@ public class KEMRecipientInfo
         {
             throw new NullPointerException("wrap cannot be null");
         }
-        if (kekLength.intValueExact() > 65535)
-        {
-            throw new IllegalArgumentException("kekLength must be <= 65535");
-        }
-        if (kekLength.intValueExact() < 1)
-        {
-            throw new IllegalArgumentException("kekLength must be >= 1");
-        }
+        checkKekLength(kekLength);
         this.cmsVersion = ASN1Integer.ZERO;
         this.rid = rid;
         this.kem = kem;
@@ -103,26 +101,47 @@ public class KEMRecipientInfo
         kdf = AlgorithmIdentifier.getInstance(seq.getObjectAt(4));
         kekLength = ASN1Integer.getInstance(seq.getObjectAt(5));
 
-        if (kekLength.intValueExact() > 65535)
-        {
-            throw new IllegalArgumentException("kekLength must be <= 65535");
-        }
-        if (kekLength.intValueExact() < 1)
-        {
-            throw new IllegalArgumentException("kekLength must be >= 1");
-        }
+        checkKekLength(kekLength);
 
         int elt = 6;
         if (seq.getObjectAt(6) instanceof ASN1TaggedObject)
         {
+            if (seq.size() != 9)
+            {
+                throw new IllegalArgumentException("bad sequence size: " + seq.size());
+            }
             ukm = ASN1OctetString.getInstance(ASN1TaggedObject.getInstance(seq.getObjectAt(elt++)), true);
         }
         else
         {
+            if (seq.size() != 8)
+            {
+                throw new IllegalArgumentException("bad sequence size: " + seq.size());
+            }
             ukm = null;
         }
         wrap = AlgorithmIdentifier.getInstance(seq.getObjectAt(elt++));
         encryptedKey = ASN1OctetString.getInstance(seq.getObjectAt(elt++));
+    }
+
+    /**
+     * Check the kekLength is in the ASN.1 range (1..65535). The comparison is made on the
+     * BigInteger value - an out of range value may be too large for an int, and calling
+     * ASN1Integer.intValueExact() on one of those throws ArithmeticException before the
+     * range check that is meant to reject it can be applied.
+     */
+    private static void checkKekLength(ASN1Integer kekLength)
+    {
+        BigInteger value = kekLength.getValue();
+
+        if (value.compareTo(MAX_KEK_LENGTH) > 0)
+        {
+            throw new IllegalArgumentException("kekLength must be <= 65535");
+        }
+        if (value.compareTo(BigIntegers.ONE) < 0)
+        {
+            throw new IllegalArgumentException("kekLength must be >= 1");
+        }
     }
 
     public RecipientIdentifier getRecipientIdentifier()
@@ -143,6 +162,17 @@ public class KEMRecipientInfo
     public AlgorithmIdentifier getKdf()
     {
         return kdf;
+    }
+
+    /**
+     * Return the size of the key-encryption key, in octets. RFC 9629 requires this to be
+     * consistent with the algorithm named in the wrap field.
+     *
+     * @return the kekLength field, always in the range 1..65535.
+     */
+    public int getKekLength()
+    {
+        return kekLength.intValueExact();
     }
 
     public AlgorithmIdentifier getWrap()

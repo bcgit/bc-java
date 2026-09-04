@@ -7,6 +7,7 @@ import junit.framework.TestSuite;
 
 import org.bouncycastle.asn1.cms.test.CCMParametersTest;
 import org.bouncycastle.asn1.cms.test.GCMParametersTest;
+import org.bouncycastle.asn1.cms.test.KEMRecipientInfoTest;
 import org.bouncycastle.asn1.cms.test.OctetStringTest;
 import org.bouncycastle.asn1.cms.test.ParseTest;
 import org.bouncycastle.asn1.misc.test.GetInstanceTest;
@@ -43,6 +44,7 @@ public class AllTests
         suite.addTestSuite(AllTests.class);
         suite.addTestSuite(CCMParametersTest.class);
         suite.addTestSuite(GCMParametersTest.class);
+        suite.addTestSuite(KEMRecipientInfoTest.class);
         suite.addTestSuite(OctetStringTest.class);
         suite.addTestSuite(ParseTest.class);
         suite.addTestSuite(GetInstanceTest.class);

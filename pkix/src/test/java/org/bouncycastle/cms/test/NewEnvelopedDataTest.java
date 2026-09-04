@@ -37,13 +37,18 @@ import junit.framework.Assert;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1InputStream;
+import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERSet;
+import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.cms.Attribute;
@@ -55,6 +60,8 @@ import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.cms.EncryptedContentInfo;
 import org.bouncycastle.asn1.cms.EnvelopedData;
 import org.bouncycastle.asn1.cms.GCMParameters;
+import org.bouncycastle.asn1.cms.OtherRecipientInfo;
+import org.bouncycastle.asn1.cms.RecipientInfo;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.gm.GMObjectIdentifiers;
 import org.bouncycastle.asn1.kisa.KISAObjectIdentifiers;
@@ -76,6 +83,7 @@ import org.bouncycastle.cms.CMSAlgorithm;
 import org.bouncycastle.cms.CMSAlgorithmNotAllowedException;
 import org.bouncycastle.cms.CMSEnvelopedData;
 import org.bouncycastle.cms.CMSEnvelopedDataGenerator;
+import org.bouncycastle.cms.CMSEnvelopedDataParser;
 import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.CMSProcessableByteArray;
 import org.bouncycastle.cms.CMSTagLengthException;
@@ -1136,6 +1144,210 @@ public class NewEnvelopedDataTest
 
             assertTrue(cause instanceof IllegalArgumentException);
             assertEquals("Unknown KEM algorithm requested: " + BCObjectIdentifiers.bike128, cause.getMessage());
+        }
+    }
+
+    /**
+     * Generate a valid ML-KEM-768 EnvelopedData carrying a single RFC 9629 KEMRecipientInfo.
+     */
+    private static byte[] mlKem768Enveloped(byte[] data)
+        throws Exception
+    {
+        CMSEnvelopedDataGenerator edGen = new CMSEnvelopedDataGenerator();
+
+        edGen.addRecipientInfoGenerator(new JceKEMRecipientInfoGenerator(_reciMLKem768Cert, CMSAlgorithm.AES256_WRAP)
+            .setKDF(CMSAlgorithm.SHA256_HKDF));
+
+        return edGen.generate(
+            new CMSProcessableByteArray(data),
+            new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES256_CBC).setProvider(BC).build()).getEncoded();
+    }
+
+    /**
+     * Pull the elements of the message's KEMRecipientInfo out so individual fields can be rewritten:
+     * [0] version, [1] rid, [2] kem, [3] kemct, [4] kdf, [5] kekLength, [6] wrap, [7] encryptedKey.
+     */
+    private static ASN1Encodable[] kemRecipientInfoElements(byte[] enveloped)
+        throws Exception
+    {
+        EnvelopedData env = EnvelopedData.getInstance(ContentInfo.getInstance(enveloped).getContent());
+        RecipientInfo ri = RecipientInfo.getInstance(env.getRecipientInfos().getObjectAt(0));
+        ASN1Sequence kemInfo = ASN1Sequence.getInstance(OtherRecipientInfo.getInstance(ri.getInfo()).getValue());
+
+        ASN1Encodable[] elements = new ASN1Encodable[kemInfo.size()];
+
+        for (int i = 0; i != elements.length; i++)
+        {
+            elements[i] = kemInfo.getObjectAt(i);
+        }
+
+        return elements;
+    }
+
+    /**
+     * Re-encode the message with the given elements in place of its KEMRecipientInfo.
+     */
+    private static byte[] rebuildWithKemRecipientInfo(byte[] enveloped, ASN1EncodableVector elements)
+        throws Exception
+    {
+        EnvelopedData env = EnvelopedData.getInstance(ContentInfo.getInstance(enveloped).getContent());
+        RecipientInfo ri = new RecipientInfo(
+            new OtherRecipientInfo(CMSObjectIdentifiers.id_ori_kem, new DERSequence(elements)));
+
+        return new ContentInfo(CMSObjectIdentifiers.envelopedData,
+            new EnvelopedData(env.getOriginatorInfo(), new DERSet(ri), env.getEncryptedContentInfo(),
+                env.getUnprotectedAttrs())).getEncoded();
+    }
+
+    private static ASN1EncodableVector toVector(ASN1Encodable[] elements, int count)
+    {
+        ASN1EncodableVector v = new ASN1EncodableVector();
+
+        for (int i = 0; i != count; i++)
+        {
+            v.add(elements[i]);
+        }
+
+        return v;
+    }
+
+    /**
+     * RFC 9629 leaves the wrap algorithm identifier open-ended, so a KEMRecipientInfo naming one
+     * BC has no KEK size for is an ordinary condition to report through the declared contract.
+     */
+    public void testKemUnsupportedWrapAlgorithm()
+        throws Exception
+    {
+        byte[] enveloped = mlKem768Enveloped("WallaWallaWashington".getBytes());
+        ASN1Encodable[] elements = kemRecipientInfoElements(enveloped);
+
+        elements[6] = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_alg_CMS3DESwrap);
+
+        CMSEnvelopedData ed = new CMSEnvelopedData(
+            rebuildWithKemRecipientInfo(enveloped, toVector(elements, elements.length)));
+        RecipientInformation recipient = (RecipientInformation)ed.getRecipientInfos().getRecipients().iterator().next();
+
+        try
+        {
+            recipient.getContent(new JceKEMEnvelopedRecipient(_reciMLKem768KP.getPrivate()).setProvider(BC));
+
+            fail("no exception");
+        }
+        catch (CMSException e)
+        {
+            assertEquals("unable to create KEM unwrapper: unknown wrap algorithm: "
+                + PKCSObjectIdentifiers.id_alg_CMS3DESwrap, e.getMessage());
+        }
+    }
+
+    /**
+     * RFC 9629: kekLength INTEGER (1..65535). A value too large for an int must still take the
+     * range check's path - the parse is behind the declared throws CMSException of the ctor.
+     */
+    public void testKemOversizedKekLength()
+        throws Exception
+    {
+        byte[] enveloped = mlKem768Enveloped("WallaWallaWashington".getBytes());
+        ASN1Encodable[] elements = kemRecipientInfoElements(enveloped);
+
+        elements[5] = new ASN1Integer(BigInteger.ONE.shiftLeft(40));
+
+        checkMalformed(rebuildWithKemRecipientInfo(enveloped, toVector(elements, elements.length)));
+    }
+
+    /**
+     * The recipient parse is reached from both the in-memory constructor and the streaming parser,
+     * and neither is declared to throw anything but CMSException.
+     */
+    private static void checkMalformed(byte[] enveloped)
+        throws Exception
+    {
+        try
+        {
+            new CMSEnvelopedData(enveloped);
+
+            fail("no exception");
+        }
+        catch (CMSException e)
+        {
+            assertEquals("Malformed content.", e.getMessage());
+        }
+
+        try
+        {
+            new CMSEnvelopedDataParser(new ByteArrayInputStream(enveloped));
+
+            fail("no exception");
+        }
+        catch (CMSException e)
+        {
+            assertEquals("Malformed content.", e.getMessage());
+        }
+    }
+
+    /**
+     * RFC 9629: ukm is the optional [0] element, so the sequence size and the presence of the tag
+     * have to agree - otherwise wrap and encryptedKey are read at the wrong index.
+     */
+    public void testKemUkmSizeMismatch()
+        throws Exception
+    {
+        byte[] enveloped = mlKem768Enveloped("WallaWallaWashington".getBytes());
+        ASN1Encodable[] elements = kemRecipientInfoElements(enveloped);
+
+        // eight elements, but element 6 is a [0] ukm: encryptedKey is off the end of the sequence.
+        ASN1EncodableVector shortWithUkm = toVector(elements, 6);
+
+        shortWithUkm.add(new DERTaggedObject(true, 0, new DEROctetString(new byte[]{9, 9})));
+        shortWithUkm.add(elements[6]);
+
+        checkMalformed(rebuildWithKemRecipientInfo(enveloped, shortWithUkm));
+
+        // nine elements with no [0] ukm: a trailing element that was previously ignored.
+        ASN1EncodableVector longWithoutUkm = toVector(elements, elements.length);
+
+        longWithoutUkm.add(new DEROctetString(new byte[]{7, 7}));
+
+        checkMalformed(rebuildWithKemRecipientInfo(enveloped, longWithoutUkm));
+    }
+
+    /**
+     * RFC 9629 section 3: "Implementations MUST confirm that the value provided is consistent with
+     * the key-encryption algorithm identified in the wrap field below."
+     */
+    public void testKemKekLengthAgainstWrap()
+        throws Exception
+    {
+        byte[] data = "WallaWallaWashington".getBytes();
+        byte[] enveloped = mlKem768Enveloped(data);
+        ASN1Encodable[] elements = kemRecipientInfoElements(enveloped);
+
+        // the message as generated: AES-256-WRAP with a kekLength of 32 still recovers.
+        assertEquals(32, ASN1Integer.getInstance(elements[5]).intValueExact());
+
+        CMSEnvelopedData ed = new CMSEnvelopedData(
+            rebuildWithKemRecipientInfo(enveloped, toVector(elements, elements.length)));
+        RecipientInformation recipient = (RecipientInformation)ed.getRecipientInfos().getRecipients().iterator().next();
+
+        assertTrue(Arrays.equals(data,
+            recipient.getContent(new JceKEMEnvelopedRecipient(_reciMLKem768KP.getPrivate()).setProvider(BC))));
+
+        // a kekLength that does not match the wrap algorithm is rejected.
+        elements[5] = new ASN1Integer(16);
+
+        ed = new CMSEnvelopedData(rebuildWithKemRecipientInfo(enveloped, toVector(elements, elements.length)));
+        recipient = (RecipientInformation)ed.getRecipientInfos().getRecipients().iterator().next();
+
+        try
+        {
+            recipient.getContent(new JceKEMEnvelopedRecipient(_reciMLKem768KP.getPrivate()).setProvider(BC));
+
+            fail("no exception");
+        }
+        catch (CMSException e)
+        {
+            assertEquals("kekLength 16 inconsistent with wrap algorithm "
+                + NISTObjectIdentifiers.id_aes256_wrap + ": expected 32", e.getMessage());
         }
     }
 
