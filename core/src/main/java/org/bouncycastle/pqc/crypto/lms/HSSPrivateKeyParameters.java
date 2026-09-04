@@ -413,10 +413,12 @@ public class HSSPrivateKeyParameters
 
         if (!rootQMatch)
         {
-            keys[0] = LMS.generateKeys(
-                originalRootKey.getSigParameters(),
-                originalRootKey.getOtsParameters(),
-                (int)qTreePath[0], originalRootKey.getI(), originalRootKey.getMasterSecret());
+            //
+            // Only the position moves - the root's identifier, seed and parameter sets are its own
+            // and cannot have changed - so this is the same tree at a different one-time key, and
+            // the repositioned key keeps the tree the root has already built.
+            //
+            keys[0] = originalRootKey.repositionTo((int)qTreePath[0]);
             changed = true;
         }
 
@@ -477,13 +479,12 @@ public class HSSPrivateKeyParameters
             {
 
                 //
-                // Q is different so we can generate a new private key but it will have the same public
-                // key so we do not need to sign it again.
+                // Q is different, but seedEquals says the identifier and seed are not, so this is
+                // the same tree at a different one-time key: reposition within it rather than
+                // rebuild it. The public key is unchanged either way, so the chaining signature
+                // above it still stands and does not need making again.
                 //
-                keys[i] = LMS.generateKeys(
-                    originalKeys.get(i).getSigParameters(),
-                    originalKeys.get(i).getOtsParameters(),
-                    (int)qTreePath[i], childI, childSeed);
+                keys[i] = keys[i].repositionTo((int)qTreePath[i]);
                 changed = true;
             }
 

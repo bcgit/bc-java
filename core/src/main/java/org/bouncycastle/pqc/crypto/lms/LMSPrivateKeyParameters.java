@@ -66,6 +66,11 @@ public class LMSPrivateKeyParameters
 
     private LMSPrivateKeyParameters(LMSPrivateKeyParameters parent, int q, int maxQ)
     {
+        this(parent, q, maxQ, 1 << parent.parameters.getH());
+    }
+
+    private LMSPrivateKeyParameters(LMSPrivateKeyParameters parent, int q, int maxQ, int maxCacheR)
+    {
         super(true);
         this.parameters = parent.parameters;
         this.otsParameters = parent.otsParameters;
@@ -73,10 +78,33 @@ public class LMSPrivateKeyParameters
         this.I = parent.I;
         this.maxQ = maxQ;
         this.masterSecret = parent.masterSecret;
-        this.maxCacheR = 1 << parameters.getH();
+        this.maxCacheR = maxCacheR;
         this.tCache = parent.tCache;
         this.tDigest = DigestUtil.getDigest(parameters);
         this.publicKey = parent.publicKey;
+    }
+
+    /**
+     * This key's tree at a different one-time key. A Merkle tree is a function of the key
+     * identifier, the master secret and the parameter sets and not of q, so a key repositioned
+     * within its own tree has exactly the nodes this one has: it shares the node cache and the
+     * public key rather than rebuilding a tree that has already been built. HSS repositioning uses
+     * this in place of regenerating a component key whose identifier and seed have not changed,
+     * which otherwise costs about as much as key generation (github #2414).
+     *
+     * @param q the one-time key to position at.
+     */
+    synchronized LMSPrivateKeyParameters repositionTo(int q)
+    {
+        int twoToH = 1 << parameters.getH();
+
+        if (q < 0 || q > twoToH)
+        {
+            throw new IllegalArgumentException(
+                "LMS private key q out of range: q=" + q + " 2^h=" + twoToH);
+        }
+
+        return new LMSPrivateKeyParameters(this, q, twoToH, maxCacheR);
     }
 
     public static LMSPrivateKeyParameters getInstance(byte[] privEnc, byte[] pubEnc)

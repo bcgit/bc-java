@@ -1250,6 +1250,55 @@ public class HSSTests
      * twice - once to get the public key, once here - and the node cache the first build filled
      * was discarded with it.
      */
+    /**
+     * The lower half of a hierarchy repositions within its own tree - identifier and seed
+     * unchanged, only q moves - so resetKeyToIndex must share the tree the component key already
+     * has rather than regenerate one identical to it.
+     */
+    public void testBottomLevelRepositionKeepsTheTree()
+        throws Exception
+    {
+        LMSigParameters sigParams = LMSigParameters.lms_sha256_n32_h5;
+        LMOtsParameters otsParams = LMOtsParameters.sha256_n32_w2;
+
+        HSSKeyPairGenerator gen = new HSSKeyPairGenerator();
+        gen.init(new HSSKeyGenerationParameters(
+            new LMSParameters[]{new LMSParameters(sigParams, otsParams), new LMSParameters(sigParams, otsParams)},
+            new SecureRandom()));
+        HSSPrivateKeyParameters hss = (HSSPrivateKeyParameters)gen.generateKeyPair().getPrivate();
+
+        HSSPublicKeyParameters pubKey = hss.getPublicKey();
+        List<LMSPrivateKeyParameters> keys = new ArrayList<LMSPrivateKeyParameters>(hss.getKeys());
+        List<LMSSignature> sigs = new ArrayList<LMSSignature>(hss.getSig());
+        byte[] bottomT1 = keys.get(1).getPublicKey().getT1();
+
+        // an index whose bottom level q moves while the root's does not: the branch where the
+        // derived identifier and seed match and only the position is wrong
+        HSSPrivateKeyParameters moved = new HSSPrivateKeyParameters(
+            2, keys, sigs, 3, 1L << (2 * sigParams.getH()));
+
+        assertSame("the reset replaced the root key", keys.get(0), moved.getKeys().get(0));
+        assertNotSame("the reset failed to reposition the bottom key", keys.get(1), moved.getKeys().get(1));
+        assertEquals(3, moved.getKeys().get(1).getIndex());
+        assertNotNull("repositioning discarded the tree cache", moved.getKeys().get(1).peekRootT());
+        assertTrue("repositioning changed the bottom public key",
+            Arrays.areEqual(bottomT1, moved.getKeys().get(1).getPublicKey().getT1()));
+        assertSame("repositioning re-signed a public key that had not changed",
+            sigs.get(0), moved.getSig().get(0));
+        assertTrue("repositioning changed the HSS public key",
+            Arrays.areEqual(pubKey.getEncoded(), moved.getPublicKey().getEncoded()));
+
+        byte[] msg = Hex.decode("6162636465");
+        HSSSigner signer = new HSSSigner();
+        signer.init(true, moved);
+        byte[] sig = signer.generateSignature(msg);
+
+        HSSSigner verifier = new HSSSigner();
+        verifier.init(false, pubKey);
+        assertTrue("repositioned key produced a signature that does not verify",
+            verifier.verifySignature(msg, sig));
+    }
+
     public void testSingleLevelWrapKeepsTheKey()
         throws Exception
     {
@@ -1292,6 +1341,15 @@ public class HSSTests
 
         assertNotSame("the reset failed to reposition to a different index", lms, moved.getRootKey());
         assertEquals(1, moved.getRootKey().getIndex());
+
+        // the Merkle tree is a function of I, the seed and the parameters and not of q, so the
+        // repositioned key is entitled to the tree it was built from rather than a rebuild costing
+        // about as much as generating the key. peekRootT is asked before getPublicKey below, which
+        // would prime the cache itself and hide the difference.
+        assertNotNull("repositioning discarded the tree cache", moved.getRootKey().peekRootT());
+        assertEquals("repositioning narrowed the range of the key",
+            1 << sigParams.getH(), moved.getRootKey().getIndexLimit());
+
         assertTrue("repositioning changed the public key",
             Arrays.areEqual(rootT1, moved.getPublicKey().getLMSPublicKey().getT1()));
 
