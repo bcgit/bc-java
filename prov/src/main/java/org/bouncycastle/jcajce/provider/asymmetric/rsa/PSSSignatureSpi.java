@@ -30,6 +30,9 @@ import org.bouncycastle.jcajce.util.JcaJceHelper;
 public class PSSSignatureSpi
     extends SignatureSpi
 {
+    // RFC 4055 3.1: the RSASSA-PSS-params trailerField "value MUST be 1" (RFC 8017 A.2.3 trailerFieldBC).
+    private static final int TRAILER_FIELD_BC = 1;
+
     private final JcaJceHelper helper = new BCJcaJceHelper();
 
     private AlgorithmParameters engineParams;
@@ -50,7 +53,7 @@ public class PSSSignatureSpi
     private byte getTrailer(
         int trailerField)
     {
-        if (trailerField == 1)
+        if (trailerField == TRAILER_FIELD_BC)
         {
             return org.bouncycastle.crypto.signers.PSSSigner.TRAILER_IMPLICIT;
         }
@@ -261,6 +264,12 @@ public class PSSSignatureSpi
             if (mgfDigest == null)
             {
                 throw new InvalidAlgorithmParameterException("no match on MGF algorithm: "+ newParamSpec.getMGFAlgorithm());
+            }
+
+            // checked ahead of the assignments below so a rejected spec leaves the engine as it was.
+            if (newParamSpec.getTrailerField() != TRAILER_FIELD_BC)
+            {
+                throw new InvalidAlgorithmParameterException("unknown trailer field");
             }
 
             this.engineParams = null;
