@@ -152,7 +152,10 @@ public class SLHDSAKeyPairGeneratorSpi
         }
         else
         {
-            return Strings.toUpperCase(SpecUtil.getNameFrom(paramSpec));
+            String name = SpecUtil.getNameFrom(paramSpec);
+
+            // null where the spec has no getName(), which the caller reports as the exception it declares
+            return (name == null) ? null : Strings.toUpperCase(name);
         }
     }
 

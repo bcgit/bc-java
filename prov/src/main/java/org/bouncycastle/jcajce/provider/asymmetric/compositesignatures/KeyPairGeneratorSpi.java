@@ -79,7 +79,7 @@ public class KeyPairGeneratorSpi
     {
         if (paramSpec != null)
         {
-            throw new IllegalArgumentException("Use initialize only for custom SecureRandom. AlgorithmParameterSpec must be null because it is determined by algorithm name.");
+            throw new InvalidAlgorithmParameterException("Use initialize only for custom SecureRandom. AlgorithmParameterSpec must be null because it is determined by algorithm name.");
         }
 
         AlgorithmParameterSpec[] initSpecs = CompositeIndex.getKeyPairSpecs(algorithm);

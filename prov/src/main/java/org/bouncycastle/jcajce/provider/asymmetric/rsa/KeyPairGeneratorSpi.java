@@ -78,9 +78,17 @@ public class KeyPairGeneratorSpi
         }
         RSAKeyGenParameterSpec rsaParams = (RSAKeyGenParameterSpec)params;
 
-        param = new RSAKeyGenerationParameters(
-            rsaParams.getPublicExponent(),
-            random, rsaParams.getKeysize(), PrimeCertaintyCalculator.getDefaultCertainty(2048));
+        try
+        {
+            param = new RSAKeyGenerationParameters(
+                rsaParams.getPublicExponent(),
+                random, rsaParams.getKeysize(), PrimeCertaintyCalculator.getDefaultCertainty(2048));
+        }
+        catch (IllegalArgumentException e)
+        {
+            // a spec of the right type carrying values the lightweight parameters refuse
+            throw SecurityExceptions.invalidAlgorithmParameterException(e.getMessage(), e);
+        }
 
         engine.init(param);
     }

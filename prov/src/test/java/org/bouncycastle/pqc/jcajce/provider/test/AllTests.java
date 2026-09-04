@@ -68,6 +68,7 @@ public class AllTests
         suite.addTestSuite(NamedKeyPairGeneratorTest.class);
         suite.addTestSuite(NamedKeyFactoryTest.class);
         suite.addTestSuite(KeyAlgorithmRoundTripTest.class);
+        suite.addTestSuite(KeyPairGeneratorSpecTest.class);
         suite.addTestSuite(KeyPairGeneratorStrengthTest.class);
         suite.addTestSuite(PreHashKeyInteropTest.class);
         suite.addTestSuite(SignatureSetParameterTest.class);
