@@ -1,5 +1,6 @@
 package org.bouncycastle.openpgp.operator.jcajce;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -292,6 +293,7 @@ class JceAEADUtil
         private int dataOff;
         private long chunkIndex = 0;
         private long totalBytes = 0;
+        private boolean aeadComplete = false; // set once the trailing message tag has been verified
         private boolean v5StyleAEAD;
 
         /**
@@ -329,7 +331,7 @@ class JceAEADUtil
             this.aaData = aaData;
 
             // prime with 2 * tag len bytes.
-            Streams.readFully(in, buf, 0, aeadTagLength + aeadTagLength);
+            readAeadFully(buf, 0, aeadTagLength + aeadTagLength);
 
             // load the first block
             this.data = readBlock();
@@ -409,9 +411,20 @@ class JceAEADUtil
         {
             // we initialise with the first 16 bytes as there is an additional 16 bytes following
             // the last chunk (which may not be the exact chunklength).
-            int dataLen = Streams.readFully(in, buf, aeadTagLength + aeadTagLength, chunkLength);
+            int dataLen = readAeadFully(buf, aeadTagLength + aeadTagLength, chunkLength);
             if (dataLen == 0)
             {
+                if (!aeadComplete)
+                {
+                    // A chunk-aligned message (plaintext an exact multiple of chunkLength) ends after a
+                    // full-size final data chunk, so the trailing message tag was pre-read into the
+                    // look-ahead (buf[0..aeadTagLength)) but the full-size-chunk path below never verified it.
+                    // Verify it now, before signalling EOF, so that truncation at a chunk boundary
+                    // (dropping trailing chunks plus the final tag) is rejected rather than accepted as
+                    // authentic - RFC 9580 5.13.2 relies on the final tag to authenticate the total length.
+                    verifyFinalTag();
+                    aeadComplete = true;
+                }
                 return null;
             }
 
@@ -441,31 +454,55 @@ class JceAEADUtil
 
             if (dataLen != chunkLength)     // it's our last block
             {
-                adata = PGPAeadOutputStream.getAdata(v5StyleAEAD, aaData, chunkIndex, totalBytes);
-                try
-                {
-                    if (v5StyleAEAD)
-                    {
-                        JceAEADCipherUtil.setUpAeadCipher(c, secretKey, Cipher.DECRYPT_MODE, getNonce(iv, chunkIndex), 128, Arrays.concatenate(adata, Pack.longToBigEndian(totalBytes)));
-                    }
-                    else
-                    {
-                        JceAEADCipherUtil.setUpAeadCipher(c, secretKey, Cipher.DECRYPT_MODE, getNonce(iv, chunkIndex), 128, adata);
-                    }
-
-                    c.doFinal(buf, 0, aeadTagLength); // check final tag
-                }
-                catch (Exception e)
-                {
-                    throw new IOException("exception processing final tag: " + e.getMessage());
-                }
+                verifyFinalTag();
+                aeadComplete = true;
             }
             else
             {
-                Streams.readFully(in, buf, aeadTagLength, aeadTagLength);   // read the next tag bytes
+                readAeadFully(buf, aeadTagLength, aeadTagLength);   // read the next tag bytes
             }
 
             return decData;
+        }
+
+        // Verify the trailing message tag, which is held in buf[0..aeadTagLength). Called both for a short
+        // final data chunk and for a chunk-aligned message whose final tag would otherwise be skipped.
+        private void verifyFinalTag()
+            throws IOException
+        {
+            byte[] adata = PGPAeadOutputStream.getAdata(v5StyleAEAD, aaData, chunkIndex, totalBytes);
+
+            try
+            {
+                if (v5StyleAEAD)
+                {
+                    JceAEADCipherUtil.setUpAeadCipher(c, secretKey, Cipher.DECRYPT_MODE, getNonce(iv, chunkIndex), 128, Arrays.concatenate(adata, Pack.longToBigEndian(totalBytes)));
+                }
+                else
+                {
+                    JceAEADCipherUtil.setUpAeadCipher(c, secretKey, Cipher.DECRYPT_MODE, getNonce(iv, chunkIndex), 128, adata);
+                }
+
+                c.doFinal(buf, 0, aeadTagLength); // check final tag
+            }
+            catch (Exception e)
+            {
+                throw new IOException("exception processing final tag: " + e.getMessage());
+            }
+        }
+
+        // truncation must not escape as an EOFException - nextPacketTag() reads one as a clean end of message
+        private int readAeadFully(byte[] b, int off, int len)
+            throws IOException
+        {
+            try
+            {
+                return Streams.readFully(in, b, off, len);
+            }
+            catch (EOFException e)
+            {
+                throw new IOException("truncated AEAD data: " + e.getMessage());
+            }
         }
     }
 

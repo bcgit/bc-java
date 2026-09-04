@@ -127,6 +127,8 @@ public class PGPAeadTest
 
         finalTagTruncationTests();
 
+        truncationSignalledTests();
+
         paddingPacketTests();
 
         preferredAEADAlgorithmsTests();
@@ -181,6 +183,157 @@ public class PGPAeadTest
                 }
             }
         }
+    }
+
+    // nextPacketTag() reads the truncation EOFException as a clean end of message, skipping the final tag.
+    private void truncationSignalledTests()
+        throws PGPException, IOException
+    {
+        Security.addProvider(new BouncyCastleProvider());
+
+        int chunkSizeOctet = 6; // chunkLength == 64, the minimum
+        int symAlg = SymmetricKeyAlgorithmTags.AES_128;
+        int aeadAlg = AEADAlgorithmTags.OCB;
+        int[] readSizes = new int[]{1, 16, 64, 4096};
+
+        for (int v = 0; v != 2; v++)
+        {
+            boolean v5AEAD = (v == 0);
+            for (int n = 0; n <= 96; n++)
+            {
+                byte[] plaintext = new byte[n];
+                for (int i = 0; i != n; i++)
+                {
+                    plaintext[i] = (byte)i;
+                }
+
+                byte[] message = bcEncryptRawWithTrailingPacket(v5AEAD, aeadAlg, symAlg, chunkSizeOctet, plaintext, PASSWORD);
+
+                String desc = "(n=" + n + ", " + algNames(aeadAlg, symAlg) + ", v5=" + v5AEAD + ")";
+
+                for (int r = 0; r != readSizes.length; r++)
+                {
+                    int readSize = readSizes[r];
+
+                    // the intact message must still stream cleanly at every read size
+                    isTrue("Bc round-trip failed " + desc + " readSize=" + readSize,
+                        Arrays.areEqual(plaintext, bcDecryptStreaming(message, PASSWORD, readSize)));
+                    isTrue("Jce round-trip failed " + desc + " readSize=" + readSize,
+                        Arrays.areEqual(plaintext, jceDecryptStreaming(message, PASSWORD, readSize)));
+
+                    // truncate the ciphertext, leaving the enclosing packet length claiming the dropped bytes
+                    for (int drop = 1; drop <= 16; drop++)
+                    {
+                        byte[] truncated = Arrays.copyOfRange(message, 0, message.length - drop);
+                        String tDesc = desc + " drop=" + drop + " readSize=" + readSize;
+
+                        isTrue("Bc accepted truncated message " + tDesc,
+                            streamingDecryptRejected(false, truncated, PASSWORD, readSize));
+                        isTrue("Jce accepted truncated message " + tDesc,
+                            streamingDecryptRejected(true, truncated, PASSWORD, readSize));
+                    }
+                }
+            }
+        }
+    }
+
+    private boolean streamingDecryptRejected(boolean jce, byte[] message, char[] password, int readSize)
+    {
+        try
+        {
+            if (jce)
+            {
+                jceDecryptStreaming(message, password, readSize);
+            }
+            else
+            {
+                bcDecryptStreaming(message, password, readSize);
+            }
+            return false;
+        }
+        catch (Exception e)
+        {
+            return true;
+        }
+    }
+
+    // as bcEncryptRaw(), plus the padding packet a SEIPDv2 generator appends after the literal
+    private byte[] bcEncryptRawWithTrailingPacket(boolean v5AEAD, int aeadAlg, int symAlg, int chunkSizeOctet, byte[] plaintext, char[] password)
+        throws PGPException, IOException
+    {
+        ByteArrayOutputStream ciphertextOut = new ByteArrayOutputStream();
+        PGPDigestCalculatorProvider digestCalculatorProvider = new BcPGPDigestCalculatorProvider();
+        PGPDataEncryptorBuilder encBuilder = new BcPGPDataEncryptorBuilder(symAlg);
+        if (v5AEAD)
+        {
+            encBuilder.setUseV5AEAD();
+        }
+        else
+        {
+            encBuilder.setUseV6AEAD();
+        }
+        encBuilder.setWithAEAD(aeadAlg, chunkSizeOctet);
+
+        PGPEncryptedDataGenerator encGen = new PGPEncryptedDataGenerator(encBuilder, false);
+        encGen.setForceSessionKey(true);
+        encGen.addMethod(new BcPBEKeyEncryptionMethodGenerator(password, digestCalculatorProvider.get(HashAlgorithmTags.SHA256)));
+        OutputStream encOut = encGen.open(ciphertextOut, new byte[1 << 9]);
+        PGPLiteralDataGenerator litGen = new PGPLiteralDataGenerator();
+        OutputStream litOut = litGen.open(encOut, PGPLiteralData.UTF8, "", new Date(), new byte[1 << 9]);
+        litOut.write(plaintext);
+        litOut.close();
+
+        BCPGOutputStream pOut = new BCPGOutputStream(encOut);
+        pOut.writePacket(new PaddingPacket(new byte[32]));
+        pOut.flush();
+
+        encOut.close();
+        return ciphertextOut.toByteArray();
+    }
+
+    private byte[] bcDecryptStreaming(byte[] message, char[] password, int readSize)
+        throws PGPException, IOException
+    {
+        PGPObjectFactory objectFactory = new BcPGPObjectFactory(new ByteArrayInputStream(message));
+        PGPEncryptedDataList encryptedDataList = (PGPEncryptedDataList)objectFactory.nextObject();
+        PGPPBEEncryptedData symEncData = (PGPPBEEncryptedData)encryptedDataList.get(0);
+        PBEDataDecryptorFactory decryptorFactory = new BcPBEDataDecryptorFactory(password, new BcPGPDigestCalculatorProvider());
+        return drainStreaming(new BcPGPObjectFactory(symEncData.getDataStream(decryptorFactory)), readSize);
+    }
+
+    private byte[] jceDecryptStreaming(byte[] message, char[] password, int readSize)
+        throws PGPException, IOException
+    {
+        PGPObjectFactory objectFactory = new JcaPGPObjectFactory(new ByteArrayInputStream(message));
+        PGPEncryptedDataList encryptedDataList = (PGPEncryptedDataList)objectFactory.nextObject();
+        PGPPBEEncryptedData symEncData = (PGPPBEEncryptedData)encryptedDataList.get(0);
+        PGPDigestCalculatorProvider digestCalculatorProvider = new JcaPGPDigestCalculatorProviderBuilder().setProvider("BC").build();
+        PBEDataDecryptorFactory decryptorFactory = new JcePBEDataDecryptorFactoryBuilder(digestCalculatorProvider).setProvider("BC").build(password);
+        return drainStreaming(new JcaPGPObjectFactory(symEncData.getDataStream(decryptorFactory)), readSize);
+    }
+
+    // walks the decrypted packet stream to its end, reading the literal data in readSize increments
+    private byte[] drainStreaming(PGPObjectFactory factory, int readSize)
+        throws PGPException, IOException
+    {
+        ByteArrayOutputStream plaintextOut = new ByteArrayOutputStream();
+        byte[] buf = new byte[readSize];
+        Object o;
+
+        while ((o = factory.nextObject()) != null)
+        {
+            if (o instanceof PGPLiteralData)
+            {
+                InputStream lIn = ((PGPLiteralData)o).getDataStream();
+                int len;
+                while ((len = lIn.read(buf, 0, readSize)) >= 0)
+                {
+                    plaintextOut.write(buf, 0, len);
+                }
+            }
+        }
+
+        return plaintextOut.toByteArray();
     }
 
     private boolean decryptRejected(boolean jce, byte[] message, char[] password)

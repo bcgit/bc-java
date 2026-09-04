@@ -16,6 +16,8 @@ public class IntegrityProtectedInputStream
 
     private final PGPEncryptedData esk;
 
+    private boolean closed;
+
     public IntegrityProtectedInputStream(InputStream in, PGPEncryptedData dataPacket)
     {
         super(in);
@@ -62,6 +64,13 @@ public class IntegrityProtectedInputStream
     public void close()
             throws IOException
     {
+        // verify once only: this stream is closed twice on the ordinary path and verify() cannot be repeated
+        if (closed)
+        {
+            return;
+        }
+        closed = true;
+
         super.close();
         if (esk.getEncData() instanceof SymmetricEncIntegrityPacket)
         {

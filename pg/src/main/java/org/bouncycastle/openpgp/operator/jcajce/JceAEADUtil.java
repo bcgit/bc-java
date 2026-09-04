@@ -1,5 +1,6 @@
 package org.bouncycastle.openpgp.operator.jcajce;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -311,7 +312,7 @@ class JceAEADUtil
             this.aaData = aaData;
 
             // prime with 2 * tag len bytes.
-            Streams.readFully(in, buf, 0, aeadTagLength + aeadTagLength);
+            readAeadFully(buf, 0, aeadTagLength + aeadTagLength);
 
             // load the first block
             this.data = readBlock();
@@ -391,7 +392,7 @@ class JceAEADUtil
         {
             // we initialise with the first 16 bytes as there is an additional 16 bytes following
             // the last chunk (which may not be the exact chunklength).
-            int dataLen = Streams.readFully(in, buf, aeadTagLength + aeadTagLength, chunkLength);
+            int dataLen = readAeadFully(buf, aeadTagLength + aeadTagLength, chunkLength);
             if (dataLen == 0)
             {
                 if (!aeadComplete)
@@ -439,10 +440,24 @@ class JceAEADUtil
             }
             else
             {
-                Streams.readFully(in, buf, aeadTagLength, aeadTagLength);   // read the next tag bytes
+                readAeadFully(buf, aeadTagLength, aeadTagLength);   // read the next tag bytes
             }
 
             return decData;
+        }
+
+        // truncation must not escape as an EOFException - nextPacketTag() reads one as a clean end of message
+        private int readAeadFully(byte[] b, int off, int len)
+            throws IOException
+        {
+            try
+            {
+                return Streams.readFully(in, b, off, len);
+            }
+            catch (EOFException e)
+            {
+                throw Exceptions.ioException("truncated AEAD data: " + e.getMessage(), e);
+            }
         }
 
         // Verify the trailing message tag, which is held in buf[0..aeadTagLength). Called both for a

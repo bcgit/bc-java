@@ -48,6 +48,8 @@ public class OpenPGPMessageInputStream
     private final Layer layer; // the packet layer processed by this input stream
 
     private InputStream in;
+    // this layer's IntegrityProtectedInputStream, if it has one - closed by close(), see there
+    private InputStream integrityProtectedIn;
     private final List<PacketHandler> packetHandlers = new ArrayList<PacketHandler>()
     {{
         add(new SignatureListHandler());
@@ -140,6 +142,12 @@ public class OpenPGPMessageInputStream
                 processor.onException(new PGPException("Unexpected trailing packet encountered: " +
                     next.getClass().getName()));
             }
+        }
+
+        // close it here: a truncated message never returns the -1 that makes it self-close and verify the MDC
+        if (integrityProtectedIn != null)
+        {
+            integrityProtectedIn.close();
         }
 
         resultBuilder.verifySignatures(processor);
@@ -682,6 +690,7 @@ public class OpenPGPMessageInputStream
             OpenPGPMessageProcessor.Decrypted decrypted = processor.decrypt(encryptedDataList);
 
             resultBuilder.encrypted(decrypted);
+            integrityProtectedIn = decrypted.inputStream;
             processNestedStream(decrypted.inputStream);
         }
 
