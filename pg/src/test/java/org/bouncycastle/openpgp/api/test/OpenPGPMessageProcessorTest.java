@@ -9,13 +9,20 @@ import java.util.Date;
 import java.util.List;
 
 import org.bouncycastle.bcpg.AEADAlgorithmTags;
+import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.bcpg.CompressionAlgorithmTags;
+import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.KeyIdentifier;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.openpgp.OpenPGPTestKeys;
 import org.bouncycastle.openpgp.PGPEncryptedDataGenerator;
 import org.bouncycastle.openpgp.PGPException;
+import org.bouncycastle.openpgp.PGPKeyPair;
+import org.bouncycastle.openpgp.PGPLiteralData;
+import org.bouncycastle.openpgp.PGPLiteralDataGenerator;
 import org.bouncycastle.openpgp.PGPSessionKey;
+import org.bouncycastle.openpgp.PGPSignature;
+import org.bouncycastle.openpgp.PGPSignatureGenerator;
 import org.bouncycastle.openpgp.api.KeyPassphraseProvider;
 import org.bouncycastle.openpgp.api.MessageEncryptionMechanism;
 import org.bouncycastle.openpgp.api.OpenPGPApi;
@@ -62,6 +69,8 @@ public class OpenPGPMessageProcessorTest
         truncatedSEIPD1SignedMessageIsRejected(api);
 
         policyRejectedInlineSignatureIsNotReported(api);
+        prefixedSignedMessageWithMissingCertificateIsNotFatal(api);
+        prefixedSignedMessageWithCertificateVerifies(api);
 
         roundtripUnarmoredPlaintextMessage(api);
         roundtripArmoredPlaintextMessage(api);
@@ -562,6 +571,76 @@ public class OpenPGPMessageProcessorTest
         List<OpenPGPSignature.OpenPGPDocumentSignature> signatures = verifIn.getResult().getSignatures();
         isTrue("a policy-rejected inline signature must not be reported as a verification result",
             signatures.isEmpty());
+    }
+
+    /**
+     * Build a prefixed (old style, non-one-pass) signed message: the signature packet precedes the
+     * literal data packet, so the signature cannot be initialised before the data is read.
+     */
+    private byte[] prefixedSignedMessage(OpenPGPApi api, OpenPGPKey signingKey)
+        throws PGPException, IOException
+    {
+        OpenPGPCertificate.OpenPGPComponentKey signingComponent = signingKey.getSigningKeys().get(0);
+        PGPKeyPair signingPair = signingKey.getSecretKey(signingComponent).unlock(new char[0]).getKeyPair();
+
+        PGPSignatureGenerator sGen = new PGPSignatureGenerator(
+            api.getImplementation().pgpContentSignerBuilder(
+                signingPair.getPublicKey().getAlgorithm(), HashAlgorithmTags.SHA512),
+            signingPair.getPublicKey());
+        sGen.init(PGPSignature.BINARY_DOCUMENT, signingPair.getPrivateKey());
+        sGen.update(PLAINTEXT);
+        PGPSignature signature = sGen.generate();
+
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        BCPGOutputStream pgpOut = new BCPGOutputStream(bOut);
+        signature.encode(pgpOut);
+
+        PGPLiteralDataGenerator litGen = new PGPLiteralDataGenerator();
+        OutputStream litOut = litGen.open(pgpOut, PGPLiteralData.BINARY, "", PLAINTEXT.length, new Date());
+        litOut.write(PLAINTEXT);
+        litGen.close();
+        pgpOut.close();
+
+        return bOut.toByteArray();
+    }
+
+    private void prefixedSignedMessageWithMissingCertificateIsNotFatal(OpenPGPApi api)
+        throws PGPException, IOException
+    {
+        OpenPGPKey aliceKey = api.readKeyOrCertificate().parseKey(OpenPGPTestKeys.ALICE_KEY);
+        byte[] message = prefixedSignedMessage(api, aliceKey);
+
+        // process the message without supplying the signers certificate - the prefixed signature
+        // cannot be initialised, so it must be skipped rather than fed data out of read().
+        OpenPGPMessageProcessor processor = api.decryptAndOrVerifyMessage();
+        OpenPGPMessageInputStream verifIn = processor.process(new ByteArrayInputStream(message));
+        ByteArrayOutputStream plainOut = new ByteArrayOutputStream();
+        Streams.pipeAll(verifIn, plainOut);
+        verifIn.close();
+
+        isEncodingEqual(PLAINTEXT, plainOut.toByteArray());
+        isTrue("a prefixed signature with no available certificate must not be reported as a verification result",
+            verifIn.getResult().getSignatures().isEmpty());
+    }
+
+    private void prefixedSignedMessageWithCertificateVerifies(OpenPGPApi api)
+        throws PGPException, IOException
+    {
+        OpenPGPKey aliceKey = api.readKeyOrCertificate().parseKey(OpenPGPTestKeys.ALICE_KEY);
+        byte[] message = prefixedSignedMessage(api, aliceKey);
+
+        OpenPGPCertificate aliceCert = api.readKeyOrCertificate().parseCertificate(OpenPGPTestKeys.ALICE_CERT);
+        OpenPGPMessageProcessor processor = api.decryptAndOrVerifyMessage()
+            .addVerificationCertificate(aliceCert);
+        OpenPGPMessageInputStream verifIn = processor.process(new ByteArrayInputStream(message));
+        ByteArrayOutputStream plainOut = new ByteArrayOutputStream();
+        Streams.pipeAll(verifIn, plainOut);
+        verifIn.close();
+
+        isEncodingEqual(PLAINTEXT, plainOut.toByteArray());
+        List<OpenPGPSignature.OpenPGPDocumentSignature> signatures = verifIn.getResult().getSignatures();
+        isEquals(1, signatures.size());
+        isTrue("prefixed signature is expected to verify", signatures.get(0).isValid());
     }
 
     private void inlineSignWithV4KeyAlice(OpenPGPApi api)

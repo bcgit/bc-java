@@ -777,6 +777,11 @@ public class OpenPGPMessageInputStream
                 try
                 {
                     OpenPGPCertificate.OpenPGPComponentKey key = cert.getKey(identifier);
+                    if (key == null)
+                    {
+                        // a provided certificate that does not actually carry the issuer key
+                        continue;
+                    }
                     issuers.put(ops, key);
                     ops.init(processor.getImplementation().pgpContentVerifierBuilderProvider(),
                         key.getPGPPublicKey());
@@ -889,47 +894,51 @@ public class OpenPGPMessageInputStream
                 KeyIdentifier identifier = OpenPGPSignature.getMostExpressiveIdentifier(sig.getKeyIdentifiers());
                 if (identifier == null)
                 {
-                    dataSignatures.add(new OpenPGPSignature.OpenPGPDocumentSignature(sig, null));
                     continue;
                 }
                 OpenPGPCertificate cert = processor.provideCertificate(identifier);
                 if (cert == null)
                 {
-                    dataSignatures.add(new OpenPGPSignature.OpenPGPDocumentSignature(sig, null));
+                    continue;
+                }
+                OpenPGPCertificate.OpenPGPComponentKey key = cert.getKey(identifier);
+                if (key == null)
+                {
                     continue;
                 }
 
-                OpenPGPCertificate.OpenPGPComponentKey key = cert.getKey(identifier);
                 OpenPGPSignature.OpenPGPDocumentSignature signature = new OpenPGPSignature.OpenPGPDocumentSignature(sig, key);
-                dataSignatures.add(signature);
                 try
                 {
                     signature.signature.init(
                         processor.getImplementation().pgpContentVerifierBuilderProvider(),
-                        cert.getKey(identifier).getPGPPublicKey());
+                        key.getPGPPublicKey());
                 }
                 catch (PGPException e)
                 {
                     processor.onException(e);
+                    continue;
                 }
+                // an uninitialised PGPSignature throws out of update(), i.e. out of read()
+                dataSignatures.add(signature);
             }
         }
 
         void update(int i)
         {
-            for (Iterator it = prefixedSignatures.iterator(); it.hasNext();)
+            for (Iterator it = dataSignatures.iterator(); it.hasNext();)
             {
-                PGPSignature signature = (PGPSignature)it.next();
-                signature.update((byte) i);
+                OpenPGPSignature.OpenPGPDocumentSignature signature = (OpenPGPSignature.OpenPGPDocumentSignature)it.next();
+                signature.signature.update((byte) i);
             }
         }
 
         void update(byte[] buf, int off, int len)
         {
-            for (Iterator it = prefixedSignatures.iterator(); it.hasNext();)
+            for (Iterator it = dataSignatures.iterator(); it.hasNext();)
             {
-                PGPSignature signature = (PGPSignature)it.next();
-                signature.update(buf, off, len);
+                OpenPGPSignature.OpenPGPDocumentSignature signature = (OpenPGPSignature.OpenPGPDocumentSignature)it.next();
+                signature.signature.update(buf, off, len);
             }
         }
 
