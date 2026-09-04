@@ -1,6 +1,7 @@
 package org.bouncycastle.pqc.jcajce.provider.newhope;
 
 import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidParameterException;
 import java.security.KeyPair;
 import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
@@ -31,7 +32,8 @@ public class NHKeyPairGeneratorSpi
     {
         if (strength != 1024)
         {
-            throw new IllegalArgumentException("strength must be 1024 bits");
+            // what the JCA specifies here; it extends IllegalArgumentException, so catches still match
+            throw new InvalidParameterException("strength must be 1024 bits");
         }
         engine.init(new KeyGenerationParameters(random, 1024));
         initialised = true;

@@ -1,6 +1,7 @@
 package org.bouncycastle.jcajce.provider.asymmetric.compositekem;
 
 import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidParameterException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
@@ -60,7 +61,8 @@ public class KeyPairGeneratorSpi
      */
     public void initialize(int keySize, SecureRandom random)
     {
-        throw new IllegalArgumentException("use AlgorithmParameterSpec");
+        // what the JCA specifies here; it extends IllegalArgumentException, so catches still match
+        throw new InvalidParameterException("use AlgorithmParameterSpec");
     }
 
     /**

@@ -6,6 +6,7 @@ package org.bouncycastle.jcajce.provider.asymmetric.mlkem;
 // as the exception is unreachable on modern JDKs). Keep in lockstep with base otherwise.
 
 import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidParameterException;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
@@ -58,7 +59,8 @@ public class MLKEMKeyPairGeneratorSpi
         int strength,
         SecureRandom random)
     {
-        throw new IllegalArgumentException("use AlgorithmParameterSpec");
+        // what the JCA specifies here; it extends IllegalArgumentException, so catches still match
+        throw new InvalidParameterException("use AlgorithmParameterSpec");
     }
 
     public void initialize(

@@ -1,6 +1,7 @@
 package org.bouncycastle.pqc.jcajce.provider.sqisign;
 
 import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidParameterException;
 import java.security.KeyPair;
 import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
@@ -58,7 +59,8 @@ public class SQIsignKeyPairGeneratorSpi
 
     public void initialize(int strength, SecureRandom random)
     {
-        throw new IllegalArgumentException("use AlgorithmParameterSpec");
+        // what the JCA specifies here; it extends IllegalArgumentException, so catches still match
+        throw new InvalidParameterException("use AlgorithmParameterSpec");
     }
 
     public void initialize(AlgorithmParameterSpec params, SecureRandom random)

@@ -17,6 +17,7 @@ import org.bouncycastle.crypto.params.RSAKeyGenerationParameters;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
 import org.bouncycastle.jcajce.provider.asymmetric.util.PrimeCertaintyCalculator;
+import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 
 public class KeyPairGeneratorSpi
     extends java.security.KeyPairGenerator
@@ -52,8 +53,16 @@ public class KeyPairGeneratorSpi
         int strength,
         SecureRandom random)
     {
-        param = new RSAKeyGenerationParameters(defaultPublicExponent,
-            random, strength, PrimeCertaintyCalculator.getDefaultCertainty(strength));
+        try
+        {
+            param = new RSAKeyGenerationParameters(defaultPublicExponent,
+                random, strength, PrimeCertaintyCalculator.getDefaultCertainty(strength));
+        }
+        catch (IllegalArgumentException e)
+        {
+            // the lightweight parameters cannot name a java.security exception, so translate here
+            throw SecurityExceptions.invalidParameterException(e.getMessage(), e);
+        }
 
         engine.init(param);
     }
