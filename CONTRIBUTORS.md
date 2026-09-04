@@ -524,7 +524,7 @@ We also wish to acknowledge financial and collaborative support from [CISCO](htt
 - Hendrik Ebbers \<https://github.com/hendrikebbers\> - Patch propagating exception causes when re-throwing as IllegalArgumentException in ASN.1 parsing utilities; primary author of the first cut of the TestResourceFinder update to honour the bc.test.data.home system property and BC_TEST_DATA_HOME environment variable for locating bc-test-data.
 - Gray j256 \<https://github.com/j256\> - Addition of license ID to licenses files.
 - Johannes Leupold from KOBIL GmbH; XChaCha20 and XChaCha20Poly1305 initial implementation.
-- Sean Gilligan \<https://github.com/msgilligan\> - README updates for JDK25 build / BC_JDK21 environment variable.
+- Sean Gilligan \<https://github.com/msgilligan\> - README updates for JDK25 build / BC_JDK21 environment variable. Suggestion that BIP340Signer take the public key from a key pair rather than deriving it, roughly halving the cost of signing (issue #2420).
 - Zhongyu LU \<lzy3906&#064;163.com\> - identified the NullPointerException in ECIESKEMExtractor.extractSecret when the encapsulation decoded to the point at infinity.
 - Sebastien Leveque \<https://github.com/sebastien-leveque\> - providing reproducible testing for AESNativeGCM decryption failure on a partially-filled buffer.
 - pjsg \<https://github.com/pjsg\> - initial coding for cumulative X.509 certificate review.

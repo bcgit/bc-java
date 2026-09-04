@@ -5,6 +5,7 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 
 import org.bouncycastle.asn1.x9.X9ECParameters;
+import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.Signer;
@@ -75,6 +76,7 @@ public class BIP340Signer
     private ECPrivateKeyParameters privateKey;
     private ECPublicKeyParameters publicKey;
     private SecureRandom auxRandSource;
+    private ECPoint signingP;
 
     /**
      * Create a randomized BIP-340 signer: a per-signature {@code aux_rand} is drawn from the supplied
@@ -137,24 +139,93 @@ public class BIP340Signer
             providedRandom = withRandom.getRandom();
         }
 
-        this.forSigning = forSigning;
         if (forSigning)
         {
-            ECPrivateKeyParameters ecPrivateKey = (ECPrivateKeyParameters)parameters;
-            checkSecp256k1(ecPrivateKey.getParameters());
-            this.privateKey = ecPrivateKey;
-            this.publicKey = null;
-            this.auxRandSource = deterministic ? null : CryptoServicesRegistrar.getSecureRandom(providedRandom);
+            initSign((ECPrivateKeyParameters)parameters, null, providedRandom);
         }
         else
         {
-            ECPublicKeyParameters ecPublicKey = (ECPublicKeyParameters)parameters;
-            checkSecp256k1(ecPublicKey.getParameters());
-            this.privateKey = null;
-            this.publicKey = ecPublicKey;
-            this.auxRandSource = null;
+            initVerify((ECPublicKeyParameters)parameters);
         }
+    }
 
+    /**
+     * Initialise with a key pair whose public key is already to hand, drawing {@code aux_rand} from the
+     * default {@link CryptoServicesRegistrar} source when signing.
+     *
+     * @param keyPair a secp256k1 key pair, as produced by
+     *                {@link org.bouncycastle.crypto.generators.ECKeyPairGenerator} over {@link #getDomain()}.
+     * @see #init(boolean, AsymmetricCipherKeyPair, SecureRandom)
+     */
+    public void init(boolean forSigning, AsymmetricCipherKeyPair keyPair)
+    {
+        init(forSigning, keyPair, null);
+    }
+
+    /**
+     * Initialise with a key pair whose public key is already to hand.
+     * <p>
+     * Signing needs the public point twice - for the parity of {@code d} and for {@code bytes(P)} in the
+     * nonce and challenge hashes (BIP-340 sec. 3.3 steps 3-4) - and otherwise derives it with a
+     * {@code d'*G} multiplication, which is about half the cost of producing a signature. A caller that
+     * already holds the public key can supply it here and skip that.
+     * <p>
+     * <b>The public key must be the one belonging to the private key.</b> That is not checked, since
+     * checking it means performing the very multiplication being avoided; supplying any other key simply
+     * yields a signature that does not verify. Prefer a pair that came from
+     * {@link org.bouncycastle.crypto.generators.ECKeyPairGenerator}, or one whose public half was read
+     * back through {@link #decodePublicKey} from storage that recorded it alongside the private key.
+     *
+     * @param keyPair a secp256k1 key pair; only the public half is used when {@code forSigning} is false.
+     * @param random  source for the per-signature {@code aux_rand}, or null for the default
+     *                {@link CryptoServicesRegistrar} source. Ignored when verifying, and by a signer
+     *                constructed with {@link #BIP340Signer(boolean) deterministic} signing.
+     */
+    public void init(boolean forSigning, AsymmetricCipherKeyPair keyPair, SecureRandom random)
+    {
+        if (forSigning)
+        {
+            ECPublicKeyParameters ecPublicKey = (ECPublicKeyParameters)keyPair.getPublic();
+            checkSecp256k1(ecPublicKey.getParameters());
+            initSign((ECPrivateKeyParameters)keyPair.getPrivate(), ecPublicKey.getQ(), random);
+        }
+        else
+        {
+            initVerify((ECPublicKeyParameters)keyPair.getPublic());
+        }
+    }
+
+    private void initSign(ECPrivateKeyParameters ecPrivateKey, ECPoint knownP, SecureRandom providedRandom)
+    {
+        checkSecp256k1(ecPrivateKey.getParameters());
+
+        this.forSigning = true;
+        this.privateKey = ecPrivateKey;
+        this.publicKey = null;
+        this.auxRandSource = deterministic ? null : CryptoServicesRegistrar.getSecureRandom(providedRandom);
+        // derived once here rather than per generateSignature() call, which recomputed it every time.
+        this.signingP = (knownP != null)
+            ? knownP
+            : new FixedPointCombMultiplier().multiply(SECP256K1.getG(), ecPrivateKey.getD()).normalize();
+
+        initFinished();
+    }
+
+    private void initVerify(ECPublicKeyParameters ecPublicKey)
+    {
+        checkSecp256k1(ecPublicKey.getParameters());
+
+        this.forSigning = false;
+        this.privateKey = null;
+        this.publicKey = ecPublicKey;
+        this.auxRandSource = null;
+        this.signingP = null;
+
+        initFinished();
+    }
+
+    private void initFinished()
+    {
         CryptoServicesRegistrar.checkConstraints(
             Utils.getDefaultProperties("BIP340", forSigning ? (ECKeyParameters)privateKey : publicKey, forSigning));
 
@@ -184,7 +255,7 @@ public class BIP340Signer
             auxRandSource.nextBytes(auxRand);
         }
 
-        return buffer.generateSignature(privateKey, auxRand);
+        return buffer.generateSignature(privateKey, auxRand, signingP);
     }
 
     public boolean verifySignature(byte[] signature)
@@ -203,7 +274,7 @@ public class BIP340Signer
     }
 
     // BIP-340 sec. 3.3 Default Signing.
-    private static byte[] sign(ECPrivateKeyParameters privateKey, byte[] m, byte[] auxRand)
+    private static byte[] sign(ECPrivateKeyParameters privateKey, byte[] m, byte[] auxRand, ECPoint P_pt)
     {
         BigInteger n = SECP256K1.getN();
 
@@ -216,8 +287,7 @@ public class BIP340Signer
 
         ECMultiplier mult = new FixedPointCombMultiplier();
 
-        // Steps 3-4: P = d' * G; d = d' if has_even_y(P) else n - d'.
-        ECPoint P_pt = mult.multiply(SECP256K1.getG(), d).normalize();
+        // Steps 3-4: P = d' * G (supplied by init); d = d' if has_even_y(P) else n - d'.
         if (!hasEvenY(P_pt))
         {
             d = n.subtract(d);
@@ -359,11 +429,11 @@ public class BIP340Signer
     private static final class Buffer
         extends ByteArrayOutputStream
     {
-        synchronized byte[] generateSignature(ECPrivateKeyParameters privateKey, byte[] auxRand)
+        synchronized byte[] generateSignature(ECPrivateKeyParameters privateKey, byte[] auxRand, ECPoint signingP)
         {
             try
             {
-                return sign(privateKey, Arrays.copyOf(buf, count), auxRand);
+                return sign(privateKey, Arrays.copyOf(buf, count), auxRand, signingP);
             }
             finally
             {

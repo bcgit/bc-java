@@ -8,6 +8,8 @@ import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
@@ -48,6 +50,134 @@ public class BIP340SignerTest
         roundTripWithAuxRand();
         deterministicMode();
         defaultModeSubstitutesSecureRandom();
+        keyPairInitMatchesPrivateKeyInit();
+        repeatedSignaturesAfterOneInit();
+        keyPairInitChecksTheCurve();
+    }
+
+    // Initialising from a key pair skips the d'*G multiplication (github #2420) - the signature it
+    // produces has to be the one the private-key-only path produces, and has to verify.
+    private void keyPairInitMatchesPrivateKeyInit()
+    {
+        BigInteger d = new BigInteger(
+            "B7E151628AED2A6ABF7158809CF4F3C762E7160F38B4DA56A784D9045190CFEF", 16);
+        ECPrivateKeyParameters priv = new ECPrivateKeyParameters(d, BIP340Signer.getDomain());
+        ECPublicKeyParameters pub = derivePublicKey(d);
+        AsymmetricCipherKeyPair keyPair = new AsymmetricCipherKeyPair(pub, priv);
+        byte[] msg = Hex.decode("243F6A8885A308D313198A2E03707344A4093822299F31D0082EFA98EC4E6C89");
+
+        BIP340Signer signer = new BIP340Signer(true);
+        signer.init(true, priv);
+        signer.update(msg, 0, msg.length);
+        byte[] fromPrivateKey = signer.generateSignature();
+
+        signer = new BIP340Signer(true);
+        signer.init(true, keyPair);
+        signer.update(msg, 0, msg.length);
+        byte[] fromKeyPair = signer.generateSignature();
+
+        isTrue("key pair init changed the signature", Arrays.areEqual(fromPrivateKey, fromKeyPair));
+
+        // and the randomized path, with a supplied SecureRandom, still verifies
+        signer = new BIP340Signer();
+        signer.init(true, keyPair, new SecureRandom());
+        signer.update(msg, 0, msg.length);
+        byte[] randomized = signer.generateSignature();
+
+        isTrue("key pair init did not verify", verify(pub, msg, randomized));
+        isTrue("deterministic signature did not verify", verify(pub, msg, fromKeyPair));
+
+        // verification from a key pair uses the public half
+        BIP340Signer verifier = new BIP340Signer();
+        verifier.init(false, keyPair);
+        verifier.update(msg, 0, msg.length);
+        isTrue("key pair init did not verify (verification side)", verifier.verifySignature(fromKeyPair));
+    }
+
+    // The public point is derived once per init(), so a signer used repeatedly has to keep producing
+    // the same answer as one re-initialised for every signature.
+    private void repeatedSignaturesAfterOneInit()
+    {
+        BigInteger d = new BigInteger(
+            "C90FDAA22168C234C4C6628B80DC1CD129024E088A67CC74020BBEA63B14E5C9", 16);
+        ECPrivateKeyParameters priv = new ECPrivateKeyParameters(d, BIP340Signer.getDomain());
+        ECPublicKeyParameters pub = derivePublicKey(d);
+        byte[][] msgs = new byte[][]{
+            Hex.decode("0000000000000000000000000000000000000000000000000000000000000000"),
+            Hex.decode("243F6A8885A308D313198A2E03707344A4093822299F31D0082EFA98EC4E6C89"),
+            Hex.decode("7E2D58D8B3BCDF1ABADEC7829054F90DDA9805AAB56C77333024B9D0A508B75C")};
+
+        BIP340Signer reused = new BIP340Signer(true);
+        reused.init(true, priv);
+
+        for (int i = 0; i != msgs.length; i++)
+        {
+            reused.update(msgs[i], 0, msgs[i].length);
+            byte[] sig = reused.generateSignature();
+
+            BIP340Signer fresh = new BIP340Signer(true);
+            fresh.init(true, priv);
+            fresh.update(msgs[i], 0, msgs[i].length);
+
+            isTrue("reused signer diverged at message " + i, Arrays.areEqual(fresh.generateSignature(), sig));
+            isTrue("reused signer produced an unverifiable signature at message " + i, verify(pub, msgs[i], sig));
+        }
+    }
+
+    private void keyPairInitChecksTheCurve()
+    {
+        ECDomainParameters secp256k1 = BIP340Signer.getDomain();
+        BigInteger d = new BigInteger(
+            "B7E151628AED2A6ABF7158809CF4F3C762E7160F38B4DA56A784D9045190CFEF", 16);
+        ECDomainParameters other = new ECDomainParameters(
+            org.bouncycastle.crypto.ec.CustomNamedCurves.getByName("secp256r1"));
+        BigInteger dOther = d.mod(other.getN().subtract(BigIntegers.ONE)).add(BigIntegers.ONE);
+
+        AsymmetricCipherKeyPair wrongCurve = new AsymmetricCipherKeyPair(
+            new ECPublicKeyParameters(
+                new FixedPointCombMultiplier().multiply(other.getG(), dOther).normalize(), other),
+            new ECPrivateKeyParameters(dOther, other));
+
+        try
+        {
+            new BIP340Signer().init(true, wrongCurve);
+            fail("no exception on a key pair from another curve");
+        }
+        catch (IllegalArgumentException e)
+        {
+            isEquals("BIP-340 requires secp256k1", e.getMessage());
+        }
+
+        // a public key on the wrong curve is refused even when the private key is a secp256k1 one
+        AsymmetricCipherKeyPair mixed = new AsymmetricCipherKeyPair(
+            new ECPublicKeyParameters(
+                new FixedPointCombMultiplier().multiply(other.getG(), dOther).normalize(), other),
+            new ECPrivateKeyParameters(d, secp256k1));
+
+        try
+        {
+            new BIP340Signer().init(true, mixed);
+            fail("no exception on a key pair whose public half is from another curve");
+        }
+        catch (IllegalArgumentException e)
+        {
+            isEquals("BIP-340 requires secp256k1", e.getMessage());
+        }
+    }
+
+    private static ECPublicKeyParameters derivePublicKey(BigInteger d)
+    {
+        return new ECPublicKeyParameters(
+            new FixedPointCombMultiplier().multiply(BIP340Signer.getDomain().getG(), d).normalize(),
+            BIP340Signer.getDomain());
+    }
+
+    private boolean verify(ECPublicKeyParameters pub, byte[] msg, byte[] sig)
+    {
+        BIP340Signer verifier = new BIP340Signer();
+        verifier.init(false, pub);
+        verifier.update(msg, 0, msg.length);
+        return verifier.verifySignature(sig);
     }
 
     private void runOfficialVectors()
