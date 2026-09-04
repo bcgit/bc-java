@@ -23,6 +23,7 @@ public class AllTests
         suite.addTestSuite(ParseTest.class);
         suite.addTestSuite(PQCTSPTest.class);
         suite.addTestSuite(NewTSPTest.class);
+        suite.addTestSuite(TimeStampTokenParseTest.class);
         suite.addTestSuite(CMSTimeStampedDataTest.class);
         suite.addTestSuite(CMSTimeStampedDataParserTest.class);
         suite.addTestSuite(CMSTimeStampedDataGeneratorTest.class);

@@ -46,6 +46,13 @@ public class TSTInfo
 
     private TSTInfo(ASN1Sequence seq)
     {
+        // RFC 3161 sec. 2.4.2: five mandatory fields, then accuracy, ordering, nonce, tsa and extensions
+        int count = seq.size();
+        if (count < 5 || count > 10)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + count);
+        }
+
         Enumeration e = seq.getObjects();
 
         // version

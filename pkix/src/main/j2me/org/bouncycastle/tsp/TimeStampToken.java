@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Collection;
 import java.util.Date;
+import java.util.NoSuchElementException;
 
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.cms.Attribute;
@@ -82,7 +83,7 @@ public class TimeStampToken
 
         if (signers.size() != 1)
         {
-            throw new IllegalArgumentException("Time-stamp token signed by "
+            throw new TSPValidationException("Time-stamp token signed by "
                     + signers.size()
                     + " signers, but it must contain just the TSA signature.");
         }
@@ -99,25 +100,53 @@ public class TimeStampToken
             ASN1InputStream aIn = new ASN1InputStream(new ByteArrayInputStream(bOut.toByteArray()));
 
             this.tstInfo = new TimeStampTokenInfo(TSTInfo.getInstance(aIn.readObject()));
-            
-            Attribute   attr = tsaSignerInfo.getSignedAttributes().get(PKCSObjectIdentifiers.id_aa_signingCertificate);
+
+            // no signed attributes at all means no SigningCertificate(V2), so refuse rather than NPE below
+            AttributeTable signedAttr = tsaSignerInfo.getSignedAttributes();
+
+            if (signedAttr == null)
+            {
+                throw new TSPValidationException("no signing certificate attribute found, time stamp invalid.");
+            }
+
+            Attribute attr = signedAttr.get(PKCSObjectIdentifiers.id_aa_signingCertificate);
 
             if (attr != null)
             {
-                SigningCertificate    signCert = SigningCertificate.getInstance(attr.getAttrValues().getObjectAt(0));
+                if (attr.getAttrValues().size() < 1)
+                {
+                    throw new TSPException("signing certificate attribute MUST contain at least one AttributeValue");
+                }
+
+                SigningCertificate signCert = SigningCertificate.getInstance(attr.getAttrValues().getObjectAt(0));
+
+                if (signCert.getCerts().length < 1)
+                {
+                    throw new TSPException("signing certificate attribute MUST contain at least one ESSCertID");
+                }
 
                 this.certID = new CertID(ESSCertID.getInstance(signCert.getCerts()[0]));
             }
             else
             {
-                attr = tsaSignerInfo.getSignedAttributes().get(PKCSObjectIdentifiers.id_aa_signingCertificateV2);
+                attr = signedAttr.get(PKCSObjectIdentifiers.id_aa_signingCertificateV2);
 
                 if (attr == null)
                 {
                     throw new TSPValidationException("no signing certificate attribute found, time stamp invalid.");
                 }
 
+                if (attr.getAttrValues().size() < 1)
+                {
+                    throw new TSPException("signing certificate attribute MUST contain at least one AttributeValue");
+                }
+
                 SigningCertificateV2 signCertV2 = SigningCertificateV2.getInstance(attr.getAttrValues().getObjectAt(0));
+
+                if (signCertV2.getCerts().length < 1)
+                {
+                    throw new TSPException("signing certificate attribute MUST contain at least one ESSCertID");
+                }
 
                 this.certID = new CertID(ESSCertIDv2.getInstance(signCertV2.getCerts()[0]));
             }
@@ -125,6 +154,18 @@ public class TimeStampToken
         catch (CMSException e)
         {
             throw new TSPException(e.getMessage(), e.getUnderlyingException());
+        }
+        catch (IllegalArgumentException e)
+        {
+            throw new TSPException("malformed timestamp token: " + e, e);
+        }
+        catch (ClassCastException e)
+        {
+            throw new TSPException("malformed timestamp token: " + e, e);
+        }
+        catch (NoSuchElementException e)
+        {
+            throw new TSPException("malformed timestamp token: " + e, e);
         }
     }
 

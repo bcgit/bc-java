@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Collection;
+import java.util.NoSuchElementException;
 
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.cms.Attribute;
@@ -82,7 +83,7 @@ public class TimeStampToken
 
         if (signers.size() != 1)
         {
-            throw new IllegalArgumentException("Time-stamp token signed by "
+            throw new TSPValidationException("Time-stamp token signed by "
                     + signers.size()
                     + " signers, but it must contain just the TSA signature.");
         }
@@ -154,6 +155,18 @@ public class TimeStampToken
         catch (CMSException e)
         {
             throw new TSPException(e.getMessage(), e.getUnderlyingException());
+        }
+        catch (IllegalArgumentException e)
+        {
+            throw new TSPException("malformed timestamp token: " + e, e);
+        }
+        catch (ClassCastException e)
+        {
+            throw new TSPException("malformed timestamp token: " + e, e);
+        }
+        catch (NoSuchElementException e)
+        {
+            throw new TSPException("malformed timestamp token: " + e, e);
         }
     }
 
