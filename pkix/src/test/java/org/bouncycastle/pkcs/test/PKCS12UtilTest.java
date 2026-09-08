@@ -106,6 +106,35 @@ public class PKCS12UtilTest
         }
     }
 
+    public void testValidateKeyLengthBounds()
+    {
+        // RFC 9579 sec. 9: a PBMAC1 keyLength below 20 octets is rejected.
+        try
+        {
+            org.bouncycastle.pkcs.util.PKCS12Util.validateKeyLength(java.math.BigInteger.valueOf(8));
+            fail("short keyLength accepted");
+        }
+        catch (IllegalStateException e)
+        {
+            assertEquals("keyLength 8 less than 20", e.getMessage());
+        }
+
+        // upper bound still enforced.
+        try
+        {
+            org.bouncycastle.pkcs.util.PKCS12Util.validateKeyLength(java.math.BigInteger.valueOf(2000));
+            fail("oversized keyLength accepted");
+        }
+        catch (IllegalStateException e)
+        {
+            assertEquals("keyLength 2000 greater than 1024", e.getMessage());
+        }
+
+        // the RFC 9579 20-octet floor and a conformant SHA-256 output length both pass.
+        assertEquals(20, org.bouncycastle.pkcs.util.PKCS12Util.validateKeyLength(java.math.BigInteger.valueOf(20)));
+        assertEquals(32, org.bouncycastle.pkcs.util.PKCS12Util.validateKeyLength(java.math.BigInteger.valueOf(32)));
+    }
+
     private static PKCS12PfxPdu buildPfx(
         org.bouncycastle.pkcs.PKCS12MacCalculatorBuilder macBuilder)
         throws Exception

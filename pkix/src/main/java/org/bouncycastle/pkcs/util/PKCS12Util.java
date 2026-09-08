@@ -207,25 +207,34 @@ public class PKCS12Util
         return content;
     }
 
-    // A PBMAC1 MAC key is 20-64 bytes; anything beyond this is rejected as abusive.
+    // RFC 9579 sec. 9 RECOMMENDs rejecting a PBMAC1 KDF keyLength below 20 octets, since a short
+    // derived key makes the HMAC brute-forceable; sec. 5 has the key SHOULD match the HMAC output
+    // (>= 32 for the SHA-2 PRFs BC supports), so no conforming file falls below this floor.
+    private static final BigInteger MIN_KEY_LENGTH = BigInteger.valueOf(20);
     private static final BigInteger MAX_KEY_LENGTH = BigInteger.valueOf(1024);
 
     /**
      * Validate a PBKDF2 keyLength from a PFX. As with the iteration count, the value arrives in a
      * PFX whose MAC has not been checked yet and sizes the derivation output, so it has to be
      * bounded before deriving; it is also multiplied by 8 at the call sites, which overflows to a
-     * negative bit count for a large enough value.
+     * negative bit count for a large enough value. A keyLength below 20 octets is rejected per
+     * RFC 9579 sec. 9.
      *
      * @param keyLength the keyLength from the wire.
      * @return the validated keyLength in bytes.
-     * @throws IllegalStateException if the keyLength is absent, not positive, or larger than the
-     *         maximum supported.
+     * @throws IllegalStateException if the keyLength is absent, not positive, below 20 octets, or
+     *         larger than the maximum supported.
      */
     public static int validateKeyLength(BigInteger keyLength)
     {
         if (keyLength == null || keyLength.signum() <= 0)
         {
             throw new IllegalStateException("keyLength must be positive");
+        }
+
+        if (keyLength.compareTo(MIN_KEY_LENGTH) < 0)
+        {
+            throw new IllegalStateException("keyLength " + keyLength + " less than " + MIN_KEY_LENGTH);
         }
 
         if (keyLength.compareTo(MAX_KEY_LENGTH) > 0)
