@@ -39,6 +39,7 @@ import org.bouncycastle.openpgp.api.OpenPGPKey;
 import org.bouncycastle.openpgp.operator.bc.BcPGPKeyConverter;
 import org.bouncycastle.openpgp.smartcard.OpenPGPHardwareKey;
 import org.bouncycastle.openpgp.smartcard.OpenPGPSmartCard;
+import org.bouncycastle.openpgp.smartcard.card.CardException;
 import org.bouncycastle.openpgp.smartcard.card.SupportedAlgorithms;
 import org.bouncycastle.util.Integers;
 
@@ -76,7 +77,7 @@ public class SimulatorOpenPGPSmartCard
 
     public static SimulatorOpenPGPSmartCard createSimulatedCardFrom(SimulatorOpenPGPSmartCardBackend backend,
                                                                     OpenPGPKey softwareKey)
-            throws PGPException
+            throws PGPException, CardException
     {
         // the serial only has to be unique among simulated cards; it is not security relevant, but
         // take it from the registrar's RNG rather than introducing a java.util.Random into the tree.
@@ -87,7 +88,7 @@ public class SimulatorOpenPGPSmartCard
     public static SimulatorOpenPGPSmartCard createSimulatedCardFrom(SimulatorOpenPGPSmartCardBackend backend,
                                                                     Integer serialNumber,
                                                                     OpenPGPKey softwareKey)
-            throws PGPException
+            throws PGPException, CardException
     {
         SimulatorOpenPGPSmartCard card = new SimulatorOpenPGPSmartCard(backend, serialNumber);
 
@@ -95,21 +96,21 @@ public class SimulatorOpenPGPSmartCard
         if (!signingKeys.isEmpty())
         {
             OpenPGPKey.OpenPGPSecretKey secretKey = softwareKey.getSecretKey(signingKeys.get(0));
-            card.uploadKey(OpenPGPHardwareKey.KEY_REF_SIGNATURE, secretKey.unlock(), null);
+            card.uploadSigningKey(secretKey.unlock(), key -> null);
         }
 
         List<OpenPGPCertificate.OpenPGPComponentKey> decryptionKeys = softwareKey.getEncryptionKeys();
         if (!decryptionKeys.isEmpty())
         {
             OpenPGPKey.OpenPGPSecretKey secretKey = softwareKey.getSecretKey(decryptionKeys.get(0));
-            card.uploadKey(OpenPGPHardwareKey.KEY_REF_DECRYPTION, secretKey.unlock(), null);
+            card.uploadDecryptionKey(secretKey.unlock(), key -> null);
         }
 
         List<OpenPGPCertificate.OpenPGPComponentKey> authenticationKeys = softwareKey.getComponentKeysWithFlag(new Date(), KeyFlags.AUTHENTICATION);
         if (!authenticationKeys.isEmpty())
         {
             OpenPGPKey.OpenPGPSecretKey secretKey = softwareKey.getSecretKey(authenticationKeys.get(0));
-            card.uploadKey(OpenPGPHardwareKey.KEY_REF_AUTHENTICATION, secretKey.unlock(), null);
+            card.uploadAuthenticationKey(secretKey.unlock(), key -> null);
         }
 
         return card;

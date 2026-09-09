@@ -14,6 +14,7 @@ import org.bouncycastle.openpgp.smartcard.card.CardException;
 
 import java.security.PublicKey;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -257,49 +258,78 @@ public abstract class OpenPGPSmartCard
      * Upload the given {@link OpenPGPPrivateKey} to the signing key slot on the card.
      *
      * @param key OpenPGP private key
-     * @param adminPin admin pin of the card
+     * @param adminPinProvider provider for the admin pin of the card
      * @return card
      * @throws CardException if communication with the card fails
      * @throws PGPException if the key cannot be prepared for the card
      */
-    public OpenPGPSmartCard uploadSigningKey(OpenPGPPrivateKey key, char[] adminPin)
-            throws CardException, PGPException
+    public OpenPGPSmartCard uploadSigningKey(OpenPGPPrivateKey key, KeyPassphraseProvider adminPinProvider)
+            throws PGPException, CardException
     {
-        return uploadKey(OpenPGPHardwareKey.KEY_REF_SIGNATURE, key, adminPin);
+        return uploadKey(OpenPGPHardwareKey.KEY_REF_SIGNATURE, key, adminPinProvider);
     }
 
     /**
      * Upload the given {@link OpenPGPPrivateKey} to the decryption key slot on the card.
      *
      * @param key OpenPGP private key
-     * @param adminPin admin pin of the card
+     * @param adminPinProvider provider for the admin pin of the card
      * @return card
      * @throws CardException if communication with the card fails
      * @throws PGPException if the key cannot be prepared for the card
      */
-    public OpenPGPSmartCard uploadDecryptionKey(OpenPGPPrivateKey key, char[] adminPin)
+    public OpenPGPSmartCard uploadDecryptionKey(OpenPGPPrivateKey key, KeyPassphraseProvider adminPinProvider)
             throws CardException, PGPException
     {
-        return uploadKey(OpenPGPHardwareKey.KEY_REF_DECRYPTION, key, adminPin);
+        return uploadKey(OpenPGPHardwareKey.KEY_REF_DECRYPTION, key, adminPinProvider);
     }
 
     /**
      * Upload the given {@link OpenPGPPrivateKey} to the authentication key slot on the card.
      *
      * @param key OpenPGP private key
-     * @param adminPin admin pin of the card
+     * @param adminPinProvider provider for the admin pin of the card
      * @return card
      * @throws CardException if communication with the card fails
      * @throws PGPException if the key cannot be prepared for the card
      */
-    public OpenPGPSmartCard uploadAuthenticationKey(OpenPGPPrivateKey key, char[] adminPin)
+    public OpenPGPSmartCard uploadAuthenticationKey(OpenPGPPrivateKey key, KeyPassphraseProvider adminPinProvider)
             throws CardException, PGPException
     {
-        return uploadKey(OpenPGPHardwareKey.KEY_REF_AUTHENTICATION, key, adminPin);
+        return uploadKey(OpenPGPHardwareKey.KEY_REF_AUTHENTICATION, key, adminPinProvider);
+    }
+
+    /**
+     * Upload the given key to the slot identified by <pre>keyRef</pre>.
+     * The admin PIN is required from the <pre>adminPinProvider</pre>.
+     * @param keyRef key ref
+     * @param key key
+     * @param adminPinProvider provider for the admin pin of the card
+     * @return card
+     * @throws CardException if communication with the card fails
+     * @throws PGPException if the key cannot be prepared for the card
+     */
+    public OpenPGPSmartCard uploadKey(byte keyRef,
+                                      OpenPGPPrivateKey key,
+                                      KeyPassphraseProvider adminPinProvider)
+            throws PGPException, CardException
+    {
+        char[] adminPin = requireUserPin(adminPinProvider, key.getSecretKey());
+        OpenPGPSmartCard card;
+        try
+        {
+            card = uploadKey(keyRef, key, adminPin);
+        }
+        finally
+        {
+            Arrays.fill(adminPin, '\0');
+        }
+        return card;
     }
 
     /**
      * Upload the given {@link OpenPGPPrivateKey} to the given keyRef slot on the card.
+     * Note: This method is not guaranteed to clear out the <pre>adminPin</pre> so you need to do that yourselves.
      * @param keyRef keyRef
      * @param key OpenPGP private key
      * @param adminPin admin pin of the card
@@ -307,7 +337,7 @@ public abstract class OpenPGPSmartCard
      * @throws CardException if communication with the card fails
      * @throws PGPException if the key cannot be prepared for the card
      */
-    public abstract OpenPGPSmartCard uploadKey(byte keyRef,
+    protected abstract OpenPGPSmartCard uploadKey(byte keyRef,
                                                OpenPGPPrivateKey key,
                                                char[] adminPin)
             throws CardException, PGPException;
