@@ -1,6 +1,6 @@
 
 plugins {
-    id "biz.aQute.bnd.builder" version "7.1.0"
+    id "biz.aQute.bnd.builder" version "7.4.0"
 }
 
 dependencies {
@@ -15,11 +15,11 @@ dependencies {
     // without YubiKit; an application that wants the YubiKey backend adds
     //   com.yubico.yubikit:openpgp   and   com.yubico.yubikit:desktop
     // to its own classpath, and gets a NoClassDefFoundError from the yubikey package if it does not.
-    compileOnly group: 'com.yubico.yubikit', name: 'openpgp', version: '3.1.0'
-    compileOnly group: 'com.yubico.yubikit', name: 'desktop', version: '3.1.0'
+    compileOnly group: 'com.yubico.yubikit', name: 'openpgp', version: '3.2.0'
+    compileOnly group: 'com.yubico.yubikit', name: 'desktop', version: '3.2.0'
 
-    testImplementation group: 'com.yubico.yubikit', name: 'openpgp', version: '3.1.0'
-    testImplementation group: 'com.yubico.yubikit', name: 'desktop', version: '3.1.0'
+    testImplementation group: 'com.yubico.yubikit', name: 'openpgp', version: '3.2.0'
+    testImplementation group: 'com.yubico.yubikit', name: 'desktop', version: '3.2.0'
     testImplementation group: 'junit', name: 'junit', version: '4.13.2'
 }
 
