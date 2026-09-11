@@ -11,16 +11,17 @@ import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCipher;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.TlsCryptoUtils;
+import org.bouncycastle.tls.crypto.TlsDTLS13Cipher;
 import org.bouncycastle.tls.crypto.TlsDecodeResult;
 import org.bouncycastle.tls.crypto.TlsEncodeResult;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.util.Arrays;
 
 /**
- * A generic TLS 1.2 AEAD cipher.
+ * A generic AEAD cipher, covering TLS 1.2, TLS 1.3 and DTLS 1.3 record protection.
  */
 public final class TlsAEADCipher
-    implements TlsCipher
+    implements TlsCipher, TlsDTLS13Cipher
 {
     public static final int AEAD_CCM = 1;
     public static final int AEAD_CHACHA20_POLY1305 = 2;
@@ -31,6 +32,13 @@ public final class TlsAEADCipher
     private static final long SEQUENCE_NUMBER_PLACEHOLDER = -1L;
 
     private static final byte[] EPOCH_1 = { 0x00, 0x01 };
+
+    private static final int DTLS13_FIXED_BITS = 0x20;
+    private static final int DTLS13_FIXED_BITS_MASK = 0xE0;
+    private static final int DTLS13_FLAG_CID = 0x10;
+    private static final int DTLS13_FLAG_SEQ16 = 0x08;
+    private static final int DTLS13_FLAG_LENGTH = 0x04;
+    private static final int DTLS13_MIN_CIPHERTEXT_LENGTH = 16;
 
     private final TlsCryptoParameters cryptoParams;
     private final int keySize;
@@ -47,6 +55,9 @@ public final class TlsAEADCipher
     private final int nonceMode;
     private final AEADNonceGenerator nonceGenerator;
 
+    private final boolean isDTLSv13;
+    private final TlsRecordNumberMask decryptMask, encryptMask;
+
     /** @deprecated Use version with extra 'nonceGeneratorFactory' parameter */
     @Deprecated
     @SuppressWarnings("InlineMeSuggester")
@@ -60,6 +71,20 @@ public final class TlsAEADCipher
         TlsAEADCipherImpl decryptCipher, int keySize, int macSize, int aeadType,
         AEADNonceGeneratorFactory nonceGeneratorFactory) throws IOException
     {
+        this(cryptoParams, encryptCipher, decryptCipher, keySize, macSize, aeadType, nonceGeneratorFactory, null,
+            null);
+    }
+
+    /**
+     * @param encryptMask record number encryption mask for the sending direction (DTLS 1.3 only, may be null
+     *        when DTLS 1.3 will not be negotiated).
+     * @param decryptMask record number encryption mask for the receiving direction (DTLS 1.3 only).
+     */
+    public TlsAEADCipher(TlsCryptoParameters cryptoParams, TlsAEADCipherImpl encryptCipher,
+        TlsAEADCipherImpl decryptCipher, int keySize, int macSize, int aeadType,
+        AEADNonceGeneratorFactory nonceGeneratorFactory, TlsRecordNumberMask encryptMask,
+        TlsRecordNumberMask decryptMask) throws IOException
+    {
         final SecurityParameters securityParameters = cryptoParams.getSecurityParametersHandshake();
         final ProtocolVersion negotiatedVersion = securityParameters.getNegotiatedVersion();
 
@@ -69,7 +94,11 @@ public final class TlsAEADCipher
         }
 
         this.isTLSv13 = TlsImplUtils.isTLSv13(negotiatedVersion);
+        this.isDTLSv13 = isTLSv13 && negotiatedVersion.isDTLS();
         this.nonceMode = getNonceMode(isTLSv13, aeadType);
+
+        this.encryptMask = encryptMask;
+        this.decryptMask = decryptMask;
 
         decryptConnectionID = securityParameters.getConnectionIDPeer();
         encryptConnectionID = securityParameters.getConnectionIDLocal();
@@ -105,8 +134,8 @@ public final class TlsAEADCipher
         if (isTLSv13)
         {
             nonceGenerator = null;
-            rekeyCipher(securityParameters, decryptCipher, decryptNonce, !isServer);
-            rekeyCipher(securityParameters, encryptCipher, encryptNonce, isServer);
+            rekeyCipher(securityParameters, decryptCipher, decryptNonce, decryptMask, !isServer);
+            rekeyCipher(securityParameters, encryptCipher, encryptNonce, encryptMask, isServer);
             return;
         }
 
@@ -346,14 +375,220 @@ public final class TlsAEADCipher
         return new TlsDecodeResult(ciphertext, encryptionOffset, plaintextLength, contentType);
     }
 
+    public TlsEncodeResult encodeDTLS13Plaintext(long seqNo, short contentType, byte[] header, int headerOff,
+        int headerLen, byte[] plaintext, int plaintextOffset, int plaintextLength) throws IOException
+    {
+        if (!isDTLSv13)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        int firstByte = header[headerOff] & 0xFF;
+        int cidLength = getDTLS13HeaderConnectionIDLength(firstByte, encryptConnectionID);
+        int seqNumOff = 1 + cidLength;
+        int seqNumLen = getDTLS13SequenceNumberLength(firstByte);
+        boolean hasLength = (firstByte & DTLS13_FLAG_LENGTH) != 0;
+        int expectedHeaderLen = seqNumOff + seqNumLen + (hasLength ? 2 : 0);
+        if (headerLen != expectedHeaderLen)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        /*
+         * RFC 9147 4.2.3. Senders MUST pad short plaintexts out [...] in order to make a suitable-length
+         * ciphertext (at least 16 bytes, for record number encryption).
+         */
+        int innerPlaintextLength = plaintextLength + 1;
+        int minInnerPlaintextLength = DTLS13_MIN_CIPHERTEXT_LENGTH - macSize;
+        if (innerPlaintextLength < minInnerPlaintextLength)
+        {
+            innerPlaintextLength = minInnerPlaintextLength;
+        }
+
+        byte[] nonce = createDTLS13Nonce(encryptNonce, seqNo);
+
+        encryptCipher.init(nonce, macSize);
+
+        int ciphertextLength = encryptCipher.getOutputSize(innerPlaintextLength);
+        TlsUtils.checkUint16(ciphertextLength);
+
+        byte[] output = new byte[headerLen + ciphertextLength];
+        System.arraycopy(header, headerOff, output, 0, headerLen);
+        if (hasLength)
+        {
+            TlsUtils.writeUint16(ciphertextLength, output, headerLen - 2);
+        }
+
+        // RFC 9147 4. The entire header (prior to record number encryption) is the additional data.
+        byte[] additionalData = Arrays.copyOfRange(output, 0, headerLen);
+
+        int outputPos = headerLen;
+        try
+        {
+            System.arraycopy(plaintext, plaintextOffset, output, outputPos, plaintextLength);
+            output[outputPos + plaintextLength] = (byte)contentType;
+            // NOTE: Any padding bytes after the content type are already zero
+
+            outputPos += encryptCipher.doFinal(additionalData, output, outputPos, innerPlaintextLength, output,
+                outputPos);
+        }
+        catch (RuntimeException e)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error, e);
+        }
+
+        if (outputPos != output.length)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        applyDTLS13RecordNumberMask(encryptMask, output, seqNumOff, seqNumLen, headerLen);
+
+        return new TlsEncodeResult(output, 0, output.length, (short)firstByte);
+    }
+
+    public void decryptDTLS13RecordNumber(byte[] record, int recordOff, int recordLen) throws IOException
+    {
+        if (!isDTLSv13)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+        if (recordLen < 1 || (record[recordOff] & DTLS13_FIXED_BITS_MASK) != DTLS13_FIXED_BITS)
+        {
+            throw new TlsFatalAlert(AlertDescription.decode_error);
+        }
+
+        int firstByte = record[recordOff] & 0xFF;
+        int cidLength = getDTLS13HeaderConnectionIDLength(firstByte, decryptConnectionID);
+        int seqNumOff = 1 + cidLength;
+        int seqNumLen = getDTLS13SequenceNumberLength(firstByte);
+        int headerLen = seqNumOff + seqNumLen + ((firstByte & DTLS13_FLAG_LENGTH) != 0 ? 2 : 0);
+
+        if (recordLen < headerLen + DTLS13_MIN_CIPHERTEXT_LENGTH)
+        {
+            throw new TlsFatalAlert(AlertDescription.decode_error);
+        }
+
+        applyDTLS13RecordNumberMask(decryptMask, record, recordOff + seqNumOff, seqNumLen, recordOff + headerLen);
+    }
+
+    public TlsDecodeResult decodeDTLS13Ciphertext(long seqNo, byte[] record, int recordOff, int headerLen,
+        int ciphertextLen) throws IOException
+    {
+        if (!isDTLSv13)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+        if (ciphertextLen < DTLS13_MIN_CIPHERTEXT_LENGTH || getPlaintextDecodeLimit(ciphertextLen) < 0)
+        {
+            throw new TlsFatalAlert(AlertDescription.decode_error);
+        }
+
+        byte[] nonce = createDTLS13Nonce(decryptNonce, seqNo);
+
+        decryptCipher.init(nonce, macSize);
+
+        int encryptionOffset = recordOff + headerLen;
+        int innerPlaintextLength = decryptCipher.getOutputSize(ciphertextLen);
+
+        byte[] additionalData = Arrays.copyOfRange(record, recordOff, recordOff + headerLen);
+
+        int outputPos;
+        try
+        {
+            outputPos = decryptCipher.doFinal(additionalData, record, encryptionOffset, ciphertextLen, record,
+                encryptionOffset);
+        }
+        catch (RuntimeException e)
+        {
+            throw new TlsFatalAlert(AlertDescription.bad_record_mac, e);
+        }
+
+        if (outputPos != innerPlaintextLength)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        // Strip padding and read true content type from DTLSInnerPlaintext
+        short contentType;
+        int plaintextLength = innerPlaintextLength;
+        for (;;)
+        {
+            if (--plaintextLength < 0)
+            {
+                // NOTE: The DTLS record layer deliberately converts this alert into a silent discard
+                throw new TlsFatalAlert(AlertDescription.unexpected_message);
+            }
+
+            byte octet = record[encryptionOffset + plaintextLength];
+            if (0 != octet)
+            {
+                contentType = (short)(octet & 0xFF);
+                break;
+            }
+        }
+
+        return new TlsDecodeResult(record, encryptionOffset, plaintextLength, contentType);
+    }
+
+    private static void applyDTLS13RecordNumberMask(TlsRecordNumberMask mask, byte[] record, int seqNumOff,
+        int seqNumLen, int ciphertextOff) throws IOException
+    {
+        if (null == mask)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        byte[] maskBytes = new byte[16];
+        mask.generateMask(record, ciphertextOff, maskBytes, 0);
+
+        for (int i = 0; i < seqNumLen; ++i)
+        {
+            record[seqNumOff + i] ^= maskBytes[i];
+        }
+    }
+
+    private byte[] createDTLS13Nonce(byte[] fixedNonce, long seqNo)
+    {
+        /*
+         * RFC 9147 4. In DTLS 1.3 the 64-bit sequence_number is used as the sequence number for the AEAD
+         * computation; unlike DTLS 1.2, the epoch is not included.
+         */
+        byte[] nonce = new byte[fixedNonce.length];
+        TlsUtils.writeUint64(seqNo, nonce, nonce.length - 8);
+        for (int i = 0; i < fixedNonce.length; ++i)
+        {
+            nonce[i] ^= fixedNonce[i];
+        }
+        return nonce;
+    }
+
+    private static int getDTLS13HeaderConnectionIDLength(int firstByte, byte[] connectionID) throws IOException
+    {
+        int cidLength = Arrays.isNullOrEmpty(connectionID) ? 0 : connectionID.length;
+        boolean hasCID = (firstByte & DTLS13_FLAG_CID) != 0;
+        if (hasCID != (cidLength > 0))
+        {
+            throw new TlsFatalAlert(AlertDescription.decode_error);
+        }
+        return cidLength;
+    }
+
+    private static int getDTLS13SequenceNumberLength(int firstByte)
+    {
+        return (firstByte & DTLS13_FLAG_SEQ16) != 0 ? 2 : 1;
+    }
+
     public void rekeyDecoder() throws IOException
     {
-        rekeyCipher(cryptoParams.getSecurityParametersConnection(), decryptCipher, decryptNonce, !cryptoParams.isServer());
+        rekeyCipher(cryptoParams.getSecurityParametersConnection(), decryptCipher, decryptNonce, decryptMask,
+            !cryptoParams.isServer());
     }
 
     public void rekeyEncoder() throws IOException
     {
-        rekeyCipher(cryptoParams.getSecurityParametersConnection(), encryptCipher, encryptNonce, cryptoParams.isServer());
+        rekeyCipher(cryptoParams.getSecurityParametersConnection(), encryptCipher, encryptNonce, encryptMask,
+            cryptoParams.isServer());
     }
 
     public boolean usesOpaqueRecordTypeDecode()
@@ -413,7 +648,7 @@ public final class TlsAEADCipher
     }
 
     private void rekeyCipher(SecurityParameters securityParameters, TlsAEADCipherImpl cipher, byte[] nonce,
-        boolean serverSecret) throws IOException
+        TlsRecordNumberMask mask, boolean serverSecret) throws IOException
     {
         if (!isTLSv13)
         {
@@ -430,17 +665,31 @@ public final class TlsAEADCipher
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        setup13Cipher(cipher, nonce, secret, securityParameters.getPRFCryptoHashAlgorithm());
+        setup13Cipher(cipher, nonce, mask, secret, securityParameters.getPRFCryptoHashAlgorithm());
     }
 
-    private void setup13Cipher(TlsAEADCipherImpl cipher, byte[] nonce, TlsSecret secret, int cryptoHashAlgorithm)
-        throws IOException
+    private void setup13Cipher(TlsAEADCipherImpl cipher, byte[] nonce, TlsRecordNumberMask mask, TlsSecret secret,
+        int cryptoHashAlgorithm) throws IOException
     {
         byte[] key = hkdfExpandLabel(secret, cryptoHashAlgorithm, "key", keySize).extract();
         byte[] iv = hkdfExpandLabel(secret, cryptoHashAlgorithm, "iv", fixed_iv_length).extract();
 
         cipher.setKey(key, 0, keySize);
         System.arraycopy(iv, 0, nonce, 0, fixed_iv_length);
+
+        if (isDTLSv13)
+        {
+            /*
+             * RFC 9147 4.2.3. [sender]_sn_key = HKDF-Expand-Label(Secret, "sn", "", key_length)
+             */
+            if (null == mask)
+            {
+                throw new TlsFatalAlert(AlertDescription.internal_error, "No record number mask for DTLS 1.3");
+            }
+
+            byte[] snKey = hkdfExpandLabel(secret, cryptoHashAlgorithm, "sn", keySize).extract();
+            mask.setKey(snKey, 0, keySize);
+        }
     }
 
     private static int getNonceMode(boolean isTLSv13, int aeadType) throws IOException

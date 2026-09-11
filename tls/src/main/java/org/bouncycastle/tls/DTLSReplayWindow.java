@@ -82,6 +82,14 @@ class DTLSReplayWindow
         }
     }
 
+    /**
+     * @return the highest sequence number reported authenticated so far, or -1 if none.
+     */
+    long getLatestConfirmedSeq()
+    {
+        return latestConfirmedSeq;
+    }
+
     void reset(long seq)
     {
         if ((seq & VALID_SEQ_MASK) != seq)
