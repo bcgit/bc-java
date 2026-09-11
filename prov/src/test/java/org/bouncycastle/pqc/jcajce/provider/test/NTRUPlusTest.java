@@ -5,6 +5,8 @@ import java.security.Key;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.security.spec.InvalidKeySpecException;
@@ -18,10 +20,13 @@ import javax.crypto.spec.SecretKeySpec;
 
 import junit.framework.TestCase;
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.jcajce.SecretKeyWithEncapsulation;
 import org.bouncycastle.jcajce.spec.KEMExtractSpec;
 import org.bouncycastle.jcajce.spec.KEMGenerateSpec;
 import org.bouncycastle.jcajce.spec.KEMParameterSpec;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.pqc.jcajce.interfaces.NTRUPlusKey;
 import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 import org.bouncycastle.pqc.jcajce.spec.NTRUPlusParameterSpec;
@@ -32,11 +37,55 @@ public class NTRUPlusTest
     extends TestCase
 {
 
+    private static final NTRUPlusParameterSpec[] ALL_SPECS = new NTRUPlusParameterSpec[]
+    {
+        NTRUPlusParameterSpec.ntruplus_768,
+        NTRUPlusParameterSpec.ntruplus_864,
+        NTRUPlusParameterSpec.ntruplus_1152
+    };
+
     public void setUp()
     {
         if (Security.getProvider(BouncyCastlePQCProvider.PROVIDER_NAME) == null)
         {
             Security.addProvider(new BouncyCastlePQCProvider());
+        }
+        if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null)
+        {
+            Security.addProvider(new BouncyCastleProvider());
+        }
+    }
+
+    /**
+     * The BC&lt;-&gt;BCPQC bridge regression test: for every parameter set, generate a keypair via
+     * BCPQC, then decode the encoded SubjectPublicKeyInfo / PrivateKeyInfo through
+     * BouncyCastleProvider.getPublicKey / getPrivateKey - the path CertificateFactory("X.509", "BC")
+     * and KeyFactory(..., "BC") use - and assert each key is recovered rather than returned as null,
+     * which requires the NTRU+ OIDs to be registered in BouncyCastleProvider.loadPQCKeys().
+     */
+    public void testBcProviderKeyInfoConverter()
+        throws Exception
+    {
+        for (int i = 0; i != ALL_SPECS.length; i++)
+        {
+            KeyPairGenerator kpg = KeyPairGenerator.getInstance("NTRUPLUS", "BCPQC");
+            kpg.initialize(ALL_SPECS[i], new SecureRandom());
+
+            KeyPair kp = kpg.generateKeyPair();
+
+            PublicKey pub = BouncyCastleProvider.getPublicKey(
+                SubjectPublicKeyInfo.getInstance(kp.getPublic().getEncoded()));
+            PrivateKey priv = BouncyCastleProvider.getPrivateKey(
+                PrivateKeyInfo.getInstance(kp.getPrivate().getEncoded()));
+
+            assertNotNull("BC provider returned null for a NTRU+ public key", pub);
+            assertNotNull("BC provider returned null for a NTRU+ private key", priv);
+
+            assertTrue(pub instanceof NTRUPlusKey);
+            assertTrue(priv instanceof NTRUPlusKey);
+
+            assertEquals(kp.getPublic(), pub);
+            assertEquals(kp.getPrivate(), priv);
         }
     }
 

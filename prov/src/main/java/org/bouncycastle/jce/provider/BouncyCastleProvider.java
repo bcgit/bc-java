@@ -42,6 +42,9 @@ import org.bouncycastle.pqc.jcajce.provider.lms.LMSKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.mayo.MayoKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.newhope.NHKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.ntru.NTRUKeyFactorySpi;
+import org.bouncycastle.pqc.jcajce.provider.ntruprime.NTRULPRimeKeyFactorySpi;
+import org.bouncycastle.pqc.jcajce.provider.ntruprime.SNTRUPrimeKeyFactorySpi;
+import org.bouncycastle.pqc.jcajce.provider.ntruplus.NTRUPlusKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.mqom.MQOMKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.sdith.SDitHKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.snova.SnovaKeyFactorySpi;
@@ -550,6 +553,21 @@ public final class BouncyCastleProvider extends Provider
         addKeyInfoConverter(BCObjectIdentifiers.smaugt_mode3, new SmaugTKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.smaugt_mode5, new SmaugTKeyFactorySpi());
         addKeyInfoConverter(BCObjectIdentifiers.smaugt_modet, new SmaugTKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.ntrulpr653, new NTRULPRimeKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.ntrulpr761, new NTRULPRimeKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.ntrulpr857, new NTRULPRimeKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.ntrulpr953, new NTRULPRimeKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.ntrulpr1013, new NTRULPRimeKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.ntrulpr1277, new NTRULPRimeKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.sntrup653, new SNTRUPrimeKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.sntrup761, new SNTRUPrimeKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.sntrup857, new SNTRUPrimeKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.sntrup953, new SNTRUPrimeKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.sntrup1013, new SNTRUPrimeKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.sntrup1277, new SNTRUPrimeKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.ntruplus768, new NTRUPlusKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.ntruplus864, new NTRUPlusKeyFactorySpi());
+        addKeyInfoConverter(BCObjectIdentifiers.ntruplus1152, new NTRUPlusKeyFactorySpi());
     }
 
     public void setParameter(String parameterName, Object parameter)
