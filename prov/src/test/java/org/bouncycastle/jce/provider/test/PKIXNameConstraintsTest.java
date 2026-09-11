@@ -295,6 +295,21 @@ public class PKIXNameConstraintsTest
         // uniformResourceIdentifier: the host trailing dot is stripped like the dNSName path.
         isTrue("trailing-dot URI host must be caught by the excluded competitor.example subtree",
             isExcluded(uriName("competitor.example"), uriName("https://competitor.example./")));
+
+        // More than one trailing dot must be caught too - stripping only a single dot left a phantom
+        // empty label that slipped the exact-match check past an excluded subtree.
+        isTrue("exact host with two trailing dots must be caught",
+            isExcluded(dnsName("example.com"), dnsName("example.com..")));
+        isTrue("exact host with three trailing dots must be caught",
+            isExcluded(dnsName("example.com"), dnsName("example.com...")));
+        isTrue("two-trailing-dot email host must be caught",
+            isExcluded(emailName("bank.com"), emailName("ceo@bank.com..")));
+        isTrue("two-trailing-dot email mailbox must be caught",
+            isExcluded(emailName("ceo@bank.com"), emailName("ceo@bank.com..")));
+        isTrue("two-trailing-dot URI host must be caught",
+            isExcluded(uriName("competitor.example"), uriName("https://competitor.example../")));
+        isTrue("a sibling domain with trailing dots must still not be caught",
+            !isExcluded(dnsName("example.com"), dnsName("notexample.com..")));
     }
 
     /**

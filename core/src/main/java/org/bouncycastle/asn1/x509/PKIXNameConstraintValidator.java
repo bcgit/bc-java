@@ -1240,13 +1240,21 @@ public class PKIXNameConstraintValidator
 
     private static String stripTrailingDot(String s)
     {
-        // length > 1 so a single bare "." (theoretically the empty-label
-        // root) is preserved rather than reduced to "".
-        if (s != null && s.length() > 1 && s.charAt(s.length() - 1) == '.')
+        if (s == null)
         {
-            return s.substring(0, s.length() - 1);
+            return s;
         }
-        return s;
+        // Strip *every* trailing dot, not just one: a dNSName/rfc822Name/URI host such as
+        // "example.com.." (legal IA5String, unvalidated on parse) otherwise keeps a phantom
+        // empty label after a single strip and slips past the exact-match check. The lower bound
+        // of 1 preserves a bare "." (theoretically the empty-label root) rather than reducing it
+        // to "".
+        int end = s.length();
+        while (end > 1 && s.charAt(end - 1) == '.')
+        {
+            end--;
+        }
+        return end == s.length() ? s : s.substring(0, end);
     }
 
     /**
