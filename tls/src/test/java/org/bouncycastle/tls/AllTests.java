@@ -25,6 +25,7 @@ public class AllTests
         suite.addTestSuite(CheckTlsFeaturesExtensionTest.class);
         suite.addTestSuite(DTLS13UnifiedHeaderTest.class);
         suite.addTestSuite(DTLSReassemblerTest.class);
+        suite.addTestSuite(DTLSRecordLayer13Test.class);
         suite.addTestSuite(DTLSRecordNumberMaskTest.class);
         suite.addTestSuite(SpreadCertificateStatusTest.class);
         suite.addTestSuite(TlsAEADCipherDTLS13Test.class);
