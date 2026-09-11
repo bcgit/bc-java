@@ -32,6 +32,7 @@ public class AllTests
         suite.addTestSuite(CMCEEnvelopedDataTest.class);
         suite.addTestSuite(KEMUkmEnvelopedDataTest.class);
         suite.addTestSuite(CompositeKEMEnvelopedDataTest.class);
+        suite.addTestSuite(CompositeMLDSASignedDataTest.class);
         suite.addTestSuite(KEMAuthEnvelopedDataTest.class);
         suite.addTest(NewAuthenticatedDataTest.suite());
         suite.addTest(NewAuthenticatedDataStreamTest.suite());
