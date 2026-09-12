@@ -2,6 +2,7 @@ package org.bouncycastle.tls.test;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Hashtable;
 import java.util.Random;
 import java.util.Vector;
 
@@ -20,17 +21,21 @@ import org.bouncycastle.tls.ExtensionType;
 import org.bouncycastle.tls.HandshakeType;
 import org.bouncycastle.tls.NamedGroup;
 import org.bouncycastle.tls.ProtocolVersion;
+import org.bouncycastle.tls.SRTPProtectionProfile;
 import org.bouncycastle.tls.SecurityParameters;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsAuthentication;
 import org.bouncycastle.tls.TlsCredentialedSigner;
 import org.bouncycastle.tls.TlsCredentials;
+import org.bouncycastle.tls.TlsExtensionsUtils;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsFatalAlertReceived;
+import org.bouncycastle.tls.TlsSRTPUtils;
 import org.bouncycastle.tls.TlsServer;
 import org.bouncycastle.tls.TlsServerCertificate;
 import org.bouncycastle.tls.TlsUtils;
+import org.bouncycastle.tls.UseSRTPData;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.TlsStreamSigner;
 import org.bouncycastle.util.Arrays;
@@ -80,6 +85,30 @@ public class DTLS13ProtocolTest
 
     // NOTE: Test value only - would typically be the client's IP address
     private static final byte[] CLIENT_ID = Strings.toUTF8ByteArray("MockDtlsClient");
+
+    /**
+     * RFC 5705 2. Two exporter labels and the length of the material derived for each, so that a peer which
+     * ignored the label - or derived one constant for everything - is distinguishable from one which did not.
+     */
+    private static final String EXPORTER_LABEL = "BC_DTLS13_TESTS_1";
+    private static final String EXPORTER_LABEL_OTHER = "BC_DTLS13_TESTS_2";
+    private static final int EXPORTER_LENGTH = 32;
+
+    /**
+     * RFC 5764 4.1.2. The protection profiles a 'useSrtp' client offers, most preferred first, and the MKI it
+     * offers with them. The server deliberately selects the <em>last</em> of them rather than the first, so
+     * that a client which reported a profile it had merely offered would not pass.
+     */
+    private static final int[] SRTP_PROTECTION_PROFILES = new int[]{ SRTPProtectionProfile.SRTP_AEAD_AES_128_GCM,
+        SRTPProtectionProfile.SRTP_AES128_CM_HMAC_SHA1_80 };
+    private static final byte[] SRTP_MKI = { (byte)0x01, (byte)0x02, (byte)0x03, (byte)0x04 };
+
+    /**
+     * RFC 5764 4.2. DTLS-SRTP takes its keying material from the RFC 5705 exporter under this label, with no
+     * context, and for SRTP_AES128_CM_HMAC_SHA1_80 it needs a 16-byte key and a 14-byte salt per direction.
+     */
+    private static final String SRTP_EXPORTER_LABEL = "EXTRACTOR-dtls_srtp";
+    private static final int SRTP_KEYING_MATERIAL_LENGTH = 2 * (16 + 14);
 
     /** What, if anything, to corrupt in the second ClientHello on its way to the server. */
     private static final int MANGLE_NONE = 0;
@@ -716,6 +745,306 @@ public class DTLS13ProtocolTest
         assertTrue("the second ClientHello was never mangled", harness.mangled > 0);
     }
 
+    /**
+     * RFC 5705, and RFC 8446 7.5 for the DTLS 1.3 schedule. The exporter is what DTLS-SRTP and every other
+     * RFC 5705 consumer is built on, so the properties asserted here are the ones those consumers rely on:
+     * both peers derive the same material, the label separates one consumer's material from another's, and -
+     * the part that could only be true of a DTLS 1.3 handshake - a null context and a zero-length context
+     * produce the same material, because RFC 8446 7.5 has no way to tell them apart, where RFC 5705 4's
+     * seed does and the DTLS 1.2 run below proves it does.
+     * <p>
+     * That last pair is what makes this more than "two handshakes produced different bytes", which two
+     * handshakes with different randoms would satisfy however they derived them: it is a behavioural
+     * difference between the two exporter paths, observed through the public API, in the direction each
+     * specification requires.
+     * </p>
+     */
+    public void testExportKeyingMaterial() throws Exception
+    {
+        Harness dtls13 = new Harness();
+
+        dtls13.run(16);
+
+        assertEquals("client negotiated version", ProtocolVersion.DTLSv13, dtls13.clientVersion);
+        assertEquals("server negotiated version", ProtocolVersion.DTLSv13, dtls13.serverVersion);
+
+        assertNotNull("no application data echoed back", dtls13.echo);
+
+        /*
+         * RFC 8446 Appendix D. A (D)TLS 1.3 peer reports extended_master_secret, which is what RFC 7627 5.4
+         * makes the exporter conditional on - so the exporter is available at all over DTLS 1.3.
+         */
+        assertTrue("the client did not report extended_master_secret", dtls13.clientExtendedMasterSecret);
+        assertTrue("the server did not report extended_master_secret", dtls13.serverExtendedMasterSecret);
+
+        assertNotNull("the client exported no keying material", dtls13.clientKeyingMaterial);
+        assertEquals("exported keying material length", EXPORTER_LENGTH, dtls13.clientKeyingMaterial.length);
+        assertFalse("the client exported all-zero keying material", isAllZeroes(dtls13.clientKeyingMaterial));
+
+        assertTrue("the peers exported different keying material",
+            Arrays.areEqual(dtls13.clientKeyingMaterial, dtls13.serverKeyingMaterial));
+        assertTrue("the peers exported different keying material for the second label",
+            Arrays.areEqual(dtls13.clientKeyingMaterialOtherLabel, dtls13.serverKeyingMaterialOtherLabel));
+
+        assertFalse("the exported keying material did not depend on the label",
+            Arrays.areEqual(dtls13.clientKeyingMaterial, dtls13.clientKeyingMaterialOtherLabel));
+
+        // RFC 8446 7.5. A zero-length context and no context at all are the same input to a 1.3 exporter
+        assertTrue("an empty context changed the material a DTLS 1.3 handshake exported",
+            Arrays.areEqual(dtls13.clientKeyingMaterial, dtls13.clientKeyingMaterialEmptyContext));
+        assertTrue("the peers disagreed on the material for an empty context",
+            Arrays.areEqual(dtls13.clientKeyingMaterialEmptyContext, dtls13.serverKeyingMaterialEmptyContext));
+
+        Harness dtls12 = new Harness();
+        dtls12.clientVersions = ProtocolVersion.DTLSv12.only();
+        dtls12.serverVersions = ProtocolVersion.DTLSv12.only();
+
+        dtls12.run(16);
+
+        assertEquals("client negotiated version", ProtocolVersion.DTLSv12, dtls12.clientVersion);
+        assertEquals("server negotiated version", ProtocolVersion.DTLSv12, dtls12.serverVersion);
+
+        assertTrue("the DTLS 1.2 client did not report extended_master_secret",
+            dtls12.clientExtendedMasterSecret);
+        assertTrue("the DTLS 1.2 peers exported different keying material",
+            Arrays.areEqual(dtls12.clientKeyingMaterial, dtls12.serverKeyingMaterial));
+
+        assertFalse("the DTLS 1.2 and DTLS 1.3 handshakes exported the same keying material",
+            Arrays.areEqual(dtls13.clientKeyingMaterial, dtls12.clientKeyingMaterial));
+
+        /*
+         * RFC 5705 4. The DTLS 1.2 seed is "client_random + server_random" with no context, and
+         * "client_random + server_random + length + context" with one, so an empty context is not the same
+         * input as none - the opposite of RFC 8446 7.5 above, which is how each assertion earns the other.
+         */
+        assertFalse("an empty context did not change the material a DTLS 1.2 handshake exported",
+            Arrays.areEqual(dtls12.clientKeyingMaterial, dtls12.clientKeyingMaterialEmptyContext));
+    }
+
+    /**
+     * RFC 5764, the reason this whole series exists: SRTP keying material out of a DTLS 1.3 handshake. The
+     * client offers "use_srtp" with two protection profiles and an MKI, the server selects one of them, and
+     * both peers derive the SRTP master keys and salts from the RFC 5705 exporter under
+     * "EXTRACTOR-dtls_srtp".
+     * <p>
+     * The profile the server selects is the client's <em>second</em> preference, so the client could not
+     * report the negotiated profile without having read the server's answer. Over DTLS 1.3 that answer cannot
+     * be in the ServerHello - RFC 8446 4.2 permits "use_srtp" only in the ClientHello and EncryptedExtensions
+     * - and the ServerHello on the wire is checked here to confirm it is not, which makes the client's
+     * knowledge of the profile proof that the encrypted answer arrived and was processed.
+     * </p>
+     */
+    public void testClientServerWithUseSRTP() throws Exception
+    {
+        Harness harness = new Harness();
+        harness.useSrtp = true;
+
+        harness.run(16);
+
+        assertEquals("client negotiated version", ProtocolVersion.DTLSv13, harness.clientVersion);
+        assertEquals("server negotiated version", ProtocolVersion.DTLSv13, harness.serverVersion);
+
+        assertNotNull("no application data echoed back", harness.echo);
+        assertTrue("echoed application data differs", Arrays.areEqual(harness.request, harness.echo));
+
+        int expectedProfile = SRTP_PROTECTION_PROFILES[SRTP_PROTECTION_PROFILES.length - 1];
+
+        assertEquals("the server did not select the expected SRTP protection profile", expectedProfile,
+            harness.serverSrtpProtectionProfile);
+        assertEquals("the client did not see the profile the server selected", expectedProfile,
+            harness.clientSrtpProtectionProfile);
+
+        assertTrue("the server did not echo the client's SRTP MKI",
+            Arrays.areEqual(SRTP_MKI, harness.serverSrtpMki));
+        assertTrue("the client did not receive its own SRTP MKI back",
+            Arrays.areEqual(SRTP_MKI, harness.clientSrtpMki));
+
+        assertNotNull("the client derived no SRTP keying material", harness.clientSrtpKeyingMaterial);
+        assertEquals("SRTP keying material length", SRTP_KEYING_MATERIAL_LENGTH,
+            harness.clientSrtpKeyingMaterial.length);
+        assertFalse("the client derived all-zero SRTP keying material",
+            isAllZeroes(harness.clientSrtpKeyingMaterial));
+
+        assertTrue("the peers derived different SRTP keying material",
+            Arrays.areEqual(harness.clientSrtpKeyingMaterial, harness.serverSrtpKeyingMaterial));
+
+        /*
+         * The SRTP material is the exporter's output for the RFC 5764 4.2 label, and nothing else: a peer
+         * which returned the same bytes for every label would pass the agreement check above on its own.
+         */
+        assertFalse("the SRTP keying material was not label-specific",
+            Arrays.areEqual(Arrays.copyOfRange(harness.clientSrtpKeyingMaterial, 0, EXPORTER_LENGTH),
+                harness.clientKeyingMaterial));
+
+        Vector clientHellos = handshakeBodies(harness.clientRecords(), HandshakeType.client_hello);
+        Vector serverHellos = handshakeBodies(harness.serverRecords(), HandshakeType.server_hello);
+
+        assertEquals("number of ClientHellos sent", 1, clientHellos.size());
+        assertEquals("number of ServerHellos received", 1, serverHellos.size());
+
+        assertNotNull("the ClientHello carried no use_srtp extension",
+            clientHelloExtensionData((byte[])clientHellos.elementAt(0), ExtensionType.use_srtp));
+        assertNull("the ServerHello carried a use_srtp extension, which RFC 8446 4.2 does not permit",
+            serverHelloExtensionData((byte[])serverHellos.elementAt(0), ExtensionType.use_srtp));
+
+        /*
+         * And that null means the extension was absent rather than that the walk over the ServerHello's
+         * extensions found nothing at all: "supported_versions" is certainly there, and is found.
+         */
+        assertNotNull("the ServerHello extensions could not be read",
+            serverHelloExtensionData((byte[])serverHellos.elementAt(0), ExtensionType.supported_versions));
+
+        checkUnifiedHeadersAfterHello(harness.clientRecords(), "client");
+        checkEpochProgression(harness.clientRecords(), "client");
+        checkEpochProgression(harness.serverRecords(), "server");
+    }
+
+    /**
+     * A 1.3-capable client negotiates DTLS 1.2 with a 1.2-only server and completes. The failure this guards
+     * against is state crossing between the two code paths - the defect Pion reported of its own fallback -
+     * so it is not enough that the handshake completed: every record on the wire must be a legacy
+     * DTLSPlaintext or DTLSCiphertext at epoch 0 or 1, there must be a change_cipher_spec, which DTLS 1.3 has
+     * none of, and the exporter must behave as RFC 5705 4 says rather than as RFC 8446 7.5 does.
+     */
+    public void testFallbackToDTLSv12AgainstADTLSv12OnlyServer() throws Exception
+    {
+        Harness harness = new Harness();
+        harness.clientVersions = ProtocolVersion.DTLSv13.downTo(ProtocolVersion.DTLSv12);
+        harness.serverVersions = ProtocolVersion.DTLSv12.only();
+
+        harness.run(16);
+
+        assertEquals("client negotiated version", ProtocolVersion.DTLSv12, harness.clientVersion);
+        assertEquals("server negotiated version", ProtocolVersion.DTLSv12, harness.serverVersion);
+
+        assertNotNull("no application data echoed back", harness.echo);
+        assertTrue("echoed application data differs", Arrays.areEqual(harness.request, harness.echo));
+
+        assertEquals("cipher suites differ", harness.clientCipherSuite, harness.serverCipherSuite);
+        assertFalse("a TLS 1.3 cipher suite was negotiated for a DTLS 1.2 handshake: "
+            + harness.clientCipherSuite, isTLSv13CipherSuite(harness.clientCipherSuite));
+
+        // The client really did offer DTLS 1.3, so the server really did have to decline it
+        checkClientHelloOfferedDTLSv13(harness.clientRecords());
+
+        checkLegacyRecordsThroughout(harness.clientRecords(), "client");
+        checkLegacyRecordsThroughout(harness.serverRecords(), "server");
+
+        checkDTLSv12Exporter(harness);
+    }
+
+    /**
+     * The other direction of the fallback: a 1.2-only client against a 1.3-capable server. The server is the
+     * side that chooses the version here, and having chosen 1.2 it must run the 1.2 path throughout.
+     */
+    public void testFallbackToDTLSv12AgainstADTLSv12OnlyClient() throws Exception
+    {
+        Harness harness = new Harness();
+        harness.clientVersions = ProtocolVersion.DTLSv12.only();
+        harness.serverVersions = ProtocolVersion.DTLSv13.downTo(ProtocolVersion.DTLSv12);
+
+        harness.run(16);
+
+        assertEquals("client negotiated version", ProtocolVersion.DTLSv12, harness.clientVersion);
+        assertEquals("server negotiated version", ProtocolVersion.DTLSv12, harness.serverVersion);
+
+        assertNotNull("no application data echoed back", harness.echo);
+        assertTrue("echoed application data differs", Arrays.areEqual(harness.request, harness.echo));
+
+        assertEquals("cipher suites differ", harness.clientCipherSuite, harness.serverCipherSuite);
+        assertFalse("a TLS 1.3 cipher suite was negotiated for a DTLS 1.2 handshake: "
+            + harness.clientCipherSuite, isTLSv13CipherSuite(harness.clientCipherSuite));
+
+        checkLegacyRecordsThroughout(harness.clientRecords(), "client");
+        checkLegacyRecordsThroughout(harness.serverRecords(), "server");
+
+        checkDTLSv12Exporter(harness);
+    }
+
+    /**
+     * RFC 8446 4.2.1. The first ClientHello offered DTLS 1.3 as its most preferred version, so a server that
+     * negotiated DTLS 1.2 did so by declining 1.3 rather than by never being offered it.
+     */
+    private void checkClientHelloOfferedDTLSv13(Vector records)
+    {
+        Vector clientHellos = handshakeBodies(records, HandshakeType.client_hello);
+        assertFalse("no ClientHello captured", clientHellos.isEmpty());
+
+        byte[] supportedVersions = clientHelloExtensionData((byte[])clientHellos.elementAt(0),
+            ExtensionType.supported_versions);
+
+        assertNotNull("the ClientHello carried no supported_versions extension", supportedVersions);
+        assertTrue("the supported_versions extension was too short", supportedVersions.length >= 3);
+
+        // ProtocolVersion versions<2..254>, most preferred first
+        assertEquals("supported_versions list length", supportedVersions.length - 1,
+            supportedVersions[0] & 0xFF);
+        assertEquals("the most preferred offered version was not DTLS 1.3", ProtocolVersion.DTLSv13,
+            ProtocolVersion.get(supportedVersions[1] & 0xFF, supportedVersions[2] & 0xFF));
+    }
+
+    /**
+     * RFC 5705 4. The handshake used the DTLS 1.2 exporter: both peers agree on the material, and a
+     * zero-length context gives different material from no context at all, which the RFC 8446 7.5 exporter
+     * of {@link #testExportKeyingMaterial} cannot do. A fallback handshake that had reached the 1.3 key
+     * schedule would fail here even if everything on the wire looked legacy.
+     */
+    private void checkDTLSv12Exporter(Harness harness)
+    {
+        assertTrue("the client did not report extended_master_secret", harness.clientExtendedMasterSecret);
+        assertTrue("the server did not report extended_master_secret", harness.serverExtendedMasterSecret);
+
+        assertNotNull("the client exported no keying material", harness.clientKeyingMaterial);
+        assertTrue("the peers exported different keying material",
+            Arrays.areEqual(harness.clientKeyingMaterial, harness.serverKeyingMaterial));
+
+        assertFalse("an empty context did not change the material a DTLS 1.2 handshake exported",
+            Arrays.areEqual(harness.clientKeyingMaterial, harness.clientKeyingMaterialEmptyContext));
+    }
+
+    /**
+     * RFC 6347 4.1 and RFC 9147 4. Every record a side sent was a legacy DTLS 1.2 record - never the DTLS 1.3
+     * unified header - at epoch 0 or 1 and with a legacy_record_version of 0xfeff or 0xfefd, the side reached
+     * epoch 1, and a change_cipher_spec is among the records, which is what a DTLS 1.3 handshake would never
+     * produce (RFC 9147 5).
+     */
+    private void checkLegacyRecordsThroughout(Vector records, String side)
+    {
+        assertFalse("no " + side + " records captured", records.isEmpty());
+
+        int epoch1Records = 0;
+        boolean seenChangeCipherSpec = false;
+
+        for (int i = 0; i < records.size(); ++i)
+        {
+            Record record = (Record)records.elementAt(i);
+
+            assertFalse(side + " record " + i + " used the DTLS 1.3 unified header (first byte 0x"
+                + Integer.toHexString(record.getFirstByte()) + ")", record.isUnified());
+
+            ProtocolVersion version = record.getPlaintextVersion();
+            assertTrue(side + " record " + i + " legacy_record_version " + version,
+                ProtocolVersion.DTLSv10 == version || ProtocolVersion.DTLSv12 == version);
+
+            int epoch = record.getPlaintextEpoch();
+            assertTrue(side + " record " + i + " was at epoch " + epoch, 0 == epoch || 1 == epoch);
+
+            if (1 == epoch)
+            {
+                ++epoch1Records;
+            }
+
+            if (ContentType.change_cipher_spec == record.getContentType())
+            {
+                assertEquals(side + " sent a change_cipher_spec at epoch " + epoch, 0, epoch);
+                seenChangeCipherSpec = true;
+            }
+        }
+
+        assertTrue("the " + side + " never reached the DTLS 1.2 epoch 1", epoch1Records > 0);
+        assertTrue("the " + side + " sent no change_cipher_spec", seenChangeCipherSpec);
+    }
+
     /** RFC 8446 4.1.3. A ServerHello body whose 'random' is the HelloRetryRequest value. */
     private static boolean isHelloRetryRequest(byte[] serverHelloBody)
     {
@@ -796,6 +1125,26 @@ public class DTLS13ProtocolTest
      */
     private static int clientHelloCookieValueOffset(byte[] buf, int bodyOff)
     {
+        int extensionDataOff = clientHelloExtensionDataOffset(buf, bodyOff, ExtensionType.cookie);
+
+        // The extension data is opaque cookie<1..2^16-1>, so skip its own length prefix
+        return extensionDataOff < 0 ? -1 : extensionDataOff + 2;
+    }
+
+    /** The extension_data of the given ClientHello extension (RFC 8446 4.2), or null if it has none. */
+    private static byte[] clientHelloExtensionData(byte[] body, int extensionType)
+    {
+        int off = clientHelloExtensionDataOffset(body, 0, extensionType);
+
+        return off < 0 ? null : Arrays.copyOfRange(body, off, off + readUint16(body, off - 2));
+    }
+
+    /**
+     * The offset within 'buf' of the extension_data of the given extension of the ClientHello whose body
+     * begins at 'bodyOff', or -1 if it has no such extension. Its length is the uint16 two bytes earlier.
+     */
+    private static int clientHelloExtensionDataOffset(byte[] buf, int bodyOff, int extensionType)
+    {
         int pos = bodyOff + 2 + 32;
         // legacy_session_id
         pos += 1 + (buf[pos] & 0xFF);
@@ -816,17 +1165,14 @@ public class DTLS13ProtocolTest
 
         while (pos + 4 <= end)
         {
-            int extensionType = readUint16(buf, pos);
             int extensionLength = readUint16(buf, pos + 2);
-            pos += 4;
 
-            if (ExtensionType.cookie == extensionType)
+            if (extensionType == readUint16(buf, pos))
             {
-                // The extension data is opaque cookie<1..2^16-1>, so skip its own length prefix
-                return pos + 2;
+                return pos + 4;
             }
 
-            pos += extensionLength;
+            pos += 4 + extensionLength;
         }
 
         return -1;
@@ -873,20 +1219,29 @@ public class DTLS13ProtocolTest
     /** The contents of the ServerHello's "cookie" extension (RFC 8446 4.2.2), or null if it has none. */
     private static byte[] serverHelloCookie(byte[] body)
     {
+        byte[] extensionData = serverHelloExtensionData(body, ExtensionType.cookie);
+
+        // The extension data is opaque cookie<1..2^16-1>, so skip its own length prefix
+        return null == extensionData ? null : Arrays.copyOfRange(extensionData, 2, extensionData.length);
+    }
+
+    /** The extension_data of the given ServerHello extension (RFC 8446 4.2), or null if it has none. */
+    private static byte[] serverHelloExtensionData(byte[] body, int extensionType)
+    {
         int pos = 2 + 32;
         // legacy_session_id_echo
         pos += 1 + (body[pos] & 0xFF);
         // cipher_suite and legacy_compression_method
         pos += 3;
 
-        return findCookieExtension(body, pos);
+        return findExtensionData(body, pos, extensionType);
     }
 
     /**
      * Walks the extensions block beginning at 'pos' (a uint16 length followed by type/length/data triples) and
-     * decodes the "cookie" extension's own opaque&lt;1..2^16-1&gt; body.
+     * returns the extension_data of the extension of the given type, or null if there is none.
      */
-    private static byte[] findCookieExtension(byte[] body, int pos)
+    private static byte[] findExtensionData(byte[] body, int pos, int extensionType)
     {
         if (pos + 2 > body.length)
         {
@@ -898,16 +1253,14 @@ public class DTLS13ProtocolTest
 
         while (pos + 4 <= end)
         {
-            int extensionType = readUint16(body, pos);
             int extensionLength = readUint16(body, pos + 2);
-            pos += 4;
 
-            if (ExtensionType.cookie == extensionType)
+            if (extensionType == readUint16(body, pos))
             {
-                return Arrays.copyOfRange(body, pos + 2, pos + extensionLength);
+                return Arrays.copyOfRange(body, pos + 4, pos + 4 + extensionLength);
             }
 
-            pos += extensionLength;
+            pos += 4 + extensionLength;
         }
 
         return null;
@@ -1081,6 +1434,19 @@ public class DTLS13ProtocolTest
         return epochs.length() < 1 ? -1 : epochs.charAt(epochs.length() - 1) - '0';
     }
 
+    private static boolean isAllZeroes(byte[] bs)
+    {
+        for (int i = 0; i < bs.length; ++i)
+        {
+            if (0 != bs[i])
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     private static int countRecordsAtEpoch(Vector records, int epoch)
     {
         int count = 0;
@@ -1133,6 +1499,12 @@ public class DTLS13ProtocolTest
         int serverCertReq = TlsTestConfig.SERVER_CERT_REQ_OPTIONAL;
 
         /*
+         * RFC 5764 4.1. Whether the client offers the "use_srtp" extension, which this server then answers
+         * with one of the profiles offered.
+         */
+        boolean useSrtp = false;
+
+        /*
          * Only worth lowering for a test where the client aborts partway: the server then has no peer left to
          * hear from, and shutting the harness down waits for its handshake to give up. Where the client aborts
          * before installing the handshake traffic keys, its alert is an epoch-0 record the server can no
@@ -1160,6 +1532,34 @@ public class DTLS13ProtocolTest
         // Lengths of the certificate chain the client sent and the one the server received, or -1 for none
         int clientLocalCertChainLength = -1;
         int serverPeerCertChainLength = -1;
+
+        // How many CertificateRequests the client was asked to answer
+        int clientCertificateRequestsSeen = 0;
+
+        /*
+         * RFC 5705 exporter output, taken on both peers for the same label, context and length. The
+         * 'EmptyContext' pair uses a zero-length context where the first pair passes none at all, which RFC
+         * 8446 7.5 treats as the same input and RFC 5705 4 does not.
+         */
+        boolean clientExtendedMasterSecret = false;
+        boolean serverExtendedMasterSecret = false;
+        byte[] clientKeyingMaterial = null;
+        byte[] serverKeyingMaterial = null;
+        byte[] clientKeyingMaterialEmptyContext = null;
+        byte[] serverKeyingMaterialEmptyContext = null;
+        byte[] clientKeyingMaterialOtherLabel = null;
+        byte[] serverKeyingMaterialOtherLabel = null;
+
+        // RFC 5764 4.1.1 and 4.2. The negotiated profile and MKI as each peer saw them, and the SRTP keys
+        int clientSrtpProtectionProfile = -1;
+        int serverSrtpProtectionProfile = -1;
+        byte[] clientSrtpMki = null;
+        byte[] serverSrtpMki = null;
+        byte[] clientSrtpKeyingMaterial = null;
+        byte[] serverSrtpKeyingMaterial = null;
+
+        // The client's "use_srtp" offer as the server received it
+        private UseSRTPData offeredSrtp = null;
 
         // Counts of the server's protected (epoch 3) records, taken while no application data is in flight
         int serverEpoch3AfterHandshake = -1;
@@ -1215,6 +1615,8 @@ public class DTLS13ProtocolTest
                         public TlsCredentials getClientCredentials(CertificateRequest certificateRequest)
                             throws IOException
                         {
+                            ++clientCertificateRequestsSeen;
+
                             if (TlsTestConfig.CLIENT_AUTH_NONE == clientAuth)
                             {
                                 return null;
@@ -1223,6 +1625,46 @@ public class DTLS13ProtocolTest
                             return clientCredentials(certificateRequest);
                         }
                     };
+                }
+
+                /** RFC 5764 4.1.1. The client offers its protection profiles and an MKI in the ClientHello. */
+                public Hashtable getClientExtensions() throws IOException
+                {
+                    Hashtable clientExtensions = super.getClientExtensions();
+
+                    if (useSrtp)
+                    {
+                        clientExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(clientExtensions);
+
+                        TlsSRTPUtils.addUseSRTPExtension(clientExtensions,
+                            new UseSRTPData(SRTP_PROTECTION_PROFILES, SRTP_MKI));
+                    }
+
+                    return clientExtensions;
+                }
+
+                /**
+                 * RFC 5764 4.1.1. "The server response is the ServerHello" for DTLS 1.2; over DTLS 1.3 the
+                 * answer travels in EncryptedExtensions instead (RFC 8446 4.2 permits "use_srtp" only in the
+                 * ClientHello and EncryptedExtensions). Either way it reaches the peer here.
+                 */
+                public void processServerExtensions(Hashtable serverExtensions) throws IOException
+                {
+                    super.processServerExtensions(serverExtensions);
+
+                    UseSRTPData useSRTPData = TlsSRTPUtils.getUseSRTPExtension(serverExtensions);
+                    if (null != useSRTPData)
+                    {
+                        int[] protectionProfiles = useSRTPData.getProtectionProfiles();
+                        if (1 != protectionProfiles.length)
+                        {
+                            throw new TlsFatalAlert(AlertDescription.illegal_parameter,
+                                "the server chose " + protectionProfiles.length + " SRTP protection profiles");
+                        }
+
+                        clientSrtpProtectionProfile = protectionProfiles[0];
+                        clientSrtpMki = useSRTPData.getMki();
+                    }
                 }
 
                 public void notifyHandshakeComplete() throws IOException
@@ -1239,6 +1681,23 @@ public class DTLS13ProtocolTest
                     clientLocalCertChainLength = null == localCertificate
                         ?   -1
                         :   localCertificate.getCertificateList().length;
+
+                    clientExtendedMasterSecret = sp.isExtendedMasterSecret();
+                    if (clientExtendedMasterSecret)
+                    {
+                        clientKeyingMaterial = context.exportKeyingMaterial(EXPORTER_LABEL, null,
+                            EXPORTER_LENGTH);
+                        clientKeyingMaterialEmptyContext = context.exportKeyingMaterial(EXPORTER_LABEL,
+                            new byte[0], EXPORTER_LENGTH);
+                        clientKeyingMaterialOtherLabel = context.exportKeyingMaterial(EXPORTER_LABEL_OTHER,
+                            null, EXPORTER_LENGTH);
+                    }
+
+                    if (clientSrtpProtectionProfile >= 0)
+                    {
+                        clientSrtpKeyingMaterial = context.exportKeyingMaterial(SRTP_EXPORTER_LABEL, null,
+                            SRTP_KEYING_MATERIAL_LENGTH);
+                    }
                 }
 
                 /**
@@ -1355,6 +1814,38 @@ public class DTLS13ProtocolTest
                     return version;
                 }
 
+                public void processClientExtensions(Hashtable clientExtensions) throws IOException
+                {
+                    super.processClientExtensions(clientExtensions);
+
+                    offeredSrtp = TlsSRTPUtils.getUseSRTPExtension(clientExtensions);
+                }
+
+                /**
+                 * RFC 5764 4.1.1. "The server, if it selects a profile, MUST include a single chosen profile
+                 * in its response" and, if the client offered an MKI, echoes it. The last of the offered
+                 * profiles is chosen rather than the first, so the client cannot report the right profile by
+                 * reporting its own preference.
+                 */
+                public Hashtable getServerExtensions() throws IOException
+                {
+                    Hashtable serverExtensions = super.getServerExtensions();
+
+                    if (null != offeredSrtp)
+                    {
+                        serverExtensions = TlsExtensionsUtils.ensureExtensionsInitialised(serverExtensions);
+
+                        int[] offeredProfiles = offeredSrtp.getProtectionProfiles();
+                        serverSrtpProtectionProfile = offeredProfiles[offeredProfiles.length - 1];
+                        serverSrtpMki = offeredSrtp.getMki();
+
+                        TlsSRTPUtils.addUseSRTPExtension(serverExtensions,
+                            new UseSRTPData(new int[]{ serverSrtpProtectionProfile }, serverSrtpMki));
+                    }
+
+                    return serverExtensions;
+                }
+
                 public CertificateRequest getCertificateRequest() throws IOException
                 {
                     if (TlsTestConfig.SERVER_CERT_REQ_NONE == serverCertReq)
@@ -1391,6 +1882,23 @@ public class DTLS13ProtocolTest
                     serverCipherSuite = sp.getCipherSuite();
                     serverLocalVerifyData = sp.getLocalVerifyData();
                     serverPeerVerifyData = sp.getPeerVerifyData();
+
+                    serverExtendedMasterSecret = sp.isExtendedMasterSecret();
+                    if (serverExtendedMasterSecret)
+                    {
+                        serverKeyingMaterial = context.exportKeyingMaterial(EXPORTER_LABEL, null,
+                            EXPORTER_LENGTH);
+                        serverKeyingMaterialEmptyContext = context.exportKeyingMaterial(EXPORTER_LABEL,
+                            new byte[0], EXPORTER_LENGTH);
+                        serverKeyingMaterialOtherLabel = context.exportKeyingMaterial(EXPORTER_LABEL_OTHER,
+                            null, EXPORTER_LENGTH);
+                    }
+
+                    if (serverSrtpProtectionProfile >= 0)
+                    {
+                        serverSrtpKeyingMaterial = context.exportKeyingMaterial(SRTP_EXPORTER_LABEL, null,
+                            SRTP_KEYING_MATERIAL_LENGTH);
+                    }
                 }
             };
 
