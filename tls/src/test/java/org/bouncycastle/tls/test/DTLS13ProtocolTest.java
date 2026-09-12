@@ -11,6 +11,7 @@ import org.bouncycastle.tls.Certificate;
 import org.bouncycastle.tls.CertificateRequest;
 import org.bouncycastle.tls.CipherSuite;
 import org.bouncycastle.tls.ContentType;
+import org.bouncycastle.tls.DTLS13TestKeyUpdate;
 import org.bouncycastle.tls.DTLSClientProtocol;
 import org.bouncycastle.tls.DTLSRequest;
 import org.bouncycastle.tls.DTLSServerProtocol;
@@ -26,6 +27,7 @@ import org.bouncycastle.tls.SecurityParameters;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
 import org.bouncycastle.tls.TlsAuthentication;
+import org.bouncycastle.tls.TlsContext;
 import org.bouncycastle.tls.TlsCredentialedSigner;
 import org.bouncycastle.tls.TlsCredentials;
 import org.bouncycastle.tls.TlsExtensionsUtils;
@@ -117,6 +119,31 @@ public class DTLS13ProtocolTest
      */
     private static final String SRTP_EXPORTER_LABEL = "EXTRACTOR-dtls_srtp";
     private static final int SRTP_KEYING_MATERIAL_LENGTH = 2 * (16 + 14);
+
+    /**
+     * RFC 9147 8. What post-handshake key update, if any, a run performs once the handshake has completed
+     * and application data has already flowed.
+     */
+    private static final int KEY_UPDATE_NONE = 0;
+
+    /**
+     * The client starts one with 'update_requested', which RFC 8446 4.6.3 obliges the server to answer with
+     * one of its own - so both directions rekey, and only the client is ever poked.
+     */
+    private static final int KEY_UPDATE_BOTH_DIRECTIONS = 1;
+
+    /** The client starts one with 'update_not_requested', so only the client's sending direction rekeys. */
+    private static final int KEY_UPDATE_CLIENT_ONLY = 2;
+
+    /** The application payloads of the exchanges after the handshake, distinct in both length and content. */
+    private static final byte[] REQUEST_2 = new byte[24];
+    private static final byte[] REQUEST_3 = new byte[40];
+
+    static
+    {
+        Arrays.fill(REQUEST_2, (byte)0xA5);
+        Arrays.fill(REQUEST_3, (byte)0x3C);
+    }
 
     /** What, if anything, to corrupt in the second ClientHello on its way to the server. */
     private static final int MANGLE_NONE = 0;
@@ -1129,6 +1156,204 @@ public class DTLS13ProtocolTest
     }
 
     /**
+     * RFC 9147 8, in both directions, through the real client and server. The client starts a key update
+     * asking for one in return, which RFC 8446 4.6.3 obliges the server to send before its next application
+     * data record - so the server's half is started by the protocol and not by the test.
+     * <p>
+     * Application data crosses before the update, while the client's KeyUpdate is still unacknowledged, and
+     * again once both directions have moved on, and each echo is compared against its own request. The epoch
+     * change itself is asserted from the wire: the low two bits of a DTLS 1.3 unified header carry the epoch
+     * (RFC 9147 4.1), so a record at epoch 4 is one with those bits clear, which no other epoch this
+     * connection reaches can produce - epoch 0 is never a unified record at all.
+     * </p>
+     */
+    public void testKeyUpdateInBothDirections() throws Exception
+    {
+        Harness harness = new Harness();
+        harness.keyUpdate = KEY_UPDATE_BOTH_DIRECTIONS;
+
+        harness.run(16);
+
+        assertEquals("client negotiated version", ProtocolVersion.DTLSv13, harness.clientVersion);
+        assertEquals("server negotiated version", ProtocolVersion.DTLSv13, harness.serverVersion);
+
+        assertNotNull("no application data echoed back before the key update", harness.echo);
+        assertTrue("application data sent before the key update did not survive",
+            Arrays.areEqual(harness.request, harness.echo));
+
+        assertNotNull("no application data echoed back during the key update", harness.echo2);
+        assertTrue("application data sent during the key update did not survive",
+            Arrays.areEqual(REQUEST_2, harness.echo2));
+
+        assertNotNull("no application data echoed back after the key update", harness.echo3);
+        assertTrue("application data sent after the key update did not survive",
+            Arrays.areEqual(REQUEST_3, harness.echo3));
+
+        /*
+         * RFC 9147 8. "Implementations MUST NOT send records with the new keys ... until the previous
+         * KeyUpdate has been acknowledged." The application data above was handed to the record layer with
+         * the KeyUpdate outstanding, and no record at the new epoch had been emitted at that point.
+         */
+        assertEquals("the client wrote at the new epoch before its KeyUpdate was acknowledged", 0,
+            harness.clientEpoch4RecordsWhileUpdateOutstanding);
+
+        assertTrue("the client never sent anything at the epoch after its key update",
+            countRecordsAtEpoch(harness.clientRecords(), 4) > 0);
+        assertTrue("the server never sent anything at the epoch after its key update",
+            countRecordsAtEpoch(harness.serverRecords(), 4) > 0);
+
+        checkUnifiedHeadersAfterHello(harness.clientRecords(), "client");
+        checkEpochProgressionAcrossKeyUpdate(harness.clientRecords(), "client");
+        checkEpochProgressionAcrossKeyUpdate(harness.serverRecords(), "server");
+    }
+
+    /**
+     * RFC 9147 5.8.4 and 8, over a lossy path: the datagram carrying the client's KeyUpdate is dropped, and
+     * the update has to complete on a retransmission.
+     * <p>
+     * The loss is deterministic and counted rather than a seeded loss rate, so that the message under test is
+     * certainly the thing that was lost: post-handshake the record layer packs nothing into flights, so the
+     * next datagram after the KeyUpdate is started is the KeyUpdate and nothing else. The same run is made
+     * first with nothing dropped, purely to count how many copies of the KeyUpdate a clean path needs - one -
+     * so the second copy in the lossy run can only be the retransmission, which is how the retransmission is
+     * established here without decrypting anything.
+     * </p>
+     */
+    public void testKeyUpdateUnderPacketLoss() throws Exception
+    {
+        Harness clean = new Harness();
+        clean.keyUpdate = KEY_UPDATE_CLIENT_ONLY;
+
+        clean.run(16);
+
+        assertEquals("the clean run dropped a datagram", 0, clean.keyUpdateDatagramsDropped);
+        assertEquals("copies of the KeyUpdate over a clean path", 1, clean.clientKeyUpdateCopies);
+
+        Harness lossy = new Harness();
+        lossy.keyUpdate = KEY_UPDATE_CLIENT_ONLY;
+        lossy.dropKeyUpdateDatagram = true;
+
+        lossy.run(16);
+
+        assertEquals("client negotiated version", ProtocolVersion.DTLSv13, lossy.clientVersion);
+        assertEquals("server negotiated version", ProtocolVersion.DTLSv13, lossy.serverVersion);
+
+        assertEquals("the KeyUpdate datagram was not dropped", 1, lossy.keyUpdateDatagramsDropped);
+
+        assertTrue("the client did not retransmit its KeyUpdate after the loss: "
+            + lossy.clientKeyUpdateCopies + " copies, against " + clean.clientKeyUpdateCopies
+            + " over a clean path", lossy.clientKeyUpdateCopies > clean.clientKeyUpdateCopies);
+
+        assertNotNull("no application data echoed back before the key update", lossy.echo);
+        assertTrue("application data sent before the key update did not survive",
+            Arrays.areEqual(lossy.request, lossy.echo));
+
+        assertNotNull("no application data echoed back after the key update", lossy.echo2);
+        assertTrue("application data sent after the key update did not survive",
+            Arrays.areEqual(REQUEST_2, lossy.echo2));
+
+        assertNotNull("no further application data echoed back", lossy.echo3);
+        assertTrue("the second application exchange after the key update did not survive",
+            Arrays.areEqual(REQUEST_3, lossy.echo3));
+
+        assertTrue("the client never reached the epoch after its key update",
+            countRecordsAtEpoch(lossy.clientRecords(), 4) > 0);
+
+        /*
+         * Only the client's sending direction was updated ('update_not_requested'), so the server is still
+         * writing at the application epoch - which is what makes the client's move to epoch 4 above a
+         * statement about the client and not about the connection.
+         */
+        assertEquals("the server rekeyed although it was not asked to", 0,
+            countRecordsAtEpoch(lossy.serverRecords(), 4));
+
+        checkUnifiedHeadersAfterHello(lossy.clientRecords(), "client");
+        checkEpochProgressionAcrossKeyUpdate(lossy.clientRecords(), "client");
+    }
+
+    /**
+     * RFC 5764 and RFC 8446 7.5, the series' closing claim: a key update does not disturb the DTLS-SRTP
+     * keying material a DTLS 1.3 handshake exported.
+     * <p>
+     * It cannot, and this test says why rather than merely asserting that two byte arrays match. An exporter
+     * derives from the exporter master secret, which RFC 8446 7.5 fixes at the end of the handshake, and a
+     * key update rekeys the application traffic secrets and nothing else. BC goes further: the exporter
+     * master secret is destroyed as the handshake returns - {@code securityParameters.clear()} in
+     * {@code DTLSClientProtocol.connect} and {@code DTLSServerProtocol.accept}, which is upstream behaviour
+     * this series does not touch - so after the handshake there is nothing left for a key update to reach,
+     * and a second export is refused outright on both peers. That refusal is asserted here, because it is
+     * the load-bearing fact: if BC ever retained the secret, this assertion fails and whoever changes it is
+     * told to prove the stronger claim - that a re-export across a key update returns the same bytes - in
+     * its place.
+     * </p><p>
+     * The run itself is a real DTLS-SRTP session that rekeys in both directions with application data
+     * crossing afterwards, so PR 3's claim is re-verified in a connection that has been through a key update
+     * rather than only in one that has not.
+     * </p>
+     */
+    public void testUseSRTPKeyingMaterialIsUnaffectedByAKeyUpdate() throws Exception
+    {
+        Harness harness = new Harness();
+        harness.useSrtp = true;
+        harness.keyUpdate = KEY_UPDATE_BOTH_DIRECTIONS;
+
+        harness.run(16);
+
+        assertEquals("client negotiated version", ProtocolVersion.DTLSv13, harness.clientVersion);
+        assertEquals("server negotiated version", ProtocolVersion.DTLSv13, harness.serverVersion);
+
+        // The run must actually have rekeyed, in both directions, or there is nothing to have survived it
+        assertTrue("the client never sent anything at the epoch after its key update",
+            countRecordsAtEpoch(harness.clientRecords(), 4) > 0);
+        assertTrue("the server never sent anything at the epoch after its key update",
+            countRecordsAtEpoch(harness.serverRecords(), 4) > 0);
+
+        assertNotNull("no application data echoed back after the key update", harness.echo3);
+        assertTrue("application data sent after the key update did not survive",
+            Arrays.areEqual(REQUEST_3, harness.echo3));
+
+        // PR 3's claim, restated: both peers derive the same 60 bytes under the RFC 5764 4.2 label
+        int expectedProfile = SRTP_PROTECTION_PROFILES[SRTP_PROTECTION_PROFILES.length - 1];
+
+        assertEquals("the server did not select the expected SRTP protection profile", expectedProfile,
+            harness.serverSrtpProtectionProfile);
+        assertEquals("the client did not see the profile the server selected", expectedProfile,
+            harness.clientSrtpProtectionProfile);
+
+        assertNotNull("the client derived no SRTP keying material", harness.clientSrtpKeyingMaterial);
+        assertEquals("SRTP keying material length", SRTP_KEYING_MATERIAL_LENGTH,
+            harness.clientSrtpKeyingMaterial.length);
+        assertFalse("the client derived all-zero SRTP keying material",
+            isAllZeroes(harness.clientSrtpKeyingMaterial));
+        assertTrue("the peers derived different SRTP keying material",
+            Arrays.areEqual(harness.clientSrtpKeyingMaterial, harness.serverSrtpKeyingMaterial));
+        assertFalse("the SRTP keying material was not label-specific",
+            Arrays.areEqual(Arrays.copyOfRange(harness.clientSrtpKeyingMaterial, 0, EXPORTER_LENGTH),
+                harness.clientKeyingMaterial));
+
+        /*
+         * And the reason a key update cannot have moved any of it: the secret it would have to derive from is
+         * gone by the time a key update can happen at all.
+         */
+        assertNull("the client exported keying material after the handshake, which BC destroys the exporter "
+            + "master secret to prevent - a re-export across the key update can now be asserted instead",
+            harness.clientSrtpKeyingMaterialAfterKeyUpdate);
+        assertNull("the server exported keying material after the handshake, which BC destroys the exporter "
+            + "master secret to prevent - a re-export across the key update can now be asserted instead",
+            harness.serverSrtpKeyingMaterialAfterKeyUpdate);
+
+        assertNotNull("the client's post-handshake export neither answered nor was refused",
+            harness.clientExporterRefusal);
+        assertNotNull("the server's post-handshake export neither answered nor was refused",
+            harness.serverExporterRefusal);
+
+        assertTrue("the client's post-handshake export failed for an unexpected reason: "
+            + harness.clientExporterRefusal, harness.clientExporterRefusal instanceof IllegalStateException);
+        assertTrue("the server's post-handshake export failed for an unexpected reason: "
+            + harness.serverExporterRefusal, harness.serverExporterRefusal instanceof IllegalStateException);
+    }
+
+    /**
      * A 1.3-capable client negotiates DTLS 1.2 with a 1.2-only server and completes. The failure this guards
      * against is state crossing between the two code paths - the defect Pion reported of its own fallback -
      * so it is not enough that the handshake completed: every record on the wire must be a legacy
@@ -1622,6 +1847,34 @@ public class DTLS13ProtocolTest
     }
 
     /**
+     * The epoch sequence a side's records must follow once an RFC 9147 8 key update has moved it on: the
+     * handshake epoch, then the application epoch, then the epoch after the update, and never back. Epoch 4
+     * shows on the wire as unified-header epoch bits 0 (RFC 9147 4.1), which nothing else here produces -
+     * epoch 0 records are plaintext and carry no unified header at all.
+     */
+    private void checkEpochProgressionAcrossKeyUpdate(Vector records, String side)
+    {
+        String epochs = epochSequence(records);
+
+        assertTrue(side + " sent nothing at the handshake epoch", epochs.indexOf('2') >= 0);
+
+        int firstEpoch3 = epochs.indexOf('3');
+        assertTrue(side + " never reached the application epoch", firstEpoch3 >= 0);
+
+        int firstEpoch4 = epochs.indexOf('0');
+        assertTrue(side + " never reached the epoch after the key update", firstEpoch4 >= 0);
+        assertTrue(side + " reached the post-update epoch before the application epoch",
+            firstEpoch4 > firstEpoch3);
+
+        assertTrue(side + " went back to the handshake epoch after its key update",
+            epochs.indexOf('2', firstEpoch4) < 0);
+        assertTrue(side + " went back to the pre-update epoch after its key update",
+            epochs.indexOf('3', firstEpoch4) < 0);
+        assertTrue(side + " sent a record at an epoch it never reached: " + epochs,
+            epochs.indexOf('1') < 0);
+    }
+
+    /**
      * Whether a side, having reached the application epoch, then sent something at the handshake epoch and
      * carried on at the application epoch: a '3' in the epoch sequence, then a '2', then another '3'. The
      * flight being retransmitted may be any number of records, so the run of 2s is not a fixed length.
@@ -1709,6 +1962,20 @@ public class DTLS13ProtocolTest
         return count;
     }
 
+    /** Whether a received datagram is an echo of one of the payloads already exchanged. */
+    private static boolean isEchoOfAny(Vector payloads, byte[] received)
+    {
+        for (int i = 0; i < payloads.size(); ++i)
+        {
+            if (Arrays.areEqual((byte[])payloads.elementAt(i), received))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private static boolean isAllZeroes(byte[] bs)
     {
         for (int i = 0; i < bs.length; ++i)
@@ -1763,6 +2030,14 @@ public class DTLS13ProtocolTest
         boolean helloVerifyRequestFrontEnd = false;
         boolean expectServerAbort = false;
 
+        /*
+         * RFC 9147 8. The post-handshake key update a run performs, and whether the datagram carrying the
+         * client's KeyUpdate is dropped on its way out. The drop is deterministic and counted, rather than a
+         * seeded loss rate, so that the message under test is certainly the one that was lost.
+         */
+        int keyUpdate = KEY_UPDATE_NONE;
+        boolean dropKeyUpdateDatagram = false;
+
         Exception serverAbort = null;
 
         /*
@@ -1808,6 +2083,33 @@ public class DTLS13ProtocolTest
         int serverCipherSuite = -1;
         byte[] request = null;
         byte[] echo = null;
+
+        /*
+         * The two application exchanges a key-update run adds: the second is sent while the update is in
+         * flight, the third once both directions have moved on. Each echo is compared against its own
+         * request, so data that did not survive the epoch change is visible as a mismatch and not as silence.
+         */
+        byte[] echo2 = null;
+        byte[] echo3 = null;
+
+        /**
+         * How many records the client had emitted at the post-update epoch at the moment application data was
+         * sent with its own KeyUpdate still unacknowledged. RFC 9147 8 makes that number zero.
+         */
+        int clientEpoch4RecordsWhileUpdateOutstanding = -1;
+
+        /** How many datagrams the deterministic post-handshake drop swallowed. */
+        int keyUpdateDatagramsDropped = 0;
+
+        /**
+         * How many records the client emitted at the pre-update application epoch between starting its
+         * KeyUpdate and moving on. In a KEY_UPDATE_CLIENT_ONLY run that is the number of copies of the
+         * KeyUpdate and nothing else: one for the original, and one more for each retransmission of it. A
+         * KEY_UPDATE_BOTH_DIRECTIONS run also sends application data in that window, so the count there
+         * counts that too and says nothing on its own.
+         */
+        int clientKeyUpdateCopies = -1;
+
         int dropped = 0;
         int reordered = 0;
         int replayed = 0;
@@ -1846,6 +2148,21 @@ public class DTLS13ProtocolTest
         byte[] serverSrtpMki = null;
         byte[] clientSrtpKeyingMaterial = null;
         byte[] serverSrtpKeyingMaterial = null;
+
+        /*
+         * Each peer's own context, kept so that the RFC 5705 exporter can be driven again after a key update.
+         * RFC 8446 7.5 derives exported material from the exporter master secret, which a key update does not
+         * touch - it rekeys the application traffic secrets and nothing else - so the material must not move.
+         * BC destroys that secret when the handshake finishes, so the attempt is refused rather than answered;
+         * either outcome is recorded here and the test asserts which one it was.
+         */
+        TlsContext clientContext = null;
+        TlsContext serverContext = null;
+        byte[] clientSrtpKeyingMaterialAfterKeyUpdate = null;
+        volatile byte[] serverSrtpKeyingMaterialAfterKeyUpdate = null;
+        RuntimeException clientExporterRefusal = null;
+        volatile RuntimeException serverExporterRefusal = null;
+        volatile boolean serverExporterAttempted = false;
 
         // The client's "use_srtp" offer as the server received it
         private UseSRTPData offeredSrtp = null;
@@ -1959,6 +2276,8 @@ public class DTLS13ProtocolTest
                 public void notifyHandshakeComplete() throws IOException
                 {
                     super.notifyHandshakeComplete();
+
+                    clientContext = context;
 
                     SecurityParameters sp = context.getSecurityParametersConnection();
 
@@ -2178,6 +2497,8 @@ public class DTLS13ProtocolTest
                 {
                     super.notifyHandshakeComplete();
 
+                    serverContext = context;
+
                     SecurityParameters sp = context.getSecurityParametersConnection();
 
                     serverCipherSuite = sp.getCipherSuite();
@@ -2261,11 +2582,17 @@ public class DTLS13ProtocolTest
                     }
                 }
 
+                if (KEY_UPDATE_NONE != keyUpdate)
+                {
+                    runKeyUpdate(dtlsClient, serverThread);
+                }
+
                 dtlsClient.close();
             }
             finally
             {
                 this.dropped = recording.getDropped();
+                this.keyUpdateDatagramsDropped = recording.getKeyUpdateDropped();
                 this.reordered = recording.getReordered();
                 this.replayed = recording.getReplayed();
                 this.mangled = recording.getMangled();
@@ -2273,6 +2600,192 @@ public class DTLS13ProtocolTest
                 serverThread.shutdown();
 
                 this.serverAbort = serverThread.getCaught();
+            }
+        }
+
+        /**
+         * RFC 9147 8, end to end. Starts a key update from the client and carries the connection through it,
+         * with application data sent before it, while it is still unacknowledged, and again once it has
+         * landed.
+         * <p>
+         * Nothing here reads the record layer's own state. The client is poked once, to start the update that
+         * no application-facing API starts; from there the epoch each side is writing at is read off the
+         * wire, and so is whether the update completed - a peer that never moved on would go on sending at
+         * the epoch it started at.
+         * </p>
+         */
+        private void runKeyUpdate(DTLSTransport dtlsClient, ServerThread serverThread) throws IOException
+        {
+            Vector earlier = new Vector();
+            earlier.addElement(request);
+
+            boolean sendDuringUpdate = KEY_UPDATE_BOTH_DIRECTIONS == keyUpdate;
+
+            int clientEpoch3Before = countRecordsAtEpoch(clientRecords(), 3);
+
+            if (dropKeyUpdateDatagram)
+            {
+                recording.dropNextDatagram = true;
+            }
+
+            DTLS13TestKeyUpdate.sendKeyUpdate(dtlsClient, sendDuringUpdate);
+
+            if (sendDuringUpdate)
+            {
+                /*
+                 * RFC 9147 8. Application data sent while our own KeyUpdate is still unacknowledged. Nothing
+                 * has been received since the KeyUpdate went out - the acknowledgement is only ever processed
+                 * from the receive path - so the update is certainly still outstanding at this point, and the
+                 * count taken straight afterwards is what the client had emitted at the new epoch while it
+                 * was: RFC 9147 8 says that must be nothing.
+                 */
+                dtlsClient.send(REQUEST_2, 0, REQUEST_2.length);
+
+                this.clientEpoch4RecordsWhileUpdateOutstanding = countRecordsAtEpoch(clientRecords(), 4);
+            }
+
+            /*
+             * Each copy of the KeyUpdate is one more client record at the pre-update application epoch. In a
+             * KEY_UPDATE_CLIENT_ONLY run the client sends nothing else at all during this wait - no
+             * application data, and no handshake message of the peer's to acknowledge - so the count is
+             * exactly the number of copies, which is how a retransmission is established here without
+             * decrypting anything.
+             */
+            int target = clientEpoch3Before + (dropKeyUpdateDatagram ? 2 : 1);
+
+            pumpUntilClientRecordsAtEpoch(dtlsClient, 3, target, 20000, 1000, earlier);
+
+            this.clientKeyUpdateCopies = countRecordsAtEpoch(clientRecords(), 3) - clientEpoch3Before;
+
+            if (null == echo2)
+            {
+                this.echo2 = exchange(dtlsClient, REQUEST_2, earlier);
+            }
+            earlier.addElement(REQUEST_2);
+
+            this.echo3 = exchange(dtlsClient, REQUEST_3, earlier);
+
+            if (null != clientContext && clientSrtpProtectionProfile >= 0)
+            {
+                try
+                {
+                    this.clientSrtpKeyingMaterialAfterKeyUpdate = clientContext.exportKeyingMaterial(
+                        SRTP_EXPORTER_LABEL, null, SRTP_KEYING_MATERIAL_LENGTH);
+                }
+                catch (RuntimeException e)
+                {
+                    this.clientExporterRefusal = e;
+                }
+
+                exportServerSrtpAfterKeyUpdate(dtlsClient, serverThread);
+            }
+        }
+
+        /**
+         * Sends one payload and returns the first application record that comes back which is not an echo of
+         * a payload already exchanged - the server echoes every copy of a request it receives, so a
+         * retransmitted one has more than one answer in flight.
+         *
+         * @return what came back, or null if nothing did.
+         */
+        private byte[] exchange(DTLSTransport dtlsClient, byte[] payload, Vector earlier) throws IOException
+        {
+            byte[] buf = new byte[dtlsClient.getReceiveLimit()];
+
+            for (int attempt = 0; attempt < 10; ++attempt)
+            {
+                dtlsClient.send(payload, 0, payload.length);
+
+                long deadline = System.currentTimeMillis() + 1500;
+                while (System.currentTimeMillis() < deadline)
+                {
+                    int length = dtlsClient.receive(buf, 0, buf.length, 200);
+                    if (length >= 0)
+                    {
+                        byte[] received = Arrays.copyOfRange(buf, 0, length);
+                        if (!isEchoOfAny(earlier, received))
+                        {
+                            return received;
+                        }
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        /**
+         * Pumps the client's receive path until it has emitted the expected number of records at an epoch (or
+         * the deadline passes), then keeps pumping for the settle period so that the peer's answer to the
+         * last of them is processed.
+         */
+        private void pumpUntilClientRecordsAtEpoch(DTLSTransport dtlsClient, int epoch, int target,
+            int deadlineMillis, int settleMillis, Vector earlier) throws IOException
+        {
+            byte[] buf = new byte[dtlsClient.getReceiveLimit()];
+
+            long deadline = System.currentTimeMillis() + deadlineMillis;
+            while (System.currentTimeMillis() < deadline
+                && countRecordsAtEpoch(clientRecords(), epoch) < target)
+            {
+                collect(dtlsClient.receive(buf, 0, buf.length, 200), buf, earlier);
+            }
+
+            long settleDeadline = System.currentTimeMillis() + settleMillis;
+            while (System.currentTimeMillis() < settleDeadline)
+            {
+                collect(dtlsClient.receive(buf, 0, buf.length, 200), buf, earlier);
+            }
+        }
+
+        /** Keeps the answer to the application data sent while the key update was in flight. */
+        private void collect(int length, byte[] buf, Vector earlier)
+        {
+            if (length < 0 || null != echo2)
+            {
+                return;
+            }
+
+            byte[] received = Arrays.copyOfRange(buf, 0, length);
+            if (!isEchoOfAny(earlier, received))
+            {
+                this.echo2 = received;
+            }
+        }
+
+        /**
+         * Drives the RFC 5705 exporter on the server's own thread - the thread that owns its connection - and
+         * waits for the answer while pumping the client's receive path.
+         */
+        private void exportServerSrtpAfterKeyUpdate(DTLSTransport dtlsClient, ServerThread serverThread)
+            throws IOException
+        {
+            serverThread.runOnServerThread(new Runnable()
+            {
+                public void run()
+                {
+                    try
+                    {
+                        serverSrtpKeyingMaterialAfterKeyUpdate = serverContext.exportKeyingMaterial(
+                            SRTP_EXPORTER_LABEL, null, SRTP_KEYING_MATERIAL_LENGTH);
+                    }
+                    catch (RuntimeException e)
+                    {
+                        serverExporterRefusal = e;
+                    }
+                    finally
+                    {
+                        serverExporterAttempted = true;
+                    }
+                }
+            });
+
+            byte[] buf = new byte[dtlsClient.getReceiveLimit()];
+
+            long deadline = System.currentTimeMillis() + 5000;
+            while (System.currentTimeMillis() < deadline && !serverExporterAttempted)
+            {
+                dtlsClient.receive(buf, 0, buf.length, 200);
             }
         }
 
@@ -2434,6 +2947,18 @@ public class DTLS13ProtocolTest
         private volatile boolean isShutdown = false;
         private volatile Exception caught = null;
 
+        /**
+         * A one-shot action for the server's own thread, which is the thread that owns its connection: the
+         * harness runs on the client's thread and has no other way to reach the server's context without
+         * racing the receive loop that is using it.
+         */
+        private volatile Runnable task = null;
+
+        void runOnServerThread(Runnable task)
+        {
+            this.task = task;
+        }
+
         ServerThread(DTLSServerProtocol serverProtocol, TlsServer server, DatagramTransport serverTransport,
             boolean helloVerifyRequestFrontEnd, boolean expectAbort)
         {
@@ -2471,6 +2996,13 @@ public class DTLS13ProtocolTest
                 byte[] buf = new byte[dtlsTransport.getReceiveLimit()];
                 while (!isShutdown)
                 {
+                    Runnable pending = task;
+                    if (null != pending)
+                    {
+                        this.task = null;
+                        pending.run();
+                    }
+
                     int length = dtlsTransport.receive(buf, 0, buf.length, 100);
                     if (length >= 0)
                     {
@@ -2571,6 +3103,14 @@ public class DTLS13ProtocolTest
 
         boolean dropFirstEpoch2Datagram = false;
         boolean holdFirstEpoch2Datagram = false;
+
+        /**
+         * Drops the very next datagram the client sends, whatever it carries. Used post-handshake, where the
+         * record layer packs nothing (a flight is no longer open), so the next datagram is exactly the next
+         * record - and the harness sets this immediately before starting a key update, which makes the
+         * dropped datagram the one carrying the KeyUpdate and nothing else.
+         */
+        boolean dropNextDatagram = false;
         boolean replaySecondHelloRetryRequest = false;
         int mangleSecondClientHello = MANGLE_NONE;
 
@@ -2579,6 +3119,7 @@ public class DTLS13ProtocolTest
         private byte[] injected = null;
         private int clientHellosSent = 0;
         private int dropped = 0;
+        private int keyUpdateDropped = 0;
         private int reordered = 0;
         private int replayed = 0;
         private int mangled = 0;
@@ -2607,6 +3148,11 @@ public class DTLS13ProtocolTest
         int getDropped()
         {
             return dropped;
+        }
+
+        int getKeyUpdateDropped()
+        {
+            return keyUpdateDropped;
         }
 
         int getReordered()
@@ -2682,6 +3228,16 @@ public class DTLS13ProtocolTest
                 {
                     sentRecords.addElement(records.elementAt(i));
                 }
+            }
+
+            if (dropNextDatagram)
+            {
+                this.dropNextDatagram = false;
+                ++keyUpdateDropped;
+
+                System.out.println("DTLS 1.3 test: dropped the client's " + len
+                    + " byte post-handshake datagram");
+                return;
             }
 
             if (replaySecondHelloRetryRequest || MANGLE_NONE != mangleSecondClientHello)

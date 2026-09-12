@@ -13,6 +13,16 @@ public class DTLSTransport
         this.recordLayer = recordLayer;
     }
 
+    /**
+     * The record layer behind this transport, so that a test in this package can reach the package-private
+     * DTLS 1.3 machinery - there is no application-facing entry point for a post-handshake key update, any
+     * more than {@link TlsProtocol} has one for TLS.
+     */
+    DTLSRecordLayer getRecordLayerForTest()
+    {
+        return recordLayer;
+    }
+
     public int getReceiveLimit()
         throws IOException
     {
