@@ -18,6 +18,7 @@ import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.TlsCredentialedDecryptor;
 import org.bouncycastle.tls.TlsCredentialedSigner;
+import org.bouncycastle.tls.TlsCredentials;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCertificate;
@@ -81,8 +82,31 @@ class MockDTLSServer
         return serverVersion;
     }
 
+    public TlsCredentials getCredentials() throws IOException
+    {
+        /*
+         * TODO[dtls13] Should really be finding the first client-supported signature scheme that the
+         * server also supports and has credentials for.
+         */
+        if (TlsUtils.isTLSv13(context))
+        {
+            return getRSASignerCredentials();
+        }
+
+        return super.getCredentials();
+    }
+
     public CertificateRequest getCertificateRequest() throws IOException
     {
+        /*
+         * TODO[dtls13] Client authentication is not implemented for DTLS 1.3 yet, and the server raises a
+         * fatal internal_error rather than silently dropping the request, so ask for none.
+         */
+        if (TlsUtils.isTLSv13(context))
+        {
+            return null;
+        }
+
         short[] certificateTypes = new short[]{ ClientCertificateType.rsa_sign,
             ClientCertificateType.dss_sign, ClientCertificateType.ecdsa_sign };
 
