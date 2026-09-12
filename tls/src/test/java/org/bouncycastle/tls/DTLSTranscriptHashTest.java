@@ -27,6 +27,7 @@ public class DTLSTranscriptHashTest
     private static final byte[] CLIENT_HELLO_BODY = body(0x10, 40);
     private static final byte[] SERVER_HELLO_BODY = body(0x20, 24);
     private static final byte[] CERTIFICATE_BODY = body(0x30, 11);
+    private static final byte[] HELLO_RETRY_REQUEST_BODY = body(0x50, 18);
 
     /**
      * A DTLS 1.3 transcript hashes msg_type || uint24 length || body, and nothing else.
@@ -125,6 +126,100 @@ public class DTLSTranscriptHashTest
     }
 
     /**
+     * RFC 8446 4.4.1. Where a HelloRetryRequest is used the transcript is not ClientHello1 itself but a
+     * synthetic handshake message standing in for it:
+     * <pre>
+     *     Transcript-Hash(ClientHello1, HelloRetryRequest, ... Mn) =
+     *         Hash(message_hash     ||        (= 254)
+     *              00 00 Hash.length ||
+     *              Hash(ClientHello1) ||
+     *              HelloRetryRequest  || ... || Mn)
+     * </pre>
+     * The expected bytes below are assembled from those literal field values, NOT from
+     * {@link TlsUtils#adjustTranscriptForRetry(TlsHandshakeHash)}: an error in the synthetic message's own
+     * encoding is invisible to any handshake between two Bouncy Castle peers, which would make the identical
+     * error on both sides, agree with each other, and fail only against another implementation.
+     */
+    public void testHelloRetryRequestTranscriptUsesTheSyntheticMessageHash() throws Exception
+    {
+        Fixture fixture = new Fixture(ProtocolVersion.DTLSv13);
+
+        fixture.digest(HandshakeType.client_hello, 0, CLIENT_HELLO_BODY);
+        fixture.adjustForRetry();
+        fixture.digest(HandshakeType.server_hello, 1, HELLO_RETRY_REQUEST_BODY);
+
+        byte[] transcript = fixture.transcript();
+
+        byte[] clientHello1Hash = sha256(tlsHeaderForm(HandshakeType.client_hello, CLIENT_HELLO_BODY));
+        assertEquals("SHA-256 output length", 32, clientHello1Hash.length);
+        assertEquals("RFC 8446 4.4.1 message_hash HandshakeType", 254, HandshakeType.message_hash);
+
+        ByteArrayOutputStream expected = new ByteArrayOutputStream();
+        expected.write(254);
+        expected.write(0x00);
+        expected.write(0x00);
+        expected.write(32);
+        expected.write(clientHello1Hash);
+        expected.write(tlsHeaderForm(HandshakeType.server_hello, HELLO_RETRY_REQUEST_BODY));
+
+        assertTrue("the transcript must be over the RFC 8446 4.4.1 synthetic message_hash",
+            Arrays.areEqual(sha256(expected.toByteArray()), transcript));
+
+        /*
+         * Negative controls. Each is a plausible way to get the synthetic message wrong that leaves the
+         * ordering - the only thing the existing inverted-ordering test can catch - intact.
+         */
+
+        // no substitution at all: ClientHello1 left in the transcript verbatim
+        ByteArrayOutputStream noSubstitution = new ByteArrayOutputStream();
+        noSubstitution.write(tlsHeaderForm(HandshakeType.client_hello, CLIENT_HELLO_BODY));
+        noSubstitution.write(tlsHeaderForm(HandshakeType.server_hello, HELLO_RETRY_REQUEST_BODY));
+
+        assertFalse("ClientHello1 must not be left in the transcript",
+            Arrays.areEqual(sha256(noSubstitution.toByteArray()), transcript));
+
+        // the bare digest, with no synthetic message header at all
+        ByteArrayOutputStream noHeader = new ByteArrayOutputStream();
+        noHeader.write(clientHello1Hash);
+        noHeader.write(tlsHeaderForm(HandshakeType.server_hello, HELLO_RETRY_REQUEST_BODY));
+
+        assertFalse("the synthetic message_hash header must be present",
+            Arrays.areEqual(sha256(noHeader.toByteArray()), transcript));
+
+        // some other msg_type in the synthetic message
+        ByteArrayOutputStream wrongType = new ByteArrayOutputStream();
+        wrongType.write(HandshakeType.client_hello);
+        wrongType.write(0x00);
+        wrongType.write(0x00);
+        wrongType.write(32);
+        wrongType.write(clientHello1Hash);
+        wrongType.write(tlsHeaderForm(HandshakeType.server_hello, HELLO_RETRY_REQUEST_BODY));
+
+        assertFalse("the synthetic message's msg_type must be message_hash (254)",
+            Arrays.areEqual(sha256(wrongType.toByteArray()), transcript));
+
+        // the 12-byte DTLS header form for the synthetic message, which RFC 9147 5.2 excludes
+        ByteArrayOutputStream dtlsHeader = new ByteArrayOutputStream();
+        dtlsHeader.write(dtlsHeaderForm(HandshakeType.message_hash, 0, clientHello1Hash));
+        dtlsHeader.write(tlsHeaderForm(HandshakeType.server_hello, HELLO_RETRY_REQUEST_BODY));
+
+        assertFalse("the synthetic message must use the 4-byte TLS header form",
+            Arrays.areEqual(sha256(dtlsHeader.toByteArray()), transcript));
+
+        // ClientHello1 digested in the 12-byte DTLS form before being substituted
+        ByteArrayOutputStream dtlsFormClientHello = new ByteArrayOutputStream();
+        dtlsFormClientHello.write(254);
+        dtlsFormClientHello.write(0x00);
+        dtlsFormClientHello.write(0x00);
+        dtlsFormClientHello.write(32);
+        dtlsFormClientHello.write(sha256(dtlsHeaderForm(HandshakeType.client_hello, 0, CLIENT_HELLO_BODY)));
+        dtlsFormClientHello.write(tlsHeaderForm(HandshakeType.server_hello, HELLO_RETRY_REQUEST_BODY));
+
+        assertFalse("Hash(ClientHello1) must be over the 4-byte TLS header form",
+            Arrays.areEqual(sha256(dtlsFormClientHello.toByteArray()), transcript));
+    }
+
+    /**
      * HelloVerifyRequest stays out of the transcript in every version.
      */
     public void testHelloVerifyRequestIsNotInTheTranscript() throws Exception
@@ -200,6 +295,19 @@ public class DTLSTranscriptHashTest
         void negotiate(ProtocolVersion negotiatedVersion)
         {
             context.getSecurityParametersHandshake().negotiatedVersion = negotiatedVersion;
+        }
+
+        /**
+         * The HelloRetryRequest substitution, driven exactly as DTLSServerProtocol.serverHandshake and
+         * DTLSClientProtocol.clientHandshake drive it: the PRF is determined, the transcript is replaced, and
+         * the HelloRetryRequest is then digested on top of the replacement.
+         */
+        void adjustForRetry() throws IOException
+        {
+            TlsHandshakeHash handshakeHash = handshake.getHandshakeHash();
+            handshakeHash.notifyPRFDetermined();
+
+            TlsUtils.adjustTranscriptForRetry(handshakeHash);
         }
 
         void digest(short msgType, int messageSeq, byte[] msgBody) throws IOException
