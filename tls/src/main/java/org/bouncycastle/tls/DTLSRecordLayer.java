@@ -150,6 +150,8 @@ class DTLSRecordLayer
      * DTLS 1.3 only. The epoch most recently retired by commitPendingEpochIfCurrent, kept so that
      * handshakeSuccessful can retain the handshake epoch (RFC 9147 5.8.1): once both directions have moved to
      * the application epoch, nothing else holds a reference to the handshake epoch's keys or replay window.
+     * Cleared by handshakeSuccessful, which hands it to retransmitEpoch (or drops it), so that the retention
+     * really does end when the retransmit timeout expires.
      */
     private DTLSEpoch retiredEpoch = null;
 
@@ -384,11 +386,31 @@ class DTLSRecordLayer
          */
         DTLSEpoch epochToRetain = dtls13 ? retiredEpoch : currentEpoch;
 
+        /*
+         * Nothing else reads the retired epoch after this point: a retransmission of our own flight resolves
+         * its epoch through retransmitEpoch below, so holding a second reference here would keep the handshake
+         * traffic keys and replay window alive for the whole connection instead of for the retransmit timeout.
+         */
+        this.retiredEpoch = null;
+
         if (null != retransmit && null != epochToRetain)
         {
             this.retransmit = retransmit;
             this.retransmitEpoch = epochToRetain;
-            this.retransmitEpochPlaintext = dtls13 ? plaintextEpoch : null;
+
+            /*
+             * Epoch 0 is unauthenticated, so it is retained only by the side that has a reason to read it,
+             * which is the client. In DTLS 1.3 the client sends the last flight, so (see
+             * DTLSReliableHandshake.finish) the client answers a retransmission by re-sending its own flight
+             * while the server answers one with another ACK. The flight the client answers - the server's - is
+             * the one that straddles the epoch change, with the ServerHello plaintext at epoch 0 and the rest
+             * protected at the handshake epoch, so the client must be able to read epoch 0 to recognise it.
+             * The client's final flight, which is what the server answers, is protected in its entirety at the
+             * handshake epoch and contains no epoch-0 record, so the server never needs epoch 0 - and
+             * retaining it there would let anyone able to put a datagram on the path draw an answer out of a
+             * completed server with an unauthenticated record.
+             */
+            this.retransmitEpochPlaintext = (dtls13 && !context.isServer()) ? plaintextEpoch : null;
             this.retransmitTimeout = new Timeout(RETRANSMIT_TIMEOUT);
         }
 
@@ -1588,7 +1610,11 @@ class DTLSRecordLayer
      * <p>
      * The write epoch is never changed by this, so application data continues at the application epoch.
      *
-     * @return the record number used, or null if that epoch is no longer held.
+     * @return the record number used, never null.
+     * @throws TlsFatalAlert if the record cannot be written at that epoch - because the connection is not DTLS
+     *             1.3, because the epoch is no longer held, or because the record layer has no write version
+     *             yet. Each of those would silently truncate the retransmitted flight into one the peer can
+     *             never answer, leaving only a handshake timeout to diagnose it, so it is raised here instead.
      */
     DTLSRecordNumber sendHandshakeRecordAtEpoch(int epoch, byte[] buf, int off, int len) throws IOException
     {
@@ -1596,10 +1622,18 @@ class DTLSRecordLayer
 
         if (!dtls13 || null == recordEpoch)
         {
-            return null;
+            throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        return sendRecord(recordEpoch, ContentType.handshake, buf, off, len);
+        DTLSRecordNumber recordNumber = sendRecord(recordEpoch, ContentType.handshake, buf, off, len);
+
+        if (null == recordNumber)
+        {
+            // NOTE: sendRecord only declines a record before a write version is known, i.e. before ClientHello
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        return recordNumber;
     }
 
     private DTLSEpoch getEpochForRetransmit(int epoch)
