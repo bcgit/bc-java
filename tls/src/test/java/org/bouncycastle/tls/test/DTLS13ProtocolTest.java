@@ -786,6 +786,7 @@ public class DTLS13ProtocolTest
     {
         Harness harness = new Harness();
         harness.helloVerifyRequestFrontEnd = true;
+        harness.expectServerAbort = true;
         harness.clientVersions = ProtocolVersion.DTLSv13.downTo(ProtocolVersion.DTLSv12);
         harness.serverVersions = ProtocolVersion.DTLSv13.downTo(ProtocolVersion.DTLSv12);
 
@@ -808,6 +809,16 @@ public class DTLS13ProtocolTest
          */
         assertEquals("the version the server refused to go on with", ProtocolVersion.DTLSv13,
             harness.serverVersion);
+
+        /*
+         * The client only ever sees the resulting alert, and internal_error is not specific to this cause.
+         * Assert on what the SERVER threw, so the test cannot pass because something else on the server went
+         * wrong at the same point.
+         */
+        assertNotNull("the server must be the side that aborted", harness.serverAbort);
+        assertEquals("the server's own diagnostic",
+            "internal_error(80); DTLS 1.3 cannot be negotiated behind a HelloVerifyRequest front end",
+            harness.serverAbort.getMessage());
 
         assertEquals("no application data can have been exchanged", null, harness.echo);
     }
@@ -1750,6 +1761,9 @@ public class DTLS13ProtocolTest
         boolean replaySecondHelloRetryRequest = false;
         int mangleSecondClientHello = MANGLE_NONE;
         boolean helloVerifyRequestFrontEnd = false;
+        boolean expectServerAbort = false;
+
+        Exception serverAbort = null;
 
         /*
          * RFC 5746 3.4. Strips the TLS_EMPTY_RENEGOTIATION_INFO_SCSV from the ClientHello on its way out, so
@@ -2194,7 +2208,7 @@ public class DTLS13ProtocolTest
             DTLSServerProtocol serverProtocol = new DTLSServerProtocol();
 
             ServerThread serverThread = new ServerThread(serverProtocol, server, network.getServer(),
-                helloVerifyRequestFrontEnd);
+                helloVerifyRequestFrontEnd, expectServerAbort);
             serverThread.setDaemon(true);
             serverThread.start();
 
@@ -2257,6 +2271,8 @@ public class DTLS13ProtocolTest
                 this.mangled = recording.getMangled();
 
                 serverThread.shutdown();
+
+                this.serverAbort = serverThread.getCaught();
             }
         }
 
@@ -2414,15 +2430,28 @@ public class DTLS13ProtocolTest
         private final TlsServer server;
         private final DatagramTransport serverTransport;
         private final boolean helloVerifyRequestFrontEnd;
+        private final boolean expectAbort;
         private volatile boolean isShutdown = false;
+        private volatile Exception caught = null;
 
         ServerThread(DTLSServerProtocol serverProtocol, TlsServer server, DatagramTransport serverTransport,
-            boolean helloVerifyRequestFrontEnd)
+            boolean helloVerifyRequestFrontEnd, boolean expectAbort)
         {
             this.serverProtocol = serverProtocol;
             this.server = server;
             this.serverTransport = serverTransport;
             this.helloVerifyRequestFrontEnd = helloVerifyRequestFrontEnd;
+            this.expectAbort = expectAbort;
+        }
+
+        /**
+         * Whatever aborted the server, for a test whose subject is the server's own refusal: the client only
+         * ever sees the alert that results, so asserting on this is what distinguishes the server raising the
+         * refusal from the client inferring something from an alert.
+         */
+        Exception getCaught()
+        {
+            return caught;
         }
 
         public void run()
@@ -2452,7 +2481,16 @@ public class DTLS13ProtocolTest
             }
             catch (Exception e)
             {
-                e.printStackTrace();
+                this.caught = e;
+
+                /*
+                 * A test whose subject IS the server's refusal aborts here on every run, so printing would
+                 * make a passing test look like a failing one. It asserts on getCaught() instead.
+                 */
+                if (!expectAbort)
+                {
+                    e.printStackTrace();
+                }
             }
         }
 

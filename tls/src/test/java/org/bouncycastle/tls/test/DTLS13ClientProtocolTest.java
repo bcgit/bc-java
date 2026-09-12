@@ -97,6 +97,15 @@ public class DTLS13ClientProtocolTest
 
         assertEquals("the client must have answered the HelloVerifyRequest", 2,
             transport.clientHellosSeen());
+
+        /*
+         * A retransmission of the first ClientHello would also be a second datagram carrying a ClientHello,
+         * so check the message_seq advanced: RFC 6347 4.2.2 requires the ClientHello answering a
+         * HelloVerifyRequest to be a new message, at message_seq 1.
+         */
+        assertEquals("the first ClientHello is at message_seq 0", 0, transport.clientHelloSeq(0));
+        assertEquals("the second ClientHello must be a new message, not a retransmission", 1,
+            transport.clientHelloSeq(1));
     }
 
     private short connectAndExpectFatalAlert(byte[] selectedVersion) throws Exception
@@ -250,6 +259,8 @@ public class DTLS13ClientProtocolTest
     {
         private final byte[][] script;
 
+        private final int[] clientHelloSeqs = new int[8];
+
         private int clientHellosSeen = 0;
         private byte[] pending = null;
 
@@ -268,6 +279,16 @@ public class DTLS13ClientProtocolTest
             return clientHellosSeen;
         }
 
+        /**
+         * The DTLS handshake message_seq of the ClientHello at the given index, so that a retransmission of
+         * an earlier ClientHello can be told apart from a genuinely new one - both are datagrams carrying a
+         * ClientHello, and only the message_seq distinguishes them.
+         */
+        int clientHelloSeq(int index)
+        {
+            return clientHelloSeqs[index];
+        }
+
         public int getReceiveLimit()
         {
             return MTU;
@@ -284,6 +305,13 @@ public class DTLS13ClientProtocolTest
             if (clientHellosSeen < script.length && len > 13 && (buf[off] & 0xFF) == ContentType.handshake
                 && (buf[off + 13] & 0xFF) == HandshakeType.client_hello)
             {
+                // Handshake message header: msg_type, length, then message_seq at offsets 4 and 5
+                if (clientHellosSeen < clientHelloSeqs.length)
+                {
+                    clientHelloSeqs[clientHellosSeen] = ((buf[off + 17] & 0xFF) << 8)
+                        | (buf[off + 18] & 0xFF);
+                }
+
                 this.pending = script[clientHellosSeen++];
             }
         }

@@ -134,8 +134,9 @@ public class DTLSServerProtocol
         {
             /*
              * Reached through accept(TlsServer, DatagramTransport, DTLSRequest), i.e. behind DTLSVerifier,
-             * which has already sent a DTLS 1.2 HelloVerifyRequest on this connection - see the check in
-             * generateServerHello.
+             * so this ClientHello arrived through the DTLS 1.2 cookie exchange: DTLSVerifier only produces a
+             * DTLSRequest for a ClientHello carrying a cookie it has verified, though it need not have sent
+             * the HelloVerifyRequest itself during this call - see the check in generateServerHello.
              */
             state.afterHelloVerifyRequest = true;
 
@@ -1671,12 +1672,18 @@ public class DTLSServerProtocol
 
         /*
          * NOTE: server.notifySecureRenegotiation is called from generateServerHello, in the
-         * DTLS-1.2-and-below portion past the point where the DTLS 1.3 path has returned, exactly as
-         * TlsServerProtocol.generateServerHello does it. RFC 8446 / RFC 9147 remove renegotiation, so a
-         * client offering only DTLS 1.3 (or later) legitimately sends neither the "renegotiation_info"
-         * extension nor the SCSV - see the matching 'offeringDTLSv12Minus' gate in
-         * DTLSClientProtocol.generateClientHello - and gating on the selected version rather than on the
-         * client's offer is what keeps a {1.3, 1.2} offer with neither of them acceptable.
+         * DTLS-1.2-and-below portion past the point where the DTLS 1.3 path has returned. That mirrors the
+         * version gating of TlsServerProtocol.generateServerHello, which likewise notifies only once a
+         * version at or below 1.2 has been selected. It does NOT mirror its ordering relative to the other
+         * TlsServer callbacks: DTLS selects the version in generateServerHello, so by the time the
+         * notification is made here establishClientSigAlgs and server.processClientExtensions have already
+         * run from processClientHello, whereas TlsServerProtocol notifies before both.
+         *
+         * RFC 8446 / RFC 9147 remove renegotiation, so a client offering only DTLS 1.3 (or later)
+         * legitimately sends neither the "renegotiation_info" extension nor the SCSV - see the matching
+         * 'offeringDTLSv12Minus' gate in DTLSClientProtocol.generateClientHello - and gating on the selected
+         * version rather than on the client's offer is what keeps a {1.3, 1.2} offer with neither of them
+         * acceptable.
          */
 
         if (clientHelloExtensions != null)
