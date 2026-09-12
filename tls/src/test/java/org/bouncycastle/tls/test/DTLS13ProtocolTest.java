@@ -816,6 +816,83 @@ public class DTLS13ProtocolTest
     }
 
     /**
+     * RFC 8446 / RFC 9147 remove renegotiation, so a DTLS 1.3 client legitimately sends neither the RFC 5746
+     * "renegotiation_info" extension nor the TLS_EMPTY_RENEGOTIATION_INFO_SCSV. A client that straddles the
+     * versions - offering DTLS 1.3 and DTLS 1.2 - and implements neither must still be able to complete a DTLS
+     * 1.3 handshake, because the server's RFC 5746 rule is a property of the version it SELECTS, not of the
+     * versions the client offered. TlsServerProtocol gets this right by placing its notifySecureRenegotiation
+     * call in the part of generateServerHello that the 1.3 path returns before reaching.
+     */
+    public void testDTLSv13WithNeitherSecureRenegotiationSignal() throws Exception
+    {
+        Harness harness = new Harness();
+        harness.clientVersions = ProtocolVersion.DTLSv13.downTo(ProtocolVersion.DTLSv12);
+        harness.suppressSecureRenegotiationOffer = true;
+
+        harness.run(16);
+
+        assertEquals("client negotiated version", ProtocolVersion.DTLSv13, harness.clientVersion);
+        assertEquals("server negotiated version", ProtocolVersion.DTLSv13, harness.serverVersion);
+
+        assertEquals("notifySecureRenegotiation reached on a DTLS 1.3 handshake", 0,
+            harness.serverSecureRenegotiationNotifications);
+
+        assertNotNull("no application data echoed back", harness.echo);
+        assertTrue("echoed application data differs", Arrays.areEqual(harness.request, harness.echo));
+    }
+
+    /**
+     * The DTLS 1.2 half of the same rule, unchanged: where DTLS 1.2 is the version actually selected, a client
+     * that sent neither the "renegotiation_info" extension nor the SCSV is still refused by MockDTLSServer's
+     * inherited RFC 5746 behaviour. The client's offer is identical to the test above; only the version the
+     * server can select differs, which is exactly what the callback must be gated on.
+     */
+    public void testDTLSv12WithNeitherSecureRenegotiationSignalStillRefused() throws Exception
+    {
+        Harness harness = new Harness();
+        harness.clientVersions = ProtocolVersion.DTLSv13.downTo(ProtocolVersion.DTLSv12);
+        harness.serverVersions = ProtocolVersion.DTLSv12.only();
+        harness.suppressSecureRenegotiationOffer = true;
+
+        try
+        {
+            harness.run(16);
+
+            fail("expected the DTLS 1.2 server to refuse a ClientHello with no RFC 5746 signal");
+        }
+        catch (TlsFatalAlertReceived fatalAlertReceived)
+        {
+            assertEquals("alert for a DTLS 1.2 ClientHello with no RFC 5746 signal",
+                AlertDescription.handshake_failure, fatalAlertReceived.getAlertDescription());
+        }
+
+        assertEquals("notifySecureRenegotiation not reached on a DTLS 1.2 handshake", 1,
+            harness.serverSecureRenegotiationNotifications);
+    }
+
+    /**
+     * And the DTLS 1.2 positive case: the same server, reached by the same version-straddling client, where the
+     * SCSV is left in place. The callback is reached exactly once and the handshake completes.
+     */
+    public void testDTLSv12WithTheSecureRenegotiationSCSV() throws Exception
+    {
+        Harness harness = new Harness();
+        harness.clientVersions = ProtocolVersion.DTLSv13.downTo(ProtocolVersion.DTLSv12);
+        harness.serverVersions = ProtocolVersion.DTLSv12.only();
+
+        harness.run(16);
+
+        assertEquals("client negotiated version", ProtocolVersion.DTLSv12, harness.clientVersion);
+        assertEquals("server negotiated version", ProtocolVersion.DTLSv12, harness.serverVersion);
+
+        assertEquals("notifySecureRenegotiation reached once on a DTLS 1.2 handshake", 1,
+            harness.serverSecureRenegotiationNotifications);
+
+        assertNotNull("no application data echoed back", harness.echo);
+        assertTrue("echoed application data differs", Arrays.areEqual(harness.request, harness.echo));
+    }
+
+    /**
      * RFC 8446 4.2.2. The second ClientHello must echo the cookie exactly, and a server that accepted anything
      * else would have no way to tell its own HelloRetryRequest's answer from an unrelated ClientHello. One byte
      * of the echoed cookie is flipped on the path, so the client is well-behaved and only the server's check
@@ -1655,6 +1732,13 @@ public class DTLS13ProtocolTest
         boolean replaySecondHelloRetryRequest = false;
         int mangleSecondClientHello = MANGLE_NONE;
         boolean helloVerifyRequestFrontEnd = false;
+
+        /*
+         * RFC 5746 3.4. Strips the TLS_EMPTY_RENEGOTIATION_INFO_SCSV from the ClientHello on its way out, so
+         * that a version-straddling offer carries neither the SCSV nor the "renegotiation_info" extension -
+         * what a third-party DTLS 1.3 client that never implemented RFC 5746 sends.
+         */
+        boolean suppressSecureRenegotiationOffer = false;
         ProtocolVersion[] clientVersions = ProtocolVersion.DTLSv13.only();
         ProtocolVersion[] serverVersions = ProtocolVersion.DTLSv13.only();
 
@@ -1685,6 +1769,9 @@ public class DTLS13ProtocolTest
 
         ProtocolVersion clientVersion = null;
         ProtocolVersion serverVersion = null;
+
+        // How many times the server's notifySecureRenegotiation callback was reached
+        int serverSecureRenegotiationNotifications = 0;
         int clientCipherSuite = -1;
         int serverCipherSuite = -1;
         byte[] request = null;
@@ -1959,6 +2046,18 @@ public class DTLS13ProtocolTest
                     return serverHandshakeTimeoutMillis;
                 }
 
+                /*
+                 * RFC 5746. Counted so a test can assert that a DTLS 1.3 handshake never reaches it - RFC
+                 * 8446 / RFC 9147 removed renegotiation, so the callback belongs to the DTLS 1.2-and-below
+                 * path only. The default behaviour (reject when the flag is false) is preserved.
+                 */
+                public void notifySecureRenegotiation(boolean secureRenegotiation) throws IOException
+                {
+                    ++serverSecureRenegotiationNotifications;
+
+                    super.notifySecureRenegotiation(secureRenegotiation);
+                }
+
                 public int[] getSupportedGroups() throws IOException
                 {
                     if (!forceHelloRetryRequest)
@@ -2098,7 +2197,11 @@ public class DTLS13ProtocolTest
 
             try
             {
-                DTLSTransport dtlsClient = new DTLSClientProtocol().connect(client, recording);
+                DTLSClientProtocol clientProtocol = suppressSecureRenegotiationOffer
+                    ? new NoSecureRenegotiationOfferClientProtocol()
+                    : new DTLSClientProtocol();
+
+                DTLSTransport dtlsClient = clientProtocol.connect(client, recording);
 
                 if (probeServerAckPath)
                 {
@@ -2222,6 +2325,67 @@ public class DTLS13ProtocolTest
             record[off + 11] = (byte)bodyLength;
 
             rawClientTransport.send(record, 0, record.length);
+        }
+    }
+
+    /**
+     * A client that offers DTLS 1.2 but implements none of RFC 5746: the
+     * TLS_EMPTY_RENEGOTIATION_INFO_SCSV that DTLSClientProtocol.generateClientHello appends is removed from
+     * the encoded ClientHello before it is digested or sent, and BC never offers the "renegotiation_info"
+     * extension itself, so neither signal reaches the server. Editing the encoded body (rather than the
+     * offered suites) keeps the client's own transcript hash and the server's in step, because
+     * DTLSReliableHandshake digests what generateClientHello returned.
+     */
+    static class NoSecureRenegotiationOfferClientProtocol
+        extends DTLSClientProtocol
+    {
+        protected byte[] generateClientHello(ClientHandshakeState state) throws IOException
+        {
+            return removeCipherSuite(super.generateClientHello(state),
+                CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV);
+        }
+
+        /**
+         * Rewrites the 'cipher_suites' vector of an encoded DTLS ClientHello body without one suite. The body
+         * is client_version(2) random(32) session_id(1+n) cookie(1+n) cipher_suites(2+n) ...
+         */
+        private static byte[] removeCipherSuite(byte[] body, int cipherSuite)
+        {
+            int pos = 2 + 32;
+            pos += 1 + (body[pos] & 0xFF);
+            pos += 1 + (body[pos] & 0xFF);
+
+            int suitesLength = readUint16(body, pos);
+            int suitesOff = pos + 2;
+
+            byte[] out = new byte[body.length - 2];
+            System.arraycopy(body, 0, out, 0, suitesOff);
+            TlsUtils.writeUint16(suitesLength - 2, out, pos);
+
+            int written = suitesOff;
+            boolean removed = false;
+            for (int i = 0; i < suitesLength; i += 2)
+            {
+                if (!removed && readUint16(body, suitesOff + i) == cipherSuite)
+                {
+                    removed = true;
+                    continue;
+                }
+
+                out[written++] = body[suitesOff + i];
+                out[written++] = body[suitesOff + i + 1];
+            }
+
+            if (!removed)
+            {
+                throw new IllegalStateException("ClientHello did not offer cipher suite 0x"
+                    + Integer.toHexString(cipherSuite));
+            }
+
+            System.arraycopy(body, suitesOff + suitesLength, out, written,
+                body.length - (suitesOff + suitesLength));
+
+            return out;
         }
     }
 

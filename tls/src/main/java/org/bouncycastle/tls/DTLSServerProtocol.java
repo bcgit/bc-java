@@ -1194,6 +1194,8 @@ public class DTLSServerProtocol
             }
         }
 
+        server.notifySecureRenegotiation(securityParameters.isSecureRenegotiation());
+
         Hashtable clientHelloExtensions = state.clientHello.getExtensions();
 
         TlsSession sessionToResume = server.getSessionToResume(state.clientHello.getSessionID());
@@ -1640,18 +1642,14 @@ public class DTLSServerProtocol
         }
 
         /*
-         * RFC 8446 / RFC 9147 remove renegotiation, so a client offering only DTLS 1.3 (or later)
-         * legitimately sends neither the "renegotiation_info" extension nor the SCSV - see the matching
-         * 'offeringDTLSv12Minus' gate in DTLSClientProtocol.generateClientHello. TlsServerProtocol gets
-         * this for free, because its equivalent block sits in the DTLS-1.2-and-below part of
-         * generateServerHello, past the point where the 1.3 path has already returned; here the
-         * ClientHello is processed before a version is selected, so the client's own offer is the gate.
+         * NOTE: server.notifySecureRenegotiation is called from generateServerHello, in the
+         * DTLS-1.2-and-below portion past the point where the DTLS 1.3 path has returned, exactly as
+         * TlsServerProtocol.generateServerHello does it. RFC 8446 / RFC 9147 remove renegotiation, so a
+         * client offering only DTLS 1.3 (or later) legitimately sends neither the "renegotiation_info"
+         * extension nor the SCSV - see the matching 'offeringDTLSv12Minus' gate in
+         * DTLSClientProtocol.generateClientHello - and gating on the selected version rather than on the
+         * client's offer is what keeps a {1.3, 1.2} offer with neither of them acceptable.
          */
-        if (ProtocolVersion.DTLSv12.isEqualOrLaterVersionOf(
-            ProtocolVersion.getEarliestDTLS(serverContext.getClientSupportedVersions())))
-        {
-            server.notifySecureRenegotiation(securityParameters.isSecureRenegotiation());
-        }
 
         if (clientHelloExtensions != null)
         {
