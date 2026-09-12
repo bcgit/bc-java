@@ -171,6 +171,20 @@ class DTLSRecordLayer
      */
     private DTLSEpoch retiredEpoch = null;
 
+    /*
+     * RFC 9147 8. DTLS 1.3 only. The read epoch that a post-handshake key update has superseded, retained so
+     * that records the peer had already put on the wire under it stay readable: section 8 requires a peer to
+     * "retain the pre-update keying material until it receives and processes a record at the new epoch", and
+     * without that a reordered or delayed record at the old epoch would be dropped, losing real application
+     * data.
+     *
+     * At most one epoch is ever retained here. Section 8 forbids sending under a new epoch until the peer's
+     * KeyUpdate has been acknowledged, so a second update cannot begin while this slot is still occupied;
+     * retainReadEpoch asserts that rather than letting the set grow, because a collection driven by
+     * peer-controlled key updates that had no bound would be a memory-growth denial of service.
+     */
+    private DTLSEpoch retainedReadEpoch = null;
+
     // The epoch 0 (unprotected) epoch, which is never replaced; see retransmitEpochPlaintext
     private final DTLSEpoch plaintextEpoch;
 
@@ -403,6 +417,67 @@ class DTLSRecordLayer
     int getRetiredEpoch()
     {
         return (null != retiredEpoch) ? retiredEpoch.getEpoch() : -1;
+    }
+
+    /**
+     * RFC 9147 4.2.2 and 8. The epochs a received record may still be attributed to, ordered most recent
+     * first: the current read epoch, the read epoch retained across a key update, the handshake epoch
+     * retained by {@link #handshakeSuccessful(DTLSHandshakeRetransmit)} for RFC 9147 5.8.1, and - on the
+     * client only - the plaintext epoch 0 that the same flight straddles.
+     * <p>
+     * The order is the point. Only the low 2 epoch bits are on the wire, so two held epochs can alias, and
+     * RFC 9147 4.2.2 resolves that to "the most recent past epoch which has matching bits". Iterating this
+     * collection newest-first makes that rule the structure rather than a special case, and resolving both
+     * directions through the one collection - see {@link #getEpochForRetransmit(int)} - keeps the send and
+     * receive sides from disagreeing about which epochs are held.
+     * </p>
+     * Package-private so that the epoch set itself can be asserted on directly by the tests.
+     */
+    Vector getLiveReadEpochs()
+    {
+        Vector liveReadEpochs = new Vector(4);
+        addLiveReadEpoch(liveReadEpochs, readEpoch);
+        addLiveReadEpoch(liveReadEpochs, retainedReadEpoch);
+        addLiveReadEpoch(liveReadEpochs, retransmitEpoch);
+        addLiveReadEpoch(liveReadEpochs, retransmitEpochPlaintext);
+        return liveReadEpochs;
+    }
+
+    private static void addLiveReadEpoch(Vector liveReadEpochs, DTLSEpoch epoch)
+    {
+        /*
+         * The same DTLSEpoch can occupy two of the slots (in DTLS 1.2 the retained epoch is the current one),
+         * and a duplicate would make the collection's size a misleading bound. Identity is the right test:
+         * two distinct epochs never share an epoch number.
+         */
+        if (null != epoch && !liveReadEpochs.contains(epoch))
+        {
+            liveReadEpochs.addElement(epoch);
+        }
+    }
+
+    /**
+     * RFC 9147 8. Retain the read epoch that a key update has just superseded, so that records already in
+     * flight under it remain readable until the first record at the new epoch has been processed.
+     *
+     * @throws IllegalStateException if an epoch is already retained. Section 8's requirement that a KeyUpdate
+     *             be acknowledged before anything is sent at the new epoch means a second update cannot begin
+     *             while the first is still retained, so more than one retained epoch is a bug here and not a
+     *             peer's doing - and a retained set that could grow without bound under peer-controlled key
+     *             updates would be a memory-growth denial of service.
+     */
+    void retainReadEpoch(DTLSEpoch epoch)
+    {
+        if (null == epoch)
+        {
+            throw new IllegalArgumentException("'epoch' cannot be null");
+        }
+        if (null != retainedReadEpoch)
+        {
+            throw new IllegalStateException("at most one read epoch may be retained across a key update");
+        }
+
+        this.retainedReadEpoch = epoch;
     }
 
     void handshakeSuccessful(DTLSHandshakeRetransmit retransmit)
@@ -1275,18 +1350,21 @@ class DTLSRecordLayer
         }
 
         /*
-         * NOTE: Only the low 2 epoch bits are on the wire, so a record can only be attributed to an epoch the
-         * record layer still holds: the read epoch, or the handshake epoch retained by handshakeSuccessful for
-         * RFC 9147 5.8.1.
+         * RFC 9147 4.2.2. Only the low 2 epoch bits are on the wire, so a record can only be attributed to an
+         * epoch the record layer still holds, and where two held epochs alias on those bits it is the most
+         * recent of them that the record belongs to. getLiveReadEpochs is ordered most recent first, so the
+         * first match is that epoch.
          */
         DTLSEpoch recordEpoch = null;
-        if (DTLS13UnifiedHeader.matchesEpoch(firstByte, readEpoch.getEpoch()))
+        Vector liveReadEpochs = getLiveReadEpochs();
+        for (int i = 0; i < liveReadEpochs.size(); ++i)
         {
-            recordEpoch = readEpoch;
-        }
-        else if (null != retransmitEpoch && DTLS13UnifiedHeader.matchesEpoch(firstByte, retransmitEpoch.getEpoch()))
-        {
-            recordEpoch = retransmitEpoch;
+            DTLSEpoch liveReadEpoch = (DTLSEpoch)liveReadEpochs.elementAt(i);
+            if (DTLS13UnifiedHeader.matchesEpoch(firstByte, liveReadEpoch.getEpoch()))
+            {
+                recordEpoch = liveReadEpoch;
+                break;
+            }
         }
         if (null == recordEpoch)
         {
@@ -1687,22 +1765,35 @@ class DTLSRecordLayer
         {
             return writeEpoch;
         }
-        if (readEpoch.getEpoch() == epoch)
+
+        /*
+         * The read side resolves through this same collection (see getLiveReadEpochs), so the two directions
+         * cannot disagree about which epochs are held: whatever can still be read can still be written at, and
+         * whatever has been released is resolvable by neither. The match is on the full epoch number rather
+         * than the low bits, so the collection's order does not change which epoch is found here.
+         */
+        Vector liveReadEpochs = getLiveReadEpochs();
+        for (int i = 0; i < liveReadEpochs.size(); ++i)
         {
-            return readEpoch;
+            DTLSEpoch liveReadEpoch = (DTLSEpoch)liveReadEpochs.elementAt(i);
+            if (liveReadEpoch.getEpoch() == epoch)
+            {
+                return liveReadEpoch;
+            }
         }
+
         if (currentEpoch.getEpoch() == epoch)
         {
             return currentEpoch;
-        }
-        if (null != retransmitEpoch && retransmitEpoch.getEpoch() == epoch)
-        {
-            return retransmitEpoch;
         }
         if (null != retiredEpoch && retiredEpoch.getEpoch() == epoch)
         {
             return retiredEpoch;
         }
+        /*
+         * Epoch 0 is resolvable for writing whether or not it is retained for reading: only the client
+         * retains it for reading (see retransmitEpochPlaintext), while either side may have to write at it.
+         */
         if (plaintextEpoch.getEpoch() == epoch)
         {
             return plaintextEpoch;

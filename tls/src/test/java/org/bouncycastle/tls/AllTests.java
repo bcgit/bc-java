@@ -34,6 +34,7 @@ public class AllTests
         suite.addTestSuite(DTLSReassemblerTest.class);
         suite.addTestSuite(DTLSRecordLayer13Test.class);
         suite.addTestSuite(DTLSRecordLayerAggregationTest.class);
+        suite.addTestSuite(DTLSRecordLayerEpochSetTest.class);
         suite.addTestSuite(DTLSRecordNumberMaskTest.class);
         suite.addTestSuite(DTLSTranscriptHashTest.class);
         suite.addTestSuite(SpreadCertificateStatusTest.class);
