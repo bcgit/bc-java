@@ -534,16 +534,13 @@ public class DTLSClientProtocol
         {
             /*
              * RFC 8446 4.3.2. A server which is authenticating with a certificate MAY optionally request a
-             * certificate from the client. Record it so that it is not silently discarded, then fail: the
-             * client cannot yet answer one.
-             *
-             * TODO[dtls13] Replaced by real in-handshake client authentication (send Certificate and
-             * CertificateVerify in the client's flight, or an empty certificate list when declining).
+             * certificate from the client. Answered at the end of this method, once the server's Finished has
+             * been verified. If no CertificateRequest arrives, 'state.certificateRequest' simply stays null,
+             * which is what TlsClientProtocol.skip13CertificateRequest expresses for its dispatcher.
              */
             receive13CertificateRequest(state, serverMessage.getBody());
 
-            throw new TlsFatalAlert(AlertDescription.unexpected_message,
-                "DTLS 1.3 client authentication is not implemented");
+            serverMessage = handshake.receiveMessage();
         }
 
         if (serverMessage.getType() == HandshakeType.certificate)
@@ -580,6 +577,41 @@ public class DTLSClientProtocol
          * RFC 9147 5. DTLS 1.3 does not use the TLS 1.3 "compatibility mode", so there is no
          * change_cipher_spec message in either direction.
          */
+
+        if (null != state.certificateRequest)
+        {
+            TlsCredentialedSigner clientCredentials = TlsUtils.establish13ClientCredentials(state.authentication,
+                state.certificateRequest);
+
+            Certificate clientCertificate = null;
+            if (null != clientCredentials)
+            {
+                clientCertificate = clientCredentials.getCertificate();
+            }
+
+            if (null == clientCertificate)
+            {
+                /*
+                 * RFC 8446 4.4.2. A client that declines still answers, with an empty certificate list. In
+                 * this calling context, certificate_request_context is length 0.
+                 */
+                clientCertificate = Certificate.EMPTY_CHAIN_TLS13;
+            }
+
+            sendCertificateMessage(clientContext, handshake, clientCertificate, null);
+
+            if (null != clientCredentials)
+            {
+                /*
+                 * NOTE: Signed over the transcript through the Certificate just sent, and exclusive of the
+                 * CertificateVerify message itself.
+                 */
+                DigitallySigned certificateVerify = TlsUtils.generate13CertificateVerify(clientContext,
+                    clientCredentials, handshake.getHandshakeHash());
+                handshake.sendMessage(HandshakeType.certificate_verify,
+                    generateCertificateVerify(state, certificateVerify));
+            }
+        }
 
         // NOTE: Calculated exclusive of the Finished message itself, and sent at the handshake epoch
         securityParameters.localVerifyData = TlsUtils.calculateVerifyData(clientContext,

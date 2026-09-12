@@ -1,10 +1,13 @@
 package org.bouncycastle.tls.test;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.util.Random;
 import java.util.Vector;
 
 import org.bouncycastle.tls.AlertDescription;
+import org.bouncycastle.tls.Certificate;
+import org.bouncycastle.tls.CertificateRequest;
 import org.bouncycastle.tls.CipherSuite;
 import org.bouncycastle.tls.ContentType;
 import org.bouncycastle.tls.DTLSClientProtocol;
@@ -18,10 +21,18 @@ import org.bouncycastle.tls.HandshakeType;
 import org.bouncycastle.tls.NamedGroup;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SecurityParameters;
+import org.bouncycastle.tls.SignatureAlgorithm;
+import org.bouncycastle.tls.SignatureAndHashAlgorithm;
+import org.bouncycastle.tls.TlsAuthentication;
+import org.bouncycastle.tls.TlsCredentialedSigner;
+import org.bouncycastle.tls.TlsCredentials;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsFatalAlertReceived;
 import org.bouncycastle.tls.TlsServer;
+import org.bouncycastle.tls.TlsServerCertificate;
+import org.bouncycastle.tls.TlsUtils;
 import org.bouncycastle.tls.crypto.TlsCrypto;
+import org.bouncycastle.tls.crypto.TlsStreamSigner;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 
@@ -104,6 +115,134 @@ public class DTLS13ProtocolTest
     }
 
     /**
+     * RFC 8446 4.4.2 and 4.4.3. A mutually authenticated handshake: the server sends a CertificateRequest in
+     * its flight, and the client answers with a Certificate carrying its chain plus a CertificateVerify over
+     * the transcript through that Certificate.
+     * <p>
+     * The proof that the client's signature was computed over the transcript the server expects is that the
+     * handshake completed at all: the server verifies the CertificateVerify against its own transcript hash
+     * taken at the same cut point, and a mismatch is a fatal "decrypt_error" rather than a quiet pass - which
+     * is what {@link #testClientServerWithACorruptedClientCertificateVerify} exercises in the other direction.
+     * The Finished cross-check below then proves both peers' transcripts agree through the client's
+     * Certificate and CertificateVerify as well.
+     * </p>
+     */
+    public void testClientServerWithClientAuthentication() throws Exception
+    {
+        Harness harness = new Harness();
+        harness.clientAuth = TlsTestConfig.CLIENT_AUTH_VALID;
+        harness.serverCertReq = TlsTestConfig.SERVER_CERT_REQ_MANDATORY;
+
+        harness.run(16);
+
+        assertEquals("client negotiated version", ProtocolVersion.DTLSv13, harness.clientVersion);
+        assertEquals("server negotiated version", ProtocolVersion.DTLSv13, harness.serverVersion);
+
+        assertTrue("the client did not send a certificate of its own", harness.clientLocalCertChainLength > 0);
+        assertTrue("the server did not receive a client certificate", harness.serverPeerCertChainLength > 0);
+        assertEquals("the chain the server received is not the one the client sent",
+            harness.clientLocalCertChainLength, harness.serverPeerCertChainLength);
+
+        assertTrue("the server did not verify the client's Finished over the same transcript",
+            Arrays.areEqual(harness.clientLocalVerifyData, harness.serverPeerVerifyData));
+        assertTrue("the client did not verify the server's Finished over the same transcript",
+            Arrays.areEqual(harness.serverLocalVerifyData, harness.clientPeerVerifyData));
+
+        assertNotNull("no application data echoed back", harness.echo);
+        assertTrue("echoed application data differs", Arrays.areEqual(harness.request, harness.echo));
+
+        /*
+         * The client's Certificate and CertificateVerify are all at epoch 2, so its flight does not straddle
+         * an epoch change: the progression is unchanged by client authentication.
+         */
+        checkEpochProgression(harness.clientRecords(), "client");
+        checkEpochProgression(harness.serverRecords(), "server");
+    }
+
+    /**
+     * RFC 8446 4.4.2. "If the client does not send any certificates (i.e., it sends an empty Certificate
+     * message), the server MAY at its discretion either continue the handshake without client authentication".
+     * The client still answers the CertificateRequest - with an empty certificate list and no CertificateVerify
+     * - and the server, which only asked optionally, completes.
+     */
+    public void testClientServerWithClientAuthenticationDeclined() throws Exception
+    {
+        Harness harness = new Harness();
+        harness.clientAuth = TlsTestConfig.CLIENT_AUTH_NONE;
+        harness.serverCertReq = TlsTestConfig.SERVER_CERT_REQ_OPTIONAL;
+
+        harness.run(16);
+
+        assertEquals("client negotiated version", ProtocolVersion.DTLSv13, harness.clientVersion);
+        assertEquals("server negotiated version", ProtocolVersion.DTLSv13, harness.serverVersion);
+
+        /*
+         * The server saw a Certificate message, and it was empty: a declining client is distinguished from an
+         * authenticating one by the length of the chain in it, not by the message's absence.
+         */
+        assertEquals("the server did not see an empty client certificate", 0, harness.serverPeerCertChainLength);
+        assertEquals("the client claimed a certificate it did not have", 0, harness.clientLocalCertChainLength);
+
+        assertTrue("the server did not verify the client's Finished over the same transcript",
+            Arrays.areEqual(harness.clientLocalVerifyData, harness.serverPeerVerifyData));
+
+        assertNotNull("no application data echoed back", harness.echo);
+        assertTrue("echoed application data differs", Arrays.areEqual(harness.request, harness.echo));
+    }
+
+    /**
+     * RFC 8446 4.4.2.4. "if the client's certificate chain is empty ... the server MAY ... abort the handshake
+     * with a 'certificate_required' alert". A server that requires client authentication must reject a client
+     * that declines, rather than silently treating the handshake as authenticated.
+     */
+    public void testClientServerWithMandatoryClientAuthenticationDeclined() throws Exception
+    {
+        Harness harness = new Harness();
+        harness.clientAuth = TlsTestConfig.CLIENT_AUTH_NONE;
+        harness.serverCertReq = TlsTestConfig.SERVER_CERT_REQ_MANDATORY;
+
+        try
+        {
+            harness.run(16);
+
+            fail("expected the server to abort when client authentication was declined");
+        }
+        catch (TlsFatalAlertReceived fatalAlert)
+        {
+            assertEquals("alert for a declined mandatory CertificateRequest", AlertDescription.certificate_required,
+                fatalAlert.getAlertDescription());
+        }
+
+        assertEquals("the server did not see an empty client certificate", 0, harness.serverPeerCertChainLength);
+    }
+
+    /**
+     * RFC 8446 4.4.3. The server really does verify the client's CertificateVerify signature: one bit of it is
+     * flipped, which must be a fatal "decrypt_error". Without this, a CertificateVerify computed over the wrong
+     * transcript - or over nothing at all - would pass {@link #testClientServerWithClientAuthentication}.
+     */
+    public void testClientServerWithACorruptedClientCertificateVerify() throws Exception
+    {
+        Harness harness = new Harness();
+        harness.clientAuth = TlsTestConfig.CLIENT_AUTH_INVALID_VERIFY;
+        harness.serverCertReq = TlsTestConfig.SERVER_CERT_REQ_MANDATORY;
+
+        try
+        {
+            harness.run(16);
+
+            fail("expected the server to reject a corrupted CertificateVerify");
+        }
+        catch (TlsFatalAlertReceived fatalAlert)
+        {
+            assertEquals("alert for a bad client CertificateVerify signature", AlertDescription.decrypt_error,
+                fatalAlert.getAlertDescription());
+        }
+
+        assertTrue("the server did not receive a client certificate", harness.serverPeerCertChainLength > 0);
+    }
+
+    /**
      * RFC 9147 5.8.1. The client's final flight is dropped once, so the server retransmits its own flight
      * under the handshake traffic keys and the client must answer with a retransmitted Finished at the epoch
      * the server can still read. Without the record layer retaining the handshake epoch for reading, the
@@ -131,16 +270,19 @@ public class DTLS13ProtocolTest
         checkUnifiedHeadersAfterHello(harness.clientRecords(), "client");
 
         /*
-         * The Finished still goes out at the handshake epoch first, and the retransmission of it arrives after
-         * the client has moved on to epoch 3 - which is the whole point: the write epoch is not wound back, so
-         * the retransmission is addressed to the retained handshake epoch while application data continues at
-         * the application epoch.
+         * The final flight still goes out at the handshake epoch first, and the retransmission of it arrives
+         * after the client has moved on to epoch 3 - which is the whole point: the write epoch is not wound
+         * back, so the retransmission is addressed to the retained handshake epoch while application data
+         * continues at the application epoch.
          */
         assertEquals("the client's first protected record was not at the handshake epoch", 2,
             firstProtectedEpoch(harness.clientRecords()));
-        assertTrue("the client did not retransmit at the handshake epoch after reaching epoch 3",
-            lastProtectedEpoch(harness.clientRecords()) == 3
-                && epochSequence(harness.clientRecords()).indexOf("323") >= 0);
+
+        String clientEpochs = epochSequence(harness.clientRecords());
+
+        assertTrue("the client did not retransmit at the handshake epoch after reaching epoch 3 (epochs: "
+            + clientEpochs + ")", lastProtectedEpoch(harness.clientRecords()) == 3
+                && retransmittedAtHandshakeEpochAfterApplicationEpoch(clientEpochs));
     }
 
     /**
@@ -205,12 +347,11 @@ public class DTLS13ProtocolTest
     }
 
     /**
-     * RFC 9147 5.1. The server's denial-of-service countermeasure for DTLS 1.3 is a HelloRetryRequest with a
-     * "cookie" extension, not a HelloVerifyRequest. The handshake must complete after the retry, and the proof
-     * that it did so over the right transcript is the Finished verification: RFC 8446 4.4.1 replaces the first
-     * ClientHello with a synthetic "message_hash" message, and if either peer computed that substitution
-     * differently the verify_data would not match and the handshake would have failed with "decrypt_error".
-     * The verify data of each side is compared against what the other side computed for it, so a transcript
+     * RFC 8446 4.4.1. A HelloRetryRequest changes how the transcript is computed: the first ClientHello is
+     * replaced by a synthetic "message_hash" message. The handshake must complete after the retry, and the
+     * proof that it did so over the right transcript is the Finished verification: if either peer computed that
+     * substitution differently the verify_data would not match and the handshake would have failed with
+     * "decrypt_error". The verify data of each side is compared against what the other side computed for it, so a transcript
      * that merely happened to agree on something wrong is still caught by
      * {@link #testSecondClientHelloEchoesTheCookie}'s check of the bytes on the wire.
      */
@@ -898,6 +1039,19 @@ public class DTLS13ProtocolTest
         assertTrue(side + " never reached epoch 3", seenEpoch3);
     }
 
+    /**
+     * Whether a side, having reached the application epoch, then sent something at the handshake epoch and
+     * carried on at the application epoch: a '3' in the epoch sequence, then a '2', then another '3'. The
+     * flight being retransmitted may be any number of records, so the run of 2s is not a fixed length.
+     */
+    private static boolean retransmittedAtHandshakeEpochAfterApplicationEpoch(String epochs)
+    {
+        int epoch3 = epochs.indexOf('3');
+        int epoch2After = epoch3 < 0 ? -1 : epochs.indexOf('2', epoch3 + 1);
+
+        return epoch2After >= 0 && epochs.indexOf('3', epoch2After + 1) >= 0;
+    }
+
     /** The epoch bits of each protected record, in order, as digits. */
     private static String epochSequence(Vector records)
     {
@@ -970,6 +1124,15 @@ public class DTLS13ProtocolTest
         ProtocolVersion[] serverVersions = ProtocolVersion.DTLSv13.only();
 
         /*
+         * Client authentication, configured as TlsTestConfig / DTLSTestSuite configure it for DTLS 1.2: what
+         * the server asks for, and what the client answers with. The defaults are what MockDTLSServer and
+         * MockDTLSClient do of their own accord, which is to ask optionally and decline - the same pair of
+         * defaults MockTlsServer and MockTlsClient have for TLS 1.3.
+         */
+        int clientAuth = TlsTestConfig.CLIENT_AUTH_NONE;
+        int serverCertReq = TlsTestConfig.SERVER_CERT_REQ_OPTIONAL;
+
+        /*
          * Only worth lowering for a test where the client aborts partway: the server then has no peer left to
          * hear from, and shutting the harness down waits for its handshake to give up. Where the client aborts
          * before installing the handshake traffic keys, its alert is an epoch-0 record the server can no
@@ -993,6 +1156,10 @@ public class DTLS13ProtocolTest
         byte[] clientPeerVerifyData = null;
         byte[] serverLocalVerifyData = null;
         byte[] serverPeerVerifyData = null;
+
+        // Lengths of the certificate chain the client sent and the one the server received, or -1 for none
+        int clientLocalCertChainLength = -1;
+        int serverPeerCertChainLength = -1;
 
         // Counts of the server's protected (epoch 3) records, taken while no application data is in flight
         int serverEpoch3AfterHandshake = -1;
@@ -1027,6 +1194,37 @@ public class DTLS13ProtocolTest
                     clientVersion = version;
                 }
 
+                public TlsAuthentication getAuthentication() throws IOException
+                {
+                    final TlsAuthentication authentication = super.getAuthentication();
+
+                    return new TlsAuthentication()
+                    {
+                        public void notifyServerCertificate(TlsServerCertificate serverCertificate)
+                            throws IOException
+                        {
+                            authentication.notifyServerCertificate(serverCertificate);
+                        }
+
+                        /*
+                         * MockDTLSClient's own answer depends on the 'certificate_types' a DTLS 1.3
+                         * CertificateRequest does not have (RFC 8446 4.3.2 replaced them with
+                         * 'signature_algorithms'), so the credentials are selected here instead, the way
+                         * TlsTestClientImpl selects them for TLS 1.3.
+                         */
+                        public TlsCredentials getClientCredentials(CertificateRequest certificateRequest)
+                            throws IOException
+                        {
+                            if (TlsTestConfig.CLIENT_AUTH_NONE == clientAuth)
+                            {
+                                return null;
+                            }
+
+                            return clientCredentials(certificateRequest);
+                        }
+                    };
+                }
+
                 public void notifyHandshakeComplete() throws IOException
                 {
                     super.notifyHandshakeComplete();
@@ -1036,6 +1234,86 @@ public class DTLS13ProtocolTest
                     clientCipherSuite = sp.getCipherSuite();
                     clientLocalVerifyData = sp.getLocalVerifyData();
                     clientPeerVerifyData = sp.getPeerVerifyData();
+
+                    Certificate localCertificate = sp.getLocalCertificate();
+                    clientLocalCertChainLength = null == localCertificate
+                        ?   -1
+                        :   localCertificate.getCertificateList().length;
+                }
+
+                /**
+                 * The RSA client credentials, with the CertificateVerify signature corrupted for
+                 * CLIENT_AUTH_INVALID_VERIFY. RSA PKCS#1 v1.5 signatures are not usable in a (D)TLS 1.3
+                 * CertificateVerify, so the PSS scheme is selected explicitly, as TlsTestClientImpl does.
+                 */
+                private TlsCredentials clientCredentials(CertificateRequest certificateRequest) throws IOException
+                {
+                    Vector supportedSigAlgs = certificateRequest.getSupportedSignatureAlgorithms();
+
+                    SignatureAndHashAlgorithm pss = SignatureAndHashAlgorithm.rsa_pss_rsae_sha256;
+                    if (!TlsUtils.containsSignatureAlgorithm(supportedSigAlgs, pss))
+                    {
+                        throw new TlsFatalAlert(AlertDescription.internal_error,
+                            "the server did not offer " + pss);
+                    }
+
+                    final TlsCredentialedSigner credentials = TlsTestUtils.loadSignerCredentials(context,
+                        new String[]{ "x509-client-rsa.pem" }, "x509-client-key-rsa.pem", pss);
+
+                    if (TlsTestConfig.CLIENT_AUTH_INVALID_VERIFY != clientAuth)
+                    {
+                        return credentials;
+                    }
+
+                    return new TlsCredentialedSigner()
+                    {
+                        public byte[] generateRawSignature(byte[] hash) throws IOException
+                        {
+                            return corruptBit(credentials.generateRawSignature(hash));
+                        }
+
+                        public Certificate getCertificate()
+                        {
+                            return credentials.getCertificate();
+                        }
+
+                        public SignatureAndHashAlgorithm getSignatureAndHashAlgorithm()
+                        {
+                            return credentials.getSignatureAndHashAlgorithm();
+                        }
+
+                        public TlsStreamSigner getStreamSigner() throws IOException
+                        {
+                            final TlsStreamSigner streamSigner = credentials.getStreamSigner();
+                            if (null == streamSigner)
+                            {
+                                return null;
+                            }
+
+                            return new TlsStreamSigner()
+                            {
+                                public OutputStream getOutputStream() throws IOException
+                                {
+                                    return streamSigner.getOutputStream();
+                                }
+
+                                public byte[] getSignature() throws IOException
+                                {
+                                    return corruptBit(streamSigner.getSignature());
+                                }
+                            };
+                        }
+                    };
+                }
+
+                private byte[] corruptBit(byte[] bs)
+                {
+                    bs = Arrays.clone(bs);
+
+                    int bit = context.getCrypto().getSecureRandom().nextInt(bs.length << 3);
+                    bs[bit >>> 3] ^= (1 << (bit & 7));
+
+                    return bs;
                 }
             };
             client.setHandshakeTimeoutMillis(HANDSHAKE_TIMEOUT_MILLIS);
@@ -1075,6 +1353,33 @@ public class DTLS13ProtocolTest
                     serverVersion = version;
 
                     return version;
+                }
+
+                public CertificateRequest getCertificateRequest() throws IOException
+                {
+                    if (TlsTestConfig.SERVER_CERT_REQ_NONE == serverCertReq)
+                    {
+                        return null;
+                    }
+
+                    return super.getCertificateRequest();
+                }
+
+                public void notifyClientCertificate(Certificate clientCertificate) throws IOException
+                {
+                    serverPeerCertChainLength = clientCertificate.getCertificateList().length;
+
+                    /*
+                     * RFC 8446 4.4.2.4. An empty chain is the client declining, which a server that requires
+                     * client authentication must refuse - as TlsTestServerImpl refuses it for DTLS 1.2, with
+                     * the 1.3 alert.
+                     */
+                    if (clientCertificate.isEmpty() && TlsTestConfig.SERVER_CERT_REQ_MANDATORY == serverCertReq)
+                    {
+                        throw new TlsFatalAlert(AlertDescription.certificate_required);
+                    }
+
+                    super.notifyClientCertificate(clientCertificate);
                 }
 
                 public void notifyHandshakeComplete() throws IOException
@@ -1231,8 +1536,11 @@ public class DTLS13ProtocolTest
             int off = PLAINTEXT_HEADER_LENGTH;
             record[off] = (byte)HandshakeType.finished;
             record[off + 3] = (byte)bodyLength;
-            // The client's final flight is its Finished, which follows its ClientHello as message_seq 1
-            record[off + 5] = (byte)1;
+            /*
+             * The client's ClientHello is message_seq 0, its Certificate answering the server's
+             * CertificateRequest is 1, and its Finished is 2.
+             */
+            record[off + 5] = (byte)2;
             record[off + 11] = (byte)bodyLength;
 
             rawClientTransport.send(record, 0, record.length);

@@ -475,13 +475,29 @@ public class DTLSServerProtocol
         byte[] serverFinishedTranscriptHash = send13ServerHelloCoda(state, handshake, afterHelloRetryRequest);
 
         /*
-         * RFC 8446 4.4. With no CertificateRequest sent, the client's flight is its Finished alone; a
-         * Certificate or CertificateVerify here is unexpected, which is what receiveMessageDelayedDigest
-         * reports.
-         *
-         * TODO[dtls13] Task 6 adds in-handshake client authentication (CertificateRequest, then the
-         * client's Certificate and CertificateVerify ahead of its Finished).
+         * RFC 8446 4.4.2. A client that was sent a CertificateRequest always answers with a Certificate,
+         * carrying an empty certificate list when it declines, and follows it with a CertificateVerify only
+         * when that list is not empty. With no CertificateRequest sent, the client's flight is its Finished
+         * alone, and a Certificate or CertificateVerify here is unexpected - which is what the type check in
+         * receiveMessageDelayedDigest reports. This is the counterpart of TlsServerProtocol's
+         * skip13ClientCertificate and skip13ClientCertificateVerify, which make the same two rules explicit
+         * because its dispatcher reaches the Finished handler from either state.
          */
+        if (null != state.certificateRequest)
+        {
+            receive13ClientCertificate(state, handshake.receiveMessageBody(HandshakeType.certificate));
+
+            if (expectCertificateVerifyMessage(state))
+            {
+                // NOTE: Verified over the transcript excluding the CertificateVerify message itself
+                DTLSReliableHandshake.Message certificateVerifyMessage = handshake.receiveMessageDelayedDigest(
+                    HandshakeType.certificate_verify);
+                receive13ClientCertificateVerify(state, certificateVerifyMessage.getBody(),
+                    handshake.getHandshakeHash());
+                handshake.updateHandshakeMessagesDigest(certificateVerifyMessage);
+            }
+        }
+
         {
             // NOTE: Calculated exclusive of the actual Finished message from the client
             DTLSReliableHandshake.Message finishedMessage = handshake.receiveMessageDelayedDigest(
@@ -566,16 +582,22 @@ public class DTLSServerProtocol
         {
             // CertificateRequest
             {
-                /*
-                 * TODO[dtls13] Task 6 sends the CertificateRequest here and processes the client's
-                 * Certificate/CertificateVerify. Until then a server configured to request client
-                 * authentication must fail rather than silently complete an unauthenticated handshake.
-                 */
                 state.certificateRequest = server.getCertificateRequest();
                 if (null != state.certificateRequest)
                 {
-                    throw new TlsFatalAlert(AlertDescription.internal_error,
-                        "DTLS 1.3 client authentication is not implemented");
+                    /*
+                     * RFC 8446 4.3.2. In a handshake the 'certificate_request_context' is zero length; a
+                     * non-empty one belongs to post-handshake authentication, which this does not support.
+                     */
+                    if (!state.certificateRequest.hasCertificateRequestContext(TlsUtils.EMPTY_BYTES))
+                    {
+                        throw new TlsFatalAlert(AlertDescription.internal_error);
+                    }
+
+                    TlsUtils.establishServerSigAlgs(securityParameters, state.certificateRequest);
+
+                    handshake.sendMessage(HandshakeType.certificate_request,
+                        generateCertificateRequest(state, state.certificateRequest));
                 }
             }
 
@@ -1024,6 +1046,45 @@ public class DTLSServerProtocol
         ByteArrayOutputStream buf = new ByteArrayOutputStream();
         certificateVerify.encode(buf);
         return buf.toByteArray();
+    }
+
+    /**
+     * Mirrors TlsServerProtocol.receive13ClientCertificate. The message is parsed exactly as the DTLS 1.2
+     * path parses it; RFC 8446 4.4.2's extra rule is only that the client must not send one unasked.
+     */
+    protected void receive13ClientCertificate(ServerHandshakeState state, byte[] body)
+        throws IOException
+    {
+        if (null == state.certificateRequest)
+        {
+            throw new TlsFatalAlert(AlertDescription.unexpected_message);
+        }
+
+        processClientCertificate(state, body);
+    }
+
+    /**
+     * Mirrors TlsServerProtocol.receive13ClientCertificateVerify. The transcript passed in must exclude the
+     * CertificateVerify message itself, which is why it is read with a delayed digest.
+     */
+    protected void receive13ClientCertificateVerify(ServerHandshakeState state, byte[] body,
+        TlsHandshakeHash handshakeHash) throws IOException
+    {
+        TlsServerContextImpl serverContext = state.serverContext;
+
+        Certificate clientCertificate = serverContext.getSecurityParametersHandshake().getPeerCertificate();
+        if (null == clientCertificate || clientCertificate.isEmpty())
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        ByteArrayInputStream buf = new ByteArrayInputStream(body);
+
+        CertificateVerify certificateVerify = CertificateVerify.parse(serverContext, buf);
+
+        TlsProtocol.assertEmpty(buf);
+
+        TlsUtils.verify13CertificateVerifyClient(serverContext, handshakeHash, certificateVerify);
     }
 
     /**

@@ -98,18 +98,6 @@ class MockDTLSServer
 
     public CertificateRequest getCertificateRequest() throws IOException
     {
-        /*
-         * TODO[dtls13] Client authentication is not implemented for DTLS 1.3 yet, and the server raises a
-         * fatal internal_error rather than silently dropping the request, so ask for none.
-         */
-        if (TlsUtils.isTLSv13(context))
-        {
-            return null;
-        }
-
-        short[] certificateTypes = new short[]{ ClientCertificateType.rsa_sign,
-            ClientCertificateType.dss_sign, ClientCertificateType.ecdsa_sign };
-
         Vector serverSigAlgs = null;
         if (TlsUtils.isSignatureAlgorithmsExtensionAllowed(context.getServerVersion()))
         {
@@ -123,6 +111,20 @@ class MockDTLSServer
 
         // All the CA certificates are currently configured with this subject
         certificateAuthorities.addElement(new X500Name("CN=BouncyCastle TLS Test CA"));
+
+        if (TlsUtils.isTLSv13(context))
+        {
+            // TODO[dtls13] Support for non-empty request context
+            byte[] certificateRequestContext = TlsUtils.EMPTY_BYTES;
+
+            Vector serverSigAlgsCert = null;
+
+            return new CertificateRequest(certificateRequestContext, serverSigAlgs, serverSigAlgsCert,
+                certificateAuthorities);
+        }
+
+        short[] certificateTypes = new short[]{ ClientCertificateType.rsa_sign,
+            ClientCertificateType.dss_sign, ClientCertificateType.ecdsa_sign };
 
         return new CertificateRequest(certificateTypes, serverSigAlgs, certificateAuthorities);
     }
