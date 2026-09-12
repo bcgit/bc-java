@@ -66,6 +66,14 @@ public class DTLS13ProtocolTest
     private static final int UNIFIED_FLAG_LENGTH = 0x04;
     private static final int UNIFIED_EPOCH_BITS_MASK = 0x03;
 
+    /**
+     * The MTU the handshakes here run at, and a smaller one at which the client's authenticated flight no
+     * longer fits its records and has to be fragmented (RFC 9147 5.5). Both are above the 576-byte floor
+     * RFC 9147 4.2 assumes for a path MTU estimate only in the first case: 512 is deliberately small.
+     */
+    private static final int DEFAULT_MTU = 1500;
+    private static final int FRAGMENTING_MTU = 512;
+
     /** RFC 9147 5.2. The DTLS handshake message header, which the wire keeps and the transcript omits. */
     private static final int MESSAGE_HEADER_LENGTH = 12;
 
@@ -144,7 +152,8 @@ public class DTLS13ProtocolTest
          * No CertificateRequest was sent, so the client was never asked for credentials and the server never
          * saw a Certificate message of any kind - not even the empty one a declining client would send.
          */
-        assertEquals("the client was asked for a certificate", 0, harness.clientCertificateRequestsSeen);
+        assertEquals("CertificateRequests the client was asked to answer", 0,
+            harness.clientCertificateRequestsSeen);
         assertEquals("the client sent a certificate of its own", -1, harness.clientLocalCertChainLength);
         assertEquals("the server received a client Certificate message", -1, harness.serverPeerCertChainLength);
 
@@ -395,19 +404,46 @@ public class DTLS13ProtocolTest
     }
 
     /**
-     * The authenticated client flight over a lossy path. It is the largest flight either peer sends - a real
-     * certificate chain plus a CertificateVerify over it - so it is the one whose retransmission can span
-     * several records, and the per-record epoch bookkeeping and the flight boundaries both have more to get
-     * wrong here than for a bare Finished. Loss in both directions is what makes any of that run.
+     * The authenticated client flight, fragmented across several records and then lost. It is the largest
+     * flight either peer sends - a real certificate chain plus a CertificateVerify over it - so it is the
+     * only one the record layer has to fragment, and the per-fragment epoch bookkeeping and the flight
+     * boundaries both have more to get wrong here than for a bare Finished.
+     * <p>
+     * The loss is deterministic rather than seeded-random: the datagram carrying the start of the flight is
+     * dropped outright, the way {@link #testClientServerWithClientFinishedLost} drops the bare Finished, so
+     * that the flight under test is certainly the thing that was lost and the drop is counted where the
+     * test can see it. The same handshake is also run first at the normal MTU, purely to count how many
+     * records the flight needs when nothing has to be fragmented: the two runs send the identical sequence
+     * of handshake messages, so the extra records at the smaller MTU can only be fragmentation - which is
+     * how fragmentation is established here without decrypting anything.
+     * </p>
      */
-    public void testClientServerWithClientAuthenticationAndPacketLoss() throws Exception
+    public void testClientServerWithClientAuthenticationFlightLost() throws Exception
     {
+        Harness unfragmented = new Harness();
+        unfragmented.clientAuth = TlsTestConfig.CLIENT_AUTH_VALID;
+        unfragmented.serverCertReq = TlsTestConfig.SERVER_CERT_REQ_MANDATORY;
+
+        unfragmented.run(16);
+
+        assertNotNull("no application data echoed back", unfragmented.echo);
+
+        String unfragmentedEpochs = epochSequence(unfragmented.clientRecords());
+        int unfragmentedFlightRecords = countEpoch2BeforeFirstEpoch3(unfragmentedEpochs);
+
+        assertTrue("the authenticated flight was not sent at the handshake epoch (epochs: "
+            + unfragmentedEpochs + ")", unfragmentedFlightRecords > 0);
+
         Harness harness = new Harness();
         harness.clientAuth = TlsTestConfig.CLIENT_AUTH_VALID;
         harness.serverCertReq = TlsTestConfig.SERVER_CERT_REQ_MANDATORY;
-        harness.loss = new UnreliableDatagramTransportFactory(new Random(0x2ADF1347L), 10, 10);
+        harness.networkMtu = FRAGMENTING_MTU;
+        harness.dropFirstClientEpoch2Datagram = true;
 
         harness.run(16);
+
+        // The drop really fired, so nothing below can pass on a path that turned out to be lossless
+        assertTrue("the client's authenticated flight was not dropped", harness.dropped > 0);
 
         assertEquals("client negotiated version", ProtocolVersion.DTLSv13, harness.clientVersion);
         assertEquals("server negotiated version", ProtocolVersion.DTLSv13, harness.serverVersion);
@@ -428,9 +464,37 @@ public class DTLS13ProtocolTest
         assertNotNull("no application data echoed back", harness.echo);
         assertTrue("echoed application data differs", Arrays.areEqual(harness.request, harness.echo));
 
+        String clientEpochs = epochSequence(harness.clientRecords());
+        int flightRecords = countEpoch2BeforeFirstEpoch3(clientEpochs);
+
+        /*
+         * RFC 9147 5.5. The same messages took more records at the smaller MTU, so at least one of them was
+         * fragmented - and the flight therefore spans several records, with a fragment_offset to get right
+         * on each of them, which is the specific risk this test exists for.
+         */
+        assertTrue("the reduced MTU did not fragment the authenticated flight (" + flightRecords
+            + " records at MTU " + FRAGMENTING_MTU + " against " + unfragmentedFlightRecords + " at MTU "
+            + DEFAULT_MTU + ")", flightRecords > unfragmentedFlightRecords);
+
+        /*
+         * And the whole of that fragmented flight came back after the client had moved on to the application
+         * epoch: retransmission is at the epoch a fragment was first sent under, not at the current one.
+         */
+        assertTrue("the client did not retransmit its whole authenticated flight after reaching the"
+            + " application epoch (epochs: " + clientEpochs + ")",
+            countEpoch2AfterFirstEpoch3(clientEpochs) >= flightRecords);
+
         checkUnifiedHeadersAfterHello(harness.clientRecords(), "client");
 
-        checkEpochProgression(harness.clientRecords(), "client");
+        assertEquals("the client's first protected record was not at the handshake epoch", 2,
+            firstProtectedEpoch(harness.clientRecords()));
+        assertEquals("the client did not end at the application epoch", 3,
+            lastProtectedEpoch(harness.clientRecords()));
+
+        /*
+         * The server never winds its own write epoch back: it has not seen the client's Finished when it
+         * retransmits, so its whole run is monotonic even though the client's is not.
+         */
         checkEpochProgression(harness.serverRecords(), "server");
     }
 
@@ -1518,6 +1582,27 @@ public class DTLS13ProtocolTest
         return count;
     }
 
+    /**
+     * How many epoch-2 records a side sent before the first epoch-3 one: the size, in records, of its
+     * original final flight.
+     */
+    private static int countEpoch2BeforeFirstEpoch3(String epochs)
+    {
+        int epoch3 = epochs.indexOf('3');
+        int end = epoch3 < 0 ? epochs.length() : epoch3;
+
+        int count = 0;
+        for (int i = 0; i < end; ++i)
+        {
+            if ('2' == epochs.charAt(i))
+            {
+                ++count;
+            }
+        }
+
+        return count;
+    }
+
     private static boolean isAllZeroes(byte[] bs)
     {
         for (int i = 0; i < bs.length; ++i)
@@ -1595,6 +1680,7 @@ public class DTLS13ProtocolTest
          * longer read, so giving up is the only way out.
          */
         int serverHandshakeTimeoutMillis = HANDSHAKE_TIMEOUT_MILLIS;
+        int networkMtu = DEFAULT_MTU;
         UnreliableDatagramTransportFactory loss = null;
 
         ProtocolVersion clientVersion = null;
@@ -1986,7 +2072,7 @@ public class DTLS13ProtocolTest
                 }
             };
 
-            MockDatagramAssociation network = new MockDatagramAssociation(1500);
+            MockDatagramAssociation network = new MockDatagramAssociation(networkMtu);
 
             DTLSServerProtocol serverProtocol = new DTLSServerProtocol();
 
