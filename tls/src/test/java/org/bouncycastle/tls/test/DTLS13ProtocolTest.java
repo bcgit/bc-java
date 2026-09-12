@@ -135,6 +135,16 @@ public class DTLS13ProtocolTest
     /** The client starts one with 'update_not_requested', so only the client's sending direction rekeys. */
     private static final int KEY_UPDATE_CLIENT_ONLY = 2;
 
+    /**
+     * Bounds on the two post-handshake pump loops. Both exit as soon as the records they are waiting for have
+     * appeared, so the deadline is only spent by a run that is already failing; it has to clear the peer's one
+     * second retransmit interval and its backoff with room for a loaded machine, and be no more generous than
+     * that. The settle period is spent on every run, and is what lets a peer's answer to the last record
+     * arrive, so it has to stay long enough to be reliable and short enough not to dominate the suite.
+     */
+    private static final int KEY_UPDATE_DEADLINE_MILLIS = 8000;
+    private static final int KEY_UPDATE_SETTLE_MILLIS = 1000;
+
     /** The application payloads of the exchanges after the handshake, distinct in both length and content. */
     private static final byte[] REQUEST_2 = new byte[24];
     private static final byte[] REQUEST_3 = new byte[40];
@@ -2653,7 +2663,8 @@ public class DTLS13ProtocolTest
              */
             int target = clientEpoch3Before + (dropKeyUpdateDatagram ? 2 : 1);
 
-            pumpUntilClientRecordsAtEpoch(dtlsClient, 3, target, 20000, 1000, earlier);
+            pumpUntilClientRecordsAtEpoch(dtlsClient, 3, target, KEY_UPDATE_DEADLINE_MILLIS,
+                KEY_UPDATE_SETTLE_MILLIS, earlier);
 
             this.clientKeyUpdateCopies = countRecordsAtEpoch(clientRecords(), 3) - clientEpoch3Before;
 
@@ -2805,7 +2816,8 @@ public class DTLS13ProtocolTest
              */
             int expected = holdFirstClientEpoch2Datagram ? 2 : 1;
 
-            this.serverEpoch3AfterHandshake = drainServerEpoch3(dtlsClient, expected, 20000, 1500);
+            this.serverEpoch3AfterHandshake = drainServerEpoch3(dtlsClient, expected,
+                KEY_UPDATE_DEADLINE_MILLIS, KEY_UPDATE_SETTLE_MILLIS);
 
             injectPlaintextHandshakeRecord();
 

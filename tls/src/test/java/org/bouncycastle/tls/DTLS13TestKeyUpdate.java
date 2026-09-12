@@ -26,7 +26,7 @@ public class DTLS13TestKeyUpdate
     {
         short value = requestUpdate ? KeyUpdateRequest.update_requested : KeyUpdateRequest.update_not_requested;
 
-        DTLS13PostHandshake postHandshake = transport.getRecordLayerForTest().getPostHandshake();
+        DTLS13PostHandshake postHandshake = transport.getRecordLayer().getPostHandshake();
         if (null == postHandshake)
         {
             throw new IllegalStateException("no DTLS 1.3 post-handshake owner on this transport");

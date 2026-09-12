@@ -115,7 +115,7 @@ class DTLS13PostHandshake
      * RFC 9147 7.2. An ACK retires the fragments it names; a message all of whose fragments have been
      * acknowledged is no longer retransmitted.
      */
-    public void receivedAck(Vector recordNumbers)
+    public synchronized void receivedAck(Vector recordNumbers)
     {
         flightTracker.acknowledge(recordNumbers);
 
@@ -153,10 +153,30 @@ class DTLS13PostHandshake
      * is still unacknowledged - section 5.8.4 forbids a second one, and there would be nowhere to put the
      * derived epoch in any case.
      * </p>
+     * <p>
+     * <b>A deliberate deviation from RFC 8446, disclosed here because it is the only one in this
+     * implementation.</b> Two MUSTs collide in that first case and they cannot both be honoured. RFC 8446
+     * 4.6.3: a peer that receives {@code update_requested} MUST send a KeyUpdate of its own "prior to sending
+     * its next Application Data record". RFC 9147 5.8.4: an implementation MUST NOT send a KeyUpdate "if an
+     * earlier message of the same type has not yet been acknowledged". When an {@code update_requested}
+     * arrives while our own KeyUpdate is outstanding, honouring 8446 means breaking 9147, and the only way to
+     * break neither is to stop sending application data until the outstanding update clears. So 9147 is
+     * followed: the obligation is DEFERRED past application data - the latch above holds it - and discharged
+     * on the first send after the outstanding KeyUpdate has been acknowledged.
+     * </p>
+     * <p>
+     * 9147 wins on three grounds. It is the DTLS specification constraining a TLS rule it inherits. Its rule
+     * is load-bearing: only two epoch bits are on the wire (RFC 9147 4.2.2), so a second unacknowledged
+     * KeyUpdate makes the receiver's epoch reconstruction ambiguous, whereas 8446's rule is timeliness
+     * hygiene - the answer is late, not absent. And the third option, blocking application data until the
+     * outstanding update clears, would be a self-inflicted stall on the data path in response to a
+     * peer-controlled message. The deferral is bounded by our own retransmit state machine (5.8.4), which is
+     * already driving that KeyUpdate to an acknowledgement.
+     * </p>
      * The record this was called for is unaffected: it still goes out at the current write epoch, because
      * section 8 will not let the write epoch move until the KeyUpdate is acknowledged.
      */
-    void checkKeyUpdateBeforeSend() throws IOException
+    synchronized void checkKeyUpdateBeforeSend() throws IOException
     {
         if (null != keyUpdateMessage)
         {
@@ -183,14 +203,16 @@ class DTLS13PostHandshake
      * new epoch can only be built at this moment - and because a derivation that fails must fail before a
      * KeyUpdate has been put on the wire announcing an update we then could not perform. The message goes out
      * SECOND, at the old epoch, which is the only epoch the peer can read. The state machine is armed LAST,
-     * so that nothing is left latched if either of the first two throws.
+     * and within that the latch - {@code keyUpdateMessage} - is assigned after the flight tracker it speaks
+     * for, so that nothing is left latched if any earlier step throws and nothing observes the latch set over
+     * a tracker that does not yet describe this message.
      * </p>
      *
      * @throws IllegalStateException if a KeyUpdate of ours is already awaiting acknowledgement. RFC 9147
      *             5.8.4: "implementations MUST NOT send KeyUpdate ... messages if an earlier message of the
      *             same type has not yet been acknowledged."
      */
-    void sendKeyUpdate(short requestUpdate) throws IOException
+    synchronized void sendKeyUpdate(short requestUpdate) throws IOException
     {
         if (null != keyUpdateMessage)
         {
@@ -215,14 +237,24 @@ class DTLS13PostHandshake
 
         next_send_seq += 1;
 
-        this.keyUpdateMessage = message;
+        /*
+         * The flight tracker is reset and registered BEFORE 'keyUpdateMessage', which is the latch: while the
+         * latch is set, receivedAck acts on a complete tracker by installing the new write epoch, so the
+         * tracker must already describe this KeyUpdate's fragment by the time the latch says one is
+         * outstanding. Ordering it this way makes that true by construction rather than by the (true, but
+         * two-step and easily invalidated) argument that isComplete() returns false on an empty tracker and
+         * the tracker happens to be empty here.
+         */
+        flightTracker.reset();
+        flightTracker.register(recordNumber, message_seq, 0, 1);
+
         this.keyUpdateEpoch = epoch;
         this.keyUpdateMessageSeq = message_seq;
         this.keyUpdateResendMillis = recordLayer.getHandshakeResendTimeMillis();
         this.keyUpdateResendTimeout = new Timeout(keyUpdateResendMillis);
 
-        flightTracker.reset();
-        flightTracker.register(recordNumber, message_seq, 0, 1);
+        // Last: the latch. Nothing above it leaves the state machine running if it throws.
+        this.keyUpdateMessage = message;
 
         /*
          * RFC 8446 4.6.3. Whatever prompted this one, it discharges any obligation to answer an
@@ -235,7 +267,7 @@ class DTLS13PostHandshake
      * RFC 9147 5.8.4. Drive the sending state machines, which "reduce to waiting for an ACK and
      * retransmitting the original message". Called from the record layer's receive loop.
      */
-    void checkTimeouts(long currentTimeMillis) throws IOException
+    synchronized void checkTimeouts(long currentTimeMillis) throws IOException
     {
         if (null == keyUpdateMessage || !Timeout.hasExpired(keyUpdateResendTimeout, currentTimeMillis))
         {
@@ -262,19 +294,19 @@ class DTLS13PostHandshake
      * record layer's receive loop, which must not block past it - a peer waiting for an ACK it will never get
      * because we never woke up to resend is the failure this exists to prevent.
      */
-    Timeout getResendTimeout()
+    synchronized Timeout getResendTimeout()
     {
         return keyUpdateResendTimeout;
     }
 
     /** @return true while a KeyUpdate of ours is awaiting acknowledgement. */
-    boolean isKeyUpdateOutstanding()
+    synchronized boolean isKeyUpdateOutstanding()
     {
         return null != keyUpdateMessage;
     }
 
     /** @return the epoch the outstanding KeyUpdate was sent at, or -1 when none is outstanding. */
-    int getKeyUpdateEpoch()
+    synchronized int getKeyUpdateEpoch()
     {
         return keyUpdateEpoch;
     }
@@ -283,7 +315,7 @@ class DTLS13PostHandshake
      * Bring the KeyUpdate retransmit timeout forward so that the next receive expires it through its own code
      * path, instead of a test having to wait out the peer's configured resend interval.
      */
-    void expireKeyUpdateResendTimeoutForTest()
+    synchronized void expireKeyUpdateResendTimeoutForTest()
     {
         if (null != keyUpdateResendTimeout)
         {
@@ -296,7 +328,7 @@ class DTLS13PostHandshake
      *
      * @param epoch the epoch the record was protected under, as resolved by the record layer.
      */
-    void receivedHandshakeRecord(int epoch, byte[] buf, int off, int len)
+    synchronized void receivedHandshakeRecord(int epoch, byte[] buf, int off, int len)
         throws IOException
     {
         if (epoch < MIN_EPOCH)
@@ -530,6 +562,14 @@ class DTLS13PostHandshake
              * driven by the sending side, which owns those. Section 8 also overrides RFC 8446 here when the
              * epoch limit would be exceeded: the flag is then to be ignored rather than honoured, and that
              * judgement belongs with the sender too, which is the only side that knows its own epoch.
+             *
+             * NOTE: "prior to sending its next Application Data record" is quoted above as the rule, and on
+             * one path it is knowingly NOT honoured. If our own KeyUpdate is outstanding when this arrives,
+             * RFC 9147 5.8.4 forbids sending a second one, so the obligation is deferred PAST application
+             * data until the outstanding one is acknowledged. That is a deliberate reading of 9147 over 8446,
+             * not an oversight; checkKeyUpdateBeforeSend carries the grounds, and
+             * DTLS13KeyUpdateTest.testAnUpdateRequestedIsDeferredWhileOurOwnKeyUpdateIsOutstanding exercises
+             * it.
              */
             if (KeyUpdateRequest.update_requested == requestUpdate)
             {
@@ -545,31 +585,25 @@ class DTLS13PostHandshake
     }
 
     /** RFC 9147 7.2. The outstanding post-handshake messages awaiting acknowledgement. */
-    DTLS13FlightTracker getFlightTracker()
+    synchronized DTLS13FlightTracker getFlightTracker()
     {
         return flightTracker;
     }
 
-    /** The message_seq the next post-handshake message we send will carry. */
-    int getNextSendSeq()
-    {
-        return next_send_seq;
-    }
-
     /** The message_seq of the next post-handshake message we expect to receive. */
-    int getNextReceiveSeq()
+    synchronized int getNextReceiveSeq()
     {
         return next_receive_seq;
     }
 
     /** How many NewSessionTicket messages have been received (and discarded). */
-    int getNewSessionTicketCount()
+    synchronized int getNewSessionTicketCount()
     {
         return newSessionTicketCount;
     }
 
     /** How many KeyUpdate messages have been received. */
-    int getKeyUpdateCount()
+    synchronized int getKeyUpdateCount()
     {
         return keyUpdateCount;
     }
@@ -579,13 +613,13 @@ class DTLS13PostHandshake
      * Read by the sending side, which owns the KeyUpdate state machine of RFC 9147 5.8.4 and is also the only
      * side that can apply section 8's override of this rule at the epoch limit.
      */
-    boolean isKeyUpdatePendingSend()
+    synchronized boolean isKeyUpdatePendingSend()
     {
         return keyUpdatePendingSend;
     }
 
     /** Clear the RFC 8446 4.6.3 obligation, once the sending side has answered it. */
-    void clearKeyUpdatePendingSend()
+    synchronized void clearKeyUpdatePendingSend()
     {
         this.keyUpdatePendingSend = false;
     }

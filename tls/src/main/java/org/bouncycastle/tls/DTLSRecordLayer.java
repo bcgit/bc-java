@@ -34,6 +34,13 @@ class DTLSRecordLayer
      * layers have no common base and RecordStream is one of the files this series leaves untouched.
      */
     private static final long KEY_UPDATE_SEQUENCE_LIMIT = 1L << 20;
+
+    /**
+     * The number of slots {@link #getLiveReadEpoch(int)} holds; see {@link #getLiveReadEpochs()} for what
+     * their ordering means and why every epoch resolution walks them rather than a collection.
+     */
+    private static final int LIVE_READ_EPOCH_SLOTS = 4;
+
     private static final long TCP_MSL = 1000L * 60 * 2;
     private static final long RETRANSMIT_TIMEOUT = TCP_MSL * 2;
 
@@ -657,21 +664,76 @@ class DTLSRecordLayer
      * client only - the plaintext epoch 0 that the same flight straddles.
      * <p>
      * The order is the point. Only the low 2 epoch bits are on the wire, so two held epochs can alias, and
-     * RFC 9147 4.2.2 resolves that to "the most recent past epoch which has matching bits". Iterating this
-     * collection newest-first makes that rule the structure rather than a special case, and resolving both
-     * directions through the one collection - see {@link #getEpochForRetransmit(int)} - keeps the send and
-     * receive sides from disagreeing about which epochs are held.
+     * RFC 9147 4.2.2 resolves that to "the most recent past epoch which has matching bits". Walking the slots
+     * newest-first makes that rule the structure rather than a special case, and resolving both directions
+     * through the one ordering - {@link #getLiveReadEpoch(int)}, which this method, the unified-header read
+     * path and {@link #getEpochForRetransmit(int)} all walk - keeps the send and receive sides from
+     * disagreeing about which epochs are held.
      * </p>
-     * Package-private so that the epoch set itself can be asserted on directly by the tests.
+     * <p>
+     * That last claim is about the DTLS 1.3 unified-header path only. Three legacy plaintext-header read sites
+     * still probe the epoch fields by hand, and are deliberately left alone: in DTLS 1.3 the only plaintext
+     * records are at epoch 0, and an epoch retained by a key update is always 3 or higher, so a retained epoch
+     * cannot reach them.
+     * </p>
+     * This method exists for the tests, which assert on the epoch set itself. It is deliberately NOT on the
+     * per-record receive path: that walks the slots in place (see {@link #resolveReadEpochByHeaderBits(int)}),
+     * because a fresh Vector plus up to four linear scans for every received unified-header record is exactly
+     * the per-datagram allocation that github #1487's reused flight buffer set out to avoid on the send side.
      */
     Vector getLiveReadEpochs()
     {
-        Vector liveReadEpochs = new Vector(4);
-        addLiveReadEpoch(liveReadEpochs, readEpoch);
-        addLiveReadEpoch(liveReadEpochs, retainedReadEpoch);
-        addLiveReadEpoch(liveReadEpochs, retransmitEpoch);
-        addLiveReadEpoch(liveReadEpochs, retransmitEpochPlaintext);
+        Vector liveReadEpochs = new Vector(LIVE_READ_EPOCH_SLOTS);
+        for (int i = 0; i < LIVE_READ_EPOCH_SLOTS; ++i)
+        {
+            addLiveReadEpoch(liveReadEpochs, getLiveReadEpoch(i));
+        }
         return liveReadEpochs;
+    }
+
+    /**
+     * The single ordering of the live read epochs, most recent first. Every resolution of an epoch - in either
+     * direction - walks this, so that no two of them can disagree about which epochs are held or about which
+     * of two aliasing epochs is the more recent.
+     *
+     * @return the epoch in that slot, or null if the slot is empty. A slot can also repeat an epoch already
+     *         returned (in DTLS 1.2 the retained epoch is the current one); that is harmless for resolution,
+     *         where the first match wins either way, and {@link #getLiveReadEpochs()} removes the duplicate.
+     */
+    private DTLSEpoch getLiveReadEpoch(int index)
+    {
+        switch (index)
+        {
+        case 0:
+            return readEpoch;
+        case 1:
+            return retainedReadEpoch;
+        case 2:
+            return retransmitEpoch;
+        case 3:
+            return retransmitEpochPlaintext;
+        default:
+            return null;
+        }
+    }
+
+    /**
+     * RFC 9147 4.2.2. The live read epoch a received unified-header record belongs to: the most recent held
+     * epoch whose low 2 bits match the ones on the wire.
+     *
+     * @return that epoch, or null if no held epoch matches.
+     */
+    private DTLSEpoch resolveReadEpochByHeaderBits(int firstByte)
+    {
+        for (int i = 0; i < LIVE_READ_EPOCH_SLOTS; ++i)
+        {
+            DTLSEpoch liveReadEpoch = getLiveReadEpoch(i);
+            if (null != liveReadEpoch && DTLS13UnifiedHeader.matchesEpoch(firstByte, liveReadEpoch.getEpoch()))
+            {
+                return liveReadEpoch;
+            }
+        }
+        return null;
     }
 
     private static void addLiveReadEpoch(Vector liveReadEpochs, DTLSEpoch epoch)
@@ -794,7 +856,15 @@ class DTLSRecordLayer
      * {@link #handshakeSuccessful(DTLSHandshakeRetransmit)} is careful to do with the epoch it retires:
      * anything still holding it would keep that epoch's traffic keys and replay window alive for the rest of
      * the connection. {@link org.bouncycastle.tls.crypto.TlsCipher} has no destroy operation of its own, so
-     * releasing the last reference to it is the whole of what this layer can do.
+     * dropping references is the whole of what this layer can do.
+     * <p>
+     * This is not a zeroisation guarantee, and frequently not even the last reference. The two directions
+     * advance on their own key updates, so immediately after a peer key update the retained epoch is usually
+     * the SAME object as the write epoch - one epoch installed for both directions by the handshake - and
+     * nulling this field then releases nothing until our own write epoch moves. That is correct: we are still
+     * writing at it, and its keys are still in use. What this does is end the retention, so that the epoch
+     * goes when the last direction using it does.
+     * </p>
      */
     private void releaseRetainedReadEpoch()
     {
@@ -1759,20 +1829,10 @@ class DTLSRecordLayer
         /*
          * RFC 9147 4.2.2. Only the low 2 epoch bits are on the wire, so a record can only be attributed to an
          * epoch the record layer still holds, and where two held epochs alias on those bits it is the most
-         * recent of them that the record belongs to. getLiveReadEpochs is ordered most recent first, so the
-         * first match is that epoch.
+         * recent of them that the record belongs to. The live read epoch slots are ordered most recent first,
+         * so the first match is that epoch.
          */
-        DTLSEpoch recordEpoch = null;
-        Vector liveReadEpochs = getLiveReadEpochs();
-        for (int i = 0; i < liveReadEpochs.size(); ++i)
-        {
-            DTLSEpoch liveReadEpoch = (DTLSEpoch)liveReadEpochs.elementAt(i);
-            if (DTLS13UnifiedHeader.matchesEpoch(firstByte, liveReadEpoch.getEpoch()))
-            {
-                recordEpoch = liveReadEpoch;
-                break;
-            }
-        }
+        DTLSEpoch recordEpoch = resolveReadEpochByHeaderBits(firstByte);
         if (null == recordEpoch)
         {
             return -1;
@@ -2235,25 +2295,30 @@ class DTLSRecordLayer
         }
 
         /*
-         * The read side resolves through this same collection (see getLiveReadEpochs), so the two directions
-         * cannot disagree about which epochs are held: whatever has been released is resolvable by neither.
-         * The match is on the full epoch number rather than the low bits, so the collection's order does not
+         * The read side resolves through these same slots in the same order (see getLiveReadEpoch), so the two
+         * directions cannot disagree about which epochs are held: whatever has been released is resolvable by
+         * neither. The match is on the full epoch number rather than the low bits, so the order does not
          * change which epoch is found here.
          *
          * One exception, and it is not symmetric: an epoch built from the PEER's updated traffic secret
          * (DTLSEpoch.isPeerKeyed, set only by updatePeerReadEpoch) may be read at and must never be written
-         * at. A DTLSEpoch carries one cipher and one sequence number counter for both directions, so writing
-         * at the peer's epoch would encrypt under the peer's key at sequence numbers the peer has already
-         * used. Before post-handshake key updates every held epoch was one both directions shared, so this
-         * could not arise; once the read side advances on its own it can, and the epoch numbers of the two
-         * directions coincide often enough (both start from the application epoch and advance by one) that
-         * it would arise by number collision rather than by anything obviously wrong.
+         * at. Its encrypt side is NOT the peer's - TlsUtils.initCipher keys both directions, the decrypt side
+         * from the peer's traffic secret and the encrypt side from the local one, and updatePeerReadEpoch
+         * updates only the peer's secret - so that epoch's encryptor is keyed identically to the current write
+         * epoch's, while its sequence number counter starts again at zero. Writing at it would therefore put
+         * records on the wire under the SAME AEAD key at nonces the current write epoch has already used, and
+         * a peer would read them perfectly well. See DTLSEpoch.peerKeyed for why that is worse than a
+         * decryption failure would be.
+         *
+         * Before post-handshake key updates every held epoch was one both directions shared, so this could not
+         * arise; once the read side advances on its own it can, and the epoch numbers of the two directions
+         * coincide often enough (both start from the application epoch and advance by one) that it would arise
+         * by number collision rather than by anything obviously wrong.
          */
-        Vector liveReadEpochs = getLiveReadEpochs();
-        for (int i = 0; i < liveReadEpochs.size(); ++i)
+        for (int i = 0; i < LIVE_READ_EPOCH_SLOTS; ++i)
         {
-            DTLSEpoch liveReadEpoch = (DTLSEpoch)liveReadEpochs.elementAt(i);
-            if (liveReadEpoch.getEpoch() == epoch && !liveReadEpoch.isPeerKeyed())
+            DTLSEpoch liveReadEpoch = getLiveReadEpoch(i);
+            if (null != liveReadEpoch && liveReadEpoch.getEpoch() == epoch && !liveReadEpoch.isPeerKeyed())
             {
                 return liveReadEpoch;
             }

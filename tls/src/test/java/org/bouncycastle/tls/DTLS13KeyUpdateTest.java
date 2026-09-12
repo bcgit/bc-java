@@ -802,6 +802,94 @@ public class DTLS13KeyUpdateTest
     }
 
     /**
+     * RFC 8446 4.6.3 against RFC 9147 5.8.4: the one place this implementation knowingly does not honour a
+     * MUST, because a second specification forbids honouring it. 8446 has a peer that receives
+     * {@code update_requested} send a KeyUpdate of its own "prior to sending its next Application Data
+     * record"; 5.8.4 forbids sending one while an earlier one is unacknowledged. Both cannot hold, and 9147
+     * is followed - {@code DTLS13PostHandshake.checkKeyUpdateBeforeSend} carries the grounds.
+     * <p>
+     * So the obligation is recorded and DEFERRED past application data rather than discharged before it, and
+     * it is discharged on the first send after the outstanding KeyUpdate has been acknowledged. Both halves
+     * are read off the wire - what goes out while the obligation is deferred, and what goes out once it is
+     * not - rather than asked of a field, because a field assertion would pass for an implementation that
+     * recorded the obligation and then sent the KeyUpdate anyway.
+     * </p>
+     * <p>
+     * Mutations this test is built to catch: remove the outstanding-KeyUpdate latch at the top of
+     * {@code checkKeyUpdateBeforeSend} - i.e. follow RFC 8446 instead - and the deferral half fails, because
+     * a second KeyUpdate goes out while one is unacknowledged; drop the {@code keyUpdatePendingSend} latch
+     * (clear it in {@code handleMessage} instead of recording it) and the discharge half fails, because the
+     * answering KeyUpdate is never sent at all.
+     * </p>
+     */
+    public void testAnUpdateRequestedIsDeferredWhileOurOwnKeyUpdateIsOutstanding() throws Exception
+    {
+        setUpPair();
+
+        DTLS13PostHandshake clientPostHandshake = client.recordLayer.getPostHandshake();
+
+        // Our own KeyUpdate goes out first, and is left unacknowledged for the whole of the first half
+        clientPostHandshake.sendKeyUpdate(KeyUpdateRequest.update_not_requested);
+        byte[] ourKeyUpdate = takeClientDatagram();
+        assertTrue(clientPostHandshake.isKeyUpdateOutstanding());
+        assertEquals(APPLICATION_EPOCH, clientPostHandshake.getKeyUpdateEpoch());
+
+        // The peer's 'update_requested' arrives while it is outstanding
+        byte[] peerKeyUpdate = keyUpdate(0, KeyUpdateRequest.update_requested);
+        server.recordLayer.sendRecordForTest(ContentType.handshake, peerKeyUpdate, 0, peerKeyUpdate.length);
+        assertNull(DTLSRecordLayer13TestSupport.receive(client, 100));
+
+        assertEquals("the peer's key update moved our read side", 4, client.recordLayer.getReadEpoch());
+        assertTrue("the obligation to answer is recorded", clientPostHandshake.isKeyUpdatePendingSend());
+
+        // Drop the ACK the client just sent for it, so that what follows is only what the send path emits
+        takeClientDatagrams();
+
+        /*
+         * RFC 8446 4.6.3 would have a KeyUpdate go out ahead of this record. RFC 9147 5.8.4 forbids one while
+         * ours is unacknowledged, and 9147 is what is followed: the application record goes out alone.
+         */
+        byte[] data = new byte[]{ 0x01, 0x02, 0x03, 0x04 };
+        client.recordLayer.sendReturningRecordNumber(data, 0, data.length);
+
+        Vector duringDeferral = takeClientDatagrams();
+        assertEquals("RFC 9147 5.8.4: no second KeyUpdate while ours is unacknowledged, so the application"
+            + " record goes out alone", 1, duringDeferral.size());
+        assertSentAtEpoch("the application record", APPLICATION_EPOCH, 4,
+            (byte[])duringDeferral.elementAt(0));
+
+        assertTrue("the obligation is deferred, not discharged", clientPostHandshake.isKeyUpdatePendingSend());
+        assertTrue("and no second KeyUpdate was started", clientPostHandshake.isKeyUpdateOutstanding());
+        assertEquals("nor a second write epoch derived", 4, client.recordLayer.getPendingWriteEpoch());
+        assertEquals(APPLICATION_EPOCH, client.recordLayer.getWriteEpoch());
+
+        // The acknowledgement of our own KeyUpdate clears the way for the answer
+        assertNull(deliver(ourKeyUpdate));
+        assertNull(DTLSRecordLayer13TestSupport.receive(client, 100));
+
+        assertFalse(clientPostHandshake.isKeyUpdateOutstanding());
+        assertEquals(4, client.recordLayer.getWriteEpoch());
+        assertTrue("the obligation survives the acknowledgement",
+            clientPostHandshake.isKeyUpdatePendingSend());
+
+        takeClientDatagrams();
+
+        // Now the answering KeyUpdate goes out, ahead of the application record whose send triggered it
+        byte[] more = new byte[]{ 0x05, 0x06, 0x07, 0x08 };
+        assertEquals(4, client.recordLayer.sendReturningRecordNumber(more, 0, more.length).getEpoch());
+
+        Vector afterAck = takeClientDatagrams();
+        assertEquals("the deferred KeyUpdate, then the application record", 2, afterAck.size());
+        assertSentAtEpoch("the answering KeyUpdate", 4, 5, (byte[])afterAck.elementAt(0));
+        assertSentAtEpoch("the application record", 4, 5, (byte[])afterAck.elementAt(1));
+
+        assertFalse("the obligation is discharged", clientPostHandshake.isKeyUpdatePendingSend());
+        assertTrue(clientPostHandshake.isKeyUpdateOutstanding());
+        assertEquals(4, clientPostHandshake.getKeyUpdateEpoch());
+        assertEquals(5, client.recordLayer.getPendingWriteEpoch());
+    }
+
+    /**
      * RFC 9147 7. "After the handshake, implementations MUST use the highest available sending epoch" - and
      * that is the whole rule. The handshake-time floor ("an epoch equal to or higher than the record which is
      * being acknowledged") does not survive the handshake, and applying it afterwards is a real stall: the
@@ -883,9 +971,11 @@ public class DTLS13KeyUpdateTest
 
     /**
      * RFC 9147 8 and 4.2.2. An epoch built from the PEER's updated traffic secret may be read at and must
-     * never be written at: a {@link DTLSEpoch} carries one cipher and one sequence number counter for both
-     * directions, so writing at it would encrypt our records under the peer's key at sequence numbers the
-     * peer has already used.
+     * never be written at. Its encrypt side is not the peer's: {@code TlsUtils.initCipher} keys both
+     * directions and {@code updatePeerReadEpoch} updates only the peer's secret, so that epoch's encryptor is
+     * keyed identically to the current write epoch's while its sequence number counter starts again at zero.
+     * Writing at it would put records on the wire under the same AEAD key at nonces the current write epoch
+     * has already used - see {@link DTLSEpoch} for why that is worse than a decryption failure.
      * <p>
      * It is reachable only by number collision, which is why it is worth a test of its own: the two
      * directions start from the same application epoch and advance by one on their own key updates, so the
