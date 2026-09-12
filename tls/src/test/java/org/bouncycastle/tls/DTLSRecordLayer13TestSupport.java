@@ -181,6 +181,12 @@ class DTLSRecordLayer13TestSupport
         recordLayer.enablePendingEpochRead();
         recordLayer.handshakeSuccessful(retransmit);
 
+        // Production always follows the record layer's handshakeSuccessful with the context's
+        // handshakeComplete (see DTLSClientProtocol/DTLSServerProtocol): this nulls the handshake security
+        // parameters, so anything that still tries to build a cipher off them after this point throws, just
+        // as it would in production.
+        context.handshakeComplete(peer, null);
+
         checkEquals(3, recordLayer.getReadEpoch());
 
         return new Side(context, recordLayer);
