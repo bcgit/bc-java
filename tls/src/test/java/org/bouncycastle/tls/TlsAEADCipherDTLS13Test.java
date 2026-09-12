@@ -6,6 +6,7 @@ import java.security.SecureRandom;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.tls.crypto.CryptoHashAlgorithm;
 import org.bouncycastle.tls.crypto.TlsCrypto;
+import org.bouncycastle.tls.crypto.TlsCryptoUtils;
 import org.bouncycastle.tls.crypto.TlsDTLS13Cipher;
 import org.bouncycastle.tls.crypto.TlsDecodeResult;
 import org.bouncycastle.tls.crypto.TlsEncodeResult;
@@ -48,6 +49,12 @@ public class TlsAEADCipherDTLS13Test
         sp.negotiatedVersion = ProtocolVersion.DTLSv13;
         sp.cipherSuite = cipherSuite;
         sp.prfCryptoHashAlgorithm = hash;
+        /*
+         * Production sets both of these together (TlsUtils.negotiatedVersion), and the key schedule reads
+         * this one: RFC 8446 7.2's "traffic upd" derivation expands to the PRF hash length, so a context
+         * that left it at -1 could build a cipher but not update a traffic secret.
+         */
+        sp.prfHashLength = TlsCryptoUtils.getHashOutputSize(hash);
         sp.trafficSecretClient = crypto.createSecret(clientSecret);
         sp.trafficSecretServer = crypto.createSecret(serverSecret);
         return context;

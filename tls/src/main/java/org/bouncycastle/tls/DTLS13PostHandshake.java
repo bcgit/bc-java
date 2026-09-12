@@ -66,6 +66,14 @@ class DTLS13PostHandshake
     private int newSessionTicketCount = 0;
     private int keyUpdateCount = 0;
 
+    /**
+     * RFC 8446 4.6.3. Set when a received KeyUpdate asked for one in return, and cleared by the sending side
+     * once it has sent one. The same latch TlsProtocol keeps ('keyUpdatePendingSend'), for the same reason:
+     * the obligation is to send a KeyUpdate before the next Application Data record, not to send one from
+     * inside the receive path.
+     */
+    private boolean keyUpdatePendingSend = false;
+
     DTLS13PostHandshake(DTLSRecordLayer recordLayer, int next_send_seq, int next_receive_seq,
         int maxHandshakeMessageSize)
     {
@@ -283,11 +291,10 @@ class DTLS13PostHandshake
         case HandshakeType.key_update:
         {
             /*
-             * RFC 8446 4.6.3. The body is a single KeyUpdateRequest. It is validated here so that a malformed
-             * one is refused at the point it is parsed rather than wherever it is later consumed.
-             *
-             * TODO[dtls13] Act on it: retain the current read epoch and derive the next one (RFC 9147 8),
-             * and answer an update_requested with our own KeyUpdate.
+             * RFC 8446 4.6.3. The body is a single KeyUpdateRequest. It is validated before anything is acted
+             * on, so that a malformed one is refused at the point it is parsed and never reaches the key
+             * schedule - the update is irreversible, so it must not be started on a message that may still
+             * turn out to be rejected.
              */
             if (1 != body.length)
             {
@@ -298,6 +305,36 @@ class DTLS13PostHandshake
             if (!KeyUpdateRequest.isValid(requestUpdate))
             {
                 throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            }
+
+            /*
+             * RFC 9147 8. The peer is updating its sending keys, so our read side moves with it: the peer's
+             * next traffic secret is derived and the read epoch it keys is installed, while the epoch it
+             * supersedes stays readable until a record decrypts under the new one.
+             *
+             * This happens before the ACK that receivedHandshakeRecord sends, which is only correct because
+             * the two are independent: the ACK goes out at our own write epoch, which a peer's key update
+             * does not move.
+             */
+            recordLayer.updatePeerReadEpoch();
+
+            /*
+             * RFC 8446 4.6.3. "If the request_update field is set to 'update_requested', then the receiver
+             * MUST send a KeyUpdate of its own with request_update set to 'update_not_requested' prior to
+             * sending its next Application Data record."
+             *
+             * Recorded as an obligation rather than sent from here, which is what TlsProtocol.receive13KeyUpdate
+             * does too ('keyUpdatePendingSend |= updateRequested'); it does not send from the receive path
+             * either. Over DTLS there is a second reason: sending a KeyUpdate is a state machine, not a write.
+             * RFC 9147 5.8.4 makes it a single-flight message with its own retransmit timer, and section 8
+             * forbids sending under the new epoch until it has been acknowledged, so the answer has to be
+             * driven by the sending side, which owns those. Section 8 also overrides RFC 8446 here when the
+             * epoch limit would be exceeded: the flag is then to be ignored rather than honoured, and that
+             * judgement belongs with the sender too, which is the only side that knows its own epoch.
+             */
+            if (KeyUpdateRequest.update_requested == requestUpdate)
+            {
+                this.keyUpdatePendingSend = true;
             }
 
             keyUpdateCount += 1;
@@ -336,5 +373,21 @@ class DTLS13PostHandshake
     int getKeyUpdateCount()
     {
         return keyUpdateCount;
+    }
+
+    /**
+     * RFC 8446 4.6.3. Whether a received KeyUpdate asked for one in return and none has been sent since.
+     * Read by the sending side, which owns the KeyUpdate state machine of RFC 9147 5.8.4 and is also the only
+     * side that can apply section 8's override of this rule at the epoch limit.
+     */
+    boolean isKeyUpdatePendingSend()
+    {
+        return keyUpdatePendingSend;
+    }
+
+    /** Clear the RFC 8446 4.6.3 obligation, once the sending side has answered it. */
+    void clearKeyUpdatePendingSend()
+    {
+        this.keyUpdatePendingSend = false;
     }
 }

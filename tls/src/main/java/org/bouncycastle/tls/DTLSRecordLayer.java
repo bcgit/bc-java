@@ -412,6 +412,18 @@ class DTLSRecordLayer
         commitPendingEpochIfCurrent();
     }
 
+    /**
+     * Commit the handshake's pending epoch once both directions have reached it.
+     * <p>
+     * The both-directions test is exactly right for the epoch changes this is called for and only for those.
+     * 'pendingEpoch' is set by {@link #initPendingEpoch(TlsCipher)}, which is a handshake path, and a
+     * handshake epoch change moves both directions to one shared epoch. A post-handshake key update moves one
+     * direction only and its epoch numbers are per-direction, which is why it goes nowhere near this method:
+     * it uses {@link #updatePeerReadEpoch()} and {@link #derivePendingWriteEpoch(TlsCipher)} instead, neither
+     * of which touches 'pendingEpoch'. So this invariant is not one key update falsifies; it is one key
+     * update never reaches.
+     * </p>
+     */
     private void commitPendingEpochIfCurrent()
     {
         if (readEpoch == pendingEpoch && writeEpoch == pendingEpoch)
@@ -421,10 +433,10 @@ class DTLSRecordLayer
              * in DTLS 1.2 the epoch being superseded is still the current one at that point. Assigning it
              * only for DTLS 1.3 keeps the DTLS 1.2 path's state untouched by this field.
              *
-             * TODO[dtls13] This holds only the MOST RECENT retired epoch, which is all RFC 9147 5.8.1 needs
-             * while the only epoch change after the handshake epoch is the one to the application epoch. Once
-             * post-handshake key update (RFC 9147 8) lands, several epochs can be retired in succession and
-             * which of them is still readable becomes load-bearing.
+             * NOTE: This holds only the MOST RECENT retired epoch, which is all it has to: it is read once,
+             * by handshakeSuccessful, which clears it. A post-handshake key update supersedes epochs too, but
+             * it retires them through retainedReadEpoch (read side, RFC 9147 8) and by simply dropping the
+             * superseded write epoch (see installPendingWriteEpoch), not through here.
              */
             if (dtls13)
             {
@@ -446,6 +458,30 @@ class DTLSRecordLayer
     }
 
     /**
+     * RFC 9147 8. The epoch number a key update moves one direction to.
+     * <p>
+     * Section 8 caps a sending implementation at 2^48-1 and directs a receiving implementation not to enforce
+     * that cap, so that the value can be raised later. Neither cap binds here: a {@link DTLSEpoch} holds its
+     * epoch in an int and refuses a negative one, so the int is the tighter bound in both directions, and
+     * every key update costs at least a round trip, so 2^31-1 of them is not a number of updates a connection
+     * can perform. The check is here because this is the one place where a peer influences how fast the epoch
+     * number advances, and a silent wrap would produce a negative epoch - refused by DTLSEpoch's constructor
+     * at best, and at worst aliasing an epoch the record layer already holds.
+     * </p>
+     * Package-private rather than private so that the guard itself is testable: no connection can reach it by
+     * advancing an epoch at a time, so a test that drove it through the record layer could not exist.
+     */
+    static int nextEpoch(int epoch) throws IOException
+    {
+        if (epoch < 0 || epoch == Integer.MAX_VALUE)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        return epoch + 1;
+    }
+
+    /**
      * RFC 9147 8. Derive the write epoch that a post-handshake key update moves to, and hold it without
      * sending anything under it. Sending begins only once {@link #installPendingWriteEpoch()} is called, which
      * section 8 permits only after the peer has acknowledged the KeyUpdate.
@@ -460,8 +496,9 @@ class DTLSRecordLayer
      * @return the derived epoch, which is not the write epoch until it is installed.
      * @throws IllegalStateException if the connection is not DTLS 1.3, if the cipher is not a
      *             {@link TlsDTLS13Cipher}, or if a derived write epoch is already being held.
+     * @throws TlsFatalAlert if the epoch number would overflow; see {@link #nextEpoch(int)}.
      */
-    DTLSEpoch derivePendingWriteEpoch(TlsCipher cipher)
+    DTLSEpoch derivePendingWriteEpoch(TlsCipher cipher) throws IOException
     {
         if (null == cipher)
         {
@@ -480,8 +517,7 @@ class DTLSRecordLayer
             throw new IllegalStateException("a derived write epoch is already held");
         }
 
-        // TODO Check for overflow
-        int nextWriteEpoch = writeEpoch.getEpoch() + 1;
+        int nextWriteEpoch = nextEpoch(writeEpoch.getEpoch());
 
         /*
          * The record header lengths follow the connection IDs in use rather than the keys, so the new epoch
@@ -497,6 +533,21 @@ class DTLSRecordLayer
      * RFC 9147 8. Install the epoch held by {@link #derivePendingWriteEpoch(TlsCipher)} as the write epoch, so
      * that records are from now on sent under it. The slot is cleared, which is what lets a later key update
      * derive its own epoch.
+     * <p>
+     * The superseded write epoch is retained by nothing and is released here. That is the whole asymmetry
+     * with the read side: the pre-update READ keys have to be kept (section 8 - records the peer had already
+     * put on the wire are still arriving under them), while nothing is ever sent under the pre-update WRITE
+     * epoch again. RFC 9147 5.8.4's sending state machines "reduce to waiting for an ACK and retransmitting
+     * the original message", and by the time this is called that ACK has arrived, so there is no message left
+     * outstanding at the old epoch; and section 7 requires a post-handshake ACK to go out at "the highest
+     * available sending epoch", which is the new one. Holding the old epoch would keep its keys and its
+     * sequence number alive for the rest of the connection for no reader.
+     * </p>
+     * 'currentEpoch' is advanced with it. Its two remaining readers - {@link #resetWriteEpoch()} and
+     * {@link #getEpochForRetransmit(int)}'s fallback - are both about writing, so after the handshake it
+     * tracks the write direction. Leaving it behind would make that fallback resolve the epoch number of a
+     * released epoch to the released object itself, which is a live lookup returning stale keys and a
+     * sequence number the peer has already seen.
      *
      * @return the epoch now being written at.
      * @throws IllegalStateException if no derived write epoch is being held.
@@ -511,6 +562,7 @@ class DTLSRecordLayer
             }
 
             this.writeEpoch = pendingWriteEpoch;
+            this.currentEpoch = pendingWriteEpoch;
             this.pendingWriteEpoch = null;
 
             return writeEpoch;
@@ -587,6 +639,96 @@ class DTLSRecordLayer
         }
 
         this.retainedReadEpoch = epoch;
+    }
+
+    /**
+     * @return the epoch number retained across a key update by {@link #retainReadEpoch(DTLSEpoch)}, or -1
+     *         when none is retained.
+     */
+    int getRetainedReadEpoch()
+    {
+        return (null != retainedReadEpoch) ? retainedReadEpoch.getEpoch() : -1;
+    }
+
+    /**
+     * RFC 9147 8. Act on a KeyUpdate received from the peer: derive the peer's next application traffic
+     * secret, build the read epoch it keys, and make that the read epoch while the epoch it supersedes stays
+     * readable (see {@link #retainReadEpoch(DTLSEpoch)}).
+     * <p>
+     * The derivation and the cipher construction are deliberately one operation and cannot be split.
+     * {@code update13TrafficSecretPeer} destroys the secret it replaces, so a cipher not built from the
+     * updated secret here can never be built from the superseded one afterwards: the epoch retained a line
+     * later would be keyed from material that no longer exists, and every record still in flight under it
+     * would be lost. Note also that building a cipher after the handshake no longer throws - the security
+     * parameters a cipher is built from now resolve to the connection ones - so the construction call cannot
+     * be relied on to object if it is reached in the wrong order; only the order itself protects this.
+     * </p>
+     * Everything that can refuse the update is checked before the secret is touched, for the same reason: a
+     * refusal after the derivation would leave the connection with a read epoch whose keys nothing holds.
+     *
+     * @return the new read epoch.
+     * @throws TlsFatalAlert with {@code unexpected_message} if a read epoch is still retained from an earlier
+     *             key update. Section 8 forbids the peer sending a new KeyUpdate before the previous one is
+     *             acknowledged, and our acknowledgement is followed by its records at the new epoch, which
+     *             release the retained one; so a second update arriving while one is retained is the peer
+     *             breaking that rule, and honouring it would mean either dropping keys that records are still
+     *             arriving under or growing the retained set without bound at the peer's discretion.
+     * @throws IllegalStateException if the connection is not DTLS 1.3.
+     */
+    DTLSEpoch updatePeerReadEpoch() throws IOException
+    {
+        if (!dtls13)
+        {
+            throw new IllegalStateException("key update requires DTLS 1.3");
+        }
+        if (null != retainedReadEpoch)
+        {
+            throw new TlsFatalAlert(AlertDescription.unexpected_message);
+        }
+
+        DTLSEpoch supersededEpoch = readEpoch;
+        int nextReadEpoch = nextEpoch(supersededEpoch.getEpoch());
+
+        TlsUtils.update13TrafficSecretPeer(context);
+
+        TlsCipher cipher = TlsUtils.initCipher(context);
+        if (!(cipher instanceof TlsDTLS13Cipher))
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        /*
+         * The record header lengths follow the connection IDs in use rather than the keys, so the new epoch
+         * inherits the ones the epoch it supersedes was built with.
+         */
+        DTLSEpoch nextEpoch = new DTLSEpoch(nextReadEpoch, cipher, supersededEpoch.getRecordHeaderLengthRead(),
+            supersededEpoch.getRecordHeaderLengthWrite());
+
+        retainReadEpoch(supersededEpoch);
+        this.readEpoch = nextEpoch;
+
+        return nextEpoch;
+    }
+
+    /**
+     * RFC 9147 8. "receivers MUST retain the pre-update keying material until receipt and successful
+     * decryption of a message using the new keys." This is that release, and the trigger is exactly the one
+     * the RFC names: a record has just decrypted at the new read epoch.
+     * <p>
+     * It is emphatically not the peer's acknowledgement of anything. The two halves of section 8 have
+     * different triggers - the sender may not write at its new epoch until its KeyUpdate is ACKed, the
+     * receiver may not release the old keys until it has decrypted at the new epoch - and an ACK proves only
+     * that the peer parsed a record, not that it has begun sending under the new keys.
+     * </p>
+     * The reference is dropped rather than merely unlinked from the live set, which is what
+     * {@link #handshakeSuccessful(DTLSHandshakeRetransmit)} is careful to do with the epoch it retires:
+     * anything still holding it would keep that epoch's traffic keys and replay window alive for the rest of
+     * the connection. {@link org.bouncycastle.tls.crypto.TlsCipher} has no destroy operation of its own, so
+     * releasing the last reference to it is the whole of what this layer can do.
+     */
+    private void releaseRetainedReadEpoch()
+    {
+        this.retainedReadEpoch = null;
     }
 
     void handshakeSuccessful(DTLSHandshakeRetransmit retransmit)
@@ -1564,6 +1706,23 @@ class DTLSRecordLayer
             }
 
             return -1;
+        }
+
+        /*
+         * RFC 9147 8. "receivers MUST retain the pre-update keying material until receipt and successful
+         * decryption of a message using the new keys." A record has just decrypted at the current read epoch,
+         * so if that epoch is one a key update installed, this is that decryption and the epoch it superseded
+         * is released here - before the record is dispatched, so that a KeyUpdate arriving as the first thing
+         * at the new epoch finds the retained slot free and can install an epoch of its own.
+         *
+         * The release is placed on the decryption and nothing later: the RFC's trigger is successful
+         * decryption, and a record that decrypts but is then dropped for its length still proves the peer is
+         * writing under the new keys. It is not placed on an acknowledgement either - see
+         * releaseRetainedReadEpoch for why the two are not interchangeable.
+         */
+        if (null != retainedReadEpoch && recordEpoch == readEpoch)
+        {
+            releaseRetainedReadEpoch();
         }
 
         if (decoded.len > this.plaintextLimit)
