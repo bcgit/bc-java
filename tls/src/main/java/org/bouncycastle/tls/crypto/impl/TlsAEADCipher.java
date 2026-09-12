@@ -85,7 +85,13 @@ public final class TlsAEADCipher
         AEADNonceGeneratorFactory nonceGeneratorFactory, TlsRecordNumberMask encryptMask,
         TlsRecordNumberMask decryptMask) throws IOException
     {
-        final SecurityParameters securityParameters = cryptoParams.getSecurityParametersHandshake();
+        /*
+         * The parameters in force, not specifically the handshake ones: a DTLS 1.3 key update builds a
+         * cipher after the handshake has completed, when only the connection parameters remain. During a
+         * handshake this returns the same object getSecurityParametersHandshake() did, so no (D)TLS 1.2 or
+         * TLS 1.3 caller sees any difference.
+         */
+        final SecurityParameters securityParameters = cryptoParams.getSecurityParameters();
         final ProtocolVersion negotiatedVersion = securityParameters.getNegotiatedVersion();
 
         if (!TlsImplUtils.isTLSv12(negotiatedVersion))

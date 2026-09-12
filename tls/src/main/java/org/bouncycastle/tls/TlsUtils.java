@@ -4719,7 +4719,13 @@ public class TlsUtils
 
     static TlsCipher initCipher(TlsContext context) throws IOException
     {
-        SecurityParameters securityParameters = context.getSecurityParametersHandshake();
+        /*
+         * The parameters in force, not specifically the handshake ones: a DTLS 1.3 key update builds a
+         * cipher after the handshake has completed, when only the connection parameters remain. During a
+         * handshake this returns the same object getSecurityParametersHandshake() did, so no (D)TLS 1.2 or
+         * TLS 1.3 caller sees any difference.
+         */
+        SecurityParameters securityParameters = context.getSecurityParameters();
         int cipherSuite = securityParameters.getCipherSuite();
         int encryptionAlgorithm = getEncryptionAlgorithm(cipherSuite);
         int macAlgorithm = getMACAlgorithm(cipherSuite);

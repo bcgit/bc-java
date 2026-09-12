@@ -21,6 +21,19 @@ public class TlsCryptoParameters
         this.context = context;
     }
 
+    /**
+     * Return the security parameters currently in force: the handshake parameters while a handshake is in
+     * progress, the connection parameters once it has completed. This mirrors
+     * {@code AbstractTlsContext.getSecurityParameters()}, and lets a cipher be built after the handshake has
+     * completed (RFC 9147 4.6.3 key update), when the handshake parameters no longer exist.
+     *
+     * @return the security parameters in force, or null before any handshake has begun.
+     */
+    public SecurityParameters getSecurityParameters()
+    {
+        return context.getSecurityParameters();
+    }
+
     public SecurityParameters getSecurityParametersConnection()
     {
         return context.getSecurityParametersConnection();
