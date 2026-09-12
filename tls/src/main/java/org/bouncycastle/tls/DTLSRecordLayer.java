@@ -185,6 +185,26 @@ class DTLSRecordLayer
      */
     private DTLSEpoch retainedReadEpoch = null;
 
+    /*
+     * RFC 9147 8. DTLS 1.3 only. The write epoch a post-handshake key update has derived but which is not yet
+     * in use for sending.
+     *
+     * It has to be derived early and held: updating the local traffic secret destroys the secret the current
+     * write epoch was keyed from, so the new epoch can only be built at the moment the KeyUpdate is generated,
+     * while section 8 forbids sending anything under it until the peer has acknowledged that KeyUpdate.
+     *
+     * 'pendingEpoch' cannot serve here. enablePendingEpochWrite installs it the instant it is asked to, and
+     * commitPendingEpochIfCurrent retires the old epoch only once BOTH directions have reached the pending
+     * one. A key update advances exactly one direction, so neither matches; a shared pending epoch would also
+     * force one epoch number on both directions, which is wrong once they advance independently.
+     *
+     * At most one epoch is held here at a time. RFC 9147 5.8.4 forbids starting a second key update while one
+     * is still unacknowledged, so a second derivation while this slot is occupied is a bug on this side, and
+     * derivePendingWriteEpoch refuses it rather than silently discarding keys that records may already have
+     * been sent under.
+     */
+    private DTLSEpoch pendingWriteEpoch = null;
+
     // The epoch 0 (unprotected) epoch, which is never replaced; see retransmitEpochPlaintext
     private final DTLSEpoch plaintextEpoch;
 
@@ -405,6 +425,87 @@ class DTLSRecordLayer
 
             this.currentEpoch = pendingEpoch;
             this.pendingEpoch = null;
+        }
+    }
+
+    /**
+     * @return the epoch number of the write epoch derived by {@link #derivePendingWriteEpoch(TlsCipher)} and
+     *         not yet installed, or -1 when there is none.
+     */
+    int getPendingWriteEpoch()
+    {
+        return (null == pendingWriteEpoch) ? -1 : pendingWriteEpoch.getEpoch();
+    }
+
+    /**
+     * RFC 9147 8. Derive the write epoch that a post-handshake key update moves to, and hold it without
+     * sending anything under it. Sending begins only once {@link #installPendingWriteEpoch()} is called, which
+     * section 8 permits only after the peer has acknowledged the KeyUpdate.
+     * <p>
+     * The epoch number is derived from the write epoch alone. {@code initPendingEpoch}'s number is
+     * deliberately not reused: it numbers one epoch that both directions move to together, whereas after the
+     * handshake each direction advances on its own key updates, so a single shared "next epoch" would collide
+     * with or skip past the read side's.
+     * </p>
+     *
+     * @param cipher the cipher for the new epoch, already keyed from the updated local traffic secret.
+     * @return the derived epoch, which is not the write epoch until it is installed.
+     * @throws IllegalStateException if the connection is not DTLS 1.3, if the cipher is not a
+     *             {@link TlsDTLS13Cipher}, or if a derived write epoch is already being held.
+     */
+    DTLSEpoch derivePendingWriteEpoch(TlsCipher cipher)
+    {
+        if (null == cipher)
+        {
+            throw new IllegalArgumentException("'cipher' cannot be null");
+        }
+        if (!dtls13)
+        {
+            throw new IllegalStateException("key update requires DTLS 1.3");
+        }
+        if (!(cipher instanceof TlsDTLS13Cipher))
+        {
+            throw new IllegalStateException("DTLS 1.3 requires a TlsDTLS13Cipher");
+        }
+        if (null != pendingWriteEpoch)
+        {
+            throw new IllegalStateException("a derived write epoch is already held");
+        }
+
+        // TODO Check for overflow
+        int nextWriteEpoch = writeEpoch.getEpoch() + 1;
+
+        /*
+         * The record header lengths follow the connection IDs in use rather than the keys, so the new epoch
+         * inherits the ones the write epoch was built with.
+         */
+        this.pendingWriteEpoch = new DTLSEpoch(nextWriteEpoch, cipher, writeEpoch.getRecordHeaderLengthRead(),
+            writeEpoch.getRecordHeaderLengthWrite());
+
+        return pendingWriteEpoch;
+    }
+
+    /**
+     * RFC 9147 8. Install the epoch held by {@link #derivePendingWriteEpoch(TlsCipher)} as the write epoch, so
+     * that records are from now on sent under it. The slot is cleared, which is what lets a later key update
+     * derive its own epoch.
+     *
+     * @return the epoch now being written at.
+     * @throws IllegalStateException if no derived write epoch is being held.
+     */
+    DTLSEpoch installPendingWriteEpoch()
+    {
+        synchronized (writeLock)
+        {
+            if (null == pendingWriteEpoch)
+            {
+                throw new IllegalStateException("no derived write epoch to install");
+            }
+
+            this.writeEpoch = pendingWriteEpoch;
+            this.pendingWriteEpoch = null;
+
+            return writeEpoch;
         }
     }
 

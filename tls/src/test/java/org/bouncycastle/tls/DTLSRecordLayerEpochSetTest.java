@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.util.Vector;
 
 import org.bouncycastle.tls.crypto.CryptoHashAlgorithm;
+import org.bouncycastle.tls.crypto.TlsCipher;
+import org.bouncycastle.util.Arrays;
 
 import junit.framework.TestCase;
 
@@ -198,6 +200,231 @@ public class DTLSRecordLayerEpochSetTest
         int[] epochs = epochNumbers(clientLayer);
         assertEquals("the live read epoch set stays bounded", 4, epochs.length);
         assertEquals(4, epochs[1]);
+    }
+
+    /**
+     * A cipher keyed exactly as the side's current one. A key update would key the new epoch from an updated
+     * traffic secret, but nothing here depends on the keys differing - what is under test is which epoch a
+     * record is sent under, and keeping the keys identical means the epoch number on the wire is the only
+     * thing that can distinguish the two records.
+     */
+    private static TlsCipher createEpochCipher(DTLSRecordLayer13TestSupport.Side side) throws IOException
+    {
+        return TlsUtils.initCipher(side.context);
+    }
+
+    /** The epoch number the low 2 bits of a sent record's first byte can be attributed to. */
+    private static void assertSentAtEpoch(int expectedEpoch, int otherEpoch, byte[] datagram)
+    {
+        int firstByte = datagram[0] & 0xFF;
+        assertTrue("record must be on the wire under epoch " + expectedEpoch,
+            DTLS13UnifiedHeader.matchesEpoch(firstByte, expectedEpoch));
+        assertFalse("record must not be on the wire under epoch " + otherEpoch,
+            DTLS13UnifiedHeader.matchesEpoch(firstByte, otherEpoch));
+    }
+
+    /**
+     * RFC 9147 8: a key update MUST NOT send under the new epoch until the peer has acknowledged the
+     * KeyUpdate, but the new epoch's cipher has to be built at the moment the KeyUpdate is generated, because
+     * updating the traffic secret destroys the one the old epoch was keyed from. So the epoch is derived and
+     * held, and only installing it may change what goes on the wire.
+     * <p>
+     * The assertions are on the epoch of the record that was actually sent - the returned record number and
+     * the epoch bits in the datagram - and on which peer can still read it, not on the field. A field
+     * assertion would pass even if the send path had picked up the derived epoch regardless.
+     * </p>
+     * <p>
+     * Mutations this test is built to catch: have {@code derivePendingWriteEpoch} assign {@code writeEpoch}
+     * (i.e. behave like {@code enablePendingEpochWrite}) and the pre-install assertions fail; make
+     * {@code installPendingWriteEpoch} merely clear the slot without assigning {@code writeEpoch} and the
+     * post-install assertions fail.
+     * </p>
+     */
+    public void testDerivedWriteEpochIsNotSentUnderUntilInstalled() throws Exception
+    {
+        setUpPairWithRetainedEpochs();
+
+        DTLSRecordLayer clientLayer = support.client.recordLayer;
+
+        byte[] before = new byte[]{ 0x01, 0x02, 0x03, 0x04 };
+        DTLSRecordNumber beforeDerive = clientLayer.sendReturningRecordNumber(before, 0, before.length);
+        assertEquals(3, beforeDerive.getEpoch());
+
+        DTLSEpoch derived = clientLayer.derivePendingWriteEpoch(createEpochCipher(support.client));
+        assertEquals("the derived write epoch follows the write epoch, not the read epoch", 4,
+            derived.getEpoch());
+        assertEquals(4, clientLayer.getPendingWriteEpoch());
+
+        // Deriving must not have changed what is sent
+        byte[] held = new byte[]{ 0x05, 0x06, 0x07, 0x08 };
+        DTLSRecordNumber whileHeld = clientLayer.sendReturningRecordNumber(held, 0, held.length);
+        assertEquals("a derived write epoch must not be sent under until it is installed", 3,
+            whileHeld.getEpoch());
+        assertSentAtEpoch(3, 4, support.clientToServer.peekLast());
+
+        // ... and the peer, whose read epoch is still 3, can still read it
+        DTLSRecordLayer13TestSupport.receive(support.server, 200);
+        byte[] received = DTLSRecordLayer13TestSupport.receive(support.server, 200);
+        assertNotNull("the peer must still be able to read records sent while the epoch is only derived",
+            received);
+        assertTrue(Arrays.areEqual(held, received));
+
+        // Installing it, and only installing it, changes the epoch on the wire
+        assertSame(derived, clientLayer.installPendingWriteEpoch());
+        assertEquals("installing clears the slot, so a later key update can derive its own epoch", -1,
+            clientLayer.getPendingWriteEpoch());
+
+        byte[] after = new byte[]{ 0x09, 0x0a, 0x0b, 0x0c };
+        DTLSRecordNumber afterInstall = clientLayer.sendReturningRecordNumber(after, 0, after.length);
+        assertEquals("an installed write epoch is the epoch records are sent under", 4,
+            afterInstall.getEpoch());
+        assertEquals("a newly installed epoch starts its own sequence number space", 0L,
+            afterInstall.getSequenceNumber());
+        assertSentAtEpoch(4, 3, support.clientToServer.peekLast());
+
+        /*
+         * 4 and 3 do not share the low 2 epoch bits, and the peer holds no epoch that does, so the record is
+         * unreadable to it until its own read side is moved - which is a key update's job, not this task's.
+         */
+        assertNull("a record under the new epoch is not attributable to any epoch the peer holds",
+            DTLSRecordLayer13TestSupport.receive(support.server, 100));
+    }
+
+    /**
+     * Nothing has ever been sent under a derived-but-not-installed epoch, so there is nothing to retransmit
+     * under it and {@link DTLSRecordLayer#sendHandshakeRecordAtEpoch(int, byte[], int, int)} must not resolve
+     * it. Once installed it resolves like any write epoch.
+     * <p>
+     * Mutation this test is built to catch: add {@code pendingWriteEpoch} to {@code getEpochForRetransmit}
+     * and the first half fails.
+     * </p>
+     */
+    public void testDerivedWriteEpochIsNotResolvedForSendingUntilInstalled() throws Exception
+    {
+        setUpPairWithRetainedEpochs();
+
+        DTLSRecordLayer clientLayer = support.client.recordLayer;
+        clientLayer.derivePendingWriteEpoch(createEpochCipher(support.client));
+
+        byte[] body = new byte[]{ 0x14, 0x00, 0x00, 0x00 };
+        try
+        {
+            clientLayer.sendHandshakeRecordAtEpoch(4, body, 0, body.length);
+            fail("expected a send at a derived-but-not-installed epoch to be refused");
+        }
+        catch (TlsFatalAlert e)
+        {
+            assertEquals(AlertDescription.internal_error, e.getAlertDescription());
+        }
+        assertTrue("nothing may reach the wire under an epoch that is only derived",
+            support.clientToServer.datagrams.isEmpty());
+
+        clientLayer.installPendingWriteEpoch();
+
+        DTLSRecordNumber recordNumber = clientLayer.sendHandshakeRecordAtEpoch(4, body, 0, body.length);
+        assertNotNull(recordNumber);
+        assertEquals(4, recordNumber.getEpoch());
+        assertSentAtEpoch(4, 3, support.clientToServer.peekLast());
+    }
+
+    /**
+     * The read side is untouched by either step, and the write epoch number is derived from the write epoch
+     * alone. That is the whole reason for a field separate from {@code pendingEpoch}: after the handshake the
+     * two directions advance on separate key updates, so one shared "next epoch" number is wrong.
+     * <p>
+     * Mutation this test is built to catch: derive the number from {@code readEpoch.getEpoch() + 1} and the
+     * second derivation yields 4 again instead of 5.
+     * </p>
+     */
+    public void testDerivedWriteEpochNumberIsIndependentOfTheReadEpoch() throws Exception
+    {
+        setUpPairWithRetainedEpochs();
+
+        DTLSRecordLayer clientLayer = support.client.recordLayer;
+
+        int[] beforeEpochs = epochNumbers(clientLayer);
+
+        assertEquals(4, clientLayer.derivePendingWriteEpoch(createEpochCipher(support.client)).getEpoch());
+        assertEquals("deriving a write epoch must not move the read side", 3, clientLayer.getReadEpoch());
+        assertEquals("deriving a write epoch is not the handshake's pending epoch", -1,
+            clientLayer.getPendingEpoch());
+        assertTrue("deriving a write epoch must not alter the live read epochs",
+            Arrays.areEqual(beforeEpochs, epochNumbers(clientLayer)));
+
+        clientLayer.installPendingWriteEpoch();
+        assertEquals("installing a write epoch must not move the read side", 3, clientLayer.getReadEpoch());
+        assertEquals(-1, clientLayer.getPendingEpoch());
+        assertTrue("installing a write epoch must not alter the live read epochs",
+            Arrays.areEqual(beforeEpochs, epochNumbers(clientLayer)));
+
+        assertEquals("the write side advances again from the write epoch, with the read epoch still at 3", 5,
+            clientLayer.derivePendingWriteEpoch(createEpochCipher(support.client)).getEpoch());
+        assertEquals(3, clientLayer.getReadEpoch());
+    }
+
+    /**
+     * RFC 9147 5.8.4 forbids a second key update while one is still unacknowledged, so a second derivation
+     * while one epoch is held is a bug on this side. Refusing it rather than overwriting matters because the
+     * held epoch may already have been installed-and-sent-under by the time the mistake is noticed.
+     */
+    public void testAtMostOneDerivedWriteEpoch() throws Exception
+    {
+        setUpPairWithRetainedEpochs();
+
+        DTLSRecordLayer clientLayer = support.client.recordLayer;
+
+        DTLSEpoch derived = clientLayer.derivePendingWriteEpoch(createEpochCipher(support.client));
+
+        try
+        {
+            clientLayer.derivePendingWriteEpoch(createEpochCipher(support.client));
+            fail("expected a second derived write epoch to be refused");
+        }
+        catch (IllegalStateException e)
+        {
+            // expected
+        }
+
+        assertEquals(4, clientLayer.getPendingWriteEpoch());
+        assertSame("the refused derivation must not have replaced the held epoch", derived,
+            clientLayer.installPendingWriteEpoch());
+    }
+
+    public void testInstallPendingWriteEpochRequiresADerivedEpoch() throws Exception
+    {
+        setUpPairWithRetainedEpochs();
+
+        DTLSRecordLayer clientLayer = support.client.recordLayer;
+        assertEquals(-1, clientLayer.getPendingWriteEpoch());
+
+        try
+        {
+            clientLayer.installPendingWriteEpoch();
+            fail("expected installing with no derived write epoch to be refused");
+        }
+        catch (IllegalStateException e)
+        {
+            // expected
+        }
+
+        byte[] data = new byte[]{ 0x01, 0x02, 0x03, 0x04 };
+        assertEquals("a refused install must not have moved the write epoch", 3,
+            clientLayer.sendReturningRecordNumber(data, 0, data.length).getEpoch());
+    }
+
+    public void testDerivePendingWriteEpochRejectsNull() throws Exception
+    {
+        setUpPairWithRetainedEpochs();
+
+        try
+        {
+            support.client.recordLayer.derivePendingWriteEpoch(null);
+            fail("expected a null cipher to be refused");
+        }
+        catch (IllegalArgumentException e)
+        {
+            // expected
+        }
     }
 
     public void testRetainReadEpochRejectsNull() throws Exception
