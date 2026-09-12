@@ -280,6 +280,19 @@ class DTLSReliableHandshake
         return message.getBody();
     }
 
+    /**
+     * Receive the next message without digesting it, leaving that to a later call to
+     * {@link #updateHandshakeMessagesDigest(Message)}. For a message whose type is not known in advance but
+     * which may need something else hashed ahead of it: RFC 8446 4.4.1's synthetic "message_hash" message
+     * replaces the first ClientHello in the transcript before a HelloRetryRequest is hashed after it, and a
+     * HelloRetryRequest is only recognisable once its body has been read.
+     */
+    Message receiveMessageDelayedDigest()
+        throws IOException
+    {
+        return implReceiveMessage();
+    }
+
     Message receiveMessageDelayedDigest(short msg_type)
         throws IOException
     {

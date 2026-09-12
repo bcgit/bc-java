@@ -4,14 +4,20 @@ import java.io.IOException;
 import java.util.Random;
 import java.util.Vector;
 
+import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.CipherSuite;
 import org.bouncycastle.tls.ContentType;
 import org.bouncycastle.tls.DTLSClientProtocol;
 import org.bouncycastle.tls.DTLSServerProtocol;
 import org.bouncycastle.tls.DTLSTransport;
 import org.bouncycastle.tls.DatagramTransport;
+import org.bouncycastle.tls.ExtensionType;
 import org.bouncycastle.tls.HandshakeType;
+import org.bouncycastle.tls.NamedGroup;
 import org.bouncycastle.tls.ProtocolVersion;
+import org.bouncycastle.tls.SecurityParameters;
+import org.bouncycastle.tls.TlsFatalAlert;
+import org.bouncycastle.tls.TlsFatalAlertReceived;
 import org.bouncycastle.tls.TlsServer;
 import org.bouncycastle.util.Arrays;
 
@@ -44,6 +50,23 @@ public class DTLS13ProtocolTest
     private static final int MESSAGE_HEADER_LENGTH = 12;
 
     private static final int PLAINTEXT_HEADER_LENGTH = 13;
+
+    /**
+     * RFC 8446 4.1.3. The 'random' of a HelloRetryRequest, which is what distinguishes one from a ServerHello.
+     * Spelled out here rather than read from the implementation, so that a test asserting "this is a
+     * HelloRetryRequest" does so against the value on the wire.
+     */
+    private static final byte[] HELLO_RETRY_REQUEST_RANDOM = {
+        (byte)0xCF, (byte)0x21, (byte)0xAD, (byte)0x74, (byte)0xE5, (byte)0x9A, (byte)0x61, (byte)0x11,
+        (byte)0xBE, (byte)0x1D, (byte)0x8C, (byte)0x02, (byte)0x1E, (byte)0x65, (byte)0xB8, (byte)0x91,
+        (byte)0xC2, (byte)0xA2, (byte)0x11, (byte)0x16, (byte)0x7A, (byte)0xBB, (byte)0x8C, (byte)0x5E,
+        (byte)0x07, (byte)0x9E, (byte)0x09, (byte)0xE2, (byte)0xC8, (byte)0xA8, (byte)0x33, (byte)0x9C
+    };
+
+    /** What, if anything, to corrupt in the second ClientHello on its way to the server. */
+    private static final int MANGLE_NONE = 0;
+    private static final int MANGLE_COOKIE = 1;
+    private static final int MANGLE_RANDOM = 2;
 
     public void testClientServer() throws Exception
     {
@@ -172,6 +195,501 @@ public class DTLS13ProtocolTest
 
         assertNotNull("no application data echoed back", harness.echo);
         assertTrue("echoed application data differs", Arrays.areEqual(harness.request, harness.echo));
+    }
+
+    /**
+     * RFC 9147 5.1. The server's denial-of-service countermeasure for DTLS 1.3 is a HelloRetryRequest with a
+     * "cookie" extension, not a HelloVerifyRequest. The handshake must complete after the retry, and the proof
+     * that it did so over the right transcript is the Finished verification: RFC 8446 4.4.1 replaces the first
+     * ClientHello with a synthetic "message_hash" message, and if either peer computed that substitution
+     * differently the verify_data would not match and the handshake would have failed with "decrypt_error".
+     * The verify data of each side is compared against what the other side computed for it, so a transcript
+     * that merely happened to agree on something wrong is still caught by
+     * {@link #testSecondClientHelloEchoesTheCookie}'s check of the bytes on the wire.
+     */
+    public void testClientServerWithHelloRetryRequest() throws Exception
+    {
+        Harness harness = new Harness();
+        harness.forceHelloRetryRequest = true;
+
+        harness.run(16);
+
+        assertEquals("client negotiated version", ProtocolVersion.DTLSv13, harness.clientVersion);
+        assertEquals("server negotiated version", ProtocolVersion.DTLSv13, harness.serverVersion);
+
+        assertEquals("cipher suites differ", harness.clientCipherSuite, harness.serverCipherSuite);
+        assertTrue("client cipher suite is not a TLS 1.3 suite: " + harness.clientCipherSuite,
+            isTLSv13CipherSuite(harness.clientCipherSuite));
+
+        // The retry really happened: two ClientHellos out, a HelloRetryRequest and then a ServerHello back
+        Vector clientHellos = handshakeBodies(harness.clientRecords(), HandshakeType.client_hello);
+        Vector serverHellos = handshakeBodies(harness.serverRecords(), HandshakeType.server_hello);
+
+        assertEquals("number of ClientHellos sent", 2, clientHellos.size());
+        assertEquals("number of ServerHellos received", 2, serverHellos.size());
+
+        assertTrue("the server's first answer was not a HelloRetryRequest",
+            isHelloRetryRequest((byte[])serverHellos.elementAt(0)));
+        assertFalse("the server's second answer was another HelloRetryRequest",
+            isHelloRetryRequest((byte[])serverHellos.elementAt(1)));
+
+        /*
+         * Finished verification succeeded on both sides: each peer's own verify_data is what the other peer
+         * expected of it. Both are computed over the transcript that begins with the synthetic "message_hash".
+         */
+        assertNotNull("client has no Finished verify data", harness.clientLocalVerifyData);
+        assertNotNull("server has no Finished verify data", harness.serverLocalVerifyData);
+
+        assertTrue("the server did not verify the client's Finished over the same transcript",
+            Arrays.areEqual(harness.clientLocalVerifyData, harness.serverPeerVerifyData));
+        assertTrue("the client did not verify the server's Finished over the same transcript",
+            Arrays.areEqual(harness.serverLocalVerifyData, harness.clientPeerVerifyData));
+
+        assertNotNull("no application data echoed back", harness.echo);
+        assertTrue("echoed application data differs", Arrays.areEqual(harness.request, harness.echo));
+
+        /*
+         * RFC 9147 5.3 and 4. Both ClientHellos and both of the server's hellos are unprotected epoch-0
+         * plaintext records; everything after them carries the unified header.
+         */
+        checkPlaintextHelloRecords(harness.clientRecords(), 2, "client");
+        checkPlaintextHelloRecords(harness.serverRecords(), 2, "server");
+
+        checkEpochProgression(harness.clientRecords(), "client");
+        checkEpochProgression(harness.serverRecords(), "server");
+    }
+
+    /**
+     * The first 'count' records of a side are unprotected epoch-0 plaintext hellos, and every record after
+     * them is a DTLS 1.3 unified-header record (RFC 9147 4).
+     */
+    private void checkPlaintextHelloRecords(Vector records, int count, String side)
+    {
+        assertTrue(side + " sent fewer than " + count + " records", records.size() > count);
+
+        for (int i = 0; i < count; ++i)
+        {
+            Record record = (Record)records.elementAt(i);
+
+            assertFalse(side + " record " + i + " used the DTLS 1.3 unified header", record.isUnified());
+            assertEquals(side + " record " + i + " content type", ContentType.handshake,
+                record.getContentType());
+            assertEquals(side + " record " + i + " epoch", 0, record.getPlaintextEpoch());
+        }
+
+        for (int i = count; i < records.size(); ++i)
+        {
+            Record record = (Record)records.elementAt(i);
+
+            assertTrue(side + " record " + i + " is not a DTLS 1.3 unified-header record (first byte 0x"
+                + Integer.toHexString(record.getFirstByte()) + ")", record.isUnified());
+        }
+    }
+
+    /**
+     * The cookie exchange over a lossy path. RFC 9147 5.8.1 retransmits each handshake fragment at the epoch
+     * it was first sent under, and the flight bookkeeping is reset at each flight boundary: a cookie exchange
+     * adds two of those boundaries on each side (the first ClientHello, then the HelloRetryRequest, then the
+     * second ClientHello), so a retransmission after the retry must still find the right message. Loss is what
+     * makes that machinery run at all, which is why this is a separate test from the clean one.
+     */
+    public void testClientServerWithHelloRetryRequestAndPacketLoss() throws Exception
+    {
+        Harness harness = new Harness();
+        harness.forceHelloRetryRequest = true;
+        harness.loss = new UnreliableDatagramTransportFactory(new Random(0x5AC00C1EL), 10, 10);
+
+        harness.run(16);
+
+        assertEquals("client negotiated version", ProtocolVersion.DTLSv13, harness.clientVersion);
+        assertEquals("server negotiated version", ProtocolVersion.DTLSv13, harness.serverVersion);
+
+        assertTrue("the server did not send a HelloRetryRequest", hasHelloRetryRequest(harness.serverRecords()));
+
+        assertTrue("the server did not verify the client's Finished over the same transcript",
+            Arrays.areEqual(harness.clientLocalVerifyData, harness.serverPeerVerifyData));
+        assertTrue("the client did not verify the server's Finished over the same transcript",
+            Arrays.areEqual(harness.serverLocalVerifyData, harness.clientPeerVerifyData));
+
+        assertNotNull("no application data echoed back", harness.echo);
+        assertTrue("echoed application data differs", Arrays.areEqual(harness.request, harness.echo));
+
+        /*
+         * Every ClientHello and every (Hello)ServerHello, original or retransmitted, was sent at epoch 0.
+         */
+        checkHelloEpochs(harness.clientRecords(), HandshakeType.client_hello, "client");
+        checkHelloEpochs(harness.serverRecords(), HandshakeType.server_hello, "server");
+    }
+
+    private static boolean hasHelloRetryRequest(Vector records)
+    {
+        Vector serverHellos = handshakeBodies(records, HandshakeType.server_hello);
+
+        for (int i = 0; i < serverHellos.size(); ++i)
+        {
+            if (isHelloRetryRequest((byte[])serverHellos.elementAt(i)))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * RFC 9147 6.1. Every record carrying a message of the given handshake type was an unprotected epoch-0
+     * plaintext record, retransmissions included - the epoch a fragment is retransmitted at is the one it was
+     * first sent at, and for the hellos of a cookie exchange that is always 0.
+     */
+    private void checkHelloEpochs(Vector records, short msgType, String side)
+    {
+        int seen = 0;
+
+        for (int i = 0; i < records.size(); ++i)
+        {
+            Record record = (Record)records.elementAt(i);
+            if (record.isUnified() || ContentType.handshake != record.getContentType())
+            {
+                continue;
+            }
+
+            byte[] fragment = record.getFragment();
+            if (fragment.length < MESSAGE_HEADER_LENGTH || msgType != (fragment[0] & 0xFF))
+            {
+                continue;
+            }
+
+            assertEquals(side + " record " + i + " epoch", 0, record.getPlaintextEpoch());
+            ++seen;
+        }
+
+        assertTrue("no " + side + " hello records of type " + msgType, seen > 0);
+    }
+
+    /**
+     * RFC 8446 4.2.2. "When sending the new ClientHello, the client MUST copy the contents of the extension
+     * received in the HelloRetryRequest into a "cookie" extension in the new ClientHello." Read off the wire
+     * in both directions, so that a client which echoed something else - or nothing - fails here even though
+     * this server would accept it.
+     * <p>
+     * RFC 9147 5.3 also keeps the ClientHello's 'legacy_cookie' field for backwards compatibility only: a
+     * DTLS 1.3 client writes it empty and a DTLS 1.3 server ignores it.
+     * </p>
+     */
+    public void testSecondClientHelloEchoesTheCookie() throws Exception
+    {
+        Harness harness = new Harness();
+        harness.forceHelloRetryRequest = true;
+
+        harness.run(16);
+
+        assertNotNull("no application data echoed back", harness.echo);
+
+        Vector clientHellos = handshakeBodies(harness.clientRecords(), HandshakeType.client_hello);
+        Vector serverHellos = handshakeBodies(harness.serverRecords(), HandshakeType.server_hello);
+
+        assertEquals("number of ClientHellos sent", 2, clientHellos.size());
+        assertTrue("the server's first answer was not a HelloRetryRequest",
+            isHelloRetryRequest((byte[])serverHellos.elementAt(0)));
+
+        byte[] issuedCookie = serverHelloCookie((byte[])serverHellos.elementAt(0));
+        assertNotNull("the HelloRetryRequest carried no cookie extension", issuedCookie);
+        assertTrue("the HelloRetryRequest cookie was empty", issuedCookie.length > 0);
+
+        assertNull("the first ClientHello carried a cookie extension",
+            clientHelloCookie((byte[])clientHellos.elementAt(0)));
+
+        byte[] echoedCookie = clientHelloCookie((byte[])clientHellos.elementAt(1));
+        assertNotNull("the second ClientHello carried no cookie extension", echoedCookie);
+        assertTrue("the second ClientHello did not echo the cookie exactly",
+            Arrays.areEqual(issuedCookie, echoedCookie));
+
+        assertEquals("the first ClientHello's legacy_cookie was not empty", 0,
+            clientHelloLegacyCookie((byte[])clientHellos.elementAt(0)).length);
+        assertEquals("the second ClientHello's legacy_cookie was not empty", 0,
+            clientHelloLegacyCookie((byte[])clientHellos.elementAt(1)).length);
+    }
+
+    /**
+     * RFC 8446 4.1.4. "If a client receives a second HelloRetryRequest in the same connection (i.e., where the
+     * ClientHello was itself in response to a HelloRetryRequest), it MUST abort the handshake with an
+     * "unexpected_message" alert."
+     * <p>
+     * The second HelloRetryRequest is manufactured on the path rather than by the server, which will not send
+     * one: the client's second ClientHello is swallowed and the server's own HelloRetryRequest record is
+     * played back to the client instead, with a fresh record sequence number and the next handshake
+     * message_seq so that nothing discards it as a duplicate. That is precisely what an attacker able to put a
+     * datagram on the path can do, since these records are unprotected epoch-0 plaintext.
+     * </p>
+     */
+    public void testSecondHelloRetryRequestRejected() throws Exception
+    {
+        Harness harness = new Harness();
+        harness.forceHelloRetryRequest = true;
+        harness.replaySecondHelloRetryRequest = true;
+
+        try
+        {
+            harness.run(16);
+
+            fail("expected the client to abort on a second HelloRetryRequest");
+        }
+        catch (TlsFatalAlert fatalAlert)
+        {
+            assertEquals("alert for a second HelloRetryRequest", AlertDescription.unexpected_message,
+                fatalAlert.getAlertDescription());
+        }
+
+        assertTrue("the second HelloRetryRequest was never played back", harness.replayed > 0);
+    }
+
+    /**
+     * RFC 8446 4.2.2. The second ClientHello must echo the cookie exactly, and a server that accepted anything
+     * else would have no way to tell its own HelloRetryRequest's answer from an unrelated ClientHello. One byte
+     * of the echoed cookie is flipped on the path, so the client is well-behaved and only the server's check
+     * can catch it.
+     */
+    public void testSecondClientHelloWithAMangledCookieRejected() throws Exception
+    {
+        Harness harness = new Harness();
+        harness.forceHelloRetryRequest = true;
+        harness.mangleSecondClientHello = MANGLE_COOKIE;
+
+        try
+        {
+            harness.run(16);
+
+            fail("expected the server to abort on a mangled cookie");
+        }
+        catch (TlsFatalAlertReceived fatalAlert)
+        {
+            assertEquals("alert for a second ClientHello that did not echo the cookie",
+                AlertDescription.illegal_parameter, fatalAlert.getAlertDescription());
+        }
+
+        assertTrue("the second ClientHello was never mangled", harness.mangled > 0);
+    }
+
+    /**
+     * RFC 8446 4.1.2. "the client MUST send the same ClientHello without modification, except as follows"
+     * - and 'random' is not on that list. One byte of it is flipped on the path, which must be refused rather
+     * than quietly accepted as the answer to the HelloRetryRequest.
+     */
+    public void testSecondClientHelloThatDidNotRepeatTheFirstRejected() throws Exception
+    {
+        Harness harness = new Harness();
+        harness.forceHelloRetryRequest = true;
+        harness.mangleSecondClientHello = MANGLE_RANDOM;
+
+        try
+        {
+            harness.run(16);
+
+            fail("expected the server to abort on a second ClientHello that changed 'random'");
+        }
+        catch (TlsFatalAlertReceived fatalAlert)
+        {
+            assertEquals("alert for a second ClientHello that did not repeat the first",
+                AlertDescription.illegal_parameter, fatalAlert.getAlertDescription());
+        }
+
+        assertTrue("the second ClientHello was never mangled", harness.mangled > 0);
+    }
+
+    /** RFC 8446 4.1.3. A ServerHello body whose 'random' is the HelloRetryRequest value. */
+    private static boolean isHelloRetryRequest(byte[] serverHelloBody)
+    {
+        return Arrays.areEqual(HELLO_RETRY_REQUEST_RANDOM,
+            Arrays.copyOfRange(serverHelloBody, 2, 2 + 32));
+    }
+
+    /**
+     * The bodies of every unfragmented handshake message of the given type carried by the plaintext records,
+     * in order. A ClientHello or ServerHello always fits one record at this MTU, so a fragmented one would be
+     * a defect and is deliberately not reassembled here.
+     */
+    private static Vector handshakeBodies(Vector records, short msgType)
+    {
+        Vector bodies = new Vector();
+
+        for (int i = 0; i < records.size(); ++i)
+        {
+            Record record = (Record)records.elementAt(i);
+            if (record.isUnified() || ContentType.handshake != record.getContentType())
+            {
+                continue;
+            }
+
+            byte[] fragment = record.getFragment();
+
+            int pos = 0;
+            while (pos + MESSAGE_HEADER_LENGTH <= fragment.length)
+            {
+                int length = readUint24(fragment, pos + 1);
+                int fragmentOffset = readUint24(fragment, pos + 6);
+                int fragmentLength = readUint24(fragment, pos + 9);
+
+                if (pos + MESSAGE_HEADER_LENGTH + fragmentLength > fragment.length)
+                {
+                    break;
+                }
+
+                if (msgType == (fragment[pos] & 0xFF) && 0 == fragmentOffset && length == fragmentLength)
+                {
+                    bodies.addElement(Arrays.copyOfRange(fragment, pos + MESSAGE_HEADER_LENGTH,
+                        pos + MESSAGE_HEADER_LENGTH + fragmentLength));
+                }
+
+                pos += MESSAGE_HEADER_LENGTH + fragmentLength;
+            }
+        }
+
+        return bodies;
+    }
+
+    /** RFC 9147 5.3. The ClientHello's 'legacy_cookie' field, which a DTLS 1.3 client writes empty. */
+    private static byte[] clientHelloLegacyCookie(byte[] body)
+    {
+        int pos = 2 + 32;
+        pos += 1 + (body[pos] & 0xFF);
+
+        int cookieLength = body[pos] & 0xFF;
+        return Arrays.copyOfRange(body, pos + 1, pos + 1 + cookieLength);
+    }
+
+    /** The contents of the ClientHello's "cookie" extension (RFC 8446 4.2.2), or null if it has none. */
+    private static byte[] clientHelloCookie(byte[] body)
+    {
+        int valueOff = clientHelloCookieValueOffset(body, 0);
+        if (valueOff < 0)
+        {
+            return null;
+        }
+
+        return Arrays.copyOfRange(body, valueOff, valueOff + readUint16(body, valueOff - 2));
+    }
+
+    /**
+     * The offset within 'buf' of the first byte of the cookie carried by the "cookie" extension of the
+     * ClientHello whose body begins at 'bodyOff', or -1 if there is no such extension. Offset-based rather
+     * than copying, because the corruption tests rewrite the cookie in place in a datagram.
+     */
+    private static int clientHelloCookieValueOffset(byte[] buf, int bodyOff)
+    {
+        int pos = bodyOff + 2 + 32;
+        // legacy_session_id
+        pos += 1 + (buf[pos] & 0xFF);
+        // legacy_cookie
+        pos += 1 + (buf[pos] & 0xFF);
+        // cipher_suites
+        pos += 2 + readUint16(buf, pos);
+        // legacy_compression_methods
+        pos += 1 + (buf[pos] & 0xFF);
+
+        if (pos + 2 > buf.length)
+        {
+            return -1;
+        }
+
+        int end = pos + 2 + readUint16(buf, pos);
+        pos += 2;
+
+        while (pos + 4 <= end)
+        {
+            int extensionType = readUint16(buf, pos);
+            int extensionLength = readUint16(buf, pos + 2);
+            pos += 4;
+
+            if (ExtensionType.cookie == extensionType)
+            {
+                // The extension data is opaque cookie<1..2^16-1>, so skip its own length prefix
+                return pos + 2;
+            }
+
+            pos += extensionLength;
+        }
+
+        return -1;
+    }
+
+    /**
+     * The offset within the datagram of the body of the first ClientHello it carries, or -1 if it carries
+     * none. Only unprotected plaintext records are walked: a ClientHello is never anything else.
+     */
+    private static int findClientHelloBodyOffset(byte[] buf, int off, int len)
+    {
+        int pos = off;
+        int end = off + len;
+
+        while (pos + PLAINTEXT_HEADER_LENGTH <= end)
+        {
+            int firstByte = buf[pos] & 0xFF;
+            if ((firstByte & UNIFIED_FIXED_BITS_MASK) == UNIFIED_FIXED_BITS)
+            {
+                return -1;
+            }
+
+            int recordLength = PLAINTEXT_HEADER_LENGTH + readUint16(buf, pos + 11);
+            if (pos + recordLength > end)
+            {
+                return -1;
+            }
+
+            int fragment = pos + PLAINTEXT_HEADER_LENGTH;
+
+            if (ContentType.handshake == firstByte
+                && fragment + MESSAGE_HEADER_LENGTH <= end
+                && HandshakeType.client_hello == (buf[fragment] & 0xFF))
+            {
+                return fragment + MESSAGE_HEADER_LENGTH;
+            }
+
+            pos += recordLength;
+        }
+
+        return -1;
+    }
+
+    /** The contents of the ServerHello's "cookie" extension (RFC 8446 4.2.2), or null if it has none. */
+    private static byte[] serverHelloCookie(byte[] body)
+    {
+        int pos = 2 + 32;
+        // legacy_session_id_echo
+        pos += 1 + (body[pos] & 0xFF);
+        // cipher_suite and legacy_compression_method
+        pos += 3;
+
+        return findCookieExtension(body, pos);
+    }
+
+    /**
+     * Walks the extensions block beginning at 'pos' (a uint16 length followed by type/length/data triples) and
+     * decodes the "cookie" extension's own opaque&lt;1..2^16-1&gt; body.
+     */
+    private static byte[] findCookieExtension(byte[] body, int pos)
+    {
+        if (pos + 2 > body.length)
+        {
+            return null;
+        }
+
+        int end = pos + 2 + readUint16(body, pos);
+        pos += 2;
+
+        while (pos + 4 <= end)
+        {
+            int extensionType = readUint16(body, pos);
+            int extensionLength = readUint16(body, pos + 2);
+            pos += 4;
+
+            if (ExtensionType.cookie == extensionType)
+            {
+                return Arrays.copyOfRange(body, pos + 2, pos + extensionLength);
+            }
+
+            pos += extensionLength;
+        }
+
+        return null;
     }
 
     private static boolean isTLSv13CipherSuite(int cipherSuite)
@@ -364,6 +882,9 @@ public class DTLS13ProtocolTest
         boolean dropFirstClientEpoch2Datagram = false;
         boolean holdFirstClientEpoch2Datagram = false;
         boolean probeServerAckPath = false;
+        boolean forceHelloRetryRequest = false;
+        boolean replaySecondHelloRetryRequest = false;
+        int mangleSecondClientHello = MANGLE_NONE;
         UnreliableDatagramTransportFactory loss = null;
 
         ProtocolVersion clientVersion = null;
@@ -374,6 +895,13 @@ public class DTLS13ProtocolTest
         byte[] echo = null;
         int dropped = 0;
         int reordered = 0;
+        int replayed = 0;
+        int mangled = 0;
+
+        byte[] clientLocalVerifyData = null;
+        byte[] clientPeerVerifyData = null;
+        byte[] serverLocalVerifyData = null;
+        byte[] serverPeerVerifyData = null;
 
         // Counts of the server's protected (epoch 3) records, taken while no application data is in flight
         int serverEpoch3AfterHandshake = -1;
@@ -412,7 +940,11 @@ public class DTLS13ProtocolTest
                 {
                     super.notifyHandshakeComplete();
 
-                    clientCipherSuite = context.getSecurityParametersConnection().getCipherSuite();
+                    SecurityParameters sp = context.getSecurityParametersConnection();
+
+                    clientCipherSuite = sp.getCipherSuite();
+                    clientLocalVerifyData = sp.getLocalVerifyData();
+                    clientPeerVerifyData = sp.getPeerVerifyData();
                 }
             };
             client.setHandshakeTimeoutMillis(HANDSHAKE_TIMEOUT_MILLIS);
@@ -429,6 +961,22 @@ public class DTLS13ProtocolTest
                     return HANDSHAKE_TIMEOUT_MILLIS;
                 }
 
+                public int[] getSupportedGroups() throws IOException
+                {
+                    if (!forceHelloRetryRequest)
+                    {
+                        return super.getSupportedGroups();
+                    }
+
+                    /*
+                     * RFC 8446 4.1.4 and 4.2.8. The client sends a key share only for its single most
+                     * preferred group (x25519 here), so a server that will only use secp384r1 has no usable
+                     * share and must answer with a HelloRetryRequest naming it. That is the one reason this
+                     * implementation sends a HelloRetryRequest, and the cookie rides along with it.
+                     */
+                    return new int[]{ NamedGroup.secp384r1 };
+                }
+
                 public ProtocolVersion getServerVersion() throws IOException
                 {
                     ProtocolVersion version = super.getServerVersion();
@@ -442,13 +990,19 @@ public class DTLS13ProtocolTest
                 {
                     super.notifyHandshakeComplete();
 
-                    serverCipherSuite = context.getSecurityParametersConnection().getCipherSuite();
+                    SecurityParameters sp = context.getSecurityParametersConnection();
+
+                    serverCipherSuite = sp.getCipherSuite();
+                    serverLocalVerifyData = sp.getLocalVerifyData();
+                    serverPeerVerifyData = sp.getPeerVerifyData();
                 }
             };
 
             MockDatagramAssociation network = new MockDatagramAssociation(1500);
 
-            ServerThread serverThread = new ServerThread(new DTLSServerProtocol(), server, network.getServer());
+            DTLSServerProtocol serverProtocol = new DTLSServerProtocol();
+
+            ServerThread serverThread = new ServerThread(serverProtocol, server, network.getServer());
             serverThread.setDaemon(true);
             serverThread.start();
 
@@ -464,6 +1018,8 @@ public class DTLS13ProtocolTest
             this.recording = new RecordingDatagramTransport(clientTransport);
             recording.dropFirstEpoch2Datagram = dropFirstClientEpoch2Datagram;
             recording.holdFirstEpoch2Datagram = holdFirstClientEpoch2Datagram;
+            recording.replaySecondHelloRetryRequest = replaySecondHelloRetryRequest;
+            recording.mangleSecondClientHello = mangleSecondClientHello;
 
             try
             {
@@ -501,6 +1057,8 @@ public class DTLS13ProtocolTest
             {
                 this.dropped = recording.getDropped();
                 this.reordered = recording.getReordered();
+                this.replayed = recording.getReplayed();
+                this.mangled = recording.getMangled();
 
                 serverThread.shutdown();
             }
@@ -610,7 +1168,7 @@ public class DTLS13ProtocolTest
             {
                 /*
                  * NOTE: Not the DTLSVerifier harness the DTLS 1.2 tests use: that issues a DTLS 1.2
-                 * HelloVerifyRequest, where RFC 9147 uses a HelloRetryRequest cookie instead.
+                 * HelloVerifyRequest, which RFC 9147 5.1 has no place for in DTLS 1.3.
                  */
                 DTLSTransport dtlsTransport = serverProtocol.accept(server, serverTransport);
 
@@ -675,10 +1233,17 @@ public class DTLS13ProtocolTest
 
         boolean dropFirstEpoch2Datagram = false;
         boolean holdFirstEpoch2Datagram = false;
+        boolean replaySecondHelloRetryRequest = false;
+        int mangleSecondClientHello = MANGLE_NONE;
 
         private byte[] held = null;
+        private byte[] capturedHelloRetryRequest = null;
+        private byte[] injected = null;
+        private int clientHellosSent = 0;
         private int dropped = 0;
         private int reordered = 0;
+        private int replayed = 0;
+        private int mangled = 0;
 
         RecordingDatagramTransport(DatagramTransport transport)
         {
@@ -711,6 +1276,16 @@ public class DTLS13ProtocolTest
             return reordered;
         }
 
+        int getReplayed()
+        {
+            return replayed;
+        }
+
+        int getMangled()
+        {
+            return mangled;
+        }
+
         public int getReceiveLimit() throws IOException
         {
             return transport.getReceiveLimit();
@@ -723,7 +1298,21 @@ public class DTLS13ProtocolTest
 
         public int receive(byte[] buf, int off, int len, int waitMillis) throws IOException
         {
-            int length = transport.receive(buf, off, len, waitMillis);
+            int length;
+
+            byte[] replay = injected;
+            if (null != replay && replay.length <= len)
+            {
+                this.injected = null;
+
+                System.arraycopy(replay, 0, buf, off, replay.length);
+                length = replay.length;
+            }
+            else
+            {
+                length = transport.receive(buf, off, len, waitMillis);
+            }
+
             if (length > 0)
             {
                 Vector records = parseRecords(buf, off, length);
@@ -734,7 +1323,13 @@ public class DTLS13ProtocolTest
                         receivedRecords.addElement(records.elementAt(i));
                     }
                 }
+
+                if (replaySecondHelloRetryRequest && null == capturedHelloRetryRequest)
+                {
+                    this.capturedHelloRetryRequest = findHelloRetryRequestRecord(records);
+                }
             }
+
             return length;
         }
 
@@ -748,6 +1343,67 @@ public class DTLS13ProtocolTest
                 for (int i = 0; i < records.size(); ++i)
                 {
                     sentRecords.addElement(records.elementAt(i));
+                }
+            }
+
+            if (replaySecondHelloRetryRequest || MANGLE_NONE != mangleSecondClientHello)
+            {
+                int clientHelloBodyOffset = findClientHelloBodyOffset(buf, off, len);
+                if (clientHelloBodyOffset >= 0)
+                {
+                    ++clientHellosSent;
+
+                    if (2 == clientHellosSent && replaySecondHelloRetryRequest
+                        && null != capturedHelloRetryRequest)
+                    {
+                        /*
+                         * Swallow the second ClientHello and answer it with the server's own HelloRetryRequest
+                         * record instead, renumbered so that neither the record-layer replay window nor the
+                         * handshake's message_seq bookkeeping can discard it as something already seen.
+                         */
+                        byte[] replay = Arrays.clone(capturedHelloRetryRequest);
+
+                        // record sequence_number, a value the server has not used
+                        replay[5] = (byte)0;
+                        replay[9] = (byte)0x7F;
+                        replay[10] = (byte)0xFF;
+
+                        // handshake message_seq: the one after the server's real HelloRetryRequest
+                        replay[PLAINTEXT_HEADER_LENGTH + 4] = (byte)0;
+                        replay[PLAINTEXT_HEADER_LENGTH + 5] = (byte)1;
+
+                        this.injected = replay;
+                        ++replayed;
+
+                        System.out.println("DTLS 1.3 test: replayed the HelloRetryRequest as a second one");
+                        return;
+                    }
+
+                    /*
+                     * NOTE: Every ClientHello from the second on, retransmissions included, so that a
+                     * retransmission cannot arrive intact and let the handshake through after all.
+                     */
+                    if (clientHellosSent >= 2 && MANGLE_NONE != mangleSecondClientHello)
+                    {
+                        byte[] datagram = Arrays.copyOfRange(buf, off, off + len);
+                        int bodyOffset = clientHelloBodyOffset - off;
+
+                        int target = MANGLE_COOKIE == mangleSecondClientHello
+                            ? clientHelloCookieValueOffset(datagram, bodyOffset)
+                            : bodyOffset + 2;
+
+                        if (target >= 0)
+                        {
+                            datagram[target] ^= (byte)0x01;
+                            ++mangled;
+
+                            System.out.println("DTLS 1.3 test: corrupted byte " + target
+                                + " of the second ClientHello");
+                        }
+
+                        transport.send(datagram, 0, datagram.length);
+                        return;
+                    }
                 }
             }
 
@@ -797,6 +1453,27 @@ public class DTLS13ProtocolTest
         public void close() throws IOException
         {
             transport.close();
+        }
+
+        /** The raw bytes of a plaintext record carrying a HelloRetryRequest, or null if there is none. */
+        private static byte[] findHelloRetryRequestRecord(Vector records)
+        {
+            for (int i = 0; i < records.size(); ++i)
+            {
+                Record record = (Record)records.elementAt(i);
+                if (!record.isUnified() && ContentType.handshake == record.getContentType())
+                {
+                    byte[] fragment = record.getFragment();
+                    if (fragment.length >= MESSAGE_HEADER_LENGTH + 2 + 32
+                        && HandshakeType.server_hello == (fragment[0] & 0xFF)
+                        && isHelloRetryRequest(Arrays.copyOfRange(fragment, MESSAGE_HEADER_LENGTH,
+                            fragment.length)))
+                    {
+                        return record.getBytes();
+                    }
+                }
+            }
+            return null;
         }
 
         private static boolean containsEpoch(Vector records, int epoch)
@@ -907,6 +1584,12 @@ public class DTLS13ProtocolTest
         int getPlaintextEpoch()
         {
             return readUint16(record, 3);
+        }
+
+        /** The record exactly as it crossed the transport. */
+        byte[] getBytes()
+        {
+            return Arrays.clone(record);
         }
 
         /** The plaintext fragment of an unprotected record. */

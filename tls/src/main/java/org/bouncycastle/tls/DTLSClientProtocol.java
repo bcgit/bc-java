@@ -105,7 +105,12 @@ public class DTLSClientProtocol
 
         handshake.sendMessage(HandshakeType.client_hello, clientHelloBody);
 
-        DTLSReliableHandshake.Message serverMessage = handshake.receiveMessage();
+        /*
+         * NOTE: Received without being digested. A HelloRetryRequest must not go into the transcript until
+         * the first ClientHello in it has been replaced by RFC 8446 4.4.1's synthetic "message_hash"
+         * message, and whether this is one is only known once its body has been read.
+         */
+        DTLSReliableHandshake.Message serverMessage = handshake.receiveMessageDelayedDigest();
 
         // TODO Consider stricter HelloVerifyRequest protocol
 //        if (serverMessage.getType() == HandshakeType.hello_verify_request)
@@ -117,11 +122,49 @@ public class DTLSClientProtocol
             handshake.resetAfterHelloVerifyRequestClient();
             handshake.sendMessage(HandshakeType.client_hello, patched);
 
-            serverMessage = handshake.receiveMessage();
+            serverMessage = handshake.receiveMessageDelayedDigest();
+        }
+
+        if (serverMessage.getType() == HandshakeType.server_hello && isHelloRetryRequest(serverMessage.getBody()))
+        {
+            process13HelloRetryRequest(state, serverMessage.getBody());
+
+            /*
+             * RFC 8446 4.4.1. The transcript for a handshake with a HelloRetryRequest begins with a
+             * synthetic "message_hash" message carrying the hash of the first ClientHello alone, which
+             * replaces it. So the first ClientHello is hashed and substituted here - reading the transcript
+             * is what flushes it, in the DTLS 1.3 header form now that the negotiated version is known - and
+             * only then is the HelloRetryRequest hashed after it.
+             */
+            TlsHandshakeHash handshakeHash = handshake.getHandshakeHash();
+            handshakeHash.notifyPRFDetermined();
+
+            TlsUtils.adjustTranscriptForRetry(handshakeHash);
+
+            handshake.updateHandshakeMessagesDigest(serverMessage);
+
+            handshake.sendMessage(HandshakeType.client_hello, generate13ClientHelloRetry(state));
+
+            state.afterHelloRetryRequest = true;
+
+            serverMessage = handshake.receiveMessageDelayedDigest();
+
+            /*
+             * RFC 8446 4.1.4. If a client receives a second HelloRetryRequest in the same connection (i.e.,
+             * where the ClientHello was itself in response to a HelloRetryRequest), it MUST abort the
+             * handshake with an "unexpected_message" alert.
+             */
+            if (serverMessage.getType() == HandshakeType.server_hello && isHelloRetryRequest(serverMessage.getBody()))
+            {
+                throw new TlsFatalAlert(AlertDescription.unexpected_message,
+                    "Second HelloRetryRequest received");
+            }
         }
 
         if (serverMessage.getType() == HandshakeType.server_hello)
         {
+            handshake.updateHandshakeMessagesDigest(serverMessage);
+
             ProtocolVersion recordLayerVersion = recordLayer.getReadVersion();
 
             /*
@@ -158,7 +201,7 @@ public class DTLSClientProtocol
                 handshake.getHandshakeHash().notifyPRFDetermined();
                 handshake.getHandshakeHash().sealHashAlgorithms();
 
-                process13ServerHelloCoda(state, handshake.getHandshakeHash(), false);
+                process13ServerHelloCoda(state, handshake.getHandshakeHash(), state.afterHelloRetryRequest);
 
                 return clientHandshake13(state, handshake);
             }
@@ -826,6 +869,223 @@ public class DTLSClientProtocol
     }
 
     /**
+     * Whether a ServerHello body is a HelloRetryRequest (RFC 8446 4.1.3: a ServerHello whose 'random' is the
+     * special value). Used only to route the message; all validation is left to
+     * {@link #process13HelloRetryRequest} or {@link #processServerHello}.
+     */
+    protected static boolean isHelloRetryRequest(byte[] body)
+        throws IOException
+    {
+        return ServerHello.parse(new ByteArrayInputStream(body)).isHelloRetryRequest();
+    }
+
+    /**
+     * Mirrors TlsClientProtocol.process13HelloRetryRequest. The "cookie" extension carried here is the
+     * RFC 8446 4.2.2 retry token: opaque to the client, which simply echoes it in its second ClientHello.
+     */
+    protected void process13HelloRetryRequest(ClientHandshakeState state, byte[] body)
+        throws IOException
+    {
+        TlsClient client = state.client;
+        TlsClientContextImpl clientContext = state.clientContext;
+        SecurityParameters securityParameters = clientContext.getSecurityParametersHandshake();
+
+        /*
+         * RFC 9147 5.3. The second ClientHello is still a plaintext record, carrying 'legacy_record_version'
+         * 0xFEFD.
+         */
+        state.recordLayer.setWriteVersion(ProtocolVersion.DTLSv12);
+
+        ServerHello helloRetryRequest = ServerHello.parse(new ByteArrayInputStream(body));
+
+        /*
+         * RFC 8446 4.1.4. Upon receipt of a HelloRetryRequest, the client MUST check the legacy_version,
+         * legacy_session_id_echo, cipher_suite, and legacy_compression_method as specified in Section 4.1.3
+         * and then process the extensions, starting with determining the version using "supported_versions".
+         */
+        ProtocolVersion legacy_version = helloRetryRequest.getVersion();
+        byte[] legacy_session_id_echo = helloRetryRequest.getSessionID();
+        int cipherSuite = helloRetryRequest.getCipherSuite();
+        // NOTE: legacy_compression_method checked during ServerHello parsing
+
+        if (!ProtocolVersion.DTLSv12.equals(legacy_version) ||
+            !Arrays.areEqual(state.clientHello.getSessionID(), legacy_session_id_echo) ||
+            !TlsUtils.isValidCipherSuiteSelection(state.clientHello.getCipherSuites(), cipherSuite))
+        {
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+        }
+
+        Hashtable extensions = helloRetryRequest.getExtensions();
+        if (null == extensions)
+        {
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter, "no extensions found");
+        }
+        TlsUtils.checkExtensionData13(extensions, HandshakeType.hello_retry_request,
+            AlertDescription.illegal_parameter);
+
+        {
+            /*
+             * RFC 8446 4.2. Implementations MUST NOT send extension responses if the remote endpoint did not
+             * send the corresponding extension requests, with the exception of the "cookie" extension in the
+             * HelloRetryRequest. Upon receiving such an extension, an endpoint MUST abort the handshake with
+             * an "unsupported_extension" alert.
+             */
+            Enumeration e = extensions.keys();
+            while (e.hasMoreElements())
+            {
+                Integer extType = (Integer)e.nextElement();
+                int extensionType = extType.intValue();
+
+                if (ExtensionType.cookie == extensionType)
+                {
+                    continue;
+                }
+
+                if (null == TlsUtils.getExtensionData(state.clientExtensions, extType))
+                {
+                    throw new TlsFatalAlert(AlertDescription.unsupported_extension,
+                        "Unrequested extension in HelloRetryRequest: " + ExtensionType.getText(extensionType));
+                }
+            }
+        }
+
+        ProtocolVersion server_version = TlsExtensionsUtils.getSupportedVersionsExtensionServer(extensions);
+        if (null == server_version)
+        {
+            throw new TlsFatalAlert(AlertDescription.missing_extension,
+                "missing extension response: " + ExtensionType.getText(ExtensionType.supported_versions));
+        }
+
+        if (!ProtocolVersion.DTLSv13.isEqualOrEarlierVersionOf(server_version) ||
+            server_version.isLaterVersionOf(ProtocolVersion.DTLSv13))
+        {
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter,
+                "invalid version selected: " + server_version);
+        }
+
+        if (!TlsUtils.isValidVersionForCipherSuite(cipherSuite, server_version))
+        {
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter, "invalid cipher suite for selected version");
+        }
+
+        if (null != state.clientBinders)
+        {
+            if (!Arrays.contains(state.clientBinders.pskKeyExchangeModes, PskKeyExchangeMode.psk_dhe_ke))
+            {
+                state.clientBinders = null;
+
+                client.notifySelectedPSK(null);
+            }
+        }
+
+        int selectedGroup = TlsExtensionsUtils.getKeyShareHelloRetryRequest(extensions);
+
+        /*
+         * TODO[dtls13:psk_ke] RFC 8446 4.2.8. Servers [..] MUST NOT send a KeyShareEntry when using the
+         * "psk_ke" PskKeyExchangeMode - and RFC 8446 4.1.4 permits a HelloRetryRequest that carries only a
+         * cookie, which this does not yet accept.
+         */
+        if (selectedGroup < 0)
+        {
+            throw new TlsFatalAlert(AlertDescription.missing_extension,
+                "missing extension response: " + ExtensionType.getText(ExtensionType.key_share));
+        }
+
+        /*
+         * RFC 8446 4.2.8. Upon receipt of this [Key Share] extension in a HelloRetryRequest, the client MUST
+         * verify that (1) the selected_group field corresponds to a group which was provided in the
+         * "supported_groups" extension in the original ClientHello and (2) the selected_group field does not
+         * correspond to a group which was provided in the "key_share" extension in the original ClientHello.
+         * If either of these checks fails, then the client MUST abort the handshake with an
+         * "illegal_parameter" alert.
+         */
+        if (!TlsUtils.isValidKeyShareSelection(server_version, securityParameters.getClientSupportedGroups(),
+            state.clientAgreements, selectedGroup))
+        {
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter, "invalid key_share selected");
+        }
+
+        byte[] cookie = TlsExtensionsUtils.getCookieExtension(extensions);
+
+        // NOTE: Also checks that this is a version the client offered, and notifies the TlsClient
+        reportServerVersion(state, server_version);
+
+        securityParameters.resumedSession = false;
+        securityParameters.sessionID = TlsUtils.EMPTY_BYTES;
+        client.notifySessionID(TlsUtils.EMPTY_BYTES);
+
+        TlsUtils.negotiatedCipherSuite(securityParameters, cipherSuite);
+        client.notifySelectedCipherSuite(cipherSuite);
+
+        securityParameters.negotiatedGroup = selectedGroup;
+
+        state.clientAgreements = null;
+        state.retryCookie = cookie;
+        state.retryGroup = selectedGroup;
+    }
+
+    /**
+     * Mirrors TlsClientProtocol.send13ClientHelloRetry, except that the message goes out through
+     * DTLSReliableHandshake and RFC 9147 5 drops the TLS 1.3 compatibility-mode change_cipher_spec that
+     * precedes it there.
+     * <p>
+     * RFC 8446 4.1.2: the second ClientHello repeats the first unchanged except for the "key_share",
+     * "early_data", "cookie", "pre_shared_key" and "padding" extensions, which is why the ClientHello object
+     * itself is kept and re-encoded. Its 'legacy_cookie' field stays empty: RFC 9147 5.3 keeps that field
+     * only for backwards compatibility with the DTLS 1.2 HelloVerifyRequest exchange.
+     * </p>
+     */
+    protected byte[] generate13ClientHelloRetry(ClientHandshakeState state)
+        throws IOException
+    {
+        ClientHello clientHello = state.clientHello;
+        Hashtable clientHelloExtensions = clientHello.getExtensions();
+
+        clientHelloExtensions.remove(TlsExtensionsUtils.EXT_cookie);
+        clientHelloExtensions.remove(TlsExtensionsUtils.EXT_early_data);
+        clientHelloExtensions.remove(TlsExtensionsUtils.EXT_key_share);
+        clientHelloExtensions.remove(TlsExtensionsUtils.EXT_pre_shared_key);
+
+        /*
+         * RFC 8446 4.2.2. When sending the new ClientHello, the client MUST copy the contents of the
+         * extension received in the HelloRetryRequest into a "cookie" extension in the new ClientHello.
+         */
+        if (null != state.retryCookie)
+        {
+            TlsExtensionsUtils.addCookieExtension(clientHelloExtensions, state.retryCookie);
+            state.retryCookie = null;
+        }
+
+        /*
+         * TODO[dtls13-psk] Update the "pre_shared_key" extension if present, by recomputing the
+         * "obfuscated_ticket_age" and binder values (TlsUtils.addPreSharedKeyToClientHelloRetry). No PSK is
+         * ever offered yet, so there is nothing to recompute.
+         */
+
+        /*
+         * RFC 8446 4.2.8. [..] when sending the new ClientHello, the client MUST replace the original
+         * "key_share" extension with one containing only a new KeyShareEntry for the group indicated in the
+         * selected_group field of the triggering HelloRetryRequest.
+         */
+        if (state.retryGroup < 0)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        state.clientAgreements = TlsUtils.addKeyShareToClientHelloRetry(state.clientContext,
+            clientHelloExtensions, state.retryGroup);
+
+        /*
+         * TODO[dtls13] Optionally adding, removing, or changing the length of the "padding" extension
+         * [RFC7685].
+         */
+
+        ByteArrayOutputStream buf = new ByteArrayOutputStream();
+        clientHello.encode(state.clientContext, buf);
+        return buf.toByteArray();
+    }
+
+    /**
      * Mirrors TlsClientProtocol.process13ServerHello: check the ServerHello against the ClientHello that was
      * sent, then run the RFC 8446 7.1 key schedule as far as the handshake secret.
      */
@@ -836,11 +1096,14 @@ public class DTLSClientProtocol
         TlsClientContextImpl clientContext = state.clientContext;
         SecurityParameters securityParameters = clientContext.getSecurityParametersHandshake();
 
+        /*
+         * RFC 8446 4.1.4. A HelloRetryRequest is handled in clientHandshake, ahead of this; reaching here
+         * with one means a second one, which must be refused.
+         */
         if (serverHello.isHelloRetryRequest())
         {
-            // TODO[dtls13] HelloRetryRequest (with its cookie extension) is not implemented yet
             throw new TlsFatalAlert(AlertDescription.unexpected_message,
-                "DTLS 1.3 HelloRetryRequest is not implemented");
+                "HelloRetryRequest received where a ServerHello was expected");
         }
 
         ProtocolVersion legacy_version = serverHello.getVersion();
@@ -1304,7 +1567,7 @@ public class DTLSClientProtocol
 
         if (ProtocolVersion.DTLSv13.isEqualOrEarlierVersionOf(server_version))
         {
-            process13ServerHello(state, serverHello, false);
+            process13ServerHello(state, serverHello, state.afterHelloRetryRequest);
             return;
         }
 
@@ -1312,9 +1575,8 @@ public class DTLSClientProtocol
 
         state.clientHello = null;
 
-        // TODO[dtls13]
-//      state.retryCookie = null;
-//      state.retryGroup = -1;
+        state.retryCookie = null;
+        state.retryGroup = -1;
 
         securityParameters.serverRandom = serverHello.getRandom();
 
@@ -1700,6 +1962,9 @@ public class DTLSClientProtocol
         boolean expectSessionTicket = false;
         Hashtable clientAgreements = null;
         OfferedPsks.BindersConfig clientBinders = null;
+        boolean afterHelloRetryRequest = false;
+        byte[] retryCookie = null;
+        int retryGroup = -1;
         TlsKeyExchange keyExchange = null;
         TlsAuthentication authentication = null;
         CertificateStatus certificateStatus = null;
