@@ -32,7 +32,7 @@ public final class Tls13NullCipher
     public Tls13NullCipher(TlsCryptoParameters cryptoParams, TlsHMAC readHMAC, TlsHMAC writeHMAC)
         throws IOException
     {
-        final SecurityParameters securityParameters = cryptoParams.getSecurityParametersHandshake();
+        final SecurityParameters securityParameters = cryptoParams.getSecurityParameters();
         
         if (!TlsImplUtils.isTLSv13(securityParameters.getNegotiatedVersion()))
         {

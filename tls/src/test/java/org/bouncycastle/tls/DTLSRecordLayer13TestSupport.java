@@ -185,6 +185,12 @@ class DTLSRecordLayer13TestSupport
         // handshakeComplete (see DTLSClientProtocol/DTLSServerProtocol): this nulls the handshake security
         // parameters, so anything that still tries to build a cipher off them after this point throws, just
         // as it would in production.
+        //
+        // Passing null for the session (production always passes a real one) is safe only because nothing
+        // in tls/src/main/java/org/bouncycastle/tls currently reads the session back from the context
+        // (AbstractTlsContext.getSession()/getResumableSession() have no callers there); this is a fact
+        // about today's production code, not a property of this harness, and would need revisiting if that
+        // ever changes.
         context.handshakeComplete(peer, null);
 
         checkEquals(3, recordLayer.getReadEpoch());

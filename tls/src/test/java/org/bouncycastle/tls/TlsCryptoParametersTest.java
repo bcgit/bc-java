@@ -4,6 +4,7 @@ import org.bouncycastle.tls.crypto.CryptoHashAlgorithm;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.TlsDTLS13Cipher;
+import org.bouncycastle.tls.crypto.impl.Tls13NullCipher;
 import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
 
 import junit.framework.TestCase;
@@ -80,6 +81,27 @@ public class TlsCryptoParametersTest
         context.handshakeComplete(peer, null);
 
         TlsDTLS13Cipher cipher = (TlsDTLS13Cipher)TlsUtils.initCipher(context);
+        assertNotNull(cipher);
+    }
+
+    /**
+     * The same blocker for the RFC 9150 integrity-only suites (TLS_SHA256_SHA256, TLS_SHA384_SHA384):
+     * {@link Tls13NullCipher} must also be constructible after the handshake has completed, for the same
+     * RFC 9147 4.6.3 key update reason as the AEAD case above.
+     */
+    public void testNullCipherIsConstructedAfterHandshakeCompletes() throws Exception
+    {
+        TlsCrypto crypto = new BcTlsCrypto();
+        TlsPeer peer = createPeer(crypto);
+        AbstractTlsContext context = TlsAEADCipherDTLS13Test.createContext(crypto, false,
+            CipherSuite.TLS_SHA256_SHA256, CryptoHashAlgorithm.sha256, new byte[32], new byte[32]);
+
+        SecurityParameters sp = context.getSecurityParametersHandshake();
+        sp.negotiatedVersion = ProtocolVersion.TLSv13;
+
+        context.handshakeComplete(peer, null);
+
+        Tls13NullCipher cipher = (Tls13NullCipher)TlsUtils.initCipher(context);
         assertNotNull(cipher);
     }
 }
