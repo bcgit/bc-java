@@ -748,7 +748,7 @@ public class DTLS13ProtocolTest
      * DTLS 1.2 countermeasure front end is put in front of the server here precisely because it is the thing
      * that would otherwise send one.
      */
-    public void testHelloVerifyRequestRefusedWhenOnlyDTLSv13Offered() throws Exception
+    public void testClientRefusesAHelloVerifyRequestWhenOnlyDTLSv13WasOffered() throws Exception
     {
         Harness harness = new Harness();
         harness.helloVerifyRequestFrontEnd = true;
@@ -768,30 +768,48 @@ public class DTLS13ProtocolTest
     }
 
     /**
-     * RFC 9147 5.1. The other half of the same rule, and the one a version-straddling client reaches: a client
-     * that also offers DTLS 1.2 must accept a HelloVerifyRequest, since the server may be a 1.2 server - but
-     * having answered one it must not then let the server select DTLS 1.3, because that handshake would have
-     * been reached through a countermeasure DTLS 1.3 does not have. Without this check the cookie exchange is
-     * a way in to a 1.3 handshake.
+     * RFC 9147 5.1. The server half of the same rule. A version-straddling client - one that also offers DTLS
+     * 1.2 - legitimately answers a HelloVerifyRequest, so the server is reached, and the server must then
+     * refuse to select DTLS 1.3 on that connection: DTLS 1.3 has no HelloVerifyRequest, and a client that
+     * answered one rightly refuses a 1.3 selection afterwards (see
+     * DTLS13ClientProtocolTest.testClientRefusesDTLSv13SelectedAfterAHelloVerifyRequest, which scripts a
+     * server that does it anyway). The refusal is raised on the server, with a diagnostic naming the cause,
+     * so an operator who lists DTLSv13 and keeps DTLSVerifier in front of it learns that from their own logs
+     * rather than from an alert on somebody else's client.
+     * <p>
+     * Capping the offered versions at DTLS 1.2 instead is not an option: the RFC 8446 4.1.3 downgrade
+     * sentinel is derived from the server's configured versions, not from the capped list, so a 1.3-capable
+     * client would abort on the sentinel anyway - see the NOTE in DTLSServerProtocol.generateServerHello.
+     * </p>
      */
-    public void testDTLSv13RefusedAfterAHelloVerifyRequest() throws Exception
+    public void testServerRefusesToSelectDTLSv13BehindAHelloVerifyRequest() throws Exception
     {
         Harness harness = new Harness();
         harness.helloVerifyRequestFrontEnd = true;
         harness.clientVersions = ProtocolVersion.DTLSv13.downTo(ProtocolVersion.DTLSv12);
-        harness.serverHandshakeTimeoutMillis = 4000;
+        harness.serverVersions = ProtocolVersion.DTLSv13.downTo(ProtocolVersion.DTLSv12);
 
         try
         {
             harness.run(16);
 
-            fail("expected the client to refuse DTLS 1.3 after a HelloVerifyRequest");
+            fail("expected the server to refuse DTLS 1.3 behind a HelloVerifyRequest front end");
         }
-        catch (TlsFatalAlert fatalAlert)
+        catch (TlsFatalAlertReceived fatalAlertReceived)
         {
-            assertEquals("alert for DTLS 1.3 selected after a HelloVerifyRequest",
-                AlertDescription.illegal_parameter, fatalAlert.getAlertDescription());
+            assertEquals("alert for DTLS 1.3 selected behind a HelloVerifyRequest front end",
+                AlertDescription.internal_error, fatalAlertReceived.getAlertDescription());
         }
+
+        /*
+         * The refusal is raised where the cause is known, which is after the version has been selected, so
+         * DTLS 1.3 really was what the server was about to send - the handshake is not merely failing for
+         * want of a common version.
+         */
+        assertEquals("the version the server refused to go on with", ProtocolVersion.DTLSv13,
+            harness.serverVersion);
+
+        assertEquals("no application data can have been exchanged", null, harness.echo);
     }
 
     /**
@@ -799,7 +817,7 @@ public class DTLS13ProtocolTest
      * client and server that both also speak DTLS 1.2 complete a 1.2 handshake through the cookie exchange,
      * exactly as the DTLS 1.2 suites do.
      */
-    public void testHelloVerifyRequestStillWorksForDTLSv12() throws Exception
+    public void testHelloVerifyRequestStillCompletesADTLSv12Handshake() throws Exception
     {
         Harness harness = new Harness();
         harness.helloVerifyRequestFrontEnd = true;

@@ -132,6 +132,13 @@ public class DTLSServerProtocol
         }
         else
         {
+            /*
+             * Reached through accept(TlsServer, DatagramTransport, DTLSRequest), i.e. behind DTLSVerifier,
+             * which has already sent a DTLS 1.2 HelloVerifyRequest on this connection - see the check in
+             * generateServerHello.
+             */
+            state.afterHelloVerifyRequest = true;
+
             processClientHello(state, request.getClientHello());
 
             request = null;
@@ -1168,6 +1175,27 @@ public class DTLSServerProtocol
         if (ProtocolVersion.DTLSv13.isEqualOrEarlierVersionOf(serverVersion))
         {
             /*
+             * RFC 9147 5.1. DTLS 1.3 has no HelloVerifyRequest at all: its denial-of-service cookie is
+             * carried by a HelloRetryRequest instead. A connection reached through DTLSVerifier has already
+             * had a HelloVerifyRequest sent on it, and DTLSClientProtocol rightly refuses a DTLS 1.3
+             * selection that arrives after one, so this handshake cannot complete. Fail here, where the cause
+             * is known, rather than leave the operator to diagnose their own configuration from an alert
+             * raised on the client.
+             *
+             * NOTE: Capping the offered versions at DTLS 1.2 instead is not an option: the RFC 8446 4.1.3
+             * downgrade sentinel written below is derived from server.getProtocolVersions(), not from the
+             * capped list, so a 1.3-capable client would abort on the sentinel regardless.
+             *
+             * TODO[dtls13] Support the RFC 9147 5.1 stateless HelloRetryRequest cookie exchange in
+             * DTLSVerifier, so that a DTLS 1.3 handshake can be fronted by a cookie exchange too.
+             */
+            if (state.afterHelloVerifyRequest)
+            {
+                throw new TlsFatalAlert(AlertDescription.internal_error,
+                    "DTLS 1.3 cannot be negotiated behind a HelloVerifyRequest front end");
+            }
+
+            /*
              * RFC 9147 5.1. DTLS 1.3 records carry 'legacy_record_version' 0xfefd (DTLS 1.2) in the
              * plaintext records that precede the first protected epoch.
              *
@@ -1731,6 +1759,7 @@ public class DTLSServerProtocol
         Hashtable serverExtensions = null;
         boolean expectSessionTicket = false;
         boolean helloRetryRequestSent = false;
+        boolean afterHelloVerifyRequest = false;
         byte[] retryCookie = null;
         int retryGroup = -1;
         TlsKeyExchange keyExchange = null;

@@ -52,7 +52,63 @@ public class DTLS13ClientProtocolTest
             alertDescription);
     }
 
+    /**
+     * RFC 9147 5.1. DTLS 1.3 has no HelloVerifyRequest, so a server that sent one must not then select DTLS
+     * 1.3: the handshake would have been reached through a denial-of-service countermeasure DTLS 1.3 does not
+     * have, and without this check the DTLS 1.2 cookie exchange is a way in to a 1.3 handshake. A
+     * version-straddling client - one that offers DTLS 1.2 as well - has to accept the HelloVerifyRequest,
+     * because the peer may genuinely be a DTLS 1.2 server, so the refusal can only come afterwards.
+     * <p>
+     * The server half of this sequence is scripted rather than driven by DTLSServerProtocol, because a
+     * conforming BC server no longer produces it: DTLSServerProtocol.generateServerHello refuses to select
+     * DTLS 1.3 behind a HelloVerifyRequest front end at all (see
+     * DTLS13ProtocolTest.testServerRefusesToSelectDTLSv13BehindAHelloVerifyRequest). Only a synthetic peer
+     * can still exercise the client's side of the rule.
+     * </p>
+     */
+    public void testClientRefusesDTLSv13SelectedAfterAHelloVerifyRequest() throws Exception
+    {
+        byte[] cookie = new byte[]{ (byte)0xA1, (byte)0xB2, (byte)0xC3, (byte)0xD4 };
+
+        byte[][] script = new byte[][]{
+            // RFC 6347 4.2.1. HelloVerifyRequest, message_seq 0, answering the first ClientHello
+            createHelloVerifyRequestRecord(cookie, 0),
+            // and then DTLS 1.3 anyway, at the message_seq the client expects a ServerHello at after one
+            createServerHelloRecord(new byte[]{ (byte)0xFE, (byte)0xFC }, 1, 1)
+        };
+
+        ScriptedServerHelloTransport transport = new ScriptedServerHelloTransport(script);
+
+        TlsFatalAlert fatalAlert = connectAndExpectFatalAlert(transport,
+            ProtocolVersion.DTLSv13.downTo(ProtocolVersion.DTLSv12));
+
+        assertEquals("alert for DTLS 1.3 selected after a HelloVerifyRequest",
+            AlertDescription.illegal_parameter, fatalAlert.getAlertDescription());
+
+        /*
+         * The alert description alone would not say which check raised it - the DTLS 1.3 ServerHello scripted
+         * here carries no "key_share" either, and that check raises the same alert a few lines later. The
+         * message, and the fact that the client answered the HelloVerifyRequest with a second ClientHello,
+         * pin it to the rule under test.
+         */
+        assertEquals("the HelloVerifyRequest check must be the one that raised it",
+            "illegal_parameter(47); Server selected DTLS 1.3 after sending a HelloVerifyRequest",
+            fatalAlert.getMessage());
+
+        assertEquals("the client must have answered the HelloVerifyRequest", 2,
+            transport.clientHellosSeen());
+    }
+
     private short connectAndExpectFatalAlert(byte[] selectedVersion) throws Exception
+    {
+        ScriptedServerHelloTransport transport = new ScriptedServerHelloTransport(
+            new byte[][]{ createServerHelloRecord(selectedVersion, 0, 0) });
+
+        return connectAndExpectFatalAlert(transport, ProtocolVersion.DTLSv13.only()).getAlertDescription();
+    }
+
+    private TlsFatalAlert connectAndExpectFatalAlert(ScriptedServerHelloTransport transport,
+        final ProtocolVersion[] clientVersions) throws Exception
     {
         MockDTLSClient client = new MockDTLSClient(null)
         {
@@ -63,7 +119,7 @@ public class DTLS13ClientProtocolTest
 
             protected ProtocolVersion[] getSupportedVersions()
             {
-                return ProtocolVersion.DTLSv13.only();
+                return clientVersions;
             }
         };
 
@@ -71,9 +127,6 @@ public class DTLS13ClientProtocolTest
         client.setHandshakeTimeoutMillis(5000);
 
         DTLSClientProtocol clientProtocol = new DTLSClientProtocol();
-
-        ScriptedServerHelloTransport transport = new ScriptedServerHelloTransport(
-            createServerHelloRecord(selectedVersion));
 
         try
         {
@@ -83,18 +136,35 @@ public class DTLS13ClientProtocolTest
         {
             assertTrue("server never received a ClientHello", transport.sawClientHello());
 
-            return fatalAlert.getAlertDescription();
+            return fatalAlert;
         }
 
         fail("expected the client to raise a fatal alert");
-        return -1;
+        return null;
+    }
+
+    /**
+     * RFC 6347 4.2.1. A DTLS plaintext record carrying a HelloVerifyRequest, whose 'server_version' is DTLS
+     * 1.0 as that section requires regardless of the version being negotiated.
+     */
+    private static byte[] createHelloVerifyRequestRecord(byte[] cookie, long recordSeq) throws IOException
+    {
+        ByteArrayOutputStream body = new ByteArrayOutputStream();
+        // server_version: DTLS 1.0
+        body.write(0xFE);
+        body.write(0xFF);
+        body.write(cookie.length);
+        body.write(cookie, 0, cookie.length);
+
+        return createPlaintextRecord(HandshakeType.hello_verify_request, 0, recordSeq, body.toByteArray());
     }
 
     /**
      * A DTLS plaintext record (RFC 9147 4) carrying a single unfragmented ServerHello, selecting the given
      * version through the "supported_versions" extension.
      */
-    private static byte[] createServerHelloRecord(byte[] selectedVersion) throws IOException
+    private static byte[] createServerHelloRecord(byte[] selectedVersion, int messageSeq, long recordSeq)
+        throws IOException
     {
         ByteArrayOutputStream extensions = new ByteArrayOutputStream();
         writeUint16(extensions, ExtensionType.supported_versions);
@@ -120,8 +190,17 @@ public class DTLS13ClientProtocolTest
         writeUint16(body, extensionsData.length);
         body.write(extensionsData, 0, extensionsData.length);
 
-        byte[] bodyData = body.toByteArray();
+        return createPlaintextRecord(HandshakeType.server_hello, messageSeq, recordSeq, body.toByteArray());
+    }
 
+    /**
+     * RFC 9147 4. One epoch-0 plaintext record carrying one unfragmented handshake message. The
+     * 'sequence_number' is the caller's, because the record layer's replay window discards a repeat of one it
+     * has already accepted, so each record of a scripted sequence needs its own.
+     */
+    private static byte[] createPlaintextRecord(short msgType, int messageSeq, long recordSeq, byte[] bodyData)
+        throws IOException
+    {
         ByteArrayOutputStream record = new ByteArrayOutputStream();
         record.write(ContentType.handshake);
         // legacy_record_version
@@ -129,17 +208,16 @@ public class DTLS13ClientProtocolTest
         record.write(0xFD);
         // epoch
         writeUint16(record, 0);
-        // sequence_number
-        for (int i = 0; i < 6; ++i)
+        // sequence_number (48 bits)
+        for (int i = 5; i >= 0; --i)
         {
-            record.write(0);
+            record.write((int)((recordSeq >>> (8 * i)) & 0xFF));
         }
         writeUint16(record, 12 + bodyData.length);
 
-        record.write(HandshakeType.server_hello);
+        record.write(msgType);
         writeUint24(record, bodyData.length);
-        // message_seq
-        writeUint16(record, 0);
+        writeUint16(record, messageSeq);
         // fragment_offset
         writeUint24(record, 0);
         // fragment_length
@@ -163,24 +241,31 @@ public class DTLS13ClientProtocolTest
     }
 
     /**
-     * Answers the first ClientHello with one prepared record and nothing thereafter.
+     * Answers each ClientHello with the next prepared record, and nothing once the script runs out. One
+     * record per ClientHello is enough for both shapes used here: a single ServerHello, and a
+     * HelloVerifyRequest followed by the ServerHello that answers the second ClientHello.
      */
     private static class ScriptedServerHelloTransport
         implements DatagramTransport
     {
-        private final byte[] serverHelloRecord;
+        private final byte[][] script;
 
-        private boolean sawClientHello = false;
+        private int clientHellosSeen = 0;
         private byte[] pending = null;
 
-        ScriptedServerHelloTransport(byte[] serverHelloRecord)
+        ScriptedServerHelloTransport(byte[][] script)
         {
-            this.serverHelloRecord = serverHelloRecord;
+            this.script = script;
         }
 
         boolean sawClientHello()
         {
-            return sawClientHello;
+            return clientHellosSeen > 0;
+        }
+
+        int clientHellosSeen()
+        {
+            return clientHellosSeen;
         }
 
         public int getReceiveLimit()
@@ -196,11 +281,10 @@ public class DTLS13ClientProtocolTest
         public void send(byte[] buf, int off, int len) throws IOException
         {
             // DTLS plaintext record header (13 bytes), then the DTLS handshake message header
-            if (!sawClientHello && len > 13 && (buf[off] & 0xFF) == ContentType.handshake
+            if (clientHellosSeen < script.length && len > 13 && (buf[off] & 0xFF) == ContentType.handshake
                 && (buf[off + 13] & 0xFF) == HandshakeType.client_hello)
             {
-                this.sawClientHello = true;
-                this.pending = serverHelloRecord;
+                this.pending = script[clientHellosSeen++];
             }
         }
 
