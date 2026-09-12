@@ -210,6 +210,14 @@ class DTLSRecordLayer
 
     private DTLSAckListener ackListener = null;
 
+    /**
+     * RFC 9147 5.8.4 and 7. The owner of post-handshake messages and acknowledgements, installed when the
+     * handshake completes. Deliberately not cleared with 'retransmit' when the retransmit timeout expires:
+     * that hook answers a retransmission of a flight and is over in twice the MSL, while a post-handshake
+     * message may arrive at any point in the connection's life.
+     */
+    private DTLS13PostHandshake postHandshake = null;
+
     /*
      * RFC 9147 7.1. The record number of the most recently accepted handshake record. It is assigned only
      * for records whose decoded content type is handshake, which is its only consumer: the reliable
@@ -637,6 +645,39 @@ class DTLSRecordLayer
             this.currentEpoch = pendingEpoch;
             this.pendingEpoch = null;
         }
+    }
+
+    /**
+     * RFC 9147 5.8.4 and 7. Install the post-handshake owner, which takes over the ACK listener the reliable
+     * handshake is about to give up and receives every handshake record that arrives from here on at epoch
+     * {@link DTLS13PostHandshake#MIN_EPOCH} or above.
+     * <p>
+     * Called from {@link DTLSReliableHandshake#finish()} rather than from
+     * {@link #handshakeSuccessful(DTLSHandshakeRetransmit)}, because the message_seq counters it continues are
+     * the handshake's and are not otherwise visible here.
+     * </p>
+     *
+     * @throws IllegalStateException if the connection is not DTLS 1.3, or if an owner is already installed.
+     */
+    void initPostHandshake(int nextSendSeq, int nextReceiveSeq, int maxHandshakeMessageSize)
+    {
+        if (!dtls13)
+        {
+            throw new IllegalStateException("post-handshake messages are DTLS 1.3 only");
+        }
+        if (null != postHandshake)
+        {
+            throw new IllegalStateException("a post-handshake owner is already installed");
+        }
+
+        this.postHandshake = new DTLS13PostHandshake(this, nextSendSeq, nextReceiveSeq, maxHandshakeMessageSize);
+
+        setAckListener(postHandshake);
+    }
+
+    DTLS13PostHandshake getPostHandshake()
+    {
+        return postHandshake;
     }
 
     void initHeartbeat(TlsHeartbeat heartbeat, boolean heartbeatResponder)
@@ -1297,9 +1338,22 @@ class DTLSRecordLayer
         {
             if (!inHandshake)
             {
+                /*
+                 * The two handlers partition the epochs rather than compete for the record: the RFC 9147
+                 * 5.8.1 hook answers a retransmission of the peer's final flight, which is protected under
+                 * the retained handshake epoch (or, on the client, straddles epoch 0), while the
+                 * post-handshake owner takes only epoch 3 and above (RFC 9147 6.1). Offering the record to
+                 * both keeps that partition in one place, and means the post-handshake owner is unaffected
+                 * when the retransmit timeout drops the hook.
+                 */
                 if (null != retransmit)
                 {
                     retransmit.receivedHandshakeRecord(epoch, decoded.buf, decoded.off, decoded.len);
+                }
+
+                if (null != postHandshake)
+                {
+                    postHandshake.receivedHandshakeRecord(epoch, decoded.buf, decoded.off, decoded.len);
                 }
 
                 // TODO Consider support for HelloRequest
@@ -1818,6 +1872,18 @@ class DTLSRecordLayer
     DTLSRecordNumber sendRecordForTest(short contentType, byte[] buf, int off, int len) throws IOException
     {
         return sendRecord(contentType, buf, off, len);
+    }
+
+    /**
+     * Bring the RFC 9147 5.8.1 retransmit timeout forward so that the next {@link #receive} expires it
+     * through its own code path, instead of a test having to wait twice the MSL for it.
+     */
+    void expireRetransmitTimeoutForTest()
+    {
+        if (null != retransmitTimeout)
+        {
+            this.retransmitTimeout = new Timeout(0);
+        }
     }
 
     /**

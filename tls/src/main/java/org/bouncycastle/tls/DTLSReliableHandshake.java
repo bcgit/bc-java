@@ -473,8 +473,21 @@ class DTLSReliableHandshake
             }
         }
 
-        // RFC 9147 7. Post-handshake ACKs belong to the post-handshake state machines, not this flight tracker.
-        recordLayer.setAckListener(null);
+        if (recordLayer.isDTLS13())
+        {
+            /*
+             * RFC 9147 5.8.4 and 7. Post-handshake ACKs belong to the post-handshake state machines, not to
+             * this flight tracker, so the listener is handed over rather than dropped. The message_seq
+             * counters go with it: post-handshake messages continue the same sequence space in both
+             * directions, and restarting either at zero would be wrong on the wire while still interoperating
+             * perfectly with another peer built from this code.
+             */
+            recordLayer.initPostHandshake(next_send_seq, next_receive_seq, maxHandshakeMessageSize);
+        }
+        else
+        {
+            recordLayer.setAckListener(null);
+        }
 
         recordLayer.handshakeSuccessful(retransmit);
     }
@@ -756,6 +769,18 @@ class DTLSReliableHandshake
             int expectedEpoch;
             if (recordLayer.isDTLS13())
             {
+                /*
+                 * RFC 8446 4.6.3. "Implementations that receive a KeyUpdate message prior to receiving a
+                 * Finished message MUST terminate the connection with an "unexpected_message" alert." The
+                 * epoch test below would drop it quietly, which is not the same thing: a KeyUpdate before the
+                 * keys it updates exist is an error, and a peer that sent one must be told so rather than
+                 * left retransmitting it.
+                 */
+                if (HandshakeType.key_update == msg_type)
+                {
+                    throw new TlsFatalAlert(AlertDescription.unexpected_message);
+                }
+
                 /*
                  * RFC 9147 6.1. Epoch 0 carries the unencrypted ClientHello, ServerHello and
                  * HelloRetryRequest; every other message of the main handshake is protected under the
