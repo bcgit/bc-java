@@ -8,8 +8,10 @@ import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.CipherSuite;
 import org.bouncycastle.tls.ContentType;
 import org.bouncycastle.tls.DTLSClientProtocol;
+import org.bouncycastle.tls.DTLSRequest;
 import org.bouncycastle.tls.DTLSServerProtocol;
 import org.bouncycastle.tls.DTLSTransport;
+import org.bouncycastle.tls.DTLSVerifier;
 import org.bouncycastle.tls.DatagramTransport;
 import org.bouncycastle.tls.ExtensionType;
 import org.bouncycastle.tls.HandshakeType;
@@ -19,7 +21,9 @@ import org.bouncycastle.tls.SecurityParameters;
 import org.bouncycastle.tls.TlsFatalAlert;
 import org.bouncycastle.tls.TlsFatalAlertReceived;
 import org.bouncycastle.tls.TlsServer;
+import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
 
 import junit.framework.TestCase;
 
@@ -62,6 +66,9 @@ public class DTLS13ProtocolTest
         (byte)0xC2, (byte)0xA2, (byte)0x11, (byte)0x16, (byte)0x7A, (byte)0xBB, (byte)0x8C, (byte)0x5E,
         (byte)0x07, (byte)0x9E, (byte)0x09, (byte)0xE2, (byte)0xC8, (byte)0xA8, (byte)0x33, (byte)0x9C
     };
+
+    // NOTE: Test value only - would typically be the client's IP address
+    private static final byte[] CLIENT_ID = Strings.toUTF8ByteArray("MockDtlsClient");
 
     /** What, if anything, to corrupt in the second ClientHello on its way to the server. */
     private static final int MANGLE_NONE = 0;
@@ -440,6 +447,79 @@ public class DTLS13ProtocolTest
         }
 
         assertTrue("the second HelloRetryRequest was never played back", harness.replayed > 0);
+    }
+
+    /**
+     * RFC 9147 5.1. DTLS 1.3 replaces the HelloVerifyRequest with a HelloRetryRequest cookie and has no
+     * HelloVerifyRequest at all, so a client that offered nothing earlier than DTLS 1.3 must refuse one. The
+     * DTLS 1.2 countermeasure front end is put in front of the server here precisely because it is the thing
+     * that would otherwise send one.
+     */
+    public void testHelloVerifyRequestRefusedWhenOnlyDTLSv13Offered() throws Exception
+    {
+        Harness harness = new Harness();
+        harness.helloVerifyRequestFrontEnd = true;
+        harness.serverHandshakeTimeoutMillis = 4000;
+
+        try
+        {
+            harness.run(16);
+
+            fail("expected the client to refuse a HelloVerifyRequest");
+        }
+        catch (TlsFatalAlert fatalAlert)
+        {
+            assertEquals("alert for a HelloVerifyRequest with only DTLS 1.3 offered",
+                AlertDescription.unexpected_message, fatalAlert.getAlertDescription());
+        }
+    }
+
+    /**
+     * RFC 9147 5.1. The other half of the same rule, and the one a version-straddling client reaches: a client
+     * that also offers DTLS 1.2 must accept a HelloVerifyRequest, since the server may be a 1.2 server - but
+     * having answered one it must not then let the server select DTLS 1.3, because that handshake would have
+     * been reached through a countermeasure DTLS 1.3 does not have. Without this check the cookie exchange is
+     * a way in to a 1.3 handshake.
+     */
+    public void testDTLSv13RefusedAfterAHelloVerifyRequest() throws Exception
+    {
+        Harness harness = new Harness();
+        harness.helloVerifyRequestFrontEnd = true;
+        harness.clientVersions = ProtocolVersion.DTLSv13.downTo(ProtocolVersion.DTLSv12);
+        harness.serverHandshakeTimeoutMillis = 4000;
+
+        try
+        {
+            harness.run(16);
+
+            fail("expected the client to refuse DTLS 1.3 after a HelloVerifyRequest");
+        }
+        catch (TlsFatalAlert fatalAlert)
+        {
+            assertEquals("alert for DTLS 1.3 selected after a HelloVerifyRequest",
+                AlertDescription.illegal_parameter, fatalAlert.getAlertDescription());
+        }
+    }
+
+    /**
+     * The counterpart of the two above: the HelloVerifyRequest path that DTLS 1.2 depends on is untouched. A
+     * client and server that both also speak DTLS 1.2 complete a 1.2 handshake through the cookie exchange,
+     * exactly as the DTLS 1.2 suites do.
+     */
+    public void testHelloVerifyRequestStillWorksForDTLSv12() throws Exception
+    {
+        Harness harness = new Harness();
+        harness.helloVerifyRequestFrontEnd = true;
+        harness.clientVersions = ProtocolVersion.DTLSv13.downTo(ProtocolVersion.DTLSv12);
+        harness.serverVersions = ProtocolVersion.DTLSv12.only();
+
+        harness.run(16);
+
+        assertEquals("client negotiated version", ProtocolVersion.DTLSv12, harness.clientVersion);
+        assertEquals("server negotiated version", ProtocolVersion.DTLSv12, harness.serverVersion);
+
+        assertNotNull("no application data echoed back", harness.echo);
+        assertTrue("echoed application data differs", Arrays.areEqual(harness.request, harness.echo));
     }
 
     /**
@@ -885,6 +965,17 @@ public class DTLS13ProtocolTest
         boolean forceHelloRetryRequest = false;
         boolean replaySecondHelloRetryRequest = false;
         int mangleSecondClientHello = MANGLE_NONE;
+        boolean helloVerifyRequestFrontEnd = false;
+        ProtocolVersion[] clientVersions = ProtocolVersion.DTLSv13.only();
+        ProtocolVersion[] serverVersions = ProtocolVersion.DTLSv13.only();
+
+        /*
+         * Only worth lowering for a test where the client aborts partway: the server then has no peer left to
+         * hear from, and shutting the harness down waits for its handshake to give up. Where the client aborts
+         * before installing the handshake traffic keys, its alert is an epoch-0 record the server can no
+         * longer read, so giving up is the only way out.
+         */
+        int serverHandshakeTimeoutMillis = HANDSHAKE_TIMEOUT_MILLIS;
         UnreliableDatagramTransportFactory loss = null;
 
         ProtocolVersion clientVersion = null;
@@ -926,7 +1017,7 @@ public class DTLS13ProtocolTest
             {
                 protected ProtocolVersion[] getSupportedVersions()
                 {
-                    return ProtocolVersion.DTLSv13.only();
+                    return clientVersions;
                 }
 
                 public void notifyServerVersion(ProtocolVersion version) throws IOException
@@ -953,12 +1044,12 @@ public class DTLS13ProtocolTest
             {
                 protected ProtocolVersion[] getSupportedVersions()
                 {
-                    return ProtocolVersion.DTLSv13.only();
+                    return serverVersions;
                 }
 
                 public int getHandshakeTimeoutMillis()
                 {
-                    return HANDSHAKE_TIMEOUT_MILLIS;
+                    return serverHandshakeTimeoutMillis;
                 }
 
                 public int[] getSupportedGroups() throws IOException
@@ -1002,7 +1093,8 @@ public class DTLS13ProtocolTest
 
             DTLSServerProtocol serverProtocol = new DTLSServerProtocol();
 
-            ServerThread serverThread = new ServerThread(serverProtocol, server, network.getServer());
+            ServerThread serverThread = new ServerThread(serverProtocol, server, network.getServer(),
+                helloVerifyRequestFrontEnd);
             serverThread.setDaemon(true);
             serverThread.start();
 
@@ -1153,13 +1245,16 @@ public class DTLS13ProtocolTest
         private final DTLSServerProtocol serverProtocol;
         private final TlsServer server;
         private final DatagramTransport serverTransport;
+        private final boolean helloVerifyRequestFrontEnd;
         private volatile boolean isShutdown = false;
 
-        ServerThread(DTLSServerProtocol serverProtocol, TlsServer server, DatagramTransport serverTransport)
+        ServerThread(DTLSServerProtocol serverProtocol, TlsServer server, DatagramTransport serverTransport,
+            boolean helloVerifyRequestFrontEnd)
         {
             this.serverProtocol = serverProtocol;
             this.server = server;
             this.serverTransport = serverTransport;
+            this.helloVerifyRequestFrontEnd = helloVerifyRequestFrontEnd;
         }
 
         public void run()
@@ -1167,10 +1262,14 @@ public class DTLS13ProtocolTest
             try
             {
                 /*
-                 * NOTE: Not the DTLSVerifier harness the DTLS 1.2 tests use: that issues a DTLS 1.2
-                 * HelloVerifyRequest, which RFC 9147 5.1 has no place for in DTLS 1.3.
+                 * NOTE: By default not the DTLSVerifier harness the DTLS 1.2 tests use: that issues a DTLS
+                 * 1.2 HelloVerifyRequest, where RFC 9147 5.1 uses a HelloRetryRequest cookie instead. The
+                 * tests of that rule turn it on deliberately, to check that a DTLS 1.3 handshake cannot be
+                 * reached through it.
                  */
-                DTLSTransport dtlsTransport = serverProtocol.accept(server, serverTransport);
+                DTLSRequest request = helloVerifyRequestFrontEnd ? verifyRequest() : null;
+
+                DTLSTransport dtlsTransport = serverProtocol.accept(server, serverTransport, request);
 
                 byte[] buf = new byte[dtlsTransport.getReceiveLimit()];
                 while (!isShutdown)
@@ -1186,6 +1285,39 @@ public class DTLS13ProtocolTest
             catch (Exception e)
             {
                 e.printStackTrace();
+            }
+        }
+
+        /**
+         * The DTLS 1.2 denial-of-service countermeasure as a front end, exactly as DTLSProtocolTest drives
+         * it: datagrams are read until one carries a ClientHello with a valid cookie, and anything else is
+         * answered with a HelloVerifyRequest.
+         */
+        private DTLSRequest verifyRequest() throws IOException
+        {
+            TlsCrypto serverCrypto = server.getCrypto();
+
+            DTLSVerifier verifier = new DTLSVerifier(serverCrypto);
+
+            int receiveLimit = serverTransport.getReceiveLimit();
+            byte[] buf = new byte[receiveLimit];
+
+            for (;;)
+            {
+                if (isShutdown)
+                {
+                    return null;
+                }
+
+                int length = serverTransport.receive(buf, 0, receiveLimit, 100);
+                if (length > 0)
+                {
+                    DTLSRequest request = verifier.verifyRequest(CLIENT_ID, buf, 0, length, serverTransport);
+                    if (null != request)
+                    {
+                        return request;
+                    }
+                }
             }
         }
 

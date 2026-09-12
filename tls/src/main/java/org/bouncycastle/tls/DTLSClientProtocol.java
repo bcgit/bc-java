@@ -116,6 +116,20 @@ public class DTLSClientProtocol
 //        if (serverMessage.getType() == HandshakeType.hello_verify_request)
         while (serverMessage.getType() == HandshakeType.hello_verify_request)
         {
+            /*
+             * RFC 9147 5.1. HelloVerifyRequest has no place in DTLS 1.3 at all; its denial-of-service
+             * countermeasure is a HelloRetryRequest cookie instead. A client that offered nothing earlier
+             * than DTLS 1.3 therefore has no use for one, and accepting it would let an attacker drive the
+             * 1.2 cookie exchange ahead of a 1.3 handshake.
+             */
+            if (!state.offeringDTLSv12Minus)
+            {
+                throw new TlsFatalAlert(AlertDescription.unexpected_message,
+                    "HelloVerifyRequest received, but only DTLS 1.3 was offered");
+            }
+
+            state.helloVerifyRequested = true;
+
             byte[] cookie = processHelloVerifyRequest(state, serverMessage.getBody());
             byte[] patched = patchClientHelloWithCookie(clientHelloBody, cookie);
 
@@ -127,6 +141,16 @@ public class DTLSClientProtocol
 
         if (serverMessage.getType() == HandshakeType.server_hello && isHelloRetryRequest(serverMessage.getBody()))
         {
+            /*
+             * RFC 9147 5.1. A HelloRetryRequest means DTLS 1.3, which does not have HelloVerifyRequest, so
+             * the two cannot both have happened.
+             */
+            if (state.helloVerifyRequested)
+            {
+                throw new TlsFatalAlert(AlertDescription.illegal_parameter,
+                    "HelloRetryRequest received after a HelloVerifyRequest");
+            }
+
             process13HelloRetryRequest(state, serverMessage.getBody());
 
             /*
@@ -186,6 +210,17 @@ public class DTLSClientProtocol
             }
 
             boolean isDTLSv13 = ProtocolVersion.DTLSv13.isEqualOrEarlierVersionOf(server_version);
+
+            /*
+             * RFC 9147 5.1. DTLS 1.3 has no HelloVerifyRequest, so a server that sent one cannot then select
+             * DTLS 1.3: either it is confused, or the cookie exchange was driven by something in the middle.
+             * Without this a 1.3 handshake could be reached through the 1.2 countermeasure.
+             */
+            if (isDTLSv13 && state.helloVerifyRequested)
+            {
+                throw new TlsFatalAlert(AlertDescription.illegal_parameter,
+                    "Server selected DTLS 1.3 after sending a HelloVerifyRequest");
+            }
 
             if (!isDTLSv13)
             {
@@ -618,6 +653,9 @@ public class DTLSClientProtocol
 
         boolean offeringDTLSv12Minus = ProtocolVersion.DTLSv12.isEqualOrLaterVersionOf(earliestVersion);
         boolean offeringDTLSv13Plus = ProtocolVersion.DTLSv13.isEqualOrEarlierVersionOf(latestVersion);
+
+        // NOTE: Whether a HelloVerifyRequest is a legal answer at all - see clientHandshake
+        state.offeringDTLSv12Minus = offeringDTLSv12Minus;
 
         {
             boolean useGMTUnixTime = !offeringDTLSv13Plus && client.shouldUseGMTUnixTime();
@@ -1962,6 +2000,8 @@ public class DTLSClientProtocol
         boolean expectSessionTicket = false;
         Hashtable clientAgreements = null;
         OfferedPsks.BindersConfig clientBinders = null;
+        boolean offeringDTLSv12Minus = false;
+        boolean helloVerifyRequested = false;
         boolean afterHelloRetryRequest = false;
         byte[] retryCookie = null;
         int retryGroup = -1;
