@@ -13,6 +13,9 @@ class DTLSReliableHandshake
 {
     static final int MESSAGE_HEADER_LENGTH = 12;
 
+    // RFC 8446 4: msg_type (uint8) and length (uint24), which is what a DTLS 1.3 transcript hashes
+    static final int TLS_MESSAGE_HEADER_LENGTH = 4;
+
     private static final int MAX_RECEIVE_AHEAD = 16;
     private static final int MAX_RESEND_MILLIS = 60000;
 
@@ -82,10 +85,26 @@ class DTLSReliableHandshake
     /*
      * No 'final' modifiers so that it works in earlier JDKs
      */
+    private TlsContext context;
     private DTLSRecordLayer recordLayer;
     private Timeout handshakeTimeout;
 
     private TlsHandshakeHash handshakeHash;
+
+    /*
+     * RFC 9147 5.2. "In DTLS 1.3, the message transcript is computed over the original TLS 1.3-style
+     * Handshake messages without the message_seq, fragment_offset, and fragment_length values." DTLS 1.2
+     * hashes the full 12-byte DTLS header instead.
+     *
+     * The negotiated version is not known when the ClientHello is hashed, nor (for a client) when the
+     * ServerHello is, so messages are held here until it is and only then encoded. Choosing the encoding
+     * per message as it arrives would hash the ClientHello in one form and everything after it in the
+     * other; both peers would do that identically, so no handshake between two of these would ever fail
+     * and the transcript would still be wrong on the wire.
+     */
+    private Vector undecidedTranscript = new Vector();
+    private boolean transcriptDecided = false;
+    private boolean transcriptDTLS13 = false;
 
     private Hashtable currentInboundFlight = new Hashtable();
     private Hashtable previousInboundFlight = null;
@@ -114,6 +133,7 @@ class DTLSReliableHandshake
     {
         long currentTimeMillis = System.currentTimeMillis();
 
+        this.context = context;
         this.recordLayer = transport;
         this.handshakeHash = new DeferredHash(context);
         this.handshakeTimeout = Timeout.forWaitMillis(timeoutMillis, currentTimeMillis);
@@ -139,7 +159,13 @@ class DTLSReliableHandshake
             next_send_seq = 1;
             next_receive_seq = messageSeq + 1;
 
-            handshakeHash.update(message, 0, message.length);
+            /*
+             * NOTE: Deferred like any other message, since the negotiated version is not known yet. The
+             * DTLS 1.2 encoding of this reproduces 'message' exactly: DTLSVerifier only accepts an
+             * unfragmented ClientHello, so its fragment_offset is 0 and its fragment_length is its length.
+             */
+            byte[] clientHelloBody = TlsUtils.copyOfRangeExact(message, MESSAGE_HEADER_LENGTH, message.length);
+            undecidedTranscript.addElement(new Message(messageSeq, HandshakeType.client_hello, clientHelloBody));
         }
 
         recordLayer.setAckListener(new DTLSAckListener()
@@ -165,16 +191,25 @@ class DTLSReliableHandshake
         // We're waiting for ServerHello, always with (message) sequence number 1
         next_receive_seq = 1;
 
+        undecidedTranscript.removeAllElements();
+        transcriptDecided = false;
+        transcriptDTLS13 = false;
+
         handshakeHash.reset();
     }
 
     TlsHandshakeHash getHandshakeHash()
     {
+        // NOTE: Nothing may read the transcript while any message is still held undecided
+        checkTranscriptDecided();
+
         return handshakeHash;
     }
 
     void prepareToFinish()
     {
+        checkTranscriptDecided();
+
         handshakeHash.stopTracking();
     }
 
@@ -249,29 +284,94 @@ class DTLSReliableHandshake
     void updateHandshakeMessagesDigest(Message message)
         throws IOException
     {
-        short msg_type = message.getType();
-        switch (msg_type)
+        switch (message.getType())
         {
         case HandshakeType.hello_request:
         case HandshakeType.hello_verify_request:
         case HandshakeType.key_update:
-            break;
+            return;
 
         // TODO[dtls13] Not included in the transcript for (D)TLS 1.3+
         case HandshakeType.new_session_ticket:
         default:
+            break;
+        }
+
+        if (!transcriptDecided)
         {
-            byte[] body = message.getBody();
-            byte[] buf = new byte[MESSAGE_HEADER_LENGTH];
+            undecidedTranscript.addElement(message);
+
+            // NOTE: Flushes this message too, once the negotiated version is known
+            checkTranscriptDecided();
+            return;
+        }
+
+        writeTranscriptMessage(message);
+    }
+
+    /**
+     * Encode the pending messages as soon as the negotiated version says which header form the transcript
+     * uses. Until then nothing has been written to the digest, and a caller that reads the transcript before
+     * that point would see an empty one; every caller goes through {@link #getHandshakeHash()}, which calls
+     * this first, and on both sides the version is known before the transcript is ever read.
+     */
+    private void checkTranscriptDecided()
+    {
+        if (transcriptDecided)
+        {
+            return;
+        }
+
+        SecurityParameters securityParameters = context.getSecurityParametersHandshake();
+        if (null == securityParameters)
+        {
+            return;
+        }
+
+        ProtocolVersion negotiatedVersion = securityParameters.getNegotiatedVersion();
+        if (null == negotiatedVersion)
+        {
+            return;
+        }
+
+        this.transcriptDTLS13 = TlsUtils.isTLSv13(negotiatedVersion);
+        this.transcriptDecided = true;
+
+        int count = undecidedTranscript.size();
+        for (int i = 0; i < count; ++i)
+        {
+            writeTranscriptMessage((Message)undecidedTranscript.elementAt(i));
+        }
+        undecidedTranscript.removeAllElements();
+    }
+
+    private void writeTranscriptMessage(Message message)
+    {
+        short msg_type = message.getType();
+        byte[] body = message.getBody();
+
+        byte[] buf;
+        if (transcriptDTLS13)
+        {
+            /*
+             * RFC 9147 5.2. The TLS 1.3-style header only: msg_type and the body length.
+             */
+            buf = new byte[TLS_MESSAGE_HEADER_LENGTH];
+            TlsUtils.writeUint8(msg_type, buf, 0);
+            TlsUtils.writeUint24(body.length, buf, 1);
+        }
+        else
+        {
+            buf = new byte[MESSAGE_HEADER_LENGTH];
             TlsUtils.writeUint8(msg_type, buf, 0);
             TlsUtils.writeUint24(body.length, buf, 1);
             TlsUtils.writeUint16(message.getSeq(), buf, 4);
             TlsUtils.writeUint24(0, buf, 6);
             TlsUtils.writeUint24(body.length, buf, 9);
-            handshakeHash.update(buf, 0, buf.length);
-            handshakeHash.update(body, 0, body.length);
         }
-        }
+
+        handshakeHash.update(buf, 0, buf.length);
+        handshakeHash.update(body, 0, body.length);
     }
 
     void finish()
@@ -885,7 +985,7 @@ class DTLSReliableHandshake
         private final short msg_type;
         private final byte[] body;
 
-        private Message(int message_seq, short msg_type, byte[] body)
+        Message(int message_seq, short msg_type, byte[] body)
         {
             this.message_seq = message_seq;
             this.msg_type = msg_type;
