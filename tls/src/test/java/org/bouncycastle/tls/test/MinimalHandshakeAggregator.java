@@ -15,6 +15,7 @@ public class MinimalHandshakeAggregator
 {
     private final DatagramTransport transport;
 
+
     private final boolean aggregateReceiving, aggregateSending;
 
     byte[] receiveBuf, sendBuf;
@@ -58,6 +59,35 @@ public class MinimalHandshakeAggregator
      * Epoch 1.
      */
     private boolean flushAfterThisPacket(byte[] buf, int off, int len)
+    {
+        /*
+         * A datagram may carry several records (the record layer now packs handshake flights), so every
+         * record has to be examined; when each datagram held exactly one record, looking at the first was
+         * the same thing.
+         */
+        int pos = off;
+        int end = off + len;
+
+        while (pos + FilteredDatagramTransport.RECORD_HEADER_LENGTH <= end)
+        {
+            int recordLength = TlsUtils.readUint16(buf, pos + 11);
+            if (flushAfterThisRecord(buf, pos))
+            {
+                return true;
+            }
+            if (recordLength > end - (pos + FilteredDatagramTransport.RECORD_HEADER_LENGTH))
+            {
+                // NOTE: Malformed or truncated record - stop rather than read past the datagram
+                break;
+            }
+            pos += FilteredDatagramTransport.RECORD_HEADER_LENGTH + recordLength;
+        }
+
+        return false;
+    }
+
+    /** Whether this single record ends a flight that should be flushed. */
+    private boolean flushAfterThisRecord(byte[] buf, int off)
     {
         int epoch = TlsUtils.readUint16(buf, off + 3);
         if (epoch > 0)

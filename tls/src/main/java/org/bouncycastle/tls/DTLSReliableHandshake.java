@@ -90,12 +90,22 @@ class DTLSReliableHandshake
     private Hashtable currentInboundFlight = new Hashtable();
     private Hashtable previousInboundFlight = null;
     private Vector outboundFlight = new Vector();
+    private DTLS13FlightTracker flightTracker = new DTLS13FlightTracker();
+    private boolean flightOpen = false;
 
     private int initialResendMillis;
     private int resendMillis = -1;
     private Timeout resendTimeout = null;
 
     private int next_send_seq = 0, next_receive_seq = 0;
+
+    /*
+     * RFC 9147 7.1. The record numbers of the handshake records of the current inbound flight that were
+     * processed or buffered, and the two triggers for acknowledging them.
+     */
+    private Vector ackRecordNumbers = new Vector();
+    private Timeout ackTimeout = null;
+    private boolean ackRequested = false;
 
     private int maxHandshakeMessageSize;
 
@@ -131,6 +141,15 @@ class DTLSReliableHandshake
 
             handshakeHash.update(message, 0, message.length);
         }
+
+        recordLayer.setAckListener(new DTLSAckListener()
+        {
+            public void receivedAck(Vector recordNumbers)
+            {
+                // RFC 9147 7.2. Retire the acknowledged fragments; retransmission consults the tracker.
+                flightTracker.acknowledge(recordNumbers);
+            }
+        });
     }
 
     void resetAfterHelloVerifyRequestClient()
@@ -138,6 +157,7 @@ class DTLSReliableHandshake
         currentInboundFlight = new Hashtable();
         previousInboundFlight = null;
         outboundFlight = new Vector();
+        flightTracker.reset();
 
         resendMillis = -1;
         resendTimeout = null;
@@ -171,7 +191,10 @@ class DTLSReliableHandshake
             resendTimeout = null;
 
             outboundFlight.removeAllElements();
+            flightTracker.reset();
         }
+
+        beginOutboundFlight();
 
         Message message = new Message(next_send_seq++, msg_type, body);
 
@@ -243,11 +266,25 @@ class DTLSReliableHandshake
     }
 
     void finish()
+        throws IOException
     {
+        endOutboundFlight();
+
         DTLSHandshakeRetransmit retransmit = null;
         if (null != resendTimeout)
         {
             checkInboundFlight();
+
+            if (recordLayer.isDTLS13() && !ackRecordNumbers.isEmpty())
+            {
+                /*
+                 * RFC 9147 7.1. We have just received the peer's final flight. No flight of ours follows it,
+                 * so nothing acknowledges it implicitly and it must be acknowledged explicitly. Answering a
+                 * later retransmission of that flight with a second ACK (RFC 9147 5.8.1) is deferred: the
+                 * record layer drops the retransmission once the read epoch has moved on.
+                 */
+                sendPendingAck();
+            }
         }
         else
         {
@@ -271,6 +308,9 @@ class DTLSReliableHandshake
                 };
             }
         }
+
+        // RFC 9147 7. Post-handshake ACKs belong to the post-handshake state machines, not this flight tracker.
+        recordLayer.setAckListener(null);
 
         recordLayer.handshakeSuccessful(retransmit);
     }
@@ -318,6 +358,8 @@ class DTLSReliableHandshake
     private Message implReceiveMessage()
         throws IOException
     {
+        endOutboundFlight();
+
         long currentTimeMillis = System.currentTimeMillis();
 
         if (null == resendTimeout)
@@ -337,6 +379,12 @@ class DTLSReliableHandshake
                 throw new TlsFatalAlert(AlertDescription.user_canceled);
             }
 
+            if (recordLayer.isDTLS13()
+                && (ackRequested || Timeout.hasExpired(ackTimeout, currentTimeMillis)))
+            {
+                sendPendingAck();
+            }
+
             Message pending = getPendingMessage();
             if (pending != null)
             {
@@ -350,6 +398,7 @@ class DTLSReliableHandshake
 
             int waitMillis = Timeout.getWaitMillis(handshakeTimeout, currentTimeMillis);
             waitMillis = Timeout.constrainWaitMillis(waitMillis, resendTimeout, currentTimeMillis);
+            waitMillis = Timeout.constrainWaitMillis(waitMillis, ackTimeout, currentTimeMillis);
 
             // NOTE: Ensure a finite wait, of at least 1ms
             if (waitMillis < 1)
@@ -370,7 +419,29 @@ class DTLSReliableHandshake
             }
             else
             {
-                processRecord(MAX_RECEIVE_AHEAD, recordLayer.getLastReceivedEpoch(), buf, 0, received);
+                boolean accepted = processRecord(MAX_RECEIVE_AHEAD, recordLayer.getLastReceivedEpoch(), buf, 0,
+                    received);
+
+                if (accepted && recordLayer.isDTLS13())
+                {
+                    /*
+                     * RFC 9147 7.1. Only a record that was processed or buffered may be acknowledged.
+                     */
+                    DTLSRecordNumber recordNumber = recordLayer.getLastReceivedRecordNumber();
+                    if (null != recordNumber && ackRecordNumbers.size() < maxAckRecordNumbers())
+                    {
+                        ackRecordNumbers.addElement(recordNumber);
+                    }
+
+                    if (null == ackTimeout)
+                    {
+                        /*
+                         * RFC 9147 7.1. Part of a flight has arrived: ACK it if the rest does not follow
+                         * within a quarter of the current retransmit timer.
+                         */
+                        ackTimeout = new Timeout(Math.max(1, resendMillis / 4), System.currentTimeMillis());
+                    }
+                }
             }
 
             currentTimeMillis = System.currentTimeMillis();
@@ -379,13 +450,30 @@ class DTLSReliableHandshake
 
     private void prepareInboundFlight(Hashtable nextFlight)
     {
+        /*
+         * RFC 9147 7.1. During the handshake an ACK covers only the flight being received, so the
+         * accumulated record numbers and both triggers are dropped at every flight boundary.
+         */
+        ackRecordNumbers = new Vector();
+        ackTimeout = null;
+        ackRequested = false;
+
         resetAll(currentInboundFlight);
         previousInboundFlight = currentInboundFlight;
         currentInboundFlight = nextFlight;
     }
 
-    private void processRecord(int windowSize, int epoch, byte[] buf, int off, int len) throws IOException
+    /**
+     * @return true only if every message carried by the record was processed or buffered, which is the
+     *         RFC 9147 7.1 condition for including the record's number in an ACK. A message discarded
+     *         because a previous copy had been received still counts as processed, and RFC 9147 7.1 says so
+     *         explicitly; a message that was rejected does not, and acknowledging its record would tell the
+     *         peer not to retransmit something we dropped.
+     */
+    private boolean processRecord(int windowSize, int epoch, byte[] buf, int off, int len) throws IOException
     {
+        boolean accepted = false;
+        boolean dropped = false;
         boolean checkPreviousFlight = false;
 
         while (len >= MESSAGE_HEADER_LENGTH)
@@ -395,6 +483,7 @@ class DTLSReliableHandshake
             if (len < message_length)
             {
                 // NOTE: Truncated message - ignore it
+                dropped = true;
                 break;
             }
 
@@ -403,6 +492,7 @@ class DTLSReliableHandshake
             if (fragment_offset + fragment_length > length)
             {
                 // NOTE: Malformed fragment - ignore it and the rest of the record
+                dropped = true;
                 break;
             }
 
@@ -412,6 +502,7 @@ class DTLSReliableHandshake
                 // the rest of the record) rather than committing a reassembly buffer of that size.
                 // The reassembler is sized from this attacker-controlled length before any
                 // signature/Finished verification, so an unbounded value is a memory-exhaustion DoS.
+                dropped = true;
                 break;
             }
 
@@ -420,9 +511,27 @@ class DTLSReliableHandshake
              * renegotiation (and we're not likely to do that anyway).
              */
             short msg_type = TlsUtils.readUint8(buf, off + 0);
-            int expectedEpoch = msg_type == HandshakeType.finished ? 1 : 0;
+
+            int expectedEpoch;
+            if (recordLayer.isDTLS13())
+            {
+                /*
+                 * RFC 9147 6.1. Epoch 0 carries the unencrypted ClientHello, ServerHello and
+                 * HelloRetryRequest; every other message of the main handshake is protected under the
+                 * handshake traffic keys at epoch 2. Post-handshake messages arrive at epoch 3 and above
+                 * and are not part of this flight.
+                 */
+                expectedEpoch = (HandshakeType.client_hello == msg_type || HandshakeType.server_hello == msg_type)
+                    ? 0 : 2;
+            }
+            else
+            {
+                expectedEpoch = msg_type == HandshakeType.finished ? 1 : 0;
+            }
+
             if (epoch != expectedEpoch)
             {
+                dropped = true;
                 break;
             }
 
@@ -430,6 +539,7 @@ class DTLSReliableHandshake
             if (message_seq >= (next_receive_seq + windowSize))
             {
                 // NOTE: Too far ahead - ignore
+                dropped = true;
             }
             else if (message_seq >= next_receive_seq)
             {
@@ -440,8 +550,43 @@ class DTLSReliableHandshake
                     currentInboundFlight.put(Integers.valueOf(message_seq), reassembler);
                 }
 
-                reassembler.contributeFragment(msg_type, length, buf, off + MESSAGE_HEADER_LENGTH, fragment_offset,
-                    fragment_length);
+                int nextExpectedOffset = reassembler.getNextExpectedOffset();
+                if (nextExpectedOffset >= 0 && fragment_offset != nextExpectedOffset)
+                {
+                    /*
+                     * RFC 9147 7.1. This is not the next piece of the message, whether because an earlier
+                     * fragment was lost or because this one is a fresh message beginning past its own start;
+                     * either way something was lost, so ACK what we have.
+                     *
+                     * A negative next expected offset means the message is already complete, so the fragment
+                     * is a duplicate rather than evidence of loss. It is still accumulated below (RFC 9147
+                     * 7.1 acknowledges records whose messages were discarded as duplicates), but forcing an
+                     * ACK for it would let a peer replaying one fragment draw one ACK per copy; the quarter
+                     * timer batches it instead.
+                     */
+                    ackRequested = true;
+                }
+
+                if (message_seq != next_receive_seq)
+                {
+                    // RFC 9147 7.1. A message ahead of the next expected one is a sign of loss; ACK what we have.
+                    ackRequested = true;
+                }
+
+                if (reassembler.contributeFragment(msg_type, length, buf, off + MESSAGE_HEADER_LENGTH,
+                        fragment_offset, fragment_length)
+                    || reassembler.acceptsFragment(msg_type, length, fragment_offset, fragment_length))
+                {
+                    /*
+                     * RFC 9147 7.1. Contributed, or discarded because a previous copy had been received;
+                     * both count as processed, so the record carrying it may be acknowledged.
+                     */
+                    accepted = true;
+                }
+                else
+                {
+                    dropped = true;
+                }
             }
             else if (previousInboundFlight != null)
             {
@@ -453,10 +598,29 @@ class DTLSReliableHandshake
                 DTLSReassembler reassembler = (DTLSReassembler)previousInboundFlight.get(Integers.valueOf(message_seq));
                 if (reassembler != null)
                 {
-                    reassembler.contributeFragment(msg_type, length, buf, off + MESSAGE_HEADER_LENGTH, fragment_offset,
-                        fragment_length);
+                    if (reassembler.contributeFragment(msg_type, length, buf, off + MESSAGE_HEADER_LENGTH,
+                            fragment_offset, fragment_length)
+                        || reassembler.acceptsFragment(msg_type, length, fragment_offset, fragment_length))
+                    {
+                        accepted = true;
+                    }
+                    else
+                    {
+                        dropped = true;
+                    }
+
                     checkPreviousFlight = true;
                 }
+                else
+                {
+                    // NOTE: Already delivered, so a duplicate, which RFC 9147 7.1 counts as processed
+                    accepted = true;
+                }
+            }
+            else
+            {
+                // NOTE: Already delivered, so a duplicate, which RFC 9147 7.1 counts as processed
+                accepted = true;
             }
 
             off += message_length;
@@ -468,19 +632,159 @@ class DTLSReliableHandshake
             resendOutboundFlight();
             resetAll(previousInboundFlight);
         }
+
+        return accepted && !dropped;
+    }
+
+    /**
+     * RFC 9147 7.1: "The ACK message ... SHOULD include as many received records as fit into the ACK
+     * record", and when there is not room for all of them "the implementation SHOULD favor including
+     * records which have not yet been acknowledged".
+     * <p>
+     * So the bound on an ACK is what a datagram will carry, not a fixed count: any count large enough to
+     * be useful puts the body over a typical path MTU, and an ACK that is itself fragmented or dropped
+     * cannot do the one thing it is for, which is to stop the peer retransmitting. The record layer's send
+     * limit is the plaintext body it can carry, so the ACK's own uint16 length prefix comes off it and what
+     * is left divides by the 16 bytes of one RecordNumber. It is computed per ACK rather than cached,
+     * because the send limit moves with the write epoch's cipher overhead and with the path MTU. The floor
+     * of one keeps an ACK possible whatever the limit says.
+     * </p>
+     */
+    private int maxAckRecordNumbers() throws IOException
+    {
+        /*
+         * A floor of zero rather than one: on an implausibly small send limit an empty ACK is still legal
+         * (RFC 9147 7.1) and still shortcuts the peer's retransmit timer, whereas one record number would
+         * not fit and the record would exceed the limit.
+         */
+        return Math.max(0, (recordLayer.getSendLimit() - 2) / DTLSAck.RECORD_NUMBER_LENGTH);
+    }
+
+    private void sendPendingAck() throws IOException
+    {
+        ackRequested = false;
+        ackTimeout = null;
+
+        Vector recordNumbers = ackRecordNumbers;
+
+        int maxRecordNumbers = maxAckRecordNumbers();
+        if (recordNumbers.size() > maxRecordNumbers)
+        {
+            /*
+             * RFC 9147 7.1 asks that the records favoured be the ones not yet acknowledged. The receive
+             * side does not track which of these already went out in an earlier ACK of this flight, so the
+             * earliest entries are kept instead: being the oldest, they are the ones the peer is most
+             * likely to still be retransmitting. Omitting the rest is safe - the only cost is a
+             * retransmission of the records left out.
+             */
+            Vector trimmed = new Vector(maxRecordNumbers);
+            for (int i = 0; i < maxRecordNumbers; ++i)
+            {
+                trimmed.addElement(recordNumbers.elementAt(i));
+            }
+            recordNumbers = trimmed;
+        }
+
+        // RFC 9147 7.1. An ACK with no record numbers is legal and shortcuts the peer's retransmit timer.
+        recordLayer.sendAck(recordNumbers);
     }
 
     private void resendOutboundFlight()
         throws IOException
     {
-        recordLayer.resetWriteEpoch();
-        for (int i = 0; i < outboundFlight.size(); ++i)
+        if (!recordLayer.isDTLS13())
         {
-            writeMessage((Message)outboundFlight.elementAt(i));
+            /*
+             * DTLS 1.2 only: this restores the write epoch to the epoch of the flight being retransmitted.
+             * DTLS 1.3 never registers the legacy retransmit, and resetting here could move the write epoch
+             * back from a pending epoch that only the write direction has switched to.
+             */
+            recordLayer.resetWriteEpoch();
         }
+
+        beginOutboundFlight();
+
+        if (recordLayer.isDTLS13() && !flightTracker.isEmpty())
+        {
+            /*
+             * RFC 9147 5.8.1 and 7.2. Retransmit only the fragments that have not been acknowledged; a
+             * record that appeared in any ACK counts as delivered. Once every fragment of the flight has
+             * been acknowledged, getOutstanding() is empty and this loop writes and flushes nothing,
+             * which is exactly RFC 9147 7.2's requirement to cancel all retransmission of that flight.
+             */
+            Vector outstanding = flightTracker.getOutstanding();
+            for (int i = 0; i < outstanding.size(); ++i)
+            {
+                DTLS13FlightTracker.Fragment fragment = (DTLS13FlightTracker.Fragment)outstanding.elementAt(i);
+                Message message = getOutboundMessage(fragment.getMessageSeq());
+                if (null != message)
+                {
+                    writeHandshakeFragment(message, fragment.getFragmentOffset(), fragment.getFragmentLength());
+                }
+            }
+        }
+        else
+        {
+            for (int i = 0; i < outboundFlight.size(); ++i)
+            {
+                writeMessage((Message)outboundFlight.elementAt(i));
+            }
+        }
+
+        endOutboundFlight();
 
         resendMillis = backOff(resendMillis);
         resendTimeout = new Timeout(resendMillis);
+    }
+
+    private Message getOutboundMessage(int messageSeq)
+    {
+        for (int i = 0; i < outboundFlight.size(); ++i)
+        {
+            Message message = (Message)outboundFlight.elementAt(i);
+            if (message.getSeq() == messageSeq)
+            {
+                return message;
+            }
+        }
+        return null;
+    }
+
+    private void beginOutboundFlight() throws IOException
+    {
+        if (!flightOpen)
+        {
+            // github #1487. Pack this flight's records into as few datagrams as the MTU allows.
+            recordLayer.beginFlight();
+            flightOpen = true;
+        }
+    }
+
+    private void endOutboundFlight() throws IOException
+    {
+        if (flightOpen)
+        {
+            recordLayer.endFlight();
+            flightOpen = false;
+        }
+    }
+
+    /** For the reliable-handshake tests: close the current outbound flight. */
+    void endFlightForTest() throws IOException
+    {
+        endOutboundFlight();
+    }
+
+    /** For the reliable-handshake tests: deliver an ACK as the record layer's listener would. */
+    void acknowledgeForTest(Vector recordNumbers)
+    {
+        flightTracker.acknowledge(recordNumbers);
+    }
+
+    /** For the reliable-handshake tests: drive the retransmission path directly. */
+    void resendOutboundFlightForTest() throws IOException
+    {
+        resendOutboundFlight();
     }
 
     private void writeMessage(Message message)
@@ -520,7 +824,22 @@ class DTLSReliableHandshake
         TlsUtils.writeUint24(fragment_length, fragment);
         fragment.write(message.getBody(), fragment_offset, fragment_length);
 
-        fragment.sendToRecordLayer(recordLayer);
+        DTLSRecordNumber recordNumber = fragment.sendToRecordLayer(recordLayer);
+
+        if (null != recordNumber)
+        {
+            /*
+             * RFC 9147 7.2. Remember which record carried this fragment so an ACK can retire it.
+             *
+             * Registered for both versions rather than only when isDTLS13(): a DTLS 1.3 flight can straddle
+             * the point at which the record layer switches to the 1.3 format, because initPendingEpoch sets
+             * that flag only after ServerHello has been written. A fragment written before the switch would
+             * otherwise be absent from the tracker and silently omitted from the retransmitted flight, which
+             * could then never complete. Only the consumption of the tracker is gated on isDTLS13(), so
+             * DTLS 1.2 pays for the entries and never reads them.
+             */
+            flightTracker.register(recordNumber, message.getSeq(), fragment_offset, fragment_length);
+        }
     }
 
     private static boolean checkAll(Hashtable inboundFlight)
@@ -581,10 +900,11 @@ class DTLSReliableHandshake
             super(size);
         }
 
-        void sendToRecordLayer(DTLSRecordLayer recordLayer) throws IOException
+        DTLSRecordNumber sendToRecordLayer(DTLSRecordLayer recordLayer) throws IOException
         {
-            recordLayer.send(buf, 0, count);
+            DTLSRecordNumber recordNumber = recordLayer.sendReturningRecordNumber(buf, 0, count);
             buf = null;
+            return recordNumber;
         }
     }
 }

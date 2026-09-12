@@ -937,6 +937,13 @@ public class TlsUtils
         return ((long)(hi & 0xffffffffL) << 24) | (long)(lo & 0xffffffffL);
     }
 
+    public static long readUint64(byte[] buf, int offset)
+    {
+        long hi = readUint32(buf, offset);
+        long lo = readUint32(buf, offset + 4);
+        return (hi << 32) | lo;
+    }
+
     public static byte[] readAllOrNothing(int length, InputStream input)
         throws IOException
     {

@@ -5,6 +5,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.net.SocketTimeoutException;
+import java.util.Vector;
 
 import org.bouncycastle.tls.crypto.TlsCipher;
 import org.bouncycastle.tls.crypto.TlsDTLS13Cipher;
@@ -113,12 +114,19 @@ class DTLSRecordLayer
     private final ByteQueue recordQueue = new ByteQueue();
     private final Object writeLock = new Object();
 
+    // github #1487. While a flight is open, records are packed into as few datagrams as the MTU allows.
+    private byte[] flightBuffer = null;
+    private int flightBufferPos = 0;
+    private int flightSendLimit = 0;
+    private boolean inFlight = false;
+
     private volatile boolean closed = false;
     private volatile boolean failed = false;
     // TODO[dtls13] Review the draft/RFC (legacy_record_version) to see if readVersion can be removed
     private volatile ProtocolVersion readVersion = null, writeVersion = null;
     private volatile boolean inConnection;
-    private volatile boolean inHandshake;
+    // Package-private: the reliable-handshake and aggregation tests set this directly.
+    volatile boolean inHandshake;
     private volatile int plaintextLimit;
     private DTLSEpoch currentEpoch, pendingEpoch;
     private DTLSEpoch readEpoch, writeEpoch;
@@ -130,6 +138,16 @@ class DTLSRecordLayer
     private DTLSHandshakeRetransmit retransmit = null;
     private DTLSEpoch retransmitEpoch = null;
     private Timeout retransmitTimeout = null;
+
+    private DTLSAckListener ackListener = null;
+
+    /*
+     * RFC 9147 7.1. The record number of the most recently accepted handshake record. It is assigned only
+     * for records whose decoded content type is handshake, which is its only consumer: the reliable
+     * handshake reads it after a receive, and assigning it for alerts, ACKs or application data would
+     * leave it pointing at a record the handshake never saw.
+     */
+    private DTLSRecordNumber lastReceivedRecordNumber = null;
 
     private TlsHeartbeat heartbeat = null;              // If non-null, controls the sending of heartbeat requests
     private boolean heartBeatResponder = false;         // Whether we should send heartbeat responses
@@ -194,6 +212,24 @@ class DTLSRecordLayer
     int getLastReceivedEpoch()
     {
         return lastReceivedEpoch;
+    }
+
+    /**
+     * @return the record number of the most recently accepted handshake record, or null if none. Used by
+     *         the reliable handshake to build ACKs (RFC 9147 7.1).
+     */
+    DTLSRecordNumber getLastReceivedRecordNumber()
+    {
+        return lastReceivedRecordNumber;
+    }
+
+    /**
+     * @return true once a DTLS 1.3 version has been negotiated and the record layer has switched to the
+     *         RFC 9147 record format.
+     */
+    boolean isDTLS13()
+    {
+        return dtls13;
     }
 
     /** The pending epoch number, or -1 when there is no pending epoch. */
@@ -315,7 +351,12 @@ class DTLSRecordLayer
             throw new IllegalStateException();
         }
 
-        // DTLS 1.3 retransmission is ACK-driven (RFC 9147 7) and handled by the reliable handshake
+        /*
+         * RFC 6347 4.2.4. DTLS 1.2 only. A DTLS 1.3 answer to a retransmitted final flight is a retransmitted
+         * ACK (RFC 9147 5.8.1), not a retransmitted flight, and reaching it needs the record layer to retain
+         * the handshake read epoch after completion so the retransmission is not dropped as a stale epoch.
+         * That is deferred with the rest of the post-handshake work.
+         */
         if (null != retransmit && !dtls13)
         {
             this.retransmit = retransmit;
@@ -486,6 +527,18 @@ class DTLSRecordLayer
     public void send(byte[] buf, int off, int len)
         throws IOException
     {
+        sendReturningRecordNumber(buf, off, len);
+    }
+
+    /**
+     * As {@link #send(byte[], int, int)}, but reports the record number the data was sent in, which the
+     * reliable handshake needs to map handshake fragments to records for ACK processing (RFC 9147 7).
+     *
+     * @return the record number used, or null if nothing was sent.
+     */
+    DTLSRecordNumber sendReturningRecordNumber(byte[] buf, int off, int len)
+        throws IOException
+    {
         short contentType = ContentType.application_data;
 
         if (this.inHandshake || this.writeEpoch == this.retransmitEpoch)
@@ -521,7 +574,7 @@ class DTLSRecordLayer
             }
         }
 
-        sendRecord(contentType, buf, off, len);
+        return sendRecord(contentType, buf, off, len);
     }
 
     public void close()
@@ -541,6 +594,17 @@ class DTLSRecordLayer
     {
         if (!closed)
         {
+            synchronized (writeLock)
+            {
+                /*
+                 * github #1487. Unlike closeTransport, discard the buffered flight rather than flushing it:
+                 * a fatal alert follows, so the flight is abandoned and transmitting its records ahead of
+                 * the alert has no upside.
+                 */
+                inFlight = false;
+                flightBufferPos = 0;
+            }
+
             if (inConnection)
             {
                 try
@@ -579,6 +643,24 @@ class DTLSRecordLayer
     {
         if (!closed)
         {
+            synchronized (writeLock)
+            {
+                /*
+                 * github #1487. A graceful close should not have anything buffered, but if it does the
+                 * flight was not abandoned, so flush it. Contrast fail(), which discards it.
+                 */
+                try
+                {
+                    flushFlightBuffer();
+                }
+                catch (Exception e)
+                {
+                    // Ignore: we are tearing down
+                }
+                inFlight = false;
+                flightBufferPos = 0;
+            }
+
             /*
              * RFC 5246 7.2.1. Unless some other fatal alert has been transmitted, each party is
              * required to send a close_notify alert before closing the write side of the
@@ -863,6 +945,11 @@ class DTLSRecordLayer
             recordCallback.recordAccepted(flags);
         }
 
+        if (ContentType.handshake == decoded.contentType)
+        {
+            this.lastReceivedRecordNumber = new DTLSRecordNumber(epoch, seq);
+        }
+
         return processDecodedRecord(decoded, epoch, buf, off, len);
     }
 
@@ -981,6 +1068,24 @@ class DTLSRecordLayer
                 catch (Exception e)
                 {
                     // Ignore
+                }
+            }
+
+            return -1;
+        }
+        case ContentType.ack:
+        {
+            /*
+             * RFC 9147 7. ACK is not a handshake message and never reaches the application; it is
+             * delivered to the handshake, which uses it to retire acknowledged fragments. A malformed
+             * body is discarded like any other invalid record (RFC 9147 4.5.2).
+             */
+            if (null != ackListener)
+            {
+                Vector recordNumbers = DTLSAck.decode(decoded.buf, decoded.off, decoded.len);
+                if (null != recordNumbers)
+                {
+                    ackListener.receivedAck(filterAckRecordNumbers(recordNumbers, epoch));
                 }
             }
 
@@ -1151,7 +1256,42 @@ class DTLSRecordLayer
             recordCallback.recordAccepted(flags);
         }
 
+        if (ContentType.handshake == decoded.contentType)
+        {
+            this.lastReceivedRecordNumber = new DTLSRecordNumber(recordEpoch.getEpoch(), seq);
+        }
+
         return processDecodedRecord(decoded, recordEpoch.getEpoch(), buf, off, len);
+    }
+
+    /**
+     * RFC 9147 7. An ACK is sent at an epoch equal to or higher than the records it acknowledges, so a
+     * record number naming an epoch above the one that carried the ACK is discarded.
+     * <p>
+     * Without this an off-path attacker who can spoof the peer's address has a blind denial of service:
+     * epoch 0 is unauthenticated (a fragmented ClientHello has to be acknowledgeable there) and DTLS
+     * sequence numbers start at 0 and are predictable, so a forged plaintext ACK listing the protected
+     * epochs would retire handshake fragments that were never delivered. Retransmission then writes
+     * nothing and the handshake stalls until it times out.
+     * </p>
+     * An ACK all of whose record numbers are filtered out is still delivered: an empty ACK is meaningful.
+     */
+    private static Vector filterAckRecordNumbers(Vector recordNumbers, int epoch)
+    {
+        Vector result = new Vector(recordNumbers.size());
+        for (int i = 0; i < recordNumbers.size(); ++i)
+        {
+            DTLSRecordNumber recordNumber = (DTLSRecordNumber)recordNumbers.elementAt(i);
+            /*
+             * A forged epoch at or above 2^63 decodes to a negative long, which would otherwise slip past
+             * an upper-bound-only test; require a real epoch so the filter's invariant holds exactly.
+             */
+            if (recordNumber.getEpoch() >= 0 && recordNumber.getEpoch() <= epoch)
+            {
+                result.addElement(recordNumber);
+            }
+        }
+        return result;
     }
 
     private int receivePendingRecord(byte[] buf, int off, int len)
@@ -1340,12 +1480,60 @@ class DTLSRecordLayer
      * atomic, and if we synchronize only on the datagram send instead, then the only effect should
      * be possible reordering of records (which might surprise a reliable transport implementation).
      */
-    private void sendRecord(short contentType, byte[] buf, int off, int len) throws IOException
+    void setAckListener(DTLSAckListener ackListener)
+    {
+        this.ackListener = ackListener;
+    }
+
+    /**
+     * RFC 9147 7. Send an ACK covering the given record numbers.
+     * <p>
+     * An ACK must be sent at an epoch equal to or higher than the records it acknowledges. The read and
+     * write epochs advance through separate calls in DTLS 1.3, so the write epoch is checked against the
+     * highest epoch named rather than assumed to be above it; if it is below, no ACK is sent. Emitting one
+     * anyway would both violate that requirement and hand the record numbers of protected records to a
+     * passive observer. The only cost of not sending it is a retransmission.
+     * </p>
+     *
+     * @return the record number the ACK was sent in, or null if no ACK was sent.
+     */
+    DTLSRecordNumber sendAck(Vector recordNumbers) throws IOException
+    {
+        if (!dtls13)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        long maxEpoch = 0;
+        for (int i = 0; i < recordNumbers.size(); ++i)
+        {
+            long recordEpoch = ((DTLSRecordNumber)recordNumbers.elementAt(i)).getEpoch();
+            if (recordEpoch > maxEpoch)
+            {
+                maxEpoch = recordEpoch;
+            }
+        }
+
+        if (writeEpoch.getEpoch() < maxEpoch)
+        {
+            return null;
+        }
+
+        byte[] body = DTLSAck.encode(recordNumbers);
+        return sendRecord(ContentType.ack, body, 0, body.length);
+    }
+
+    DTLSRecordNumber sendRecordForTest(short contentType, byte[] buf, int off, int len) throws IOException
+    {
+        return sendRecord(contentType, buf, off, len);
+    }
+
+    private DTLSRecordNumber sendRecord(short contentType, byte[] buf, int off, int len) throws IOException
     {
         // Never send anything until a valid ClientHello has been received
         if (writeVersion == null)
         {
-            return;
+            return null;
         }
 
         if (len > this.plaintextLimit)
@@ -1366,8 +1554,7 @@ class DTLSRecordLayer
         {
             if (dtls13 && writeEpoch.getEpoch() > 0)
             {
-                sendDTLS13Record(contentType, buf, off, len);
-                return;
+                return sendDTLS13Record(contentType, buf, off, len);
             }
 
             int recordEpoch = writeEpoch.getEpoch();
@@ -1396,11 +1583,13 @@ class DTLSRecordLayer
 
             TlsUtils.writeUint16(ciphertextLength, encoded.buf, encoded.off + (recordHeaderLength - 2));
 
-            sendDatagram(transport, encoded.buf, encoded.off, encoded.len);
+            emitRecord(contentType, encoded.buf, encoded.off, encoded.len);
+
+            return new DTLSRecordNumber(recordEpoch, recordSequenceNumber);
         }
     }
 
-    private void sendDTLS13Record(short contentType, byte[] buf, int off, int len) throws IOException
+    private DTLSRecordNumber sendDTLS13Record(short contentType, byte[] buf, int off, int len) throws IOException
     {
         int recordEpoch = writeEpoch.getEpoch();
         long recordSequenceNumber = writeEpoch.allocateSequenceNumber();
@@ -1418,7 +1607,108 @@ class DTLSRecordLayer
         TlsEncodeResult encoded = cipher.encodeDTLS13Plaintext(recordSequenceNumber, contentType, header, 0,
             headerLength, buf, off, len);
 
-        sendDatagram(transport, encoded.buf, encoded.off, encoded.len);
+        emitRecord(contentType, encoded.buf, encoded.off, encoded.len);
+
+        return new DTLSRecordNumber(recordEpoch, recordSequenceNumber);
+    }
+
+    /**
+     * github #1487. Begin coalescing handshake records into datagrams. Records written until
+     * {@link #endFlight()} are packed into as few datagrams as the send limit allows, rather than one
+     * datagram each.
+     */
+    void beginFlight() throws IOException
+    {
+        synchronized (writeLock)
+        {
+            if (inFlight)
+            {
+                return;
+            }
+
+            int sendLimit = transport.getSendLimit();
+            if (null == flightBuffer || flightBuffer.length < sendLimit)
+            {
+                flightBuffer = new byte[sendLimit];
+            }
+
+            flightSendLimit = sendLimit;
+            flightBufferPos = 0;
+            inFlight = true;
+        }
+    }
+
+    /**
+     * github #1487. Flush any partially filled datagram and stop coalescing.
+     */
+    void endFlight() throws IOException
+    {
+        synchronized (writeLock)
+        {
+            if (!inFlight)
+            {
+                return;
+            }
+
+            flushFlightBuffer();
+            inFlight = false;
+        }
+    }
+
+    /**
+     * Emit one encoded record: append it to the current datagram while a flight is open and the record is
+     * a handshake record, otherwise send it on its own. Caller holds 'writeLock'.
+     */
+    private void emitRecord(short contentType, byte[] buf, int off, int len) throws IOException
+    {
+        /*
+         * github #1487. Only handshake records are packed: alerts must not sit in a buffer that a close
+         * could discard, and heartbeat or application-data sends can race a flight under 'writeLock'.
+         */
+        if (!inFlight)
+        {
+            sendDatagram(transport, buf, off, len);
+            return;
+        }
+
+        if (ContentType.handshake != contentType)
+        {
+            /*
+             * Preserve write order: anything buffered was written before this record, so it must reach the
+             * peer first. A change_cipher_spec that overtook the flight it belongs to would move the peer's
+             * read epoch ahead of records it has not seen yet.
+             */
+            flushFlightBuffer();
+            sendDatagram(transport, buf, off, len);
+            return;
+        }
+
+        if (len > flightSendLimit)
+        {
+            // Larger than the send limit: flush what we have and let it go out alone rather than drop it
+            flushFlightBuffer();
+            sendDatagram(transport, buf, off, len);
+            return;
+        }
+
+        if (flightBufferPos + len > flightSendLimit)
+        {
+            flushFlightBuffer();
+        }
+
+        System.arraycopy(buf, off, flightBuffer, flightBufferPos, len);
+        flightBufferPos += len;
+    }
+
+    /** Caller holds 'writeLock'. */
+    private void flushFlightBuffer() throws IOException
+    {
+        if (flightBufferPos > 0)
+        {
+            int len = flightBufferPos;
+            flightBufferPos = 0;
+            sendDatagram(transport, flightBuffer, 0, len);
+        }
     }
 
     private static long getMacSequenceNumber(int epoch, long sequence_number)
