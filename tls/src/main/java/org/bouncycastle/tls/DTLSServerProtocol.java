@@ -577,7 +577,7 @@ public class DTLSServerProtocol
         recordLayer.enablePendingEpochRead();
 
         handshake.sendMessage(HandshakeType.encrypted_extensions,
-            generate13EncryptedExtensions(state, state.serverExtensions));
+            generate13EncryptedExtensions(state.serverExtensions));
 
         if (state.selectedPSK13)
         {
@@ -1037,7 +1037,7 @@ public class DTLSServerProtocol
     /**
      * Mirrors TlsServerProtocol.send13EncryptedExtensionsMessage.
      */
-    protected byte[] generate13EncryptedExtensions(ServerHandshakeState state, Hashtable serverExtensions)
+    protected byte[] generate13EncryptedExtensions(Hashtable serverExtensions)
         throws IOException
     {
         byte[] extBytes = TlsProtocol.writeExtensionsData(serverExtensions);
