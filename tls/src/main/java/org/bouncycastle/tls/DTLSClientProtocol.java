@@ -7,10 +7,12 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Vector;
 
+import org.bouncycastle.tls.crypto.TlsAgreement;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.TlsSecret;
 import org.bouncycastle.tls.crypto.TlsStreamSigner;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Integers;
 
 public class DTLSClientProtocol
     extends DTLSProtocol
@@ -121,10 +123,45 @@ public class DTLSClientProtocol
         if (serverMessage.getType() == HandshakeType.server_hello)
         {
             ProtocolVersion recordLayerVersion = recordLayer.getReadVersion();
-            reportServerVersion(state, recordLayerVersion);
+
+            /*
+             * NOTE: The version the server actually selected is only visible once the ServerHello body has
+             * been read; the record-layer version is 'legacy_record_version' and says nothing for DTLS 1.3.
+             */
+            ProtocolVersion server_version = readSelectedVersion(serverMessage.getBody());
+
+            /*
+             * Refuse anything later than the latest version this implementation actually knows how to
+             * process. Neither of the other version checks catches it: 'reportServerVersion' only tests the
+             * versions this client offered, and the DTLS 1.3 routing below is a lower bound, so without this
+             * a future version would be processed with DTLS 1.3 semantics.
+             */
+            if (server_version.isLaterVersionOf(ProtocolVersion.DTLSv13))
+            {
+                throw new TlsFatalAlert(AlertDescription.protocol_version,
+                    "Server selected an unsupported protocol version: " + server_version);
+            }
+
+            boolean isDTLSv13 = ProtocolVersion.DTLSv13.isEqualOrEarlierVersionOf(server_version);
+
+            if (!isDTLSv13)
+            {
+                reportServerVersion(state, recordLayerVersion);
+            }
+
             recordLayer.setWriteVersion(recordLayerVersion);
 
             processServerHello(state, serverMessage.getBody());
+
+            if (isDTLSv13)
+            {
+                handshake.getHandshakeHash().notifyPRFDetermined();
+                handshake.getHandshakeHash().sealHashAlgorithms();
+
+                process13ServerHelloCoda(state, handshake.getHandshakeHash(), false);
+
+                return clientHandshake13(state, handshake);
+            }
 
             applyMaxFragmentLengthExtension(recordLayer, securityParameters.getMaxFragmentLength());
         }
@@ -398,6 +435,116 @@ public class DTLSClientProtocol
         return new DTLSTransport(recordLayer);
     }
 
+    /**
+     * RFC 9147: the client half of a DTLS 1.3 handshake, from just after the ServerHello (handshake traffic
+     * keys installed at epoch 2) through to sending the client's Finished and installing the application
+     * traffic keys at epoch 3.
+     */
+    protected DTLSTransport clientHandshake13(ClientHandshakeState state, DTLSReliableHandshake handshake)
+        throws IOException
+    {
+        TlsClient client = state.client;
+        TlsClientContextImpl clientContext = state.clientContext;
+        DTLSRecordLayer recordLayer = state.recordLayer;
+        SecurityParameters securityParameters = clientContext.getSecurityParametersHandshake();
+
+        receive13EncryptedExtensions(state, handshake.receiveMessageBody(HandshakeType.encrypted_extensions));
+
+        DTLSReliableHandshake.Message serverMessage = handshake.receiveMessage();
+
+        if (serverMessage.getType() == HandshakeType.certificate_request)
+        {
+            /*
+             * RFC 8446 4.3.2. A server which is authenticating with a certificate MAY optionally request a
+             * certificate from the client. Record it so that it is not silently discarded, then fail: the
+             * client cannot yet answer one.
+             *
+             * TODO[dtls13] Replaced by real in-handshake client authentication (send Certificate and
+             * CertificateVerify in the client's flight, or an empty certificate list when declining).
+             */
+            receive13CertificateRequest(state, serverMessage.getBody());
+
+            throw new TlsFatalAlert(AlertDescription.unexpected_message,
+                "DTLS 1.3 client authentication is not implemented");
+        }
+
+        if (serverMessage.getType() == HandshakeType.certificate)
+        {
+            receive13ServerCertificate(state, serverMessage.getBody());
+        }
+        else
+        {
+            // TODO[dtls13-psk] A PSK handshake has no server Certificate (see skip13ServerCertificate)
+            throw new TlsFatalAlert(AlertDescription.unexpected_message);
+        }
+
+        {
+            // NOTE: Verified over the transcript excluding the CertificateVerify message itself
+            DTLSReliableHandshake.Message certificateVerifyMessage = handshake.receiveMessageDelayedDigest(
+                HandshakeType.certificate_verify);
+            receive13ServerCertificateVerify(state, certificateVerifyMessage.getBody(),
+                handshake.getHandshakeHash());
+            handshake.updateHandshakeMessagesDigest(certificateVerifyMessage);
+        }
+
+        byte[] serverFinishedTranscriptHash;
+        {
+            // NOTE: Calculated exclusive of the actual Finished message from the server
+            DTLSReliableHandshake.Message finishedMessage = handshake.receiveMessageDelayedDigest(
+                HandshakeType.finished);
+            receive13ServerFinished(state, finishedMessage.getBody(), handshake.getHandshakeHash());
+            handshake.updateHandshakeMessagesDigest(finishedMessage);
+
+            serverFinishedTranscriptHash = TlsUtils.getCurrentPRFHash(handshake.getHandshakeHash());
+        }
+
+        /*
+         * RFC 9147 5. DTLS 1.3 does not use the TLS 1.3 "compatibility mode", so there is no
+         * change_cipher_spec message in either direction.
+         */
+
+        // NOTE: Calculated exclusive of the Finished message itself, and sent at the handshake epoch
+        securityParameters.localVerifyData = TlsUtils.calculateVerifyData(clientContext,
+            handshake.getHandshakeHash(), false);
+        securityParameters.tlsUnique = null;
+
+        handshake.sendMessage(HandshakeType.finished, securityParameters.getLocalVerifyData());
+
+        /*
+         * RFC 9147 6.1. The application traffic keys are epoch 3; both directions switch to it only after
+         * the client's Finished has gone out under the handshake traffic keys of epoch 2.
+         */
+        TlsUtils.establish13PhaseApplication(clientContext, serverFinishedTranscriptHash, null);
+
+        recordLayer.initPendingEpoch(TlsUtils.initCipher(clientContext));
+        recordLayer.enablePendingEpochWrite();
+        recordLayer.enablePendingEpochRead();
+
+        handshake.finish();
+
+        state.sessionMasterSecret = securityParameters.getMasterSecret();
+
+        state.sessionParameters = new SessionParameters.Builder()
+            .setCipherSuite(securityParameters.getCipherSuite())
+            .setExtendedMasterSecret(securityParameters.isExtendedMasterSecret())
+            .setLocalCertificate(securityParameters.getLocalCertificate())
+            .setMasterSecret(clientContext.getCrypto().adoptSecret(state.sessionMasterSecret))
+            .setNegotiatedVersion(securityParameters.getNegotiatedVersion())
+            .setPeerCertificate(securityParameters.getPeerCertificate())
+            .setPSKIdentity(securityParameters.getPSKIdentity())
+            .setSRPIdentity(securityParameters.getSRPIdentity())
+            .setServerExtensions(state.serverExtensions)
+            .build();
+
+        state.tlsSession = TlsUtils.importSession(securityParameters.getSessionID(), state.sessionParameters);
+
+        clientContext.handshakeComplete(client, state.tlsSession);
+
+        recordLayer.initHeartbeat(state.heartbeat, HeartbeatMode.peer_allowed_to_send == state.heartbeatPolicy);
+
+        return new DTLSTransport(recordLayer);
+    }
+
     protected byte[] generateCertificateVerify(ClientHandshakeState state, DigitallySigned certificateVerify)
         throws IOException
     {
@@ -588,6 +735,9 @@ public class DTLSClientProtocol
         ClientHello clientHello = new ClientHello(legacy_version, securityParameters.getClientRandom(),
             legacy_session_id, TlsUtils.EMPTY_BYTES, state.offeredCipherSuites, state.clientExtensions, bindersSize);
 
+        // NOTE: (D)TLS 1.3 checks the ServerHello against the ClientHello that was actually sent
+        state.clientHello = clientHello;
+
         /*
          * TODO[dtls13] See TlsClientProtocol.sendClientHelloMessage for how to prepare/encode binders and also consider
          * the impact of binders on cookie patching after HelloVerifyRequest.
@@ -673,6 +823,366 @@ public class DTLSClientProtocol
         }
 
         cancelSession(state);
+    }
+
+    /**
+     * Mirrors TlsClientProtocol.process13ServerHello: check the ServerHello against the ClientHello that was
+     * sent, then run the RFC 8446 7.1 key schedule as far as the handshake secret.
+     */
+    protected void process13ServerHello(ClientHandshakeState state, ServerHello serverHello,
+        boolean afterHelloRetryRequest) throws IOException
+    {
+        TlsClient client = state.client;
+        TlsClientContextImpl clientContext = state.clientContext;
+        SecurityParameters securityParameters = clientContext.getSecurityParametersHandshake();
+
+        if (serverHello.isHelloRetryRequest())
+        {
+            // TODO[dtls13] HelloRetryRequest (with its cookie extension) is not implemented yet
+            throw new TlsFatalAlert(AlertDescription.unexpected_message,
+                "DTLS 1.3 HelloRetryRequest is not implemented");
+        }
+
+        ProtocolVersion legacy_version = serverHello.getVersion();
+        byte[] legacy_session_id_echo = serverHello.getSessionID();
+        int cipherSuite = serverHello.getCipherSuite();
+        // NOTE: legacy_compression_method checked during ServerHello parsing
+
+        if (!ProtocolVersion.DTLSv12.equals(legacy_version) ||
+            !Arrays.areEqual(state.clientHello.getSessionID(), legacy_session_id_echo))
+        {
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+        }
+
+        Hashtable extensions = serverHello.getExtensions();
+        if (null == extensions)
+        {
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+        }
+        TlsUtils.checkExtensionData13(extensions, HandshakeType.server_hello, AlertDescription.illegal_parameter);
+
+        if (afterHelloRetryRequest)
+        {
+            ProtocolVersion server_version = TlsExtensionsUtils.getSupportedVersionsExtensionServer(extensions);
+            if (null == server_version)
+            {
+                throw new TlsFatalAlert(AlertDescription.missing_extension);
+            }
+
+            if (!securityParameters.getNegotiatedVersion().equals(server_version) ||
+                securityParameters.getCipherSuite() != cipherSuite)
+            {
+                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            }
+        }
+        else
+        {
+            if (!TlsUtils.isValidCipherSuiteSelection(state.clientHello.getCipherSuites(), cipherSuite) ||
+                !TlsUtils.isValidVersionForCipherSuite(cipherSuite, securityParameters.getNegotiatedVersion()))
+            {
+                throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+            }
+
+            securityParameters.resumedSession = false;
+            securityParameters.sessionID = TlsUtils.EMPTY_BYTES;
+            client.notifySessionID(TlsUtils.EMPTY_BYTES);
+
+            TlsUtils.negotiatedCipherSuite(securityParameters, cipherSuite);
+            client.notifySelectedCipherSuite(cipherSuite);
+        }
+
+        state.clientHello = null;
+
+        // NOTE: Apparently downgrade marker mechanism not used for (D)TLS 1.3+
+        securityParameters.serverRandom = serverHello.getRandom();
+
+        securityParameters.secureRenegotiation = false;
+
+        /*
+         * RFC 8446 Appendix D. Because TLS 1.3 always hashes in the transcript up to the server
+         * Finished, implementations which support both TLS 1.3 and earlier versions SHOULD indicate
+         * the use of the Extended Master Secret extension in their APIs whenever TLS 1.3 is used.
+         */
+        securityParameters.extendedMasterSecret = true;
+
+        /*
+         * RFC 8446 4.4.2.1. OCSP information is carried in an extension of the CertificateEntry for the
+         * certificate it answers for, so there is nothing to echo here and no "certificate_status" message
+         * to expect; a version of 1 records only that we asked.
+         */
+        securityParameters.statusRequestVersion =
+            state.clientExtensions.containsKey(TlsExtensionsUtils.EXT_status_request) ? 1 : 0;
+
+        TlsSecret pskEarlySecret = null;
+        {
+            int selected_identity = TlsExtensionsUtils.getPreSharedKeyServerHello(extensions);
+            TlsPSK selectedPSK = null;
+
+            if (selected_identity >= 0)
+            {
+                if (null == state.clientBinders || selected_identity >= state.clientBinders.psks.length)
+                {
+                    throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+                }
+
+                selectedPSK = state.clientBinders.psks[selected_identity];
+                if (selectedPSK.getPRFAlgorithm() != securityParameters.getPRFAlgorithm())
+                {
+                    throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+                }
+
+                pskEarlySecret = state.clientBinders.earlySecrets[selected_identity];
+
+                state.selectedPSK13 = true;
+            }
+
+            client.notifySelectedPSK(selectedPSK);
+        }
+
+        TlsSecret sharedSecret = null;
+        {
+            KeyShareEntry serverShare = TlsExtensionsUtils.getKeyShareServerHello(extensions);
+            if (null == serverShare)
+            {
+                if (afterHelloRetryRequest ||
+                    pskEarlySecret == null ||
+                    !Arrays.contains(state.clientBinders.pskKeyExchangeModes, PskKeyExchangeMode.psk_ke))
+                {
+                    throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+                }
+            }
+            else
+            {
+                if (pskEarlySecret != null &&
+                    !Arrays.contains(state.clientBinders.pskKeyExchangeModes, PskKeyExchangeMode.psk_dhe_ke))
+                {
+                    throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+                }
+
+                int namedGroup = serverShare.getNamedGroup();
+
+                TlsAgreement agreement = (TlsAgreement)state.clientAgreements.get(Integers.valueOf(namedGroup));
+                if (null == agreement)
+                {
+                    throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+                }
+
+                agreement.receivePeerValue(serverShare.getKeyExchange());
+                sharedSecret = agreement.calculateSecret();
+
+                if (!afterHelloRetryRequest)
+                {
+                    securityParameters.negotiatedGroup = namedGroup;
+                }
+            }
+        }
+
+        state.clientAgreements = null;
+        state.clientBinders = null;
+
+        TlsUtils.establish13PhaseSecrets(clientContext, pskEarlySecret, sharedSecret);
+
+        invalidateSession(state);
+        state.tlsSession = TlsUtils.importSession(securityParameters.getSessionID(), null);
+    }
+
+    /**
+     * Mirrors TlsClientProtocol.process13ServerHelloCoda. Where the stream class hands the new cipher to
+     * RecordStream, DTLS installs it as the pending epoch and switches both directions to it: RFC 9147 6.1
+     * reserves epoch 1 for early data, so the handshake traffic keys are epoch 2. RFC 9147 5 drops the TLS
+     * 1.3 compatibility-mode change_cipher_spec, so none is sent.
+     */
+    protected void process13ServerHelloCoda(ClientHandshakeState state, TlsHandshakeHash handshakeHash,
+        boolean afterHelloRetryRequest) throws IOException
+    {
+        TlsClientContextImpl clientContext = state.clientContext;
+        DTLSRecordLayer recordLayer = state.recordLayer;
+
+        byte[] serverHelloTranscriptHash = TlsUtils.getCurrentPRFHash(handshakeHash);
+
+        TlsUtils.establish13PhaseHandshake(clientContext, serverHelloTranscriptHash, null);
+
+        recordLayer.initPendingEpoch(TlsUtils.initCipher(clientContext));
+        recordLayer.enablePendingEpochWrite();
+        recordLayer.enablePendingEpochRead();
+    }
+
+    /**
+     * Mirrors TlsClientProtocol.receive13CertificateRequest.
+     */
+    protected void receive13CertificateRequest(ClientHandshakeState state, byte[] body)
+        throws IOException
+    {
+        /*
+         * RFC 8446 4.3.2. A server which is authenticating with a certificate MAY optionally
+         * request a certificate from the client.
+         */
+        if (state.selectedPSK13)
+        {
+            throw new TlsFatalAlert(AlertDescription.unexpected_message);
+        }
+
+        ByteArrayInputStream buf = new ByteArrayInputStream(body);
+
+        CertificateRequest certificateRequest = CertificateRequest.parse(state.clientContext, buf);
+
+        TlsProtocol.assertEmpty(buf);
+
+        if (!certificateRequest.hasCertificateRequestContext(TlsUtils.EMPTY_BYTES))
+        {
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+        }
+
+        state.certificateRequest = certificateRequest;
+
+        TlsUtils.establishServerSigAlgs(state.clientContext.getSecurityParametersHandshake(), certificateRequest);
+    }
+
+    /**
+     * Mirrors TlsClientProtocol.receive13EncryptedExtensions.
+     */
+    protected void receive13EncryptedExtensions(ClientHandshakeState state, byte[] body)
+        throws IOException
+    {
+        TlsClient client = state.client;
+        TlsClientContextImpl clientContext = state.clientContext;
+        SecurityParameters securityParameters = clientContext.getSecurityParametersHandshake();
+
+        ByteArrayInputStream buf = new ByteArrayInputStream(body);
+
+        byte[] extBytes = TlsUtils.readOpaque16(buf);
+
+        TlsProtocol.assertEmpty(buf);
+
+        state.serverExtensions = TlsProtocol.readExtensionsData13(HandshakeType.encrypted_extensions, extBytes);
+
+        {
+            /*
+             * RFC 8446 4.2. Implementations MUST NOT send extension responses if the remote
+             * endpoint did not send the corresponding extension requests, with the exception of the
+             * "cookie" extension in the HelloRetryRequest. Upon receiving such an extension, an
+             * endpoint MUST abort the handshake with an "unsupported_extension" alert.
+             */
+            Enumeration e = state.serverExtensions.keys();
+            while (e.hasMoreElements())
+            {
+                Integer extType = (Integer)e.nextElement();
+
+                if (null == TlsUtils.getExtensionData(state.clientExtensions, extType))
+                {
+                    throw new TlsFatalAlert(AlertDescription.unsupported_extension,
+                        "Unrequested extension in EncryptedExtensions: " + ExtensionType.getText(extType.intValue()));
+                }
+            }
+        }
+
+        securityParameters.applicationProtocol = TlsExtensionsUtils.getALPNExtensionServer(state.serverExtensions);
+        securityParameters.applicationProtocolSet = true;
+
+        Hashtable sessionClientExtensions = state.clientExtensions, sessionServerExtensions = state.serverExtensions;
+        if (securityParameters.isResumedSession())
+        {
+            sessionClientExtensions = null;
+            sessionServerExtensions = state.sessionParameters.readServerExtensions();
+        }
+
+        securityParameters.maxFragmentLength = TlsUtils.processMaxFragmentLengthExtension(sessionClientExtensions,
+            sessionServerExtensions, AlertDescription.illegal_parameter);
+
+        securityParameters.encryptThenMAC = false;
+        securityParameters.truncatedHMac = false;
+
+        if (!securityParameters.isResumedSession())
+        {
+            // RFC 8446 4.4.2.1. See the note in process13ServerHello.
+            securityParameters.statusRequestVersion =
+                state.clientExtensions.containsKey(TlsExtensionsUtils.EXT_status_request) ? 1 : 0;
+
+            TlsCrypto crypto = clientContext.getCrypto();
+            securityParameters.clientCertificateType = TlsUtils.processClientCertificateTypeExtension13(
+                crypto, sessionClientExtensions, sessionServerExtensions, AlertDescription.illegal_parameter);
+            securityParameters.serverCertificateType = TlsUtils.processServerCertificateTypeExtension13(
+                crypto, sessionClientExtensions, sessionServerExtensions, AlertDescription.illegal_parameter);
+        }
+
+        state.expectSessionTicket = false;
+
+        if (null != sessionClientExtensions)
+        {
+            client.processServerExtensions(state.serverExtensions);
+        }
+
+        applyMaxFragmentLengthExtension(state.recordLayer, securityParameters.getMaxFragmentLength());
+    }
+
+    /**
+     * Mirrors TlsClientProtocol.receive13ServerCertificate.
+     */
+    protected void receive13ServerCertificate(ClientHandshakeState state, byte[] body)
+        throws IOException
+    {
+        if (state.selectedPSK13)
+        {
+            throw new TlsFatalAlert(AlertDescription.unexpected_message);
+        }
+
+        state.authentication = TlsUtils.receive13ServerCertificate(state.clientContext, state.client,
+            state.clientExtensions, new ByteArrayInputStream(body));
+
+        // NOTE: In (D)TLS 1.3 we don't have to wait for a possible CertificateStatus message.
+        TlsUtils.processServerCertificate(state.clientContext, null, null, state.authentication,
+            state.clientExtensions, state.serverExtensions);
+    }
+
+    /**
+     * Mirrors TlsClientProtocol.receive13ServerCertificateVerify. The transcript passed in must exclude the
+     * CertificateVerify message itself, which is why it is read with a delayed digest.
+     */
+    protected void receive13ServerCertificateVerify(ClientHandshakeState state, byte[] body,
+        TlsHandshakeHash handshakeHash) throws IOException
+    {
+        TlsClientContextImpl clientContext = state.clientContext;
+
+        Certificate serverCertificate = clientContext.getSecurityParametersHandshake().getPeerCertificate();
+        if (null == serverCertificate || serverCertificate.isEmpty())
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        ByteArrayInputStream buf = new ByteArrayInputStream(body);
+
+        CertificateVerify certificateVerify = CertificateVerify.parse(clientContext, buf);
+
+        TlsProtocol.assertEmpty(buf);
+
+        TlsUtils.verify13CertificateVerifyServer(clientContext, handshakeHash, certificateVerify);
+    }
+
+    /**
+     * Mirrors TlsClientProtocol.receive13ServerFinished (TlsProtocol.process13FinishedMessage). The
+     * transcript passed in must exclude the Finished message itself.
+     */
+    protected void receive13ServerFinished(ClientHandshakeState state, byte[] body,
+        TlsHandshakeHash handshakeHash) throws IOException
+    {
+        TlsClientContextImpl clientContext = state.clientContext;
+        SecurityParameters securityParameters = clientContext.getSecurityParametersHandshake();
+
+        byte[] expected_verify_data = TlsUtils.calculateVerifyData(clientContext, handshakeHash, true);
+
+        ByteArrayInputStream buf = new ByteArrayInputStream(body);
+
+        byte[] verify_data = TlsUtils.readFully(expected_verify_data.length, buf);
+
+        TlsProtocol.assertEmpty(buf);
+
+        if (!Arrays.constantTimeAreEqual(expected_verify_data, verify_data))
+        {
+            throw new TlsFatalAlert(AlertDescription.decrypt_error);
+        }
+
+        securityParameters.peerVerifyData = expected_verify_data;
+        securityParameters.tlsUnique = null;
     }
 
     protected void processCertificateRequest(ClientHandshakeState state, byte[] body) throws IOException
@@ -792,17 +1302,17 @@ public class DTLSClientProtocol
         // NOTE: This is integrated into reportServerVersion call above
 //        TlsUtils.negotiatedVersionDTLSClient(clientContext, state.client);
 
-        // TODO[dtls13]
-//        if (ProtocolVersion.DTLSv13.isEqualOrEarlierVersionOf(server_version))
-//        {
-//            process13ServerHello(serverHello, false);
-//            return;
-//        }
+        if (ProtocolVersion.DTLSv13.isEqualOrEarlierVersionOf(server_version))
+        {
+            process13ServerHello(state, serverHello, false);
+            return;
+        }
 
         int[] offeredCipherSuites = state.offeredCipherSuites;
 
+        state.clientHello = null;
+
         // TODO[dtls13]
-//      state.clientHello = null;
 //      state.retryCookie = null;
 //      state.retryGroup = -1;
 
@@ -1105,6 +1615,22 @@ public class DTLSClientProtocol
         state.client.processServerSupplementalData(serverSupplementalData);
     }
 
+    /**
+     * Determine the protocol version a ServerHello selects, without otherwise processing it: the
+     * "supported_versions" extension if present (RFC 8446 4.2.1), else 'legacy_version'. Used only to route
+     * the ServerHello; all validation of the pair is left to {@link #processServerHello}.
+     */
+    protected static ProtocolVersion readSelectedVersion(byte[] body)
+        throws IOException
+    {
+        ServerHello serverHello = ServerHello.parse(new ByteArrayInputStream(body));
+
+        ProtocolVersion supported_version = TlsExtensionsUtils.getSupportedVersionsExtensionServer(
+            serverHello.getExtensions());
+
+        return null != supported_version ? supported_version : serverHello.getVersion();
+    }
+
     protected void reportServerVersion(ClientHandshakeState state, ProtocolVersion server_version)
         throws IOException
     {
@@ -1166,7 +1692,9 @@ public class DTLSClientProtocol
         SessionParameters sessionParameters = null;
         TlsSecret sessionMasterSecret = null;
         SessionParameters.Builder sessionParametersBuilder = null;
+        ClientHello clientHello = null;
         int[] offeredCipherSuites = null;
+        boolean selectedPSK13 = false;
         Hashtable clientExtensions = null;
         Hashtable serverExtensions = null;
         boolean expectSessionTicket = false;

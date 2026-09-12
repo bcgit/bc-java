@@ -25,6 +25,7 @@ public class AllTests
         suite.addTestSuite(BcTlsProtocolHybridTest.class);
         suite.addTestSuite(BcTlsProtocolKemTest.class);
         suite.addTestSuite(ByteQueueInputStreamTest.class);
+        suite.addTestSuite(DTLS13ClientProtocolTest.class);
         suite.addTestSuite(DTLSAggregatedHandshakeRetransmissionTest.class);
         suite.addTestSuite(DTLSHandshakeRetransmissionTest.class);
         suite.addTestSuite(DTLSInvalidRecordTest.class);

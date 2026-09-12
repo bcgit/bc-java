@@ -1938,7 +1938,14 @@ public class TlsUtils
 
         // TODO[tls13] Early data (client->server only)
 
-        recordStream.setPendingCipher(initCipher(context));
+        /*
+         * NOTE: DTLS 1.3 has no RecordStream; the DTLS protocol classes pass null here and install the
+         * cipher themselves via DTLSRecordLayer.initPendingEpoch (RFC 9147 6.1 epochs).
+         */
+        if (null != recordStream)
+        {
+            recordStream.setPendingCipher(initCipher(context));
+        }
     }
 
     static void establish13PhaseApplication(TlsContext context, byte[] serverFinishedTranscriptHash,
