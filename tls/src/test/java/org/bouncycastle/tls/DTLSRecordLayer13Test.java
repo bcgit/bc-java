@@ -158,17 +158,29 @@ public class DTLSRecordLayer13Test
 
     public void testApplicationDataAfterHandshakeWithRetransmitState() throws Exception
     {
-        setUpPair(CipherSuite.TLS_AES_128_GCM_SHA256, CryptoHashAlgorithm.sha256);
-
-        // A real handshake hands the record layer a retransmit handler; in DTLS 1.3 mode it must not
-        // put the write epoch into the legacy "retransmit" state that reclassifies sends as handshake.
+        // A real handshake hands the record layer a retransmit handler, which retains the handshake epoch
+        // (RFC 9147 5.8.1) for as long as a retransmitted final flight might still arrive. Drive that
+        // retention through the harness itself - calling handshakeSuccessful a second time here would find
+        // nothing left to retain, since the harness's own completed-handshake transition already cleared it.
         DTLSHandshakeRetransmit retransmit = new DTLSHandshakeRetransmit()
         {
             public void receivedHandshakeRecord(int epoch, byte[] buf, int off, int len)
             {
             }
         };
-        client.recordLayer.handshakeSuccessful(retransmit);
+
+        support = new DTLSRecordLayer13TestSupport();
+        support.setUpPair(CipherSuite.TLS_AES_128_GCM_SHA256, CryptoHashAlgorithm.sha256, retransmit, retransmit);
+        clientToServer = support.clientToServer;
+        serverToClient = support.serverToClient;
+        client = support.client;
+        server = support.server;
+
+        // In DTLS 1.3 mode the retained handshake epoch must never become the write epoch: resetWriteEpoch
+        // puts it there anyway (it is DTLS 1.2 only, guarded at its sole call site in
+        // DTLSReliableHandshake.resendOutboundFlight by !isDTLS13()), so calling it directly here forces
+        // exactly the state sendReturningRecordNumber's own dtls13 guard must not be fooled by.
+        client.recordLayer.resetWriteEpoch();
 
         byte[] data = new byte[]{ 0x14, 0x15, 0x16 }; // first byte would parse as handshake type finished (20)
         client.recordLayer.send(data, 0, data.length);

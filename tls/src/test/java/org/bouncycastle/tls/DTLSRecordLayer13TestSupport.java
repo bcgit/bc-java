@@ -122,6 +122,18 @@ class DTLSRecordLayer13TestSupport
 
     void setUpPair(int cipherSuite, int hash) throws IOException
     {
+        setUpPair(cipherSuite, hash, null, null);
+    }
+
+    /**
+     * As {@link #setUpPair(int, int)}, but each side's completed-handshake transition is driven with its own
+     * {@link DTLSHandshakeRetransmit}, retaining the handshake epoch (RFC 9147 5.8.1) for that side instead of
+     * dropping it. Pass null for a side that should complete the handshake with nothing retained, exactly as
+     * {@link #setUpPair(int, int)} does for both sides.
+     */
+    void setUpPair(int cipherSuite, int hash, DTLSHandshakeRetransmit clientRetransmit,
+        DTLSHandshakeRetransmit serverRetransmit) throws IOException
+    {
         TlsCrypto crypto = new BcTlsCrypto();
         byte[] clientSecret = new byte[48];
         byte[] serverSecret = new byte[48];
@@ -132,13 +144,14 @@ class DTLSRecordLayer13TestSupport
         serverToClient = new Queue();
 
         client = createSide(crypto, false, cipherSuite, hash, clientSecret, serverSecret,
-            new QueueTransport(serverToClient, clientToServer));
+            new QueueTransport(serverToClient, clientToServer), clientRetransmit);
         server = createSide(crypto, true, cipherSuite, hash, clientSecret, serverSecret,
-            new QueueTransport(clientToServer, serverToClient));
+            new QueueTransport(clientToServer, serverToClient), serverRetransmit);
     }
 
     private static Side createSide(TlsCrypto crypto, boolean isServer, int cipherSuite, int hash,
-        byte[] clientSecret, byte[] serverSecret, DatagramTransport transport) throws IOException
+        byte[] clientSecret, byte[] serverSecret, DatagramTransport transport,
+        DTLSHandshakeRetransmit retransmit) throws IOException
     {
         AbstractTlsContext context = TlsAEADCipherDTLS13Test.createContext(crypto, isServer, cipherSuite, hash,
             clientSecret, serverSecret);
@@ -166,7 +179,7 @@ class DTLSRecordLayer13TestSupport
         checkEquals(3, recordLayer.getPendingEpoch());
         recordLayer.enablePendingEpochWrite();
         recordLayer.enablePendingEpochRead();
-        recordLayer.handshakeSuccessful(null);
+        recordLayer.handshakeSuccessful(retransmit);
 
         checkEquals(3, recordLayer.getReadEpoch());
 
