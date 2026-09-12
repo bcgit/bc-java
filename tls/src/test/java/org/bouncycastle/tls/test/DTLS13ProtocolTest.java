@@ -115,9 +115,16 @@ public class DTLS13ProtocolTest
     private static final int MANGLE_COOKIE = 1;
     private static final int MANGLE_RANDOM = 2;
 
+    /**
+     * The plain baseline: a certificate-based DTLS 1.3 handshake with no CertificateRequest at all, which is
+     * the shortest flight shape the protocol has and the one that leaves 'state.certificateRequest' null on
+     * both peers. Every other test here has the server ask for a certificate, optionally or otherwise, so
+     * without this one that branch would go unexercised.
+     */
     public void testClientServer() throws Exception
     {
         Harness harness = new Harness();
+        harness.serverCertReq = TlsTestConfig.SERVER_CERT_REQ_NONE;
 
         harness.run(16);
 
@@ -132,6 +139,14 @@ public class DTLS13ProtocolTest
 
         assertNotNull("no application data echoed back", harness.echo);
         assertTrue("echoed application data differs", Arrays.areEqual(harness.request, harness.echo));
+
+        /*
+         * No CertificateRequest was sent, so the client was never asked for credentials and the server never
+         * saw a Certificate message of any kind - not even the empty one a declining client would send.
+         */
+        assertEquals("the client was asked for a certificate", 0, harness.clientCertificateRequestsSeen);
+        assertEquals("the client sent a certificate of its own", -1, harness.clientLocalCertChainLength);
+        assertEquals("the server received a client Certificate message", -1, harness.serverPeerCertChainLength);
 
         checkClientHello(harness.clientRecords());
         checkServerHello(harness.serverRecords());
@@ -292,9 +307,15 @@ public class DTLS13ProtocolTest
 
         assertTrue("the client's final flight was not dropped", harness.dropped > 0);
 
-        int clientEpoch2Records = countRecordsAtEpoch(harness.clientRecords(), 2);
-        assertTrue("the client did not retransmit its final flight (epoch 2 records: " + clientEpoch2Records
-            + ")", clientEpoch2Records >= 2);
+        String clientEpochs = epochSequence(harness.clientRecords());
+
+        /*
+         * The flight is a Certificate and a Finished, so two epoch-2 records, and both of them must come back:
+         * counting epoch-2 records from the first epoch-3 record onwards is what distinguishes a
+         * retransmission from the original flight, which is already two epoch-2 records of its own.
+         */
+        assertTrue("the client did not retransmit its whole final flight after reaching the application epoch"
+            + " (epochs: " + clientEpochs + ")", countEpoch2AfterFirstEpoch3(clientEpochs) >= 2);
 
         checkUnifiedHeadersAfterHello(harness.clientRecords(), "client");
 
@@ -306,8 +327,6 @@ public class DTLS13ProtocolTest
          */
         assertEquals("the client's first protected record was not at the handshake epoch", 2,
             firstProtectedEpoch(harness.clientRecords()));
-
-        String clientEpochs = epochSequence(harness.clientRecords());
 
         assertTrue("the client did not retransmit at the handshake epoch after reaching epoch 3 (epochs: "
             + clientEpochs + ")", lastProtectedEpoch(harness.clientRecords()) == 3
@@ -373,6 +392,46 @@ public class DTLS13ProtocolTest
 
         assertNotNull("no application data echoed back", harness.echo);
         assertTrue("echoed application data differs", Arrays.areEqual(harness.request, harness.echo));
+    }
+
+    /**
+     * The authenticated client flight over a lossy path. It is the largest flight either peer sends - a real
+     * certificate chain plus a CertificateVerify over it - so it is the one whose retransmission can span
+     * several records, and the per-record epoch bookkeeping and the flight boundaries both have more to get
+     * wrong here than for a bare Finished. Loss in both directions is what makes any of that run.
+     */
+    public void testClientServerWithClientAuthenticationAndPacketLoss() throws Exception
+    {
+        Harness harness = new Harness();
+        harness.clientAuth = TlsTestConfig.CLIENT_AUTH_VALID;
+        harness.serverCertReq = TlsTestConfig.SERVER_CERT_REQ_MANDATORY;
+        harness.loss = new UnreliableDatagramTransportFactory(new Random(0x2ADF1347L), 10, 10);
+
+        harness.run(16);
+
+        assertEquals("client negotiated version", ProtocolVersion.DTLSv13, harness.clientVersion);
+        assertEquals("server negotiated version", ProtocolVersion.DTLSv13, harness.serverVersion);
+
+        assertTrue("the client did not send a certificate of its own", harness.clientLocalCertChainLength > 0);
+        assertEquals("the chain the server received is not the one the client sent",
+            harness.clientLocalCertChainLength, harness.serverPeerCertChainLength);
+
+        /*
+         * The transcripts agreed all the way through the client's Certificate and CertificateVerify despite
+         * the loss: a flight reassembled wrongly, or digested at the wrong boundary, would fail here.
+         */
+        assertTrue("the server did not verify the client's Finished over the same transcript",
+            Arrays.areEqual(harness.clientLocalVerifyData, harness.serverPeerVerifyData));
+        assertTrue("the client did not verify the server's Finished over the same transcript",
+            Arrays.areEqual(harness.serverLocalVerifyData, harness.clientPeerVerifyData));
+
+        assertNotNull("no application data echoed back", harness.echo);
+        assertTrue("echoed application data differs", Arrays.areEqual(harness.request, harness.echo));
+
+        checkUnifiedHeadersAfterHello(harness.clientRecords(), "client");
+
+        checkEpochProgression(harness.clientRecords(), "client");
+        checkEpochProgression(harness.serverRecords(), "server");
     }
 
     /**
@@ -1432,6 +1491,31 @@ public class DTLS13ProtocolTest
     {
         String epochs = epochSequence(records);
         return epochs.length() < 1 ? -1 : epochs.charAt(epochs.length() - 1) - '0';
+    }
+
+    /**
+     * How many epoch-2 records appear after the first epoch-3 one. A side's original final flight is already
+     * several epoch-2 records, so only the ones after it has moved on to the application epoch can be a
+     * retransmission of that flight, and the count says how much of the flight came back.
+     */
+    private static int countEpoch2AfterFirstEpoch3(String epochs)
+    {
+        int epoch3 = epochs.indexOf('3');
+        if (epoch3 < 0)
+        {
+            return 0;
+        }
+
+        int count = 0;
+        for (int i = epoch3 + 1; i < epochs.length(); ++i)
+        {
+            if ('2' == epochs.charAt(i))
+            {
+                ++count;
+            }
+        }
+
+        return count;
     }
 
     private static boolean isAllZeroes(byte[] bs)
