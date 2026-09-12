@@ -1,6 +1,9 @@
 package org.bouncycastle.tls;
 
+import java.util.Hashtable;
 import java.util.Vector;
+
+import org.bouncycastle.util.Integers;
 
 import junit.framework.TestCase;
 
@@ -136,6 +139,102 @@ public class DTLS13RetransmissionTest
 
         assertTrue("an unacknowledged flight must be retransmitted when nothing arrives",
             support.countRecordsSent() > 0);
+    }
+
+    /*
+     * RFC 9147 5.8.1. The server answers a retransmission of the peer's final flight with another ACK, so what
+     * counts as a retransmission of that flight decides what can draw an ACK out of a completed server. Epoch
+     * 0 is unauthenticated, so a record from there must never qualify.
+     */
+
+    private static final int FINISHED_LENGTH = 32;
+    private static final int FINAL_FLIGHT_SEQ = 1;
+
+    private static Hashtable finalFlightOfOneFinished()
+    {
+        DTLSReassembler reassembler = new DTLSReassembler(HandshakeType.finished, FINISHED_LENGTH);
+        reassembler.contributeFragment(HandshakeType.finished, FINISHED_LENGTH, new byte[FINISHED_LENGTH], 0, 0,
+            FINISHED_LENGTH);
+
+        Hashtable inboundFlight = new Hashtable();
+        inboundFlight.put(Integers.valueOf(FINAL_FLIGHT_SEQ), reassembler);
+
+        return DTLSReliableHandshake.summarizeFlight(inboundFlight);
+    }
+
+    private static byte[] handshakeRecord(short msgType, int length, int messageSeq, int fragmentOffset,
+        int fragmentLength)
+    {
+        byte[] record = new byte[DTLSReliableHandshake.MESSAGE_HEADER_LENGTH + fragmentLength];
+        TlsUtils.writeUint8(msgType, record, 0);
+        TlsUtils.writeUint24(length, record, 1);
+        TlsUtils.writeUint16(messageSeq, record, 4);
+        TlsUtils.writeUint24(fragmentOffset, record, 6);
+        TlsUtils.writeUint24(fragmentLength, record, 9);
+        return record;
+    }
+
+    public void testRetransmissionOfTheFinalFlightIsRecognised()
+    {
+        Hashtable flight = finalFlightOfOneFinished();
+
+        byte[] record = handshakeRecord(HandshakeType.finished, FINISHED_LENGTH, FINAL_FLIGHT_SEQ, 0,
+            FINISHED_LENGTH);
+
+        assertTrue("a retransmission of the final flight must be answered",
+            DTLSReliableHandshake.matchesFlight(flight, 2, record, 0, record.length));
+
+        byte[] firstHalf = handshakeRecord(HandshakeType.finished, FINISHED_LENGTH, FINAL_FLIGHT_SEQ, 0,
+            FINISHED_LENGTH / 2);
+
+        assertTrue("a fragment of the final flight must be answered",
+            DTLSReliableHandshake.matchesFlight(flight, 2, firstHalf, 0, firstHalf.length));
+    }
+
+    public void testUnauthenticatedEpochIsNotTakenForTheFinalFlight()
+    {
+        Hashtable flight = finalFlightOfOneFinished();
+
+        byte[] record = handshakeRecord(HandshakeType.finished, FINISHED_LENGTH, FINAL_FLIGHT_SEQ, 0,
+            FINISHED_LENGTH);
+
+        assertFalse("epoch 0 is unauthenticated and carries none of the final flight",
+            DTLSReliableHandshake.matchesFlight(flight, 0, record, 0, record.length));
+        assertFalse("the application epoch carries no handshake flight",
+            DTLSReliableHandshake.matchesFlight(flight, 3, record, 0, record.length));
+    }
+
+    public void testForeignHandshakeRecordIsNotTakenForTheFinalFlight()
+    {
+        Hashtable flight = finalFlightOfOneFinished();
+
+        byte[] otherSeq = handshakeRecord(HandshakeType.finished, FINISHED_LENGTH, FINAL_FLIGHT_SEQ + 1, 0,
+            FINISHED_LENGTH);
+        assertFalse("a message_seq the flight never contained",
+            DTLSReliableHandshake.matchesFlight(flight, 2, otherSeq, 0, otherSeq.length));
+
+        byte[] otherType = handshakeRecord(HandshakeType.key_update, FINISHED_LENGTH, FINAL_FLIGHT_SEQ, 0,
+            FINISHED_LENGTH);
+        assertFalse("a different message under the flight's message_seq",
+            DTLSReliableHandshake.matchesFlight(flight, 2, otherType, 0, otherType.length));
+
+        byte[] otherLength = handshakeRecord(HandshakeType.finished, FINISHED_LENGTH + 1, FINAL_FLIGHT_SEQ, 0,
+            FINISHED_LENGTH + 1);
+        assertFalse("a different length under the flight's message_seq",
+            DTLSReliableHandshake.matchesFlight(flight, 2, otherLength, 0, otherLength.length));
+
+        byte[] record = handshakeRecord(HandshakeType.finished, FINISHED_LENGTH, FINAL_FLIGHT_SEQ, 0,
+            FINISHED_LENGTH);
+        assertFalse("a truncated record",
+            DTLSReliableHandshake.matchesFlight(flight, 2, record, 0, record.length - 1));
+        assertFalse("a record too short to hold a message header",
+            DTLSReliableHandshake.matchesFlight(flight, 2, record, 0, 4));
+
+        byte[] pair = new byte[record.length + otherSeq.length];
+        System.arraycopy(record, 0, pair, 0, record.length);
+        System.arraycopy(otherSeq, 0, pair, record.length, otherSeq.length);
+        assertFalse("one fragment of the flight does not excuse a foreign one beside it",
+            DTLSReliableHandshake.matchesFlight(flight, 2, pair, 0, pair.length));
     }
 
     public void testUnacknowledgedFlightStillRetransmitsEverything() throws Exception

@@ -114,6 +114,50 @@ public class DTLS13ProtocolTest
     }
 
     /**
+     * RFC 9147 5.8.1. The server's answer to a retransmission of the client's final flight is another ACK, and
+     * a reordering reaches it where a duplicate cannot: the client's first Finished datagram is held until it
+     * has sent a second, so the server completes on the second copy and then reads the first at a lower,
+     * never-seen epoch-2 sequence number, which its replay window has no reason to discard.
+     * <p>
+     * The counts are of the server's protected records taken before any application data is sent, so each one
+     * is an ACK: one for the final flight in the baseline, a second for the retransmission here. An
+     * unauthenticated epoch-0 handshake record injected at the server afterwards must draw no ACK at all - the
+     * server retains only the handshake epoch for reading, not the plaintext epoch the client needs.
+     * </p>
+     */
+    public void testServerAcksReorderedFinalFlight() throws Exception
+    {
+        Harness baseline = new Harness();
+        baseline.probeServerAckPath = true;
+
+        baseline.run(16);
+
+        assertNotNull("no application data echoed back", baseline.echo);
+        assertEquals("the server sent more than the one ACK of the final flight", 1,
+            baseline.serverEpoch3AfterHandshake);
+
+        Harness harness = new Harness();
+        harness.holdFirstClientEpoch2Datagram = true;
+        harness.probeServerAckPath = true;
+
+        harness.run(16);
+
+        assertEquals("client negotiated version", ProtocolVersion.DTLSv13, harness.clientVersion);
+        assertEquals("server negotiated version", ProtocolVersion.DTLSv13, harness.serverVersion);
+
+        assertTrue("the client's final flight was not reordered", harness.reordered > 0);
+
+        assertTrue("the server did not ACK the reordered retransmission of the final flight (protected records: "
+            + harness.serverEpoch3AfterHandshake + ")", harness.serverEpoch3AfterHandshake >= 2);
+
+        assertEquals("an unauthenticated epoch-0 handshake record drew an answer from the server",
+            harness.serverEpoch3AfterHandshake, harness.serverEpoch3AfterInjection);
+
+        assertNotNull("no application data echoed back", harness.echo);
+        assertTrue("echoed application data differs", Arrays.areEqual(harness.request, harness.echo));
+    }
+
+    /**
      * The ACK-driven retransmission of RFC 9147 7 over a lossy path, in both directions.
      */
     public void testClientServerWithPacketLoss() throws Exception
@@ -318,6 +362,8 @@ public class DTLS13ProtocolTest
     static class Harness
     {
         boolean dropFirstClientEpoch2Datagram = false;
+        boolean holdFirstClientEpoch2Datagram = false;
+        boolean probeServerAckPath = false;
         UnreliableDatagramTransportFactory loss = null;
 
         ProtocolVersion clientVersion = null;
@@ -327,8 +373,14 @@ public class DTLS13ProtocolTest
         byte[] request = null;
         byte[] echo = null;
         int dropped = 0;
+        int reordered = 0;
+
+        // Counts of the server's protected (epoch 3) records, taken while no application data is in flight
+        int serverEpoch3AfterHandshake = -1;
+        int serverEpoch3AfterInjection = -1;
 
         private RecordingDatagramTransport recording = null;
+        private DatagramTransport rawClientTransport = null;
 
         Vector clientRecords()
         {
@@ -400,7 +452,9 @@ public class DTLS13ProtocolTest
             serverThread.setDaemon(true);
             serverThread.start();
 
-            DatagramTransport clientTransport = network.getClient();
+            this.rawClientTransport = network.getClient();
+
+            DatagramTransport clientTransport = rawClientTransport;
 
             if (null != loss)
             {
@@ -409,10 +463,16 @@ public class DTLS13ProtocolTest
 
             this.recording = new RecordingDatagramTransport(clientTransport);
             recording.dropFirstEpoch2Datagram = dropFirstClientEpoch2Datagram;
+            recording.holdFirstEpoch2Datagram = holdFirstClientEpoch2Datagram;
 
             try
             {
                 DTLSTransport dtlsClient = new DTLSClientProtocol().connect(client, recording);
+
+                if (probeServerAckPath)
+                {
+                    probeServerAckPath(dtlsClient);
+                }
 
                 this.request = new byte[dataLength];
                 Arrays.fill(request, (byte)0x5A);
@@ -440,9 +500,92 @@ public class DTLS13ProtocolTest
             finally
             {
                 this.dropped = recording.getDropped();
+                this.reordered = recording.getReordered();
 
                 serverThread.shutdown();
             }
+        }
+
+        /**
+         * Counts the server's protected records once the handshake has completed and again after an
+         * unauthenticated epoch-0 handshake record has been injected. No application data has been sent at
+         * either point, so every protected record the server has sent is an ACK (RFC 9147 7.1): the first
+         * count is the ACK of the final flight plus any answer to the reordered retransmission of it, and the
+         * second shows whether the injected record drew an answer of its own.
+         */
+        private void probeServerAckPath(DTLSTransport dtlsClient) throws IOException
+        {
+            /*
+             * connect() returns as soon as the client has written its Finished, so the server has not
+             * necessarily completed yet - and in the reordering case it has not even retransmitted its own
+             * flight, which is what provokes the second copy of the Finished.
+             */
+            int expected = holdFirstClientEpoch2Datagram ? 2 : 1;
+
+            this.serverEpoch3AfterHandshake = drainServerEpoch3(dtlsClient, expected, 20000, 1500);
+
+            injectPlaintextHandshakeRecord();
+
+            // An answer to the injected record would be immediate, so a short wait is enough to rule one out
+            this.serverEpoch3AfterInjection = drainServerEpoch3(dtlsClient, serverEpoch3AfterHandshake + 1, 2000,
+                0);
+        }
+
+        /**
+         * Pumps the client's receive path until the server has sent the expected number of protected records
+         * (or the deadline passes), then keeps pumping for the settle period so that a record arriving after
+         * the expected ones is still counted.
+         *
+         * @return the number of protected records the server had sent by the end.
+         */
+        private int drainServerEpoch3(DTLSTransport dtlsClient, int expected, int deadlineMillis, int settleMillis)
+            throws IOException
+        {
+            byte[] buf = new byte[dtlsClient.getReceiveLimit()];
+
+            long deadline = System.currentTimeMillis() + deadlineMillis;
+            while (System.currentTimeMillis() < deadline
+                && countRecordsAtEpoch(serverRecords(), 3) < expected)
+            {
+                dtlsClient.receive(buf, 0, buf.length, 200);
+            }
+
+            long settleDeadline = System.currentTimeMillis() + settleMillis;
+            while (System.currentTimeMillis() < settleDeadline)
+            {
+                dtlsClient.receive(buf, 0, buf.length, 200);
+            }
+
+            return countRecordsAtEpoch(serverRecords(), 3);
+        }
+
+        /**
+         * Sends the server a plaintext epoch-0 record with a handshake content type, imitating the client's
+         * final flight (a Finished with the message_seq the real one had). It bypasses the client's record
+         * layer entirely, which is exactly the position of anyone able to put a datagram on the path: epoch 0
+         * is unauthenticated, so this record is forgeable by an off-path attacker who can guess the 5-tuple.
+         */
+        private void injectPlaintextHandshakeRecord() throws IOException
+        {
+            int bodyLength = 32;
+            byte[] record = new byte[PLAINTEXT_HEADER_LENGTH + MESSAGE_HEADER_LENGTH + bodyLength];
+
+            record[0] = (byte)ContentType.handshake;
+            record[1] = (byte)0xFE;
+            record[2] = (byte)0xFD;
+            // epoch 0, sequence_number 1
+            record[10] = (byte)1;
+            record[11] = (byte)((MESSAGE_HEADER_LENGTH + bodyLength) >>> 8);
+            record[12] = (byte)(MESSAGE_HEADER_LENGTH + bodyLength);
+
+            int off = PLAINTEXT_HEADER_LENGTH;
+            record[off] = (byte)HandshakeType.finished;
+            record[off + 3] = (byte)bodyLength;
+            // The client's final flight is its Finished, which follows its ClientHello as message_seq 1
+            record[off + 5] = (byte)1;
+            record[off + 11] = (byte)bodyLength;
+
+            rawClientTransport.send(record, 0, record.length);
         }
     }
 
@@ -531,8 +674,11 @@ public class DTLS13ProtocolTest
         private final Vector receivedRecords = new Vector();
 
         boolean dropFirstEpoch2Datagram = false;
+        boolean holdFirstEpoch2Datagram = false;
 
+        private byte[] held = null;
         private int dropped = 0;
+        private int reordered = 0;
 
         RecordingDatagramTransport(DatagramTransport transport)
         {
@@ -558,6 +704,11 @@ public class DTLS13ProtocolTest
         int getDropped()
         {
             return dropped;
+        }
+
+        int getReordered()
+        {
+            return reordered;
         }
 
         public int getReceiveLimit() throws IOException
@@ -607,6 +758,37 @@ public class DTLS13ProtocolTest
 
                 System.out.println("DTLS 1.3 test: dropped the client's " + len + " byte handshake-epoch flight");
                 return;
+            }
+
+            if (containsEpoch(records, 2))
+            {
+                if (holdFirstEpoch2Datagram)
+                {
+                    /*
+                     * Held rather than dropped: the peer stops retransmitting its own flight once this one
+                     * arrives, so holding it until the client has sent a second copy is what delivers the two
+                     * copies out of order - the later one first, then this one at a lower, never-seen sequence
+                     * number, which the replay window cannot discard.
+                     */
+                    holdFirstEpoch2Datagram = false;
+                    this.held = Arrays.copyOfRange(buf, off, off + len);
+
+                    System.out.println("DTLS 1.3 test: held the client's " + len + " byte handshake-epoch flight");
+                    return;
+                }
+
+                if (null != held)
+                {
+                    byte[] heldDatagram = held;
+                    this.held = null;
+                    ++reordered;
+
+                    transport.send(buf, off, len);
+                    transport.send(heldDatagram, 0, heldDatagram.length);
+
+                    System.out.println("DTLS 1.3 test: released the held flight after its retransmission");
+                    return;
+                }
             }
 
             transport.send(buf, off, len);

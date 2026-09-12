@@ -176,6 +176,37 @@ public class DTLSRecordLayer13Test
     }
 
     /**
+     * RFC 9147 5.8.1. The handshake epoch is held only for as long as a retransmission of the flight protected
+     * under it may still arrive, so once the handshake has completed without that retention (or once it has
+     * been dropped) nothing may resolve epoch 2 any more - neither to send at it, which would address a peer
+     * that has long since moved on, nor by keeping its traffic keys and replay window alive for the life of
+     * the connection.
+     * <p>
+     * The failure is raised rather than returned: silently declining to write a record of a retransmitted
+     * flight truncates it into one the peer can never answer, which shows up only as a later timeout.
+     * </p>
+     */
+    public void testHandshakeEpochIsNotHeldWithoutRetransmitState() throws Exception
+    {
+        setUpPair(CipherSuite.TLS_AES_128_GCM_SHA256, CryptoHashAlgorithm.sha256);
+
+        // setUpPair completes the handshake with no retransmit handler, so there is nothing to retain for
+        byte[] data = new byte[]{ 0x14, 0x00, 0x00, 0x00 };
+
+        try
+        {
+            client.recordLayer.sendHandshakeRecordAtEpoch(2, data, 0, data.length);
+            fail("expected a fatal alert for a write at an epoch the record layer no longer holds");
+        }
+        catch (TlsFatalAlert e)
+        {
+            assertEquals(AlertDescription.internal_error, e.getAlertDescription());
+        }
+
+        assertTrue("nothing may be written at an epoch that is no longer held", clientToServer.datagrams.isEmpty());
+    }
+
+    /**
      * A conforming peer may send the compact header forms even though we only ever write the full form, so the
      * receive path must handle them. The record is built by hand from a cipher keyed exactly like the client's
      * epoch-3 cipher and placed on the wire directly, bypassing client.recordLayer.send.
