@@ -47,8 +47,9 @@ class DTLS13PostHandshake
 
     /**
      * RFC 9147 7.2. The record numbers of post-handshake messages we have sent and not yet seen acknowledged.
-     * Nothing registers into it yet - the sending side arrives with key update - but the inbound ACK path it
-     * exists for is wired up here, because that wiring is what was missing.
+     * Only the KeyUpdate state machine registers into it: post-handshake messages are single-flight (5.8.4),
+     * so at most one message is ever outstanding and {@code isComplete} is exactly "our KeyUpdate has been
+     * acknowledged".
      */
     private final DTLS13FlightTracker flightTracker = new DTLS13FlightTracker();
 
@@ -74,6 +75,33 @@ class DTLS13PostHandshake
      */
     private boolean keyUpdatePendingSend = false;
 
+    /**
+     * RFC 9147 5.8.4 and 8. The KeyUpdate we have sent and not yet seen acknowledged, retained so that it can
+     * be retransmitted byte for byte, and doubling as the latch: section 5.8.4 forbids sending a KeyUpdate
+     * while an earlier one is unacknowledged, and section 8 forbids sending anything at all under the new
+     * epoch until then. Null means no key update of ours is in flight.
+     * <p>
+     * There is no second copy of this state anywhere. The derived write epoch it is waiting for lives in the
+     * record layer (see {@code derivePendingWriteEpoch}), and the fragments it is waiting to have
+     * acknowledged live in {@code flightTracker}; this field is what ties the two together and what says the
+     * state machine is running.
+     * </p>
+     */
+    private byte[] keyUpdateMessage = null;
+
+    /**
+     * RFC 9147 8. The epoch the outstanding KeyUpdate was sent under, which is the epoch it must be
+     * retransmitted under: it is the only epoch the peer can read until it has processed the KeyUpdate, and
+     * it is the epoch we are still writing at, since section 8 will not let us move until it is acknowledged.
+     */
+    private int keyUpdateEpoch = -1;
+
+    /** The message_seq of the outstanding KeyUpdate, for registering each retransmission of it. */
+    private int keyUpdateMessageSeq = -1;
+
+    private int keyUpdateResendMillis = -1;
+    private Timeout keyUpdateResendTimeout = null;
+
     DTLS13PostHandshake(DTLSRecordLayer recordLayer, int next_send_seq, int next_receive_seq,
         int maxHandshakeMessageSize)
     {
@@ -90,6 +118,177 @@ class DTLS13PostHandshake
     public void receivedAck(Vector recordNumbers)
     {
         flightTracker.acknowledge(recordNumbers);
+
+        /*
+         * RFC 9147 8. "implementations MUST NOT send records with the new keys ... until the previous
+         * KeyUpdate has been acknowledged". This is that acknowledgement, and it is the ONLY thing that
+         * installs the new write epoch.
+         *
+         * It is emphatically not the peer's decryption of anything, and the receiving half's release trigger
+         * is not this. The two halves of section 8 have different triggers: the sender may not write at its
+         * new epoch until its KeyUpdate is ACKed, while the receiver may not release the pre-update keys
+         * until a record has decrypted at the new epoch. An ACK proves the peer parsed a record; it says
+         * nothing about what the peer has begun sending.
+         */
+        if (null != keyUpdateMessage && flightTracker.isComplete())
+        {
+            recordLayer.installPendingWriteEpoch();
+
+            this.keyUpdateMessage = null;
+            this.keyUpdateEpoch = -1;
+            this.keyUpdateMessageSeq = -1;
+            this.keyUpdateResendMillis = -1;
+            this.keyUpdateResendTimeout = null;
+
+            flightTracker.reset();
+        }
+    }
+
+    /**
+     * RFC 9147 8 and RFC 8446 4.6.3 and 5.5. Start a key update if one is owed, called from the record
+     * layer's send path before a record goes out.
+     * <p>
+     * Two things can owe one: an obligation recorded by a received {@code update_requested}, and the write
+     * epoch's sequence number reaching the automatic threshold. Neither is acted on while a KeyUpdate of ours
+     * is still unacknowledged - section 5.8.4 forbids a second one, and there would be nowhere to put the
+     * derived epoch in any case.
+     * </p>
+     * The record this was called for is unaffected: it still goes out at the current write epoch, because
+     * section 8 will not let the write epoch move until the KeyUpdate is acknowledged.
+     */
+    void checkKeyUpdateBeforeSend() throws IOException
+    {
+        if (null != keyUpdateMessage)
+        {
+            return;
+        }
+
+        if (!keyUpdatePendingSend && !recordLayer.needsKeyUpdate())
+        {
+            return;
+        }
+
+        /*
+         * RFC 8446 4.6.3. A KeyUpdate sent to discharge an 'update_requested' carries
+         * 'update_not_requested', or the two peers would answer each other forever.
+         */
+        sendKeyUpdate(KeyUpdateRequest.update_not_requested);
+    }
+
+    /**
+     * RFC 9147 5.8.4 and 8. Send a KeyUpdate and start the state machine that waits for its acknowledgement.
+     * <p>
+     * The order of the three steps is fixed. The new write epoch is derived FIRST, because
+     * {@code update13TrafficSecretLocal} destroys the secret the current write epoch was keyed from, so the
+     * new epoch can only be built at this moment - and because a derivation that fails must fail before a
+     * KeyUpdate has been put on the wire announcing an update we then could not perform. The message goes out
+     * SECOND, at the old epoch, which is the only epoch the peer can read. The state machine is armed LAST,
+     * so that nothing is left latched if either of the first two throws.
+     * </p>
+     *
+     * @throws IllegalStateException if a KeyUpdate of ours is already awaiting acknowledgement. RFC 9147
+     *             5.8.4: "implementations MUST NOT send KeyUpdate ... messages if an earlier message of the
+     *             same type has not yet been acknowledged."
+     */
+    void sendKeyUpdate(short requestUpdate) throws IOException
+    {
+        if (null != keyUpdateMessage)
+        {
+            throw new IllegalStateException("a KeyUpdate is already awaiting acknowledgement");
+        }
+
+        int epoch = recordLayer.getWriteEpoch();
+        int message_seq = next_send_seq;
+
+        byte[] message = new byte[DTLSReliableHandshake.MESSAGE_HEADER_LENGTH + 1];
+        TlsUtils.writeUint8(HandshakeType.key_update, message, 0);
+        TlsUtils.writeUint24(1, message, 1);
+        TlsUtils.writeUint16(message_seq, message, 4);
+        TlsUtils.writeUint24(0, message, 6);
+        TlsUtils.writeUint24(1, message, 9);
+        TlsUtils.writeUint8(requestUpdate, message, 12);
+
+        recordLayer.deriveNextWriteEpoch();
+
+        DTLSRecordNumber recordNumber = recordLayer.sendHandshakeRecordAtEpoch(epoch, message, 0,
+            message.length);
+
+        next_send_seq += 1;
+
+        this.keyUpdateMessage = message;
+        this.keyUpdateEpoch = epoch;
+        this.keyUpdateMessageSeq = message_seq;
+        this.keyUpdateResendMillis = recordLayer.getHandshakeResendTimeMillis();
+        this.keyUpdateResendTimeout = new Timeout(keyUpdateResendMillis);
+
+        flightTracker.reset();
+        flightTracker.register(recordNumber, message_seq, 0, 1);
+
+        /*
+         * RFC 8446 4.6.3. Whatever prompted this one, it discharges any obligation to answer an
+         * 'update_requested': the peer asked for a key update and is getting one.
+         */
+        this.keyUpdatePendingSend = false;
+    }
+
+    /**
+     * RFC 9147 5.8.4. Drive the sending state machines, which "reduce to waiting for an ACK and
+     * retransmitting the original message". Called from the record layer's receive loop.
+     */
+    void checkTimeouts(long currentTimeMillis) throws IOException
+    {
+        if (null == keyUpdateMessage || !Timeout.hasExpired(keyUpdateResendTimeout, currentTimeMillis))
+        {
+            return;
+        }
+
+        this.keyUpdateResendMillis = DTLSReliableHandshake.backOff(keyUpdateResendMillis);
+        this.keyUpdateResendTimeout = new Timeout(keyUpdateResendMillis, currentTimeMillis);
+
+        /*
+         * At the epoch it was first sent under, not the current write epoch - which is the same epoch for as
+         * long as this message is outstanding (RFC 9147 8), so this is a statement of intent rather than a
+         * correction. The peer cannot read anything above it until it has processed this very message.
+         */
+        DTLSRecordNumber recordNumber = recordLayer.sendHandshakeRecordAtEpoch(keyUpdateEpoch,
+            keyUpdateMessage, 0, keyUpdateMessage.length);
+
+        // The same fragment under a new record number: either record being acknowledged retires it
+        flightTracker.register(recordNumber, keyUpdateMessageSeq, 0, 1);
+    }
+
+    /**
+     * The retransmit timeout of the outstanding KeyUpdate, or null when none is outstanding. Read by the
+     * record layer's receive loop, which must not block past it - a peer waiting for an ACK it will never get
+     * because we never woke up to resend is the failure this exists to prevent.
+     */
+    Timeout getResendTimeout()
+    {
+        return keyUpdateResendTimeout;
+    }
+
+    /** @return true while a KeyUpdate of ours is awaiting acknowledgement. */
+    boolean isKeyUpdateOutstanding()
+    {
+        return null != keyUpdateMessage;
+    }
+
+    /** @return the epoch the outstanding KeyUpdate was sent at, or -1 when none is outstanding. */
+    int getKeyUpdateEpoch()
+    {
+        return keyUpdateEpoch;
+    }
+
+    /**
+     * Bring the KeyUpdate retransmit timeout forward so that the next receive expires it through its own code
+     * path, instead of a test having to wait out the peer's configured resend interval.
+     */
+    void expireKeyUpdateResendTimeoutForTest()
+    {
+        if (null != keyUpdateResendTimeout)
+        {
+            this.keyUpdateResendTimeout = new Timeout(0);
+        }
     }
 
     /**

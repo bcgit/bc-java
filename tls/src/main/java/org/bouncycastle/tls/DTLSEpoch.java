@@ -12,9 +12,27 @@ class DTLSEpoch
     private final TlsCipher cipher;
     private final int recordHeaderLengthRead, recordHeaderLengthWrite;
 
+    /*
+     * RFC 9147 8. True for an epoch built from the PEER's updated traffic secret, i.e. one created by
+     * DTLSRecordLayer.updatePeerReadEpoch. Such an epoch can be read at and must never be written at: its
+     * cipher is keyed for the peer's sending direction and its single sequence number counter is the peer's,
+     * so allocating from it would encrypt our records under the peer's key at sequence numbers the peer has
+     * already used - AEAD nonce reuse, and the worst outcome an epoch lookup can have.
+     *
+     * Every other epoch this record layer holds is one both directions shared (the handshake installs one
+     * epoch for both) or one of our own making, and each of those is legitimately writable.
+     */
+    private final boolean peerKeyed;
+
     private long sequenceNumber = 0;
 
     DTLSEpoch(int epoch, TlsCipher cipher, int recordHeaderLengthRead, int recordHeaderLengthWrite)    
+    {
+        this(epoch, cipher, recordHeaderLengthRead, recordHeaderLengthWrite, false);
+    }
+
+    DTLSEpoch(int epoch, TlsCipher cipher, int recordHeaderLengthRead, int recordHeaderLengthWrite,
+        boolean peerKeyed)
     {
         if (epoch < 0)
         {
@@ -29,6 +47,13 @@ class DTLSEpoch
         this.cipher = cipher;
         this.recordHeaderLengthRead = recordHeaderLengthRead;
         this.recordHeaderLengthWrite = recordHeaderLengthWrite;
+        this.peerKeyed = peerKeyed;
+    }
+
+    /** @return true if this epoch is keyed from the peer's traffic secret and may only be read at. */
+    boolean isPeerKeyed()
+    {
+        return peerKeyed;
     }
 
     synchronized long allocateSequenceNumber() throws IOException

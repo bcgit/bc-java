@@ -15,10 +15,10 @@ import junit.framework.TestCase;
  * epoch, keyed from the peer's updated traffic secret, and the epoch it supersedes stays readable until the
  * first record decrypts under the new one.
  * <p>
- * The two halves of section 8 have different triggers and only one of them is implemented here. The sender
- * may not write at its new epoch until its own KeyUpdate has been <em>acknowledged</em>; the receiver may not
- * release the pre-update keys until the first successful <em>decryption</em> at the new epoch. Nothing in
- * this class turns on an ACK.
+ * The two halves of section 8 have different triggers, and both are covered here. The sender may not write at
+ * its new epoch until its own KeyUpdate has been <em>acknowledged</em>; the receiver may not release the
+ * pre-update keys until the first successful <em>decryption</em> at the new epoch. A test of one half must
+ * never turn on the other's trigger, and the names say which half each one is about.
  * </p>
  * <p>
  * {@link DTLSRecordLayerEpochSetTest} deliberately keys the epochs it compares identically, so that the epoch
@@ -34,6 +34,9 @@ public class DTLS13KeyUpdateTest
 
     /** The application epoch both directions reach when the handshake completes (RFC 9147 6.1). */
     private static final int APPLICATION_EPOCH = 3;
+
+    /** {@link AbstractTlsPeer#getHandshakeResendTimeMillis()}, which the harness's peers do not override. */
+    private static final int DEFAULT_RESEND_MILLIS = 1000;
 
     private DTLSRecordLayer13TestSupport support;
     private DTLSRecordLayer13TestSupport.Side client, server;
@@ -562,4 +565,365 @@ public class DTLS13KeyUpdateTest
             // expected
         }
     }
+
+    /** The epoch number the low 2 bits of a sent record's first byte can be attributed to. */
+    private static void assertSentAtEpoch(int expectedEpoch, int otherEpoch, byte[] datagram)
+    {
+        assertSentAtEpoch("record", expectedEpoch, otherEpoch, datagram);
+    }
+
+    private static void assertSentAtEpoch(String message, int expectedEpoch, int otherEpoch, byte[] datagram)
+    {
+        int firstByte = datagram[0] & 0xFF;
+        assertTrue(message + " must be on the wire under epoch " + expectedEpoch,
+            DTLS13UnifiedHeader.matchesEpoch(firstByte, expectedEpoch));
+        assertFalse(message + " must not be on the wire under epoch " + otherEpoch,
+            DTLS13UnifiedHeader.matchesEpoch(firstByte, otherEpoch));
+    }
+
+    /** Send one application record from the client and return the datagram it produced. */
+    private byte[] sendClientApplicationData(byte[] data, int expectedEpoch) throws IOException
+    {
+        DTLSRecordNumber recordNumber = client.recordLayer.sendReturningRecordNumber(data, 0, data.length);
+        assertNotNull(recordNumber);
+        assertEquals(expectedEpoch, recordNumber.getEpoch());
+        return takeClientDatagram();
+    }
+
+    /**
+     * RFC 9147 8, the SENDING half. "implementations MUST NOT send records with the new keys ... until the
+     * previous KeyUpdate has been acknowledged."
+     * <p>
+     * The acknowledgement is withheld, and every record sent meanwhile is read off the wire and checked for
+     * the OLD epoch's bits - not asked of a field, and not decrypted, because a field assertion would pass
+     * even if the send path had picked up the derived epoch, and a decryption would only prove which keys we
+     * think we used. Then the ACK is delivered and the epoch advances, on the wire, in the same way.
+     * </p>
+     * <p>
+     * Mutations this test is built to catch: install the derived epoch at the point the KeyUpdate is sent
+     * (i.e. follow {@code deriveNextWriteEpoch} with {@code installPendingWriteEpoch} in
+     * {@code sendKeyUpdate}) and every withheld-ACK assertion fails; drop the
+     * {@code installPendingWriteEpoch} call from {@code receivedAck} and the post-ACK assertions fail.
+     * </p>
+     */
+    public void testNoRecordIsSentAtTheNewEpochUntilTheKeyUpdateIsAcknowledged() throws Exception
+    {
+        setUpPair();
+
+        DTLS13PostHandshake clientPostHandshake = client.recordLayer.getPostHandshake();
+        assertFalse(clientPostHandshake.isKeyUpdateOutstanding());
+
+        clientPostHandshake.sendKeyUpdate(KeyUpdateRequest.update_not_requested);
+
+        assertTrue(clientPostHandshake.isKeyUpdateOutstanding());
+        assertEquals(APPLICATION_EPOCH, clientPostHandshake.getKeyUpdateEpoch());
+        assertEquals("the new epoch is derived but not installed", 4,
+            client.recordLayer.getPendingWriteEpoch());
+        assertEquals(APPLICATION_EPOCH, client.recordLayer.getWriteEpoch());
+
+        byte[] keyUpdateDatagram = takeClientDatagram();
+        assertSentAtEpoch(APPLICATION_EPOCH, 4, keyUpdateDatagram);
+
+        // Everything sent while the ACK is withheld is on the wire under the old epoch
+        for (int i = 0; i < 3; ++i)
+        {
+            byte[] data = new byte[]{ (byte)i, 0x02, 0x03, 0x04 };
+            assertSentAtEpoch(APPLICATION_EPOCH, 4, sendClientApplicationData(data, APPLICATION_EPOCH));
+            assertEquals(APPLICATION_EPOCH, client.recordLayer.getWriteEpoch());
+            assertTrue(clientPostHandshake.isKeyUpdateOutstanding());
+        }
+
+        // Now let it be acknowledged: the peer processes the KeyUpdate and ACKs it, and we read that ACK
+        assertNull(deliver(keyUpdateDatagram));
+        assertEquals(4, server.recordLayer.getReadEpoch());
+        assertFalse("the KeyUpdate must be acknowledged", support.serverToClient.datagrams.isEmpty());
+
+        assertNull(DTLSRecordLayer13TestSupport.receive(client, 100));
+
+        assertFalse("the acknowledgement ends the state machine", clientPostHandshake.isKeyUpdateOutstanding());
+        assertEquals(4, client.recordLayer.getWriteEpoch());
+        assertEquals(-1, client.recordLayer.getPendingWriteEpoch());
+
+        byte[] afterAck = new byte[]{ 0x09, 0x0a, 0x0b, 0x0c };
+        assertSentAtEpoch(4, APPLICATION_EPOCH, sendClientApplicationData(afterAck, 4));
+    }
+
+    /**
+     * RFC 9147 8 and RFC 8446 5.5. A key update starts by itself once enough records have been sent under the
+     * write epoch, at the same threshold the TLS record layer uses ({@code RecordStream.needsKeyUpdate}),
+     * applied to the write epoch's sequence number.
+     * <p>
+     * The record that crosses the threshold still goes out at the old epoch. Starting a key update and moving
+     * the epoch are different events, separated by the peer's acknowledgement.
+     * </p>
+     * <p>
+     * Mutations this test is built to catch: raise {@code KEY_UPDATE_SEQUENCE_LIMIT} and the second half
+     * fails (no update is started); lower it by one and the first half fails (one is started below the
+     * threshold); test it against the read epoch's sequence number instead and both halves fail.
+     * </p>
+     */
+    public void testKeyUpdateStartsAutomaticallyAtTheSequenceNumberThreshold() throws Exception
+    {
+        setUpPair();
+
+        DTLS13PostHandshake clientPostHandshake = client.recordLayer.getPostHandshake();
+        byte[] data = new byte[]{ 0x01, 0x02, 0x03, 0x04 };
+
+        client.recordLayer.setWriteEpochSequenceNumberForTest((1L << 20) - 1);
+        sendClientApplicationData(data, APPLICATION_EPOCH);
+        assertFalse("below the threshold nothing is started", clientPostHandshake.isKeyUpdateOutstanding());
+        assertEquals(-1, client.recordLayer.getPendingWriteEpoch());
+
+        client.recordLayer.setWriteEpochSequenceNumberForTest(1L << 20);
+        DTLSRecordNumber recordNumber = client.recordLayer.sendReturningRecordNumber(data, 0, data.length);
+
+        assertTrue("at the threshold a key update is started", clientPostHandshake.isKeyUpdateOutstanding());
+        assertEquals(APPLICATION_EPOCH, clientPostHandshake.getKeyUpdateEpoch());
+        assertEquals(4, client.recordLayer.getPendingWriteEpoch());
+        assertEquals("the record that crossed the threshold still goes out at the old epoch",
+            APPLICATION_EPOCH, recordNumber.getEpoch());
+        assertEquals(APPLICATION_EPOCH, client.recordLayer.getWriteEpoch());
+
+        Vector datagrams = takeClientDatagrams();
+        assertEquals("the KeyUpdate, then the application record", 2, datagrams.size());
+        assertSentAtEpoch(APPLICATION_EPOCH, 4, (byte[])datagrams.elementAt(0));
+        assertSentAtEpoch(APPLICATION_EPOCH, 4, (byte[])datagrams.elementAt(1));
+    }
+
+    /**
+     * RFC 9147 5.8.4. The sending state machine "reduces to waiting for an ACK and retransmitting the
+     * original message", and it is driven from the RECEIVE path. A peer that sends nothing after starting a
+     * key update must still retransmit it, and must still install the new epoch when the ACK arrives - and
+     * that peer is exactly the one a send-driven timer would never reach, because RFC 9147 8 has left it
+     * unable to send anything new at the epoch it wants to use.
+     * <p>
+     * Nothing in this test writes application data after the KeyUpdate. The only calls that could produce the
+     * retransmission are the receives.
+     * </p>
+     * <p>
+     * Mutation this test is built to catch: drive {@code checkTimeouts} from {@code sendReturningRecordNumber}
+     * instead of from {@code receive} and the retransmission never appears. The other half of the same
+     * mechanism - that a blocking receive does not sleep past the resend timeout - is
+     * {@link #testAReceiveBlocksNoLongerThanTheKeyUpdateResendTimeout()}, because this test brings the
+     * timeout forward and so would not notice.
+     * </p>
+     */
+    public void testAReceiveOnlyPeerRetransmitsItsKeyUpdateAndInstallsOnTheAck() throws Exception
+    {
+        setUpPair();
+
+        DTLS13PostHandshake clientPostHandshake = client.recordLayer.getPostHandshake();
+        clientPostHandshake.sendKeyUpdate(KeyUpdateRequest.update_not_requested);
+
+        // The original is lost in transit, and the client sends nothing else for the rest of the test
+        takeClientDatagram();
+
+        clientPostHandshake.expireKeyUpdateResendTimeoutForTest();
+        assertNull(DTLSRecordLayer13TestSupport.receive(client, 50));
+
+        byte[] resent = takeClientDatagram();
+        assertSentAtEpoch("the retransmission is at the epoch the peer can still read", APPLICATION_EPOCH,
+            4, resent);
+        assertTrue(clientPostHandshake.isKeyUpdateOutstanding());
+        assertEquals(APPLICATION_EPOCH, client.recordLayer.getWriteEpoch());
+
+        assertNull(deliver(resent));
+        assertEquals("the retransmission is what moves the peer", 4, server.recordLayer.getReadEpoch());
+
+        assertNull(DTLSRecordLayer13TestSupport.receive(client, 100));
+
+        assertFalse(clientPostHandshake.isKeyUpdateOutstanding());
+        assertEquals("a peer that never sent anything still reaches the new epoch", 4,
+            client.recordLayer.getWriteEpoch());
+    }
+
+    /**
+     * The other half of driving the state machine from the receive path: a receive must not block past the
+     * resend timeout. The timeout here is the peer's real configured interval, not one brought forward, so a
+     * receive whose wait is longer than it has to be cut short by it - otherwise a receive-only peer sleeps
+     * through its own retransmission and the length of its stall is whatever its caller happened to pass.
+     * <p>
+     * Mutation this test is built to catch: drop the {@code constrainWaitMillis} call for
+     * {@code postHandshake.getResendTimeout()} in {@code receive} and nothing is retransmitted within the
+     * wait.
+     * </p>
+     */
+    public void testAReceiveBlocksNoLongerThanTheKeyUpdateResendTimeout() throws Exception
+    {
+        setUpPair();
+
+        DTLS13PostHandshake clientPostHandshake = client.recordLayer.getPostHandshake();
+        clientPostHandshake.sendKeyUpdate(KeyUpdateRequest.update_not_requested);
+        takeClientDatagram();
+
+        assertNull(DTLSRecordLayer13TestSupport.receive(client, DEFAULT_RESEND_MILLIS
+            + (DEFAULT_RESEND_MILLIS / 2)));
+
+        byte[] resent = takeClientDatagram();
+        assertSentAtEpoch("the retransmission", APPLICATION_EPOCH, 4, resent);
+    }
+
+    /**
+     * RFC 9147 5.8.4. "implementations MUST NOT send KeyUpdate ... messages if an earlier message of the same
+     * type has not yet been acknowledged." Neither an explicit request nor the automatic threshold starts a
+     * second one.
+     * <p>
+     * Mutation this test is built to catch: remove the outstanding-message latch from
+     * {@code checkKeyUpdateBeforeSend} and the automatic half fails - a second KeyUpdate goes out, and the
+     * derivation behind it throws because there is nowhere to put a second epoch.
+     * </p>
+     */
+    public void testASecondKeyUpdateIsNotStartedWhileOneIsOutstanding() throws Exception
+    {
+        setUpPair();
+
+        DTLS13PostHandshake clientPostHandshake = client.recordLayer.getPostHandshake();
+        clientPostHandshake.sendKeyUpdate(KeyUpdateRequest.update_not_requested);
+        takeClientDatagrams();
+
+        try
+        {
+            clientPostHandshake.sendKeyUpdate(KeyUpdateRequest.update_not_requested);
+            fail("expected a second KeyUpdate to be refused while one is outstanding");
+        }
+        catch (IllegalStateException e)
+        {
+            // expected
+        }
+
+        client.recordLayer.setWriteEpochSequenceNumberForTest(1L << 20);
+        byte[] data = new byte[]{ 0x01, 0x02, 0x03, 0x04 };
+        client.recordLayer.sendReturningRecordNumber(data, 0, data.length);
+
+        assertEquals("only the application record went out", 1, takeClientDatagrams().size());
+        assertEquals("no second epoch was derived", 4, client.recordLayer.getPendingWriteEpoch());
+        assertEquals(APPLICATION_EPOCH, clientPostHandshake.getKeyUpdateEpoch());
+        assertEquals(APPLICATION_EPOCH, client.recordLayer.getWriteEpoch());
+    }
+
+    /**
+     * RFC 9147 7. "After the handshake, implementations MUST use the highest available sending epoch" - and
+     * that is the whole rule. The handshake-time floor ("an epoch equal to or higher than the record which is
+     * being acknowledged") does not survive the handshake, and applying it afterwards is a real stall: the
+     * two directions' epochs advance on their own key updates, so a peer that has updated its sending keys
+     * while we have not sends its next KeyUpdate at an epoch above ours, and that KeyUpdate is a message
+     * whose whole state machine is waiting for the ACK we would be withholding.
+     * <p>
+     * Reached here the way a connection reaches it: the peer key-updates twice, so its second KeyUpdate
+     * arrives at epoch 4 while our own write epoch is still 3.
+     * </p>
+     * <p>
+     * Mutation this test is built to catch: restore the unconditional epoch floor in {@code sendAck} and no
+     * ACK is sent for the second KeyUpdate. The receive-side half is covered by
+     * {@code testAnAckFromBelowOurEpochStillRetiresOurKeyUpdate}.
+     * </p>
+     */
+    public void testAKeyUpdateAboveOurOwnWriteEpochIsStillAcknowledged() throws Exception
+    {
+        setUpPair();
+
+        sendKeyUpdate(0, KeyUpdateRequest.update_not_requested);
+        assertNull(deliver(takeClientDatagram()));
+        assertFalse(support.serverToClient.datagrams.isEmpty());
+        support.serverToClient.datagrams.removeAllElements();
+
+        clientMovesToTheNextWriteEpoch();
+
+        DTLSRecordNumber second = sendKeyUpdate(1, KeyUpdateRequest.update_not_requested);
+        assertEquals("the peer's KeyUpdate is above our own write epoch", 4, second.getEpoch());
+        assertEquals(APPLICATION_EPOCH, server.recordLayer.getWriteEpoch());
+
+        assertNull(deliver(takeClientDatagram()));
+        assertEquals(5, server.recordLayer.getReadEpoch());
+
+        assertFalse("a KeyUpdate above our own write epoch must still be acknowledged",
+            support.serverToClient.datagrams.isEmpty());
+        assertSentAtEpoch("the ACK goes out at the highest epoch we have", APPLICATION_EPOCH, 4,
+            support.serverToClient.peekLast());
+    }
+
+    /**
+     * The receiving half of the same rule. Our KeyUpdate is sent at epoch 4 and the peer, still writing at
+     * epoch 3, acknowledges it from below. That ACK must retire it: the record-number filter that discards
+     * numbers above the ACK's own epoch is a handshake-time defence (a forged plaintext ACK at epoch 0), and
+     * applying it to a protected post-handshake ACK leaves us retransmitting a KeyUpdate that has in fact
+     * been acknowledged, forever.
+     * <p>
+     * Mutation this test is built to catch: filter unconditionally in the ACK receive path and the write
+     * epoch never advances.
+     * </p>
+     */
+    public void testAnAckFromBelowOurEpochStillRetiresOurKeyUpdate() throws Exception
+    {
+        setUpPair();
+
+        DTLS13PostHandshake clientPostHandshake = client.recordLayer.getPostHandshake();
+
+        // First key update, acknowledged at the same epoch, leaves the client writing at 4
+        clientPostHandshake.sendKeyUpdate(KeyUpdateRequest.update_not_requested);
+        assertNull(deliver(takeClientDatagram()));
+        assertNull(DTLSRecordLayer13TestSupport.receive(client, 100));
+        assertEquals(4, client.recordLayer.getWriteEpoch());
+
+        // Second key update, sent at 4, while the server is still writing at 3
+        clientPostHandshake.sendKeyUpdate(KeyUpdateRequest.update_not_requested);
+        byte[] datagram = takeClientDatagram();
+        assertSentAtEpoch(4, APPLICATION_EPOCH, datagram);
+
+        assertNull(deliver(datagram));
+        assertEquals(APPLICATION_EPOCH, server.recordLayer.getWriteEpoch());
+        assertFalse(support.serverToClient.datagrams.isEmpty());
+
+        assertNull(DTLSRecordLayer13TestSupport.receive(client, 100));
+
+        assertFalse("an ACK from below our epoch still acknowledges our KeyUpdate",
+            clientPostHandshake.isKeyUpdateOutstanding());
+        assertEquals(5, client.recordLayer.getWriteEpoch());
+    }
+
+    /**
+     * RFC 9147 8 and 4.2.2. An epoch built from the PEER's updated traffic secret may be read at and must
+     * never be written at: a {@link DTLSEpoch} carries one cipher and one sequence number counter for both
+     * directions, so writing at it would encrypt our records under the peer's key at sequence numbers the
+     * peer has already used.
+     * <p>
+     * It is reachable only by number collision, which is why it is worth a test of its own: the two
+     * directions start from the same application epoch and advance by one on their own key updates, so the
+     * peer's read epoch 4 and a write-side request for "epoch 4" coincide as a matter of course.
+     * </p>
+     * <p>
+     * Mutation this test is built to catch: drop the {@code isPeerKeyed} test from
+     * {@code getEpochForRetransmit} and the peer's epoch is returned and written at.
+     * </p>
+     */
+    public void testAPeerKeyedEpochIsNeverResolvedForWriting() throws Exception
+    {
+        setUpPair();
+
+        byte[] body = new byte[]{ 0x14, 0x00, 0x00, 0x00 };
+
+        // The peer's key update gives the server a read epoch 4 that is keyed from the PEER's secret
+        sendKeyUpdate(0, KeyUpdateRequest.update_not_requested);
+        assertNull(deliver(takeClientDatagram()));
+        assertEquals(4, server.recordLayer.getReadEpoch());
+        assertEquals(APPLICATION_EPOCH, server.recordLayer.getWriteEpoch());
+
+        try
+        {
+            server.recordLayer.sendHandshakeRecordAtEpoch(4, body, 0, body.length);
+            fail("expected an epoch keyed from the peer's secret to be unresolvable for writing");
+        }
+        catch (TlsFatalAlert e)
+        {
+            assertEquals(AlertDescription.internal_error, e.getAlertDescription());
+        }
+
+        // Our own epoch 4, once we have one, resolves as it always did
+        TlsUtils.update13TrafficSecretLocal(server.context);
+        server.recordLayer.derivePendingWriteEpoch(TlsUtils.initCipher(server.context));
+        assertEquals(4, server.recordLayer.installPendingWriteEpoch().getEpoch());
+
+        assertEquals(4, server.recordLayer.sendHandshakeRecordAtEpoch(4, body, 0, body.length).getEpoch());
+    }
+
 }

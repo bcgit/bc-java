@@ -26,6 +26,14 @@ class DTLSRecordLayer
     private static final int RECORD_LENGTH_REST_OF_DATAGRAM = -2;
 
     private static final int MAX_FRAGMENT_LENGTH = 1 << 14;
+
+    /**
+     * RFC 9147 8 and RFC 8446 5.5. The write sequence number at which a key update is started automatically.
+     * This is the same threshold the TLS record layer applies to its own write sequence number - see
+     * {@link RecordStream#needsKeyUpdate()} - restated here rather than shared, because the two record
+     * layers have no common base and RecordStream is one of the files this series leaves untouched.
+     */
+    private static final long KEY_UPDATE_SEQUENCE_LIMIT = 1L << 20;
     private static final long TCP_MSL = 1000L * 60 * 2;
     private static final long RETRANSMIT_TIMEOUT = TCP_MSL * 2;
 
@@ -280,6 +288,32 @@ class DTLSRecordLayer
         return readEpoch.getEpoch();
     }
 
+    /** @return the epoch number records are currently sent under. */
+    int getWriteEpoch()
+    {
+        return writeEpoch.getEpoch();
+    }
+
+    /**
+     * RFC 9147 8 and RFC 8446 5.5. Whether enough records have been sent under the current write epoch that
+     * a key update should be started. The test is on the WRITE epoch's sequence number, because a key update
+     * rekeys the sending direction, and it is the same threshold {@link RecordStream#needsKeyUpdate()}
+     * applies over TLS.
+     */
+    boolean needsKeyUpdate()
+    {
+        return writeEpoch.getSequenceNumber() >= KEY_UPDATE_SEQUENCE_LIMIT;
+    }
+
+    /**
+     * The peer's configured retransmit interval, which RFC 9147 5.8.4's post-handshake state machines use for
+     * the same purpose the handshake does: how long to wait for an ACK before resending.
+     */
+    int getHandshakeResendTimeMillis()
+    {
+        return peer.getHandshakeResendTimeMillis();
+    }
+
     /**
      * The epoch of the record most recently delivered by a receive call.
      * <p>
@@ -530,6 +564,42 @@ class DTLSRecordLayer
     }
 
     /**
+     * RFC 9147 8. Start a key update of our own sending direction: update the local traffic secret and hold
+     * the write epoch it keys, without sending anything under it. The mirror of {@link #updatePeerReadEpoch()}
+     * for the direction we control, and the counterpart the sending side calls.
+     * <p>
+     * The epoch number is validated before the secret is touched, exactly as {@link #updatePeerReadEpoch()}
+     * validates before its own derivation. {@code update13TrafficSecretLocal} destroys the secret it
+     * replaces, so a refusal after it had run would leave the connection unable to build either the old
+     * epoch's keys or the new one's.
+     * </p>
+     *
+     * @return the derived epoch, which is not the write epoch until {@link #installPendingWriteEpoch()} is
+     *         called - which RFC 9147 8 permits only once the peer has acknowledged the KeyUpdate.
+     * @throws IllegalStateException if the connection is not DTLS 1.3, or if a derived write epoch is
+     *             already being held.
+     * @throws TlsFatalAlert if the epoch number would overflow; see {@link #nextEpoch(int)}.
+     */
+    DTLSEpoch deriveNextWriteEpoch() throws IOException
+    {
+        if (!dtls13)
+        {
+            throw new IllegalStateException("key update requires DTLS 1.3");
+        }
+        if (null != pendingWriteEpoch)
+        {
+            throw new IllegalStateException("a derived write epoch is already held");
+        }
+
+        // Checked here as well as in derivePendingWriteEpoch, so that it is checked before the secret moves
+        nextEpoch(writeEpoch.getEpoch());
+
+        TlsUtils.update13TrafficSecretLocal(context);
+
+        return derivePendingWriteEpoch(TlsUtils.initCipher(context));
+    }
+
+    /**
      * RFC 9147 8. Install the epoch held by {@link #derivePendingWriteEpoch(TlsCipher)} as the write epoch, so
      * that records are from now on sent under it. The slot is cleared, which is what lets a later key update
      * derive its own epoch.
@@ -702,7 +772,7 @@ class DTLSRecordLayer
          * inherits the ones the epoch it supersedes was built with.
          */
         DTLSEpoch nextEpoch = new DTLSEpoch(nextReadEpoch, cipher, supersededEpoch.getRecordHeaderLengthRead(),
-            supersededEpoch.getRecordHeaderLengthWrite());
+            supersededEpoch.getRecordHeaderLengthWrite(), true);
 
         retainReadEpoch(supersededEpoch);
         this.readEpoch = nextEpoch;
@@ -899,6 +969,17 @@ class DTLSRecordLayer
                 retransmitTimeout = null;
             }
 
+            /*
+             * RFC 9147 5.8.4. The post-handshake sending state machines are driven from here rather than from
+             * the send path, because a peer that has sent a KeyUpdate need not send anything else at all: it
+             * may be a pure receiver from that point on, and its own KeyUpdate is then the one thing standing
+             * between it and ever sending again. Driving them from a write would stall exactly that peer.
+             */
+            if (null != postHandshake)
+            {
+                postHandshake.checkTimeouts(currentTimeMillis);
+            }
+
             if (Timeout.hasExpired(heartbeatTimeout, currentTimeMillis))
             {
                 if (null != heartbeatInFlight)
@@ -925,6 +1006,12 @@ class DTLSRecordLayer
 
             waitMillis = Timeout.constrainWaitMillis(waitMillis, heartbeatTimeout, currentTimeMillis);
             waitMillis = Timeout.constrainWaitMillis(waitMillis, heartbeatResendTimeout, currentTimeMillis);
+
+            if (null != postHandshake)
+            {
+                waitMillis = Timeout.constrainWaitMillis(waitMillis, postHandshake.getResendTimeout(),
+                    currentTimeMillis);
+            }
 
             // NOTE: Guard against bad logic giving a negative value 
             if (waitMillis < 0)
@@ -990,6 +1077,18 @@ class DTLSRecordLayer
     DTLSRecordNumber sendReturningRecordNumber(byte[] buf, int off, int len)
         throws IOException
     {
+        /*
+         * RFC 9147 8 and RFC 8446 5.5. A key update is started from the send path, because the condition that
+         * starts one - enough records sent under the current write epoch - is only reached by sending. It
+         * does not change the epoch this record goes out under: section 8 forbids sending under the new epoch
+         * until the KeyUpdate has been acknowledged, so the epoch moves in installPendingWriteEpoch and
+         * nowhere else.
+         */
+        if (dtls13 && !inHandshake && null != postHandshake)
+        {
+            postHandshake.checkKeyUpdateBeforeSend();
+        }
+
         short contentType = ContentType.application_data;
 
         /*
@@ -1561,7 +1660,18 @@ class DTLSRecordLayer
                 Vector recordNumbers = DTLSAck.decode(decoded.buf, decoded.off, decoded.len);
                 if (null != recordNumbers)
                 {
-                    ackListener.receivedAck(filterAckRecordNumbers(recordNumbers, epoch));
+                    /*
+                     * RFC 9147 7. The filter's floor is a handshake-time rule and is applied only where the
+                     * threat it exists for is: see filterAckRecordNumbers. After the handshake, an ACK at a
+                     * protected epoch is accepted as it stands, because a peer whose own sending epoch is
+                     * below ours legitimately acknowledges our records from there - and it is our KeyUpdate
+                     * that arrives there, so filtering it out would leave us retransmitting forever.
+                     */
+                    Vector ackRecordNumbers = (inHandshake || 0 == epoch)
+                        ? filterAckRecordNumbers(recordNumbers, epoch)
+                        : recordNumbers;
+
+                    ackListener.receivedAck(ackRecordNumbers);
                 }
             }
 
@@ -1762,14 +1872,23 @@ class DTLSRecordLayer
     }
 
     /**
-     * RFC 9147 7. An ACK is sent at an epoch equal to or higher than the records it acknowledges, so a
-     * record number naming an epoch above the one that carried the ACK is discarded.
+     * RFC 9147 7. "During the handshake, ACK records MUST be sent with an epoch which is equal to or higher
+     * than the record which is being acknowledged", so a record number naming an epoch above the one that
+     * carried the ACK is discarded.
      * <p>
      * Without this an off-path attacker who can spoof the peer's address has a blind denial of service:
      * epoch 0 is unauthenticated (a fragmented ClientHello has to be acknowledgeable there) and DTLS
      * sequence numbers start at 0 and are predictable, so a forged plaintext ACK listing the protected
      * epochs would retire handshake fragments that were never delivered. Retransmission then writes
      * nothing and the handshake stalls until it times out.
+     * </p>
+     * <p>
+     * That threat is what bounds where this is applied. The quoted rule is explicitly a handshake-time one -
+     * after the handshake the RFC says only "use the highest available sending epoch", with no floor - and a
+     * peer that has updated its sending keys while we have not is below the epoch of the very KeyUpdate it
+     * is acknowledging. So the caller applies this during the handshake, and afterwards only to an ACK that
+     * arrived at epoch 0, which is the only epoch an attacker can write at. An ACK at a protected epoch
+     * decrypted under keys only the peer holds, so there is nothing left to filter for.
      * </p>
      * An ACK all of whose record numbers are filtered out is still delivered: an empty ACK is meaningful.
      */
@@ -1993,11 +2112,22 @@ class DTLSRecordLayer
     /**
      * RFC 9147 7. Send an ACK covering the given record numbers.
      * <p>
-     * An ACK must be sent at an epoch equal to or higher than the records it acknowledges. The read and
-     * write epochs advance through separate calls in DTLS 1.3, so the write epoch is checked against the
-     * highest epoch named rather than assumed to be above it; if it is below, no ACK is sent. Emitting one
-     * anyway would both violate that requirement and hand the record numbers of protected records to a
-     * passive observer. The only cost of not sending it is a retransmission.
+     * The section has two rules, and which one applies turns on whether the handshake is still running.
+     * "During the handshake, ACK records MUST be sent with an epoch which is equal to or higher than the
+     * record which is being acknowledged." Our write epoch may still be below that - the read and write
+     * epochs are installed by separate calls - so it is checked against the highest epoch named, and if it
+     * is below, no ACK is sent. Emitting one anyway would both violate that requirement and hand the record
+     * numbers of protected records to a passive observer; the only cost of withholding it is a
+     * retransmission, which the handshake's own timer will produce.
+     * </p>
+     * <p>
+     * "After the handshake, implementations MUST use the highest available sending epoch" - and that is the
+     * whole rule, with no floor set by the record being acknowledged. The distinction is not cosmetic. The
+     * two directions' epochs advance on their own key updates, so a peer that has updated its sending keys
+     * while we have not is acknowledged from below its epoch, and it is precisely its KeyUpdate - a message
+     * whose entire state machine is "wait for an ACK and retransmit" (RFC 9147 5.8.4) - that arrives there.
+     * Applying the handshake-time floor after the handshake would leave that KeyUpdate unacknowledged and
+     * the peer retransmitting it for as long as its state machine runs.
      * </p>
      *
      * @return the record number the ACK was sent in, or null if no ACK was sent.
@@ -2009,19 +2139,22 @@ class DTLSRecordLayer
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        long maxEpoch = 0;
-        for (int i = 0; i < recordNumbers.size(); ++i)
+        if (inHandshake)
         {
-            long recordEpoch = ((DTLSRecordNumber)recordNumbers.elementAt(i)).getEpoch();
-            if (recordEpoch > maxEpoch)
+            long maxEpoch = 0;
+            for (int i = 0; i < recordNumbers.size(); ++i)
             {
-                maxEpoch = recordEpoch;
+                long recordEpoch = ((DTLSRecordNumber)recordNumbers.elementAt(i)).getEpoch();
+                if (recordEpoch > maxEpoch)
+                {
+                    maxEpoch = recordEpoch;
+                }
             }
-        }
 
-        if (writeEpoch.getEpoch() < maxEpoch)
-        {
-            return null;
+            if (writeEpoch.getEpoch() < maxEpoch)
+            {
+                return null;
+            }
         }
 
         byte[] body = DTLSAck.encode(recordNumbers);
@@ -2031,6 +2164,15 @@ class DTLSRecordLayer
     DTLSRecordNumber sendRecordForTest(short contentType, byte[] buf, int off, int len) throws IOException
     {
         return sendRecord(contentType, buf, off, len);
+    }
+
+    /**
+     * Advance the write epoch's sequence number, so that a test can reach the automatic key update threshold
+     * of {@link #needsKeyUpdate()} through its own code path instead of sending a million records.
+     */
+    void setWriteEpochSequenceNumberForTest(long sequenceNumber)
+    {
+        writeEpoch.setSequenceNumber(sequenceNumber);
     }
 
     /**
@@ -2094,15 +2236,24 @@ class DTLSRecordLayer
 
         /*
          * The read side resolves through this same collection (see getLiveReadEpochs), so the two directions
-         * cannot disagree about which epochs are held: whatever can still be read can still be written at, and
-         * whatever has been released is resolvable by neither. The match is on the full epoch number rather
-         * than the low bits, so the collection's order does not change which epoch is found here.
+         * cannot disagree about which epochs are held: whatever has been released is resolvable by neither.
+         * The match is on the full epoch number rather than the low bits, so the collection's order does not
+         * change which epoch is found here.
+         *
+         * One exception, and it is not symmetric: an epoch built from the PEER's updated traffic secret
+         * (DTLSEpoch.isPeerKeyed, set only by updatePeerReadEpoch) may be read at and must never be written
+         * at. A DTLSEpoch carries one cipher and one sequence number counter for both directions, so writing
+         * at the peer's epoch would encrypt under the peer's key at sequence numbers the peer has already
+         * used. Before post-handshake key updates every held epoch was one both directions shared, so this
+         * could not arise; once the read side advances on its own it can, and the epoch numbers of the two
+         * directions coincide often enough (both start from the application epoch and advance by one) that
+         * it would arise by number collision rather than by anything obviously wrong.
          */
         Vector liveReadEpochs = getLiveReadEpochs();
         for (int i = 0; i < liveReadEpochs.size(); ++i)
         {
             DTLSEpoch liveReadEpoch = (DTLSEpoch)liveReadEpochs.elementAt(i);
-            if (liveReadEpoch.getEpoch() == epoch)
+            if (liveReadEpoch.getEpoch() == epoch && !liveReadEpoch.isPeerKeyed())
             {
                 return liveReadEpoch;
             }

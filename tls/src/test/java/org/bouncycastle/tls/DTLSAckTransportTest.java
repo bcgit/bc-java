@@ -110,21 +110,25 @@ public class DTLSAckTransportTest
     }
 
     /**
-     * RFC 9147 7. An ACK is sent at an epoch equal to or higher than the records it acknowledges, so a
-     * record number naming a higher epoch than the ACK that carried it is discarded on receipt.
+     * RFC 9147 7. "During the handshake, ACK records MUST be sent with an epoch which is equal to or higher
+     * than the record which is being acknowledged", so during the handshake a record number naming a higher
+     * epoch than the ACK that carried it is discarded on receipt.
      * <p>
      * Epoch 0 is unauthenticated and DTLS sequence numbers are predictable, so without this an off-path
      * attacker who can spoof the peer's address could forge a plaintext ACK naming the protected epochs,
      * retire fragments that were never delivered and stall the handshake.
      * </p>
      */
-    public void testAckRecordNumbersAboveTheAckEpochAreDiscarded() throws Exception
+    public void testAckRecordNumbersAboveTheAckEpochAreDiscardedDuringTheHandshake() throws Exception
     {
         DTLSRecordLayer13TestSupport support = new DTLSRecordLayer13TestSupport();
         support.setUpPair(CipherSuite.TLS_AES_128_GCM_SHA256, CryptoHashAlgorithm.sha256);
 
         RecordingAckListener listener = new RecordingAckListener();
         support.server.recordLayer.setAckListener(listener);
+
+        // The rule under test is a handshake-time one; the harness has otherwise completed the handshake
+        support.server.recordLayer.inHandshake = true;
 
         int ackEpoch = support.server.recordLayer.getReadEpoch();
 
@@ -146,14 +150,57 @@ public class DTLSAckTransportTest
         assertEquals(new DTLSRecordNumber(ackEpoch, 7), got.elementAt(0));
     }
 
-    /** The same rule on the sending side: rather than emit a non-compliant ACK, send none. */
-    public void testAckIsNotSentBelowTheEpochOfTheRecordsItAcknowledges() throws Exception
+    /**
+     * RFC 9147 7. After the handshake there is no such floor - "implementations MUST use the highest
+     * available sending epoch" is the whole rule - and a protected ACK from a peer whose own sending epoch is
+     * below ours is exactly what a post-handshake KeyUpdate draws. Discarding those record numbers would
+     * leave the KeyUpdate unretired and its sender retransmitting forever, so a protected ACK is taken as it
+     * stands.
+     * <p>
+     * The epoch-0 defence is untouched: an unprotected ACK is still filtered, and it is the only epoch an
+     * attacker can write at.
+     * </p>
+     */
+    public void testAckRecordNumbersAboveTheAckEpochSurviveAfterTheHandshake() throws Exception
     {
         DTLSRecordLayer13TestSupport support = new DTLSRecordLayer13TestSupport();
         support.setUpPair(CipherSuite.TLS_AES_128_GCM_SHA256, CryptoHashAlgorithm.sha256);
 
         RecordingAckListener listener = new RecordingAckListener();
         support.server.recordLayer.setAckListener(listener);
+
+        int ackEpoch = support.server.recordLayer.getReadEpoch();
+
+        Vector recordNumbers = new Vector();
+        recordNumbers.addElement(new DTLSRecordNumber(ackEpoch, 7));
+        recordNumbers.addElement(new DTLSRecordNumber(ackEpoch + 1, 0));
+
+        byte[] body = DTLSAck.encode(recordNumbers);
+        support.client.recordLayer.sendRecordForTest(ContentType.ack, body, 0, body.length);
+
+        byte[] buf = new byte[support.server.recordLayer.getReceiveLimit()];
+        assertTrue(support.server.recordLayer.receive(buf, 0, buf.length, 500) < 0);
+
+        assertEquals(1, listener.received.size());
+
+        Vector got = (Vector)listener.received.elementAt(0);
+        assertEquals("a protected post-handshake ACK is delivered as it stands", 2, got.size());
+        assertEquals(new DTLSRecordNumber(ackEpoch + 1, 0), got.elementAt(1));
+    }
+
+    /**
+     * The same rule on the sending side, and it is likewise a handshake-time one: rather than emit an ACK
+     * below the epoch of the records it covers, send none.
+     */
+    public void testAckIsNotSentBelowTheEpochOfTheRecordsItAcknowledgesDuringTheHandshake() throws Exception
+    {
+        DTLSRecordLayer13TestSupport support = new DTLSRecordLayer13TestSupport();
+        support.setUpPair(CipherSuite.TLS_AES_128_GCM_SHA256, CryptoHashAlgorithm.sha256);
+
+        RecordingAckListener listener = new RecordingAckListener();
+        support.server.recordLayer.setAckListener(listener);
+
+        support.client.recordLayer.inHandshake = true;
 
         Vector recordNumbers = new Vector();
         recordNumbers.addElement(new DTLSRecordNumber(support.client.recordLayer.getReadEpoch() + 1, 0));
@@ -165,6 +212,39 @@ public class DTLSAckTransportTest
         assertTrue(support.server.recordLayer.receive(buf, 0, buf.length, 500) < 0);
 
         assertEquals("nothing reached the peer", 0, listener.received.size());
+    }
+
+    /**
+     * RFC 9147 7. "After the handshake, implementations MUST use the highest available sending epoch", with
+     * no floor set by the record being acknowledged. The two directions' epochs advance on their own key
+     * updates, so a peer that has updated its sending keys while we have not must still be acknowledged -
+     * from below its epoch, at the highest epoch we have.
+     * <p>
+     * Mutation this test is built to catch: apply the handshake-time floor unconditionally in
+     * {@code sendAck} and no ACK is sent.
+     * </p>
+     */
+    public void testAckIsSentAtTheHighestSendingEpochAfterTheHandshake() throws Exception
+    {
+        DTLSRecordLayer13TestSupport support = new DTLSRecordLayer13TestSupport();
+        support.setUpPair(CipherSuite.TLS_AES_128_GCM_SHA256, CryptoHashAlgorithm.sha256);
+
+        RecordingAckListener listener = new RecordingAckListener();
+        support.server.recordLayer.setAckListener(listener);
+
+        int writeEpoch = support.client.recordLayer.getWriteEpoch();
+
+        Vector recordNumbers = new Vector();
+        recordNumbers.addElement(new DTLSRecordNumber(writeEpoch + 1, 0));
+
+        DTLSRecordNumber sent = support.client.recordLayer.sendAck(recordNumbers);
+        assertNotNull("an ACK must still be sent from below the epoch it covers", sent);
+        assertEquals("at the highest epoch we have", writeEpoch, sent.getEpoch());
+
+        byte[] buf = new byte[support.server.recordLayer.getReceiveLimit()];
+        assertTrue(support.server.recordLayer.receive(buf, 0, buf.length, 500) < 0);
+
+        assertEquals("and it reached the peer", 1, listener.received.size());
     }
 
     public void testSendAckRequiresDTLS13() throws Exception
