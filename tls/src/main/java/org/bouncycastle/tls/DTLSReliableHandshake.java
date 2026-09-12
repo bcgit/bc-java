@@ -402,6 +402,7 @@ class DTLSReliableHandshake
                  * so nothing acknowledges it implicitly and it must be acknowledged explicitly.
                  */
                 final Vector finalFlightAck = ackRecordNumbers;
+                final Hashtable finalFlight = summarizeFlight(currentInboundFlight);
 
                 sendPendingAck();
 
@@ -411,13 +412,20 @@ class DTLSReliableHandshake
                  * follows. The record layer retains the handshake epoch so the retransmission can still be
                  * read, and the ACK goes out at the current (application) write epoch, which the peer has by
                  * now installed for reading.
+                 *
+                 * Only a record that plausibly carries that flight is answered. Anything else arriving with a
+                 * handshake content type - at worst an unauthenticated record, since the record layer also
+                 * retains epoch 0 on the side that needs to read it - would otherwise draw an ACK out of us.
                  */
                 retransmit = new DTLSHandshakeRetransmit()
                 {
                     public void receivedHandshakeRecord(int epoch, byte[] buf, int off, int len)
                         throws IOException
                     {
-                        sendAck(finalFlightAck);
+                        if (matchesFlight(finalFlight, epoch, buf, off, len))
+                        {
+                            sendAck(finalFlightAck);
+                        }
                     }
                 };
             }
@@ -458,6 +466,81 @@ class DTLSReliableHandshake
          * retransmit backoff.
          */
         return Math.min(timeoutMillis * 2, MAX_RESEND_MILLIS);
+    }
+
+    /**
+     * The message_seq, msg_type and length of each complete message of a flight, which is all that is needed
+     * to recognise a retransmission of it. The reassemblers themselves are deliberately not retained: their
+     * bodies are the largest thing the handshake holds, and this summary outlives the handshake.
+     */
+    static Hashtable summarizeFlight(Hashtable inboundFlight)
+    {
+        Hashtable summary = new Hashtable();
+
+        Enumeration e = inboundFlight.keys();
+        while (e.hasMoreElements())
+        {
+            Integer key = (Integer)e.nextElement();
+            DTLSReassembler reassembler = (DTLSReassembler)inboundFlight.get(key);
+            byte[] body = reassembler.getBodyIfComplete();
+            if (null != body)
+            {
+                summary.put(key, new int[]{ reassembler.getMsgType(), body.length });
+            }
+        }
+
+        return summary;
+    }
+
+    /**
+     * RFC 9147 5.8.1. Whether a handshake record that arrived after the handshake completed plausibly carries
+     * a retransmission of the flight summarized by {@link #summarizeFlight(Hashtable)}, which is the only
+     * thing a retransmitted ACK answers.
+     * <p>
+     * The framing checks are those {@link #processRecord(int, int, byte[], int, int)} makes, which is the
+     * model for how much gating is enough: the epoch must be the one that flight was protected under, and
+     * every fragment in the record must belong to a message that flight was made of. Without this, any record
+     * whose decoded content type is handshake would draw an ACK, including an unauthenticated one on the side
+     * that retains epoch 0 for reading.
+     * </p>
+     */
+    static boolean matchesFlight(Hashtable flight, int epoch, byte[] buf, int off, int len)
+    {
+        /*
+         * RFC 9147 6.1. The flight this answers is the peer's final flight, every message of which is
+         * protected under the handshake traffic keys at epoch 2.
+         */
+        if (2 != epoch || len < MESSAGE_HEADER_LENGTH)
+        {
+            return false;
+        }
+
+        while (len >= MESSAGE_HEADER_LENGTH)
+        {
+            short msg_type = TlsUtils.readUint8(buf, off + 0);
+            int length = TlsUtils.readUint24(buf, off + 1);
+            int message_seq = TlsUtils.readUint16(buf, off + 4);
+            int fragment_offset = TlsUtils.readUint24(buf, off + 6);
+            int fragment_length = TlsUtils.readUint24(buf, off + 9);
+
+            int message_length = MESSAGE_HEADER_LENGTH + fragment_length;
+            if (len < message_length || fragment_offset + fragment_length > length)
+            {
+                // NOTE: Truncated or malformed - not something the peer sent us before
+                return false;
+            }
+
+            int[] expected = (int[])flight.get(Integers.valueOf(message_seq));
+            if (null == expected || expected[0] != msg_type || expected[1] != length)
+            {
+                return false;
+            }
+
+            off += message_length;
+            len -= message_length;
+        }
+
+        return true;
     }
 
     /**
@@ -975,6 +1058,18 @@ class DTLSReliableHandshake
     private void retransmitHandshakeFragment(Message message, int fragment_offset, int fragment_length, int epoch)
         throws IOException
     {
+        if (epoch < 0)
+        {
+            /*
+             * A tracked fragment always has an epoch: DTLS13FlightTracker.register records one from the record
+             * number that carried the fragment, and implWriteHandshakeFragment only registers a fragment when
+             * the record layer returned a record number. A fragment without one would be retransmitted at the
+             * current write epoch, which is the very defect the per-fragment epoch exists to prevent, so it is
+             * raised rather than written.
+             */
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
         implWriteHandshakeFragment(message, fragment_offset, fragment_length, epoch);
     }
 
