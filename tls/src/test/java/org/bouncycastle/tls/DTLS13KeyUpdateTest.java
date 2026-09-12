@@ -816,10 +816,12 @@ public class DTLS13KeyUpdateTest
      * </p>
      * <p>
      * Mutations this test is built to catch: remove the outstanding-KeyUpdate latch at the top of
-     * {@code checkKeyUpdateBeforeSend} - i.e. follow RFC 8446 instead - and the deferral half fails, because
-     * a second KeyUpdate goes out while one is unacknowledged; drop the {@code keyUpdatePendingSend} latch
-     * (clear it in {@code handleMessage} instead of recording it) and the discharge half fails, because the
-     * answering KeyUpdate is never sent at all.
+     * {@code checkKeyUpdateBeforeSend} - i.e. try to follow RFC 8446 instead - and the deferral half fails on
+     * the {@code IllegalStateException} raised by {@code sendKeyUpdate}'s own RFC 9147 5.8.4 guard, which is
+     * the second of the two. Relax both, so that the implementation conforms to RFC 8446, and it fails
+     * instead on the datagram count, because a second KeyUpdate goes out while one is unacknowledged. Drop
+     * the {@code keyUpdatePendingSend} latch (clear it in {@code handleMessage} instead of recording it) and
+     * the discharge half fails, because the answering KeyUpdate is never sent at all.
      * </p>
      */
     public void testAnUpdateRequestedIsDeferredWhileOurOwnKeyUpdateIsOutstanding() throws Exception

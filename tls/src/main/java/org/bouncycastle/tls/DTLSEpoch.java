@@ -20,14 +20,19 @@ class DTLSEpoch
      * for BOTH directions: TlsAEADCipher's (D)TLS 1.3 constructor calls rekeyCipher once for the decrypt side,
      * keyed from the peer's traffic secret, and once for the encrypt side, keyed from the LOCAL one.
      * updatePeerReadEpoch updates only the peer's secret (TlsUtils.update13TrafficSecretPeer), so the epoch it
-     * builds carries an encrypt side keyed IDENTICALLY to the current write epoch's, paired with a sequence
+     * builds carries an encrypt side keyed from the LOCAL secret's current value, paired with a sequence
      * number counter of its own that starts at zero.
      *
+     * Which epoch that key belongs to depends on when the derivation happens. Normally it is the current write
+     * epoch's key. If a KeyUpdate of ours is already outstanding it is the PENDING write epoch's, because
+     * deriveNextWriteEpoch advances the local secret when the KeyUpdate is sent and installPendingWriteEpoch
+     * only swaps the epoch in when the ACK arrives. Either way it is a key that is live, or about to be.
+     *
      * So allocating a record from this epoch would not produce something the peer cannot read. It would
-     * produce records encrypted under the SAME AEAD key, at nonces already used for records sent at the
-     * current write epoch. That is AEAD nonce reuse: silent, with the connection still working, and for GCM it
-     * is enough to recover the authentication key. It is the worst outcome an epoch lookup can have, and
-     * nothing observable would report it.
+     * produce records encrypted under the SAME AEAD key as another epoch, at nonces that epoch either has
+     * already used or will use, because both counters start at zero. That is AEAD nonce reuse: silent, with
+     * the connection still working, and for GCM it is enough to recover the authentication key. It is the
+     * worst outcome an epoch lookup can have, and nothing observable would report it.
      *
      * The structural cause, which is why this flag has to exist at all: updatePeerReadEpoch builds a full
      * bidirectional cipher when it needs only the read direction, and so leaves a correctly-keyed encryptor in

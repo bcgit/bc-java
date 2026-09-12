@@ -127,6 +127,15 @@ class DTLSRecordLayer
     private final DatagramTransport transport;
 
     private final ByteQueue recordQueue = new ByteQueue();
+
+    /*
+     * Guards the write path, which a send and a receive thread may reach at once.
+     *
+     * LOCK ORDER: every DTLS13PostHandshake method is synchronized on that object, and its work reaches back
+     * into this class and takes writeLock. So the only permitted order is the post-handshake monitor first,
+     * writeLock second. Never call into postHandshake from inside a synchronized (writeLock) block: that is
+     * the reverse order and two threads taking the two orders at once would deadlock.
+     */
     private final Object writeLock = new Object();
 
     // github #1487. While a flight is open, records are packed into as few datagrams as the MTU allows.
@@ -2304,11 +2313,12 @@ class DTLSRecordLayer
          * (DTLSEpoch.isPeerKeyed, set only by updatePeerReadEpoch) may be read at and must never be written
          * at. Its encrypt side is NOT the peer's - TlsUtils.initCipher keys both directions, the decrypt side
          * from the peer's traffic secret and the encrypt side from the local one, and updatePeerReadEpoch
-         * updates only the peer's secret - so that epoch's encryptor is keyed identically to the current write
-         * epoch's, while its sequence number counter starts again at zero. Writing at it would therefore put
-         * records on the wire under the SAME AEAD key at nonces the current write epoch has already used, and
-         * a peer would read them perfectly well. See DTLSEpoch.peerKeyed for why that is worse than a
-         * decryption failure would be.
+         * updates only the peer's secret - so that epoch's encryptor is keyed from the local secret as it
+         * stands, which is the current write epoch's key, or the pending write epoch's if a KeyUpdate of ours
+         * is already outstanding. Its sequence number counter starts again at zero either way. Writing at it
+         * would therefore put records on the wire under the SAME AEAD key as another epoch, at nonces that
+         * epoch has used or will use, and a peer would read them perfectly well. See DTLSEpoch.peerKeyed for
+         * why that is worse than a decryption failure would be.
          *
          * Before post-handshake key updates every held epoch was one both directions shared, so this could not
          * arise; once the read side advances on its own it can, and the epoch numbers of the two directions

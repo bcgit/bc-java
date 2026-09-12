@@ -142,8 +142,14 @@ public class DTLS13ProtocolTest
      * that. The settle period is spent on every run, and is what lets a peer's answer to the last record
      * arrive, so it has to stay long enough to be reliable and short enough not to dominate the suite.
      */
-    private static final int KEY_UPDATE_DEADLINE_MILLIS = 8000;
-    private static final int KEY_UPDATE_SETTLE_MILLIS = 1000;
+    private static final int POST_HANDSHAKE_DEADLINE_MILLIS = 8000;
+    private static final int POST_HANDSHAKE_SETTLE_MILLIS = 1000;
+
+    /*
+     * The ACK probe waits longer before concluding that nothing more is coming, because its whole claim is a
+     * count of records that did NOT arrive. Trimming this trades a real margin for no measurable runtime.
+     */
+    private static final int ACK_PROBE_SETTLE_MILLIS = 1500;
 
     /** The application payloads of the exchanges after the handshake, distinct in both length and content. */
     private static final byte[] REQUEST_2 = new byte[24];
@@ -2663,8 +2669,8 @@ public class DTLS13ProtocolTest
              */
             int target = clientEpoch3Before + (dropKeyUpdateDatagram ? 2 : 1);
 
-            pumpUntilClientRecordsAtEpoch(dtlsClient, 3, target, KEY_UPDATE_DEADLINE_MILLIS,
-                KEY_UPDATE_SETTLE_MILLIS, earlier);
+            pumpUntilClientRecordsAtEpoch(dtlsClient, 3, target, POST_HANDSHAKE_DEADLINE_MILLIS,
+                POST_HANDSHAKE_SETTLE_MILLIS, earlier);
 
             this.clientKeyUpdateCopies = countRecordsAtEpoch(clientRecords(), 3) - clientEpoch3Before;
 
@@ -2817,7 +2823,7 @@ public class DTLS13ProtocolTest
             int expected = holdFirstClientEpoch2Datagram ? 2 : 1;
 
             this.serverEpoch3AfterHandshake = drainServerEpoch3(dtlsClient, expected,
-                KEY_UPDATE_DEADLINE_MILLIS, KEY_UPDATE_SETTLE_MILLIS);
+                POST_HANDSHAKE_DEADLINE_MILLIS, ACK_PROBE_SETTLE_MILLIS);
 
             injectPlaintextHandshakeRecord();
 

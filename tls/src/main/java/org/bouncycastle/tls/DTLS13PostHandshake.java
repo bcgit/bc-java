@@ -22,6 +22,14 @@ import org.bouncycastle.util.Integers;
  * reducing to "waiting for an ACK and retransmitting the original message". The receiving side, implemented
  * here, is common to all of them: reassemble, dispatch by message type, acknowledge the record.
  * </p>
+ * <p>
+ * Thread safety: a send thread reaches this class through {@code checkKeyUpdateBeforeSend} while a receive
+ * thread reaches it through the ACK listener, the record dispatch and the timers, so every non-private method
+ * is synchronized on this object. LOCK ORDER: this monitor is taken FIRST and the record layer's write lock
+ * second, because the work done here calls back into the record layer. A call into this class from inside a
+ * {@code synchronized (writeLock)} block would take the two in the opposite order and can deadlock; see the
+ * note on that field.
+ * </p>
  */
 class DTLS13PostHandshake
     implements DTLSAckListener
@@ -584,7 +592,13 @@ class DTLS13PostHandshake
         }
     }
 
-    /** RFC 9147 7.2. The outstanding post-handshake messages awaiting acknowledgement. */
+    /**
+     * RFC 9147 7.2. The outstanding post-handshake messages awaiting acknowledgement.
+     * <p>
+     * Synchronized only so the reference is published safely. It confers nothing on the caller, who reads and
+     * mutates the tracker outside this monitor. Test-only; there is no production caller.
+     * </p>
+     */
     synchronized DTLS13FlightTracker getFlightTracker()
     {
         return flightTracker;

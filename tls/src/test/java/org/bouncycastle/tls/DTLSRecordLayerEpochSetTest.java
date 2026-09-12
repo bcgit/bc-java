@@ -10,8 +10,9 @@ import org.bouncycastle.util.Arrays;
 import junit.framework.TestCase;
 
 /**
- * RFC 9147 4.2.2 and 8. The record layer resolves a received record's epoch from one ordered collection of
- * live read epochs, iterated most recent first, and writes at an epoch through the same collection.
+ * RFC 9147 4.2.2 and 8. The record layer resolves a received record's epoch from one ordered set of live read
+ * epochs, walked most recent first by {@code getLiveReadEpoch(int)}, and writes at an epoch through the same
+ * walk. {@code getLiveReadEpochs()} is a view over that walk for tests; the record path does not use it.
  * <p>
  * The load-bearing test here is {@link #testAliasingEpochResolvesToTheMostRecentMatch()}: only the low 2
  * epoch bits are on the wire, so two live epochs can alias, and the RFC resolves that to the most recent of
@@ -119,9 +120,10 @@ public class DTLSRecordLayerEpochSetTest
      * bits that are on the wire, and both are live and able to decode the record, so the only thing that
      * decides which one the record is attributed to is the order the collection is iterated in.
      * <p>
-     * Mutation this test is built to catch: reverse the iteration in {@code getLiveReadEpochs} (or in its
-     * consumer in {@code processDTLS13Record}) and the record resolves to epoch 2 instead, failing every
-     * assertion below.
+     * Mutation this test is built to catch: reverse the slot order in {@code getLiveReadEpoch(int)} (or in
+     * its consumer {@code resolveReadEpochByHeaderBits}) and the record resolves to epoch 2 instead, failing
+     * every assertion below. Reversing {@code getLiveReadEpochs()} alone would not, since that is only the
+     * test-facing view.
      * </p>
      */
     public void testAliasingEpochResolvesToTheMostRecentMatch() throws Exception
