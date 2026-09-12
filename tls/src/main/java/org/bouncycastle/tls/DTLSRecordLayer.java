@@ -142,6 +142,22 @@ class DTLSRecordLayer
      * plaintext at epoch 0 while the rest of the same flight is protected at the handshake epoch - so
      * answering a retransmission of it means being able to read the plaintext epoch too. Handshake records
      * only, exactly as for retransmitEpoch.
+     *
+     * Epoch 0 is unauthenticated, so anyone able to put a datagram on the path can forge a record at it, and
+     * retaining it for reading would otherwise be a way to draw an answer out of a completed client. It is
+     * harmless because of three separate gates, all of which have to hold for it to stay harmless:
+     *
+     * 1. DTLSReliableHandshake.processRecord's DTLS 1.3 'expectedEpoch' check (RFC 9147 6.1). At epoch 0
+     *    only a client_hello or server_hello msg_type is accepted, so a forgery cannot stand in for anything
+     *    later in the flight; on the client, which is the only side that retains epoch 0, that leaves
+     *    server_hello fragments.
+     * 2. DTLSReliableHandshake.processRecord only answers a retransmission once
+     *    checkAll(previousInboundFlight) finds that flight complete, and the rest of that flight is
+     *    protected at the handshake epoch, which cannot be forged. A plaintext-only forgery therefore never
+     *    completes a flight and never draws a retransmission.
+     * 3. Post-handshake, processRecord is called with a 'windowSize' of 0 (see the retransmit callback in
+     *    DTLSReliableHandshake.finish), so every message_seq is 'too far ahead' and no DTLSReassembler is
+     *    ever allocated: the forgery cannot make us buffer anything either.
      */
     private DTLSEpoch retransmitEpochPlaintext = null;
     private Timeout retransmitTimeout = null;
@@ -358,10 +374,35 @@ class DTLSRecordLayer
     {
         if (readEpoch == pendingEpoch && writeEpoch == pendingEpoch)
         {
-            this.retiredEpoch = currentEpoch;
+            /*
+             * DTLS 1.2 never reads 'retiredEpoch': handshakeSuccessful retains 'currentEpoch' there, because
+             * in DTLS 1.2 the epoch being superseded is still the current one at that point. Assigning it
+             * only for DTLS 1.3 keeps the DTLS 1.2 path's state untouched by this field.
+             *
+             * TODO[dtls13] This holds only the MOST RECENT retired epoch, which is all RFC 9147 5.8.1 needs
+             * while the only epoch change after the handshake epoch is the one to the application epoch. Once
+             * post-handshake key update (RFC 9147 8) lands, several epochs can be retired in succession and
+             * which of them is still readable becomes load-bearing.
+             */
+            if (dtls13)
+            {
+                this.retiredEpoch = currentEpoch;
+            }
+
             this.currentEpoch = pendingEpoch;
             this.pendingEpoch = null;
         }
+    }
+
+    /**
+     * RFC 9147 5.8.1. DTLS 1.3 only: the epoch that {@link #handshakeSuccessful(DTLSHandshakeRetransmit)} is
+     * about to retain for reading, i.e. the handshake epoch the peer's final flight was protected under, or
+     * -1 if no epoch has been retired. Read by {@link DTLSReliableHandshake#finish()}, so that the epoch a
+     * retransmission of that flight has to arrive at is taken from the record layer rather than assumed.
+     */
+    int getRetiredEpoch()
+    {
+        return (null != retiredEpoch) ? retiredEpoch.getEpoch() : -1;
     }
 
     void handshakeSuccessful(DTLSHandshakeRetransmit retransmit)

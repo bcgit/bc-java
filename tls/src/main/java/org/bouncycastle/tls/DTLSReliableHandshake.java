@@ -417,6 +417,13 @@ class DTLSReliableHandshake
                 final Vector finalFlightAck = ackRecordNumbers;
                 final Hashtable finalFlight = summarizeFlight(currentInboundFlight);
 
+                /*
+                 * RFC 9147 5.8.1. The epoch that flight was protected under, taken from the record layer -
+                 * which is about to retain exactly that epoch for reading - rather than assumed to be the
+                 * handshake epoch's current number.
+                 */
+                final int finalFlightEpoch = recordLayer.getRetiredEpoch();
+
                 sendPendingAck();
 
                 /*
@@ -435,7 +442,7 @@ class DTLSReliableHandshake
                     public void receivedHandshakeRecord(int epoch, byte[] buf, int off, int len)
                         throws IOException
                     {
-                        if (matchesFlight(finalFlight, epoch, buf, off, len))
+                        if (matchesFlight(finalFlight, finalFlightEpoch, epoch, buf, off, len))
                         {
                             sendAck(finalFlightAck);
                         }
@@ -517,13 +524,15 @@ class DTLSReliableHandshake
      * that retains epoch 0 for reading.
      * </p>
      */
-    static boolean matchesFlight(Hashtable flight, int epoch, byte[] buf, int off, int len)
+    static boolean matchesFlight(Hashtable flight, int flightEpoch, int epoch, byte[] buf, int off, int len)
     {
         /*
-         * RFC 9147 6.1. The flight this answers is the peer's final flight, every message of which is
-         * protected under the handshake traffic keys at epoch 2.
+         * RFC 9147 6.1. The flight this answers is the peer's final flight, and 'flightEpoch' is the epoch it
+         * was protected under - the handshake epoch, which the record layer has retained for reading. A
+         * record at any other epoch carries none of it, the unauthenticated epoch 0 included; a flightEpoch
+         * of -1 means no epoch was retired, so there is nothing to recognise.
          */
-        if (2 != epoch || len < MESSAGE_HEADER_LENGTH)
+        if (flightEpoch < 0 || flightEpoch != epoch || len < MESSAGE_HEADER_LENGTH)
         {
             return false;
         }

@@ -182,13 +182,13 @@ public class DTLS13RetransmissionTest
             FINISHED_LENGTH);
 
         assertTrue("a retransmission of the final flight must be answered",
-            DTLSReliableHandshake.matchesFlight(flight, 2, record, 0, record.length));
+            DTLSReliableHandshake.matchesFlight(flight, 2, 2, record, 0, record.length));
 
         byte[] firstHalf = handshakeRecord(HandshakeType.finished, FINISHED_LENGTH, FINAL_FLIGHT_SEQ, 0,
             FINISHED_LENGTH / 2);
 
         assertTrue("a fragment of the final flight must be answered",
-            DTLSReliableHandshake.matchesFlight(flight, 2, firstHalf, 0, firstHalf.length));
+            DTLSReliableHandshake.matchesFlight(flight, 2, 2, firstHalf, 0, firstHalf.length));
     }
 
     public void testUnauthenticatedEpochIsNotTakenForTheFinalFlight()
@@ -199,9 +199,12 @@ public class DTLS13RetransmissionTest
             FINISHED_LENGTH);
 
         assertFalse("epoch 0 is unauthenticated and carries none of the final flight",
-            DTLSReliableHandshake.matchesFlight(flight, 0, record, 0, record.length));
+            DTLSReliableHandshake.matchesFlight(flight, 2, 0, record, 0, record.length));
         assertFalse("the application epoch carries no handshake flight",
-            DTLSReliableHandshake.matchesFlight(flight, 3, record, 0, record.length));
+            DTLSReliableHandshake.matchesFlight(flight, 2, 3, record, 0, record.length));
+
+        assertFalse("with no epoch retired there is nothing to recognise",
+            DTLSReliableHandshake.matchesFlight(flight, -1, -1, record, 0, record.length));
     }
 
     public void testForeignHandshakeRecordIsNotTakenForTheFinalFlight()
@@ -211,30 +214,30 @@ public class DTLS13RetransmissionTest
         byte[] otherSeq = handshakeRecord(HandshakeType.finished, FINISHED_LENGTH, FINAL_FLIGHT_SEQ + 1, 0,
             FINISHED_LENGTH);
         assertFalse("a message_seq the flight never contained",
-            DTLSReliableHandshake.matchesFlight(flight, 2, otherSeq, 0, otherSeq.length));
+            DTLSReliableHandshake.matchesFlight(flight, 2, 2, otherSeq, 0, otherSeq.length));
 
         byte[] otherType = handshakeRecord(HandshakeType.key_update, FINISHED_LENGTH, FINAL_FLIGHT_SEQ, 0,
             FINISHED_LENGTH);
         assertFalse("a different message under the flight's message_seq",
-            DTLSReliableHandshake.matchesFlight(flight, 2, otherType, 0, otherType.length));
+            DTLSReliableHandshake.matchesFlight(flight, 2, 2, otherType, 0, otherType.length));
 
         byte[] otherLength = handshakeRecord(HandshakeType.finished, FINISHED_LENGTH + 1, FINAL_FLIGHT_SEQ, 0,
             FINISHED_LENGTH + 1);
         assertFalse("a different length under the flight's message_seq",
-            DTLSReliableHandshake.matchesFlight(flight, 2, otherLength, 0, otherLength.length));
+            DTLSReliableHandshake.matchesFlight(flight, 2, 2, otherLength, 0, otherLength.length));
 
         byte[] record = handshakeRecord(HandshakeType.finished, FINISHED_LENGTH, FINAL_FLIGHT_SEQ, 0,
             FINISHED_LENGTH);
         assertFalse("a truncated record",
-            DTLSReliableHandshake.matchesFlight(flight, 2, record, 0, record.length - 1));
+            DTLSReliableHandshake.matchesFlight(flight, 2, 2, record, 0, record.length - 1));
         assertFalse("a record too short to hold a message header",
-            DTLSReliableHandshake.matchesFlight(flight, 2, record, 0, 4));
+            DTLSReliableHandshake.matchesFlight(flight, 2, 2, record, 0, 4));
 
         byte[] pair = new byte[record.length + otherSeq.length];
         System.arraycopy(record, 0, pair, 0, record.length);
         System.arraycopy(otherSeq, 0, pair, record.length, otherSeq.length);
         assertFalse("one fragment of the flight does not excuse a foreign one beside it",
-            DTLSReliableHandshake.matchesFlight(flight, 2, pair, 0, pair.length));
+            DTLSReliableHandshake.matchesFlight(flight, 2, 2, pair, 0, pair.length));
     }
 
     public void testUnacknowledgedFlightStillRetransmitsEverything() throws Exception
