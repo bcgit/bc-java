@@ -203,6 +203,17 @@ class DTLSReliableHandshake
         // NOTE: Nothing may read the transcript while any message is still held undecided
         checkTranscriptDecided();
 
+        /*
+         * A transcript that is still undecided has written nothing to the digest yet, so handing the hash
+         * out here would silently yield a transcript missing every buffered message. That must never
+         * happen: fail loudly instead of computing a verify_data or a signature over the wrong bytes.
+         */
+        if (!transcriptDecided && !undecidedTranscript.isEmpty())
+        {
+            throw new IllegalStateException("DTLS handshake transcript requested before the negotiated "
+                + "version was known, with " + undecidedTranscript.size() + " message(s) still buffered");
+        }
+
         return handshakeHash;
     }
 
