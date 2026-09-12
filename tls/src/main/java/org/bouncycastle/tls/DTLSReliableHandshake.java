@@ -399,11 +399,27 @@ class DTLSReliableHandshake
             {
                 /*
                  * RFC 9147 7.1. We have just received the peer's final flight. No flight of ours follows it,
-                 * so nothing acknowledges it implicitly and it must be acknowledged explicitly. Answering a
-                 * later retransmission of that flight with a second ACK (RFC 9147 5.8.1) is deferred: the
-                 * record layer drops the retransmission once the read epoch has moved on.
+                 * so nothing acknowledges it implicitly and it must be acknowledged explicitly.
                  */
+                final Vector finalFlightAck = ackRecordNumbers;
+
                 sendPendingAck();
+
+                /*
+                 * RFC 9147 5.8.1. If that ACK is lost the peer retransmits its final flight, and the answer
+                 * is another ACK of the same records - not a retransmitted flight, since no flight of ours
+                 * follows. The record layer retains the handshake epoch so the retransmission can still be
+                 * read, and the ACK goes out at the current (application) write epoch, which the peer has by
+                 * now installed for reading.
+                 */
+                retransmit = new DTLSHandshakeRetransmit()
+                {
+                    public void receivedHandshakeRecord(int epoch, byte[] buf, int off, int len)
+                        throws IOException
+                    {
+                        sendAck(finalFlightAck);
+                    }
+                };
             }
         }
         else
@@ -785,10 +801,15 @@ class DTLSReliableHandshake
         ackRequested = false;
         ackTimeout = null;
 
-        Vector recordNumbers = ackRecordNumbers;
+        sendAck(ackRecordNumbers);
+    }
+
+    private void sendAck(Vector recordNumbers) throws IOException
+    {
+        Vector toSend = recordNumbers;
 
         int maxRecordNumbers = maxAckRecordNumbers();
-        if (recordNumbers.size() > maxRecordNumbers)
+        if (toSend.size() > maxRecordNumbers)
         {
             /*
              * RFC 9147 7.1 asks that the records favoured be the ones not yet acknowledged. The receive
@@ -800,13 +821,13 @@ class DTLSReliableHandshake
             Vector trimmed = new Vector(maxRecordNumbers);
             for (int i = 0; i < maxRecordNumbers; ++i)
             {
-                trimmed.addElement(recordNumbers.elementAt(i));
+                trimmed.addElement(toSend.elementAt(i));
             }
-            recordNumbers = trimmed;
+            toSend = trimmed;
         }
 
         // RFC 9147 7.1. An ACK with no record numbers is legal and shortcuts the peer's retransmit timer.
-        recordLayer.sendAck(recordNumbers);
+        recordLayer.sendAck(toSend);
     }
 
     private void resendOutboundFlight()
@@ -839,7 +860,13 @@ class DTLSReliableHandshake
                 Message message = getOutboundMessage(fragment.getMessageSeq());
                 if (null != message)
                 {
-                    writeHandshakeFragment(message, fragment.getFragmentOffset(), fragment.getFragmentLength());
+                    /*
+                     * RFC 9147 5.8.1. Each fragment goes back out at the epoch it was first sent at: a DTLS 1.3
+                     * flight straddles an epoch change, and after the handshake has completed the write epoch
+                     * has moved on to keys the peer cannot read while it is still retransmitting.
+                     */
+                    retransmitHandshakeFragment(message, fragment.getFragmentOffset(),
+                        fragment.getFragmentLength(), fragment.getEpoch());
                 }
             }
         }
@@ -942,6 +969,21 @@ class DTLSReliableHandshake
     private void writeHandshakeFragment(Message message, int fragment_offset, int fragment_length)
         throws IOException
     {
+        implWriteHandshakeFragment(message, fragment_offset, fragment_length, -1);
+    }
+
+    private void retransmitHandshakeFragment(Message message, int fragment_offset, int fragment_length, int epoch)
+        throws IOException
+    {
+        implWriteHandshakeFragment(message, fragment_offset, fragment_length, epoch);
+    }
+
+    /**
+     * @param epoch the epoch to send at, or a negative value to use the record layer's current write epoch.
+     */
+    private void implWriteHandshakeFragment(Message message, int fragment_offset, int fragment_length, int epoch)
+        throws IOException
+    {
         RecordLayerBuffer fragment = new RecordLayerBuffer(MESSAGE_HEADER_LENGTH + fragment_length);
         TlsUtils.writeUint8(message.getType(), fragment);
         TlsUtils.writeUint24(message.getBody().length, fragment);
@@ -950,7 +992,9 @@ class DTLSReliableHandshake
         TlsUtils.writeUint24(fragment_length, fragment);
         fragment.write(message.getBody(), fragment_offset, fragment_length);
 
-        DTLSRecordNumber recordNumber = fragment.sendToRecordLayer(recordLayer);
+        DTLSRecordNumber recordNumber = epoch < 0
+            ? fragment.sendToRecordLayer(recordLayer)
+            : fragment.sendToRecordLayerAtEpoch(recordLayer, epoch);
 
         if (null != recordNumber)
         {
@@ -1029,6 +1073,13 @@ class DTLSReliableHandshake
         DTLSRecordNumber sendToRecordLayer(DTLSRecordLayer recordLayer) throws IOException
         {
             DTLSRecordNumber recordNumber = recordLayer.sendReturningRecordNumber(buf, 0, count);
+            buf = null;
+            return recordNumber;
+        }
+
+        DTLSRecordNumber sendToRecordLayerAtEpoch(DTLSRecordLayer recordLayer, int epoch) throws IOException
+        {
+            DTLSRecordNumber recordNumber = recordLayer.sendHandshakeRecordAtEpoch(epoch, buf, 0, count);
             buf = null;
             return recordNumber;
         }

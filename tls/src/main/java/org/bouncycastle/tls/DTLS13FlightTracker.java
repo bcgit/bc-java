@@ -21,6 +21,14 @@ class DTLS13FlightTracker
         private final int fragmentOffset;
         private final int fragmentLength;
 
+        /*
+         * RFC 9147 5.8.1. The epoch the fragment was first sent at, which is the epoch it must be retransmitted
+         * at: a DTLS 1.3 flight straddles an epoch change, and once the handshake completes the write epoch has
+         * moved on past the keys a peer that is still retransmitting can read. Negative until a record number
+         * is registered, which means nothing was actually written.
+         */
+        private int epoch = -1;
+
         boolean acknowledged = false;
 
         Fragment(int messageSeq, int fragmentOffset, int fragmentLength)
@@ -28,6 +36,11 @@ class DTLS13FlightTracker
             this.messageSeq = messageSeq;
             this.fragmentOffset = fragmentOffset;
             this.fragmentLength = fragmentLength;
+        }
+
+        int getEpoch()
+        {
+            return epoch;
         }
 
         int getMessageSeq()
@@ -81,6 +94,11 @@ class DTLS13FlightTracker
         if (null != recordNumber)
         {
             carriers.put(recordNumber, existing);
+
+            if (existing.epoch < 0)
+            {
+                existing.epoch = (int)recordNumber.getEpoch();
+            }
         }
     }
 

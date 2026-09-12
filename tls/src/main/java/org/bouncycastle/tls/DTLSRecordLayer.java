@@ -137,7 +137,24 @@ class DTLSRecordLayer
 
     private DTLSHandshakeRetransmit retransmit = null;
     private DTLSEpoch retransmitEpoch = null;
+    /*
+     * RFC 9147 5.8.1. DTLS 1.3 only. A DTLS 1.3 flight straddles an epoch change - the ServerHello is
+     * plaintext at epoch 0 while the rest of the same flight is protected at the handshake epoch - so
+     * answering a retransmission of it means being able to read the plaintext epoch too. Handshake records
+     * only, exactly as for retransmitEpoch.
+     */
+    private DTLSEpoch retransmitEpochPlaintext = null;
     private Timeout retransmitTimeout = null;
+
+    /*
+     * DTLS 1.3 only. The epoch most recently retired by commitPendingEpochIfCurrent, kept so that
+     * handshakeSuccessful can retain the handshake epoch (RFC 9147 5.8.1): once both directions have moved to
+     * the application epoch, nothing else holds a reference to the handshake epoch's keys or replay window.
+     */
+    private DTLSEpoch retiredEpoch = null;
+
+    // The epoch 0 (unprotected) epoch, which is never replaced; see retransmitEpochPlaintext
+    private final DTLSEpoch plaintextEpoch;
 
     private DTLSAckListener ackListener = null;
 
@@ -167,6 +184,7 @@ class DTLSRecordLayer
         this.inHandshake = true;
 
         this.currentEpoch = new DTLSEpoch(0, TlsNullNullCipher.INSTANCE, RECORD_HEADER_LENGTH, RECORD_HEADER_LENGTH);        
+        this.plaintextEpoch = currentEpoch;
         this.pendingEpoch = null;
         this.readEpoch = currentEpoch;
         this.writeEpoch = currentEpoch;
@@ -338,6 +356,7 @@ class DTLSRecordLayer
     {
         if (readEpoch == pendingEpoch && writeEpoch == pendingEpoch)
         {
+            this.retiredEpoch = currentEpoch;
             this.currentEpoch = pendingEpoch;
             this.pendingEpoch = null;
         }
@@ -352,15 +371,24 @@ class DTLSRecordLayer
         }
 
         /*
-         * RFC 6347 4.2.4. DTLS 1.2 only. A DTLS 1.3 answer to a retransmitted final flight is a retransmitted
-         * ACK (RFC 9147 5.8.1), not a retransmitted flight, and reaching it needs the record layer to retain
-         * the handshake read epoch after completion so the retransmission is not dropped as a stale epoch.
-         * That is deferred with the rest of the post-handshake work.
+         * RFC 6347 4.2.4 and RFC 9147 5.8.1. For at least twice the default MSL, a peer that is still
+         * retransmitting the flight we have just accepted must get an answer, so the epoch that flight was
+         * protected under is retained for reading. In DTLS 1.2 that epoch is the one being superseded, which
+         * is still the current epoch here; in DTLS 1.3 both directions have already moved on to the
+         * application epoch, so it is the epoch commitPendingEpochIfCurrent retired.
+         *
+         * NOTE: Retaining it never moves the write epoch. resetWriteEpoch is DTLS 1.2 only, and
+         * sendReturningRecordNumber's handshake classification is likewise gated, so DTLS 1.3 application
+         * data continues to be written at the application epoch as application_data. The answer itself goes
+         * out through sendHandshakeRecordAtEpoch (a retransmitted flight) or sendAck (a retransmitted ACK).
          */
-        if (null != retransmit && !dtls13)
+        DTLSEpoch epochToRetain = dtls13 ? retiredEpoch : currentEpoch;
+
+        if (null != retransmit && null != epochToRetain)
         {
             this.retransmit = retransmit;
-            this.retransmitEpoch = currentEpoch;
+            this.retransmitEpoch = epochToRetain;
+            this.retransmitEpochPlaintext = dtls13 ? plaintextEpoch : null;
             this.retransmitTimeout = new Timeout(RETRANSMIT_TIMEOUT);
         }
 
@@ -445,6 +473,7 @@ class DTLSRecordLayer
             {
                 retransmit = null;
                 retransmitEpoch = null;
+                retransmitEpochPlaintext = null;
                 retransmitTimeout = null;
             }
 
@@ -541,7 +570,12 @@ class DTLSRecordLayer
     {
         short contentType = ContentType.application_data;
 
-        if (this.inHandshake || this.writeEpoch == this.retransmitEpoch)
+        /*
+         * NOTE: The retransmitEpoch test is DTLS 1.2 only. DTLS 1.3 retains the handshake epoch for reading
+         * and retransmits through sendHandshakeRecordAtEpoch without ever making it the write epoch, so
+         * application data must not be reclassified here on its account.
+         */
+        if (this.inHandshake || (!dtls13 && this.writeEpoch == this.retransmitEpoch))
         {
             contentType = ContentType.handshake;
 
@@ -789,6 +823,13 @@ class DTLSRecordLayer
             if (recordType == ContentType.handshake)
             {
                 recordEpoch = currentEpoch;
+            }
+        }
+        else if (null != retransmitEpochPlaintext && epoch == retransmitEpochPlaintext.getEpoch())
+        {
+            if (recordType == ContentType.handshake)
+            {
+                recordEpoch = retransmitEpochPlaintext;
             }
         }
 
@@ -1104,6 +1145,7 @@ class DTLSRecordLayer
         {
             this.retransmit = null;
             this.retransmitEpoch = null;
+            this.retransmitEpochPlaintext = null;
             this.retransmitTimeout = null;
         }
 
@@ -1170,9 +1212,9 @@ class DTLSRecordLayer
         }
 
         /*
-         * TODO[dtls13] With only the low 2 epoch bits on the wire, a retransmitted record from an earlier epoch
-         * is dropped once the read epoch advances; the reliable handshake (RFC 9147 7) will need to retain
-         * recent epochs.
+         * NOTE: Only the low 2 epoch bits are on the wire, so a record can only be attributed to an epoch the
+         * record layer still holds: the read epoch, or the handshake epoch retained by handshakeSuccessful for
+         * RFC 9147 5.8.1.
          */
         DTLSEpoch recordEpoch = null;
         if (DTLS13UnifiedHeader.matchesEpoch(firstByte, readEpoch.getEpoch()))
@@ -1339,6 +1381,10 @@ class DTLSRecordLayer
             {
                 recordEpoch = currentEpoch;
             }
+            else if (null != retransmitEpochPlaintext && epoch == retransmitEpochPlaintext.getEpoch())
+            {
+                recordEpoch = retransmitEpochPlaintext;
+            }
 
             if (null == recordEpoch)
             {
@@ -1434,6 +1480,10 @@ class DTLSRecordLayer
             {
                 recordEpoch = currentEpoch;
             }
+            else if (null != retransmitEpochPlaintext && epoch == retransmitEpochPlaintext.getEpoch())
+            {
+                recordEpoch = retransmitEpochPlaintext;
+            }
 
             if (null == recordEpoch)
             {
@@ -1528,7 +1578,70 @@ class DTLSRecordLayer
         return sendRecord(contentType, buf, off, len);
     }
 
+    /**
+     * RFC 9147 5.8.1. DTLS 1.3 only: retransmit a handshake record under the epoch it was first sent at, rather
+     * than under the current write epoch. A DTLS 1.3 flight straddles an epoch change - the ServerHello is
+     * plaintext at epoch 0 while the rest of the server's flight is protected at the handshake epoch - and a
+     * peer discards a handshake message that arrives at the wrong epoch (RFC 9147 6.1). After the handshake
+     * has completed, our own last flight must likewise still go out at the handshake epoch, which is the only
+     * epoch a peer that is still retransmitting can read.
+     * <p>
+     * The write epoch is never changed by this, so application data continues at the application epoch.
+     *
+     * @return the record number used, or null if that epoch is no longer held.
+     */
+    DTLSRecordNumber sendHandshakeRecordAtEpoch(int epoch, byte[] buf, int off, int len) throws IOException
+    {
+        DTLSEpoch recordEpoch = getEpochForRetransmit(epoch);
+
+        if (!dtls13 || null == recordEpoch)
+        {
+            return null;
+        }
+
+        return sendRecord(recordEpoch, ContentType.handshake, buf, off, len);
+    }
+
+    private DTLSEpoch getEpochForRetransmit(int epoch)
+    {
+        if (epoch < 0)
+        {
+            return null;
+        }
+        if (writeEpoch.getEpoch() == epoch)
+        {
+            return writeEpoch;
+        }
+        if (readEpoch.getEpoch() == epoch)
+        {
+            return readEpoch;
+        }
+        if (currentEpoch.getEpoch() == epoch)
+        {
+            return currentEpoch;
+        }
+        if (null != retransmitEpoch && retransmitEpoch.getEpoch() == epoch)
+        {
+            return retransmitEpoch;
+        }
+        if (null != retiredEpoch && retiredEpoch.getEpoch() == epoch)
+        {
+            return retiredEpoch;
+        }
+        if (plaintextEpoch.getEpoch() == epoch)
+        {
+            return plaintextEpoch;
+        }
+        return null;
+    }
+
     private DTLSRecordNumber sendRecord(short contentType, byte[] buf, int off, int len) throws IOException
+    {
+        return sendRecord(null, contentType, buf, off, len);
+    }
+
+    private DTLSRecordNumber sendRecord(DTLSEpoch epoch, short contentType, byte[] buf, int off, int len)
+        throws IOException
     {
         // Never send anything until a valid ClientHello has been received
         if (writeVersion == null)
@@ -1552,19 +1665,21 @@ class DTLSRecordLayer
 
         synchronized (writeLock)
         {
-            if (dtls13 && writeEpoch.getEpoch() > 0)
+            DTLSEpoch recordEpoch = null != epoch ? epoch : writeEpoch;
+
+            if (dtls13 && recordEpoch.getEpoch() > 0)
             {
-                return sendDTLS13Record(contentType, buf, off, len);
+                return sendDTLS13Record(recordEpoch, contentType, buf, off, len);
             }
 
-            int recordEpoch = writeEpoch.getEpoch();
-            long recordSequenceNumber = writeEpoch.allocateSequenceNumber();
-            long macSequenceNumber = getMacSequenceNumber(recordEpoch, recordSequenceNumber);
+            int recordEpochNumber = recordEpoch.getEpoch();
+            long recordSequenceNumber = recordEpoch.allocateSequenceNumber();
+            long macSequenceNumber = getMacSequenceNumber(recordEpochNumber, recordSequenceNumber);
             ProtocolVersion recordVersion = writeVersion;
 
-            int recordHeaderLength = writeEpoch.getRecordHeaderLengthWrite();
+            int recordHeaderLength = recordEpoch.getRecordHeaderLengthWrite();
 
-            TlsEncodeResult encoded = writeEpoch.getCipher().encodePlaintext(macSequenceNumber, contentType,
+            TlsEncodeResult encoded = recordEpoch.getCipher().encodePlaintext(macSequenceNumber, contentType,
                 recordVersion, recordHeaderLength, buf, off, len);
 
             int ciphertextLength = encoded.len - recordHeaderLength;
@@ -1572,7 +1687,7 @@ class DTLSRecordLayer
 
             TlsUtils.writeUint8(encoded.recordType, encoded.buf, encoded.off + 0);
             TlsUtils.writeVersion(recordVersion, encoded.buf, encoded.off + 1);
-            TlsUtils.writeUint16(recordEpoch, encoded.buf, encoded.off + 3);
+            TlsUtils.writeUint16(recordEpochNumber, encoded.buf, encoded.off + 3);
             TlsUtils.writeUint48(recordSequenceNumber, encoded.buf, encoded.off + 5);
 
             if (recordHeaderLength > RECORD_HEADER_LENGTH)
@@ -1585,31 +1700,32 @@ class DTLSRecordLayer
 
             emitRecord(contentType, encoded.buf, encoded.off, encoded.len);
 
-            return new DTLSRecordNumber(recordEpoch, recordSequenceNumber);
+            return new DTLSRecordNumber(recordEpochNumber, recordSequenceNumber);
         }
     }
 
-    private DTLSRecordNumber sendDTLS13Record(short contentType, byte[] buf, int off, int len) throws IOException
+    private DTLSRecordNumber sendDTLS13Record(DTLSEpoch recordEpoch, short contentType, byte[] buf, int off,
+        int len) throws IOException
     {
-        int recordEpoch = writeEpoch.getEpoch();
-        long recordSequenceNumber = writeEpoch.allocateSequenceNumber();
+        int recordEpochNumber = recordEpoch.getEpoch();
+        long recordSequenceNumber = recordEpoch.allocateSequenceNumber();
 
         byte[] connectionID = context.getSecurityParameters().getConnectionIDLocal();
         int connectionIDLength = null == connectionID ? 0 : connectionID.length;
 
         byte[] header = new byte[DTLS13UnifiedHeader.getWriteHeaderLength(connectionIDLength)];
-        int headerLength = DTLS13UnifiedHeader.writeHeader(recordEpoch, recordSequenceNumber, connectionID, header,
-            0);
+        int headerLength = DTLS13UnifiedHeader.writeHeader(recordEpochNumber, recordSequenceNumber, connectionID,
+            header, 0);
 
         // NOTE: initPendingEpoch checked this for every DTLS 1.3 epoch
-        TlsDTLS13Cipher cipher = (TlsDTLS13Cipher)writeEpoch.getCipher();
+        TlsDTLS13Cipher cipher = (TlsDTLS13Cipher)recordEpoch.getCipher();
 
         TlsEncodeResult encoded = cipher.encodeDTLS13Plaintext(recordSequenceNumber, contentType, header, 0,
             headerLength, buf, off, len);
 
         emitRecord(contentType, encoded.buf, encoded.off, encoded.len);
 
-        return new DTLSRecordNumber(recordEpoch, recordSequenceNumber);
+        return new DTLSRecordNumber(recordEpochNumber, recordSequenceNumber);
     }
 
     /**
