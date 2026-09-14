@@ -767,7 +767,7 @@ abstract class AEADBaseEngine
                 if (available > 0)
                 {
                     this.len = available;
-                    processBufferDecrypt(input, inOff, output, outOff);
+                    processBufferDecrypt(input, inOff, output, outOff + rlt);
                     rlt += available;
                     len -= available;
                     inOff += available;
