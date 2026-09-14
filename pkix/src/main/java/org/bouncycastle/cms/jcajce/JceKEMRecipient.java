@@ -12,7 +12,6 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.cms.KEMRecipientInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.cms.AbstractRecipient;
-import org.bouncycastle.cms.CMSAlgorithmNotAllowedException;
 import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.KEMRecipient;
 import org.bouncycastle.operator.OperatorException;
@@ -176,12 +175,7 @@ public abstract class JceKEMRecipient
     protected Key extractSecretKey(AlgorithmIdentifier keyEncryptionAlgorithm, AlgorithmIdentifier encryptedKeyAlgorithm, byte[] encryptedEncryptionKey)
         throws CMSException
     {
-        if (!isContentAlgorithmAllowed(encryptedKeyAlgorithm.getAlgorithm()))
-        {
-            throw new CMSAlgorithmNotAllowedException("content-encryption algorithm not in recipient's allowed set: " + encryptedKeyAlgorithm.getAlgorithm());
-        }
-
-        checkTagSize(encryptedKeyAlgorithm);
+        checkContentAlgorithm(encryptedKeyAlgorithm);
 
         // TODO: note there is a move to change the type for KEMs from KeyTrans, expect this to change
         KEMRecipientInfo gktParams = KEMRecipientInfo.getInstance(keyEncryptionAlgorithm.getParameters());

@@ -8,7 +8,6 @@ import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.pkcs.PBKDF2Params;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.cms.AbstractRecipient;
-import org.bouncycastle.cms.CMSAlgorithmNotAllowedException;
 import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.PasswordRecipient;
 import org.bouncycastle.crypto.InvalidCipherTextException;
@@ -62,12 +61,7 @@ public abstract class BcPasswordRecipient
     protected KeyParameter extractSecretKey(AlgorithmIdentifier keyEncryptionAlgorithm, AlgorithmIdentifier contentEncryptionAlgorithm, byte[] derivedKey, byte[] encryptedContentEncryptionKey)
         throws CMSException
     {
-        if (!isContentAlgorithmAllowed(contentEncryptionAlgorithm.getAlgorithm()))
-        {
-            throw new CMSAlgorithmNotAllowedException("content-encryption algorithm not in recipient's allowed set: " + contentEncryptionAlgorithm.getAlgorithm());
-        }
-
-        checkTagSize(contentEncryptionAlgorithm);
+        checkContentAlgorithm(contentEncryptionAlgorithm);
 
         Wrapper keyEncryptionCipher = EnvelopedDataHelper.createRFC3211Wrapper(keyEncryptionAlgorithm.getAlgorithm());
 

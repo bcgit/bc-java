@@ -9,7 +9,6 @@ import javax.crypto.SecretKey;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.cms.AbstractRecipient;
-import org.bouncycastle.cms.CMSAlgorithmNotAllowedException;
 import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.KEKRecipient;
 import org.bouncycastle.operator.OperatorException;
@@ -133,12 +132,7 @@ public abstract class JceKEKRecipient
     protected Key extractSecretKey(AlgorithmIdentifier keyEncryptionAlgorithm, AlgorithmIdentifier encryptedKeyAlgorithm, byte[] encryptedContentEncryptionKey)
         throws CMSException
     {
-        if (!isContentAlgorithmAllowed(encryptedKeyAlgorithm.getAlgorithm()))
-        {
-            throw new CMSAlgorithmNotAllowedException("content-encryption algorithm not in recipient's allowed set: " + encryptedKeyAlgorithm.getAlgorithm());
-        }
-
-        checkTagSize(encryptedKeyAlgorithm);
+        checkContentAlgorithm(encryptedKeyAlgorithm);
 
         SymmetricKeyUnwrapper unwrapper = helper.createSymmetricUnwrapper(keyEncryptionAlgorithm, recipientKey);
 

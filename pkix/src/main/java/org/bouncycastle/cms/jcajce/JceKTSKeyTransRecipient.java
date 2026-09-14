@@ -14,7 +14,6 @@ import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.cms.IssuerAndSerialNumber;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.cms.AbstractRecipient;
-import org.bouncycastle.cms.CMSAlgorithmNotAllowedException;
 import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.KeyTransRecipient;
 import org.bouncycastle.cms.KeyTransRecipientId;
@@ -168,12 +167,7 @@ public abstract class JceKTSKeyTransRecipient
     protected Key extractSecretKey(AlgorithmIdentifier keyEncryptionAlgorithm, AlgorithmIdentifier encryptedKeyAlgorithm, byte[] encryptedEncryptionKey)
         throws CMSException
     {
-        if (!isContentAlgorithmAllowed(encryptedKeyAlgorithm.getAlgorithm()))
-        {
-            throw new CMSAlgorithmNotAllowedException("content-encryption algorithm not in recipient's allowed set: " + encryptedKeyAlgorithm.getAlgorithm());
-        }
-
-        checkTagSize(encryptedKeyAlgorithm);
+        checkContentAlgorithm(encryptedKeyAlgorithm);
 
         JceKTSKeyUnwrapper unwrapper = helper.createAsymmetricUnwrapper(keyEncryptionAlgorithm, recipientKey, ANONYMOUS_SENDER, partyVInfo);
 

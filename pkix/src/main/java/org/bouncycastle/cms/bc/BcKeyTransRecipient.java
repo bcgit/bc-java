@@ -5,7 +5,6 @@ import java.util.Set;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.cms.AbstractRecipient;
-import org.bouncycastle.cms.CMSAlgorithmNotAllowedException;
 import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.KeyTransRecipient;
 import org.bouncycastle.crypto.CipherParameters;
@@ -43,12 +42,7 @@ public abstract class BcKeyTransRecipient
     protected CipherParameters extractSecretKey(AlgorithmIdentifier keyEncryptionAlgorithm, AlgorithmIdentifier encryptedKeyAlgorithm, byte[] encryptedEncryptionKey)
         throws CMSException
     {
-        if (!isContentAlgorithmAllowed(encryptedKeyAlgorithm.getAlgorithm()))
-        {
-            throw new CMSAlgorithmNotAllowedException("content-encryption algorithm not in recipient's allowed set: " + encryptedKeyAlgorithm.getAlgorithm());
-        }
-
-        checkTagSize(encryptedKeyAlgorithm);
+        checkContentAlgorithm(encryptedKeyAlgorithm);
 
         AsymmetricKeyUnwrapper unwrapper = new BcRSAAsymmetricKeyUnwrapper(keyEncryptionAlgorithm, recipientKey);
 

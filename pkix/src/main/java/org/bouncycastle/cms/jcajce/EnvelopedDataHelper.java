@@ -260,7 +260,21 @@ public class EnvelopedDataHelper
     public void keySizeCheck(AlgorithmIdentifier keyAlgorithm, Key key)
         throws CMSException
     {
-        int expectedKeySize = EnvelopedDataHelper.KEY_SIZE_PROVIDER.getKeySize(keyAlgorithm);
+        AlgorithmIdentifier encAlgId;
+
+        // RFC 9709: the EncryptedContentInfo carries an outer id-alg-cek-hkdf-sha256 wrapping the
+        // real inner content-encryption AlgorithmIdentifier - it is the inner one that fixes the
+        // key size the recovered CEK is expected to have.
+        if (keyAlgorithm.getAlgorithm().equals(CMSObjectIdentifiers.id_alg_cek_hkdf_sha256))
+        {
+            encAlgId = AlgorithmIdentifier.getInstance(keyAlgorithm.getParameters());
+        }
+        else
+        {
+            encAlgId = keyAlgorithm;
+        }
+
+        int expectedKeySize = EnvelopedDataHelper.KEY_SIZE_PROVIDER.getKeySize(encAlgId);
         if (expectedKeySize > 0)
         {
             byte[] keyEnc = null;

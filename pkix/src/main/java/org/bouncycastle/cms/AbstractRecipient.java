@@ -4,6 +4,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 
 /**
@@ -51,5 +52,39 @@ public abstract class AbstractRecipient
                     + " bits below required minimum " + minimumTagSizeInBits + " bits");
             }
         }
+    }
+
+    /**
+     * Apply both of the recipient's restrictions to the content-encryption algorithm the message
+     * names, resolving an RFC 9709 key-derivation wrapper to the content-encryption algorithm it
+     * carries first, so that the restrictions are applied to the algorithm the content is actually
+     * encrypted under.
+     *
+     * @param contentAlgorithm the content-encryption AlgorithmIdentifier taken from the message.
+     * @throws CMSAlgorithmNotAllowedException if the content algorithm is not in the allowed set.
+     * @throws CMSTagLengthException if the tag size is below the configured minimum.
+     */
+    protected final void checkContentAlgorithm(AlgorithmIdentifier contentAlgorithm)
+        throws CMSException
+    {
+        AlgorithmIdentifier encAlgId;
+
+        // RFC 9709: the EncryptedContentInfo carries an outer id-alg-cek-hkdf-sha256 wrapping the
+        // real inner content-encryption AlgorithmIdentifier - it is the inner one these checks apply to.
+        if (contentAlgorithm.getAlgorithm().equals(CMSObjectIdentifiers.id_alg_cek_hkdf_sha256))
+        {
+            encAlgId = AlgorithmIdentifier.getInstance(contentAlgorithm.getParameters());
+        }
+        else
+        {
+            encAlgId = contentAlgorithm;
+        }
+
+        if (!isContentAlgorithmAllowed(encAlgId.getAlgorithm()))
+        {
+            throw new CMSAlgorithmNotAllowedException("content-encryption algorithm not in recipient's allowed set: " + encAlgId.getAlgorithm());
+        }
+
+        checkTagSize(encAlgId);
     }
 }
