@@ -23,6 +23,7 @@ public class AllTests
         suite.addTestSuite(AbstractTlsServerResetTest.class);
         suite.addTestSuite(Add13CertificateStatusTest.class);
         suite.addTestSuite(CheckTlsFeaturesExtensionTest.class);
+        suite.addTestSuite(DTLS13KeyScheduleLabelTest.class);
         suite.addTestSuite(DTLS13UnifiedHeaderTest.class);
         suite.addTestSuite(DTLSReassemblerTest.class);
         suite.addTestSuite(DTLSRecordLayer13Test.class);

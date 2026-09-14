@@ -671,8 +671,9 @@ public final class TlsAEADCipher
     private void setup13Cipher(TlsAEADCipherImpl cipher, byte[] nonce, TlsRecordNumberMask mask, TlsSecret secret,
         int cryptoHashAlgorithm) throws IOException
     {
-        byte[] key = hkdfExpandLabel(secret, cryptoHashAlgorithm, "key", keySize).extract();
-        byte[] iv = hkdfExpandLabel(secret, cryptoHashAlgorithm, "iv", fixed_iv_length).extract();
+        // RFC 9147 5.9. DTLS 1.3 derives with the "dtls13" label prefix rather than TLS 1.3's "tls13 ".
+        byte[] key = hkdfExpandLabel(secret, cryptoHashAlgorithm, "key", keySize, isDTLSv13).extract();
+        byte[] iv = hkdfExpandLabel(secret, cryptoHashAlgorithm, "iv", fixed_iv_length, isDTLSv13).extract();
 
         cipher.setKey(key, 0, keySize);
         System.arraycopy(iv, 0, nonce, 0, fixed_iv_length);
@@ -687,7 +688,7 @@ public final class TlsAEADCipher
                 throw new TlsFatalAlert(AlertDescription.internal_error, "No record number mask for DTLS 1.3");
             }
 
-            byte[] snKey = hkdfExpandLabel(secret, cryptoHashAlgorithm, "sn", keySize).extract();
+            byte[] snKey = hkdfExpandLabel(secret, cryptoHashAlgorithm, "sn", keySize, true).extract();
             mask.setKey(snKey, 0, keySize);
         }
     }
@@ -708,9 +709,10 @@ public final class TlsAEADCipher
         }
     }
 
-    private static TlsSecret hkdfExpandLabel(TlsSecret secret, int cryptoHashAlgorithm, String label, int length)
-        throws IOException
+    private static TlsSecret hkdfExpandLabel(TlsSecret secret, int cryptoHashAlgorithm, String label, int length,
+        boolean isDTLS) throws IOException
     {
-        return TlsCryptoUtils.hkdfExpandLabel(secret, cryptoHashAlgorithm, label, TlsUtils.EMPTY_BYTES, length);
+        return TlsCryptoUtils.hkdfExpandLabel(secret, cryptoHashAlgorithm, label, TlsUtils.EMPTY_BYTES, length,
+            isDTLS);
     }
 }
