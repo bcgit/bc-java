@@ -173,11 +173,15 @@ public class JceYubikeyPublicKeyDataDecryptorFactoryBuilder
             || "curve25519".equals(curveName);
     }
 
+    /**
+     * Fetch the card's user PIN. A defensive copy of the provider's array is returned, so
+     * the copy is the caller's to zeroize once the card has verified it.
+     */
     private char[] requireUserPin(KeyPassphraseProvider userPinProvider,
                                   OpenPGPKey.OpenPGPSecretKey key)
             throws KeyPassphraseException
     {
-        char[] pin = userPinProvider.getKeyPassword(key);
+        char[] pin = Arrays.clone(userPinProvider.getKeyPassword(key));
         if (pin == null || pin.length == 0)
         {
             throw new KeyPassphraseException(key, new IllegalStateException("PIN required."));

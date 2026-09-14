@@ -224,13 +224,13 @@ public class BcYubikeyPublicKeyDataDecryptorFactory
     }
 
     /**
-     * Fetch the card's user PIN. The returned array is the caller's to zeroize once the card has
-     * verified it.
+     * Fetch the card's user PIN. A defensive copy of the provider's array is returned, so
+     * the copy is the caller's to zeroize once the card has verified it.
      */
     private char[] requireUserPin()
         throws KeyPassphraseException
     {
-        char[] pin = userPinProvider.getKeyPassword(getSecretKey());
+        char[] pin = Arrays.clone(userPinProvider.getKeyPassword(getSecretKey()));
         if (pin == null || pin.length == 0)
         {
             throw new KeyPassphraseException(getSecretKey(), new IllegalStateException("PIN required."));

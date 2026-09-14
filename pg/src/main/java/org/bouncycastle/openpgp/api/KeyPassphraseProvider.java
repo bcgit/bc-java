@@ -14,6 +14,8 @@ public interface KeyPassphraseProvider
      * Return the passphrase for the given key.
      * This callback is only fired, if the key is locked and a passphrase is required to unlock it.
      * Returning null means, that the passphrase is not available.
+     * The returned array remains owned by the provider; a caller that needs to zeroize the
+     * passphrase after use must clone it first.
      *
      * @param key the locked (sub-)key.
      * @return passphrase or null
