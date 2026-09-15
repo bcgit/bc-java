@@ -10,12 +10,12 @@ import org.bouncycastle.jsse.BCSSLParameters;
 
 abstract class SSLEngineUtil
 {
-    static ProvSSLEngine create(ContextData contextData)
+    static SSLEngine create(ContextData contextData)
     {
         return new ProvSSLEngine_9(contextData);
     }
 
-    static ProvSSLEngine create(ContextData contextData, String host, int port)
+    static SSLEngine create(ContextData contextData, String host, int port)
     {
         return new ProvSSLEngine_9(contextData, host, port);
     }
