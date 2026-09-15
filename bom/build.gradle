@@ -4,16 +4,19 @@ plugins {
 }
 
 
+// 1.86.1 is a point release of bctls alone (github #2448): only the tls constraint follows the
+// project version, the other seven modules stay pinned at the 1.86 artifacts already published,
+// as the 1.85.2 BOM did for its lone bcprov republish.
 dependencies {
     constraints {
-        api(project(":prov"))
-        api(project(":util"))
-        api(project(":pkix"))
-        api(project(":pg"))
+        api("org.bouncycastle:bcprov-$vmrange:1.86")
+        api("org.bouncycastle:bcutil-$vmrange:1.86")
+        api("org.bouncycastle:bcpkix-$vmrange:1.86")
+        api("org.bouncycastle:bcpg-$vmrange:1.86")
         api(project(":tls"))
-        api(project(":mls"))
-        api(project(":mail"))
-        api(project(":jmail"))
+        api("org.bouncycastle:bcmls-$vmrange:1.86")
+        api("org.bouncycastle:bcmail-$vmrange:1.86")
+        api("org.bouncycastle:bcjmail-$vmrange:1.86")
     }
 }
 
