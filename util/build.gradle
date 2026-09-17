@@ -1,6 +1,6 @@
 
 plugins {
-  id "biz.aQute.bnd.builder" version "7.1.0"
+  id "biz.aQute.bnd.builder" version "7.4.0"
 }
 
 jar.archiveBaseName = "bcutil-$vmrange"
@@ -20,7 +20,7 @@ dependencies {
 
     implementation project(':prov')
 
-    testImplementation group: 'junit', name: 'junit', version: '4.11'
+    testImplementation group: 'junit', name: 'junit', version: '4.13.2'
 
     java9Implementation files([sourceSets.main.output.classesDirs]) {
         builtBy compileJava
