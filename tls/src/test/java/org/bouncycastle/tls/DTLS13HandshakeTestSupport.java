@@ -316,6 +316,11 @@ class DTLS13HandshakeTestSupport
     }
 
     /** Send a small message, which opens a new outbound flight (and so a new inbound flight). */
+    void setNextSendSeq(int nextSendSeq)
+    {
+        handshake.setNextSendSeqForTest(nextSendSeq);
+    }
+
     void sendMessage() throws IOException
     {
         handshake.sendMessage(HandshakeType.certificate, new byte[8]);

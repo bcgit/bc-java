@@ -30,6 +30,7 @@ public class AllTests
         suite.addTestSuite(DTLS13UnifiedHeaderTest.class);
         suite.addTestSuite(DTLSAckTest.class);
         suite.addTestSuite(DTLSAckTransportTest.class);
+        suite.addTestSuite(DTLSMessageSeqTest.class);
         suite.addTestSuite(DTLSReassemblerTest.class);
         suite.addTestSuite(DTLSRecordLayer13Test.class);
         suite.addTestSuite(DTLSRecordLayerAggregationTest.class);

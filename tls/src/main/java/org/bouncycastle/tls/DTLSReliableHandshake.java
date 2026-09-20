@@ -183,6 +183,15 @@ class DTLSReliableHandshake
     {
         TlsUtils.checkUint24(body.length);
 
+        /*
+         * draft-ietf-tls-rfc9147bis: message_seq is a uint16 and "MUST NOT wrap"; writeUint16 would
+         * silently truncate and reuse the sequence number of an earlier message.
+         */
+        if (next_send_seq > 0xFFFF)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
         if (null != resendTimeout)
         {
             checkInboundFlight();
@@ -779,6 +788,12 @@ class DTLSReliableHandshake
     void acknowledgeForTest(Vector recordNumbers)
     {
         flightTracker.acknowledge(recordNumbers);
+    }
+
+    /** For the reliable-handshake tests: position the send counter, e.g. at the uint16 limit. */
+    void setNextSendSeqForTest(int nextSendSeq)
+    {
+        next_send_seq = nextSendSeq;
     }
 
     /** For the reliable-handshake tests: drive the retransmission path directly. */
