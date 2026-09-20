@@ -227,6 +227,16 @@ class DTLS13PostHandshake
             throw new IllegalStateException("a KeyUpdate is already awaiting acknowledgement");
         }
 
+        /*
+         * draft-ietf-tls-rfc9147bis: message_seq is a uint16 and "MUST NOT wrap"; writeUint16 would silently
+         * truncate and reuse the sequence number of an earlier message. Checked before the next write epoch
+         * is derived, so a refusal leaves the connection's keys untouched.
+         */
+        if (next_send_seq > 0xFFFF)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
         int epoch = recordLayer.getWriteEpoch();
         int message_seq = next_send_seq;
 

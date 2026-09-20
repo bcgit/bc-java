@@ -1018,4 +1018,47 @@ public class DTLS13KeyUpdateTest
         assertEquals(4, server.recordLayer.sendHandshakeRecordAtEpoch(4, body, 0, body.length).getEpoch());
     }
 
+    /**
+     * draft-ietf-tls-rfc9147bis: message_seq MUST NOT wrap. The last sequence number is still usable, the
+     * next send is refused, and the refusal leaves no KeyUpdate outstanding and the write epoch untouched.
+     */
+    public void testKeyUpdateMessageSeqWrapIsRefused() throws Exception
+    {
+        support = new DTLSRecordLayer13TestSupport();
+        support.setUpPair(CipherSuite.TLS_AES_128_GCM_SHA256, CryptoHashAlgorithm.sha256);
+        client = support.client;
+        server = support.server;
+
+        client.recordLayer.initPostHandshake(0x10000, 0, MAX_HANDSHAKE_MESSAGE_SIZE);
+        DTLS13PostHandshake clientPostHandshake = client.recordLayer.getPostHandshake();
+        int writeEpoch = client.recordLayer.getWriteEpoch();
+
+        try
+        {
+            clientPostHandshake.sendKeyUpdate(KeyUpdateRequest.update_not_requested);
+            fail("message_seq 65536 must not be sent");
+        }
+        catch (TlsFatalAlert e)
+        {
+            assertEquals(AlertDescription.internal_error, e.getAlertDescription());
+        }
+
+        assertFalse(clientPostHandshake.isKeyUpdateOutstanding());
+        assertEquals(writeEpoch, client.recordLayer.getWriteEpoch());
+    }
+
+    public void testKeyUpdateAtTheLastMessageSeqIsSent() throws Exception
+    {
+        support = new DTLSRecordLayer13TestSupport();
+        support.setUpPair(CipherSuite.TLS_AES_128_GCM_SHA256, CryptoHashAlgorithm.sha256);
+        client = support.client;
+        server = support.server;
+
+        client.recordLayer.initPostHandshake(0xFFFF, 0, MAX_HANDSHAKE_MESSAGE_SIZE);
+        DTLS13PostHandshake clientPostHandshake = client.recordLayer.getPostHandshake();
+
+        clientPostHandshake.sendKeyUpdate(KeyUpdateRequest.update_not_requested);
+        assertTrue(clientPostHandshake.isKeyUpdateOutstanding());
+    }
+
 }
