@@ -6,6 +6,11 @@ public class XofUtils
 {
     public static byte[] leftEncode(long strLen)
     {
+        if (strLen < 0)
+        {
+            throw new IllegalArgumentException("'strLen' cannot be negative");
+        }
+
         byte n = 1;
 
         long v = strLen;
@@ -28,6 +33,11 @@ public class XofUtils
 
     public static byte[] rightEncode(long strLen)
     {
+        if (strLen < 0)
+        {
+            throw new IllegalArgumentException("'strLen' cannot be negative");
+        }
+
         byte n = 1;
 
         long v = strLen;
@@ -57,8 +67,8 @@ public class XofUtils
     {
         if (in.length == len)
         {
-            return Arrays.concatenate(XofUtils.leftEncode(len * 8), in);
+            return Arrays.concatenate(XofUtils.leftEncode(len * 8L), in);
         }
-        return Arrays.concatenate(XofUtils.leftEncode(len * 8), Arrays.copyOfRange(in, inOff, inOff + len));
+        return Arrays.concatenate(XofUtils.leftEncode(len * 8L), Arrays.copyOfRange(in, inOff, inOff + len));
     }
 }

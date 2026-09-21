@@ -187,6 +187,7 @@ public class RegressionTest
             new SP80038GTest(),
             new TupleHashTest(),
             new ParallelHashTest(),
+            new XofUtilsTest(),
             new CryptoServiceConstraintsTest(),
             new SymmetricConstraintsTest(),
             new DigestConstraintsTest(),
@@ -215,7 +216,8 @@ public class RegressionTest
             new SCryptTest(),
             new CramerShoupTest(),
             new OpenSSHKeyParsingTests(),
-            new AsymmetricConstraintsTest()
+            new AsymmetricConstraintsTest(),
+            new TupleHashLargeInputTest()
         };
 
     public static Test[] openBSDBCryptTests =
