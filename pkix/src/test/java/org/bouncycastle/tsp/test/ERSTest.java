@@ -19,7 +19,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Random;
 
 import junit.framework.TestCase;
 import org.bouncycastle.asn1.ASN1EncodableVector;
@@ -68,6 +70,7 @@ import org.bouncycastle.tsp.ers.ERSEvidenceRecordStore;
 import org.bouncycastle.tsp.ers.ERSException;
 import org.bouncycastle.tsp.ers.ERSFileData;
 import org.bouncycastle.tsp.ers.ERSInputStreamData;
+import org.bouncycastle.tsp.ers.SortedHashList;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Store;
 import org.bouncycastle.util.Strings;
@@ -1353,6 +1356,150 @@ public class ERSTest
     private int compare(byte[] a, byte[] b)
     {
         return new BigInteger(1, a).compareTo(new BigInteger(1, b));
+    }
+
+    /**
+     * SortedHashList used to find each hash's insertion point by walking a LinkedList with
+     * get(index). The order it produced is the one recorded in every existing evidence record,
+     * so it is reproduced here from the original algorithm and compared against the list's
+     * output, over pseudo-random input including duplicates and arrays of differing lengths.
+     */
+    public void testSortedHashListOrder()
+    {
+        Random random = new Random(0x5eed);
+        List<byte[]> input = new ArrayList<byte[]>();
+
+        for (int i = 0; i != 1000; i++)
+        {
+            byte[] value = new byte[random.nextInt(33)];
+            random.nextBytes(value);
+            input.add(value);
+        }
+        // duplicates, and values sharing a prefix with a longer one
+        for (int i = 0; i != 100; i++)
+        {
+            input.add((byte[])input.get(i));
+            input.add(Arrays.copyOfRange((byte[])input.get(i + 100), 0, ((byte[])input.get(i + 100)).length / 2));
+        }
+
+        SortedHashList list = new SortedHashList();
+        for (int i = 0; i != input.size(); i++)
+        {
+            list.add((byte[])input.get(i));
+        }
+
+        List<byte[]> expected = insertionSorted(input);
+        List<byte[]> actual = list.toList();
+
+        assertEquals(input.size(), list.size());
+        assertEquals(expected.size(), actual.size());
+        for (int i = 0; i != expected.size(); i++)
+        {
+            assertTrue("differs at " + i, Arrays.areEqual((byte[])expected.get(i), (byte[])actual.get(i)));
+        }
+        assertTrue(Arrays.areEqual((byte[])expected.get(0), list.getFirst()));
+    }
+
+    /**
+     * The order SortedHashList produced before sorting was deferred to the accessors.
+     */
+    private List<byte[]> insertionSorted(List<byte[]> hashes)
+    {
+        LinkedList<byte[]> baseList = new LinkedList<byte[]>();
+
+        for (int h = 0; h != hashes.size(); h++)
+        {
+            byte[] hash = (byte[])hashes.get(h);
+
+            if (baseList.size() == 0)
+            {
+                baseList.addFirst(hash);
+            }
+            else if (compareUnsigned(hash, (byte[])baseList.get(0)) < 0)
+            {
+                baseList.addFirst(hash);
+            }
+            else
+            {
+                int index = 1;
+                while (index < baseList.size() && compareUnsigned((byte[])baseList.get(index), hash) <= 0)
+                {
+                    index++;
+                }
+
+                if (index == baseList.size())
+                {
+                    baseList.add(hash);
+                }
+                else
+                {
+                    baseList.add(index, hash);
+                }
+            }
+        }
+
+        return baseList;
+    }
+
+    private int compareUnsigned(byte[] left, byte[] right)
+    {
+        for (int i = 0; i < left.length && i < right.length; i++)
+        {
+            int a = (left[i] & 0xff);
+            int b = (right[i] & 0xff);
+
+            if (a != b)
+            {
+                return a - b;
+            }
+        }
+        return left.length - right.length;
+    }
+
+    /**
+     * A reduced hash tree over a large number of data objects. This reaches both sorted lists -
+     * SortedIndexedHashList from ERSArchiveTimeStampGenerator.getPartialHashtrees(), and
+     * SortedHashList from BinaryTreeRootCalculator.computeRootHash() - and took about 2.5
+     * seconds for these 2,000 objects when the insertion point was found by walking a
+     * LinkedList, rising by roughly a factor of eight per doubling (10,000 objects took 347
+     * seconds). The root is also checked to be independent of the order the objects were added
+     * in, which is what the sorting is there for.
+     */
+    public void testLargeDataObjectSet()
+        throws Exception
+    {
+        DigestCalculatorProvider digestCalculatorProvider = new JcaDigestCalculatorProviderBuilder().build();
+
+        List<ERSData> dataObjects = new ArrayList<ERSData>();
+        for (int i = 0; i != 2000; i++)
+        {
+            dataObjects.add(new ERSByteData(Strings.toByteArray("document " + i)));
+        }
+
+        byte[] ascending = rootOf(dataObjects, digestCalculatorProvider);
+
+        List<ERSData> reversed = new ArrayList<ERSData>(dataObjects);
+        Collections.reverse(reversed);
+
+        assertTrue(Arrays.areEqual(ascending, rootOf(reversed, digestCalculatorProvider)));
+    }
+
+    private byte[] rootOf(List<ERSData> dataObjects, DigestCalculatorProvider digestCalculatorProvider)
+        throws Exception
+    {
+        ERSArchiveTimeStampGenerator ersGen = new ERSArchiveTimeStampGenerator(
+            digestCalculatorProvider.get(new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256)));
+
+        for (int i = 0; i != dataObjects.size(); i++)
+        {
+            ersGen.addData((ERSData)dataObjects.get(i));
+        }
+
+        TimeStampRequestGenerator tspReqGen = new TimeStampRequestGenerator();
+
+        tspReqGen.setCertReq(true);
+
+        return ersGen.generateTimeStampRequest(tspReqGen).getMessageImprintDigest();
     }
 
     public void testReducedHashTrees()

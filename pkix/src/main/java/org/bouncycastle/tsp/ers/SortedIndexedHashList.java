@@ -1,9 +1,10 @@
 package org.bouncycastle.tsp.ers;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
-import java.util.LinkedList;
 import java.util.List;
+import java.util.NoSuchElementException;
 
 /**
  * A sorting list - byte[] are sorted in ascending order.
@@ -12,7 +13,17 @@ public class SortedIndexedHashList
 {
     private static final Comparator<byte[]> hashComp = new ByteArrayComparator();
 
-    private final LinkedList<IndexedHash> baseList = new LinkedList<IndexedHash>();
+    private static final Comparator<IndexedHash> digestComp = new Comparator<IndexedHash>()
+    {
+        public int compare(IndexedHash l, IndexedHash r)
+        {
+            return hashComp.compare(l.digest, r.digest);
+        }
+    };
+
+    private final List<IndexedHash> baseList = new ArrayList<IndexedHash>();
+
+    private boolean isSorted = true;
 
     public SortedIndexedHashList()
     {
@@ -20,39 +31,20 @@ public class SortedIndexedHashList
 
     public IndexedHash getFirst()
     {
-        return (IndexedHash)baseList.getFirst();
+        if (baseList.isEmpty())
+        {
+            throw new NoSuchElementException();
+        }
+
+        sort();
+
+        return (IndexedHash)baseList.get(0);
     }
 
     public void add(IndexedHash hash)
     {
-        if (baseList.size() == 0)
-        {
-             baseList.addFirst(hash);
-        }
-        else
-        {
-            if (hashComp.compare(hash.digest, ((IndexedHash)baseList.get(0)).digest) < 0)
-            {
-                baseList.addFirst(hash);
-            }
-            else
-            {
-                int index = 1;
-                while(index < baseList.size() && hashComp.compare(((IndexedHash)baseList.get(index)).digest, hash.digest) <= 0)
-                {
-                    index++;
-                }
-
-                if (index == baseList.size())
-                {
-                    baseList.add(hash);
-                }
-                else
-                {
-                    baseList.add(index, hash);
-                }
-            }
-        }
+        baseList.add(hash);
+        isSorted = false;
     }
 
     public int size()
@@ -62,6 +54,22 @@ public class SortedIndexedHashList
 
     public List<IndexedHash> toList()
     {
+        sort();
+
         return new ArrayList<IndexedHash>(baseList);
+    }
+
+    /**
+     * Sorting is deferred to the accessors, for the reason given on SortedHashList.sort():
+     * finding the insertion point with LinkedList.get(index) made building a list of n hashes
+     * O(n^3). Collections.sort() is stable, so hashes comparing equal keep ascending order.
+     */
+    private void sort()
+    {
+        if (!isSorted)
+        {
+            Collections.sort(baseList, digestComp);
+            isSorted = true;
+        }
     }
 }
