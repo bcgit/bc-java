@@ -85,6 +85,8 @@ Date: 2026, TBD
 
 - CRL.isRevoked() on the provider's CRLs threw ClassCastException for a certificate whose type is "X.509" but which is not a java.security.cert.X509Certificate, although the method checks only the type and goes on to handle exactly that case: it cast the certificate to X509Certificate for its serial number before looking at any entry, so the branch that reads the issuer from the certificate's encoding could never be reached. Such a certificate now has both its serial number and its issuer read from its encoding, in the provider's X509CRL and in the legacy org.bouncycastle.jce.provider.X509CRLObject alike.
 
+- ITSExplicitCertificateBuilder chose the certificate's Signature CHOICE from the VerificationKeyIndicator CHOICE rather than from the signing key's curve, so brainpoolP256r1 signatures were labelled as NIST P-256 and rejected by BC's own verifier, brainpoolP384r1 keys could not sign a certificate at all, and a P-256 signature under an implicit issuer was labelled as brainpoolP256r1. The signature type is now taken from the content signer's curve (github PR #2463).
+
 ### 2.1.3 Additional Features and Functionality
 
 - The CRMF certificate request message controls now include the RFC 4211 sec. 6.6 protocolEncrKey control, which names the key a CA is to encrypt its response with: org.bouncycastle.cert.crmf.ProtocolEncrKeyControl carries the SubjectPublicKeyInfo the control is defined to take, and CertificateRequestMessage.getControl() recognises id-regCtrl-protocolEncrKey alongside the regToken, authenticator and pkiArchiveOptions controls it already returned (github PR #2443).
