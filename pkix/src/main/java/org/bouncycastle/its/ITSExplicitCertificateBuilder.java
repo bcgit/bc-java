@@ -5,8 +5,6 @@ import java.io.OutputStream;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
-import org.bouncycastle.asn1.sec.SECObjectIdentifiers;
-import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
 import org.bouncycastle.its.operator.ECDSAEncoder;
 import org.bouncycastle.its.operator.ITSContentSigner;
 import org.bouncycastle.oer.OEREncoder;
@@ -16,7 +14,6 @@ import org.bouncycastle.oer.its.ieee1609dot2.CertificateType;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.HashAlgorithm;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.HashedId8;
 import org.bouncycastle.oer.its.ieee1609dot2.IssuerIdentifier;
-import org.bouncycastle.oer.its.ieee1609dot2.basetypes.PublicVerificationKey;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.Signature;
 import org.bouncycastle.oer.its.ieee1609dot2.ToBeSignedCertificate;
 import org.bouncycastle.oer.its.ieee1609dot2.VerificationKeyIndicator;
@@ -62,18 +59,6 @@ public class ITSExplicitCertificateBuilder
 
         ToBeSignedCertificate tbsCertificate = tbsBldr.createToBeSignedCertificate();
 
-        ToBeSignedCertificate signerCert = null;
-        VerificationKeyIndicator verificationKeyIndicator;
-        if (signer.isForSelfSigning())
-        {
-            verificationKeyIndicator = tbsCertificate.getVerifyKeyIndicator();
-        }
-        else
-        {
-            signerCert = signer.getAssociatedCertificate().toASN1Structure().getToBeSigned();
-            verificationKeyIndicator = signerCert.getVerifyKeyIndicator();
-        }
-
         OutputStream sOut = signer.getOutputStream();
 
         try
@@ -87,21 +72,8 @@ public class ITSExplicitCertificateBuilder
             throw new IllegalArgumentException("cannot produce certificate signature");
         }
 
-        Signature sig = null;        // TODO: signature actually optional.
-        switch (verificationKeyIndicator.getChoice())
-        {
-        case PublicVerificationKey.ecdsaNistP256:
-            sig = ECDSAEncoder.toITS(SECObjectIdentifiers.secp256r1, signer.getSignature());
-            break;
-        case PublicVerificationKey.ecdsaBrainpoolP256r1:
-            sig = ECDSAEncoder.toITS(TeleTrusTObjectIdentifiers.brainpoolP256r1, signer.getSignature());
-            break;
-        case PublicVerificationKey.ecdsaBrainpoolP384r1:
-            sig = ECDSAEncoder.toITS(TeleTrusTObjectIdentifiers.brainpoolP384r1, signer.getSignature());
-            break;
-        default:
-            throw new IllegalStateException("unknown key type");
-        }
+        // TODO: signature actually optional.
+        Signature sig = ECDSAEncoder.toITS(signer.getCurveID(), signer.getSignature());
 
         CertificateBase.Builder baseBldr = new CertificateBase.Builder();
 

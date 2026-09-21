@@ -8,10 +8,13 @@ import java.util.Date;
 
 import junit.framework.TestCase;
 import org.bouncycastle.asn1.ASN1Object;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DERIA5String;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.nist.NISTNamedCurves;
 import org.bouncycastle.asn1.sec.SECObjectIdentifiers;
+import org.bouncycastle.asn1.teletrust.TeleTrusTNamedCurves;
+import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.Digest;
@@ -56,6 +59,7 @@ import org.bouncycastle.oer.its.ieee1609dot2.basetypes.PublicVerificationKey;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.SequenceOfPsidSsp;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.SequenceOfPsidSspRange;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.ServiceSpecificPermissions;
+import org.bouncycastle.oer.its.ieee1609dot2.basetypes.Signature;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.SubjectAssurance;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.SymmAlgorithm;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.Time32;
@@ -301,6 +305,151 @@ public class ITSBasicTest
         boolean valid = newCert.isSignatureValid(provider);
 
         TestCase.assertTrue(valid);
+    }
+
+    public void testBuildSelfSignedCurves()
+        throws Exception
+    {
+        ASN1ObjectIdentifier[] curveIDs = new ASN1ObjectIdentifier[]
+            {
+                SECObjectIdentifiers.secp256r1,
+                TeleTrusTObjectIdentifiers.brainpoolP256r1,
+                TeleTrusTObjectIdentifiers.brainpoolP384r1
+            };
+        X9ECParameters[] curveParams = new X9ECParameters[]
+            {
+                NISTNamedCurves.getByOID(SECObjectIdentifiers.secp256r1),
+                TeleTrusTNamedCurves.getByOID(TeleTrusTObjectIdentifiers.brainpoolP256r1),
+                TeleTrusTNamedCurves.getByOID(TeleTrusTObjectIdentifiers.brainpoolP384r1)
+            };
+        int[] sigChoices = new int[]
+            {
+                Signature.ecdsaNistP256Signature,
+                Signature.ecdsaBrainpoolP256r1Signature,
+                Signature.ecdsaBrainpoolP384r1Signature
+            };
+
+        for (int i = 0; i != curveIDs.length; i++)
+        {
+            ECNamedDomainParameters domainParameters = new ECNamedDomainParameters(curveIDs[i], curveParams[i]);
+
+            ECKeyPairGenerator generator = new ECKeyPairGenerator();
+            generator.init(new ECKeyGenerationParameters(domainParameters, new SecureRandom()));
+            AsymmetricCipherKeyPair kp = generator.generateKeyPair();
+
+            ECPublicKeyParameters publicVerificationKey = (ECPublicKeyParameters)kp.getPublic();
+            ECPrivateKeyParameters privateKeyParameters = (ECPrivateKeyParameters)kp.getPrivate();
+
+            ToBeSignedCertificate.Builder tbsBuilder = new ToBeSignedCertificate.Builder();
+            tbsBuilder.setAppPermissions(
+                SequenceOfPsidSsp.builder()
+                    .setItem(PsidSsp.builder()
+                        .setPsid(new Psid(622))
+                        .setSsp(ServiceSpecificPermissions
+                            .bitmapSsp(new BitmapSsp(new DEROctetString(Hex.decode("0101"))))
+                            )
+                        .createPsidSsp())
+                    .createSequenceOfPsidSsp());
+            tbsBuilder.setAssuranceLevel(new SubjectAssurance(new byte[]{(byte)0xC0}));
+            tbsBuilder.setCrlSeries(new CrlSeries(1));
+
+            ITSContentSigner itsContentSigner = new BcITSContentSigner(
+                new ECPrivateKeyParameters(privateKeyParameters.getD(), domainParameters));
+            BcITSExplicitCertificateBuilder itsCertificateBuilder = new BcITSExplicitCertificateBuilder(itsContentSigner, tbsBuilder);
+
+            itsCertificateBuilder.setValidityPeriod(ITSValidityPeriod.from(new Date()).plusYears(1));
+
+            ITSCertificate newCert = itsCertificateBuilder.build(
+                CertificateId.name(new Hostname("Legion of the BouncyCastle CA")),
+                publicVerificationKey);
+
+            assertEquals(sigChoices[i], newCert.toASN1Structure().getSignature().getChoice());
+
+            BcITSContentVerifierProvider provider = new BcITSContentVerifierProvider(newCert);
+
+            assertTrue(newCert.isSignatureValid(provider));
+
+            //
+            // an end-entity certificate issued under the certificate just built is
+            // signed with the same key, so it carries the same signature choice.
+            //
+            ITSContentSigner caContentSigner = new BcITSContentSigner(
+                new ECPrivateKeyParameters(privateKeyParameters.getD(), domainParameters), newCert);
+            BcITSExplicitCertificateBuilder eeBuilder = new BcITSExplicitCertificateBuilder(caContentSigner, tbsBuilder);
+
+            eeBuilder.setValidityPeriod(ITSValidityPeriod.from(new Date()).plusYears(1));
+
+            ITSCertificate eeCert = eeBuilder.build(
+                CertificateId.name(new Hostname("Legion of the BouncyCastle EE")),
+                (ECPublicKeyParameters)generator.generateKeyPair().getPublic());
+
+            assertEquals(sigChoices[i], eeCert.toASN1Structure().getSignature().getChoice());
+
+            assertTrue(eeCert.isSignatureValid(new BcITSContentVerifierProvider(newCert)));
+        }
+    }
+
+    public void testBuildUnderImplicitIssuer()
+        throws Exception
+    {
+        ECNamedDomainParameters domainParameters = new ECNamedDomainParameters(
+            SECObjectIdentifiers.secp256r1, NISTNamedCurves.getByOID(SECObjectIdentifiers.secp256r1));
+
+        ECKeyPairGenerator generator = new ECKeyPairGenerator();
+        generator.init(new ECKeyGenerationParameters(domainParameters, new SecureRandom()));
+
+        AsymmetricCipherKeyPair rootKp = generator.generateKeyPair();
+
+        ToBeSignedCertificate.Builder tbsBuilder = new ToBeSignedCertificate.Builder();
+        tbsBuilder.setAppPermissions(
+            SequenceOfPsidSsp.builder()
+                .setItem(PsidSsp.builder()
+                    .setPsid(new Psid(622))
+                    .setSsp(ServiceSpecificPermissions
+                        .bitmapSsp(new BitmapSsp(new DEROctetString(Hex.decode("0101"))))
+                        )
+                    .createPsidSsp())
+                .createSequenceOfPsidSsp());
+        tbsBuilder.setAssuranceLevel(new SubjectAssurance(new byte[]{(byte)0xC0}));
+        tbsBuilder.setCrlSeries(new CrlSeries(1));
+
+        ITSContentSigner rootContentSigner = new BcITSContentSigner(
+            new ECPrivateKeyParameters(((ECPrivateKeyParameters)rootKp.getPrivate()).getD(), domainParameters));
+        BcITSExplicitCertificateBuilder rootBuilder = new BcITSExplicitCertificateBuilder(rootContentSigner, tbsBuilder);
+
+        rootBuilder.setValidityPeriod(ITSValidityPeriod.from(new Date()).plusYears(1));
+
+        ITSCertificate rootCert = rootBuilder.build(
+            CertificateId.name(new Hostname("Legion of the BouncyCastle CA")),
+            (ECPublicKeyParameters)rootKp.getPublic());
+
+        //
+        // an implicit certificate carries a reconstructionValue, so its verification
+        // key indicator choice is 1 - which must not be read as a curve.
+        //
+        BcITSImplicitCertificateBuilder subBuilder = new BcITSImplicitCertificateBuilder(rootCert, tbsBuilder);
+
+        subBuilder.setValidityPeriod(ITSValidityPeriod.from(new Date()).plusYears(1));
+
+        ITSCertificate subCert = subBuilder.build(
+            CertificateId.name(new Hostname("Legion of the BouncyCastle SUB")), BigInteger.ONE, BigIntegers.TWO);
+
+        assertEquals(VerificationKeyIndicator.reconstructionValue,
+            subCert.toASN1Structure().getToBeSigned().getVerifyKeyIndicator().getChoice());
+
+        AsymmetricCipherKeyPair subKp = generator.generateKeyPair();
+
+        ITSContentSigner subContentSigner = new BcITSContentSigner(
+            new ECPrivateKeyParameters(((ECPrivateKeyParameters)subKp.getPrivate()).getD(), domainParameters), subCert);
+        BcITSExplicitCertificateBuilder eeBuilder = new BcITSExplicitCertificateBuilder(subContentSigner, tbsBuilder);
+
+        eeBuilder.setValidityPeriod(ITSValidityPeriod.from(new Date()).plusYears(1));
+
+        ITSCertificate eeCert = eeBuilder.build(
+            CertificateId.name(new Hostname("Legion of the BouncyCastle EE")),
+            (ECPublicKeyParameters)generator.generateKeyPair().getPublic());
+
+        assertEquals(Signature.ecdsaNistP256Signature, eeCert.toASN1Structure().getSignature().getChoice());
     }
 
     public void testSelfSignedCA()
