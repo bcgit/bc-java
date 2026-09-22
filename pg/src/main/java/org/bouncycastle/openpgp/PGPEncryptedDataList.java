@@ -202,4 +202,32 @@ public class PGPEncryptedDataList
     {
         return new PGPSessionKeyEncryptedData(data);
     }
+
+    /**
+     * Create a decryption method using a {@link PGPSessionKey}, stating whether the session key was recovered
+     * from a password. This method can be used to decrypt messages which do not contain a SKESK or PKESK packet
+     * using a session key.
+     * <p>
+     * A session key recovered from a SKESK packet with the wrong passphrase is a well formed key which simply
+     * decrypts to garbage, and on a SEIPD v1 (or SED) packet the legacy CFB "quick check" on the two repeated
+     * prefix bytes is what detects that - so passing true here makes the wrong passphrase surface as a
+     * {@link PGPDataValidationException} from {@link PGPSessionKeyEncryptedData#getDataStream(org.bouncycastle.openpgp.operator.SessionKeyDataDecryptorFactory)},
+     * as it does when the same packet is decrypted in one step through {@link PGPPBEEncryptedData}, rather than
+     * as a parse failure further down the stream.
+     * </p><p>
+     * It must be passed true only for a session key that was recovered from a password. Reporting the quick
+     * check for a session key that came from a public key operation - one recovered from a PKESK packet, or one
+     * held from an earlier decryption - re-creates the Mister-Zuccherato oracle on the CFB prefix, which is why
+     * {@link #extractSessionKeyEncryptedData()} never reports it. A SEIPD v2 (AEAD) packet carries no such
+     * check and is unaffected either way.
+     * </p>
+     *
+     * @param passwordDerivedSessionKey true if the session key was recovered from a password (a SKESK packet),
+     *                                  false if it came from a public key operation or from anywhere else.
+     * @return session key encrypted data
+     */
+    public PGPSessionKeyEncryptedData extractSessionKeyEncryptedData(boolean passwordDerivedSessionKey)
+    {
+        return new PGPSessionKeyEncryptedData(data, passwordDerivedSessionKey);
+    }
 }

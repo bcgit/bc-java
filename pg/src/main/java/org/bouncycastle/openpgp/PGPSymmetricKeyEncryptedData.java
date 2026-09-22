@@ -77,7 +77,7 @@ public class PGPSymmetricKeyEncryptedData
         {
             InputStream encIn = getInputStream();
             encIn.mark(dataDecryptor.getBlockSize() + 2); // iv + 2 octets checksum
-            if (processSymmetricEncIntegrityPacketDataStream(withIntegrityPacket, dataDecryptor, encIn, isPublicKeyEncrypted()))
+            if (processSymmetricEncIntegrityPacketDataStream(withIntegrityPacket, dataDecryptor, encIn, useQuickCheck()))
             {
                 encIn.reset();
                 throw new PGPDataValidationException("data check failed.");
@@ -96,13 +96,18 @@ public class PGPSymmetricKeyEncryptedData
     }
 
     /**
-     * Whether this data was decrypted from a public-key (or otherwise already-recovered session key)
-     * rather than from a password (PBE). The CFB "quick check" is suppressed on the public-key /
-     * session-key path (it would only re-create the Mister-Zuccherato oracle and there is no
-     * multi-SKESK passphrase retry to drive); PBE keeps it. Overridden by {@link PGPSessionKeyEncryptedData}.
+     * Whether the legacy CFB "quick check" on the two repeated prefix bytes of a SEIPD v1 (or SED)
+     * packet is applied when this data is decrypted. Reporting a mismatch is what lets a wrong
+     * passphrase be detected - and the stream rewound to try the next SKESK packet - so the
+     * password-based path keeps it, while a session key recovered from a public key operation
+     * suppresses it: there the report is the Mister-Zuccherato oracle on the CFB prefix and the MDC
+     * is the integrity check. Overridden by {@link PGPSessionKeyEncryptedData}, where the caller
+     * states which kind of session key it holds.
+     *
+     * @return true if a quick check mismatch should be reported, false if it should be ignored.
      */
-    protected boolean isPublicKeyEncrypted()
+    protected boolean useQuickCheck()
     {
-        return false;
+        return true;
     }
 }

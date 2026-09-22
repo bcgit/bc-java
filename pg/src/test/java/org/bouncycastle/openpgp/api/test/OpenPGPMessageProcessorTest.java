@@ -40,6 +40,8 @@ import org.bouncycastle.openpgp.api.OpenPGPMessageOutputStream;
 import org.bouncycastle.openpgp.api.OpenPGPMessageProcessor;
 import org.bouncycastle.openpgp.api.OpenPGPPolicy;
 import org.bouncycastle.openpgp.api.OpenPGPSignature;
+import org.bouncycastle.openpgp.operator.bc.BcPBEKeyEncryptionMethodGenerator;
+import org.bouncycastle.openpgp.operator.bc.BcPGPDataEncryptorBuilder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.io.Streams;
@@ -78,6 +80,7 @@ public class OpenPGPMessageProcessorTest
         roundTripCompressedSymEncMessageMessage(api);
 
         roundTripSymEncMessageWithMultiplePassphrases(api);
+        symEncSEIPD1MessageIsTriedWithEveryPassphrase(api);
 
         roundTripV4KeyEncryptedMessageAlice(api);
         roundTripV4KeyEncryptedMessageBob(api);
@@ -99,6 +102,58 @@ public class OpenPGPMessageProcessorTest
         verifyMessageByRevokedKey(api);
         incompleteMessageProcessing(api);
         processUnencryptedMessage(api);
+    }
+
+    /**
+     * A SKESK v4 packet which derives the session key from the S2K output directly (no encrypted session key)
+     * hands back a well formed session key for any passphrase, so on the SEIPD v1 packet that follows it only
+     * the CFB quick check tells a wrong passphrase from the right one. The processor decrypts in two steps, so
+     * it has to ask for that check - without it the first (wrong) passphrase is taken for a success and the
+     * remaining ones are never tried.
+     */
+    private void symEncSEIPD1MessageIsTriedWithEveryPassphrase(OpenPGPApi api)
+        throws PGPException, IOException
+    {
+        byte[] message = directS2KSymEncMessage("olive");
+
+        OpenPGPMessageProcessor processor = api.decryptAndOrVerifyMessage();
+        processor.addMessagePassphrase("mauve".toCharArray());      // wrong, and tried first
+        processor.addMessagePassphrase("olive".toCharArray());
+
+        OpenPGPMessageInputStream decIn = processor.process(new ByteArrayInputStream(message));
+        ByteArrayOutputStream plainOut = new ByteArrayOutputStream();
+        Streams.pipeAll(decIn, plainOut);
+        decIn.close();
+
+        isEncodingEqual(PLAINTEXT, plainOut.toByteArray());
+        isTrue(Arrays.areEqual("olive".toCharArray(), decIn.getResult().getDecryptionPassphrase()));
+    }
+
+    private byte[] directS2KSymEncMessage(String passphrase)
+        throws PGPException, IOException
+    {
+        ByteArrayOutputStream litOut = new ByteArrayOutputStream();
+        PGPLiteralDataGenerator litGen = new PGPLiteralDataGenerator();
+        OutputStream lOut = litGen.open(litOut, PGPLiteralData.BINARY, "_CONSOLE", PLAINTEXT.length, new Date());
+
+        lOut.write(PLAINTEXT);
+
+        litGen.close();
+
+        PGPEncryptedDataGenerator encGen = new PGPEncryptedDataGenerator(
+            new BcPGPDataEncryptorBuilder(SymmetricKeyAlgorithmTags.AES_256).setWithIntegrityPacket(true));
+
+        encGen.setForceSessionKey(false);       // session key is the S2K output itself
+        encGen.addMethod(new BcPBEKeyEncryptionMethodGenerator(passphrase.toCharArray()));
+
+        ByteArrayOutputStream encOut = new ByteArrayOutputStream();
+        OutputStream cOut = encGen.open(encOut, new byte[16]);
+
+        cOut.write(litOut.toByteArray());
+
+        cOut.close();
+
+        return encOut.toByteArray();
     }
 
     private void roundtripUnarmoredPlaintextMessage(OpenPGPApi api)

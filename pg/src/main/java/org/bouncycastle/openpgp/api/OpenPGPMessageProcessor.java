@@ -330,10 +330,10 @@ public class OpenPGPMessageProcessor
                             implementation.pbeDataDecryptorFactory(passphrase);
                         PGPSessionKey decryptedSessionKey = skesk.getSessionKey(passphraseDecryptorFactory);
 
-                        // Decrypt the message with the decrypted session key
+                        // Decrypt the message with the decrypted session key - the session key came from a passphrase, so a wrong one is reported by the SEIPD v1 quick check and the next passphrase/SKESK is tried
                         SessionKeyDataDecryptorFactory skDecryptorFactory =
                             implementation.sessionKeyDataDecryptorFactory(decryptedSessionKey);
-                        PGPSessionKeyEncryptedData encData = encDataList.extractSessionKeyEncryptedData();
+                        PGPSessionKeyEncryptedData encData = encDataList.extractSessionKeyEncryptedData(true);
                         InputStream decryptedIn = encData.getDataStream(skDecryptorFactory);
                         IntegrityProtectedInputStream verifyingIn = new IntegrityProtectedInputStream(decryptedIn, encData);
 
@@ -456,9 +456,9 @@ public class OpenPGPMessageProcessor
                         PBEDataDecryptorFactory passphraseDecryptorFactory = implementation.pbeDataDecryptorFactory(passphrase);
                         PGPSessionKey decryptedSessionKey = skesk.getSessionKey(passphraseDecryptorFactory);
 
-                        // Decrypt the data using the decrypted session key
+                        // Decrypt the data using the decrypted session key - passphrase derived, so the SEIPD v1 quick check applies as above
                         SessionKeyDataDecryptorFactory skDecryptorFactory = implementation.sessionKeyDataDecryptorFactory(decryptedSessionKey);
-                        PGPSessionKeyEncryptedData encData = encDataList.extractSessionKeyEncryptedData();
+                        PGPSessionKeyEncryptedData encData = encDataList.extractSessionKeyEncryptedData(true);
                         InputStream decryptedIn = encData.getDataStream(skDecryptorFactory);
                         IntegrityProtectedInputStream verifyingIn = new IntegrityProtectedInputStream(decryptedIn, encData);
                         Decrypted decrypted = new Decrypted(encData, decryptedSessionKey, verifyingIn);

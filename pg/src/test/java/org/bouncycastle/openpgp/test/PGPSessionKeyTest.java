@@ -4,17 +4,21 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.security.Security;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.Iterator;
 
 import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.PGPCompressedData;
+import org.bouncycastle.openpgp.PGPEncryptedDataGenerator;
 import org.bouncycastle.openpgp.PGPEncryptedDataList;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPLiteralData;
+import org.bouncycastle.openpgp.PGPLiteralDataGenerator;
 import org.bouncycastle.openpgp.PGPObjectFactory;
 import org.bouncycastle.openpgp.PGPPBEEncryptedData;
 import org.bouncycastle.openpgp.PGPDataValidationException;
@@ -30,7 +34,9 @@ import org.bouncycastle.openpgp.operator.PublicKeyDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.SessionKeyDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
 import org.bouncycastle.openpgp.operator.bc.BcPBEDataDecryptorFactory;
+import org.bouncycastle.openpgp.operator.bc.BcPBEKeyEncryptionMethodGenerator;
 import org.bouncycastle.openpgp.operator.bc.BcPBESecretKeyDecryptorBuilder;
+import org.bouncycastle.openpgp.operator.bc.BcPGPDataEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.bc.BcPGPDigestCalculatorProvider;
 import org.bouncycastle.openpgp.operator.bc.BcPublicKeyDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.bc.BcSessionKeyDataDecryptorFactory;
@@ -99,6 +105,10 @@ public class PGPSessionKeyTest
         return "PGPSessionKeyTest";
     }
 
+    private static final char[] QUICK_CHECK_PASSPHRASE = "correct passphrase".toCharArray();
+    private static final char[] QUICK_CHECK_WRONG_PASSPHRASE = "wrong passphrase".toCharArray();
+    private static final byte[] QUICK_CHECK_PLAINTEXT = Strings.toByteArray("the quick brown fox jumps over the lazy dog");
+
     public void performTest()
         throws Exception
     {
@@ -116,6 +126,85 @@ public class PGPSessionKeyTest
         decryptMessageWithoutEskUsingSessionKey();
 
         sessionKeyDecryptionSuppressesQuickCheckOracle();
+
+        passwordDerivedSessionKeyIsQuickChecked();
+    }
+
+    /**
+     * A SKESK v4 packet which derives the session key from the S2K output directly (no encrypted session key,
+     * the shape "gpg -c" produces) hands back a well formed session key for any passphrase, so on the SEIPD v1
+     * packet that follows it only the CFB quick check tells a wrong passphrase from a right one. Decrypting in
+     * two steps has to be able to get that back, without turning it on for a session key that came from a
+     * public key operation.
+     */
+    private void passwordDerivedSessionKeyIsQuickChecked()
+        throws Exception
+    {
+        byte[] message = directS2KMessage();
+
+        // stating the session key came from a password gets the wrong one reported, as the one step
+        // PGPPBEEncryptedData path reports it.
+        try
+        {
+            openSessionKeyStream(message, QUICK_CHECK_WRONG_PASSPHRASE, true);
+            fail("no exception on quick check of wrong password derived session key");
+        }
+        catch (PGPDataValidationException e)
+        {
+            isEquals("data check failed.", e.getMessage());
+        }
+
+        // the default stays as it was: no early, distinguishable failure to serve as an oracle.
+        openSessionKeyStream(message, QUICK_CHECK_WRONG_PASSPHRASE, false);
+
+        // and the right passphrase still decrypts with the check in place.
+        PGPObjectFactory objectFactory = new BcPGPObjectFactory(
+            openSessionKeyStream(message, QUICK_CHECK_PASSPHRASE, true));
+        PGPLiteralData literalData = (PGPLiteralData)objectFactory.nextObject();
+
+        isTrue("quick checked session key decryption failed",
+            Arrays.equals(QUICK_CHECK_PLAINTEXT, Streams.readAll(literalData.getDataStream())));
+    }
+
+    private byte[] directS2KMessage()
+        throws Exception
+    {
+        ByteArrayOutputStream litOut = new ByteArrayOutputStream();
+        PGPLiteralDataGenerator litGen = new PGPLiteralDataGenerator();
+        OutputStream lOut = litGen.open(litOut, PGPLiteralData.BINARY, "_CONSOLE",
+            QUICK_CHECK_PLAINTEXT.length, new Date());
+
+        lOut.write(QUICK_CHECK_PLAINTEXT);
+
+        litGen.close();
+
+        PGPEncryptedDataGenerator encGen = new PGPEncryptedDataGenerator(
+            new BcPGPDataEncryptorBuilder(SymmetricKeyAlgorithmTags.AES_256).setWithIntegrityPacket(true));
+
+        encGen.setForceSessionKey(false);       // session key is the S2K output itself
+        encGen.addMethod(new BcPBEKeyEncryptionMethodGenerator(QUICK_CHECK_PASSPHRASE));
+
+        ByteArrayOutputStream encOut = new ByteArrayOutputStream();
+        OutputStream cOut = encGen.open(encOut, new byte[16]);
+
+        cOut.write(litOut.toByteArray());
+
+        cOut.close();
+
+        return encOut.toByteArray();
+    }
+
+    private InputStream openSessionKeyStream(byte[] message, char[] passphrase, boolean passwordDerivedSessionKey)
+        throws Exception
+    {
+        PGPObjectFactory objectFactory = new BcPGPObjectFactory(new ByteArrayInputStream(message));
+        PGPEncryptedDataList encryptedDataList = (PGPEncryptedDataList)objectFactory.nextObject();
+        PGPPBEEncryptedData pbeData = (PGPPBEEncryptedData)encryptedDataList.get(0);
+        PGPSessionKey sessionKey = pbeData.getSessionKey(
+            new BcPBEDataDecryptorFactory(passphrase, new BcPGPDigestCalculatorProvider()));
+
+        return encryptedDataList.extractSessionKeyEncryptedData(passwordDerivedSessionKey)
+            .getDataStream(new BcSessionKeyDataDecryptorFactory(sessionKey));
     }
 
     private void sessionKeyDecryptionSuppressesQuickCheckOracle()
