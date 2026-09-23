@@ -23,6 +23,10 @@ import org.bouncycastle.crypto.signers.XMSSSigner;
 import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 import org.bouncycastle.pqc.jcajce.interfaces.StateAwareSignature;
 
+/**
+ * @deprecated use {@link org.bouncycastle.jcajce.provider.asymmetric.xmss.XMSSSignatureSpi} instead.
+ */
+@Deprecated
 public class XMSSSignatureSpi
     extends Signature
     implements StateAwareSignature

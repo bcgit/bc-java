@@ -1,4 +1,4 @@
-package org.bouncycastle.pqc.jcajce.provider.xmss;
+package org.bouncycastle.jcajce.provider.asymmetric.xmss;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -14,10 +14,6 @@ import org.bouncycastle.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.pqc.jcajce.interfaces.XMSSKey;
 import org.bouncycastle.util.Arrays;
 
-/**
- * @deprecated use {@link org.bouncycastle.jcajce.provider.asymmetric.xmss.BCXMSSPublicKey} instead.
- */
-@Deprecated
 public class BCXMSSPublicKey
     implements PublicKey, XMSSKey
 {

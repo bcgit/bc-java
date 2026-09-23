@@ -1,4 +1,4 @@
-package org.bouncycastle.pqc.jcajce.provider.xmss;
+package org.bouncycastle.jcajce.provider.asymmetric.xmss;
 
 import java.security.InvalidKeyException;
 import java.security.PrivateKey;
@@ -11,6 +11,7 @@ import java.security.spec.AlgorithmParameterSpec;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.NullDigest;
@@ -18,26 +19,22 @@ import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
-import org.bouncycastle.crypto.params.XMSSMTPrivateKeyParameters;
-import org.bouncycastle.crypto.signers.XMSSMTSigner;
+import org.bouncycastle.crypto.params.XMSSPrivateKeyParameters;
+import org.bouncycastle.crypto.signers.XMSSSigner;
 import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 import org.bouncycastle.pqc.jcajce.interfaces.StateAwareSignature;
 
-/**
- * @deprecated use {@link org.bouncycastle.jcajce.provider.asymmetric.xmss.XMSSMTSignatureSpi} instead.
- */
-@Deprecated
-public class XMSSMTSignatureSpi
+public class XMSSSignatureSpi
     extends Signature
     implements StateAwareSignature
 {
-    protected XMSSMTSignatureSpi(String algorithm)
+    protected XMSSSignatureSpi(String algorithm)
     {
         super(algorithm);
     }
 
     private Digest digest;
-    private XMSSMTSigner signer;
+    private XMSSSigner signer;
     private ASN1ObjectIdentifier treeDigest;
     // the attributes of the key engineInitSign was given, so the key getUpdatedPrivateKey()
     // hands back is the same key rather than one stripped of them
@@ -49,12 +46,12 @@ public class XMSSMTSignatureSpi
     // drive, and this is what stops isSigningCapable() answering true while it is verifying.
     private boolean signing;
 
-    protected XMSSMTSignatureSpi(String sigName, Digest digest, XMSSMTSigner signer)
+    protected XMSSSignatureSpi(String sigName, Digest digest, XMSSSigner signer)
     {
         this(sigName, digest, signer, null);
     }
 
-    protected XMSSMTSignatureSpi(String sigName, Digest digest, XMSSMTSigner signer, ASN1ObjectIdentifier[] treeDigests)
+    protected XMSSSignatureSpi(String sigName, Digest digest, XMSSSigner signer, ASN1ObjectIdentifier[] treeDigests)
     {
         super(sigName);
 
@@ -66,29 +63,41 @@ public class XMSSMTSignatureSpi
     protected void engineInitVerify(PublicKey publicKey)
         throws InvalidKeyException
     {
-        if (publicKey instanceof BCXMSSMTPublicKey)
+        BCXMSSPublicKey xmssKey;
+
+        if (publicKey instanceof BCXMSSPublicKey)
         {
-            checkTreeDigest(((BCXMSSMTPublicKey)publicKey).getTreeDigestOID());
-
-            CipherParameters param = ((BCXMSSMTPublicKey)publicKey).getKeyParams();
-
-            signing = false;
-            digest.reset();
-            signer.init(false, param);
+            xmssKey = (BCXMSSPublicKey)publicKey;
         }
         else
         {
-            throw new InvalidKeyException("unknown public key passed to XMSSMT");
+            // a key from elsewhere - the deprecated org.bouncycastle.pqc.jcajce.provider.xmss copy, or another provider - is taken through its encoding; verification is stateless, so unlike a private key it can be rebuilt here.
+            try
+            {
+                xmssKey = new BCXMSSPublicKey(SubjectPublicKeyInfo.getInstance(publicKey.getEncoded()));
+            }
+            catch (Exception e)
+            {
+                throw new InvalidKeyException("unknown public key passed to XMSS");
+            }
         }
+
+        checkTreeDigest(xmssKey.getTreeDigestOID());
+
+        CipherParameters param = xmssKey.getKeyParams();
+
+        signing = false;
+        digest.reset();
+        signer.init(false, param);
     }
 
-    // Only the tree-digest-named signers (XMSSMT-SHA256, XMSSMT-SHAKE256, ...) constrain the key:
-    // they supply a treeDigests allowlist and reject a key whose tree digest is outside it.
-    // SHAKE256-LEN (the SP 800-208 SHAKE256/256 and SHAKE256/192 sets) is part of the SHAKE256 family
-    // and SHA-256/192 shares id-sha256 with SHA-256/256, so both are accepted by their respective
-    // named signers. The generic "XMSSMT" signer and the "...withXMSSMT-..." prehash signers pass
-    // null (any key accepted) - for the prehash variants the leading digest names the message
-    // pre-hash, which is independent of the key's tree digest.
+    // Only the tree-digest-named signers (XMSS-SHA256, XMSS-SHAKE256, ...) constrain the key: they
+    // supply a treeDigests allowlist and reject a key whose tree digest is outside it. SHAKE256-LEN
+    // (the SP 800-208 SHAKE256/256 and SHAKE256/192 sets) is part of the SHAKE256 family and
+    // SHA-256/192 shares id-sha256 with SHA-256/256, so both are accepted by their respective named
+    // signers. The generic "XMSS" signer and the "...withXMSS-..." prehash signers pass null (any
+    // key accepted) - for the prehash variants the leading digest names the message pre-hash, which
+    // is independent of the key's tree digest.
     private void checkTreeDigest(ASN1ObjectIdentifier keyTreeDigest)
         throws InvalidKeyException
     {
@@ -124,19 +133,19 @@ public class XMSSMTSignatureSpi
     private void initSigning(PrivateKey privateKey, SecureRandom random)
         throws InvalidKeyException
     {
-        if (privateKey instanceof BCXMSSMTPrivateKey)
+        if (privateKey instanceof BCXMSSPrivateKey)
         {
-            if (((BCXMSSMTPrivateKey)privateKey).isDestroyed())
+            if (((BCXMSSPrivateKey)privateKey).isDestroyed())
             {
                 throw new InvalidKeyException("key destroyed");
             }
 
-            checkTreeDigest(((BCXMSSMTPrivateKey)privateKey).getTreeDigestOID());
+            checkTreeDigest(((BCXMSSPrivateKey)privateKey).getTreeDigestOID());
 
-            CipherParameters param = ((BCXMSSMTPrivateKey)privateKey).getKeyParams();
+            CipherParameters param = ((BCXMSSPrivateKey)privateKey).getKeyParams();
 
-            treeDigest = ((BCXMSSMTPrivateKey)privateKey).getTreeDigestOID();
-            attributes = ((BCXMSSMTPrivateKey)privateKey).getAttributes();
+            treeDigest = ((BCXMSSPrivateKey)privateKey).getTreeDigestOID();
+            attributes = ((BCXMSSPrivateKey)privateKey).getAttributes();
             if (random != null)
             {
                 param = new ParametersWithRandom(param, random);
@@ -148,7 +157,7 @@ public class XMSSMTSignatureSpi
         }
         else
         {
-            throw new InvalidKeyException("unknown private key passed to XMSSMT");
+            throw new InvalidKeyException("unknown private key passed to XMSS");
         }
     }
 
@@ -234,7 +243,6 @@ public class XMSSMTSignatureSpi
         return signing && signer.getUsagesRemaining() != 0;
     }
 
-
     public PrivateKey getUpdatedPrivateKey()
     {
         // the signer is asked rather than a field of this object being read: what it hands back is
@@ -249,113 +257,113 @@ public class XMSSMTSignatureSpi
         // isSigningCapable() and hands a key back from here - deliberately, because a spent key is
         // still state its caller has to store. So a key from here is not a statement that anything
         // is left to sign with; only isSigningCapable() says that.
-        XMSSMTPrivateKeyParameters updated = (treeDigest == null)
-            ? null : (XMSSMTPrivateKeyParameters)signer.getUpdatedPrivateKey();
+        XMSSPrivateKeyParameters updated = (treeDigest == null)
+            ? null : (XMSSPrivateKeyParameters)signer.getUpdatedPrivateKey();
 
         if (updated == null)
         {
             throw new IllegalStateException("signature object not in a signing state");
         }
 
-        return new BCXMSSMTPrivateKey(treeDigest, updated, attributes);
+        return new BCXMSSPrivateKey(treeDigest, updated, attributes);
     }
 
     static public class generic
-        extends XMSSMTSignatureSpi
+        extends XMSSSignatureSpi
     {
         public generic()
         {
-            super("XMSSMT", new NullDigest(), new XMSSMTSigner());
+            super("XMSS", new NullDigest(), new XMSSSigner());
         }
     }
-    
+
     static public class withSha256
-        extends XMSSMTSignatureSpi
+        extends XMSSSignatureSpi
     {
         public withSha256()
         {
-            super("XMSSMT-SHA256", new NullDigest(), new XMSSMTSigner(), new ASN1ObjectIdentifier[]{ NISTObjectIdentifiers.id_sha256 });
+            super("XMSS-SHA256", new NullDigest(), new XMSSSigner(), new ASN1ObjectIdentifier[]{ NISTObjectIdentifiers.id_sha256 });
         }
     }
 
     static public class withShake128
-        extends XMSSMTSignatureSpi
+        extends XMSSSignatureSpi
     {
         public withShake128()
         {
-            super("XMSSMT-SHAKE128", new NullDigest(), new XMSSMTSigner(), new ASN1ObjectIdentifier[]{ NISTObjectIdentifiers.id_shake128 });
+            super("XMSS-SHAKE128", new NullDigest(), new XMSSSigner(), new ASN1ObjectIdentifier[]{ NISTObjectIdentifiers.id_shake128 });
         }
     }
 
     static public class withSha512
-        extends XMSSMTSignatureSpi
+        extends XMSSSignatureSpi
     {
         public withSha512()
         {
-            super("XMSSMT-SHA512", new NullDigest(), new XMSSMTSigner(), new ASN1ObjectIdentifier[]{ NISTObjectIdentifiers.id_sha512 });
+            super("XMSS-SHA512", new NullDigest(), new XMSSSigner(), new ASN1ObjectIdentifier[]{ NISTObjectIdentifiers.id_sha512 });
         }
     }
 
     static public class withShake256
-        extends XMSSMTSignatureSpi
+        extends XMSSSignatureSpi
     {
         public withShake256()
         {
-            super("XMSSMT-SHAKE256", new NullDigest(), new XMSSMTSigner(), new ASN1ObjectIdentifier[]{ NISTObjectIdentifiers.id_shake256, NISTObjectIdentifiers.id_shake256_len });
+            super("XMSS-SHAKE256", new NullDigest(), new XMSSSigner(), new ASN1ObjectIdentifier[]{ NISTObjectIdentifiers.id_shake256, NISTObjectIdentifiers.id_shake256_len });
         }
     }
 
     static public class withSha256andPrehash
-        extends XMSSMTSignatureSpi
+        extends XMSSSignatureSpi
     {
         public withSha256andPrehash()
         {
-            super("SHA256withXMSSMT-SHA256", new SHA256Digest(), new XMSSMTSigner());
+            super("SHA256withXMSS-SHA256", new SHA256Digest(), new XMSSSigner());
         }
     }
 
     static public class withShake128andPrehash
-        extends XMSSMTSignatureSpi
+        extends XMSSSignatureSpi
     {
         public withShake128andPrehash()
         {
-            super("SHAKE128withXMSSMT-SHAKE128", new SHAKEDigest(128), new XMSSMTSigner());
+            super("SHAKE128withXMSS-SHAKE128", new SHAKEDigest(128), new XMSSSigner());
         }
     }
 
     static public class withShake128_512andPrehash
-        extends XMSSMTSignatureSpi
+        extends XMSSSignatureSpi
     {
         public withShake128_512andPrehash()
         {
-            super("SHAKE128(512)withXMSSMT-SHAKE128", new DigestUtil.DoubleDigest(new SHAKEDigest(128)), new XMSSMTSigner());
+            super("SHAKE128(512)withXMSS-SHAKE128", new DigestUtil.DoubleDigest(new SHAKEDigest(128)), new XMSSSigner());
         }
     }
 
     static public class withSha512andPrehash
-        extends XMSSMTSignatureSpi
+        extends XMSSSignatureSpi
     {
         public withSha512andPrehash()
         {
-            super("SHA512withXMSSMT-SHA512", new SHA512Digest(), new XMSSMTSigner());
+            super("SHA512withXMSS-SHA512", new SHA512Digest(), new XMSSSigner());
         }
     }
 
     static public class withShake256andPrehash
-        extends XMSSMTSignatureSpi
+        extends XMSSSignatureSpi
     {
         public withShake256andPrehash()
         {
-            super("SHAKE256withXMSSMT-SHAKE256", new SHAKEDigest(256), new XMSSMTSigner());
+            super("SHAKE256withXMSS-SHAKE256", new SHAKEDigest(256), new XMSSSigner());
         }
     }
 
     static public class withShake256_1024andPrehash
-        extends XMSSMTSignatureSpi
+        extends XMSSSignatureSpi
     {
         public withShake256_1024andPrehash()
         {
-            super("SHAKE256(1024)withXMSSMT-SHAKE256", new DigestUtil.DoubleDigest(new SHAKEDigest(256)), new XMSSMTSigner());
+            super("SHAKE256(1024)withXMSS-SHAKE256", new DigestUtil.DoubleDigest(new SHAKEDigest(256)), new XMSSSigner());
         }
     }
 }

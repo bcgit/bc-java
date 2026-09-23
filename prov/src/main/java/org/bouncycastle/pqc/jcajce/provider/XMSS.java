@@ -6,12 +6,16 @@ import org.bouncycastle.internal.asn1.isara.IsaraObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.util.AsymmetricAlgorithmProvider;
 import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
-import org.bouncycastle.pqc.jcajce.provider.xmss.XMSSKeyFactorySpi;
-import org.bouncycastle.pqc.jcajce.provider.xmss.XMSSMTKeyFactorySpi;
+import org.bouncycastle.jcajce.provider.asymmetric.xmss.XMSSKeyFactorySpi;
+import org.bouncycastle.jcajce.provider.asymmetric.xmss.XMSSMTKeyFactorySpi;
 
+/**
+ * @deprecated use {@link org.bouncycastle.jcajce.provider.asymmetric.XMSS} instead.
+ */
+@Deprecated
 public class XMSS
 {
-    private static final String PREFIX = "org.bouncycastle.pqc.jcajce.provider" + ".xmss.";
+    private static final String PREFIX = "org.bouncycastle.jcajce.provider.asymmetric" + ".xmss.";
 
     public static class Mappings
         extends AsymmetricAlgorithmProvider

@@ -14,6 +14,10 @@ import org.bouncycastle.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.pqc.jcajce.interfaces.XMSSMTKey;
 import org.bouncycastle.util.Arrays;
 
+/**
+ * @deprecated use {@link org.bouncycastle.jcajce.provider.asymmetric.xmss.BCXMSSMTPublicKey} instead.
+ */
+@Deprecated
 public class BCXMSSMTPublicKey
     implements PublicKey, XMSSMTKey
 {

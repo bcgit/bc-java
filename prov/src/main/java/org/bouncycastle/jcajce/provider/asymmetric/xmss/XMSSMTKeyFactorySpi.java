@@ -1,4 +1,4 @@
-package org.bouncycastle.pqc.jcajce.provider.xmss;
+package org.bouncycastle.jcajce.provider.asymmetric.xmss;
 
 import java.io.IOException;
 import java.security.InvalidKeyException;
@@ -17,10 +17,6 @@ import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
 import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 
-/**
- * @deprecated use {@link org.bouncycastle.jcajce.provider.asymmetric.xmss.XMSSMTKeyFactorySpi} instead.
- */
-@Deprecated
 public class XMSSMTKeyFactorySpi
     extends KeyFactorySpi
     implements AsymmetricKeyInfoConverter

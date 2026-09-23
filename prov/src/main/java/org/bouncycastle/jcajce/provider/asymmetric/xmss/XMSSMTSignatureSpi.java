@@ -1,4 +1,4 @@
-package org.bouncycastle.pqc.jcajce.provider.xmss;
+package org.bouncycastle.jcajce.provider.asymmetric.xmss;
 
 import java.security.InvalidKeyException;
 import java.security.PrivateKey;
@@ -11,6 +11,7 @@ import java.security.spec.AlgorithmParameterSpec;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.NullDigest;
@@ -23,10 +24,6 @@ import org.bouncycastle.crypto.signers.XMSSMTSigner;
 import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 import org.bouncycastle.pqc.jcajce.interfaces.StateAwareSignature;
 
-/**
- * @deprecated use {@link org.bouncycastle.jcajce.provider.asymmetric.xmss.XMSSMTSignatureSpi} instead.
- */
-@Deprecated
 public class XMSSMTSignatureSpi
     extends Signature
     implements StateAwareSignature
@@ -66,20 +63,32 @@ public class XMSSMTSignatureSpi
     protected void engineInitVerify(PublicKey publicKey)
         throws InvalidKeyException
     {
+        BCXMSSMTPublicKey xmssKey;
+
         if (publicKey instanceof BCXMSSMTPublicKey)
         {
-            checkTreeDigest(((BCXMSSMTPublicKey)publicKey).getTreeDigestOID());
-
-            CipherParameters param = ((BCXMSSMTPublicKey)publicKey).getKeyParams();
-
-            signing = false;
-            digest.reset();
-            signer.init(false, param);
+            xmssKey = (BCXMSSMTPublicKey)publicKey;
         }
         else
         {
-            throw new InvalidKeyException("unknown public key passed to XMSSMT");
+            // a key from elsewhere - the deprecated org.bouncycastle.pqc.jcajce.provider.xmss copy, or another provider - is taken through its encoding; verification is stateless, so unlike a private key it can be rebuilt here.
+            try
+            {
+                xmssKey = new BCXMSSMTPublicKey(SubjectPublicKeyInfo.getInstance(publicKey.getEncoded()));
+            }
+            catch (Exception e)
+            {
+                throw new InvalidKeyException("unknown public key passed to XMSSMT");
+            }
         }
+
+        checkTreeDigest(xmssKey.getTreeDigestOID());
+
+        CipherParameters param = xmssKey.getKeyParams();
+
+        signing = false;
+        digest.reset();
+        signer.init(false, param);
     }
 
     // Only the tree-digest-named signers (XMSSMT-SHA256, XMSSMT-SHAKE256, ...) constrain the key:

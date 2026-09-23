@@ -1,4 +1,4 @@
-package org.bouncycastle.pqc.jcajce.provider.xmss;
+package org.bouncycastle.jcajce.provider.asymmetric.xmss;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -17,10 +17,6 @@ import org.bouncycastle.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.pqc.jcajce.interfaces.XMSSMTPrivateKey;
 import org.bouncycastle.util.Exceptions;
 
-/**
- * @deprecated use {@link org.bouncycastle.jcajce.provider.asymmetric.xmss.BCXMSSMTPrivateKey} instead.
- */
-@Deprecated
 public class BCXMSSMTPrivateKey
     implements PrivateKey, XMSSMTPrivateKey, Destroyable
 {

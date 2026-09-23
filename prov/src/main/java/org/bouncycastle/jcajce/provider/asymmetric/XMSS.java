@@ -6,8 +6,8 @@ import org.bouncycastle.internal.asn1.isara.IsaraObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.util.AsymmetricAlgorithmProvider;
 import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
-import org.bouncycastle.pqc.jcajce.provider.xmss.XMSSKeyFactorySpi;
-import org.bouncycastle.pqc.jcajce.provider.xmss.XMSSMTKeyFactorySpi;
+import org.bouncycastle.jcajce.provider.asymmetric.xmss.XMSSKeyFactorySpi;
+import org.bouncycastle.jcajce.provider.asymmetric.xmss.XMSSMTKeyFactorySpi;
 
 /**
  * The XMSS and XMSS^MT (RFC 8391, SP 800-208) services of the BC provider. The BC provider has
@@ -33,7 +33,7 @@ import org.bouncycastle.pqc.jcajce.provider.xmss.XMSSMTKeyFactorySpi;
  */
 public class XMSS
 {
-    private static final String PREFIX = "org.bouncycastle.pqc.jcajce.provider" + ".xmss.";
+    private static final String PREFIX = "org.bouncycastle.jcajce.provider.asymmetric" + ".xmss.";
 
     public static class Mappings
         extends AsymmetricAlgorithmProvider

@@ -46,9 +46,9 @@ import org.bouncycastle.internal.asn1.isara.IsaraObjectIdentifiers;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.pqc.jcajce.interfaces.StateAwareSignature;
 import org.bouncycastle.pqc.jcajce.interfaces.XMSSKey;
-import org.bouncycastle.pqc.jcajce.interfaces.XMSSPrivateKey;
+import org.bouncycastle.jcajce.interfaces.XMSSPrivateKey;
 import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
-import org.bouncycastle.pqc.jcajce.provider.xmss.BCXMSSPrivateKey;
+import org.bouncycastle.jcajce.provider.asymmetric.xmss.BCXMSSPrivateKey;
 import org.bouncycastle.pqc.jcajce.spec.XMSSParameterSpec;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
@@ -182,7 +182,11 @@ public class XMSSTest
 
         XMSSKey privKey2 = (XMSSKey)oIn.readObject();
 
-        assertEquals(privKey, privKey2);
+        // the stored stream names the pre-promotion org.bouncycastle.pqc.jcajce.provider.xmss class, so what
+        // comes back is of that class rather than the one the provider builds now, and each class's equals()
+        // requires its own type - the key material is what this test is about.
+        assertTrue(org.bouncycastle.util.Arrays.areEqual(
+            ((java.security.Key)privKey).getEncoded(), ((java.security.Key)privKey2).getEncoded()));
     }
 
     public void testPrivateKeyRecovery()

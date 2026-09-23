@@ -1,4 +1,4 @@
-package org.bouncycastle.pqc.jcajce.provider.xmss;
+package org.bouncycastle.jcajce.provider.asymmetric.xmss;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -11,28 +11,24 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.params.XMSSMTPrivateKeyParameters;
+import org.bouncycastle.crypto.params.XMSSPrivateKeyParameters;
 import org.bouncycastle.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.crypto.util.PrivateKeyInfoFactory;
-import org.bouncycastle.pqc.jcajce.interfaces.XMSSMTPrivateKey;
+import org.bouncycastle.pqc.jcajce.interfaces.XMSSPrivateKey;
 import org.bouncycastle.util.Exceptions;
 
-/**
- * @deprecated use {@link org.bouncycastle.jcajce.provider.asymmetric.xmss.BCXMSSMTPrivateKey} instead.
- */
-@Deprecated
-public class BCXMSSMTPrivateKey
-    implements PrivateKey, XMSSMTPrivateKey, Destroyable
+public class BCXMSSPrivateKey
+    implements PrivateKey, XMSSPrivateKey, Destroyable
 {
-    private static final long serialVersionUID = 7682140473044521395L;
+    private static final long serialVersionUID = 8568701712864512338L;
 
+    private transient XMSSPrivateKeyParameters keyParams;
     private transient ASN1ObjectIdentifier treeDigest;
-    private transient XMSSMTPrivateKeyParameters keyParams;
     private transient ASN1Set attributes;
 
-    public BCXMSSMTPrivateKey(
+    public BCXMSSPrivateKey(
         ASN1ObjectIdentifier treeDigest,
-        XMSSMTPrivateKeyParameters keyParams)
+        XMSSPrivateKeyParameters keyParams)
     {
         this(treeDigest, keyParams, null);
     }
@@ -49,9 +45,9 @@ public class BCXMSSMTPrivateKey
      * on being sharded once, with nothing to say so.
      * </p>
      */
-    BCXMSSMTPrivateKey(
+    BCXMSSPrivateKey(
         ASN1ObjectIdentifier treeDigest,
-        XMSSMTPrivateKeyParameters keyParams,
+        XMSSPrivateKeyParameters keyParams,
         ASN1Set attributes)
     {
         this.treeDigest = treeDigest;
@@ -59,7 +55,7 @@ public class BCXMSSMTPrivateKey
         this.attributes = attributes;
     }
 
-    public BCXMSSMTPrivateKey(PrivateKeyInfo keyInfo)
+    public BCXMSSPrivateKey(PrivateKeyInfo keyInfo)
         throws IOException
     {
         init(keyInfo);
@@ -70,9 +66,9 @@ public class BCXMSSMTPrivateKey
     {
         this.attributes = keyInfo.getAttributes();
         // Derive the tree digest from the recovered key rather than the AlgorithmIdentifier
-        // parameters: the RFC 9802 form (id-alg-xmssmt-hashsig) carries no XMSSMTKeyParams, so
-        // reading them would NPE. Mirrors BCXMSSMTPublicKey.init.
-        this.keyParams = (XMSSMTPrivateKeyParameters)PrivateKeyFactory.createKey(keyInfo);
+        // parameters: the RFC 9802 form (id-alg-xmss-hashsig) carries no XMSSKeyParams, so reading
+        // them would NPE. Mirrors BCXMSSPublicKey.init.
+        this.keyParams = (XMSSPrivateKeyParameters)PrivateKeyFactory.createKey(keyInfo);
         this.treeDigest = DigestUtil.getDigestOID(keyParams.getTreeDigest());
     }
 
@@ -95,14 +91,14 @@ public class BCXMSSMTPrivateKey
         return keyParams.getUsagesRemaining();
     }
 
-    public XMSSMTPrivateKey extractKeyShard(int usageCount)
+    public XMSSPrivateKey extractKeyShard(int usageCount)
     {
-        return new BCXMSSMTPrivateKey(this.treeDigest, keyParams.extractKeyShard(usageCount), this.attributes);
+        return new BCXMSSPrivateKey(this.treeDigest, keyParams.extractKeyShard(usageCount), this.attributes);
     }
 
     public String getAlgorithm()
     {
-        return "XMSSMT";
+        return "XMSS";
     }
 
     public String getFormat()
@@ -138,14 +134,9 @@ public class BCXMSSMTPrivateKey
         }
     }
 
-    CipherParameters getKeyParams()
-    {
-        return keyParams;
-    }
-
     /**
      * Whether these are the same key at the same position, which for a stateful key means the same
-     * traversal state too - the whole of which {@link XMSSMTPrivateKeyParameters#equals(Object)}
+     * traversal state too - the whole of which {@link XMSSPrivateKeyParameters#equals(Object)}
      * decides, this being the line that asks it.
      * <p>
      * It was written out here, over the accessors, and none of it belonged here: the fields it
@@ -179,9 +170,9 @@ public class BCXMSSMTPrivateKey
             return true;
         }
 
-        if (o instanceof BCXMSSMTPrivateKey)
+        if (o instanceof BCXMSSPrivateKey)
         {
-            BCXMSSMTPrivateKey otherKey = (BCXMSSMTPrivateKey)o;
+            BCXMSSPrivateKey otherKey = (BCXMSSPrivateKey)o;
 
             // a destroyed key no longer exposes its value, so it is only equal to itself. Ahead of
             // the delegation because the key parameters' own equals() reads the secret arrays as
@@ -203,6 +194,11 @@ public class BCXMSSMTPrivateKey
         return keyParams.hashCode();
     }
 
+    CipherParameters getKeyParams()
+    {
+        return keyParams;
+    }
+
     ASN1ObjectIdentifier getTreeDigestOID()
     {
         return treeDigest;
@@ -213,11 +209,6 @@ public class BCXMSSMTPrivateKey
         return keyParams.getParameters().getHeight();
     }
 
-    public int getLayers()
-    {
-        return keyParams.getParameters().getLayers();
-    }
-
     public String getTreeDigest()
     {
         return DigestUtil.getXMSSDigestName(treeDigest, keyParams.getParameters().getTreeDigestSize());
@@ -226,15 +217,15 @@ public class BCXMSSMTPrivateKey
     /**
      * Destroy this key, zeroizing the secret key material it holds.
      * <p>
-     * The secret key seed, the PRF key and the WOTS+ secrets retained by the per-layer BDS
-     * traversal states are zeroized; the public seed, root, index and tree nodes are retained, so
-     * {@link #getIndex()}, {@link #getUsagesRemaining()}, {@link #getHeight()},
-     * {@link #getLayers()} and {@link #getTreeDigest()} keep working and {@link #hashCode()} is
-     * stable. After destruction {@link #isDestroyed()} returns true, {@link #getEncoded()} and
-     * {@link #extractKeyShard(int)} throw {@link IllegalStateException}, the key can no longer be
-     * serialized, and a Signature refuses it at initSign. Shards extracted before destruction hold
-     * their own copies of the seeds and are unaffected. As the underlying
-     * {@link XMSSMTPrivateKeyParameters} object is destroyed, keys sharing it are invalidated too.
+     * The secret key seed, the PRF key and the WOTS+ secret retained by the BDS traversal state are
+     * zeroized; the public seed, root, index and tree nodes are retained, so {@link #getIndex()},
+     * {@link #getUsagesRemaining()}, {@link #getHeight()} and {@link #getTreeDigest()} keep
+     * working and {@link #hashCode()} is stable. After destruction {@link #isDestroyed()} returns
+     * true, {@link #getEncoded()} and {@link #extractKeyShard(int)} throw
+     * {@link IllegalStateException}, the key can no longer be serialized, and a Signature refuses
+     * it at initSign. Shards extracted before destruction hold their own copies of the seeds and
+     * are unaffected. As the underlying {@link XMSSPrivateKeyParameters} object is destroyed,
+     * keys sharing it are invalidated too.
      */
     public synchronized void destroy()
     {

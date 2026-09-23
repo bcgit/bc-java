@@ -1,4 +1,4 @@
-package org.bouncycastle.pqc.jcajce.provider.xmss;
+package org.bouncycastle.jcajce.provider.asymmetric.xmss;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -8,33 +8,27 @@ import java.security.PublicKey;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.CipherParameters;
-import org.bouncycastle.crypto.params.XMSSPublicKeyParameters;
+import org.bouncycastle.crypto.params.XMSSMTPublicKeyParameters;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.crypto.util.SubjectPublicKeyInfoFactory;
-import org.bouncycastle.pqc.jcajce.interfaces.XMSSKey;
+import org.bouncycastle.pqc.jcajce.interfaces.XMSSMTKey;
 import org.bouncycastle.util.Arrays;
 
-/**
- * @deprecated use {@link org.bouncycastle.jcajce.provider.asymmetric.xmss.BCXMSSPublicKey} instead.
- */
-@Deprecated
-public class BCXMSSPublicKey
-    implements PublicKey, XMSSKey
+public class BCXMSSMTPublicKey
+    implements PublicKey, XMSSMTKey
 {
-    private static final long serialVersionUID = -5617456225328969766L;
-    
-    private transient XMSSPublicKeyParameters keyParams;
-    private transient ASN1ObjectIdentifier treeDigest;
+    private static final long serialVersionUID = 3230324130542413475L;
 
-    public BCXMSSPublicKey(
-        ASN1ObjectIdentifier treeDigest,
-        XMSSPublicKeyParameters keyParams)
+    private transient ASN1ObjectIdentifier treeDigest;
+    private transient XMSSMTPublicKeyParameters keyParams;
+
+    public BCXMSSMTPublicKey(ASN1ObjectIdentifier treeDigest, XMSSMTPublicKeyParameters keyParams)
     {
         this.treeDigest = treeDigest;
         this.keyParams = keyParams;
     }
 
-    public BCXMSSPublicKey(SubjectPublicKeyInfo keyInfo)
+    public BCXMSSMTPublicKey(SubjectPublicKeyInfo keyInfo)
         throws IOException
     {
         init(keyInfo);
@@ -43,44 +37,8 @@ public class BCXMSSPublicKey
     private void init(SubjectPublicKeyInfo keyInfo)
         throws IOException
     {
-        this.keyParams = (XMSSPublicKeyParameters)PublicKeyFactory.createKey(keyInfo);
-        this.treeDigest = DigestUtil.getDigestOID(keyParams.getTreeDigest());
-    }
-
-    /**
-     * @return name of the algorithm - "XMSS"
-     */
-    public final String getAlgorithm()
-    {
-        return "XMSS";
-    }
-
-    public byte[] getEncoded()
-    {
-        try
-        {
-            SubjectPublicKeyInfo pki = SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(keyParams);
-            return pki.getEncoded();
-        }
-        catch (IOException e)
-        {
-            return null;
-        }
-    }
-
-    public String getFormat()
-    {
-        return "X.509";
-    }
-
-    CipherParameters getKeyParams()
-    {
-        return keyParams;
-    }
-
-    ASN1ObjectIdentifier getTreeDigestOID()
-    {
-        return treeDigest;
+        this.keyParams = (XMSSMTPublicKeyParameters)PublicKeyFactory.createKey(keyInfo);
+        this.treeDigest =  DigestUtil.getDigestOID(this.keyParams.getTreeDigest());
     }
 
     public boolean equals(Object o)
@@ -90,9 +48,9 @@ public class BCXMSSPublicKey
             return true;
         }
 
-        if (o instanceof BCXMSSPublicKey)
+        if (o instanceof BCXMSSMTPublicKey)
         {
-            BCXMSSPublicKey otherKey = (BCXMSSPublicKey)o;
+            BCXMSSMTPublicKey otherKey = (BCXMSSMTPublicKey)o;
 
             try
             {
@@ -120,9 +78,51 @@ public class BCXMSSPublicKey
         }
     }
 
+    /**
+     * @return name of the algorithm - "XMSSMT"
+     */
+    public final String getAlgorithm()
+    {
+        return "XMSSMT";
+    }
+
+    public byte[] getEncoded()
+    {
+        try
+        {
+            SubjectPublicKeyInfo pki = SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(keyParams);
+
+            return pki.getEncoded();
+        }
+        catch (IOException e)
+        {
+            return null;
+        }
+    }
+
+    public String getFormat()
+    {
+        return "X.509";
+    }
+
+    CipherParameters getKeyParams()
+    {
+        return keyParams;
+    }
+
+    ASN1ObjectIdentifier getTreeDigestOID()
+    {
+        return treeDigest;
+    }
+
     public int getHeight()
     {
         return keyParams.getParameters().getHeight();
+    }
+
+    public int getLayers()
+    {
+        return keyParams.getParameters().getLayers();
     }
 
     public String getTreeDigest()

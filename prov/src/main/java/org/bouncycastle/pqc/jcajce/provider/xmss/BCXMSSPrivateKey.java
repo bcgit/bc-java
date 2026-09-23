@@ -17,6 +17,10 @@ import org.bouncycastle.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.pqc.jcajce.interfaces.XMSSPrivateKey;
 import org.bouncycastle.util.Exceptions;
 
+/**
+ * @deprecated use {@link org.bouncycastle.jcajce.provider.asymmetric.xmss.BCXMSSPrivateKey} instead.
+ */
+@Deprecated
 public class BCXMSSPrivateKey
     implements PrivateKey, XMSSPrivateKey, Destroyable
 {

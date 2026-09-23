@@ -1,4 +1,4 @@
-package org.bouncycastle.pqc.jcajce.provider.xmss;
+package org.bouncycastle.jcajce.provider.asymmetric.xmss;
 
 import java.io.IOException;
 import java.security.InvalidKeyException;
@@ -17,11 +17,7 @@ import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
 import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 
-/**
- * @deprecated use {@link org.bouncycastle.jcajce.provider.asymmetric.xmss.XMSSMTKeyFactorySpi} instead.
- */
-@Deprecated
-public class XMSSMTKeyFactorySpi
+public class XMSSKeyFactorySpi
     extends KeyFactorySpi
     implements AsymmetricKeyInfoConverter
 {
@@ -72,14 +68,14 @@ public class XMSSMTKeyFactorySpi
     public final KeySpec engineGetKeySpec(Key key, Class keySpec)
         throws InvalidKeySpecException
     {
-        if (key instanceof BCXMSSMTPrivateKey)
+        if (key instanceof BCXMSSPrivateKey)
         {
             if (PKCS8EncodedKeySpec.class.isAssignableFrom(keySpec))
             {
                 return new PKCS8EncodedKeySpec(key.getEncoded());
             }
         }
-        else if (key instanceof BCXMSSMTPublicKey)
+        else if (key instanceof BCXMSSPublicKey)
         {
             if (X509EncodedKeySpec.class.isAssignableFrom(keySpec))
             {
@@ -99,7 +95,7 @@ public class XMSSMTKeyFactorySpi
     public final Key engineTranslateKey(Key key)
         throws InvalidKeyException
     {
-        if (key instanceof BCXMSSMTPrivateKey || key instanceof BCXMSSMTPublicKey)
+        if (key instanceof BCXMSSPrivateKey || key instanceof BCXMSSPublicKey)
         {
             return key;
         }
@@ -110,12 +106,12 @@ public class XMSSMTKeyFactorySpi
     public PrivateKey generatePrivate(PrivateKeyInfo keyInfo)
         throws IOException
     {
-        return new BCXMSSMTPrivateKey(keyInfo);
+        return new BCXMSSPrivateKey(keyInfo);
     }
 
     public PublicKey generatePublic(SubjectPublicKeyInfo keyInfo)
         throws IOException
     {
-        return new BCXMSSMTPublicKey(keyInfo);
+        return new BCXMSSPublicKey(keyInfo);
     }
 }

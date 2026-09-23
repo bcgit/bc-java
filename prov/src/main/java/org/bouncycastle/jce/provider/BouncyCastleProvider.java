@@ -48,8 +48,8 @@ import org.bouncycastle.pqc.jcajce.provider.snova.SnovaKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.sqisign.SQIsignKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.uov.UOVKeyFactorySpi;
 import org.bouncycastle.pqc.jcajce.provider.sphincs.Sphincs256KeyFactorySpi;
-import org.bouncycastle.pqc.jcajce.provider.xmss.XMSSKeyFactorySpi;
-import org.bouncycastle.pqc.jcajce.provider.xmss.XMSSMTKeyFactorySpi;
+import org.bouncycastle.jcajce.provider.asymmetric.xmss.XMSSKeyFactorySpi;
+import org.bouncycastle.jcajce.provider.asymmetric.xmss.XMSSMTKeyFactorySpi;
 import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Strings;
 

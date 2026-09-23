@@ -1,4 +1,4 @@
-package org.bouncycastle.pqc.jcajce.provider.xmss;
+package org.bouncycastle.jcajce.provider.asymmetric.xmss;
 
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidParameterException;
@@ -17,12 +17,8 @@ import org.bouncycastle.crypto.params.XMSSMTParameters;
 import org.bouncycastle.crypto.params.XMSSMTPrivateKeyParameters;
 import org.bouncycastle.crypto.params.XMSSMTPublicKeyParameters;
 import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
-import org.bouncycastle.pqc.jcajce.spec.XMSSMTParameterSpec;
+import org.bouncycastle.jcajce.spec.XMSSMTParameterSpec;
 
-/**
- * @deprecated use {@link org.bouncycastle.jcajce.provider.asymmetric.xmss.XMSSMTKeyPairGeneratorSpi} instead.
- */
-@Deprecated
 public class XMSSMTKeyPairGeneratorSpi
     extends java.security.KeyPairGenerator
 {
