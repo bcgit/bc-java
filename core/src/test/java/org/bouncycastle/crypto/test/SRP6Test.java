@@ -429,7 +429,7 @@ public class SRP6Test extends SimpleTest
         try
         {
             server.calculateSecret(ZERO);
-            fail("Client failed to detect invalid value for 'A'");
+            fail("Server failed to detect invalid value for 'A'");
         }
         catch (CryptoException e)
         {
@@ -439,7 +439,7 @@ public class SRP6Test extends SimpleTest
         try
         {
             server.calculateSecret(group.getN());
-            fail("Client failed to detect invalid value for 'A'");
+            fail("Server failed to detect invalid value for 'A'");
         }
         catch (CryptoException e)
         {
