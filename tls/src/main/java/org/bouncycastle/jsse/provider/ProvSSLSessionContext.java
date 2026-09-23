@@ -17,12 +17,14 @@ import javax.net.ssl.SSLSession;
 import javax.net.ssl.SSLSessionContext;
 
 import org.bouncycastle.jsse.BCSNIServerName;
+import org.bouncycastle.jsse.BCSSLContext;
+import org.bouncycastle.jsse.BCSSLSessionContext;
 import org.bouncycastle.tls.SessionID;
 import org.bouncycastle.tls.TlsSession;
 import org.bouncycastle.tls.TlsUtils;
 
 class ProvSSLSessionContext
-    implements SSLSessionContext
+    implements SSLSessionContext, BCSSLSessionContext
 {
     private static final Logger LOG = Logger.getLogger(ProvSSLSessionContext.class.getName());
 
@@ -54,6 +56,11 @@ class ProvSSLSessionContext
     ProvSSLSessionContext(ContextData contextData)
     {
         this.contextData = contextData;
+    }
+
+    public BCSSLContext getBCSSLContext()
+    {
+        return contextData;
     }
 
     ContextData getContextData()

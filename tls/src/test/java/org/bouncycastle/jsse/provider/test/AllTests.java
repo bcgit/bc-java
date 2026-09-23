@@ -24,6 +24,7 @@ public class AllTests
         suite.addTestSuite(BasicClientAuthTlsTest.class);
         suite.addTestSuite(BasicTlsTest.class);
         suite.addTestSuite(ConfigTest.class);
+        suite.addTestSuite(DefaultParametersTest.class);
         suite.addTestSuite(ECDSACredentialsTest.class);
         suite.addTestSuite(EdDSACredentialsTest.class);
         suite.addTestSuite(HandshakeTimeoutTest.class);
