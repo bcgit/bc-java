@@ -7,8 +7,12 @@ import java.net.Socket;
 import javax.net.ssl.SSLParameters;
 import javax.net.ssl.SSLServerSocket;
 
+import org.bouncycastle.jsse.BCSSLParameters;
+import org.bouncycastle.jsse.BCSSLServerSocket;
+
 class ProvSSLServerSocket
     extends SSLServerSocket
+    implements BCSSLServerSocket
 {
     protected final ContextData contextData;
     protected final ProvSSLParameters sslParameters;
@@ -88,6 +92,11 @@ class ProvSSLServerSocket
         return sslParameters.getNeedClientAuth();
     }
 
+    public synchronized BCSSLParameters getParameters()
+    {
+        return SSLParametersUtil.getParameters(sslParameters);
+    }
+
     @Override
     public synchronized SSLParameters getSSLParameters()
     {
@@ -140,6 +149,11 @@ class ProvSSLServerSocket
     public synchronized void setNeedClientAuth(boolean need)
     {
         sslParameters.setNeedClientAuth(need);
+    }
+
+    public synchronized void setParameters(BCSSLParameters parameters)
+    {
+        SSLParametersUtil.setParameters(this.sslParameters, parameters);
     }
 
     @Override
