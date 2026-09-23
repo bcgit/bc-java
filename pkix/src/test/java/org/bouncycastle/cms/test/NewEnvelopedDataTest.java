@@ -50,6 +50,7 @@ import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.BERSequence;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.DERTaggedObject;
@@ -67,6 +68,7 @@ import org.bouncycastle.asn1.cms.GCMParameters;
 import org.bouncycastle.asn1.cms.KeyAgreeRecipientInfo;
 import org.bouncycastle.asn1.cms.OtherRecipientInfo;
 import org.bouncycastle.asn1.cms.RecipientEncryptedKey;
+import org.bouncycastle.asn1.cms.KeyTransRecipientInfo;
 import org.bouncycastle.asn1.cms.RecipientInfo;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.gm.GMObjectIdentifiers;
@@ -771,6 +773,94 @@ public class NewEnvelopedDataTest
         {
             // expected
         }
+    }
+
+    /**
+     * RFC 5990 sec. 4: the KEM derives the key of the DEM's key-wrapping algorithm, so the keyLength
+     * in the RsaKemParameters is fixed by that algorithm. It used to be taken from the message and
+     * handed to the KDF as the number of bits to produce, so a few hundred bytes of CMS could ask for
+     * an arbitrary allocation - 2^26 octets exhausted a 64MiB heap, and 2^28 overflowed the bit count
+     * into a negative array size - with the length only checked once the derivation had been done.
+     */
+    public void testKTSKeyLengthMustMatchWrapAlgorithm()
+        throws Exception
+    {
+        byte[] data = "WallaWallaWashington".getBytes();
+
+        CMSEnvelopedDataGenerator edGen = new CMSEnvelopedDataGenerator();
+
+        edGen.addRecipientInfoGenerator(new JceKTSKeyTransRecipientInfoGenerator(_reciCert, "AES", 128).setProvider(BC));
+
+        CMSEnvelopedData ed = edGen.generate(
+            new CMSProcessableByteArray(data),
+            new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES128_CBC).setProvider(BC).build());
+
+        RecipientInformation recipient = (RecipientInformation)ed.getRecipientInfos().getRecipients().iterator().next();
+        KeyTransRecipientId rid = (KeyTransRecipientId)recipient.getRID();
+
+        // the message as generated still recovers
+        assertTrue(Arrays.equals(data,
+            recipient.getContent(new JceKTSKeyTransEnvelopedRecipient(_reciKP.getPrivate(), rid).setProvider(BC))));
+
+        // the same message with only the declared key length rewritten does not
+        BigInteger[] lengths = new BigInteger[]{
+            BigInteger.valueOf(1048576), BigInteger.valueOf(67108864), BigInteger.valueOf(268435456) };
+
+        for (int i = 0; i != lengths.length; i++)
+        {
+            CMSEnvelopedData tampered = new CMSEnvelopedData(rewriteKTSKeyLength(ed.getEncoded(), lengths[i]));
+            RecipientInformation tamperedRecipient =
+                (RecipientInformation)tampered.getRecipientInfos().getRecipients().iterator().next();
+
+            try
+            {
+                tamperedRecipient.getContent(new JceKTSKeyTransEnvelopedRecipient(_reciKP.getPrivate(), rid).setProvider(BC));
+
+                fail("keyLength of " + lengths[i] + " accepted");
+            }
+            catch (CMSException e)
+            {
+                assertTrue(e.getMessage(), e.getMessage().indexOf("inconsistent with wrap algorithm") > 0);
+            }
+        }
+    }
+
+    private static byte[] rewriteKTSKeyLength(byte[] enc, BigInteger keyLength)
+        throws IOException
+    {
+        ContentInfo contentInfo = ContentInfo.getInstance(enc);
+        EnvelopedData env = EnvelopedData.getInstance(contentInfo.getContent());
+        KeyTransRecipientInfo ktri = KeyTransRecipientInfo.getInstance(
+            RecipientInfo.getInstance(env.getRecipientInfos().getObjectAt(0)).getInfo());
+
+        AlgorithmIdentifier keyEncAlg = ktri.getKeyEncryptionAlgorithm();
+        ASN1Sequence hybrid = ASN1Sequence.getInstance(keyEncAlg.getParameters());
+        AlgorithmIdentifier kem = AlgorithmIdentifier.getInstance(hybrid.getObjectAt(0));
+        ASN1Sequence kemParams = ASN1Sequence.getInstance(kem.getParameters());
+
+        ASN1EncodableVector newKemParams = new ASN1EncodableVector();
+        newKemParams.add(kemParams.getObjectAt(0));
+        newKemParams.add(new ASN1Integer(keyLength));
+
+        ASN1EncodableVector newHybrid = new ASN1EncodableVector();
+        newHybrid.add(new AlgorithmIdentifier(kem.getAlgorithm(), new DERSequence(newKemParams)));
+        newHybrid.add(hybrid.getObjectAt(1));
+
+        ASN1EncodableVector newKtri = new ASN1EncodableVector();
+        newKtri.add(ktri.getVersion());
+        newKtri.add(ktri.getRecipientIdentifier());
+        newKtri.add(new AlgorithmIdentifier(keyEncAlg.getAlgorithm(), new DERSequence(newHybrid)));
+        newKtri.add(ktri.getEncryptedKey());
+
+        ASN1EncodableVector recipients = new ASN1EncodableVector();
+        recipients.add(new DERSequence(newKtri));
+
+        ASN1EncodableVector newEnv = new ASN1EncodableVector();
+        newEnv.add(env.getVersion());
+        newEnv.add(new DERSet(recipients));
+        newEnv.add(env.getEncryptedContentInfo());
+
+        return new ContentInfo(contentInfo.getContentType(), new BERSequence(newEnv)).getEncoded();
     }
 
     public void testKTSKeyTransAllowedContentAlgorithms()
