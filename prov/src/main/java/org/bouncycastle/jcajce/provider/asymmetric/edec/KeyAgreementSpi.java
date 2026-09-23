@@ -92,6 +92,11 @@ public class KeyAgreementSpi
         }
         else if (params != null)
         {
+            if (kaAlgorithm.indexOf('U') >= 0)
+            {
+                throw new InvalidAlgorithmParameterException(kaAlgorithm + " key agreement requires DHUParameterSpec for initialisation");
+            }
+
             agreement.init(priv);
 
             if (params instanceof UserKeyingMaterialSpec)
@@ -110,6 +115,11 @@ public class KeyAgreementSpi
         }
         else
         {
+            if (kaAlgorithm.indexOf('U') >= 0)
+            {
+                throw new InvalidAlgorithmParameterException(kaAlgorithm + " key agreement requires DHUParameterSpec for initialisation");
+            }
+
             agreement.init(priv);
         }
 

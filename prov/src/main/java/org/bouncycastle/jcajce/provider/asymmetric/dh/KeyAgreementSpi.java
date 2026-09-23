@@ -342,6 +342,16 @@ public class KeyAgreementSpi
             this.g = privKey.getParams().getG();
         }
 
+        // the unified and MQV agreements take their ephemeral keys from the spec, and doPhase reads it back - without one they would fail there rather than here.
+        if (unifiedAgreement != null && dheParameters == null)
+        {
+            throw new InvalidAlgorithmParameterException(kaAlgorithm + " key agreement requires DHUParameterSpec for initialisation");
+        }
+        if (mqvAgreement != null && mqvParameters == null)
+        {
+            throw new InvalidAlgorithmParameterException(kaAlgorithm + " key agreement requires MQVParameterSpec for initialisation");
+        }
+
         this.x = privKey.getX();
     }
 
@@ -355,6 +365,16 @@ public class KeyAgreementSpi
         if (!(key instanceof DHPrivateKey))
         {
             throw new InvalidKeyException("DHKeyAgreement requires DHPrivateKey");
+        }
+
+        // the ephemeral half of a unified or MQV agreement only arrives with a spec, so this entry point cannot initialise one.
+        if (unifiedAgreement != null)
+        {
+            throw new InvalidKeyException(kaAlgorithm + " key agreement requires DHUParameterSpec for initialisation");
+        }
+        if (mqvAgreement != null)
+        {
+            throw new InvalidKeyException(kaAlgorithm + " key agreement requires MQVParameterSpec for initialisation");
         }
 
         DHPrivateKey    privKey = (DHPrivateKey)key;

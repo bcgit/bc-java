@@ -271,6 +271,11 @@ public class KeyAgreementSpi
             {
                 throw new InvalidAlgorithmParameterException("no KDF specified for UserKeyingMaterialSpec");
             }
+            if (!(agreement instanceof RawAgreement))
+            {
+                throw new InvalidAlgorithmParameterException(kaAlgorithm + " key agreement requires "
+                    + getSimpleName(DHUParameterSpec.class) + " for initialisation");
+            }
             ECPrivateKeyParameters privKey = (ECPrivateKeyParameters)ECUtils.generatePrivateKeyParameter((PrivateKey)key);
             this.parameters = privKey.getParameters();
             ukmParameters = (parameterSpec instanceof UserKeyingMaterialSpec) ? ((UserKeyingMaterialSpec)parameterSpec).getUserKeyingMaterial() : null;

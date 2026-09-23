@@ -64,6 +64,7 @@ public class RegressionTest
         new JKSStoreTest(),
         new KeccakTest(),
         new KeyAgreementKeySizeTest(),
+        new KeyAgreementInitParametersTest(),
         new Argon2KeyFactoryTest(),
         new KeyStoreTest(),
         new MacTest(),

@@ -25,6 +25,8 @@ import org.bouncycastle.jce.interfaces.ECPublicKey;
 public class KeyAgreementSpi
     extends BaseAgreementSpi
 {
+    private static final byte[] DEFAULT_UKM = new byte[]{ 1 };
+
     private String                 kaAlgorithm;
 
     private ECDomainParameters     parameters;
@@ -105,7 +107,10 @@ public class KeyAgreementSpi
 
         ECPrivateKeyParameters privKey = (ECPrivateKeyParameters)ECUtil.generatePrivateKeyParameter((PrivateKey)key);
         this.parameters = privKey.getParameters();
-        ukmParameters = (parameterSpec instanceof UserKeyingMaterialSpec) ? ((UserKeyingMaterialSpec)parameterSpec).getUserKeyingMaterial() : null;
+        // RFC 7836 sec. 4.3: the UKM is optional for VKO and takes the value 1 when it is not given.
+        ukmParameters = (parameterSpec instanceof UserKeyingMaterialSpec)
+            ? ((UserKeyingMaterialSpec)parameterSpec).getUserKeyingMaterial()
+            : DEFAULT_UKM;
         agreement.init(new ParametersWithUKM(privKey, ukmParameters));
     }
 
