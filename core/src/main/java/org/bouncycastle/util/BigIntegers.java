@@ -672,8 +672,8 @@ public final class BigIntegers
     public static BigInteger createBlindedExponent(BigInteger exponent, BigInteger groupOrder, SecureRandom random)
     {
         int randomBits = 7;
-
-        return exponent.add(createRandomBigInteger(randomBits, random).add(BigInteger.valueOf(128)).multiply(groupOrder));
+        BigInteger blind = createRandomBigInteger(randomBits, random).setBit(randomBits);
+        return exponent.add(blind.multiply(groupOrder));
     }
 
     // Hexadecimal value of the product of the 131 smallest odd primes from 3 to 743

@@ -96,6 +96,7 @@ public class SRP6Server
 
     private BigInteger calculateS()
     {
+        // TODO Consider base blinding to protect 'v'
         return v.modPow(u, N).multiply(A).mod(N).modPow(blindExponent(b), N);
     }
 
