@@ -48,12 +48,14 @@ import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AccessDescription;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.AuthorityInformationAccess;
 import org.bouncycastle.asn1.x509.AuthorityKeyIdentifier;
 import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.CRLDistPoint;
+import org.bouncycastle.asn1.x509.CRLValidatorException;
 import org.bouncycastle.asn1.x509.DistributionPoint;
 import org.bouncycastle.asn1.x509.DistributionPointName;
 import org.bouncycastle.asn1.x509.Extension;
@@ -62,6 +64,7 @@ import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.asn1.x509.GeneralSubtree;
 import org.bouncycastle.asn1.x509.IssuingDistributionPoint;
 import org.bouncycastle.asn1.x509.NameConstraints;
+import org.bouncycastle.asn1.x509.PKIXCRLValidator;
 import org.bouncycastle.asn1.x509.PolicyInformation;
 import org.bouncycastle.asn1.x509.qualified.Iso4217CurrencyCode;
 import org.bouncycastle.asn1.x509.qualified.MonetaryValue;
@@ -2132,6 +2135,8 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
             crl_iter = new ArrayList().iterator();
         }
 
+        DistributionPoint[] distPoints = getDistributionPoints(cert);
+
         boolean validCrlFound = false;
         X509CRL crl = null;
         while (crl_iter.hasNext())
@@ -2144,6 +2149,13 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
 
             if (nextUpdate == null || validDate.before(nextUpdate))
             {
+                // a CRL only says something about this certificate if its scope covers it - keep looking otherwise, rather than taking an out of scope CRL from the issuer as proof of non-revocation.
+                if (!isScopedToCertificate(crl, distPoints, cert))
+                {
+                    crl = null;
+                    continue;
+                }
+
                 validCrlFound = true;
                 ErrorBundle msg = new ErrorBundle(RESOURCE_NAME, "CertPathReviewer.localValidCRL", arguments);
                 addNotification(msg,index);
@@ -2440,6 +2452,117 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
         }
     }
     
+    /**
+     * The distribution points a CRL may be scoped to for the passed in certificate: the ones in the
+     * certificate's CRL distribution points extension, followed by a distribution point naming the
+     * certificate issuer, which is what the cert path validation engine falls back to for a CRL the
+     * certificate's own distribution points do not name.
+     */
+    private DistributionPoint[] getDistributionPoints(X509Certificate cert)
+    {
+        List dps = new ArrayList();
+
+        try
+        {
+            ASN1Primitive ext = getExtensionValue(cert, CRL_DIST_POINTS);
+            if (ext != null)
+            {
+                DistributionPoint[] points = CRLDistPoint.getInstance(ext).getDistributionPoints();
+                for (int i = 0; i != points.length; i++)
+                {
+                    dps.add(points[i]);
+                }
+            }
+        }
+        catch (Exception e)
+        {
+            // a distribution points extension which will not decode is reported by the caller
+        }
+
+        try
+        {
+            X500Name issuer = X500Name.getInstance(getEncodedIssuerPrincipal(cert).getEncoded());
+
+            dps.add(new DistributionPoint(new DistributionPointName(0,
+                new GeneralNames(new GeneralName(GeneralName.directoryName, issuer))), null, null));
+        }
+        catch (Exception e)
+        {
+            // an issuer which will not re-encode leaves the certificate's own distribution points
+        }
+
+        return (DistributionPoint[])dps.toArray(new DistributionPoint[dps.size()]);
+    }
+
+    /**
+     * Whether the passed in CRL is in scope for the certificate under test, applying the RFC 5280
+     * sec. 6.3.3 (b)(2)(i) distribution point name match and the sec. 6.3.3 (d) reasons intersection
+     * that {@link PKIXCRLValidator} implements for the cert path validation engine. A CRL carrying no
+     * issuing distribution point is in scope for everything its issuer issues; one whose scope cannot
+     * be read, or which covers only some revocation reasons, is not evidence about this certificate.
+     */
+    private boolean isScopedToCertificate(X509CRL crl, DistributionPoint[] distPoints, X509Certificate cert)
+    {
+        IssuingDistributionPoint idp;
+        try
+        {
+            ASN1Primitive idpExt = getExtensionValue(crl, ISSUING_DISTRIBUTION_POINT);
+            if (idpExt == null)
+            {
+                return true;
+            }
+
+            idp = IssuingDistributionPoint.getInstance(idpExt);
+        }
+        catch (Exception e)
+        {
+            return false;
+        }
+
+        for (int i = 0; i != distPoints.length; i++)
+        {
+            if (isScopedToDistributionPoint(idp, distPoints[i], crl, cert))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private boolean isScopedToDistributionPoint(IssuingDistributionPoint idp, DistributionPoint dp, X509CRL crl,
+        X509Certificate cert)
+    {
+        try
+        {
+            X500Name crlIssuer = null;
+            if (PKIXCRLValidator.requiresCRLIssuer(idp))
+            {
+                crlIssuer = X500Name.getInstance(crl.getIssuerX500Principal().getEncoded());
+            }
+
+            X500Name certIssuer = null;
+            if (PKIXCRLValidator.requiresCertificateIssuer(idp, dp))
+            {
+                certIssuer = X500Name.getInstance(getEncodedIssuerPrincipal(cert).getEncoded());
+            }
+
+            // (b) (2) (i)
+            PKIXCRLValidator.checkDistributionPointName(idp, dp, crlIssuer, certIssuer);
+        }
+        catch (CRLValidatorException e)
+        {
+            return false;
+        }
+        catch (Exception e)
+        {
+            return false;
+        }
+
+        // (d) - the reviewer takes its answer from a single CRL, so one covering only some of the reasons cannot settle the certificate's status on its own.
+        return PKIXCRLValidator.intersectReasons(idp, dp) == PKIXCRLValidator.ALL_REASONS;
+    }
+
     protected Vector getCRLDistUrls(CRLDistPoint crlDistPoints)
     {
         Vector urls = new Vector();
