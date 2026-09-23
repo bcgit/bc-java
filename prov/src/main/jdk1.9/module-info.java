@@ -9,6 +9,7 @@ module org.bouncycastle.provider
     opens org.bouncycastle.jcajce.provider.asymmetric.cmce to java.base;
     opens org.bouncycastle.jcajce.provider.asymmetric.edec to java.base;
     opens org.bouncycastle.jcajce.provider.asymmetric.frodokem to java.base;
+    opens org.bouncycastle.jcajce.provider.asymmetric.lms to java.base;
     opens org.bouncycastle.jcajce.provider.asymmetric.mldsa to java.base;
     opens org.bouncycastle.jcajce.provider.asymmetric.mlkem to java.base;
     opens org.bouncycastle.jcajce.provider.asymmetric.slhdsa to java.base;
@@ -111,6 +112,7 @@ module org.bouncycastle.provider
     exports org.bouncycastle.jcajce.provider.asymmetric.gost;
     exports org.bouncycastle.jcajce.provider.asymmetric.frodokem;
     exports org.bouncycastle.jcajce.provider.asymmetric.ies;
+    exports org.bouncycastle.jcajce.provider.asymmetric.lms;
     exports org.bouncycastle.jcajce.provider.asymmetric.mldsa;
     exports org.bouncycastle.jcajce.provider.asymmetric.mlkem;
     exports org.bouncycastle.jcajce.provider.asymmetric.rsa;

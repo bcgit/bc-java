@@ -1,4 +1,4 @@
-package org.bouncycastle.pqc.jcajce.provider.lms;
+package org.bouncycastle.jcajce.provider.asymmetric.lms;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -16,10 +16,6 @@ import org.bouncycastle.pqc.jcajce.interfaces.LMSKey;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Encodable;
 
-/**
- * @deprecated use {@link org.bouncycastle.jcajce.provider.asymmetric.lms.BCLMSPublicKey} instead.
- */
-@Deprecated
 public class BCLMSPublicKey
     implements PublicKey, LMSKey
 {

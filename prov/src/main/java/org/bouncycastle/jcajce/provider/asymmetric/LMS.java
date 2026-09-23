@@ -6,7 +6,7 @@ import org.bouncycastle.jcajce.provider.util.AsymmetricAlgorithmProvider;
 
 public class LMS
 {
-    private static final String PREFIX = "org.bouncycastle.pqc.jcajce.provider" + ".lms.";
+    private static final String PREFIX = "org.bouncycastle.jcajce.provider.asymmetric" + ".lms.";
 
     public static class Mappings
         extends AsymmetricAlgorithmProvider

@@ -1,8 +1,8 @@
-package org.bouncycastle.pqc.jcajce.provider.lms;
+package org.bouncycastle.jcajce.provider.asymmetric.lms;
 
 import java.security.InvalidAlgorithmParameterException;
-import java.security.KeyPair;
 import java.security.InvalidParameterException;
+import java.security.KeyPair;
 import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 
@@ -11,26 +11,22 @@ import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.KeyGenerationParameters;
-import org.bouncycastle.crypto.params.HSSKeyGenerationParameters;
 import org.bouncycastle.crypto.generators.HSSKeyPairGenerator;
+import org.bouncycastle.crypto.generators.LMSKeyPairGenerator;
+import org.bouncycastle.crypto.params.HSSKeyGenerationParameters;
 import org.bouncycastle.crypto.params.HSSPrivateKeyParameters;
 import org.bouncycastle.crypto.params.HSSPublicKeyParameters;
 import org.bouncycastle.crypto.params.LMOtsParameters;
 import org.bouncycastle.crypto.params.LMSKeyGenerationParameters;
-import org.bouncycastle.crypto.generators.LMSKeyPairGenerator;
 import org.bouncycastle.crypto.params.LMSParameters;
 import org.bouncycastle.crypto.params.LMSPrivateKeyParameters;
 import org.bouncycastle.crypto.params.LMSPublicKeyParameters;
 import org.bouncycastle.crypto.params.LMSigParameters;
-import org.bouncycastle.pqc.jcajce.spec.LMSHSSKeyGenParameterSpec;
+import org.bouncycastle.jcajce.spec.LMSHSSKeyGenParameterSpec;
+import org.bouncycastle.jcajce.spec.LMSKeyGenParameterSpec;
 import org.bouncycastle.pqc.jcajce.spec.LMSHSSParameterSpec;
-import org.bouncycastle.pqc.jcajce.spec.LMSKeyGenParameterSpec;
 import org.bouncycastle.pqc.jcajce.spec.LMSParameterSpec;
 
-/**
- * @deprecated use {@link org.bouncycastle.jcajce.provider.asymmetric.lms.LMSKeyPairGeneratorSpi} instead.
- */
-@Deprecated
 public class LMSKeyPairGeneratorSpi
     extends java.security.KeyPairGenerator
 {

@@ -4,14 +4,11 @@ import java.security.Key;
 
 /**
  * Base interface for Leighton-Micali Hash-Based Signatures (LMS) keys.
+ *
+ * @deprecated use {@link org.bouncycastle.jcajce.interfaces.LMSKey} instead.
  */
+@Deprecated
 public interface LMSKey
-    extends Key
+    extends org.bouncycastle.jcajce.interfaces.LMSKey
 {
-    /**
-     * Return the number of levels (L) associated with the key.
-     *
-     * @return L.
-     */
-    int getLevels();
 }

@@ -1,4 +1,4 @@
-package org.bouncycastle.pqc.jcajce.provider.lms;
+package org.bouncycastle.jcajce.provider.asymmetric.lms;
 
 import java.security.InvalidKeyException;
 import java.security.PrivateKey;
@@ -9,17 +9,14 @@ import java.security.SignatureException;
 import java.security.spec.AlgorithmParameterSpec;
 
 import org.bouncycastle.crypto.Digest;
-import org.bouncycastle.crypto.digests.NullDigest;
 import org.bouncycastle.crypto.ExhaustedPrivateKeyException;
-import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
-import org.bouncycastle.crypto.signers.lms.LMSContext;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.crypto.digests.NullDigest;
 import org.bouncycastle.crypto.signers.LMSContextBasedSigner;
 import org.bouncycastle.crypto.signers.LMSContextBasedVerifier;
+import org.bouncycastle.crypto.signers.lms.LMSContext;
+import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 
-/**
- * @deprecated use {@link org.bouncycastle.jcajce.provider.asymmetric.lms.LMSSignatureSpi} instead.
- */
-@Deprecated
 public class LMSSignatureSpi
     extends Signature
 {
@@ -43,16 +40,27 @@ public class LMSSignatureSpi
     protected void engineInitVerify(PublicKey publicKey)
         throws InvalidKeyException
     {
+        digest = new NullDigest();
+
+        digest.reset();
+
         if (publicKey instanceof BCLMSPublicKey)
         {
-            digest = new NullDigest();
-            
-            digest.reset();
             lmOtsVerifier = (LMSContextBasedVerifier)((BCLMSPublicKey)publicKey).getKeyParams();
         }
         else
         {
-            throw new InvalidKeyException("unknown public key passed to LMS");
+            // a key from elsewhere - the deprecated org.bouncycastle.pqc.jcajce.provider.lms copy, or another provider - is taken through its encoding; verification is stateless, so unlike a private key it can be rebuilt here.
+            try
+            {
+                BCLMSPublicKey key = new BCLMSPublicKey(SubjectPublicKeyInfo.getInstance(publicKey.getEncoded()));
+
+                lmOtsVerifier = (LMSContextBasedVerifier)key.getKeyParams();
+            }
+            catch (Exception e)
+            {
+                throw new InvalidKeyException("unknown public key passed to LMS");
+            }
         }
     }
 

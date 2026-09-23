@@ -1,4 +1,4 @@
-package org.bouncycastle.pqc.jcajce.provider.lms;
+package org.bouncycastle.jcajce.provider.asymmetric.lms;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -17,10 +17,6 @@ import org.bouncycastle.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.pqc.jcajce.interfaces.LMSPrivateKey;
 import org.bouncycastle.util.Exceptions;
 
-/**
- * @deprecated use {@link org.bouncycastle.jcajce.provider.asymmetric.lms.BCLMSPrivateKey} instead.
- */
-@Deprecated
 public class BCLMSPrivateKey
     implements LMSPrivateKey, Destroyable
 {
@@ -74,7 +70,7 @@ public class BCLMSPrivateKey
         return keyParams.getUsagesRemaining();
     }
 
-    public LMSPrivateKey extractKeyShard(int usageCount)
+    public BCLMSPrivateKey extractKeyShard(int usageCount)
     {
         return new BCLMSPrivateKey(keyParams.extractKeyShard(usageCount));
     }

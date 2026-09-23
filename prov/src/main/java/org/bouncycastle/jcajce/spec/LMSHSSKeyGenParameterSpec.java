@@ -1,13 +1,13 @@
-package org.bouncycastle.pqc.jcajce.spec;
+package org.bouncycastle.jcajce.spec;
+
+import java.security.spec.AlgorithmParameterSpec;
 
 /**
- * ParameterSpec for keys using the LMS Hierarchical Signature System (HSS).
- *
- * @deprecated use {@link org.bouncycastle.jcajce.spec.LMSHSSKeyGenParameterSpec} instead.
+ * ParameterSpec for keys using the LMS Hierarchical Signature System (HSS), as described in RFC 8554
+ * and profiled by NIST SP 800-208.
  */
-@Deprecated
 public class LMSHSSKeyGenParameterSpec
-    extends org.bouncycastle.jcajce.spec.LMSHSSKeyGenParameterSpec
+    implements AlgorithmParameterSpec
 {
     private final LMSKeyGenParameterSpec[] specs;
 
@@ -18,7 +18,10 @@ public class LMSHSSKeyGenParameterSpec
      */
     public LMSHSSKeyGenParameterSpec(LMSKeyGenParameterSpec... specs)
     {
-        super(specs);
+        if (specs.length == 0)
+        {
+            throw new IllegalArgumentException("at least one LMSKeyGenParameterSpec required");
+        }
 
         this.specs = specs.clone();
     }

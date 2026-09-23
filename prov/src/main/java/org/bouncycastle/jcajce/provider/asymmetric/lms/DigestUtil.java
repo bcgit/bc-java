@@ -1,12 +1,8 @@
-package org.bouncycastle.pqc.jcajce.provider.lms;
+package org.bouncycastle.jcajce.provider.asymmetric.lms;
 
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.Xof;
 
-/**
- * @deprecated use the org.bouncycastle.jcajce.provider.asymmetric.lms equivalent instead.
- */
-@Deprecated
 class DigestUtil
 {
     public static byte[] getDigestResult(Digest digest)

@@ -1,4 +1,4 @@
-package org.bouncycastle.pqc.jcajce.provider.lms;
+package org.bouncycastle.jcajce.provider.asymmetric.lms;
 
 import java.io.IOException;
 import java.security.InvalidKeyException;
@@ -16,10 +16,6 @@ import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
 
-/**
- * @deprecated use {@link org.bouncycastle.jcajce.provider.asymmetric.lms.LMSKeyFactorySpi} instead.
- */
-@Deprecated
 public class LMSKeyFactorySpi
     extends KeyFactorySpi
     implements AsymmetricKeyInfoConverter

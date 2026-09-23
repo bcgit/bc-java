@@ -18,7 +18,7 @@ import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.crypto.params.LMOtsParameters;
 import org.bouncycastle.crypto.params.LMSigParameters;
-import org.bouncycastle.pqc.jcajce.interfaces.LMSPrivateKey;
+import org.bouncycastle.jcajce.interfaces.LMSPrivateKey;
 import org.bouncycastle.pqc.jcajce.spec.LMSHSSKeyGenParameterSpec;
 import org.bouncycastle.pqc.jcajce.spec.LMSKeyGenParameterSpec;
 import org.bouncycastle.util.Arrays;

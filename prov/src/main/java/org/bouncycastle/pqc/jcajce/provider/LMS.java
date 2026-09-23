@@ -4,9 +4,13 @@ import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.util.AsymmetricAlgorithmProvider;
 
+/**
+ * @deprecated use {@link org.bouncycastle.jcajce.provider.asymmetric.LMS} instead.
+ */
+@Deprecated
 public class LMS
 {
-    private static final String PREFIX = "org.bouncycastle.pqc.jcajce.provider" + ".lms.";
+    private static final String PREFIX = "org.bouncycastle.jcajce.provider.asymmetric" + ".lms.";
 
     public static class Mappings
         extends AsymmetricAlgorithmProvider
