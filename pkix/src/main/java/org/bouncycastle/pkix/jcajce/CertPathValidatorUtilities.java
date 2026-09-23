@@ -403,33 +403,9 @@ class CertPathValidatorUtilities
 
         if (isIndirect)
         {
-            crl_entry = crl.getRevokedCertificate(getSerialNumber(cert));
+            crl_entry = getIndirectCRLEntry(crl, getSerialNumber(cert), getEncodedIssuerPrincipal(cert));
 
             if (crl_entry == null)
-            {
-                return;
-            }
-
-            X500Principal certIssuer;
-            try
-            {
-                certIssuer = crl_entry.getCertificateIssuer();
-            }
-            catch (RuntimeException e)
-            {
-                // getCertificateIssuer() builds a new X500Principal from the entry's certificateIssuer
-                // DN, which can throw an unchecked IllegalArgumentException on a name that decodes
-                // structurally but is semantically invalid. Fail closed with the checked contract type
-                // rather than let it escape (or swallow it to null, which would fail revocation open).
-                throw new AnnotatedException("CRL entry certificate issuer could not be parsed.", e);
-            }
-
-            if (certIssuer == null)
-            {
-                certIssuer = getIssuerPrincipal(crl);
-            }
-
-            if (!getEncodedIssuerPrincipal(cert).equals(certIssuer))
             {
                 return;
             }
@@ -477,6 +453,60 @@ class CertPathValidatorUtilities
             certStatus.setCertStatus(reasonCodeValue);
             certStatus.setRevocationDate(crl_entry.getRevocationDate());
         }
+    }
+
+    /**
+     * Find the entry of an indirect CRL for the certificate with the given serial number and issuer.
+     * An indirect CRL (RFC 5280 sec. 5.2.5) lists certificates from more than one issuer and a serial
+     * number is only unique within its issuer, so the entry cannot be located by serial number alone:
+     * every entry carrying the serial number is checked against the issuer it applies to, the one
+     * named by its certificateIssuer extension or inherited from the entries before it (sec. 5.3.3).
+     *
+     * @return the entry naming the certificate, or null if the CRL carries none.
+     */
+    private static X509CRLEntry getIndirectCRLEntry(X509CRL crl, BigInteger serialNumber, X500Principal certIssuer)
+        throws AnnotatedException
+    {
+        Set entries = crl.getRevokedCertificates();
+        if (entries == null)
+        {
+            return null;
+        }
+
+        for (Iterator it = entries.iterator(); it.hasNext();)
+        {
+            X509CRLEntry entry = (X509CRLEntry)it.next();
+            if (!serialNumber.equals(entry.getSerialNumber()))
+            {
+                continue;
+            }
+
+            X500Principal entryIssuer;
+            try
+            {
+                entryIssuer = entry.getCertificateIssuer();
+            }
+            catch (RuntimeException e)
+            {
+                // getCertificateIssuer() builds a new X500Principal from the entry's certificateIssuer
+                // DN, which can throw an unchecked IllegalArgumentException on a name that decodes
+                // structurally but is semantically invalid. Fail closed with the checked contract type
+                // rather than let it escape (or swallow it to null, which would fail revocation open).
+                throw new AnnotatedException("CRL entry certificate issuer could not be parsed.", e);
+            }
+
+            if (entryIssuer == null)
+            {
+                entryIssuer = getIssuerPrincipal(crl);
+            }
+
+            if (certIssuer.equals(entryIssuer))
+            {
+                return entry;
+            }
+        }
+
+        return null;
     }
 
     /**

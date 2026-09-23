@@ -35,6 +35,7 @@ public class AllTests
             new GOST3410_2012CMSTest(),
             new GOSTR3410_2012_256GenerateCertificate(),
             new IndirectCRLSignerTest(),
+            new IndirectCRLSerialCollisionTest(),
             new MLDSACredentialsTest(),
             new PKCS10Test(),
             new RelatedCertificateDescriptorTest(),
