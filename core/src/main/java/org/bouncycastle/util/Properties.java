@@ -237,6 +237,12 @@ public class Properties
      * "Lenient" here means legal-but-non-DER formatting. Structurally malformed content is a
      * separate matter, rejected on read since 1.85 - see {@link #ASN1_ALLOW_ZONELESS_UTCTIME}, which
      * makes an exception of exactly one such value.
+     * <p>
+     * Setting this property also admits, on read, a day the month it names does not have - the 30th
+     * of February and the like. Such a value is refused by default because the lenient calendar
+     * behind {@code getDate()} rolls it into the next month, so what is read back is not what the
+     * encoding carries; OpenSSL refuses it too, while the JDK's own {@code CertificateFactory} rolls
+     * it silently, which is the behaviour this property restores.
      */
     public static final String ASN1_ALLOW_NON_DER_TIME = "org.bouncycastle.asn1.allow_non_der_time";
 

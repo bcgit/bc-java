@@ -1,6 +1,7 @@
 package org.bouncycastle.asn1;
 
 import junit.framework.TestCase;
+import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.Strings;
 
 /**
@@ -110,6 +111,62 @@ public class ASN1TimeFormatTest
      * Exact content octets (tag/length stripped) of inputs from the fuzzing
      * report that BC parses today; every one must now be rejected.
      */
+    /**
+     * A day the month does not have is not a date: the lenient Calendar behind getDate() rolls it
+     * into the next month, so the value read back is not the one the encoding names, and some other
+     * encoding already denotes it. OpenSSL refuses these; the JDK's CertificateFactory rolls them
+     * silently, which is what Properties.ASN1_ALLOW_NON_DER_TIME is there to let a caller follow.
+     */
+    public void testDayAgainstMonthLength()
+    {
+        assertFalse(ASN1TimeFormat.isValidUTCTime(b("180230101423Z")));         // 30th of February
+        assertFalse(ASN1TimeFormat.isValidUTCTime(b("180231101423Z")));
+        assertFalse(ASN1TimeFormat.isValidUTCTime(b("180431101423Z")));         // April has 30
+        assertFalse(ASN1TimeFormat.isValidUTCTime(b("180631101423Z")));
+        assertFalse(ASN1TimeFormat.isValidUTCTime(b("180931101423Z")));
+        assertFalse(ASN1TimeFormat.isValidUTCTime(b("181131101423Z")));
+        assertFalse(ASN1TimeFormat.isValidGeneralizedTime(b("20180230101423Z")));
+        assertFalse(ASN1TimeFormat.isValidGeneralizedTime(b("20180431101423Z")));
+
+        // the last day of each month is still a day
+        assertTrue(ASN1TimeFormat.isValidUTCTime(b("180228101423Z")));
+        assertTrue(ASN1TimeFormat.isValidUTCTime(b("180430101423Z")));
+        assertTrue(ASN1TimeFormat.isValidUTCTime(b("180131101423Z")));
+        assertTrue(ASN1TimeFormat.isValidGeneralizedTime(b("20180331101423Z")));
+
+        // February follows the Gregorian leap rule, and UTCTime's two digit year the RFC 5280 window
+        assertTrue(ASN1TimeFormat.isValidUTCTime(b("200229101423Z")));          // 2020, a leap year
+        assertFalse(ASN1TimeFormat.isValidUTCTime(b("190229101423Z")));         // 2019
+        assertTrue(ASN1TimeFormat.isValidUTCTime(b("000229101423Z")));          // 2000, divisible by 400
+        assertFalse(ASN1TimeFormat.isValidUTCTime(b("990229101423Z")));         // 1999
+        assertTrue(ASN1TimeFormat.isValidUTCTime(b("960229101423Z")));          // 1996
+        assertTrue(ASN1TimeFormat.isValidGeneralizedTime(b("20000229101423Z")));
+        assertFalse(ASN1TimeFormat.isValidGeneralizedTime(b("19000229101423Z"))); // divisible by 100, not 400
+        assertTrue(ASN1TimeFormat.isValidGeneralizedTime(b("16000229101423Z")));
+    }
+
+    public void testDayAgainstMonthLengthCanBeSwitchedOff()
+    {
+        assertFalse(ASN1TimeFormat.isValidUTCTime(b("180230101423Z")));
+
+        System.setProperty(Properties.ASN1_ALLOW_NON_DER_TIME, "true");
+        try
+        {
+            assertTrue(ASN1TimeFormat.isValidUTCTime(b("180230101423Z")));
+            assertTrue(ASN1TimeFormat.isValidGeneralizedTime(b("20180230101423Z")));
+
+            // the property admits the impossible day, not the impossible month
+            assertFalse(ASN1TimeFormat.isValidUTCTime(b("181301101423Z")));
+            assertFalse(ASN1TimeFormat.isValidUTCTime(b("180100101423Z")));
+        }
+        finally
+        {
+            System.getProperties().remove(Properties.ASN1_ALLOW_NON_DER_TIME);
+        }
+
+        assertFalse(ASN1TimeFormat.isValidUTCTime(b("180230101423Z")));
+    }
+
     public void testRejectsReportedCorpusContent()
     {
         // 170d 3030303030303030303030305a  -> "000000000000Z" -> today: Date 1999-11-30

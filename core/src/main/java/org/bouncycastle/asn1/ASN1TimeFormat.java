@@ -1,5 +1,7 @@
 package org.bouncycastle.asn1;
 
+import org.bouncycastle.util.Properties;
+
 /**
  * Strict well-formedness checks for the character content of ASN.1
  * {@link ASN1UTCTime} ({@code UTCTime}) and {@link ASN1GeneralizedTime}
@@ -19,11 +21,12 @@ package org.bouncycastle.asn1;
  * {@code ASN1UTCTime.isDERUTCTime}. A value rejected here could never denote a
  * real instant; a value accepted here is well-formed but is not guaranteed to
  * be DER (use the {@code Properties.ASN1_ALLOW_NON_DER_TIME} write-side gate for
- * that) and is not calendar-checked beyond per-field ranges (e.g. day 01-31 is
- * accepted without regard to the month, matching the granularity of a
- * structural check rather than a full date validation).
+ * that). The day is checked against the length of the month it names, February
+ * included, so the 30th of February is refused rather than read back as the 2nd
+ * of March; setting {@code Properties.ASN1_ALLOW_NON_DER_TIME} admits such a day
+ * for a caller that has to read what the JDK's own CertificateFactory accepts.
  * <p>
- * Field ranges enforced: month 01-12, day 01-31, hour 00-23, minute 00-59,
+ * Field ranges enforced: month 01-12, day 01 to the length of the month, hour 00-23, minute 00-59,
  * second 00-59 (ASN.1 time does not represent leap seconds), and, for a numeric
  * zone offset, offset-hours 00-23 and offset-minutes 00-59 (a loose structural
  * bound, not a UTC-offset policy). The year is range-unrestricted.
@@ -197,9 +200,60 @@ class ASN1TimeFormat
         int month = twoDigit(c, monthOff);
         int day = twoDigit(c, monthOff + 2);
         int hour = twoDigit(c, monthOff + 4);
-        return month >= 1 && month <= 12
-            && day >= 1 && day <= 31
-            && hour <= 23;
+
+        if (month < 1 || month > 12 || day < 1 || hour > 23)
+        {
+            return false;
+        }
+
+        if (day > daysInMonth(month, yearAt(c, monthOff)))
+        {
+            // the property admits the day the lenient calendar behind getDate() would roll away
+            return Properties.isOverrideSet(Properties.ASN1_ALLOW_NON_DER_TIME);
+        }
+
+        return true;
+    }
+
+    /**
+     * The year this value names, a UTCTime's two digits read through the RFC 5280 sec. 4.1.2.5.1
+     * window (50-99 are 19xx, 00-49 are 20xx) as ASN1UTCTime reads them.
+     */
+    private static int yearAt(byte[] c, int monthOff)
+    {
+        if (monthOff == 2)
+        {
+            int year = twoDigit(c, 0);
+
+            return (year >= 50) ? 1900 + year : 2000 + year;
+        }
+
+        return twoDigit(c, 0) * 100 + twoDigit(c, 2);
+    }
+
+    /**
+     * Length of the month, February taking the Gregorian leap rule proleptically as ISO 8601 does,
+     * so the 29th of February 1500 - a Julian date GregorianCalendar still accepts - is not a day.
+     */
+    private static int daysInMonth(int month, int year)
+    {
+        switch (month)
+        {
+        case 2:
+            return isLeapYear(year) ? 29 : 28;
+        case 4:
+        case 6:
+        case 9:
+        case 11:
+            return 30;
+        default:
+            return 31;
+        }
+    }
+
+    private static boolean isLeapYear(int year)
+    {
+        return (year % 4) == 0 && ((year % 100) != 0 || (year % 400) == 0);
     }
 
     private static boolean validSeconds(byte[] c, int off)
