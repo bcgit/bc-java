@@ -144,7 +144,7 @@ public class CompositeMLDSASignedDataTest
             CMSSignedData sd = new CMSSignedData(
                 gen.generate(new CMSProcessableByteArray(DATA), true).getEncoded());
 
-            SignerInformation signerInfo = sd.getSignerInfos().getSigners().iterator().next();
+            SignerInformation signerInfo = (SignerInformation)sd.getSignerInfos().getSigners().iterator().next();
 
             assertEquals(NAMES[i] + ": SignerInfo signatureAlgorithm OID",
                 OIDS[i].getId(), signerInfo.getEncryptionAlgOID());
