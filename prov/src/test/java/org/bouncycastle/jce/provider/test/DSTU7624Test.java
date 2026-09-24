@@ -8,6 +8,7 @@ import java.security.Key;
 import java.security.SecureRandom;
 import java.security.Security;
 
+import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.CipherInputStream;
 import javax.crypto.CipherOutputStream;
@@ -20,6 +21,7 @@ import javax.crypto.spec.SecretKeySpec;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ua.UAObjectIdentifiers;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 
 /**
@@ -236,6 +238,75 @@ public class DSTU7624Test
         macOidTest(UAObjectIdentifiers.dstu7624gmac_512, "DSTU7624-512GMAC", 64);
 
         ccmUpdateOutputSizeTest();
+        ccmDefaultIvLengthTest();
+        gcmReuseAfterBadTagTest();
+    }
+
+    private void ccmDefaultIvLengthTest()
+        throws Exception
+    {
+        // the mode-string form generated the generic 12 byte CCM nonce while the OID form generates a
+        // whole block; DSTU 7624 CCM takes a whole-block nonce, and the two must agree.
+        int[] blockBits = { 128, 256, 512 };
+        for (int i = 0; i != blockBits.length; i++)
+        {
+            KeyGenerator kg = KeyGenerator.getInstance("DSTU7624", "BC");
+            kg.init(blockBits[i]);
+            SecretKey key = kg.generateKey();
+
+            Cipher c = Cipher.getInstance("DSTU7624-" + blockBits[i] + "/CCM/NoPadding", "BC");
+            c.init(Cipher.ENCRYPT_MODE, key);
+            if (c.getIV().length != blockBits[i] / 8)
+            {
+                fail("DSTU7624-" + blockBits[i] + "/CCM generated a " + c.getIV().length + " byte IV");
+            }
+        }
+    }
+
+    private void gcmReuseAfterBadTagTest()
+        throws Exception
+    {
+        // KGCMBlockCipher.init did not drop the data buffered by a failed or abandoned operation, so a
+        // Cipher re-initialised after an AEADBadTagException rejected the next valid ciphertext.
+        byte[] data = Hex.decode("000102030405060708090A0B0C0D0E0F101112131415161718191A1B1C1D1E1F2021222324252627");
+        IvParameterSpec ivSpec = new IvParameterSpec(Hex.decode("101112131415161718191A1B1C1D1E1F"));
+        SecretKey key = new SecretKeySpec(Hex.decode("000102030405060708090A0B0C0D0E0F"), "DSTU7624");
+
+        Cipher c = Cipher.getInstance("DSTU7624/GCM/NoPadding", "BC");
+        c.init(Cipher.ENCRYPT_MODE, key, ivSpec);
+        byte[] ct = c.doFinal(data);
+
+        byte[] forged = Arrays.clone(ct);
+        forged[3] ^= 1;
+        c.init(Cipher.DECRYPT_MODE, key, ivSpec);
+        try
+        {
+            c.doFinal(forged);
+            fail("DSTU7624/GCM accepted a modified ciphertext");
+        }
+        catch (BadPaddingException e)
+        {
+            // expected
+        }
+
+        c.init(Cipher.DECRYPT_MODE, key, ivSpec);
+        if (!areEqual(data, c.doFinal(ct)))
+        {
+            fail("DSTU7624/GCM failed to decrypt after a rejected tag");
+        }
+
+        c.init(Cipher.ENCRYPT_MODE, key, new IvParameterSpec(Hex.decode("303132333435363738393A3B3C3D3E3F")));
+        c.update(data, 0, 5);
+        IvParameterSpec ivSpec2 = new IvParameterSpec(Hex.decode("202122232425262728292A2B2C2D2E2F"));
+        c.init(Cipher.ENCRYPT_MODE, key, ivSpec2);
+        byte[] afterAbandon = c.doFinal(data);
+
+        Cipher fresh = Cipher.getInstance("DSTU7624/GCM/NoPadding", "BC");
+        fresh.init(Cipher.ENCRYPT_MODE, key, ivSpec2);
+        if (!areEqual(fresh.doFinal(data), afterAbandon))
+        {
+            fail("DSTU7624/GCM carried an abandoned update into the next encryption");
+        }
     }
 
     private void ccmUpdateOutputSizeTest()

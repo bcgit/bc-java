@@ -45,6 +45,8 @@ public class KXTSBlockCipher
     private final long reductionPolynomial;
     private final long[] tw_init, tw_current;
     private int counter;
+    // key from the previous init, so an init with only an IV can re-key the engine for the new direction
+    private CipherParameters lastKey;
 
     public KXTSBlockCipher(BlockCipher cipher)
     {
@@ -77,6 +79,18 @@ public class KXTSBlockCipher
 
         ParametersWithIV ivParam = (ParametersWithIV)parameters;
         parameters = ivParam.getParameters();
+        if (parameters == null)
+        {
+            if (lastKey == null)
+            {
+                throw new IllegalArgumentException("KXTS requires a key on the first init");
+            }
+            parameters = lastKey;
+        }
+        else
+        {
+            lastKey = parameters;
+        }
 
         byte[] iv = ivParam.getIV();
 
@@ -116,7 +130,7 @@ public class KXTSBlockCipher
         {
             throw new DataLengthException("Input buffer too short");
         }
-        if (output.length - inOff < len)
+        if (output.length - outOff < len)
         {
             throw new OutputLengthException("Output buffer too short");
         }

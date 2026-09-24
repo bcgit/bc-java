@@ -528,13 +528,14 @@ public class BaseBlockCipher
         }
         else if (modeName.equals("CCM"))
         {
-            ivLength = 12; // CCM nonce 7..13 bytes
             if (baseEngine instanceof DSTU7624Engine)
             {
+                ivLength = baseEngine.getBlockSize(); // DSTU 7624 CCM takes a whole-block nonce, as the OID form does
                 cipher = new AEADGenericBlockCipher(new KCCMBlockCipher(baseEngine));
             }
             else
             {
+                ivLength = 12; // CCM nonce 7..13 bytes
                 cipher = new AEADGenericBlockCipher(new CCMBlockCipher(baseEngine));
             }
         }

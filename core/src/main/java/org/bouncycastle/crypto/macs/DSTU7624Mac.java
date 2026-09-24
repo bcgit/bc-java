@@ -48,6 +48,10 @@ public class DSTU7624Mac
     public DSTU7624Mac(int blockBitLength, int q)
     {
         this.engine = new DSTU7624Engine(blockBitLength);
+        if (q <= 0 || q > blockBitLength || (q & 7) != 0)
+        {
+            throw new IllegalArgumentException("MAC size must be a multiple of 8 bits, at most the block size: " + q);
+        }
         this.blockSize = blockBitLength / BITS_IN_BYTE;
         this.macSize = q / BITS_IN_BYTE;
         this.c = new byte[blockSize];

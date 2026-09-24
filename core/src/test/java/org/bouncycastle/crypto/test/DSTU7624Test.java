@@ -5,6 +5,7 @@ import java.security.SecureRandom;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
+import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.engines.DSTU7624Engine;
 import org.bouncycastle.crypto.engines.DSTU7624WrapEngine;
 import org.bouncycastle.crypto.macs.DSTU7624Mac;
@@ -105,6 +106,395 @@ public class DSTU7624Test
         kccmVariableLengthAssociatedTextAndNonce();
         kgcmEmptyInputRejected();
         macEmptyInputRejected();
+        kgcmReInitClearsBufferedData();
+        kccmMacSizeValidation();
+        kccmProcessPacketDirect();
+        overLongNonceRejected();
+        keylessReInit();
+        kxtsOutputBoundsCheck();
+        macSizeValidation();
+        wrapLengthChecks();
+    }
+
+    private byte[] kgcmEncryptAll(KGCMBlockCipher cipher, byte[] pt)
+        throws Exception
+    {
+        byte[] out = new byte[cipher.getOutputSize(pt.length)];
+        int len = cipher.processBytes(pt, 0, pt.length, out, 0);
+        len += cipher.doFinal(out, len);
+        return Arrays.copyOf(out, len);
+    }
+
+    /*
+     * init() did not clear the buffered data or the GHASH accumulator, and the failure paths in doFinal
+     * left both dirty, so a cipher re-initialised after a rejected tag, an abandoned processBytes or a
+     * short output buffer carried the old state into the next operation.
+     */
+    private void kgcmReInitClearsBufferedData()
+        throws Exception
+    {
+        byte[] key = Hex.decode("000102030405060708090A0B0C0D0E0F");
+        byte[] nonce1 = Hex.decode("101112131415161718191A1B1C1D1E1F");
+        byte[] nonce2 = Hex.decode("202122232425262728292A2B2C2D2E2F");
+        byte[] aad = Hex.decode("A0A1A2A3A4A5A6A7A8A9AAABACADAEAFB0B1B2B3");
+        byte[] pt = Hex.decode("303132333435363738393A3B3C3D3E3F404142434445464748494A4B4C4D4E4F5051525354555657");
+        KeyParameter kp = new KeyParameter(key);
+
+        // (1) a rejected tag, then a valid decryption on the same object
+        KGCMBlockCipher c = new KGCMBlockCipher(new DSTU7624Engine(128));
+        c.init(true, new AEADParameters(kp, 128, nonce1, aad));
+        byte[] ct = kgcmEncryptAll(c, pt);
+
+        byte[] forged = Arrays.clone(ct);
+        forged[0] ^= 1;
+        c.init(false, new AEADParameters(kp, 128, nonce1, aad));
+        try
+        {
+            kgcmEncryptAll(c, forged);
+            fail("KGCM accepted a modified ciphertext");
+        }
+        catch (InvalidCipherTextException e)
+        {
+            isEquals("mac verification failed", e.getMessage());
+        }
+
+        c.init(false, new AEADParameters(kp, 128, nonce1, aad));
+        isEquals("KGCM output size after a rejected tag", pt.length, c.getOutputSize(ct.length));
+        isTrue("KGCM decrypt after a rejected tag", Arrays.areEqual(pt, kgcmEncryptAll(c, ct)));
+
+        // (2) a truncated ciphertext, then a valid decryption
+        c.init(false, new AEADParameters(kp, 128, nonce1, aad));
+        try
+        {
+            kgcmEncryptAll(c, new byte[8]);
+            fail("KGCM accepted a ciphertext shorter than the tag");
+        }
+        catch (InvalidCipherTextException e)
+        {
+            isEquals("data too short", e.getMessage());
+        }
+        c.init(false, new AEADParameters(kp, 128, nonce1, aad));
+        isTrue("KGCM decrypt after a short ciphertext", Arrays.areEqual(pt, kgcmEncryptAll(c, ct)));
+
+        // (3) data buffered by processBytes then abandoned by a re-init (each encryption on c needs a new nonce)
+        byte[] nonce3 = Hex.decode("303132333435363738393A3B3C3D3E3F");
+        c.init(true, new AEADParameters(kp, 128, nonce2, aad));
+        c.processBytes(pt, 0, 7, null, 0);
+        c.init(true, new AEADParameters(kp, 128, nonce3, aad));
+        isEquals("KGCM output size after an abandoned processBytes", pt.length + 16, c.getOutputSize(pt.length));
+        KGCMBlockCipher fresh = new KGCMBlockCipher(new DSTU7624Engine(128));
+        fresh.init(true, new AEADParameters(kp, 128, nonce3, aad));
+        isTrue("KGCM encrypt after an abandoned processBytes", Arrays.areEqual(kgcmEncryptAll(fresh, pt), kgcmEncryptAll(c, pt)));
+
+        // (4) a short output buffer on doFinal, then a retry with a large enough one
+        byte[] nonce4 = Hex.decode("404142434445464748494A4B4C4D4E4F");
+        fresh = new KGCMBlockCipher(new DSTU7624Engine(128));
+        fresh.init(true, new AEADParameters(kp, 128, nonce4, aad));
+        byte[] ct3 = kgcmEncryptAll(fresh, pt);
+        c.init(true, new AEADParameters(kp, 128, nonce4, aad));
+        c.processBytes(pt, 0, pt.length, null, 0);
+        try
+        {
+            c.doFinal(new byte[pt.length], 0);
+            fail("KGCM wrote past a short output buffer");
+        }
+        catch (OutputLengthException e)
+        {
+            isEquals("Output buffer too short", e.getMessage());
+        }
+        byte[] retry = new byte[pt.length + 16];
+        isEquals(retry.length, c.doFinal(retry, 0));
+        isTrue("KGCM tag after a short output buffer", Arrays.areEqual(ct3, retry));
+
+        // the same on decryption, where the accumulator would otherwise already hold the associated text
+        c.init(false, new AEADParameters(kp, 128, nonce1, aad));
+        c.processBytes(ct, 0, ct.length, null, 0);
+        try
+        {
+            c.doFinal(new byte[pt.length - 1], 0);
+            fail("KGCM wrote past a short output buffer on decryption");
+        }
+        catch (OutputLengthException e)
+        {
+            isEquals("Output buffer too short", e.getMessage());
+        }
+        byte[] plain = new byte[pt.length];
+        isEquals(plain.length, c.doFinal(plain, 0));
+        isTrue("KGCM decrypt after a short output buffer", Arrays.areEqual(pt, plain));
+    }
+
+    /*
+     * The MAC size was checked against 512 bits whatever the block size, so a tag longer than the block
+     * passed init and failed with an array bound in doFinal, and the sizes the G1 flag byte cannot encode
+     * (192, 320 and 448 bits) produced a flag byte with a field missing.
+     */
+    private void kccmMacSizeValidation()
+        throws Exception
+    {
+        int[] blockBits = { 128, 256, 512 };
+        int[] macBits = { 64, 128, 192, 256, 320, 384, 448, 512 };
+        for (int i = 0; i != blockBits.length; i++)
+        {
+            int bits = blockBits[i];
+            byte[] key = new byte[bits / 8];
+            byte[] nonce = new byte[bits / 8];
+            for (int j = 0; j != key.length; j++)
+            {
+                key[j] = (byte)j;
+                nonce[j] = (byte)(0x80 + j);
+            }
+            for (int j = 0; j != macBits.length; j++)
+            {
+                int mb = macBits[j];
+                boolean valid = mb <= bits && (mb == 64 || mb == 128 || mb == 256 || mb == 384 || mb == 512);
+                KCCMBlockCipher c = new KCCMBlockCipher(new DSTU7624Engine(bits));
+                try
+                {
+                    c.init(true, new AEADParameters(new KeyParameter(key), mb, nonce));
+                    if (!valid)
+                    {
+                        fail("KCCM-" + bits + " accepted a " + mb + " bit MAC");
+                    }
+                    byte[] out = new byte[c.getOutputSize(bits / 8)];
+                    int len = c.processBytes(nonce, 0, nonce.length, out, 0);
+                    len += c.doFinal(out, len);
+                    isEquals("KCCM-" + bits + " output with a " + mb + " bit MAC", bits / 8 + mb / 8, len);
+                }
+                catch (IllegalArgumentException e)
+                {
+                    if (valid)
+                    {
+                        fail("KCCM-" + bits + " rejected a " + mb + " bit MAC: " + e.getMessage());
+                    }
+                    isEquals("Invalid mac size specified", e.getMessage());
+                }
+            }
+        }
+    }
+
+    /*
+     * processPacket is public, but read the plaintext length for G1 from the doFinal buffer rather than
+     * its own argument, so called directly it computed a different tag from doFinal and could not
+     * decrypt its own output.
+     */
+    private void kccmProcessPacketDirect()
+        throws Exception
+    {
+        byte[] key = Hex.decode("000102030405060708090A0B0C0D0E0F");
+        byte[] nonce = Hex.decode("101112131415161718191A1B1C1D1E1F");
+        byte[] aad = Hex.decode("A0A1A2A3A4A5A6A7");
+        byte[] pt = Hex.decode("303132333435363738393A3B3C3D3E3F404142434445464748494A4B4C4D4E4F5051525354555657");
+        KeyParameter kp = new KeyParameter(key);
+
+        KCCMBlockCipher viaFinal = new KCCMBlockCipher(new DSTU7624Engine(128));
+        viaFinal.init(true, new AEADParameters(kp, 128, nonce, aad));
+        byte[] ct1 = new byte[viaFinal.getOutputSize(pt.length)];
+        viaFinal.doFinal(ct1, viaFinal.processBytes(pt, 0, pt.length, ct1, 0));
+
+        KCCMBlockCipher viaPacket = new KCCMBlockCipher(new DSTU7624Engine(128));
+        viaPacket.init(true, new AEADParameters(kp, 128, nonce, aad));
+        byte[] ct2 = new byte[pt.length + 16];
+        isEquals(ct2.length, viaPacket.processPacket(pt, 0, pt.length, ct2, 0));
+        isTrue("KCCM processPacket differs from doFinal", Arrays.areEqual(ct1, ct2));
+
+        viaPacket.init(false, new AEADParameters(kp, 128, nonce, aad));
+        byte[] out = new byte[pt.length];
+        isEquals(pt.length, viaPacket.processPacket(ct1, 0, ct1.length, out, 0));
+        isTrue("KCCM processPacket decrypt", Arrays.areEqual(pt, out));
+
+        viaPacket.init(false, new AEADParameters(kp, 128, nonce, aad));
+        try
+        {
+            viaPacket.processPacket(ct1, 0, 8, out, 0);
+            fail("KCCM processPacket accepted a ciphertext shorter than the tag");
+        }
+        catch (InvalidCipherTextException e)
+        {
+            isEquals("data too short", e.getMessage());
+        }
+    }
+
+    /*
+     * A nonce longer than the block was truncated by KGCM, and indexed past the block by KCCM and KCTR.
+     */
+    private void overLongNonceRejected()
+    {
+        byte[] key = Hex.decode("000102030405060708090A0B0C0D0E0F");
+        byte[] nonce = new byte[17];
+        KeyParameter kp = new KeyParameter(key);
+
+        try
+        {
+            new KGCMBlockCipher(new DSTU7624Engine(128)).init(true, new AEADParameters(kp, 128, nonce));
+            fail("KGCM accepted a 17 byte nonce");
+        }
+        catch (IllegalArgumentException e)
+        {
+            isEquals("KGCM nonce must be at most 16 bytes", e.getMessage());
+        }
+        try
+        {
+            new KCCMBlockCipher(new DSTU7624Engine(128)).init(true, new AEADParameters(kp, 128, nonce));
+            fail("KCCM accepted a 17 byte nonce");
+        }
+        catch (IllegalArgumentException e)
+        {
+            isEquals("KCCM nonce must be at most 16 bytes", e.getMessage());
+        }
+        try
+        {
+            new KCTRBlockCipher(new DSTU7624Engine(128)).init(true, new ParametersWithIV(kp, nonce));
+            fail("KCTR accepted a 17 byte IV");
+        }
+        catch (IllegalArgumentException e)
+        {
+            isEquals("KCTR IV must be at most 16 bytes", e.getMessage());
+        }
+    }
+
+    /*
+     * An init carrying only an IV keeps the previous key, as the other modes do; these all passed the
+     * null key straight to the engine.
+     */
+    private void keylessReInit()
+        throws Exception
+    {
+        byte[] key = Hex.decode("000102030405060708090A0B0C0D0E0F");
+        byte[] nonce1 = Hex.decode("101112131415161718191A1B1C1D1E1F");
+        byte[] nonce2 = Hex.decode("202122232425262728292A2B2C2D2E2F");
+        byte[] pt = Hex.decode("303132333435363738393A3B3C3D3E3F404142434445464748494A4B4C4D4E4F");
+        KeyParameter kp = new KeyParameter(key);
+
+        KGCMBlockCipher gcm = new KGCMBlockCipher(new DSTU7624Engine(128));
+        gcm.init(true, new ParametersWithIV(kp, nonce1));
+        kgcmEncryptAll(gcm, pt);
+        gcm.init(true, new ParametersWithIV(null, nonce2));
+        KGCMBlockCipher gcmFresh = new KGCMBlockCipher(new DSTU7624Engine(128));
+        gcmFresh.init(true, new ParametersWithIV(kp, nonce2));
+        byte[] ct = kgcmEncryptAll(gcmFresh, pt);
+        isTrue("KGCM keyless re-init", Arrays.areEqual(ct, kgcmEncryptAll(gcm, pt)));
+        gcm.init(false, new ParametersWithIV(null, nonce2));
+        isTrue("KGCM keyless re-init for decryption", Arrays.areEqual(pt, kgcmEncryptAll(gcm, ct)));
+
+        KCCMBlockCipher ccm = new KCCMBlockCipher(new DSTU7624Engine(128));
+        ccm.init(true, new ParametersWithIV(kp, nonce1));
+        byte[] tmp = new byte[ccm.getOutputSize(pt.length)];
+        ccm.doFinal(tmp, ccm.processBytes(pt, 0, pt.length, tmp, 0));
+        ccm.init(true, new ParametersWithIV(null, nonce2));
+        byte[] ct2 = new byte[ccm.getOutputSize(pt.length)];
+        ccm.doFinal(ct2, ccm.processBytes(pt, 0, pt.length, ct2, 0));
+        KCCMBlockCipher ccmFresh = new KCCMBlockCipher(new DSTU7624Engine(128));
+        ccmFresh.init(true, new ParametersWithIV(kp, nonce2));
+        byte[] ct3 = new byte[ccmFresh.getOutputSize(pt.length)];
+        ccmFresh.doFinal(ct3, ccmFresh.processBytes(pt, 0, pt.length, ct3, 0));
+        isTrue("KCCM keyless re-init", Arrays.areEqual(ct2, ct3));
+
+        KXTSBlockCipher xts = new KXTSBlockCipher(new DSTU7624Engine(128));
+        xts.init(true, new ParametersWithIV(kp, nonce1));
+        byte[] xct = new byte[pt.length];
+        xts.processBytes(pt, 0, pt.length, xct, 0);
+        // the direction flips with the retained key
+        xts.init(false, new ParametersWithIV(null, nonce1));
+        byte[] xpt = new byte[pt.length];
+        xts.processBytes(xct, 0, xct.length, xpt, 0);
+        isTrue("KXTS keyless re-init", Arrays.areEqual(pt, xpt));
+        try
+        {
+            new KXTSBlockCipher(new DSTU7624Engine(128)).init(true, new ParametersWithIV(null, nonce1));
+            fail("KXTS initialised without a key");
+        }
+        catch (IllegalArgumentException e)
+        {
+            isEquals("KXTS requires a key on the first init", e.getMessage());
+        }
+    }
+
+    /*
+     * The output bound in processBytes was computed from the input offset.
+     */
+    private void kxtsOutputBoundsCheck()
+    {
+        byte[] key = Hex.decode("000102030405060708090A0B0C0D0E0F");
+        byte[] iv = Hex.decode("101112131415161718191A1B1C1D1E1F");
+        KXTSBlockCipher xts = new KXTSBlockCipher(new DSTU7624Engine(128));
+        xts.init(true, new ParametersWithIV(new KeyParameter(key), iv));
+
+        // input at offset 32, output exactly the right size: previously a spurious OutputLengthException
+        isEquals(32, xts.processBytes(new byte[64], 32, 32, new byte[32], 0));
+
+        // output at offset 32 with 16 bytes left: previously an ArrayIndexOutOfBoundsException
+        try
+        {
+            xts.processBytes(new byte[32], 0, 32, new byte[48], 32);
+            fail("KXTS wrote past a short output buffer");
+        }
+        catch (OutputLengthException e)
+        {
+            isEquals("Output buffer too short", e.getMessage());
+        }
+    }
+
+    /*
+     * The MAC size q was not checked against the block size.
+     */
+    private void macSizeValidation()
+    {
+        int[] bad = { 0, 4, 136, 256 };
+        for (int i = 0; i != bad.length; i++)
+        {
+            try
+            {
+                new DSTU7624Mac(128, bad[i]);
+                fail("DSTU7624Mac accepted a " + bad[i] + " bit MAC on a 128 bit block");
+            }
+            catch (IllegalArgumentException e)
+            {
+                isTrue(e.getMessage().startsWith("MAC size must be a multiple of 8 bits, at most the block size"));
+            }
+        }
+        new DSTU7624Mac(128, 64);
+        new DSTU7624Mac(256, 256);
+    }
+
+    /*
+     * unwrap had no input bound check and accepted a single block, whose unwrapping is empty; wrap
+     * accepted empty input.
+     */
+    private void wrapLengthChecks()
+        throws Exception
+    {
+        byte[] key = Hex.decode("000102030405060708090A0B0C0D0E0F");
+        DSTU7624WrapEngine wrapper = new DSTU7624WrapEngine(128);
+        wrapper.init(true, new KeyParameter(key));
+        try
+        {
+            wrapper.wrap(new byte[0], 0, 0);
+            fail("wrapped empty input");
+        }
+        catch (DataLengthException e)
+        {
+            isEquals("wrap data must be at least one block", e.getMessage());
+        }
+
+        wrapper.init(false, new KeyParameter(key));
+        try
+        {
+            wrapper.unwrap(new byte[16], 0, 32);
+            fail("unwrap read past the input");
+        }
+        catch (DataLengthException e)
+        {
+            isEquals("input buffer too short", e.getMessage());
+        }
+        try
+        {
+            wrapper.unwrap(new byte[16], 0, 16);
+            fail("unwrapped a single block");
+        }
+        catch (InvalidCipherTextException e)
+        {
+            isEquals("unwrap data too short", e.getMessage());
+        }
     }
 
     /*

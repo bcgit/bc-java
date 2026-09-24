@@ -91,6 +91,12 @@ public class KGCMBlockCipher
     {
         this.forEncryption = forEncryption;
 
+        // A re-init must behave like a fresh cipher: drop any data buffered by an abandoned or failed
+        // operation and the GHASH accumulator it may have been folded into.
+        data.reset();
+        associatedText.reset();
+        Arrays.fill(b, 0L);
+
         KeyParameter keyParameter = null;
         byte[] newNonce;
         if (params instanceof AEADParameters)
@@ -105,7 +111,6 @@ public class KGCMBlockCipher
 
             newNonce = aeadParameters.getNonce();
             initialAssociatedText = aeadParameters.getAssociatedText();
-            associatedText.reset();
             macSize = macSizeInBits / 8;
             keyParameter = aeadParameters.getKey();
 
@@ -120,7 +125,6 @@ public class KGCMBlockCipher
 
             newNonce = withIV.getIV();
             initialAssociatedText = null;
-            associatedText.reset();
             macSize = blockSize; // Set default mac size
 
             CipherParameters innerParameters = withIV.getParameters();
@@ -139,7 +143,11 @@ public class KGCMBlockCipher
             throw new IllegalArgumentException("invalid parameters passed to KGCM");
         }
 
-        // TODO Nonce length validation?
+        // The nonce is zero-extended to one block; a longer one would otherwise be silently truncated.
+        if (newNonce.length > blockSize)
+        {
+            throw new IllegalArgumentException("KGCM nonce must be at most " + blockSize + " bytes");
+        }
         if (newNonce.length < blockSize)
         {
             byte[] tmp = new byte[blockSize];
@@ -173,9 +181,13 @@ public class KGCMBlockCipher
         }
 
         this.macBlock = new byte[blockSize];
+        // A null key re-uses the key from the previous init; the CTR engine keys the shared block
+        // cipher itself, so the second init is only there to reset its state.
         ctrEngine.init(true, new ParametersWithIV(keyParameter, this.nonce));
-        // TODO Surely it's redundant to init ctrEngine's inner BlockCipher??
-        engine.init(true, keyParameter);
+        if (keyParameter != null)
+        {
+            engine.init(true, keyParameter);
+        }
     }
 
     public String getAlgorithmName()
@@ -244,6 +256,7 @@ public class KGCMBlockCipher
         int len = data.size();
         if (!forEncryption && len < macSize)
         {
+            reset();
             throw new InvalidCipherTextException("data too short");
         }
 
@@ -256,6 +269,14 @@ public class KGCMBlockCipher
                 throw new DataLengthException("KGCM requires associated text or data, both are empty");
             }
             throw new InvalidCipherTextException("KGCM requires associated text or data, both are empty");
+        }
+
+        // Check the output buffer before anything is folded into the GHASH accumulator, so a caller
+        // can retry with a large enough buffer and still get the right tag.
+        int ctLen = forEncryption ? len : len - macSize;
+        if (out.length - outOff < ctLen + (forEncryption ? macSize : 0))
+        {
+            throw new OutputLengthException("Output buffer too short");
         }
 
         // TODO Total blocks restriction in GCM mode (extend limit naturally for larger block sizes?)
@@ -281,11 +302,6 @@ public class KGCMBlockCipher
         int resultLen;
         if (forEncryption)
         {
-            if (out.length - outOff - macSize < len)
-            {
-                throw new OutputLengthException("Output buffer too short");
-            }
-
             resultLen = ctrEngine.processBytes(data.getBuffer(), 0, len, out, outOff);
             resultLen += ctrEngine.doFinal(out, outOff + resultLen);
 
@@ -304,12 +320,6 @@ public class KGCMBlockCipher
         }
         else
         {
-            int ctLen = len - macSize;
-            if (out.length - outOff < ctLen)
-            {
-                throw new OutputLengthException("Output buffer too short");
-            }
-
             // KGCM authenticates the ciphertext, so verify the tag BEFORE decrypting: a forged
             // ciphertext is rejected without ever writing unverified CTR plaintext to the caller's
             // output buffer (matches CCMBlockCipher / GCMSIVBlockCipher).
@@ -328,6 +338,7 @@ public class KGCMBlockCipher
 
             if (!Arrays.constantTimeAreEqual(mac, calculatedMac))
             {
+                reset();
                 throw new InvalidCipherTextException("mac verification failed");
             }
 

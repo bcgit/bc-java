@@ -43,6 +43,10 @@ public class KCTRBlockCipher
             ParametersWithIV ivParam = (ParametersWithIV)params;
             byte[] iv = ivParam.getIV();
             int diff = this.iv.length - iv.length;
+            if (diff < 0)
+            {
+                throw new IllegalArgumentException("KCTR IV must be at most " + this.iv.length + " bytes");
+            }
 
             Arrays.fill(this.iv, (byte)0);
             System.arraycopy(iv, 0, this.iv, diff, iv.length);

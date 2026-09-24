@@ -34,9 +34,6 @@ public class KCCMBlockCipher
     private static final int BYTES_IN_INT = 4;
     private static final int BITS_IN_BYTE = 8;
 
-    private static final int MAX_MAC_BIT_LENGTH = 512;
-    private static final int MIN_MAC_BIT_LENGTH = 64;
-
     private BlockCipher engine;
 
     private int macSize;
@@ -122,7 +119,7 @@ public class KCCMBlockCipher
             AEADParameters aeadParameters = (AEADParameters)params;
 
             int macSizeInBits = aeadParameters.getMacSize();
-            if (macSizeInBits > MAX_MAC_BIT_LENGTH || macSizeInBits < MIN_MAC_BIT_LENGTH || macSizeInBits % 8 != 0)
+            if (!isValidMacSize(macSizeInBits))
             {
                 throw new IllegalArgumentException("Invalid mac size specified");
             }
@@ -156,7 +153,11 @@ public class KCCMBlockCipher
             throw new IllegalArgumentException("invalid parameters passed to KCCM");
         }
 
-        // TODO Nonce length validation. Should it always be engineBlockSize?
+        // The nonce is zero-extended to one block; a longer one cannot be placed in G1.
+        if (newNonce.length > engine.getBlockSize())
+        {
+            throw new IllegalArgumentException("KCCM nonce must be at most " + engine.getBlockSize() + " bytes");
+        }
         if (newNonce.length < engine.getBlockSize())
         {
             byte[] tmp = new byte[engine.getBlockSize()];
@@ -193,9 +194,36 @@ public class KCCMBlockCipher
         this.mac = new byte[macSize];
         this.forEncryption = forEncryption;
 
-        engine.init(true, keyParameter);
+        // a null key re-uses the key from the previous init
+        if (keyParameter != null)
+        {
+            engine.init(true, keyParameter);
+        }
 
         reset();
+    }
+
+    /**
+     * The MAC size must be one the flag byte in G1 can encode - 64, 128, 256, 384 or 512 bits - and
+     * cannot exceed the block size.
+     */
+    private boolean isValidMacSize(int macSizeInBits)
+    {
+        if (macSizeInBits > engine.getBlockSize() * BITS_IN_BYTE)
+        {
+            return false;
+        }
+        switch (macSizeInBits)
+        {
+        case 64:
+        case 128:
+        case 256:
+        case 384:
+        case 512:
+            return true;
+        default:
+            return false;
+        }
     }
 
     public String getAlgorithmName()
@@ -218,7 +246,7 @@ public class KCCMBlockCipher
         associatedText.write(in, inOff, len);
     }
 
-    private void processAssociatedText()
+    private void processAssociatedText(int dataLen)
     {
         int aadLen = associatedText.size();
 
@@ -230,7 +258,6 @@ public class KCCMBlockCipher
         // the MAC independent of the nonce and enables cross-nonce forgery.
         System.arraycopy(nonce, 0, G1, 0, nonce.length - Nb_ - 1);
 
-        int dataLen = data.size() - (forEncryption ? 0 : macSize);
         Pack.intToLittleEndian(dataLen, buffer, 0); // for G1
 
         System.arraycopy(buffer, 0, G1, nonce.length - Nb_ - 1, BYTES_IN_INT);
@@ -318,7 +345,14 @@ public class KCCMBlockCipher
             throw new DataLengthException("input buffer too short");
         }
 
-        processAssociatedText();
+        if (!forEncryption && len < macSize)
+        {
+            throw new InvalidCipherTextException("data too short");
+        }
+
+        // the plaintext length goes into G1, taken from this call's input rather than the doFinal buffer
+        // so that processPacket gives the same result whichever way it is reached.
+        processAssociatedText(forEncryption ? len : len - macSize);
 
         if (forEncryption)
         {
@@ -359,11 +393,6 @@ public class KCCMBlockCipher
         }
         else
         {
-            if (len < macSize)
-            {
-                throw new InvalidCipherTextException("data too short");
-            }
-
             int dataLen = len - macSize;
 
             if (out.length - outOff < dataLen)

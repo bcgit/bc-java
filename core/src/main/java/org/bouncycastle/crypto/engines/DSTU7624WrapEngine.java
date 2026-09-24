@@ -76,6 +76,11 @@ public class DSTU7624WrapEngine
             throw new DataLengthException("wrap data must be a multiple of " + engine.getBlockSize() + " bytes");
         }
 
+        if (inLen == 0)
+        {
+            throw new DataLengthException("wrap data must be at least one block");
+        }
+
         if (inOff + inLen > in.length)
         {
             throw new DataLengthException("input buffer too short");
@@ -156,7 +161,13 @@ public class DSTU7624WrapEngine
             throw new DataLengthException("unwrap data must be a multiple of " + engine.getBlockSize() + " bytes");
         }
 
-        if (inLen < engine.getBlockSize())
+        if (inOff + inLen > in.length)
+        {
+            throw new DataLengthException("input buffer too short");
+        }
+
+        // wrapped data is the input plus one check block, so it is at least two blocks
+        if (inLen < 2 * engine.getBlockSize())
         {
             throw new InvalidCipherTextException("unwrap data too short");
         }
