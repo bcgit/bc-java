@@ -301,6 +301,10 @@ public abstract class JceKeyAgreeRecipient
         {
             throw new CMSException("required padding not supported.", e);
         }
+        catch (CMSException e)
+        {
+            throw e;
+        }
         catch (Exception e)
         {
             throw new CMSException("originator key invalid.", e);
