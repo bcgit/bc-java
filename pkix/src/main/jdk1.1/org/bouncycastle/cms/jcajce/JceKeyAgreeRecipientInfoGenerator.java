@@ -250,6 +250,12 @@ public class JceKeyAgreeRecipientInfoGenerator
         return userKeyingMaterial;
     }
 
+    protected void generationComplete()
+    {
+        // an MQV ephemeral key pair is shared by the recipients of one KeyAgreeRecipientInfo only
+        ephemeralKP = null;
+    }
+
     private void init(ASN1ObjectIdentifier keyAgreementOID)
         throws CMSException
     {

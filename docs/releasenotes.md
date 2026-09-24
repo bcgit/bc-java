@@ -58,6 +58,7 @@ Date: 2026, TBD
 - DSTU7624Mac did not check the MAC size against the block size, failing in doFinal for one larger than the block; the constructor now requires a positive multiple of 8 bits no larger than the block.
 - DSTU7624WrapEngine.unwrap had no bound check on its input and accepted a single block, whose unwrapping is empty, and wrap accepted empty input; unwrap now rejects an input shorter than two blocks or beyond the buffer, and wrap requires at least one block.
 - Cipher.getInstance("DSTU7624/CCM/NoPadding") and the -128/-256/-512 forms generated the generic 12 byte CCM nonce when initialised without parameters, while the OID-registered DSTU 7624 CCM ciphers generate a whole block; the mode-string form now generates a whole-block nonce too.
+- JceKeyAgreeRecipientInfoGenerator created its 1-pass ECMQV ephemeral key pair once per generator rather than once per message, so a generator used for more than one message sent the same ephemeral key in each and derived the same key-encryption key for every recipient each time, withdrawing the ephemeral contribution RFC 5753 sec. 3.2 relies on. The messages were well formed and decrypted correctly. A fresh key pair is now generated for each KeyAgreeRecipientInfo, still shared by all of its recipients.
 
 ### 2.1.3 Additional Features and Functionality
 

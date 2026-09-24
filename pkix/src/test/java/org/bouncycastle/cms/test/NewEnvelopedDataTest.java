@@ -81,6 +81,7 @@ import org.bouncycastle.asn1.pkcs.RC2CBCParameter;
 import org.bouncycastle.asn1.rosstandart.RosstandartObjectIdentifiers;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.cms.ecc.ECCCMSSharedInfo;
+import org.bouncycastle.asn1.cms.ecc.MQVuserKeyingMaterial;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
@@ -3499,6 +3500,58 @@ public class NewEnvelopedDataTest
         confirmDataReceived(recipients, data, _reciEcCert, _reciEcKP.getPrivate(), BC);
         confirmDataReceived(recipients, data, _reciEcCert2, _reciEcKP2.getPrivate(), BC);
         confirmNumberRecipients(recipients, 2);
+    }
+
+    /*
+     * The 1-pass ECMQV ephemeral key pair is shared by the recipients of one KeyAgreeRecipientInfo, but
+     * a generator reused for a second message must not send the same ephemeral key again.
+     */
+    public void testECMQVFreshEphemeralKeyPerMessage()
+        throws Exception
+    {
+        byte[] data = Hex.decode("504b492d4320434d5320456e76656c6f706564446174612053616d706c65");
+
+        JceKeyAgreeRecipientInfoGenerator recipientGenerator = new JceKeyAgreeRecipientInfoGenerator(CMSAlgorithm.ECMQV_SHA1KDF,
+            _origEcKP.getPrivate(), _origEcKP.getPublic(), CMSAlgorithm.AES128_WRAP).setProvider(BC);
+
+        recipientGenerator.addRecipient(_reciEcCert);
+        recipientGenerator.addRecipient(_reciEcCert2);
+
+        CMSEnvelopedDataGenerator edGen = new CMSEnvelopedDataGenerator();
+
+        edGen.addRecipientInfoGenerator(recipientGenerator);
+
+        CMSEnvelopedData ed1 = edGen.generate(
+            new CMSProcessableByteArray(data),
+            new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES128_CBC).setProvider(BC).build());
+        CMSEnvelopedData ed2 = edGen.generate(
+            new CMSProcessableByteArray(data),
+            new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES128_CBC).setProvider(BC).build());
+
+        byte[] ephemeral1 = getMQVEphemeralPublicKey(ed1);
+        byte[] ephemeral2 = getMQVEphemeralPublicKey(ed2);
+
+        assertFalse("ephemeral key reused across messages", Arrays.equals(ephemeral1, ephemeral2));
+
+        confirmDataReceived(ed1.getRecipientInfos(), data, _reciEcCert, _reciEcKP.getPrivate(), BC);
+        confirmDataReceived(ed1.getRecipientInfos(), data, _reciEcCert2, _reciEcKP2.getPrivate(), BC);
+        confirmDataReceived(ed2.getRecipientInfos(), data, _reciEcCert, _reciEcKP.getPrivate(), BC);
+        confirmDataReceived(ed2.getRecipientInfos(), data, _reciEcCert2, _reciEcKP2.getPrivate(), BC);
+    }
+
+    private static byte[] getMQVEphemeralPublicKey(CMSEnvelopedData ed)
+        throws IOException
+    {
+        EnvelopedData env = EnvelopedData.getInstance(ContentInfo.getInstance(ed.getEncoded()).getContent());
+        assertEquals(1, env.getRecipientInfos().size());
+
+        KeyAgreeRecipientInfo kari = KeyAgreeRecipientInfo.getInstance(
+            RecipientInfo.getInstance(env.getRecipientInfos().getObjectAt(0)).getInfo());
+        assertEquals(2, kari.getRecipientEncryptedKeys().size());
+
+        MQVuserKeyingMaterial ukm = MQVuserKeyingMaterial.getInstance(kari.getUserKeyingMaterial().getOctets());
+
+        return ukm.getEphemeralPublicKey().getPublicKeyData().getBytes();
     }
 
     private static void confirmDataReceived(RecipientInformationStore recipients,
