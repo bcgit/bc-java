@@ -15,6 +15,7 @@ import java.security.cert.X509CRL;
 import java.security.cert.X509CertSelector;
 import java.security.cert.X509Certificate;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
@@ -36,6 +37,7 @@ import org.bouncycastle.cert.X509v3CertificateBuilder;
 import org.bouncycastle.cert.jcajce.JcaX509CRLConverter;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cert.jcajce.JcaX509ExtensionUtils;
+import org.bouncycastle.jcajce.PKIXExtendedBuilderParameters;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
@@ -70,6 +72,9 @@ public class IndirectCRLSignerTest
 
         singleGenerationValidates();
         rolledRootReportsTheRealFailure();
+        excludedSignerIsNotUsed();
+        maxPathLengthBoundsSignerPath();
+        maxPathLengthUnboundedAdmitsLongSignerPath();
     }
 
     /**
@@ -109,6 +114,69 @@ public class IndirectCRLSignerTest
         }
     }
 
+    /**
+     * The caller's excluded certificates apply to the CRL signer's certification path too, so an
+     * excluded signer cannot vouch for the CRL.
+     */
+    private void excludedSignerIsNotUsed()
+        throws Exception
+    {
+        Pki pki = buildPki(1, 0);
+
+        signerRejected("excluded CRL signer accepted", pki, 5, Collections.singleton(pki.signers.get(0)));
+    }
+
+    /**
+     * The caller's maximum path length bounds the CRL signer's certification path, which here has two
+     * intermediates between the signer and the root while the certificate under check has none.
+     */
+    private void maxPathLengthBoundsSignerPath()
+        throws Exception
+    {
+        Pki pki = buildPki(1, 2);
+
+        if (validate(pki, 2, null) == null)
+        {
+            fail("CRL signer path within the maximum path length rejected");
+        }
+
+        signerRejected("CRL signer path longer than the maximum path length accepted", pki, 1, null);
+    }
+
+    /**
+     * A caller who lifts the path length limit gets it lifted for the CRL signer's path as well,
+     * rather than having that path held to the builder default of 5.
+     */
+    private void maxPathLengthUnboundedAdmitsLongSignerPath()
+        throws Exception
+    {
+        Pki pki = buildPki(1, 6);
+
+        if (validate(pki, -1, null) == null)
+        {
+            fail("CRL signer path with an unlimited maximum path length rejected");
+        }
+
+        signerRejected("CRL signer path longer than the default maximum path length accepted", pki, 5, null);
+    }
+
+    private void signerRejected(String failMessage, Pki pki, int maxPathLength, Set excluded)
+        throws Exception
+    {
+        try
+        {
+            validate(pki, maxPathLength, excluded);
+            fail(failMessage);
+        }
+        catch (CertPathBuilderException e)
+        {
+            String chain = messageChain(e);
+
+            isTrue("failure of the CRL signer's own path not reported: " + chain,
+                chain.indexOf("CertPath for CRL signer failed to validate") >= 0);
+        }
+    }
+
     private static String messageChain(Throwable t)
     {
         StringBuffer sb = new StringBuffer();
@@ -125,6 +193,12 @@ public class IndirectCRLSignerTest
     private Object validate(Pki pki)
         throws Exception
     {
+        return validate(pki, 5, null);
+    }
+
+    private Object validate(Pki pki, int maxPathLength, Set excluded)
+        throws Exception
+    {
         Set anchors = new HashSet();
         for (int i = 0; i != pki.roots.size(); i++)
         {
@@ -132,6 +206,7 @@ public class IndirectCRLSignerTest
         }
 
         List storeContents = new ArrayList(pki.signers);
+        storeContents.addAll(pki.intermediates);
         storeContents.add(pki.subCa);
         storeContents.add(pki.crl);
 
@@ -141,14 +216,22 @@ public class IndirectCRLSignerTest
         PKIXBuilderParameters params = new PKIXBuilderParameters(anchors, target);
         params.addCertStore(CertStore.getInstance("Collection", new CollectionCertStoreParameters(storeContents), "BC"));
         params.setRevocationEnabled(true);
+        params.setMaxPathLength(maxPathLength);
 
-        return CertPathBuilder.getInstance("PKIX", "BC").build(params);
+        CertPathBuilder builder = CertPathBuilder.getInstance("PKIX", "BC");
+        if (excluded != null)
+        {
+            return builder.build(new PKIXExtendedBuilderParameters.Builder(params).addExcludedCerts(excluded).build());
+        }
+
+        return builder.build(params);
     }
 
     private static class Pki
     {
         final List roots = new ArrayList();
         final List signers = new ArrayList();
+        final List intermediates = new ArrayList();
         X509Certificate subCa;
         X509CRL crl;
     }
@@ -160,6 +243,16 @@ public class IndirectCRLSignerTest
      * signed by the last generation's signer.
      */
     private Pki buildPki(int generations)
+        throws Exception
+    {
+        return buildPki(generations, 0);
+    }
+
+    /**
+     * As above, with each generation's CRL signer issued at the end of a chain of signerDepth
+     * intermediate CAs under its root, all of them covered by the same indirect CRL.
+     */
+    private Pki buildPki(int generations, int signerDepth)
         throws Exception
     {
         Pki pki = new Pki();
@@ -180,10 +273,21 @@ public class IndirectCRLSignerTest
             rootKeys.add(rootKey);
             pki.roots.add(root);
 
+            KeyPair issuerKey = rootKey;
+            X509Certificate issuer = root;
+            for (int d = 1; d <= signerDepth; d++)
+            {
+                KeyPair caKey = kpg.generateKeyPair();
+                issuer = subCa(caKey.getPublic(), new X500Name("CN=Test-Int" + d + ".CA, O=Test-PKI, C=DE, SERIALNUMBER=" + g),
+                    issuerKey, issuer, crlDp);
+                issuerKey = caKey;
+                pki.intermediates.add(issuer);
+            }
+
             KeyPair signerKey = kpg.generateKeyPair();
             // Self-referencing CRLDP: the signer's own path is validated with revocation enabled
             // before its key is trusted, so the signer needs a resolvable CRLDP of its own.
-            pki.signers.add(crlSigner(signerKey.getPublic(), signerDn, rootKey, root, crlDp));
+            pki.signers.add(crlSigner(signerKey.getPublic(), signerDn, issuerKey, issuer, crlDp));
             signerKeys.add(signerKey);
         }
 

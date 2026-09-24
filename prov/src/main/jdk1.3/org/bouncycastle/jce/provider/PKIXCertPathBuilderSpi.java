@@ -151,7 +151,7 @@ public class PKIXCertPathBuilderSpi
         // test if certificate path exceeds maximum length
         if (pkixParams.getMaxPathLength() != -1)
         {
-            if (tbvPath.size() - 1 > pkixParams.getMaxPathLength())
+            if (countIntermediates(tbvPath, tbvCert) > pkixParams.getMaxPathLength())
             {
                 return null;
             }
@@ -268,4 +268,25 @@ public class PKIXCertPathBuilderSpi
         return builderResult;
     }
 
+    /**
+     * Return the number of non-self-issued intermediate certificates the path would hold with tbvCert
+     * added to it, the first certificate in the path being the target.
+     */
+    private static int countIntermediates(List tbvPath, X509Certificate tbvCert)
+    {
+        if (tbvPath.isEmpty())
+        {
+            return 0;
+        }
+
+        int count = CertPathValidatorUtilities.isSelfIssued(tbvCert) ? 0 : 1;
+        for (int i = 1; i < tbvPath.size(); i++)
+        {
+            if (!CertPathValidatorUtilities.isSelfIssued((X509Certificate)tbvPath.get(i)))
+            {
+                count++;
+            }
+        }
+        return count;
+    }
 }

@@ -505,6 +505,119 @@ public class CertPathBuilderTest
         manyTrustAnchorsAkiNarrowingPerfTest();
         builderNodeBudgetTest();
         builderReuseTest();
+        maxPathLengthTest();
+    }
+
+    /**
+     * The builder's maximum path length counts the non-self-issued intermediate certificates, as
+     * PKIXBuilderParameters.setMaxPathLength() defines it: a limit of 0 admits the target alone, and a
+     * self-issued certificate (a key rollover, say) does not use up any of the limit.
+     */
+    private void maxPathLengthTest()
+        throws Exception
+    {
+        KeyPair rootPair = TestUtils.generateRSAKeyPair();
+        X500Name rootDN = new X500Name("CN=Path Length Root");
+        byte[] rootSki = computeSki(rootPair.getPublic());
+        X509Certificate rootCert = selfSignedV3CaCert(rootPair, rootDN, rootSki);
+
+        // root -> Int1 -> Int2 -> EE: two intermediates
+        KeyPair int1Pair = TestUtils.generateRSAKeyPair();
+        X500Name int1DN = new X500Name("CN=Path Length Int1");
+        byte[] int1Ski = computeSki(int1Pair.getPublic());
+        X509Certificate int1Cert = unconstrainedCaCert(int1DN, int1Pair.getPublic(), int1Ski,
+            rootPair.getPrivate(), rootDN, rootSki);
+
+        KeyPair int2Pair = TestUtils.generateRSAKeyPair();
+        X500Name int2DN = new X500Name("CN=Path Length Int2");
+        byte[] int2Ski = computeSki(int2Pair.getPublic());
+        X509Certificate int2Cert = unconstrainedCaCert(int2DN, int2Pair.getPublic(), int2Ski,
+            int1Pair.getPrivate(), int1DN, int1Ski);
+
+        KeyPair eePair = TestUtils.generateRSAKeyPair();
+        X509Certificate eeCert = subordinateV3Cert(new X500Name("CN=Path Length EE"), eePair.getPublic(),
+            computeSki(eePair.getPublic()), int2Pair.getPrivate(), int2DN, int2Ski, false);
+
+        List certs = new ArrayList();
+        certs.add(int1Cert);
+        certs.add(int2Cert);
+        certs.add(eeCert);
+
+        checkPathLength("two intermediates", rootCert, eeCert, certs, -1, 3);
+        checkPathLength("two intermediates", rootCert, eeCert, certs, 2, 3);
+        checkPathLength("two intermediates", rootCert, eeCert, certs, 1, -1);
+        checkPathLength("two intermediates", rootCert, eeCert, certs, 0, -1);
+
+        // root -> Int1 -> Int1' -> Int1'' -> EE: one intermediate, then two self-issued rollovers
+        KeyPair roll1Pair = TestUtils.generateRSAKeyPair();
+        byte[] roll1Ski = computeSki(roll1Pair.getPublic());
+        X509Certificate roll1Cert = unconstrainedCaCert(int1DN, roll1Pair.getPublic(), roll1Ski,
+            int1Pair.getPrivate(), int1DN, int1Ski);
+
+        KeyPair roll2Pair = TestUtils.generateRSAKeyPair();
+        byte[] roll2Ski = computeSki(roll2Pair.getPublic());
+        X509Certificate roll2Cert = unconstrainedCaCert(int1DN, roll2Pair.getPublic(), roll2Ski,
+            roll1Pair.getPrivate(), int1DN, roll1Ski);
+
+        KeyPair ee2Pair = TestUtils.generateRSAKeyPair();
+        X509Certificate ee2Cert = subordinateV3Cert(new X500Name("CN=Path Length EE2"), ee2Pair.getPublic(),
+            computeSki(ee2Pair.getPublic()), roll2Pair.getPrivate(), int1DN, roll2Ski, false);
+
+        certs = new ArrayList();
+        certs.add(int1Cert);
+        certs.add(roll1Cert);
+        certs.add(roll2Cert);
+        certs.add(ee2Cert);
+
+        checkPathLength("self-issued intermediates", rootCert, ee2Cert, certs, 1, 4);
+        checkPathLength("self-issued intermediates", rootCert, ee2Cert, certs, 0, -1);
+    }
+
+    /**
+     * Build a path to target with the given maximum path length, expecting a path of expectedLength
+     * certificates, or no path at all when expectedLength is -1.
+     */
+    private void checkPathLength(String label, X509Certificate rootCert, X509Certificate target, List certs,
+        int maxPathLength, int expectedLength)
+        throws Exception
+    {
+        X509CertSelector selector = new X509CertSelector();
+        selector.setCertificate(target);
+
+        PKIXBuilderParameters params = new PKIXBuilderParameters(
+            Collections.singleton(new TrustAnchor(rootCert, null)), selector);
+        params.addCertStore(CertStore.getInstance("Collection", new CollectionCertStoreParameters(certs), "BC"));
+        params.setRevocationEnabled(false);
+        params.setMaxPathLength(maxPathLength);
+
+        CertPathBuilder builder = CertPathBuilder.getInstance("PKIX", "BC");
+        if (expectedLength < 0)
+        {
+            checkBuildFails(label + " at maxPathLength " + maxPathLength, builder, params,
+                "Unable to find certificate chain.");
+        }
+        else
+        {
+            PKIXCertPathBuilderResult result = (PKIXCertPathBuilderResult)builder.build(params);
+
+            int length = result.getCertPath().getCertificates().size();
+
+            isTrue(label + " at maxPathLength " + maxPathLength + ": path of " + length, length == expectedLength);
+        }
+    }
+
+    private static X509Certificate unconstrainedCaCert(
+        X500Name subjectDN, PublicKey subjectKey, byte[] subjectSki,
+        PrivateKey issuerKey, X500Name issuerDN, byte[] issuerSki)
+        throws Exception
+    {
+        ExtensionsGenerator extGen = new ExtensionsGenerator();
+        extGen.addExtension(Extension.basicConstraints, true, new BasicConstraints(true));
+        extGen.addExtension(Extension.keyUsage, true,
+            new KeyUsage(KeyUsage.digitalSignature | KeyUsage.keyCertSign | KeyUsage.cRLSign));
+        extGen.addExtension(Extension.subjectKeyIdentifier, false, new SubjectKeyIdentifier(subjectSki));
+        extGen.addExtension(Extension.authorityKeyIdentifier, false, new AuthorityKeyIdentifier(issuerSki));
+        return signV3Cert(subjectDN, issuerKey, issuerDN, subjectKey, extGen);
     }
 
     private static final String SHA256_RSA = "SHA256withRSA";

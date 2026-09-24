@@ -356,6 +356,7 @@ class RFC3280CertPathUtilities
         X509Certificate defaultCRLSignCert,
         PublicKey defaultCRLSignKey,
         PKIXExtendedParameters paramsPKIX,
+        PKIXExtendedBuilderParameters builderParams,
         List certPathCerts,
         JcaJceHelper helper)
         throws AnnotatedException
@@ -473,7 +474,16 @@ class RFC3280CertPathUtilities
                     paramsBuilder.setRevocationEnabled(true);
                 }
 
-                PKIXExtendedBuilderParameters extParams = new PKIXExtendedBuilderParameters.Builder(paramsBuilder.build()).build();
+                PKIXExtendedBuilderParameters.Builder extParamsBuilder = new PKIXExtendedBuilderParameters.Builder(paramsBuilder.build());
+
+                // the caller's limits on path building apply to the CRL signer's path as well
+                if (builderParams != null)
+                {
+                    extParamsBuilder.setMaxPathLength(builderParams.getMaxPathLength())
+                        .addExcludedCerts(builderParams.getExcludedCerts());
+                }
+
+                PKIXExtendedBuilderParameters extParams = extParamsBuilder.build();
 
                 List certs = builder.engineBuild(extParams).getCertPath().getCertificates();
                 validCerts.add(signingCert);
@@ -1234,6 +1244,7 @@ class RFC3280CertPathUtilities
     protected static void processCertA(
         CertPath certPath,
         PKIXExtendedParameters paramsPKIX,
+        PKIXExtendedBuilderParameters builderParams,
         Date validityDate,
         PKIXCertRevocationChecker revocationChecker,
         int index,
@@ -1293,7 +1304,7 @@ class RFC3280CertPathUtilities
         //
         if (revocationChecker != null)
         {
-            revocationChecker.initialize(new PKIXCertRevocationCheckerParameters(paramsPKIX, validityDate, certPath,
+            revocationChecker.initialize(new ProvCertRevocationCheckerParameters(paramsPKIX, builderParams, validityDate, certPath,
                 index, sign, workingPublicKey));
 
             revocationChecker.check(cert);
@@ -1569,7 +1580,8 @@ class RFC3280CertPathUtilities
                 }
 
                 // (f)
-                Set keys = processCRLF(crl, cert, defaultCRLSignCert, defaultCRLSignKey, paramsPKIX, certPathCerts, helper);
+                Set keys = processCRLF(crl, cert, defaultCRLSignCert, defaultCRLSignKey, paramsPKIX,
+                    ProvCertRevocationCheckerParameters.getBuilderParams(params), certPathCerts, helper);
 
                 // (g)
                 PublicKey key = processCRLG(crl, keys);
