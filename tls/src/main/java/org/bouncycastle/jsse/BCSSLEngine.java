@@ -40,14 +40,16 @@ public interface BCSSLEngine
     /**
      * Sets parameters according to the properties in a {@link BCSSLParameters}.
      * <p>
-     * Note that any properties set to null will be ignored, which will leave the corresponding
-     * settings unchanged.
+     * Note that many properties set to null will be ignored, which will leave the corresponding
+     * settings unchanged. However, the newer properties signatureSchemes, signatureSchemesCert,
+     * namedGroups and earlyKeyShares are always applied, and setting one of them to null restores the
+     * default behaviour for that property.
      * </p>
      *
      * @param parameters
      *            the {@link BCSSLParameters parameters} to set
      * @throws IllegalArgumentException
-     *             if the cipherSuites or protocols properties contain unsupported values
+     *             if the setEnabledCipherSuites() or the setEnabledProtocols() call fails
      */
     void setParameters(BCSSLParameters parameters);
 }
