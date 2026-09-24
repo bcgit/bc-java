@@ -156,6 +156,14 @@ public class JceKeyAgreeRecipientInfoGenerator
 
         ASN1ObjectIdentifier keyAgreementOID = keyAgreeAlgorithm.getAlgorithm();
 
+        // RFC 3370 sec. 4.1.2 (static-static DH) and RFC 4490 sec. 4.1.1 (GOST): the ukm MUST be present
+        // TODO Consider delegating to an OID classifier for static-key agreement schemes
+        if (userKeyingMaterial == null
+            && (PKCSObjectIdentifiers.id_alg_SSDH.equals(keyAgreementOID) || isGOST(keyAgreementOID)))
+        {
+            throw new CMSException("User keying material must be set for static keys.");
+        }
+
         init(keyAgreementOID);
 
         PrivateKey senderPrivateKey = this.senderPrivateKey;
@@ -168,7 +176,7 @@ public class JceKeyAgreeRecipientInfoGenerator
 
             try
             {
-                AlgorithmParameterSpec agreementParamSpec;
+                AlgorithmParameterSpec agreementParamSpec = null;
                 ASN1ObjectIdentifier keyEncryptionOID = keyEncryptionAlgorithm.getAlgorithm();
 
                 if (isMQV(keyAgreementOID))
@@ -191,30 +199,12 @@ public class JceKeyAgreeRecipientInfoGenerator
                         agreementParamSpec = new UserKeyingMaterialSpec(ukmKeyingMaterial);
                     }
                 }
-                else if (isRFC2631(keyAgreementOID))
+                else if (isGOST(keyAgreementOID) ||
+                         isRFC2631(keyAgreementOID))
                 {
                     if (userKeyingMaterial != null)
                     {
                         agreementParamSpec = new UserKeyingMaterialSpec(userKeyingMaterial);
-                    }
-                    else
-                    {
-                        if (keyAgreementOID.equals(PKCSObjectIdentifiers.id_alg_SSDH))
-                        {
-                            throw new CMSException("User keying material must be set for static keys.");
-                        }
-                        agreementParamSpec = null;
-                    }
-                }
-                else if (isGOST(keyAgreementOID))
-                {
-                    if (userKeyingMaterial != null)
-                    {
-                        agreementParamSpec = new UserKeyingMaterialSpec(userKeyingMaterial);
-                    }
-                    else
-                    {
-                        throw new CMSException("User keying material must be set for static keys.");
                     }
                 }
                 else

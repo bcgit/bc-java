@@ -9,6 +9,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.Provider;
 import java.security.PublicKey;
+import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.HashSet;
@@ -138,9 +139,13 @@ public abstract class JceKeyAgreeRecipient
         PublicKey senderPublicKey, ASN1OctetString userKeyingMaterial, PrivateKey receiverPrivateKey, KeyMaterialGenerator kmGen)
         throws CMSException, GeneralSecurityException, IOException
     {
+        ASN1ObjectIdentifier agreeAlgOID = keyEncAlg.getAlgorithm();
+
         receiverPrivateKey = CMSUtils.cleanPrivateKey(receiverPrivateKey);
 
-        if (CMSUtils.isMQV(keyEncAlg.getAlgorithm()))
+        AlgorithmParameterSpec initParams = null;
+
+        if (CMSUtils.isMQV(agreeAlgOID))
         {
             MQVuserKeyingMaterial ukm = MQVuserKeyingMaterial.getInstance(userKeyingMaterial.getOctets());
 
@@ -149,10 +154,8 @@ public abstract class JceKeyAgreeRecipient
                                                 ukm.getEphemeralPublicKey().getPublicKey().getBytes());
 
             X509EncodedKeySpec pubSpec = new X509EncodedKeySpec(pubInfo.getEncoded());
-            KeyFactory fact = helper.createKeyFactory(keyEncAlg.getAlgorithm());
+            KeyFactory fact = helper.createKeyFactory(agreeAlgOID);
             PublicKey ephemeralKey = fact.generatePublic(pubSpec);
-
-            KeyAgreement agreement = helper.createKeyAgreement(keyEncAlg.getAlgorithm());
 
             byte[] ukmKeyingMaterial = (ukm.getAddedukm() != null) ? ukm.getAddedukm().getOctets() : null;
             if (kmGen == old_ecc_cms_Generator)
@@ -160,70 +163,57 @@ public abstract class JceKeyAgreeRecipient
                 ukmKeyingMaterial = old_ecc_cms_Generator.generateKDFMaterial(wrapAlg, keySizeProvider.getKeySize(wrapAlg), ukmKeyingMaterial);
             }
 
-            try
-            {
-            agreement.init(receiverPrivateKey, new MQVParameterSpec(receiverPrivateKey, ephemeralKey, ukmKeyingMaterial));
-            agreement.doPhase(senderPublicKey, true);
-
-            return agreement.generateSecret(wrapAlg.getAlgorithm().getId());
-            }
-            catch (Exception e)
-            {
-                throw new GeneralSecurityException(e.toString());
-            }
+            initParams = new MQVParameterSpec(receiverPrivateKey, ephemeralKey, ukmKeyingMaterial);
         }
         else
         {
-            KeyAgreement agreement = helper.createKeyAgreement(keyEncAlg.getAlgorithm());
-
-            UserKeyingMaterialSpec userKeyingMaterialSpec = null;
-
-            if (CMSUtils.isEC(keyEncAlg.getAlgorithm()))
+            if (CMSUtils.isEC(agreeAlgOID))
             {
                 if (userKeyingMaterial != null)
                 {
                     byte[] ukmKeyingMaterial = kmGen.generateKDFMaterial(wrapAlg, keySizeProvider.getKeySize(wrapAlg), userKeyingMaterial.getOctets());
 
-                    userKeyingMaterialSpec = new UserKeyingMaterialSpec(ukmKeyingMaterial);
+                    initParams = new UserKeyingMaterialSpec(ukmKeyingMaterial);
                 }
                 else
                 {
                     byte[] ukmKeyingMaterial = kmGen.generateKDFMaterial(wrapAlg, keySizeProvider.getKeySize(wrapAlg), null);
 
-                    userKeyingMaterialSpec = new UserKeyingMaterialSpec(ukmKeyingMaterial);
+                    initParams = new UserKeyingMaterialSpec(ukmKeyingMaterial);
                 }
             }
-            else if (CMSUtils.isRFC2631(keyEncAlg.getAlgorithm()))
+            else if (CMSUtils.isRFC2631(agreeAlgOID))
             {
                 if (userKeyingMaterial != null)
                 {
-                    userKeyingMaterialSpec = new UserKeyingMaterialSpec(userKeyingMaterial.getOctets());
+                    initParams = new UserKeyingMaterialSpec(userKeyingMaterial.getOctets());
                 }
             }
-            else if (CMSUtils.isGOST(keyEncAlg.getAlgorithm()))
+            else if (CMSUtils.isGOST(agreeAlgOID))
             {
                 if (userKeyingMaterial != null)
                 {
-                    userKeyingMaterialSpec = new UserKeyingMaterialSpec(userKeyingMaterial.getOctets());
+                    initParams = new UserKeyingMaterialSpec(userKeyingMaterial.getOctets());
                 }
             }
             else
             {
-                throw new CMSException("Unknown key agreement algorithm: " + keyEncAlg.getAlgorithm());
+                throw new CMSException("Unknown key agreement algorithm: " + agreeAlgOID);
             }
+        }
 
-            try
-            {
-            agreement.init(receiverPrivateKey, userKeyingMaterialSpec);
+        KeyAgreement agreement = helper.createKeyAgreement(agreeAlgOID);
 
+        try
+        {
+            agreement.init(receiverPrivateKey, initParams);
             agreement.doPhase(senderPublicKey, true);
 
             return agreement.generateSecret(wrapAlg.getAlgorithm().getId());
-            }
-            catch (Exception e)
-            {
-                throw new GeneralSecurityException(e.toString());
-            }
+        }
+        catch (Exception e)
+        {
+            throw new GeneralSecurityException(e.toString());
         }
     }
 
