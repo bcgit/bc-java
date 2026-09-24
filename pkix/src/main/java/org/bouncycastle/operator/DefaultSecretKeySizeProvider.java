@@ -8,6 +8,7 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.gm.GMObjectIdentifiers;
 import org.bouncycastle.asn1.kisa.KISAObjectIdentifiers;
+import org.bouncycastle.asn1.misc.MiscObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.ntt.NTTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
@@ -26,7 +27,8 @@ public class DefaultSecretKeySizeProvider
     {
         Map keySizes = new HashMap();
 
-        keySizes.put(new ASN1ObjectIdentifier("1.2.840.113533.7.66.10"), Integers.valueOf(128));
+        keySizes.put(MiscObjectIdentifiers.cast5CBC, Integers.valueOf(128));
+        keySizes.put(MiscObjectIdentifiers.as_sys_sec_alg_ideaCBC, Integers.valueOf(128));
 
         keySizes.put(PKCSObjectIdentifiers.des_EDE3_CBC, Integers.valueOf(192));
         keySizes.put(PKCSObjectIdentifiers.id_alg_CMS3DESwrap, Integers.valueOf(192));
