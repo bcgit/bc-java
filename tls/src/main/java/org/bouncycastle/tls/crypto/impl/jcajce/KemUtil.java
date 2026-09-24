@@ -2,12 +2,15 @@ package org.bouncycastle.tls.crypto.impl.jcajce;
 
 import java.io.IOException;
 import java.security.GeneralSecurityException;
+import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
+import java.security.Provider;
 import java.security.PublicKey;
 import java.security.spec.EncodedKeySpec;
+import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
 import javax.crypto.KeyGenerator;
@@ -18,6 +21,7 @@ import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.jcajce.SecretKeyWithEncapsulation;
+import org.bouncycastle.jcajce.interfaces.MLKEMPrivateKey;
 import org.bouncycastle.jcajce.interfaces.MLKEMPublicKey;
 import org.bouncycastle.jcajce.spec.KEMExtractSpec;
 import org.bouncycastle.jcajce.spec.KEMGenerateSpec;
@@ -54,6 +58,7 @@ class KemUtil
         try
         {
             KeyGenerator keyGenerator = crypto.getHelper().createKeyGenerator(kemName);
+            privateKey = importPrivateKey(keyGenerator.getProvider(), kemName, privateKey);
             keyGenerator.init(new KEMExtractSpec.Builder(privateKey, ciphertext, "DEF", 256).withNoKdf().build());
             SecretKeyWithEncapsulation secEnc = (SecretKeyWithEncapsulation)keyGenerator.generateKey();
             return crypto.adoptLocalSecret(secEnc.getEncoded());
@@ -69,6 +74,7 @@ class KemUtil
         try
         {
             KeyGenerator keyGenerator = crypto.getHelper().createKeyGenerator(kemName);
+            publicKey = importPublicKey(keyGenerator.getProvider(), kemName, publicKey);
             keyGenerator.init(new KEMGenerateSpec.Builder(publicKey, "DEF", 256).withNoKdf().build());
             return (SecretKeyWithEncapsulation)keyGenerator.generateKey();
         }
@@ -162,6 +168,45 @@ class KemUtil
         }
 
         throw new IllegalArgumentException("unknown kem name " + kemName);
+    }
+
+    /*
+     * The key objects and the KeyGenerator are resolved from the JCA independently, so a provider
+     * ahead of BC can supply keys that BC's generator will not accept. Re-import through the
+     * generator's own provider when that happens.
+     */
+    private static PrivateKey importPrivateKey(Provider provider, String kemName, PrivateKey privateKey)
+        throws GeneralSecurityException
+    {
+        if (!(provider instanceof BouncyCastleProvider) || privateKey instanceof MLKEMPrivateKey)
+        {
+            return privateKey;
+        }
+
+        if (!"PKCS#8".equals(privateKey.getFormat()))
+        {
+            throw new InvalidKeyException("Private key format unrecognized: " + privateKey.getFormat());
+        }
+
+        KeyFactory kf = KeyFactory.getInstance(kemName, provider);
+        return kf.generatePrivate(new PKCS8EncodedKeySpec(privateKey.getEncoded()));
+    }
+
+    private static PublicKey importPublicKey(Provider provider, String kemName, PublicKey publicKey)
+        throws GeneralSecurityException
+    {
+        if (!(provider instanceof BouncyCastleProvider) || publicKey instanceof MLKEMPublicKey)
+        {
+            return publicKey;
+        }
+
+        if (!"X.509".equals(publicKey.getFormat()))
+        {
+            throw new InvalidKeyException("Public key format unrecognized: " + publicKey.getFormat());
+        }
+
+        KeyFactory kf = KeyFactory.getInstance(kemName, provider);
+        return kf.generatePublic(new X509EncodedKeySpec(publicKey.getEncoded()));
     }
 
     static boolean isKemSupported(JcaTlsCrypto crypto, String kemName)
