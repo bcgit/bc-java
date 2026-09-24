@@ -29,6 +29,12 @@ import org.bouncycastle.util.Pack;
  * only and has <b>not</b> been confirmed against an independent conformant DSTU 7624 implementation.
  * See github #287.
  * </p>
+ * <p>
+ * As DSTU 7624:2014 sec. 12.1 requires, at least one of the associated text and the data must be
+ * non-empty: with both empty the tag would be E_K(0), which is the GHASH key. doFinal rejects that
+ * case with a {@link DataLengthException} when encrypting and an {@link InvalidCipherTextException}
+ * when decrypting.
+ * </p>
  */
 public class KGCMBlockCipher
     implements AEADBlockCipher
@@ -239,6 +245,17 @@ public class KGCMBlockCipher
         if (!forEncryption && len < macSize)
         {
             throw new InvalidCipherTextException("data too short");
+        }
+
+        // DSTU 7624:2014 sec. 12.1 requires |O| + |M| >= 1: with both empty the tag is E_K(0), the GHASH key.
+        if (associatedText.size() == 0 && len == (forEncryption ? 0 : macSize))
+        {
+            reset();
+            if (forEncryption)
+            {
+                throw new DataLengthException("KGCM requires associated text or data, both are empty");
+            }
+            throw new InvalidCipherTextException("KGCM requires associated text or data, both are empty");
         }
 
         // TODO Total blocks restriction in GCM mode (extend limit naturally for larger block sizes?)

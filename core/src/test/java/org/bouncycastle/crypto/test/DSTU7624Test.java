@@ -3,6 +3,7 @@ package org.bouncycastle.crypto.test;
 import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.engines.DSTU7624Engine;
 import org.bouncycastle.crypto.engines.DSTU7624WrapEngine;
@@ -102,6 +103,136 @@ public class DSTU7624Test
         kccmKgcmNoUnverifiedPlaintextOnFailure();
         kgcmReInitClearsAssociatedText();
         kccmVariableLengthAssociatedTextAndNonce();
+        kgcmEmptyInputRejected();
+        macEmptyInputRejected();
+    }
+
+    /*
+     * DSTU 7624:2014 sec. 12.1 requires |O| + |M| >= 1 for KGCM/KGMac: with both empty the tag is
+     * E_K(0), which is the GHASH key H, so it must be refused in both directions. Either one alone
+     * being empty is still legal.
+     */
+    private void kgcmEmptyInputRejected()
+        throws Exception
+    {
+        int[] blockBits = { 128, 256, 512 };
+        for (int i = 0; i != blockBits.length; i++)
+        {
+            int bits = blockBits[i];
+            int bs = bits / 8;
+            byte[] key = new byte[bs];
+            byte[] iv = new byte[bs];
+            for (int j = 0; j != bs; j++)
+            {
+                key[j] = (byte)j;
+                iv[j] = (byte)(0x80 + j);
+            }
+            KeyParameter kp = new KeyParameter(key);
+
+            byte[] h = new byte[bs];
+            DSTU7624Engine engine = new DSTU7624Engine(bits);
+            engine.init(true, kp);
+            engine.processBlock(h, 0, h, 0);
+
+            KGCMBlockCipher enc = new KGCMBlockCipher(new DSTU7624Engine(bits));
+            enc.init(true, new AEADParameters(kp, bits, iv));
+            try
+            {
+                enc.doFinal(new byte[bs], 0);
+                fail("KGCM-" + bits + " encrypted empty associated text and empty data");
+            }
+            catch (DataLengthException e)
+            {
+                isEquals("KGCM requires associated text or data, both are empty", e.getMessage());
+            }
+
+            // the rejected call leaves the cipher usable
+            enc.processAADByte((byte)1);
+            isEquals(bs, enc.doFinal(new byte[bs], 0));
+
+            KGCMBlockCipher dec = new KGCMBlockCipher(new DSTU7624Engine(bits));
+            dec.init(false, new AEADParameters(kp, bits, iv));
+            dec.processBytes(h, 0, h.length, null, 0);
+            try
+            {
+                dec.doFinal(new byte[0], 0);
+                fail("KGCM-" + bits + " accepted E_K(0) as the tag of an empty message");
+            }
+            catch (InvalidCipherTextException e)
+            {
+                isEquals("KGCM requires associated text or data, both are empty", e.getMessage());
+            }
+
+            KGMac mac = new KGMac(new KGCMBlockCipher(new DSTU7624Engine(bits)), bits);
+            mac.init(new ParametersWithIV(kp, iv));
+            try
+            {
+                mac.doFinal(new byte[bs], 0);
+                fail("KGMac-" + bits + " produced a tag for an empty message");
+            }
+            catch (DataLengthException e)
+            {
+                isEquals("KGCM requires associated text or data, both are empty", e.getMessage());
+            }
+            mac.update((byte)0);
+            byte[] tag = new byte[bs];
+            mac.doFinal(tag, 0);
+            isTrue("KGMac-" + bits + " one-byte tag equals E_K(0)", !Arrays.areEqual(h, tag));
+
+            // one side empty is legal: data only, associated text only (via update and via AEADParameters)
+            kgcmCheckRoundtrip(bits, kp, iv, null, new byte[0], new byte[1]);
+            kgcmCheckRoundtrip(bits, kp, iv, null, new byte[1], new byte[0]);
+            kgcmCheckRoundtrip(bits, kp, iv, new byte[1], new byte[0], new byte[0]);
+        }
+    }
+
+    private void kgcmCheckRoundtrip(int bits, KeyParameter kp, byte[] iv, byte[] initialAAD, byte[] aad, byte[] pt)
+        throws Exception
+    {
+        KGCMBlockCipher enc = new KGCMBlockCipher(new DSTU7624Engine(bits));
+        enc.init(true, new AEADParameters(kp, bits, iv, initialAAD));
+        enc.processAADBytes(aad, 0, aad.length);
+        byte[] ct = new byte[enc.getOutputSize(pt.length)];
+        enc.doFinal(ct, enc.processBytes(pt, 0, pt.length, ct, 0));
+
+        KGCMBlockCipher dec = new KGCMBlockCipher(new DSTU7624Engine(bits));
+        dec.init(false, new AEADParameters(kp, bits, iv, initialAAD));
+        dec.processAADBytes(aad, 0, aad.length);
+        byte[] out = new byte[dec.getOutputSize(ct.length)];
+        dec.doFinal(out, dec.processBytes(ct, 0, ct.length, out, 0));
+        isTrue("KGCM-" + bits + " round trip", Arrays.areEqual(pt, out));
+    }
+
+    /*
+     * DSTU 7624:2014 sec. 9.1 defines the MAC for one or more whole blocks; an empty message would
+     * otherwise get the tag of a single all-zero block.
+     */
+    private void macEmptyInputRejected()
+    {
+        byte[] key = Hex.decode("000102030405060708090A0B0C0D0E0F");
+        DSTU7624Mac mac = new DSTU7624Mac(128, 128);
+        mac.init(new KeyParameter(key));
+        try
+        {
+            mac.doFinal(new byte[16], 0);
+            fail("DSTU7624Mac produced a tag for an empty message");
+        }
+        catch (DataLengthException e)
+        {
+            isEquals("DSTU7624Mac requires at least one block of input", e.getMessage());
+        }
+
+        // the rejected call leaves the MAC usable, and a single zero block is still accepted
+        mac.update(new byte[16], 0, 16);
+        byte[] afterReject = new byte[16];
+        mac.doFinal(afterReject, 0);
+
+        DSTU7624Mac fresh = new DSTU7624Mac(128, 128);
+        fresh.init(new KeyParameter(key));
+        fresh.update(new byte[16], 0, 16);
+        byte[] zeroBlock = new byte[16];
+        fresh.doFinal(zeroBlock, 0);
+        isTrue("DSTU7624Mac state disturbed by rejected empty message", Arrays.areEqual(zeroBlock, afterReject));
     }
 
     private void kgcmReInitClearsAssociatedText()

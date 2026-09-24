@@ -15,6 +15,9 @@ import org.bouncycastle.crypto.params.ParametersWithIV;
  * <p>
  * KGMac is an invocation of the KGCM mode where no data is encrypted (i.e. all input data to the Mac
  * is processed as additional authenticated data with the underlying KGCM block cipher).
+ * <p>
+ * DSTU 7624:2014 sec. 12.1 does not define the MAC of an empty message, so doFinal throws a
+ * {@link DataLengthException} if no input has been supplied.
  */
 public class KGMac
     implements Mac

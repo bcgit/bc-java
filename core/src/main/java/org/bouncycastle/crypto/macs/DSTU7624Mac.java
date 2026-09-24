@@ -24,6 +24,10 @@ import org.bouncycastle.util.Arrays;
  * block boundary with an agreed scheme before calling update, or use a length-binding MAC such as
  * KGMac. See github #287.
  * </p>
+ * <p>
+ * An empty message is outside the domain of DSTU 7624:2014 sec. 9.1 (at least one block) and is
+ * rejected by {@link #doFinal}; it would otherwise have the same tag as a single all-zero block.
+ * </p>
  */
 public class DSTU7624Mac
     implements Mac
@@ -133,6 +137,12 @@ public class DSTU7624Mac
     public int doFinal(byte[] out, int outOff)
         throws DataLengthException, IllegalStateException
     {
+        // DSTU 7624:2014 sec. 9.1 defines the MAC for one or more blocks; an empty message would share the tag of 0^n.
+        if (bufOff == 0)
+        {
+            throw new DataLengthException("DSTU7624Mac requires at least one block of input");
+        }
+
         if (bufOff % buf.length != 0)
         {
             // Deliberately strict: see the class javadoc for why partial blocks are not zero-padded
