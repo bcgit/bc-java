@@ -147,6 +147,12 @@ public abstract class JceKeyAgreeRecipient
 
         if (CMSUtils.isMQV(agreeAlgOID))
         {
+            // RFC 5753 sec. 3.2.1: for 1-Pass ECMQV the ukm MUST be present
+            if (userKeyingMaterial == null)
+            {
+                throw new CMSException("User keying material must be present for MQV.");
+            }
+
             MQVuserKeyingMaterial ukm = MQVuserKeyingMaterial.getInstance(userKeyingMaterial.getOctets());
 
             SubjectPublicKeyInfo pubInfo = new SubjectPublicKeyInfo(

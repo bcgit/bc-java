@@ -3539,6 +3539,55 @@ public class NewEnvelopedDataTest
         confirmDataReceived(ed2.getRecipientInfos(), data, _reciEcCert2, _reciEcKP2.getPrivate(), BC);
     }
 
+    /*
+     * RFC 5753 sec. 3.2.1: for 1-pass ECMQV the ukm (carrying the MQVuserKeyingMaterial) MUST be present, so a
+     * message without one is rejected with a specific error rather than a generic one.
+     */
+    public void testECMQVKeyAgreeWithoutUkm()
+        throws Exception
+    {
+        byte[] data = Hex.decode("504b492d4320434d5320456e76656c6f706564446174612053616d706c65");
+
+        CMSEnvelopedDataGenerator edGen = new CMSEnvelopedDataGenerator();
+
+        edGen.addRecipientInfoGenerator(new JceKeyAgreeRecipientInfoGenerator(CMSAlgorithm.ECMQV_SHA1KDF,
+            _origEcKP.getPrivate(), _origEcKP.getPublic(),
+            CMSAlgorithm.AES128_WRAP).addRecipient(_reciEcCert).setProvider(BC));
+
+        CMSEnvelopedData ed = edGen.generate(
+            new CMSProcessableByteArray(data),
+            new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES128_CBC).setProvider(BC).build());
+
+        // Rebuild the message with the (mandatory) ukm removed from the KeyAgreeRecipientInfo
+        ContentInfo contentInfo = ed.toASN1Structure();
+        EnvelopedData envelopedData = EnvelopedData.getInstance(contentInfo.getContent());
+        KeyAgreeRecipientInfo kari = KeyAgreeRecipientInfo.getInstance(
+            RecipientInfo.getInstance(envelopedData.getRecipientInfos().getObjectAt(0)).getInfo());
+        assertNotNull(kari.getUserKeyingMaterial());
+
+        KeyAgreeRecipientInfo strippedKari = new KeyAgreeRecipientInfo(kari.getOriginator(), null,
+            kari.getKeyEncryptionAlgorithm(), kari.getRecipientEncryptedKeys());
+        EnvelopedData strippedEnvelopedData = new EnvelopedData(envelopedData.getOriginatorInfo(),
+            new DERSet(new RecipientInfo(strippedKari)), envelopedData.getEncryptedContentInfo(),
+            envelopedData.getUnprotectedAttrs());
+        CMSEnvelopedData stripped = new CMSEnvelopedData(
+            new ContentInfo(contentInfo.getContentType(), strippedEnvelopedData));
+
+        RecipientInformation recipient =
+            (RecipientInformation)stripped.getRecipientInfos().getRecipients().iterator().next();
+
+        try
+        {
+            recipient.getContent(new JceKeyAgreeEnvelopedRecipient(_reciEcKP.getPrivate()).setProvider(BC));
+            fail("no exception");
+        }
+        catch (CMSException e)
+        {
+            assertEquals("User keying material must be present for MQV.", e.getMessage());
+            assertNull(e.getCause());
+        }
+    }
+
     private static byte[] getMQVEphemeralPublicKey(CMSEnvelopedData ed)
         throws IOException
     {
