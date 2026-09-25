@@ -25,9 +25,15 @@ public class GOST28147WrapEngine
         
         ParametersWithUKM pU = (ParametersWithUKM)param;
 
-        cipher.init(forWrapping, pU.getParameters());
+        CipherParameters kParam = pU.getParameters();
+        if (kParam instanceof ParametersWithRandom)
+        {
+            kParam = ((ParametersWithRandom)kParam).getParameters();
+        }
 
-        mac.init(new ParametersWithIV(pU.getParameters(), pU.getUKM()));
+        cipher.init(forWrapping, kParam);
+
+        mac.init(new ParametersWithIV(kParam, pU.getUKM()));
     }
 
     public String getAlgorithmName()

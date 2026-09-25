@@ -221,16 +221,16 @@ public abstract class BaseWrapCipher
             param = new ParametersWithIV(param, iv);
         }
 
+        GOST28147WrapParameterSpec gostSpec = null;
         if (params instanceof GOST28147WrapParameterSpec)
         {
-            GOST28147WrapParameterSpec spec = (GOST28147WrapParameterSpec) params;
+            gostSpec = (GOST28147WrapParameterSpec) params;
 
-            byte[] sBox = spec.getSBox();
+            byte[] sBox = gostSpec.getSBox();
             if (sBox != null)
             {
                 param = new ParametersWithSBox(param, sBox);
             }
-            param = new ParametersWithUKM(param, spec.getUKM());
         }
 
         if (param instanceof KeyParameter && ivSize != 0)
@@ -246,6 +246,12 @@ public abstract class BaseWrapCipher
         if (random != null)
         {
             param = new ParametersWithRandom(param, random);
+        }
+
+        // the UKM goes outside the random (see org.bouncycastle.crypto.params)
+        if (gostSpec != null)
+        {
+            param = new ParametersWithUKM(param, gostSpec.getUKM());
         }
 
         try

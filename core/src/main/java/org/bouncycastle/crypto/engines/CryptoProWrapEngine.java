@@ -23,17 +23,22 @@ public class CryptoProWrapEngine
         ParametersWithUKM pU = (ParametersWithUKM)param;
         byte[] sBox = null;
 
+        CipherParameters inner = pU.getParameters();
+        if (inner instanceof ParametersWithRandom)
+        {
+            inner = ((ParametersWithRandom)inner).getParameters();
+        }
 
         KeyParameter kParam;
 
-        if (pU.getParameters() instanceof ParametersWithSBox)
+        if (inner instanceof ParametersWithSBox)
         {
-            kParam = (KeyParameter)((ParametersWithSBox)pU.getParameters()).getParameters();
-            sBox = ((ParametersWithSBox)pU.getParameters()).getSBox();
+            kParam = (KeyParameter)((ParametersWithSBox)inner).getParameters();
+            sBox = ((ParametersWithSBox)inner).getSBox();
         }
         else
         {
-            kParam = (KeyParameter)pU.getParameters();
+            kParam = (KeyParameter)inner;
         }
 
         kParam = new KeyParameter(cryptoProDiversify(kParam.getKey(), pU.getUKM(), sBox));

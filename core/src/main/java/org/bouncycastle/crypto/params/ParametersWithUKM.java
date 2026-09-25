@@ -2,6 +2,13 @@ package org.bouncycastle.crypto.params;
 
 import org.bouncycastle.crypto.CipherParameters;
 
+/**
+ * Wrapper class for parameters which include User Keying Material (UKM).
+ * <p>
+ * Combined with a {@link ParametersWithRandom}, this goes on the outside:
+ * {@code ParametersWithUKM(ParametersWithRandom(key))}. The UKM is consumed by the wrap engine or key
+ * agreement, and anything inside it is passed on.
+ */
 public class ParametersWithUKM
     implements CipherParameters
 {
