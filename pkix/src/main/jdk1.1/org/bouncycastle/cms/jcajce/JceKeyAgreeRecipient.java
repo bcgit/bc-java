@@ -41,6 +41,7 @@ import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
 import org.bouncycastle.operator.DefaultSecretKeySizeProvider;
 import org.bouncycastle.operator.SecretKeySizeProvider;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.Pack;
 
 public abstract class JceKeyAgreeRecipient
@@ -163,11 +164,10 @@ public abstract class JceKeyAgreeRecipient
             KeyFactory fact = helper.createKeyFactory(agreeAlgOID);
             PublicKey ephemeralKey = fact.generatePublic(pubSpec);
 
-            byte[] ukmKeyingMaterial = (ukm.getAddedukm() != null) ? ukm.getAddedukm().getOctets() : null;
-            if (kmGen == old_ecc_cms_Generator)
-            {
-                ukmKeyingMaterial = old_ecc_cms_Generator.generateKDFMaterial(wrapAlg, keySizeProvider.getKeySize(wrapAlg), ukmKeyingMaterial);
-            }
+            // RFC 5753 sec. 3.2.3 / 7.2: the KDF SharedInfo is DER(ECC-CMS-SharedInfo) with the addedukm as
+            // its entityUInfo, exactly as for ECDH; the generator passed in selects which form is tried.
+            byte[] addedukm = (ukm.getAddedukm() != null) ? ukm.getAddedukm().getOctets() : null;
+            byte[] ukmKeyingMaterial = kmGen.generateKDFMaterial(wrapAlg, keySizeProvider.getKeySize(wrapAlg), addedukm);
 
             initParams = new MQVParameterSpec(receiverPrivateKey, ephemeralKey, ukmKeyingMaterial);
         }
@@ -268,13 +268,21 @@ public abstract class JceKeyAgreeRecipient
                 // might be a pre-RFC 5753 message
                 if (possibleOldMessages.contains(keyEncryptionAlgorithm.getAlgorithm()))
                 {
-                    SecretKey agreedWrapKey = calculateAgreedWrapKey(keyEncryptionAlgorithm, wrapAlg,
-                        senderPublicKey, userKeyingMaterial, recipientKey, old_ecc_cms_Generator);
+                    try
+                    {
+                        SecretKey agreedWrapKey = calculateAgreedWrapKey(keyEncryptionAlgorithm, wrapAlg,
+                            senderPublicKey, userKeyingMaterial, recipientKey, old_ecc_cms_Generator);
 
-                    return unwrapSessionKey(wrapAlg.getAlgorithm(), agreedWrapKey, contentEncryptionAlgorithm.getAlgorithm(), encryptedContentEncryptionKey);
+                        return unwrapSessionKey(wrapAlg.getAlgorithm(), agreedWrapKey, contentEncryptionAlgorithm.getAlgorithm(), encryptedContentEncryptionKey);
+                    }
+                    catch (InvalidKeyException ex)
+                    {
+                        // fall through to the raw ukm form, reporting the original failure if that fails too
+                    }
                 }
-                // one last try - people do actually do this it turns out
-                if (userKeyingMaterial != null)
+                // one last try - the raw ukm as the KDF SharedInfo: people do actually do this it turns out, and
+                // for ECMQV it is the form BC itself produced from 1.53 to 1.86.
+                if (userKeyingMaterial != null && Properties.isOverrideSet(Properties.CMS_ALLOW_LEGACY_KEYAGREE_KDF, true))
                 {
                     try
                     {

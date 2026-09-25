@@ -181,7 +181,12 @@ public class JceKeyAgreeRecipientInfoGenerator
 
                 if (isMQV(keyAgreementOID))
                 {
-                    agreementParamSpec = new MQVParameterSpec(ephemeralKP, recipientPublicKey, userKeyingMaterial);
+                    // RFC 5753 sec. 3.2.2 / 7.2: the KDF SharedInfo is DER(ECC-CMS-SharedInfo), with the
+                    // addedukm as its entityUInfo, exactly as for ECDH
+                    byte[] ukmKeyingMaterial = ecc_cms_Generator.generateKDFMaterial(keyEncryptionAlgorithm,
+                        keySizeProvider.getKeySize(keyEncryptionOID), userKeyingMaterial);
+
+                    agreementParamSpec = new MQVParameterSpec(ephemeralKP, recipientPublicKey, ukmKeyingMaterial);
                 }
                 else if (isEC(keyAgreementOID))
                 {

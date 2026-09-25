@@ -78,6 +78,19 @@ public class Properties
     public static final String EC_MAX_F2M_FIELD_SIZE = "org.bouncycastle.ec.max_f2m_field_size";
     public static final String MIME_MAX_DEPTH = "org.bouncycastle.mime.max_depth";
 
+    /**
+     * Whether a CMS key agreement recipient, having failed to unwrap the content-encryption key with the
+     * RFC 5753 derivation, may retry with the raw user keying material as the KDF's SharedInfo.
+     * <p>
+     * RFC 5753 sec. 7.2 fixes the SharedInfo of the ECDH and 1-Pass ECMQV KDF as the DER-encoded
+     * ECC-CMS-SharedInfo, which carries the ukm (the addedukm for ECMQV) as its entityUInfo. Some senders
+     * feed the KDF the ukm itself instead, and BC did so for ECMQV from 1.53 to 1.86. Default (unset or
+     * "true") keeps that retry, so such messages remain readable; set to "false" to accept only the
+     * RFC 5753 form (and, for the SHA-1 KDF schemes, the RFC 3278 form that preceded it). Read via
+     * {@link #isOverrideSet(String, boolean)}.
+     */
+    public static final String CMS_ALLOW_LEGACY_KEYAGREE_KDF = "org.bouncycastle.cms.allow_legacy_keyagree_kdf";
+
     private Properties()
     {
     }
