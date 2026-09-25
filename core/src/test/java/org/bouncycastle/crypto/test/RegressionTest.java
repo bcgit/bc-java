@@ -159,6 +159,7 @@ public class RegressionTest
             new SM2SignerTest(),
             new ShortWrapCipherTextTest(),
             new UKMParametersNestingTest(),
+            new CryptoProWrapEngineTest(),
             new SM4Test(),
             new SM9KEMTest(),
             new SM9EngineTest(),

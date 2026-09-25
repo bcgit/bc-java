@@ -17,6 +17,11 @@ public class GOST28147WrapEngine
 
     public void init(boolean forWrapping, CipherParameters param)
     {
+        /*
+         * The random is stripped on both sides of the UKM on purpose: UKM(Random(..)) is the documented
+         * order, and Random(UKM(..)) is the earlier one, kept for existing callers. Not a pattern to copy -
+         * see the org.bouncycastle.crypto.params package documentation. CryptoProWrapEngine does the same.
+         */
         if (param instanceof ParametersWithRandom)
         {
             ParametersWithRandom pr = (ParametersWithRandom)param;

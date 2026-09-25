@@ -18,7 +18,6 @@ import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.params.ParametersWithSBox;
 import org.bouncycastle.crypto.params.ParametersWithUKM;
-import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -47,6 +46,7 @@ public class UKMParametersNestingTest
     {
         wrapTest("GOST28147Wrap", new GOST28147WrapEngine(), null);
         wrapTest("GOST28147Wrap/SBox", new GOST28147WrapEngine(), GOST28147Engine.getSBox("E-A"));
+        wrapTest("CryptoProWrap", new CryptoProWrapEngine(), null);
         wrapTest("CryptoProWrap/SBox", new CryptoProWrapEngine(), GOST28147Engine.getSBox("E-A"));
 
         vkoTest();
@@ -73,12 +73,9 @@ public class UKMParametersNestingTest
         }
     }
 
-    /*
-     * A fresh key each time: CryptoProWrapEngine diversifies the KeyParameter's bytes in place.
-     */
     private static CipherParameters createWrapParameters(int nesting, byte[] sBox)
     {
-        CipherParameters key = new KeyParameter(Arrays.clone(KEK));
+        CipherParameters key = new KeyParameter(KEK);
         if (sBox != null)
         {
             key = new ParametersWithSBox(key, sBox);
