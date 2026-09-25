@@ -51,6 +51,12 @@ public class PBESecretKeyFactory
                 return new BCPBEKey(this.algName, this.algOid, scheme, digest, keySize, ivSize, pbeSpec, null);
             }
 
+            String problem = PBE.Util.checkIterationCount(pbeSpec.getIterationCount());
+            if (problem != null)
+            {
+                throw new InvalidKeySpecException(problem);
+            }
+
             if (forCipher)
             {
                 param = PBE.Util.makePBEParameters(pbeSpec, scheme, digest, keySize, ivSize);

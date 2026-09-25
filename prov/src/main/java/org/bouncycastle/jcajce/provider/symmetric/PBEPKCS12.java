@@ -1,6 +1,7 @@
 package org.bouncycastle.jcajce.provider.symmetric;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidParameterSpecException;
 
@@ -12,6 +13,7 @@ import org.bouncycastle.asn1.pkcs.PKCS12PBEParams;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseAlgorithmParameters;
 import org.bouncycastle.jcajce.provider.util.AlgorithmProvider;
+import org.bouncycastle.util.Properties;
 
 public class PBEPKCS12
 {
@@ -80,7 +82,31 @@ public class PBEPKCS12
             byte[] params)
             throws IOException
         {
-            this.params = PKCS12PBEParams.getInstance(ASN1Primitive.fromByteArray(params));
+            PKCS12PBEParams pbeParams = PKCS12PBEParams.getInstance(ASN1Primitive.fromByteArray(params));
+
+            checkIterationCount(pbeParams.getIterations());
+
+            this.params = pbeParams;
+        }
+
+        /**
+         * The iteration count comes from an untrusted encoding (the parameters of a PBES1 or PKCS#12 PBE
+         * AlgorithmIdentifier) and drives the derivation before anything can be verified, so it is bounded as
+         * PBEPBKDF2 bounds its own, and a negative or beyond-int value is rejected rather than narrowed.
+         */
+        private static void checkIterationCount(BigInteger iterationCount)
+            throws IOException
+        {
+            if (iterationCount.signum() < 0 || iterationCount.bitLength() > 31)
+            {
+                throw new IOException("invalid iteration count (" + iterationCount + ")");
+            }
+
+            int maxIT = Properties.asInteger(Properties.PBE_MAX_ITERATION_COUNT, 10000000);
+            if (iterationCount.intValue() > maxIT)
+            {
+                throw new IOException("iteration count (" + iterationCount + ") greater than " + maxIT);
+            }
         }
 
         protected void engineInit(

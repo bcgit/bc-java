@@ -365,13 +365,18 @@ public class Properties
     public static final String BCFKS_SCRYPT_P_EQ_R = "org.bouncycastle.bcfks.scrypt_p_eq_r";
 
     /**
-     * Upper bound on the PBKDF2 iteration count honoured when BC takes that count from an
+     * Upper bound on the PBE iteration count honoured when BC takes that count from an
      * untrusted encoding: decrypting a PBES2-protected PKCS#8 / PEM private key or PKCS#12
      * bag, verifying an RFC 9579 PBMAC1, unwrapping a CMS password recipient, and the raw JCA
      * PBKDF2 provider (both the {@code SecretKeyFactory} derivation and the
-     * {@code AlgorithmParameters} parse a {@code Cipher} performs for PBES2). In each case the
+     * {@code AlgorithmParameters} parse a {@code Cipher} performs for PBES2). It also bounds the
+     * legacy PBES1 (PKCS#5 scheme 1) and PKCS#12 PBE families in the raw JCA provider: the
+     * {@code AlgorithmParameters} parse, and every {@code Cipher}, {@code Mac} and
+     * {@code SecretKeyFactory} derivation, whichever provider decoded the parameters. In each case the
      * key-derivation parameters travel inside an unauthenticated container, so an unbounded
-     * count makes processing attacker-supplied material a CPU-exhaustion vector. Default
+     * count makes processing attacker-supplied material a CPU-exhaustion vector. The PKCS#12
+     * key store derives through the same provider code, so a {@link #PKCS12_MAX_IT_COUNT} raised
+     * above this bound needs this one raised too. Default
      * 10,000,000 - the count RFC 8018 sec. 4.2 names as possibly appropriate for especially
      * critical keys, so generous enough for deliberately strong settings. Read via
      * {@link #asInteger(String, int)}.

@@ -43,6 +43,7 @@ import org.bouncycastle.jcajce.provider.symmetric.util.BaseSecretKeyFactory;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseWrapCipher;
 import org.bouncycastle.jcajce.provider.symmetric.util.PBE;
 import org.bouncycastle.jcajce.provider.util.AlgorithmProvider;
+import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 
 public final class DES
 {
@@ -333,13 +334,20 @@ public final class DES
                     }
                 }
 
-                if (forCipher)
+                try
                 {
-                    param = PBE.Util.makePBEParameters(pbeSpec, scheme, digest, keySize, ivSize);
+                    if (forCipher)
+                    {
+                        param = PBE.Util.makePBEParameters(pbeSpec, scheme, digest, keySize, ivSize);
+                    }
+                    else
+                    {
+                        param = PBE.Util.makePBEMacParameters(pbeSpec, scheme, digest, keySize);
+                    }
                 }
-                else
+                catch (IllegalArgumentException e)
                 {
-                    param = PBE.Util.makePBEMacParameters(pbeSpec, scheme, digest, keySize);
+                    throw SecurityExceptions.invalidKeySpecException(e.getMessage(), e);
                 }
 
                 KeyParameter kParam;

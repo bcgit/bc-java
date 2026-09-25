@@ -79,6 +79,7 @@ public class RegressionTest
         new OCBTest(),
         new OpenSSHSpecTests(),
         new PBETest(),
+        new PBEIterationCountTest(),
         new PKCS10CertRequestTest(),
         new PKCS12StorePBETest(),
         new PKCS12StoreTest(),

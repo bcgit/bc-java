@@ -197,6 +197,7 @@ public abstract class BaseWrapCipher
 
             if (params instanceof PBEParameterSpec)
             {
+                PBE.Util.checkIterationCount(params);
                 param = PBE.Util.makePBEParameters(k, params, wrapEngine.getAlgorithmName());
             }
             else if (k.getParam() != null)

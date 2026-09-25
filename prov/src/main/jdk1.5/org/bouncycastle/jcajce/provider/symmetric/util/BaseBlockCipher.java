@@ -801,6 +801,7 @@ public class BaseBlockCipher
             else if (paramSpec instanceof PBEParameterSpec)
             {
                 pbeSpec = (PBEParameterSpec)paramSpec;
+                PBE.Util.checkIterationCount(paramSpec);
                 param = PBE.Util.makePBEParameters(k, paramSpec, cipher.getUnderlyingCipher().getAlgorithmName());
             }
             else
