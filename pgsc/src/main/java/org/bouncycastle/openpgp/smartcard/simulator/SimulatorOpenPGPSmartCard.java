@@ -9,8 +9,7 @@ import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.RawAgreement;
 import org.bouncycastle.crypto.Signer;
-import org.bouncycastle.crypto.agreement.BasicRawAgreement;
-import org.bouncycastle.crypto.agreement.ECDHBasicAgreement;
+import org.bouncycastle.crypto.agreement.ECDHRawAgreement;
 import org.bouncycastle.crypto.agreement.X25519Agreement;
 import org.bouncycastle.crypto.agreement.X448Agreement;
 import org.bouncycastle.crypto.encodings.PKCS1Encoding;
@@ -18,16 +17,13 @@ import org.bouncycastle.crypto.engines.RSABlindedEngine;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.Ed25519PrivateKeyParameters;
 import org.bouncycastle.crypto.params.X25519PrivateKeyParameters;
-import org.bouncycastle.crypto.params.X25519PublicKeyParameters;
 import org.bouncycastle.crypto.params.X448PrivateKeyParameters;
-import org.bouncycastle.crypto.params.X448PublicKeyParameters;
 import org.bouncycastle.crypto.signers.DSASigner;
 import org.bouncycastle.crypto.signers.ECDSASigner;
 import org.bouncycastle.crypto.signers.Ed25519Signer;
 import org.bouncycastle.crypto.signers.Ed448Signer;
 import org.bouncycastle.crypto.signers.StandardDSAEncoding;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
-import org.bouncycastle.jcajce.provider.asymmetric.edec.BCXDHPublicKey;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPPublicKey;
@@ -329,7 +325,7 @@ public class SimulatorOpenPGPSmartCard
                     }
                     else
                     {
-                        agreement = new BasicRawAgreement(new ECDHBasicAgreement());
+                        agreement = new ECDHRawAgreement();
                     }
                     break;
 

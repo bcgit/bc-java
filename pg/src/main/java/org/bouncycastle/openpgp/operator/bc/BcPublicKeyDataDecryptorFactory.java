@@ -17,8 +17,7 @@ import org.bouncycastle.crypto.BlockCipher;
 import org.bouncycastle.crypto.BufferedAsymmetricBlockCipher;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.Wrapper;
-import org.bouncycastle.crypto.agreement.BasicRawAgreement;
-import org.bouncycastle.crypto.agreement.ECDHBasicAgreement;
+import org.bouncycastle.crypto.agreement.ECDHRawAgreement;
 import org.bouncycastle.crypto.agreement.X25519Agreement;
 import org.bouncycastle.crypto.agreement.X448Agreement;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
@@ -362,7 +361,7 @@ public class BcPublicKeyDataDecryptorFactory
             switch (keyAlgorithm)
             {
                 case PublicKeyAlgorithmTags.ECDH:
-                    return BcUtil.getSecret(new BasicRawAgreement(new ECDHBasicAgreement()), privKey, peerKey);
+                    return BcUtil.getSecret(new ECDHRawAgreement(), privKey, peerKey);
 
                 case PublicKeyAlgorithmTags.X25519:
                     return BcUtil.getSecret(new X25519Agreement(), privKey, peerKey);
