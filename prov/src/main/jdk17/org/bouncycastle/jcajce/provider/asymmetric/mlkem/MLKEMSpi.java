@@ -28,10 +28,7 @@ public abstract class MLKEMSpi
     public EncapsulatorSpi engineNewEncapsulator(PublicKey publicKey, AlgorithmParameterSpec spec,
         SecureRandom secureRandom) throws InvalidAlgorithmParameterException, InvalidKeyException
     {
-        if (!(publicKey instanceof BCMLKEMPublicKey bcPublicKey))
-        {
-            throw new InvalidKeyException("unsupported key type");
-        }
+        BCMLKEMPublicKey bcPublicKey = Utils.toBCPublicKey(publicKey);
 
         checkKeyParameters(bcPublicKey.getKeyParams());
 
@@ -44,10 +41,7 @@ public abstract class MLKEMSpi
     public DecapsulatorSpi engineNewDecapsulator(PrivateKey privateKey, AlgorithmParameterSpec spec)
         throws InvalidAlgorithmParameterException, InvalidKeyException
     {
-        if (!(privateKey instanceof BCMLKEMPrivateKey bcPrivateKey))
-        {
-            throw new InvalidKeyException("unsupported key type");
-        }
+        BCMLKEMPrivateKey bcPrivateKey = Utils.toBCPrivateKey(privateKey);
 
         checkKeyParameters(bcPrivateKey.getKeyParams());
 

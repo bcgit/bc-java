@@ -1,7 +1,9 @@
 package org.bouncycastle.pqc.jcajce.provider.test;
 
+import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Security;
@@ -57,6 +59,53 @@ public class MLKEM17Test
         // secS and secR will be identical
         assertEquals(secS.getAlgorithm(), secR.getAlgorithm());
         assertTrue(Arrays.areEqual(secS.getEncoded(), secR.getEncoded()));
+    }
+
+    /**
+     * javax.crypto.KEM bound to BC accepts ML-KEM keys from another provider, converting them from their encodings.
+     */
+    public void testKEMForeignKeys()
+            throws Exception
+    {
+        KeyPairGenerator g = KeyPairGenerator.getInstance("ML-KEM", "BC");
+
+        g.initialize(MLKEMParameterSpec.ml_kem_768, new SecureRandom());
+
+        KeyPair kp = g.generateKeyPair();
+
+        PublicKey fPub = new MLKEMTest.ForeignPublicKey(kp.getPublic().getEncoded());
+        PrivateKey fPriv = new MLKEMTest.ForeignPrivateKey(kp.getPrivate().getEncoded());
+
+        String[] kemNames = { "ML-KEM", "ML-KEM-768" };
+        for (int i = 0; i != kemNames.length; i++)
+        {
+            KEM kem = KEM.getInstance(kemNames[i], "BC");
+
+            KEM.Encapsulated enc = kem.newEncapsulator(fPub).encapsulate();
+            SecretKey secR = kem.newDecapsulator(fPriv).decapsulate(enc.encapsulation());
+
+            assertTrue(Arrays.areEqual(enc.key().getEncoded(), secR.getEncoded()));
+        }
+
+        try
+        {
+            KEM.getInstance("ML-KEM-512", "BC").newEncapsulator(fPub);
+            fail("no exception");
+        }
+        catch (InvalidKeyException e)
+        {
+            assertEquals("ML-KEM key mismatch", e.getMessage());
+        }
+
+        try
+        {
+            KEM.getInstance("ML-KEM", "BC").newDecapsulator(new MLKEMTest.ForeignPrivateKey(null));
+            fail("no exception");
+        }
+        catch (InvalidKeyException e)
+        {
+            assertEquals("unsupported key type", e.getMessage());
+        }
     }
 
     public void testBasicKEMAES()

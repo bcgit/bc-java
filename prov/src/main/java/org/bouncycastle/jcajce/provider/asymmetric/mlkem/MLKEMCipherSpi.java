@@ -153,26 +153,28 @@ public class MLKEMCipherSpi
 
         if (opmode == Cipher.WRAP_MODE)
         {
-            if (key instanceof BCMLKEMPublicKey)
+            try
             {
-                wrapKey = (BCMLKEMPublicKey)key;
-                kemGen = new MLKEMGenerator(random);
+                wrapKey = Utils.toBCPublicKey(key);
             }
-            else
+            catch (InvalidKeyException e)
             {
-                throw new InvalidKeyException("Only a " + algorithmName + " public key can be used for wrapping");
+                throw SecurityExceptions.invalidKeyException("Only a " + algorithmName + " public key can be used for wrapping", e);
             }
+            kemGen = new MLKEMGenerator(random);
+            key = wrapKey;
         }
         else if (opmode == Cipher.UNWRAP_MODE)
         {
-            if (key instanceof BCMLKEMPrivateKey)
+            try
             {
-                unwrapKey = (BCMLKEMPrivateKey)key;
+                unwrapKey = Utils.toBCPrivateKey(key);
             }
-            else
+            catch (InvalidKeyException e)
             {
-                throw new InvalidKeyException("Only a " + algorithmName + " private key can be used for unwrapping");
+                throw SecurityExceptions.invalidKeyException("Only a " + algorithmName + " private key can be used for unwrapping", e);
             }
+            key = unwrapKey;
         }
         else
         {

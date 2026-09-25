@@ -1,6 +1,7 @@
 package org.bouncycastle.jcajce.provider.asymmetric.mlkem;
 
 import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
 import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 
@@ -15,6 +16,7 @@ import org.bouncycastle.crypto.kems.MLKEMGenerator;
 import org.bouncycastle.crypto.params.MLKEMParameters;
 import org.bouncycastle.jcajce.SecretKeyWithEncapsulation;
 import org.bouncycastle.jcajce.provider.asymmetric.util.KdfUtil;
+import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 import org.bouncycastle.jcajce.spec.KEMExtractSpec;
 import org.bouncycastle.jcajce.spec.KEMGenerateSpec;
 import org.bouncycastle.jcajce.spec.MLKEMParameterSpec;
@@ -28,6 +30,8 @@ public class MLKEMKeyGeneratorSpi
     private KEMGenerateSpec genSpec;
     private SecureRandom random;
     private KEMExtractSpec extSpec;
+    private BCMLKEMPublicKey pubKey;
+    private BCMLKEMPrivateKey privKey;
 
     public MLKEMKeyGeneratorSpi()
     {
@@ -50,29 +54,53 @@ public class MLKEMKeyGeneratorSpi
         this.random = secureRandom;
         if (algorithmParameterSpec instanceof KEMGenerateSpec)
         {
-            this.genSpec = (KEMGenerateSpec)algorithmParameterSpec;
-            this.extSpec = null;
+            KEMGenerateSpec spec = (KEMGenerateSpec)algorithmParameterSpec;
+            BCMLKEMPublicKey key;
+            try
+            {
+                key = Utils.toBCPublicKey(spec.getPublicKey());
+            }
+            catch (InvalidKeyException e)
+            {
+                throw SecurityExceptions.invalidAlgorithmParameterException(e.getMessage(), e);
+            }
             if (mlkemParameters != null)
             {
                 String canonicalAlgName = MLKEMParameterSpec.fromName(mlkemParameters.getName()).getName();
-                if (!canonicalAlgName.equals(genSpec.getPublicKey().getAlgorithm()))
+                if (!canonicalAlgName.equals(key.getAlgorithm()))
                 {
                     throw new InvalidAlgorithmParameterException("key generator locked to " + canonicalAlgName);
                 }
             }
+            this.genSpec = spec;
+            this.pubKey = key;
+            this.extSpec = null;
+            this.privKey = null;
         }
         else if (algorithmParameterSpec instanceof KEMExtractSpec)
         {
-            this.genSpec = null;
-            this.extSpec = (KEMExtractSpec)algorithmParameterSpec;
+            KEMExtractSpec spec = (KEMExtractSpec)algorithmParameterSpec;
+            BCMLKEMPrivateKey key;
+            try
+            {
+                key = Utils.toBCPrivateKey(spec.getPrivateKey());
+            }
+            catch (InvalidKeyException e)
+            {
+                throw SecurityExceptions.invalidAlgorithmParameterException(e.getMessage(), e);
+            }
             if (mlkemParameters != null)
             {
                 String canonicalAlgName = MLKEMParameterSpec.fromName(mlkemParameters.getName()).getName();
-                if (!canonicalAlgName.equals(extSpec.getPrivateKey().getAlgorithm()))
+                if (!canonicalAlgName.equals(key.getAlgorithm()))
                 {
                     throw new InvalidAlgorithmParameterException("key generator locked to " + canonicalAlgName);
                 }
             }
+            this.genSpec = null;
+            this.pubKey = null;
+            this.extSpec = spec;
+            this.privKey = key;
         }
         else
         {
@@ -89,7 +117,6 @@ public class MLKEMKeyGeneratorSpi
     {
         if (genSpec != null)
         {
-            BCMLKEMPublicKey pubKey = (BCMLKEMPublicKey)genSpec.getPublicKey();
             MLKEMGenerator kemGen = new MLKEMGenerator(random);
 
             SecretWithEncapsulation secEnc = kemGen.generateEncapsulated(pubKey.getKeyParams());
@@ -117,7 +144,6 @@ public class MLKEMKeyGeneratorSpi
         }
         else
         {
-            BCMLKEMPrivateKey privKey = (BCMLKEMPrivateKey)extSpec.getPrivateKey();
             MLKEMExtractor kemExt = new MLKEMExtractor(privKey.getKeyParams());
 
             byte[] encapsulation = extSpec.getEncapsulation();

@@ -7,6 +7,7 @@ import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.security.spec.InvalidKeySpecException;
@@ -413,6 +414,198 @@ public class MLKEMTest
         catch (InvalidAlgorithmParameterException e)
         {
             assertEquals("key generator locked to " + spec.getName(), e.getMessage());
+        }
+    }
+
+    /**
+     * Keys from another provider (anything not a BCMLKEM* instance) are converted from their standard
+     * encodings by every ML-KEM SPI, rather than failing with a ClassCastException at generate time.
+     */
+    public void testForeignKeys()
+        throws Exception
+    {
+        for (int i = 0; i != names.length; i++)
+        {
+            KeyPairGenerator kpg = KeyPairGenerator.getInstance(names[i], "BC");
+            kpg.initialize(MLKEMParameterSpec.fromName(names[i]), new SecureRandom());
+            KeyPair kp = kpg.generateKeyPair();
+
+            PublicKey fPub = new ForeignPublicKey(kp.getPublic().getEncoded());
+            PrivateKey fPriv = new ForeignPrivateKey(kp.getPrivate().getEncoded());
+
+            // KeyFactory.translateKey
+            KeyFactory kf = KeyFactory.getInstance("ML-KEM", "BC");
+            assertEquals(kp.getPublic(), kf.translateKey(fPub));
+            assertEquals(kp.getPrivate(), kf.translateKey(fPriv));
+
+            // KeyGenerator, unrestricted and restricted, each direction with a foreign key
+            String[] kgNames = { "ML-KEM", names[i] };
+            for (int j = 0; j != kgNames.length; j++)
+            {
+                KeyGenerator keyGen = KeyGenerator.getInstance(kgNames[j], "BC");
+
+                keyGen.init(new KEMGenerateSpec(fPub, "AES"), new SecureRandom());
+                SecretKeyWithEncapsulation secEnc1 = (SecretKeyWithEncapsulation)keyGen.generateKey();
+
+                keyGen.init(new KEMExtractSpec(kp.getPrivate(), secEnc1.getEncapsulation(), "AES"));
+                SecretKeyWithEncapsulation secEnc2 = (SecretKeyWithEncapsulation)keyGen.generateKey();
+                assertTrue(Arrays.areEqual(secEnc1.getEncoded(), secEnc2.getEncoded()));
+
+                keyGen.init(new KEMGenerateSpec(kp.getPublic(), "AES"), new SecureRandom());
+                secEnc1 = (SecretKeyWithEncapsulation)keyGen.generateKey();
+
+                keyGen.init(new KEMExtractSpec(fPriv, secEnc1.getEncapsulation(), "AES"));
+                secEnc2 = (SecretKeyWithEncapsulation)keyGen.generateKey();
+                assertTrue(Arrays.areEqual(secEnc1.getEncoded(), secEnc2.getEncoded()));
+            }
+
+            // Cipher wrap/unwrap, restricted
+            Cipher cipher = Cipher.getInstance(names[i], "BC");
+            byte[] keyBytes = new byte[16];
+
+            cipher.init(Cipher.WRAP_MODE, fPub, new SecureRandom());
+            byte[] wrapBytes = cipher.wrap(new SecretKeySpec(keyBytes, "AES"));
+
+            cipher.init(Cipher.UNWRAP_MODE, fPriv);
+            Key unwrapKey = cipher.unwrap(wrapBytes, "AES", Cipher.SECRET_KEY);
+            assertTrue(Arrays.areEqual(keyBytes, unwrapKey.getEncoded()));
+        }
+
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("ML-KEM", "BC");
+        kpg.initialize(MLKEMParameterSpec.ml_kem_768, new SecureRandom());
+        KeyPair kp = kpg.generateKeyPair();
+
+        // a restricted generator still enforces its parameter set on a converted key
+        KeyGenerator keyGen = KeyGenerator.getInstance("ML-KEM-512", "BC");
+        try
+        {
+            keyGen.init(new KEMGenerateSpec(new ForeignPublicKey(kp.getPublic().getEncoded()), "AES"));
+            fail("no exception");
+        }
+        catch (InvalidAlgorithmParameterException e)
+        {
+            assertEquals("key generator locked to ML-KEM-512", e.getMessage());
+        }
+
+        // a key that does not encode, or does not encode an ML-KEM key, is rejected at init
+        KeyPairGenerator ecKpg = KeyPairGenerator.getInstance("EC", "BC");
+        ecKpg.initialize(256, new SecureRandom());
+        KeyPair ecKp = ecKpg.generateKeyPair();
+
+        PublicKey[] badPubs = {
+            new ForeignPublicKey(null),
+            new ForeignPublicKey(ecKp.getPublic().getEncoded()),
+            new ForeignPublicKey(new byte[]{ 0x30, 0x00 }),
+            ecKp.getPublic()
+        };
+        for (int i = 0; i != badPubs.length; i++)
+        {
+            try
+            {
+                KeyGenerator.getInstance("ML-KEM", "BC").init(new KEMGenerateSpec(badPubs[i], "AES"));
+                fail("no exception");
+            }
+            catch (InvalidAlgorithmParameterException e)
+            {
+                assertTrue(e.getMessage().startsWith("unsupported key type"));
+            }
+            try
+            {
+                Cipher.getInstance("ML-KEM", "BC").init(Cipher.WRAP_MODE, badPubs[i], new SecureRandom());
+                fail("no exception");
+            }
+            catch (InvalidKeyException e)
+            {
+                assertTrue(e.getMessage().endsWith("public key can be used for wrapping"));
+                assertTrue(e.getCause() instanceof InvalidKeyException);
+            }
+        }
+
+        PrivateKey[] badPrivs = {
+            new ForeignPrivateKey(null),
+            new ForeignPrivateKey(ecKp.getPrivate().getEncoded()),
+            ecKp.getPrivate()
+        };
+        for (int i = 0; i != badPrivs.length; i++)
+        {
+            try
+            {
+                KeyGenerator.getInstance("ML-KEM", "BC").init(new KEMExtractSpec(badPrivs[i], new byte[1088], "AES"));
+                fail("no exception");
+            }
+            catch (InvalidAlgorithmParameterException e)
+            {
+                assertTrue(e.getMessage().startsWith("unsupported key type"));
+            }
+        }
+
+        // a BC key for another algorithm is not converted
+        try
+        {
+            KeyFactory.getInstance("ML-KEM", "BC").translateKey(ecKp.getPublic());
+            fail("no exception");
+        }
+        catch (InvalidKeyException e)
+        {
+            assertTrue(e.getMessage().startsWith("unsupported key type"));
+        }
+    }
+
+    /**
+     * An ML-KEM public key as another provider might present it: algorithm name "ML-KEM", X.509 encoding.
+     */
+    static class ForeignPublicKey
+        implements PublicKey
+    {
+        private final byte[] encoding;
+
+        ForeignPublicKey(byte[] encoding)
+        {
+            this.encoding = encoding;
+        }
+
+        public String getAlgorithm()
+        {
+            return "ML-KEM";
+        }
+
+        public String getFormat()
+        {
+            return "X.509";
+        }
+
+        public byte[] getEncoded()
+        {
+            return Arrays.clone(encoding);
+        }
+    }
+
+    /**
+     * An ML-KEM private key as another provider might present it; a null encoding models a non-extractable key.
+     */
+    static class ForeignPrivateKey
+        implements PrivateKey
+    {
+        private final byte[] encoding;
+
+        ForeignPrivateKey(byte[] encoding)
+        {
+            this.encoding = encoding;
+        }
+
+        public String getAlgorithm()
+        {
+            return "ML-KEM";
+        }
+
+        public String getFormat()
+        {
+            return "PKCS#8";
+        }
+
+        public byte[] getEncoded()
+        {
+            return Arrays.clone(encoding);
         }
     }
 

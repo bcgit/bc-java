@@ -33,6 +33,8 @@ public class AllTests
         suite.addTestSuite(DTLSRawKeysProtocolTest.class);
         suite.addTestSuite(JcaTlsProtocolHybridTest.class);
         suite.addTestSuite(JcaTlsProtocolKemTest.class);
+        suite.addTestSuite(JcaTlsProtocolHybridForeignKeysTest.class);
+        suite.addTestSuite(JcaTlsProtocolKemForeignKeysTest.class);
         suite.addTestSuite(JcaTlsRawKeysProtocolTest.class);
         suite.addTestSuite(SM2Tls13Test.class);
         suite.addTestSuite(OCSPTest.class);

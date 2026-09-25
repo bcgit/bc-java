@@ -20,6 +20,7 @@ import org.bouncycastle.crypto.params.MLKEMParameters;
 import org.bouncycastle.crypto.params.MLKEMPrivateKeyParameters;
 import org.bouncycastle.crypto.params.MLKEMPublicKeyParameters;
 import org.bouncycastle.jcajce.provider.asymmetric.util.BasePQCKeyFactorySpi;
+import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 import org.bouncycastle.jcajce.spec.MLKEMPrivateKeySpec;
 import org.bouncycastle.jcajce.spec.MLKEMPublicKeySpec;
 import org.bouncycastle.util.Arrays;
@@ -100,6 +101,38 @@ public class MLKEMKeyFactorySpi
         if (key instanceof BCMLKEMPrivateKey || key instanceof BCMLKEMPublicKey)
         {
             return key;
+        }
+
+        // a key from another provider is re-read from its standard encoding
+        try
+        {
+            if (key instanceof PublicKey && "X.509".equals(key.getFormat()))
+            {
+                byte[] enc = key.getEncoded();
+                if (enc != null)
+                {
+                    return engineGeneratePublic(new X509EncodedKeySpec(enc));
+                }
+            }
+            else if (key instanceof PrivateKey && "PKCS#8".equals(key.getFormat()))
+            {
+                byte[] enc = key.getEncoded();
+                if (enc != null)
+                {
+                    try
+                    {
+                        return engineGeneratePrivate(new PKCS8EncodedKeySpec(enc));
+                    }
+                    finally
+                    {
+                        Arrays.clear(enc);
+                    }
+                }
+            }
+        }
+        catch (InvalidKeySpecException e)
+        {
+            throw SecurityExceptions.invalidKeyException("unsupported key type: " + e.getMessage(), e);
         }
 
         throw new InvalidKeyException("unsupported key type");
