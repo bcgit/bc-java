@@ -480,39 +480,39 @@ public class KeyAgreementSpi
         }
     }
 
-    public static class DHwithSHA1CKDF
+    public static class CDHwithSHA1CKDF
         extends KeyAgreementSpi
     {
-        public DHwithSHA1CKDF()
+        public CDHwithSHA1CKDF()
         {
-            super("ECDHwithSHA1CKDF", new ECDHCRawAgreement(), new ConcatenationKDFGenerator(DigestFactory.createSHA1()));
+            super("ECCDHwithSHA1CKDF", new ECDHCRawAgreement(), new ConcatenationKDFGenerator(DigestFactory.createSHA1()));
         }
     }
 
-    public static class DHwithSHA256CKDF
+    public static class CDHwithSHA256CKDF
         extends KeyAgreementSpi
     {
-        public DHwithSHA256CKDF()
+        public CDHwithSHA256CKDF()
         {
-            super("ECDHwithSHA256CKDF", new ECDHCRawAgreement(), new ConcatenationKDFGenerator(DigestFactory.createSHA256()));
+            super("ECCDHwithSHA256CKDF", new ECDHCRawAgreement(), new ConcatenationKDFGenerator(DigestFactory.createSHA256()));
         }
     }
 
-    public static class DHwithSHA384CKDF
+    public static class CDHwithSHA384CKDF
         extends KeyAgreementSpi
     {
-        public DHwithSHA384CKDF()
+        public CDHwithSHA384CKDF()
         {
-            super("ECDHwithSHA384CKDF", new ECDHCRawAgreement(), new ConcatenationKDFGenerator(DigestFactory.createSHA384()));
+            super("ECCDHwithSHA384CKDF", new ECDHCRawAgreement(), new ConcatenationKDFGenerator(DigestFactory.createSHA384()));
         }
     }
 
-    public static class DHwithSHA512CKDF
+    public static class CDHwithSHA512CKDF
         extends KeyAgreementSpi
     {
-        public DHwithSHA512CKDF()
+        public CDHwithSHA512CKDF()
         {
-            super("ECDHwithSHA512CKDF", new ECDHCRawAgreement(), new ConcatenationKDFGenerator(DigestFactory.createSHA512()));
+            super("ECCDHwithSHA512CKDF", new ECDHCRawAgreement(), new ConcatenationKDFGenerator(DigestFactory.createSHA512()));
         }
     }
 
