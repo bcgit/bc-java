@@ -123,11 +123,6 @@ public class KeyAgreementSpi
 
             agreement.init(priv);
         }
-
-        if (kdf != null && ukmParameters == null)
-        {
-            ukmParameters = new byte[0];
-        }
     }
 
     protected Key engineDoPhase(Key key, boolean lastPhase)

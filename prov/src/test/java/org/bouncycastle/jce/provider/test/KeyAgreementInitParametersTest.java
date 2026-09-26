@@ -10,6 +10,10 @@ import java.security.spec.AlgorithmParameterSpec;
 
 import javax.crypto.KeyAgreement;
 
+import org.bouncycastle.crypto.agreement.DHStandardGroups;
+import org.bouncycastle.jcajce.spec.DHDomainParameterSpec;
+import org.bouncycastle.jcajce.spec.DHUParameterSpec;
+import org.bouncycastle.jcajce.spec.MQVParameterSpec;
 import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECNamedCurveGenParameterSpec;
@@ -77,6 +81,84 @@ public class KeyAgreementInitParametersTest
 
         checkAcceptsSalt("X25519withSHA256HKDF", xKey);
         checkAcceptsSalt("XDHwithSHA256HKDF", xKey);
+
+        checkNoUkm(ecKey, xKey);
+    }
+
+    /**
+     * A KDF based agreement given no user keying material has to derive what it does with an empty
+     * one. ConcatenationKDFGenerator threw NullPointerException for a missing OtherInfo, so each
+     * concatenation KDF agreement below failed that way unless the caller supplied some - the XDH
+     * one only escaped because its SPI substituted an empty value itself.
+     */
+    private void checkNoUkm(KeyPair ecKey, KeyPair xKey)
+        throws Exception
+    {
+        byte[] empty = new byte[0];
+
+        KeyPair ecOther = generate("EC", new ECNamedCurveGenParameterSpec("P-256"));
+        KeyPair ecEphem = generate("EC", new ECNamedCurveGenParameterSpec("P-256"));
+        KeyPair ecOtherEphem = generate("EC", new ECNamedCurveGenParameterSpec("P-256"));
+
+        // MQV needs the subgroup order, so use a group that carries q
+        DHDomainParameterSpec dhGroup = new DHDomainParameterSpec(DHStandardGroups.rfc7919_ffdhe2048);
+        KeyPair dhKey = generate("DH", dhGroup);
+        KeyPair dhOther = generate("DH", dhGroup);
+        KeyPair dhEphem = generate("DH", dhGroup);
+        KeyPair dhOtherEphem = generate("DH", dhGroup);
+
+        KeyPair xOther = generate("X25519", null);
+
+        checkNoUkm("ECCDHwithSHA256CKDF", ecKey, ecOther, null, new UserKeyingMaterialSpec(empty));
+        checkNoUkm("X25519withSHA256CKDF", xKey, xOther, null, new UserKeyingMaterialSpec(empty));
+
+        checkNoUkm("ECCDHUwithSHA256CKDF", ecKey, ecOther,
+            new DHUParameterSpec(ecEphem, ecOtherEphem.getPublic()),
+            new DHUParameterSpec(ecEphem, ecOtherEphem.getPublic(), empty));
+        checkNoUkm("ECMQVwithSHA256CKDF", ecKey, ecOther,
+            new MQVParameterSpec(ecEphem, ecOtherEphem.getPublic()),
+            new MQVParameterSpec(ecEphem, ecOtherEphem.getPublic(), empty));
+        checkNoUkm("DHUwithSHA256CKDF", dhKey, dhOther,
+            new DHUParameterSpec(dhEphem, dhOtherEphem.getPublic()),
+            new DHUParameterSpec(dhEphem, dhOtherEphem.getPublic(), empty));
+        checkNoUkm("MQVwithSHA256CKDF", dhKey, dhOther,
+            new MQVParameterSpec(dhEphem, dhOtherEphem.getPublic()),
+            new MQVParameterSpec(dhEphem, dhOtherEphem.getPublic(), empty));
+    }
+
+    private void checkNoUkm(String algorithm, KeyPair kp, KeyPair other, AlgorithmParameterSpec noUkm,
+        AlgorithmParameterSpec emptyUkm)
+        throws Exception
+    {
+        if (agreement(algorithm) == null)
+        {
+            return;
+        }
+
+        byte[] withNone = deriveWith(algorithm, kp, other, noUkm);
+        byte[] withEmpty = deriveWith(algorithm, kp, other, emptyUkm);
+
+        isTrue(algorithm + " without user keying material differs from an empty one",
+            Arrays.areEqual(withNone, withEmpty));
+    }
+
+    private byte[] deriveWith(String algorithm, KeyPair a, KeyPair b, AlgorithmParameterSpec spec)
+        throws Exception
+    {
+        KeyAgreement agreement = KeyAgreement.getInstance(algorithm, "BC");
+
+        if (spec == null)
+        {
+            agreement.init(a.getPrivate());
+        }
+        else
+        {
+            agreement.init(a.getPrivate(), spec);
+        }
+
+        agreement.doPhase(b.getPublic(), true);
+
+        return agreement.generateSecret("AES").getEncoded();
     }
 
     private void checkRejectsSalt(String algorithm, KeyPair kp)
