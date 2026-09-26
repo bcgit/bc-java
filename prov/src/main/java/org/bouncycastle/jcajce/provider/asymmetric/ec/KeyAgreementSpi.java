@@ -343,15 +343,6 @@ public class KeyAgreementSpi
         }
     }
 
-    public static class DHwithSHA1KDF
-        extends KeyAgreementSpi
-    {
-        public DHwithSHA1KDF()
-        {
-            super("ECDHwithSHA1KDF", new ECDHRawAgreement(), new KDF2BytesGenerator(DigestFactory.createSHA1()));
-        }
-    }
-
     public static class DHwithSHA1KDFAndSharedInfo
         extends KeyAgreementSpi
     {
