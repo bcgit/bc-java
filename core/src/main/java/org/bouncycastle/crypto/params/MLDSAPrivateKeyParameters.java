@@ -40,6 +40,24 @@ public class MLDSAPrivateKeyParameters
     public MLDSAPrivateKeyParameters(MLDSAParameters params, byte[] rho, byte[] K, byte[] tr, byte[] s1, byte[] s2, byte[] t0, byte[] t1, byte[] seed)
     {
         super(true, params);
+
+        MLDSAEngine eng = MLDSAEngine.getInstance(params, null);
+
+        checkLength(rho, MLDSAEngine.SeedBytes, "rho");
+        checkLength(K, MLDSAEngine.SeedBytes, "K");
+        checkLength(tr, MLDSAEngine.TrBytes, "tr");
+        checkLength(s1, eng.getDilithiumL() * eng.getDilithiumPolyEtaPackedBytes(), "s1");
+        checkLength(s2, eng.getDilithiumK() * eng.getDilithiumPolyEtaPackedBytes(), "s2");
+        checkLength(t0, eng.getDilithiumK() * MLDSAEngine.DilithiumPolyT0PackedBytes, "t0");
+        if (t1 != null)
+        {
+            checkLength(t1, eng.getDilithiumK() * MLDSAEngine.DilithiumPolyT1PackedBytes, "t1");
+        }
+        if (seed != null)
+        {
+            checkLength(seed, MLDSAEngine.SeedBytes, "seed");
+        }
+
         this.rho = Arrays.clone(rho);
         this.k = Arrays.clone(K);
         this.tr = Arrays.clone(tr);
@@ -254,6 +272,18 @@ public class MLDSAPrivateKeyParameters
     public boolean isDestroyed()
     {
         return destroyed;
+    }
+
+    private static void checkLength(byte[] value, int expectedLength, String name)
+    {
+        if (value == null)
+        {
+            throw new NullPointerException("'" + name + "' cannot be null");
+        }
+        if (value.length != expectedLength)
+        {
+            throw new IllegalArgumentException("'" + name + "' has invalid length");
+        }
     }
 
     private byte[] cloneWithCheck(byte[] fieldValue)

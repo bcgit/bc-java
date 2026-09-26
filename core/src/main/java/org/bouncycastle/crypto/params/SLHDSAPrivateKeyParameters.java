@@ -28,6 +28,13 @@ public class SLHDSAPrivateKeyParameters
     public SLHDSAPrivateKeyParameters(SLHDSAParameters parameters, byte[] skSeed, byte[] prf, byte[] pkSeed, byte[] pkRoot)
     {
         super(true, parameters);
+
+        int n = parameters.getN();
+        checkLength(skSeed, n, "skSeed");
+        checkLength(prf, n, "prf");
+        checkLength(pkSeed, n, "pkSeed");
+        checkLength(pkRoot, n, "pkRoot");
+
         this.sk = new SK(skSeed, prf);
         this.pk = new PK(pkSeed, pkRoot);
     }
@@ -92,6 +99,18 @@ public class SLHDSAPrivateKeyParameters
     public boolean isDestroyed()
     {
         return destroyed;
+    }
+
+    private static void checkLength(byte[] value, int expectedLength, String name)
+    {
+        if (value == null)
+        {
+            throw new NullPointerException("'" + name + "' cannot be null");
+        }
+        if (value.length != expectedLength)
+        {
+            throw new IllegalArgumentException("'" + name + "' has invalid length");
+        }
     }
 
     private byte[] cloneWithCheck(byte[] fieldValue)

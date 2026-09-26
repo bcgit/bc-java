@@ -13,6 +13,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import junit.framework.TestCase;
+import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
@@ -758,6 +761,85 @@ public class MLDSATest
                 {
                     assertEquals("'encoding' has invalid length", e.getMessage());
                 }
+            }
+        }
+    }
+
+    public void testComponentLengthChecks()
+        throws Exception
+    {
+        MLDSAKeyPairGenerator kpGen = new MLDSAKeyPairGenerator();
+        kpGen.init(new MLDSAKeyGenerationParameters(new SecureRandom(), MLDSAParameters.ml_dsa_44));
+        AsymmetricCipherKeyPair kp = kpGen.generateKeyPair();
+        MLDSAPrivateKeyParameters priv = (MLDSAPrivateKeyParameters)kp.getPrivate();
+        MLDSAPublicKeyParameters pub = (MLDSAPublicKeyParameters)kp.getPublic();
+
+        byte[][] parts = new byte[][]{ priv.getRho(), priv.getK(), priv.getTr(), priv.getS1(), priv.getS2(), priv.getT0(), priv.getT1(), priv.getSeed() };
+        String[] names = new String[]{ "rho", "K", "tr", "s1", "s2", "t0", "t1", "seed" };
+
+        // correct lengths are accepted, with and without the optional seed and t1
+        new MLDSAPrivateKeyParameters(MLDSAParameters.ml_dsa_44, parts[0], parts[1], parts[2], parts[3], parts[4], parts[5], parts[6], parts[7]);
+        new MLDSAPrivateKeyParameters(MLDSAParameters.ml_dsa_44, parts[0], parts[1], parts[2], parts[3], parts[4], parts[5], null);
+
+        for (int i = 0; i != parts.length; i++)
+        {
+            for (int delta = -1; delta <= 1; delta += 2)
+            {
+                byte[][] bad = new byte[parts.length][];
+                System.arraycopy(parts, 0, bad, 0, parts.length);
+                bad[i] = Arrays.copyOf(parts[i], parts[i].length + delta);
+                try
+                {
+                    new MLDSAPrivateKeyParameters(MLDSAParameters.ml_dsa_44, bad[0], bad[1], bad[2], bad[3], bad[4], bad[5], bad[6], bad[7]);
+                    fail("no exception for " + names[i] + " of length " + bad[i].length);
+                }
+                catch (IllegalArgumentException e)
+                {
+                    assertEquals("'" + names[i] + "' has invalid length", e.getMessage());
+                }
+            }
+        }
+
+        byte[] rho = pub.getRho();
+        byte[] t1 = pub.getT1();
+
+        new MLDSAPublicKeyParameters(MLDSAParameters.ml_dsa_44, rho, t1);
+
+        for (int delta = -1; delta <= 1; delta += 2)
+        {
+            try
+            {
+                new MLDSAPublicKeyParameters(MLDSAParameters.ml_dsa_44, Arrays.copyOf(rho, rho.length + delta), t1);
+                fail("no exception for rho of length " + (rho.length + delta));
+            }
+            catch (IllegalArgumentException e)
+            {
+                assertEquals("'rho' has invalid length", e.getMessage());
+            }
+
+            byte[] badT1 = Arrays.copyOf(t1, t1.length + delta);
+            try
+            {
+                new MLDSAPublicKeyParameters(MLDSAParameters.ml_dsa_44, rho, badT1);
+                fail("no exception for t1 of length " + badT1.length);
+            }
+            catch (IllegalArgumentException e)
+            {
+                assertEquals("'t1' has invalid length", e.getMessage());
+            }
+
+            // SEQUENCE { OCTET STRING rho, OCTET STRING t1 } public key form via PublicKeyFactory
+            SubjectPublicKeyInfo spki = SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(pub);
+            SubjectPublicKeyInfo badSpki = new SubjectPublicKeyInfo(spki.getAlgorithm(),
+                new DERSequence(new ASN1Encodable[]{ new DEROctetString(rho), new DEROctetString(badT1) }));
+            try
+            {
+                PublicKeyFactory.createKey(badSpki);
+                fail("no exception for SEQUENCE encoded public key with t1 of length " + badT1.length);
+            }
+            catch (IllegalArgumentException e)
+            {
+                // expected
             }
         }
     }

@@ -39,6 +39,17 @@ public class MLDSAPublicKeyParameters
         {
             throw new NullPointerException("t1 cannot be null");
         }
+
+        MLDSAEngine engine = MLDSAEngine.getInstance(params, null);
+        if (rho.length != MLDSAEngine.SeedBytes)
+        {
+            throw new IllegalArgumentException("'rho' has invalid length");
+        }
+        if (t1.length != engine.getDilithiumK() * MLDSAEngine.DilithiumPolyT1PackedBytes)
+        {
+            throw new IllegalArgumentException("'t1' has invalid length");
+        }
+
         this.rho = Arrays.clone(rho);
         this.t1 = Arrays.clone(t1);
     }
