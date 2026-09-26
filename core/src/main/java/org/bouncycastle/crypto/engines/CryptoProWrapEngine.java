@@ -7,6 +7,7 @@ import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.params.ParametersWithSBox;
 import org.bouncycastle.crypto.params.ParametersWithUKM;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 
 public class CryptoProWrapEngine
@@ -14,6 +15,12 @@ public class CryptoProWrapEngine
 {
     public void init(boolean forWrapping, CipherParameters param)
     {
+        /*
+         * The random is stripped on both sides of the UKM on purpose: UKM(Random(..)) is the documented
+         * order, and Random(UKM(..)) is the earlier one, kept for existing callers. Not a pattern to copy -
+         * see the org.bouncycastle.crypto.params package documentation. This repeats GOST28147WrapEngine,
+         * whose init is handed a rebuilt UKM(..) with no random, so the unwrapping has to happen here too.
+         */
         if (param instanceof ParametersWithRandom)
         {
             ParametersWithRandom pr = (ParametersWithRandom)param;
@@ -23,20 +30,26 @@ public class CryptoProWrapEngine
         ParametersWithUKM pU = (ParametersWithUKM)param;
         byte[] sBox = null;
 
+        CipherParameters inner = pU.getParameters();
+        if (inner instanceof ParametersWithRandom)
+        {
+            inner = ((ParametersWithRandom)inner).getParameters();
+        }
 
         KeyParameter kParam;
 
-        if (pU.getParameters() instanceof ParametersWithSBox)
+        if (inner instanceof ParametersWithSBox)
         {
-            kParam = (KeyParameter)((ParametersWithSBox)pU.getParameters()).getParameters();
-            sBox = ((ParametersWithSBox)pU.getParameters()).getSBox();
+            kParam = (KeyParameter)((ParametersWithSBox)inner).getParameters();
+            sBox = ((ParametersWithSBox)inner).getSBox();
         }
         else
         {
-            kParam = (KeyParameter)pU.getParameters();
+            kParam = (KeyParameter)inner;
         }
 
-        kParam = new KeyParameter(cryptoProDiversify(kParam.getKey(), pU.getUKM(), sBox));
+        // diversify a copy - getKey() is the caller's own array
+        kParam = new KeyParameter(cryptoProDiversify(Arrays.clone(kParam.getKey()), pU.getUKM(), sBox));
 
         if (sBox != null)
         {
@@ -94,7 +107,14 @@ public class CryptoProWrapEngine
 
             GCFBBlockCipher c = new GCFBBlockCipher(new GOST28147Engine());
 
-            c.init(true, new ParametersWithIV(new ParametersWithSBox(new KeyParameter(K), sBox), s));
+            // with no S-box, the engine's default - the one the wrap itself then uses
+            CipherParameters kParam = new KeyParameter(K);
+            if (sBox != null)
+            {
+                kParam = new ParametersWithSBox(kParam, sBox);
+            }
+
+            c.init(true, new ParametersWithIV(kParam, s));
 
             c.processBlock(K, 0, K, 0);
             c.processBlock(K, 8, K, 8);

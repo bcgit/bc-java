@@ -8,6 +8,7 @@ import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
+import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.params.ParametersWithUKM;
 import org.bouncycastle.math.ec.ECAlgorithms;
 import org.bouncycastle.math.ec.ECPoint;
@@ -32,7 +33,13 @@ public class ECVKOAgreement
     {
         ParametersWithUKM p = (ParametersWithUKM)key;
 
-        this.key = (ECPrivateKeyParameters)p.getParameters();
+        CipherParameters kParam = p.getParameters();
+        if (kParam instanceof ParametersWithRandom)
+        {
+            kParam = ((ParametersWithRandom)kParam).getParameters();
+        }
+
+        this.key = (ECPrivateKeyParameters)kParam;
         this.ukm = new BigInteger(1, Arrays.reverse(p.getUKM()));
 
         CryptoServicesRegistrar.checkConstraints(Utils.getDefaultProperties("ECVKO", this.key));
