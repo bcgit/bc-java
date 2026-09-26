@@ -34,8 +34,8 @@ public class PKCS12
 
             provider.addAlgorithm("KeyStore.PKCS12-3DES-40RC2", PREFIX + "PKCS12KeyStoreSpi$BCPKCS12KeyStore");
             provider.addAlgorithm("KeyStore.PKCS12-3DES-3DES", PREFIX + "PKCS12KeyStoreSpi$BCPKCS12KeyStore3DES");
-            provider.addAlgorithm("KeyStore.PKCS12-AES256-AES128", PREFIX + "PKCS12KeyStoreSpi$DefPKCS12KeyStoreAES256");
-            provider.addAlgorithm("KeyStore.PKCS12-AES256-AES128-GCM", PREFIX + "PKCS12KeyStoreSpi$DefPKCS12KeyStoreAES256GCM");
+            provider.addAlgorithm("KeyStore.PKCS12-AES256-AES128", PREFIX + "PKCS12KeyStoreSpi$BCPKCS12KeyStoreAES256");
+            provider.addAlgorithm("KeyStore.PKCS12-AES256-AES128-GCM", PREFIX + "PKCS12KeyStoreSpi$BCPKCS12KeyStoreAES256GCM");
 
             provider.addAlgorithm("KeyStore.PKCS12-DEF-3DES-40RC2", PREFIX + "PKCS12KeyStoreSpi$DefPKCS12KeyStore");
             provider.addAlgorithm("KeyStore.PKCS12-DEF-3DES-3DES", PREFIX + "PKCS12KeyStoreSpi$DefPKCS12KeyStore3DES");
