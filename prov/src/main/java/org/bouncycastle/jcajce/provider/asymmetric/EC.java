@@ -157,6 +157,11 @@ public class EC
             provider.addAlgorithm("KeyAgreement.ECDHWITHSHA512KDF", PREFIX + "KeyAgreementSpi$DHwithSHA512KDFAndSharedInfo", generalEcAttributes);
             provider.addAlgorithm("KeyAgreement.ECCDHWITHSHA512KDF", PREFIX + "KeyAgreementSpi$CDHwithSHA512KDFAndSharedInfo", generalEcAttributes);
 
+            // HKDF (RFC 5869) - by name only: the RFC 8418 dhSinglePass-stdDH-hkdf OIDs are registered to XDH in EdEC
+            provider.addAlgorithm("KeyAgreement.ECDHWITHSHA256HKDF", PREFIX + "KeyAgreementSpi$DHwithSHA256HKDF", generalEcAttributes);
+            provider.addAlgorithm("KeyAgreement.ECDHWITHSHA384HKDF", PREFIX + "KeyAgreementSpi$DHwithSHA384HKDF", generalEcAttributes);
+            provider.addAlgorithm("KeyAgreement.ECDHWITHSHA512HKDF", PREFIX + "KeyAgreementSpi$DHwithSHA512HKDF", generalEcAttributes);
+
             provider.addAlgorithm("KeyAgreement", X9ObjectIdentifiers.dhSinglePass_stdDH_sha1kdf_scheme, PREFIX + "KeyAgreementSpi$DHwithSHA1KDFAndSharedInfo", generalEcAttributes);
             provider.addAlgorithm("KeyAgreement", X9ObjectIdentifiers.dhSinglePass_cofactorDH_sha1kdf_scheme, PREFIX + "KeyAgreementSpi$CDHwithSHA1KDFAndSharedInfo", generalEcAttributes);
 

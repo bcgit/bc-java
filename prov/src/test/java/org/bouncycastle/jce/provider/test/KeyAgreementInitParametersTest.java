@@ -81,6 +81,7 @@ public class KeyAgreementInitParametersTest
 
         checkAcceptsSalt("X25519withSHA256HKDF", xKey);
         checkAcceptsSalt("XDHwithSHA256HKDF", xKey);
+        checkAcceptsSalt("ECDHwithSHA256HKDF", ecKey);
 
         checkNoUkm(ecKey, xKey);
     }
@@ -269,9 +270,9 @@ public class KeyAgreementInitParametersTest
     private void checkUKMReachesTheKDF(KeyPair ecKey, KeyPair xKey)
         throws Exception
     {
-        String[] algorithms = new String[]{ "ECDHwithSHA256KDF", "ECCDHwithSHA256KDF", "X25519withSHA256KDF",
-            "X25519withSHA256HKDF" };
-        KeyPair[] keys = new KeyPair[]{ ecKey, ecKey, xKey, xKey };
+        String[] algorithms = new String[]{ "ECDHwithSHA256KDF", "ECCDHwithSHA256KDF", "ECDHwithSHA256HKDF",
+            "X25519withSHA256KDF", "X25519withSHA256HKDF" };
+        KeyPair[] keys = new KeyPair[]{ ecKey, ecKey, ecKey, xKey, xKey };
 
         for (int i = 0; i != algorithms.length; i++)
         {

@@ -40,7 +40,13 @@ import javax.crypto.spec.DHPublicKeySpec;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.agreement.DHStandardGroups;
+import org.bouncycastle.crypto.digests.SHA256Digest;
+import org.bouncycastle.crypto.digests.SHA384Digest;
+import org.bouncycastle.crypto.digests.SHA512Digest;
+import org.bouncycastle.crypto.generators.HKDFBytesGenerator;
+import org.bouncycastle.crypto.params.HKDFParameters;
 import org.bouncycastle.internal.asn1.bsi.BSIObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.spec.DHDomainParameterSpec;
@@ -1634,6 +1640,91 @@ public class DHTest
         testMinSpecValue();
         testGenerateUsingStandardGroup();
         testHybridValueParameterSpec();
+
+        testECDHwithHKDF("ECDHwithSHA256HKDF", new SHA256Digest(), "secp256r1");
+        testECDHwithHKDF("ECDHwithSHA384HKDF", new SHA384Digest(), "secp384r1");
+        testECDHwithHKDF("ECDHwithSHA512HKDF", new SHA512Digest(), "secp521r1");
+    }
+
+    /**
+     * The ECDH HKDF agreements against an independent derivation: the shared secret from plain ECDH,
+     * then RFC 5869 HKDF taking the UserKeyingMaterialSpec's keying material as info and its salt, when
+     * present, as salt. Run with no spec, with keying material only, and with keying material and a
+     * salt, since a salt the agreement dropped would still agree with the other side.
+     */
+    private void testECDHwithHKDF(String algorithm, Digest digest, String curveName)
+        throws Exception
+    {
+        KeyPairGenerator g = KeyPairGenerator.getInstance("EC", "BC");
+
+        g.initialize(ECNamedCurveTable.getParameterSpec(curveName));
+
+        KeyPair aKeyPair = g.generateKeyPair();
+        KeyPair bKeyPair = g.generateKeyPair();
+
+        KeyAgreement rawAgree = KeyAgreement.getInstance("ECDH", "BC");
+
+        rawAgree.init(aKeyPair.getPrivate());
+        rawAgree.doPhase(bKeyPair.getPublic(), true);
+
+        byte[] z = rawAgree.generateSecret();
+        byte[] info = Hex.decode("000102030405060708090a0b0c0d0e0f");
+        byte[] salt = Hex.decode("beeffeed");
+
+        byte[] noSpec = checkECDHwithHKDF(algorithm, aKeyPair, bKeyPair, null, hkdf(digest, z, null, null));
+        byte[] unsalted = checkECDHwithHKDF(algorithm, aKeyPair, bKeyPair, new UserKeyingMaterialSpec(info),
+            hkdf(digest, z, null, info));
+        byte[] salted = checkECDHwithHKDF(algorithm, aKeyPair, bKeyPair, new UserKeyingMaterialSpec(info, salt),
+            hkdf(digest, z, salt, info));
+
+        isTrue(algorithm + " ignored the HKDF info", !Arrays.areEqual(noSpec, unsalted));
+        isTrue(algorithm + " ignored the HKDF salt", !Arrays.areEqual(unsalted, salted));
+    }
+
+    private byte[] checkECDHwithHKDF(String algorithm, KeyPair aKeyPair, KeyPair bKeyPair,
+        UserKeyingMaterialSpec spec, byte[] expected)
+        throws Exception
+    {
+        byte[] aKey = agreeECDHwithHKDF(algorithm, aKeyPair.getPrivate(), bKeyPair.getPublic(), spec);
+        byte[] bKey = agreeECDHwithHKDF(algorithm, bKeyPair.getPrivate(), aKeyPair.getPublic(), spec);
+
+        isTrue(algorithm + " 2-way test failed", Arrays.areEqual(aKey, bKey));
+        isTrue(algorithm + " key does not match HKDF over the ECDH shared secret", Arrays.areEqual(expected, aKey));
+
+        return aKey;
+    }
+
+    private byte[] agreeECDHwithHKDF(String algorithm, PrivateKey privKey, PublicKey pubKey,
+        UserKeyingMaterialSpec spec)
+        throws Exception
+    {
+        KeyAgreement agreement = KeyAgreement.getInstance(algorithm, "BC");
+
+        if (spec == null)
+        {
+            agreement.init(privKey);
+        }
+        else
+        {
+            agreement.init(privKey, spec);
+        }
+
+        agreement.doPhase(pubKey, true);
+
+        return agreement.generateSecret("AES[256]").getEncoded();
+    }
+
+    private static byte[] hkdf(Digest digest, byte[] ikm, byte[] salt, byte[] info)
+    {
+        HKDFBytesGenerator kdf = new HKDFBytesGenerator(digest);
+
+        kdf.init(new HKDFParameters(ikm, salt, info));
+
+        byte[] key = new byte[32];
+
+        kdf.generateBytes(key, 0, key.length);
+
+        return key;
     }
 
     /**
