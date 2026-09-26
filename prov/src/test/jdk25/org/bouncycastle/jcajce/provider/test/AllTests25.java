@@ -17,6 +17,7 @@ public class AllTests25
     {
         TestSuite suite = new TestSuite("JDK25 Provider MR Tests");
         suite.addTestSuite(KemSpiMRTest.class);
+        suite.addTestSuite(NamedKeyParamsMRTest.class);
         return suite;
     }
 }

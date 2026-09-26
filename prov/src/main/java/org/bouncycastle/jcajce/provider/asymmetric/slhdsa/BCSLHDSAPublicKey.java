@@ -3,6 +3,7 @@ package org.bouncycastle.jcajce.provider.asymmetric.slhdsa;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.security.spec.AlgorithmParameterSpec;
 
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.params.SLHDSAPublicKeyParameters;
@@ -10,6 +11,7 @@ import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.jcajce.interfaces.BCKey;
 import org.bouncycastle.jcajce.interfaces.SLHDSAPublicKey;
+import org.bouncycastle.jcajce.provider.asymmetric.util.NamedParameterSpecUtil;
 import org.bouncycastle.jcajce.spec.SLHDSAParameterSpec;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Fingerprint;
@@ -99,6 +101,17 @@ public class BCSLHDSAPublicKey
     public String getFormat()
     {
         return "X.509";
+    }
+
+    /**
+     * Return the parameter set of this key as a java.security.spec.NamedParameterSpec, the form the
+     * JDK's own keys report through java.security.AsymmetricKey.getParams() from Java 22.
+     *
+     * @return a NamedParameterSpec naming the parameter set on Java 11 and later, null otherwise.
+     */
+    public AlgorithmParameterSpec getParams()
+    {
+        return NamedParameterSpecUtil.getNamedParameterSpec(getAlgorithm());
     }
 
     public SLHDSAParameterSpec getParameterSpec()

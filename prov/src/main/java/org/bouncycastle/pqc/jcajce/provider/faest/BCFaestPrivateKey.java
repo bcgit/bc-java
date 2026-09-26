@@ -4,9 +4,11 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.security.PrivateKey;
+import java.security.spec.AlgorithmParameterSpec;
 
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.jcajce.provider.asymmetric.util.NamedParameterSpecUtil;
 import org.bouncycastle.pqc.crypto.faest.FaestPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
@@ -85,6 +87,17 @@ public class BCFaestPrivateKey
         {
             return null;
         }
+    }
+
+    /**
+     * Return the parameter set of this key as a java.security.spec.NamedParameterSpec, the form the
+     * JDK's own keys report through java.security.AsymmetricKey.getParams() from Java 22.
+     *
+     * @return a NamedParameterSpec naming the parameter set on Java 11 and later, null otherwise.
+     */
+    public AlgorithmParameterSpec getParams()
+    {
+        return NamedParameterSpecUtil.getNamedParameterSpec(getParameterSpec().getName());
     }
 
     public FaestParameterSpec getParameterSpec()
