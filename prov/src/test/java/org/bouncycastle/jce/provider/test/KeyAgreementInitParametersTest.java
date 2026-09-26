@@ -65,6 +65,54 @@ public class KeyAgreementInitParametersTest
 
         checkVKODefaultUKM(gostKey);
         checkUKMReachesTheKDF(ecKey, xKey);
+
+        // only an HKDF based agreement has a use for a KDF salt - anything else would drop it silently
+        checkRejectsSalt("ECDHwithSHA256KDF", ecKey);
+        checkRejectsSalt("ECCDHwithSHA256KDF", ecKey);
+        checkRejectsSalt("ECCDHwithSHA256CKDF", ecKey);
+        checkRejectsSalt("DHwithSHA256KDF", dhKey);
+        checkRejectsSalt("X25519withSHA256KDF", xKey);
+        checkRejectsSalt("X25519withSHA256CKDF", xKey);
+        checkRejectsSalt("ECGOST3410-2012-256", gostKey);
+
+        checkAcceptsSalt("X25519withSHA256HKDF", xKey);
+        checkAcceptsSalt("XDHwithSHA256HKDF", xKey);
+    }
+
+    private void checkRejectsSalt(String algorithm, KeyPair kp)
+        throws Exception
+    {
+        KeyAgreement agreement = agreement(algorithm);
+        if (agreement == null)
+        {
+            return;
+        }
+
+        try
+        {
+            agreement.init(kp.getPrivate(), new UserKeyingMaterialSpec(UKM, UKM));
+
+            fail(algorithm + " accepted a KDF salt it does not use");
+        }
+        catch (InvalidAlgorithmParameterException e)
+        {
+            isTrue(algorithm + ": " + e.getMessage(), e.getMessage().endsWith(" key agreement does not use a KDF salt"));
+        }
+
+        // the same spec without the salt is still fine
+        agreement.init(kp.getPrivate(), new UserKeyingMaterialSpec(UKM));
+    }
+
+    private void checkAcceptsSalt(String algorithm, KeyPair kp)
+        throws Exception
+    {
+        KeyAgreement agreement = agreement(algorithm);
+        if (agreement == null)
+        {
+            return;
+        }
+
+        agreement.init(kp.getPrivate(), new UserKeyingMaterialSpec(UKM, UKM));
     }
 
     private void checkRejectsPlainUKM(String algorithm, KeyPair kp)

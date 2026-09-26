@@ -105,6 +105,11 @@ public class KeyAgreementSpi
             throw new InvalidAlgorithmParameterException("No algorithm parameters supported");
         }
 
+        if (parameterSpec != null)
+        {
+            checkKdfSalt((UserKeyingMaterialSpec)parameterSpec);
+        }
+
         ECPrivateKeyParameters privKey = (ECPrivateKeyParameters)ECUtil.generatePrivateKeyParameter((PrivateKey)key);
         this.parameters = privKey.getParameters();
         // RFC 7836 sec. 4.3: the UKM is optional for VKO and takes the value 1 when it is not given.

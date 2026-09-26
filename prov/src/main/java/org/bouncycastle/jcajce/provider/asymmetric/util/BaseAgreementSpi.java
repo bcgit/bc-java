@@ -33,6 +33,7 @@ import org.bouncycastle.internal.asn1.misc.MiscObjectIdentifiers;
 import org.bouncycastle.internal.asn1.ntt.NTTObjectIdentifiers;
 import org.bouncycastle.internal.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.jcajce.spec.HybridValueParameterSpec;
+import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Integers;
@@ -319,6 +320,23 @@ public abstract class BaseAgreementSpi
     protected void resetAgreement()
     {
         this.completed = false;
+    }
+
+    /**
+     * Refuse a UserKeyingMaterialSpec whose salt this agreement would have no use for. Only an HKDF
+     * (RFC 5869) based agreement takes a KDF salt; every other agreement would silently derive its
+     * key without it, so a salt given to one is a mismatch between the caller and the algorithm.
+     *
+     * @param spec the user keying material the agreement was initialised with.
+     * @throws InvalidAlgorithmParameterException if the spec carries a salt and the KDF is not HKDF.
+     */
+    protected void checkKdfSalt(UserKeyingMaterialSpec spec)
+        throws InvalidAlgorithmParameterException
+    {
+        if (spec.getSalt() != null && !(kdf instanceof HKDFBytesGenerator))
+        {
+            throw new InvalidAlgorithmParameterException(kaAlgorithm + " key agreement does not use a KDF salt");
+        }
     }
 
     /**

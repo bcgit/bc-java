@@ -172,6 +172,11 @@ public class KeyAgreementSpi
             throw new InvalidAlgorithmParameterException("No algorithm parameters supported");
         }
 
+        if (parameterSpec instanceof UserKeyingMaterialSpec)
+        {
+            checkKdfSalt((UserKeyingMaterialSpec)parameterSpec);
+        }
+
         if (agreement instanceof ECMQVRawAgreement)
         {
             mqvParameters = null;

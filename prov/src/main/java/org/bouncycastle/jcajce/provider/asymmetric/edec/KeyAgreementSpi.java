@@ -105,6 +105,7 @@ public class KeyAgreementSpi
                 {
                     throw new InvalidAlgorithmParameterException("no KDF specified for UserKeyingMaterialSpec");
                 }
+                checkKdfSalt((UserKeyingMaterialSpec)params);
                 this.ukmParameters = ((UserKeyingMaterialSpec)params).getUserKeyingMaterial();
                 this.ukmParametersSalt = ((UserKeyingMaterialSpec)params).getSalt();
             }
