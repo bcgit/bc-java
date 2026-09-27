@@ -275,6 +275,8 @@
                 <exclude name="**/jce/provider/test/PKCS12SecretKeyStoreTest.java"/>
                 <!-- uses java.security.interfaces.ECPrivateKey (Java 5) -->
                 <exclude name="**/jce/provider/test/HardwareKeyInvalidKeyExceptionTest.java"/>
+                <!-- uses EncryptedPrivateKeyInfo.getKeySpec(Key, String), which 1.4 does not have -->
+                <exclude name="**/jce/provider/test/PBEIterationCountTest.java"/>
                 <exclude name="**/DetDSATest.java"/>
                 <exclude name="**/ECDSA5Test.java"/>
                 <exclude name="**/CRL5Test.java"/>

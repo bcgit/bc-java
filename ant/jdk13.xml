@@ -418,6 +418,8 @@
                 <exclude name="**/jce/provider/test/AEADTest.java" />
                 <exclude name="**/jce/provider/test/ECEncodingTest.java" />
                 <exclude name="**/jce/provider/test/CertLocaleTest.java" />
+                <!-- uses EncryptedPrivateKeyInfo.getKeySpec(Key, String), which 1.3 does not have -->
+                <exclude name="**/jce/provider/test/PBEIterationCountTest.java" />
                 <exclude name="**/jce/provider/test/HardwareKeyInvalidKeyExceptionTest.java" />
                 <!-- synced from ant/jdk14.xml's prov/src/test/java fileset -->
                 <exclude name="**/jce/provider/test/JcajceParameterSpecTest.java" />
