@@ -101,7 +101,11 @@ public class ConcatenationKDFGenerator
 
                 digest.update(C, 0, C.length);
                 digest.update(shared, 0, shared.length);
-                digest.update(otherInfo, 0, otherInfo.length);
+
+                if (otherInfo != null)
+                {
+                    digest.update(otherInfo, 0, otherInfo.length);
+                }
 
                 digest.doFinal(hashBuf, 0);
 
@@ -117,7 +121,11 @@ public class ConcatenationKDFGenerator
 
             digest.update(C, 0, C.length);
             digest.update(shared, 0, shared.length);
-            digest.update(otherInfo, 0, otherInfo.length);
+
+            if (otherInfo != null)
+            {
+                digest.update(otherInfo, 0, otherInfo.length);
+            }
 
             digest.doFinal(hashBuf, 0);
 

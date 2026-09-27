@@ -328,6 +328,7 @@ public class KeyAgreementSpi
                 }
                 this.p = privKey.getParams().getP();
                 this.g = privKey.getParams().getG();
+                checkKdfSalt((UserKeyingMaterialSpec)params);
                 this.dheParameters = null;
                 this.ukmParameters = ((UserKeyingMaterialSpec)params).getUserKeyingMaterial();
             }

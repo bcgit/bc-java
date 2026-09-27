@@ -157,6 +157,11 @@ public class EC
             provider.addAlgorithm("KeyAgreement.ECDHWITHSHA512KDF", PREFIX + "KeyAgreementSpi$DHwithSHA512KDFAndSharedInfo", generalEcAttributes);
             provider.addAlgorithm("KeyAgreement.ECCDHWITHSHA512KDF", PREFIX + "KeyAgreementSpi$CDHwithSHA512KDFAndSharedInfo", generalEcAttributes);
 
+            // HKDF (RFC 5869) - by name only: the RFC 8418 dhSinglePass-stdDH-hkdf OIDs are registered to XDH in EdEC
+            provider.addAlgorithm("KeyAgreement.ECDHWITHSHA256HKDF", PREFIX + "KeyAgreementSpi$DHwithSHA256HKDF", generalEcAttributes);
+            provider.addAlgorithm("KeyAgreement.ECDHWITHSHA384HKDF", PREFIX + "KeyAgreementSpi$DHwithSHA384HKDF", generalEcAttributes);
+            provider.addAlgorithm("KeyAgreement.ECDHWITHSHA512HKDF", PREFIX + "KeyAgreementSpi$DHwithSHA512HKDF", generalEcAttributes);
+
             provider.addAlgorithm("KeyAgreement", X9ObjectIdentifiers.dhSinglePass_stdDH_sha1kdf_scheme, PREFIX + "KeyAgreementSpi$DHwithSHA1KDFAndSharedInfo", generalEcAttributes);
             provider.addAlgorithm("KeyAgreement", X9ObjectIdentifiers.dhSinglePass_cofactorDH_sha1kdf_scheme, PREFIX + "KeyAgreementSpi$CDHwithSHA1KDFAndSharedInfo", generalEcAttributes);
 
@@ -172,10 +177,10 @@ public class EC
             provider.addAlgorithm("KeyAgreement", SECObjectIdentifiers.dhSinglePass_stdDH_sha512kdf_scheme, PREFIX + "KeyAgreementSpi$DHwithSHA512KDFAndSharedInfo", generalEcAttributes);
             provider.addAlgorithm("KeyAgreement", SECObjectIdentifiers.dhSinglePass_cofactorDH_sha512kdf_scheme, PREFIX + "KeyAgreementSpi$CDHwithSHA512KDFAndSharedInfo", generalEcAttributes);
 
-            provider.addAlgorithm("KeyAgreement.ECCDHWITHSHA1CKDF", PREFIX + "KeyAgreementSpi$DHwithSHA1CKDF", generalEcAttributes);
-            provider.addAlgorithm("KeyAgreement.ECCDHWITHSHA256CKDF", PREFIX + "KeyAgreementSpi$DHwithSHA256CKDF", generalEcAttributes);
-            provider.addAlgorithm("KeyAgreement.ECCDHWITHSHA384CKDF", PREFIX + "KeyAgreementSpi$DHwithSHA384CKDF", generalEcAttributes);
-            provider.addAlgorithm("KeyAgreement.ECCDHWITHSHA512CKDF", PREFIX + "KeyAgreementSpi$DHwithSHA512CKDF", generalEcAttributes);
+            provider.addAlgorithm("KeyAgreement.ECCDHWITHSHA1CKDF", PREFIX + "KeyAgreementSpi$CDHwithSHA1CKDF", generalEcAttributes);
+            provider.addAlgorithm("KeyAgreement.ECCDHWITHSHA256CKDF", PREFIX + "KeyAgreementSpi$CDHwithSHA256CKDF", generalEcAttributes);
+            provider.addAlgorithm("KeyAgreement.ECCDHWITHSHA384CKDF", PREFIX + "KeyAgreementSpi$CDHwithSHA384CKDF", generalEcAttributes);
+            provider.addAlgorithm("KeyAgreement.ECCDHWITHSHA512CKDF", PREFIX + "KeyAgreementSpi$CDHwithSHA512CKDF", generalEcAttributes);
 
             provider.addAlgorithm("KeyAgreement.ECCDHUWITHSHA1CKDF", PREFIX + "KeyAgreementSpi$DHUwithSHA1CKDF", generalEcAttributes);
             provider.addAlgorithm("KeyAgreement.ECCDHUWITHSHA224CKDF", PREFIX + "KeyAgreementSpi$DHUwithSHA224CKDF", generalEcAttributes);

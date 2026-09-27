@@ -29,6 +29,49 @@ public class ConcatenationKDFTest
         implSHA256Test();
         implSHA512Test();
         implKDFPositiveLenTest();
+        implNullOtherInfoTest();
+    }
+
+    /**
+     * The OtherInfo is optional in KDFParameters: a null one has to derive what an empty one does,
+     * H(counter || Z), on both the single-block and multi-block paths.
+     */
+    private void implNullOtherInfoTest()
+    {
+        byte[] sharedSecretBytes = Hex.decodeStrict("3f892bd8b84dae64a782a35f6eaa8f00");
+        ConcatenationKDFGenerator kdf = new ConcatenationKDFGenerator(new SHA256Digest());
+
+        for (int len = 1; len <= 3 * 32 + 1; ++len)
+        {
+            byte[] withNull = new byte[len];
+            byte[] withEmpty = new byte[len];
+
+            kdf.init(new KDFParameters(sharedSecretBytes, null));
+            kdf.generateBytes(withNull, 0, len);
+
+            kdf.init(new KDFParameters(sharedSecretBytes, new byte[0]));
+            kdf.generateBytes(withEmpty, 0, len);
+
+            if (!Arrays.areEqual(withNull, withEmpty))
+            {
+                fail("ConcatenationKDF with null OtherInfo differs from empty OtherInfo for len " + len);
+            }
+        }
+
+        Digest digest = new SHA256Digest();
+        byte[] block1 = new byte[digest.getDigestSize()];
+        digest.update(new byte[]{ 0, 0, 0, 1 }, 0, 4);
+        digest.update(sharedSecretBytes, 0, sharedSecretBytes.length);
+        digest.doFinal(block1, 0);
+
+        byte[] output = new byte[block1.length];
+        kdf.init(new KDFParameters(sharedSecretBytes, null));
+        kdf.generateBytes(output, 0, output.length);
+
+        if (!Arrays.areEqual(block1, output))
+        {
+            fail("ConcatenationKDF with null OtherInfo is not H(counter || Z)");
+        }
     }
 
     private void implSHA1Test()

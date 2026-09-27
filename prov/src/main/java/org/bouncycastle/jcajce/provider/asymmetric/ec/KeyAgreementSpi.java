@@ -17,6 +17,7 @@ import org.bouncycastle.crypto.agreement.ECDHRawAgreement;
 import org.bouncycastle.crypto.agreement.ECMQVRawAgreement;
 import org.bouncycastle.crypto.agreement.kdf.ConcatenationKDFGenerator;
 import org.bouncycastle.crypto.digests.RIPEMD160Digest;
+import org.bouncycastle.crypto.generators.HKDFBytesGenerator;
 import org.bouncycastle.crypto.generators.KDF2BytesGenerator;
 import org.bouncycastle.crypto.params.ECDHUPrivateParameters;
 import org.bouncycastle.crypto.params.ECDHUPublicParameters;
@@ -170,6 +171,17 @@ public class KeyAgreementSpi
             !(parameterSpec instanceof MQVParameterSpec || parameterSpec instanceof UserKeyingMaterialSpec || parameterSpec instanceof DHUParameterSpec))
         {
             throw new InvalidAlgorithmParameterException("No algorithm parameters supported");
+        }
+
+        if (parameterSpec instanceof UserKeyingMaterialSpec)
+        {
+            checkKdfSalt((UserKeyingMaterialSpec)parameterSpec);
+            // only an HKDF based agreement gets this far with a salt - checkKdfSalt refuses the rest
+            ukmParametersSalt = ((UserKeyingMaterialSpec)parameterSpec).getSalt();
+        }
+        else
+        {
+            ukmParametersSalt = null;
         }
 
         if (agreement instanceof ECMQVRawAgreement)
@@ -331,15 +343,6 @@ public class KeyAgreementSpi
         }
     }
 
-    public static class DHwithSHA1KDF
-        extends KeyAgreementSpi
-    {
-        public DHwithSHA1KDF()
-        {
-            super("ECDHwithSHA1KDF", new ECDHRawAgreement(), new KDF2BytesGenerator(DigestFactory.createSHA1()));
-        }
-    }
-
     public static class DHwithSHA1KDFAndSharedInfo
         extends KeyAgreementSpi
     {
@@ -475,39 +478,71 @@ public class KeyAgreementSpi
         }
     }
 
-    public static class DHwithSHA1CKDF
+    public static class CDHwithSHA1CKDF
         extends KeyAgreementSpi
     {
-        public DHwithSHA1CKDF()
+        public CDHwithSHA1CKDF()
         {
-            super("ECDHwithSHA1CKDF", new ECDHCRawAgreement(), new ConcatenationKDFGenerator(DigestFactory.createSHA1()));
+            super("ECCDHwithSHA1CKDF", new ECDHCRawAgreement(), new ConcatenationKDFGenerator(DigestFactory.createSHA1()));
         }
     }
 
-    public static class DHwithSHA256CKDF
+    public static class CDHwithSHA256CKDF
         extends KeyAgreementSpi
     {
-        public DHwithSHA256CKDF()
+        public CDHwithSHA256CKDF()
         {
-            super("ECDHwithSHA256CKDF", new ECDHCRawAgreement(), new ConcatenationKDFGenerator(DigestFactory.createSHA256()));
+            super("ECCDHwithSHA256CKDF", new ECDHCRawAgreement(), new ConcatenationKDFGenerator(DigestFactory.createSHA256()));
         }
     }
 
-    public static class DHwithSHA384CKDF
+    public static class CDHwithSHA384CKDF
         extends KeyAgreementSpi
     {
-        public DHwithSHA384CKDF()
+        public CDHwithSHA384CKDF()
         {
-            super("ECDHwithSHA384CKDF", new ECDHCRawAgreement(), new ConcatenationKDFGenerator(DigestFactory.createSHA384()));
+            super("ECCDHwithSHA384CKDF", new ECDHCRawAgreement(), new ConcatenationKDFGenerator(DigestFactory.createSHA384()));
         }
     }
 
-    public static class DHwithSHA512CKDF
+    public static class CDHwithSHA512CKDF
         extends KeyAgreementSpi
     {
-        public DHwithSHA512CKDF()
+        public CDHwithSHA512CKDF()
         {
-            super("ECDHwithSHA512CKDF", new ECDHCRawAgreement(), new ConcatenationKDFGenerator(DigestFactory.createSHA512()));
+            super("ECCDHwithSHA512CKDF", new ECDHCRawAgreement(), new ConcatenationKDFGenerator(DigestFactory.createSHA512()));
+        }
+    }
+
+    // ECDH with HKDF (RFC 5869): the ECDH counterpart of edec's XDHwithSHA256HKDF, which serves the
+    // RFC 8418 dhSinglePass-stdDH-hkdf-sha256-scheme for X25519/X448. The UserKeyingMaterialSpec
+    // carries the HKDF info and, optionally, its salt.
+    public static class DHwithSHA256HKDF
+        extends KeyAgreementSpi
+    {
+        public DHwithSHA256HKDF()
+        {
+            super("ECDHwithSHA256HKDF", new ECDHRawAgreement(), new HKDFBytesGenerator(DigestFactory.createSHA256()));
+        }
+    }
+
+    // ECDH with HKDF (RFC 5869): the ECDH counterpart of edec's XDHwithSHA384HKDF.
+    public static class DHwithSHA384HKDF
+        extends KeyAgreementSpi
+    {
+        public DHwithSHA384HKDF()
+        {
+            super("ECDHwithSHA384HKDF", new ECDHRawAgreement(), new HKDFBytesGenerator(DigestFactory.createSHA384()));
+        }
+    }
+
+    // ECDH with HKDF (RFC 5869): the ECDH counterpart of edec's XDHwithSHA512HKDF.
+    public static class DHwithSHA512HKDF
+        extends KeyAgreementSpi
+    {
+        public DHwithSHA512HKDF()
+        {
+            super("ECDHwithSHA512HKDF", new ECDHRawAgreement(), new HKDFBytesGenerator(DigestFactory.createSHA512()));
         }
     }
 
