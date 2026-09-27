@@ -70,6 +70,8 @@ Date: 2026, TBD
 
 - The BCPQC MAYO, SDitH, SNOVA and NTRU+ KeyPairGenerators refused every java.security.spec.NamedParameterSpec with InvalidAlgorithmParameterException, whatever parameter set it named and in whatever case: they lower-cased the name and then looked it up in a table of upper-case names. The name is now upper-cased, so NamedParameterSpec("MAYO-1") and NamedParameterSpec("mayo-1") both select MAYO-1, as the other BCPQC families already allowed. The generators' own ParameterSpec classes were never affected.
 
+- With org.bouncycastle.emulate.oracle set, the X25519 and X448 KeyAgreements took the name they report under it, XDH, for the algorithm itself: the unified agreements (X25519UwithSHA256KDF, X448UwithSHA512KDF and their CKDF forms) refused a DHUParameterSpec and ran as plain static agreements without one, and the curve specific agreements accepted a key on the other curve. The property now affects only the name used in exception messages.
+
 ### 2.1.3 Additional Features and Functionality
 
 - The CRMF certificate request message controls now include the RFC 4211 sec. 6.6 protocolEncrKey control, which names the key a CA is to encrypt its response with: org.bouncycastle.cert.crmf.ProtocolEncrKeyControl carries the SubjectPublicKeyInfo the control is defined to take, and CertificateRequestMessage.getControl() recognises id-regCtrl-protocolEncrKey alongside the regToken, authenticator and pkiArchiveOptions controls it already returned (github PR #2443).

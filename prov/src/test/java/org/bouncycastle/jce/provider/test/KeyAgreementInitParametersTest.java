@@ -18,6 +18,7 @@ import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECNamedCurveGenParameterSpec;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.test.SimpleTest;
 
 /**
@@ -84,6 +85,91 @@ public class KeyAgreementInitParametersTest
         checkAcceptsSalt("ECDHwithSHA256HKDF", ecKey);
 
         checkNoUkm(ecKey, xKey);
+
+        checkEmulateOracle(xKey, generate("X448", null));
+    }
+
+    /**
+     * Properties.EMULATE_ORACLE makes the XDH agreements report themselves as "XDH", and the SPI
+     * used to take that name for the algorithm too: the unified agreements lost the DHU requirement
+     * (refusing a DHUParameterSpec, running a plain agreement without one) and the curve specific
+     * ones accepted a key on the other curve. The name is only for messages.
+     */
+    private void checkEmulateOracle(KeyPair xKey, KeyPair x448Key)
+        throws Exception
+    {
+        Properties.setThreadOverride(Properties.EMULATE_ORACLE, true);
+        try
+        {
+            checkRejectsPlainUKM("X25519UwithSHA256KDF", xKey);
+            checkRejectsPlainUKM("X448UwithSHA512KDF", x448Key);
+            checkRejectsNoSpec("X25519UwithSHA256KDF", xKey);
+            checkRejectsNoSpec("X448UwithSHA512KDF", x448Key);
+
+            checkRejectsOtherCurve("X25519", x448Key);
+            checkRejectsOtherCurve("X25519withSHA256KDF", x448Key);
+            checkRejectsOtherCurve("X448", xKey);
+            checkRejectsOtherCurve("X448withSHA512KDF", xKey);
+
+            checkUnifiedAgreement("X25519UwithSHA256KDF", xKey, generate("X25519", null));
+            checkUnifiedAgreement("X448UwithSHA512KDF", x448Key, generate("X448", null));
+
+            // the XDH names are not tied to a curve
+            KeyAgreement agreement = agreement("XDH");
+            if (agreement != null)
+            {
+                agreement.init(xKey.getPrivate());
+                agreement.init(x448Key.getPrivate());
+            }
+        }
+        finally
+        {
+            Properties.removeThreadOverride(Properties.EMULATE_ORACLE);
+        }
+    }
+
+    private void checkRejectsOtherCurve(String algorithm, KeyPair kp)
+        throws Exception
+    {
+        KeyAgreement agreement = agreement(algorithm);
+        if (agreement == null)
+        {
+            return;
+        }
+
+        try
+        {
+            agreement.init(kp.getPrivate());
+
+            fail(algorithm + " accepted a key on the other curve");
+        }
+        catch (InvalidKeyException e)
+        {
+            // expected
+        }
+    }
+
+    private void checkUnifiedAgreement(String algorithm, KeyPair kp, KeyPair other)
+        throws Exception
+    {
+        String keyAlg = algorithm.startsWith("X448") ? "X448" : "X25519";
+        KeyPair ephemeral = generate(keyAlg, null);
+        KeyPair otherEphemeral = generate(keyAlg, null);
+
+        KeyAgreement a = agreement(algorithm);
+        KeyAgreement b = agreement(algorithm);
+        if (a == null)
+        {
+            return;
+        }
+
+        a.init(kp.getPrivate(), new DHUParameterSpec(ephemeral, otherEphemeral.getPublic(), UKM));
+        b.init(other.getPrivate(), new DHUParameterSpec(otherEphemeral, ephemeral.getPublic(), UKM));
+        a.doPhase(other.getPublic(), true);
+        b.doPhase(kp.getPublic(), true);
+
+        isTrue(algorithm + " unified agreement did not agree",
+            Arrays.areEqual(a.generateSecret("AES[256]").getEncoded(), b.generateSecret("AES[256]").getEncoded()));
     }
 
     /**
