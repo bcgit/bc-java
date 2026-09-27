@@ -72,6 +72,8 @@ Date: 2026, TBD
 
 - With org.bouncycastle.emulate.oracle set, the X25519 and X448 KeyAgreements took the name they report under it, XDH, for the algorithm itself: the unified agreements (X25519UwithSHA256KDF, X448UwithSHA512KDF and their CKDF forms) refused a DHUParameterSpec and ran as plain static agreements without one, and the curve specific agreements accepted a key on the other curve. The property now affects only the name used in exception messages.
 
+- The jdk1.4 and jdk1.3 providers registered the PKCS12-AES256-AES128, PKCS12-AES256-AES128-GCM, PKCS12-DEF-AES256-AES128 and PKCS12-DEF-AES256-AES128-GCM KeyStores against classes those distributions do not contain. They are no longer registered there; the legacy PKCS12 stores can still read PBES2/AES protected files.
+
 ### 2.1.3 Additional Features and Functionality
 
 - The CRMF certificate request message controls now include the RFC 4211 sec. 6.6 protocolEncrKey control, which names the key a CA is to encrypt its response with: org.bouncycastle.cert.crmf.ProtocolEncrKeyControl carries the SubjectPublicKeyInfo the control is defined to take, and CertificateRequestMessage.getControl() recognises id-regCtrl-protocolEncrKey alongside the regToken, authenticator and pkiArchiveOptions controls it already returned (github PR #2443).
