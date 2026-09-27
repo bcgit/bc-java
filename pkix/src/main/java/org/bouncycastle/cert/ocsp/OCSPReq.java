@@ -87,16 +87,16 @@ public class OCSPReq
             }
             this.extensions = req.getTbsRequest().getRequestExtensions();
         }
-        catch (IllegalArgumentException e)
-        {
-            throw new CertIOException("malformed request: " + e.getMessage(), e);
-        }
-        catch (ClassCastException e)
-        {
-            throw new CertIOException("malformed request: " + e.getMessage(), e);
-        }
         catch (ASN1Exception e)
         {
+            throw new CertIOException("malformed request: " + e.getMessage(), e);
+        }
+        catch (RuntimeException e)
+        {
+            // any RuntimeException here (ClassCastException, IllegalArgumentException,
+            // IndexOutOfBoundsException from a truncated SEQUENCE, NullPointerException, ...)
+            // means the bytes were malformed; surface it as the declared IOException rather
+            // than letting it escape the contract, as X509CertificateHolder already does.
             throw new CertIOException("malformed request: " + e.getMessage(), e);
         }
     }
