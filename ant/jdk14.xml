@@ -238,6 +238,7 @@
                 <exclude name="**/cert/ocsp/test/AllTests.java"/>
                 <exclude name="**/cert/plants/**/*.java"/>
                 <exclude name="**/cert/test/X509CertificateReviewerTest.java"/>
+                <exclude name="**/cert/test/IndirectCRLSerialCollisionTest.java"/>
                 <exclude name="**/pkix/test/QcStatementReviewerTest.java"/>
                 <exclude name="**/pkix/test/RevocationTest.java"/>
                 <exclude name="**/TimeStampTokenInfoUnitTest.java"/>

@@ -558,12 +558,11 @@ abstract class X509CRLImpl
                         }
                     }
 
-                    if (!caName.equals(issuer))
+                    // a serial number is only unique within its issuer, so another issuer's entry is not this one.
+                    if (caName.equals(issuer))
                     {
-                        return false;
+                        return true;
                     }
-
-                    return true;
                 }
             }
         }

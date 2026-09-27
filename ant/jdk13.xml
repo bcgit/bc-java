@@ -477,6 +477,7 @@
                 <exclude name="**/cert/ocsp/test/AllTests.java"/>
                 <exclude name="**/cert/plants/**/*.java"/>
                 <exclude name="**/cert/test/X509CertificateReviewerTest.java"/>
+                <exclude name="**/cert/test/IndirectCRLSerialCollisionTest.java"/>
                 <exclude name="**/pkix/test/QcStatementReviewerTest.java"/>
                 <exclude name="**/cert/ocsp/test/OCSPExceptionalSignatureRejectionTest.java"/>
                 <exclude name="**/cert/ocsp/test/PKIXOcspRevocationCheckerTest.java"/>
@@ -521,6 +522,8 @@
             <fileset dir="mail/src/main/jdk1.4" includes="**/*.java" />
             <fileset dir="prov/src/main/jdk1.4" includes="**/*.java" >
                 <exclude name="**/LDAP*.java" />
+                <!-- jdk1.4 validator bridge: the jdk1.3 validators and CRL entries have overlays of their own -->
+                <exclude name="**/asymmetric/x509/X509CRLEntryIssuer.java" />
                 <exclude name="**/X509LDAP*.java" />
                 <exclude name="**/rsa/PSSParamSpec.java" />
             </fileset>

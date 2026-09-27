@@ -436,6 +436,7 @@ abstract class X509CRLImpl
         return entrySet;
     }
 
+    // returns the first entry with the serial number whatever its issuer - the cert path validators rely on that.
     public X509CRLEntry getRevokedCertificate(BigInteger serialNumber)
     {
         Enumeration certs = c.getRevokedCertificateEnumeration();
@@ -451,6 +452,42 @@ abstract class X509CRLImpl
             }
 
             previousCertificateIssuer = X509CRLEntryObject.loadCertificateIssuer(entry, isIndirect, previousCertificateIssuer);
+        }
+
+        return null;
+    }
+
+    /**
+     * Return the entry for the given certificate, matching its issuer as well as its serial number:
+     * an indirect CRL (RFC 5280 sec. 5.2.5) lists certificates from more than one issuer and a serial
+     * number is only unique within its issuer, so the entry cannot be located by serial number alone.
+     */
+    public X509CRLEntry getRevokedCertificate(X509Certificate certificate)
+    {
+        BigInteger serialNumber = certificate.getSerialNumber();
+        X500Name issuer = X500Name.getInstance(certificate.getIssuerX500Principal().getEncoded());
+
+        // not super.getRevokedCertificate(X509Certificate), which only exists from Java 7.
+        if (!isIndirect)
+        {
+            return issuer.equals(c.getIssuer()) ? getRevokedCertificate(serialNumber) : null;
+        }
+
+        Enumeration certs = c.getRevokedCertificateEnumeration();
+
+        X500Name previousCertificateIssuer = null; // the issuer
+        while (certs.hasMoreElements())
+        {
+            TBSCertList.CRLEntry entry = (TBSCertList.CRLEntry)certs.nextElement();
+            X500Name certificateIssuer = X509CRLEntryObject.loadCertificateIssuer(entry, isIndirect, previousCertificateIssuer);
+
+            if (entry.getUserCertificate().hasValue(serialNumber)
+                && issuer.equals(certificateIssuer == null ? c.getIssuer() : certificateIssuer))
+            {
+                return new X509CRLEntryObject(entry, isIndirect, previousCertificateIssuer);
+            }
+
+            previousCertificateIssuer = certificateIssuer;
         }
 
         return null;
@@ -665,12 +702,11 @@ abstract class X509CRLImpl
                         }
                     }
 
-                    if (!caName.equals(issuer))
+                    // a serial number is only unique within its issuer, so another issuer's entry is not this one.
+                    if (caName.equals(issuer))
                     {
-                        return false;
+                        return true;
                     }
-
-                    return true;
                 }
             }
         }

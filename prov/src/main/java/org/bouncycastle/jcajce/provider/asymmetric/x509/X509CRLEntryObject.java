@@ -24,6 +24,7 @@ import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.asn1.x509.TBSCertList;
+import org.bouncycastle.util.Objects;
 import org.bouncycastle.util.Strings;
 
 /**
@@ -206,10 +207,13 @@ class X509CRLEntryObject extends X509CRLEntry
                 }
             }
 
-            return this.c.equals(otherBC.c);
+            // an entry of an indirect CRL applies to the issuer named by its own or a preceding
+            // entry's certificateIssuer extension (RFC 5280 sec. 5.3.3), so two entries with the
+            // same encoding under different issuers are different entries.
+            return this.c.equals(otherBC.c) && Objects.areEqual(this.certificateIssuer, otherBC.certificateIssuer);
         }
 
-        return super.equals(this);
+        return super.equals(other);
     }
 
     public byte[] getEncoded()

@@ -1,5 +1,6 @@
 package org.bouncycastle.cert.test;
 
+import java.io.ByteArrayInputStream;
 import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -8,6 +9,7 @@ import java.security.Security;
 import java.security.cert.CertPathBuilder;
 import java.security.cert.CertPathBuilderException;
 import java.security.cert.CertStore;
+import java.security.cert.CertificateFactory;
 import java.security.cert.CollectionCertStoreParameters;
 import java.security.cert.PKIXBuilderParameters;
 import java.security.cert.TrustAnchor;
@@ -24,6 +26,7 @@ import java.util.Set;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.CRLDistPoint;
+import org.bouncycastle.asn1.x509.CRLReason;
 import org.bouncycastle.asn1.x509.DistributionPoint;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.GeneralName;
@@ -31,6 +34,7 @@ import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.asn1.x509.IssuingDistributionPoint;
 import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.asn1.x509.ExtensionsGenerator;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.X509v2CRLBuilder;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
@@ -75,6 +79,46 @@ public class IndirectCRLSignerTest
         excludedSignerIsNotUsed();
         maxPathLengthBoundsSignerPath();
         maxPathLengthUnboundedAdmitsLongSignerPath();
+        revocationFoundUnderAnotherCRLIssuer();
+    }
+
+    /**
+     * The CRL signer is not the certificate's issuer, so the certificate's entry names its issuer
+     * through the certificateIssuer extension. The JDK's X509CRL.getRevokedCertificate(BigInteger)
+     * looks only at the entries of the CRL issuer and so cannot find it, and a validator that took
+     * its null as the answer accepted the revoked certificate from a CRL the JDK had parsed.
+     */
+    private void revocationFoundUnderAnotherCRLIssuer()
+        throws Exception
+    {
+        Pki pki = buildPki(1);
+        pki.crl = indirectCrl(pki.signerKey, (X509Certificate)pki.signers.get(0), pki.subCa);
+
+        subCaRevoked("BC", pki);
+
+        pki.crl = (X509CRL)CertificateFactory.getInstance("X.509", "SUN").generateCRL(new ByteArrayInputStream(pki.crl.getEncoded()));
+
+        // before Java 7 the JDK has no indirect CRL support, and reports the critical issuingDistributionPoint as unsupported.
+        if (!pki.crl.hasUnsupportedCriticalExtension())
+        {
+            subCaRevoked("SUN", pki);
+        }
+    }
+
+    private void subCaRevoked(String crlProvider, Pki pki)
+        throws Exception
+    {
+        try
+        {
+            validate(pki);
+            fail("revoked certificate accepted with a CRL from " + crlProvider);
+        }
+        catch (CertPathBuilderException e)
+        {
+            String chain = messageChain(e);
+
+            isTrue("unexpected failure with a CRL from " + crlProvider + ": " + chain, chain.indexOf("revocation") >= 0);
+        }
     }
 
     /**
@@ -234,6 +278,7 @@ public class IndirectCRLSignerTest
         final List intermediates = new ArrayList();
         X509Certificate subCa;
         X509CRL crl;
+        KeyPair signerKey;
     }
 
     /**
@@ -295,7 +340,8 @@ public class IndirectCRLSignerTest
             (KeyPair)rootKeys.get(0), (X509Certificate)pki.roots.get(0), crlDp);
 
         int last = pki.signers.size() - 1;
-        pki.crl = indirectCrl((KeyPair)signerKeys.get(last), (X509Certificate)pki.signers.get(last));
+        pki.signerKey = (KeyPair)signerKeys.get(last);
+        pki.crl = indirectCrl(pki.signerKey, (X509Certificate)pki.signers.get(last), null);
 
         return pki;
     }
@@ -345,11 +391,26 @@ public class IndirectCRLSignerTest
         return sign(b, caKey.getPrivate());
     }
 
-    private X509CRL indirectCrl(KeyPair signerKey, X509Certificate signerCert)
+    /**
+     * An indirect CRL from the given signer, revoking the certificate revoked when it is not null.
+     */
+    private X509CRL indirectCrl(KeyPair signerKey, X509Certificate signerCert, X509Certificate revoked)
         throws Exception
     {
         long now = System.currentTimeMillis();
         X509v2CRLBuilder b = new X509v2CRLBuilder(subjectOf(signerCert), new Date(now - 3600000L));
+
+        if (revoked != null)
+        {
+            // the certificate's entry inherits its issuer from the entry before it (RFC 5280 sec. 5.3.3).
+            ExtensionsGenerator gen = new ExtensionsGenerator();
+
+            gen.addExtension(Extension.certificateIssuer, true, new GeneralNames(new GeneralName(
+                X500Name.getInstance(revoked.getIssuerX500Principal().getEncoded()))));
+
+            b.addCRLEntry(revoked.getSerialNumber().add(BigInteger.ONE), new Date(now - 3600000L), gen.generate());
+            b.addCRLEntry(revoked.getSerialNumber(), new Date(now - 3600000L), CRLReason.keyCompromise);
+        }
 
         b.setNextUpdate(new Date(now + 30L * 24 * 3600 * 1000));
         b.addExtension(Extension.issuingDistributionPoint, true,
