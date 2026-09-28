@@ -26,6 +26,25 @@ public class CertificateStatus
         this.response = response;
     }
 
+    /**
+     * Whether there exists an OCSP response for certificate 0 of the chain this status answers for:
+     * always true for {@link CertificateStatusType#ocsp}, true for
+     * {@link CertificateStatusType#ocsp_multi} only when there was a non-empty response for
+     * position 0.
+     */
+    boolean hasLeafResponse()
+    {
+        switch (statusType)
+        {
+        case CertificateStatusType.ocsp:
+            return true;
+        case CertificateStatusType.ocsp_multi:
+            return null != ((Vector)response).elementAt(0);
+        default:
+            throw new IllegalStateException();
+        }
+    }
+
     public short getStatusType()
     {
         return statusType;

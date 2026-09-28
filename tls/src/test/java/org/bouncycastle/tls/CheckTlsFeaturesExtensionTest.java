@@ -13,6 +13,7 @@ import org.bouncycastle.tls.crypto.TlsCertificate;
 import org.bouncycastle.tls.crypto.TlsEncryptor;
 import org.bouncycastle.tls.crypto.TlsVerifier;
 import org.bouncycastle.tls.crypto.Tls13Verifier;
+import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
 
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -40,7 +41,7 @@ public class CheckTlsFeaturesExtensionTest
 
         try
         {
-            TlsUtils.checkTlsFeatures(serverCertificate, new Hashtable(), new Hashtable());
+            checkTlsFeatures(serverCertificate, new Hashtable(), new Hashtable());
             fail("expected TlsFatalAlert for non-SEQUENCE TLS Features extension");
         }
         catch (TlsFatalAlert e)
@@ -65,7 +66,7 @@ public class CheckTlsFeaturesExtensionTest
         Certificate serverCertificate = makeCertificate(seq);
 
         // No client extensions requested, so nothing to enforce: must complete cleanly.
-        TlsUtils.checkTlsFeatures(serverCertificate, new Hashtable(), new Hashtable());
+        checkTlsFeatures(serverCertificate, new Hashtable(), new Hashtable());
     }
 
     /**
@@ -76,7 +77,59 @@ public class CheckTlsFeaturesExtensionTest
     {
         Certificate serverCertificate = makeCertificate(null);
 
-        TlsUtils.checkTlsFeatures(serverCertificate, new Hashtable(), new Hashtable());
+        checkTlsFeatures(serverCertificate, new Hashtable(), new Hashtable());
+    }
+
+    /**
+     * A (D)TLS 1.2 ServerHello may carry no extensions at all, leaving the server extensions null. A
+     * feature in force is then simply unsatisfied, and must fail with an alert rather than a
+     * NullPointerException.
+     */
+    public void testFeatureUnsatisfiedByAbsentServerExtensions()
+        throws Exception
+    {
+        ASN1Encodable[] features = new ASN1Encodable[]{ new ASN1Integer(ExtensionType.status_request) };
+        byte[] seq = new DERSequence(features).getEncoded(ASN1Encoding.DER);
+
+        Certificate serverCertificate = makeCertificate(seq);
+
+        Hashtable clientExtensions = new Hashtable();
+        TlsExtensionsUtils.addStatusRequestExtension(clientExtensions,
+            new CertificateStatusRequest(CertificateStatusType.ocsp, new OCSPStatusRequest(null, null)));
+
+        try
+        {
+            checkTlsFeatures(serverCertificate, clientExtensions, null);
+            fail("expected TlsFatalAlert for an unsatisfied TLS Feature");
+        }
+        catch (TlsFatalAlert e)
+        {
+            assertEquals(AlertDescription.certificate_unknown, e.getAlertDescription());
+        }
+    }
+
+    /**
+     * Runs the check as a (D)TLS 1.2 client would, for a server that stapled nothing.
+     */
+    private static void checkTlsFeatures(Certificate serverCertificate, Hashtable clientExtensions,
+        Hashtable serverExtensions) throws IOException
+    {
+        BcTlsCrypto crypto = new BcTlsCrypto();
+
+        TlsClientContextImpl clientContext = new TlsClientContextImpl(crypto);
+        clientContext.handshakeBeginning(new DefaultTlsClient(crypto)
+        {
+            public TlsAuthentication getAuthentication()
+            {
+                throw new UnsupportedOperationException();
+            }
+        });
+        clientContext.getSecurityParametersHandshake().negotiatedVersion = ProtocolVersion.TLSv12;
+
+        TlsServerCertificate tlsServerCertificate = new TlsServerCertificateImpl(serverCertificate, null,
+            new CertificateStatus[serverCertificate.getLength()]);
+
+        TlsUtils.checkTlsFeatures(clientContext, tlsServerCertificate, clientExtensions, serverExtensions);
     }
 
     private static Certificate makeCertificate(byte[] tlsFeaturesExtensionContent)

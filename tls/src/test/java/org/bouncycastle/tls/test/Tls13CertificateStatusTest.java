@@ -9,20 +9,33 @@ import java.util.Vector;
 
 import junit.framework.TestCase;
 
+import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.ocsp.OCSPObjectIdentifiers;
 import org.bouncycastle.asn1.ocsp.OCSPResponse;
 import org.bouncycastle.asn1.ocsp.OCSPResponseStatus;
 import org.bouncycastle.asn1.ocsp.ResponseBytes;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.cert.X509v3CertificateBuilder;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
+import org.bouncycastle.operator.ContentSigner;
+import org.bouncycastle.operator.DefaultDigestAlgorithmIdentifierFinder;
+import org.bouncycastle.operator.DefaultSignatureAlgorithmIdentifierFinder;
+import org.bouncycastle.operator.bc.BcRSAContentSignerBuilder;
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.Certificate;
 import org.bouncycastle.tls.CertificateEntry;
 import org.bouncycastle.tls.CertificateRequest;
 import org.bouncycastle.tls.CertificateStatus;
 import org.bouncycastle.tls.CertificateStatusRequest;
+import org.bouncycastle.tls.CertificateStatusRequestItemV2;
 import org.bouncycastle.tls.CertificateStatusType;
 import org.bouncycastle.tls.DefaultTlsClient;
+import org.bouncycastle.tls.ExtensionType;
+import org.bouncycastle.tls.OCSPStatusRequest;
 import org.bouncycastle.tls.ProtocolVersion;
 import org.bouncycastle.tls.SignatureAlgorithm;
 import org.bouncycastle.tls.SignatureAndHashAlgorithm;
@@ -31,9 +44,12 @@ import org.bouncycastle.tls.TlsClientProtocol;
 import org.bouncycastle.tls.TlsCredentials;
 import org.bouncycastle.tls.TlsExtensionsUtils;
 import org.bouncycastle.tls.TlsFatalAlert;
+import org.bouncycastle.tls.TlsObjectIdentifiers;
 import org.bouncycastle.tls.TlsServerCertificate;
 import org.bouncycastle.tls.TlsServerProtocol;
 import org.bouncycastle.tls.TlsUtils;
+import org.bouncycastle.tls.crypto.TlsCertificate;
+import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.TlsCryptoParameters;
 import org.bouncycastle.tls.crypto.impl.bc.BcDefaultTlsCredentialedSigner;
 import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
@@ -50,12 +66,19 @@ import org.bouncycastle.util.io.Streams;
  * callback it uses up to TLS 1.2, and the protocol distributes what it returns over the entries -
  * previously a server had to build the extensions and attach them to the {@link Certificate} its
  * credentials supplied, which the last case here shows still works.
+ * <p/>
+ * The RFC 7633 TLS feature ("must-staple") checks a client makes of what arrives are here too, with
+ * their TLS 1.2 counterparts alongside.
  */
 public class Tls13CertificateStatusTest
     extends TestCase
 {
     private static final String[] CERT_CHAIN = new String[]{ "x509-server-rsa-sign.pem", "x509-ca-rsa.pem" };
     private static final String KEY_RESOURCE = "x509-server-key-rsa-sign.pem";
+    private static final String CA_KEY_RESOURCE = "x509-ca-key-rsa.pem";
+
+    private static final int[] MUST_STAPLE = new int[]{ ExtensionType.status_request };
+    private static final int[] MULTI_CERT_MUST_STAPLE = new int[]{ ExtensionType.status_request_v2 };
 
     public void testOcspMultiIsDistributedAcrossCertificateEntries()
         throws Exception
@@ -242,6 +265,177 @@ public class Tls13CertificateStatusTest
         }
     }
 
+    /*
+     * RFC 7633 TLS feature ("must-staple") checks. A feature listing a status request is only
+     * satisfied by an actual response for the end-entity certificate: from TLS 1.3 that arrives in its
+     * CertificateEntry (never in EncryptedExtensions), and up to TLS 1.2 the ServerHello echo alone is
+     * not enough, since RFC 6066 sec. 8 lets a server then omit the "certificate_status" message.
+     */
+
+    /**
+     * github #2458: RFC 8446 sec. 4.4.2.1 puts a TLS 1.3 server's staple in the CertificateEntry, so
+     * that is where a must-staple end-entity certificate has to be satisfied from.
+     */
+    public void testMustStapleIsSatisfiedByTheCertificateEntryStaple()
+        throws Exception
+    {
+        CapturingTlsClient client = new CapturingTlsClient(true);
+
+        runTlsFeatureHandshake(client, MUST_STAPLE, ocspSingle("end-entity"), false);
+
+        assertEquals(ProtocolVersion.TLSv13, client.negotiatedVersion);
+        assertEquals("end-entity", getMarker(client.serverCertificate.getCertificateStatus()));
+    }
+
+    public void testMustStapleFailsWithoutAStaple()
+        throws Exception
+    {
+        CapturingTlsClient client = new CapturingTlsClient(true);
+
+        try
+        {
+            runTlsFeatureHandshake(client, MUST_STAPLE, null, false);
+            fail("expected a certificate_unknown");
+        }
+        catch (Exception e)
+        {
+            assertEquals(ProtocolVersion.TLSv13, client.negotiatedVersion);
+            assertClientFailedWith(client, AlertDescription.certificate_unknown);
+        }
+    }
+
+    /**
+     * RFC 7633 sec. 4.3.3: a feature is only in force where the client's ClientHello offered it too.
+     */
+    public void testMustStapleIsNotInForceUnlessRequested()
+        throws Exception
+    {
+        CapturingTlsClient client = new CapturingTlsClient(false);
+
+        runTlsFeatureHandshake(client, MUST_STAPLE, null, false);
+
+        assertEquals(ProtocolVersion.TLSv13, client.negotiatedVersion);
+        assertNull(client.serverCertificate.getCertificateStatus());
+    }
+
+    public void testTls12MustStapleIsSatisfiedByTheCertificateStatusMessage()
+        throws Exception
+    {
+        CapturingTlsClient client = new CapturingTlsClient(true);
+        client.supportedVersions = ProtocolVersion.TLSv12.only();
+
+        runTlsFeatureHandshake(client, MUST_STAPLE, ocspSingle("end-entity"), false);
+
+        assertEquals(ProtocolVersion.TLSv12, client.negotiatedVersion);
+        assertEquals("end-entity", getMarker(client.serverCertificate.getCertificateStatus()));
+    }
+
+    /**
+     * The server echoes "status_request" - as AbstractTlsServer does whenever the client offered it -
+     * but, holding no status, sends no "certificate_status" message. RFC 6066 sec. 8 permits that, so
+     * the echo alone would let anyone holding the key of a revoked must-staple certificate simply not
+     * staple.
+     */
+    public void testTls12MustStapleFailsOnAnEchoWithoutAStatus()
+        throws Exception
+    {
+        CapturingTlsClient client = new CapturingTlsClient(true);
+        client.supportedVersions = ProtocolVersion.TLSv12.only();
+
+        try
+        {
+            runTlsFeatureHandshake(client, MUST_STAPLE, null, false);
+            fail("expected a certificate_unknown");
+        }
+        catch (Exception e)
+        {
+            assertEquals(ProtocolVersion.TLSv12, client.negotiatedVersion);
+            assertClientFailedWith(client, AlertDescription.certificate_unknown);
+        }
+    }
+
+    public void testTls12MultiCertMustStapleIsSatisfiedByAnEndEntityResponse()
+        throws Exception
+    {
+        CapturingTlsClient client = new CapturingTlsClient(false);
+        client.supportedVersions = ProtocolVersion.TLSv12.only();
+        client.requestMultiCertStatus = true;
+
+        CertificateStatus certificateStatus = ocspMulti(ocspResponse("end-entity"), ocspResponse("intermediate"));
+
+        runTlsFeatureHandshake(client, MULTI_CERT_MUST_STAPLE, certificateStatus, true);
+
+        assertEquals(ProtocolVersion.TLSv12, client.negotiatedVersion);
+        assertEquals("end-entity", getMarker(client.serverCertificate.getCertificateStatusAt(0)));
+    }
+
+    /**
+     * RFC 6961 sec. 2.2 lets an element of the list be absent, so an ocsp_multi status can arrive
+     * holding nothing for the end-entity certificate - which answers nothing for must-staple, however
+     * much it holds for the rest of the chain.
+     */
+    public void testTls12MultiCertMustStapleFailsWithoutAnEndEntityResponse()
+        throws Exception
+    {
+        CapturingTlsClient client = new CapturingTlsClient(false);
+        client.supportedVersions = ProtocolVersion.TLSv12.only();
+        client.requestMultiCertStatus = true;
+
+        CertificateStatus certificateStatus = ocspMulti(null, ocspResponse("intermediate"));
+
+        try
+        {
+            runTlsFeatureHandshake(client, MULTI_CERT_MUST_STAPLE, certificateStatus, true);
+            fail("expected a certificate_unknown");
+        }
+        catch (Exception e)
+        {
+            assertEquals(ProtocolVersion.TLSv12, client.negotiatedVersion);
+            assertClientFailedWith(client, AlertDescription.certificate_unknown);
+        }
+    }
+
+    /**
+     * RFC 8446 sec. 4.2 has no place for "status_request_v2", so a TLS 1.3 server has no way to answer
+     * it, and the feature is not in force once TLS 1.3 is negotiated - even though a client that also
+     * offers TLS 1.2 sends it.
+     */
+    public void testMultiCertMustStapleIsNotInForceInTls13()
+        throws Exception
+    {
+        CapturingTlsClient client = new CapturingTlsClient(false);
+        client.supportedVersions = ProtocolVersion.TLSv13.downTo(ProtocolVersion.TLSv12);
+        client.requestMultiCertStatus = true;
+
+        runTlsFeatureHandshake(client, MULTI_CERT_MUST_STAPLE, null, false);
+
+        assertEquals(ProtocolVersion.TLSv13, client.negotiatedVersion);
+    }
+
+    private static void assertClientFailedWith(CapturingTlsClient client, short alertDescription)
+    {
+        assertTrue("client failed with " + client.failure, client.failure instanceof TlsFatalAlert);
+        assertEquals(alertDescription, ((TlsFatalAlert)client.failure).getAlertDescription());
+    }
+
+    /**
+     * Drives a handshake against a server that supports TLS 1.2 and 1.3 - so the client's versions
+     * decide - and whose end-entity certificate carries a TLS feature extension listing
+     * <code>tlsFeatures</code>.
+     *
+     * @param multiCertStatus have the server answer "status_request_v2".
+     */
+    private void runTlsFeatureHandshake(CapturingTlsClient client, int[] tlsFeatures,
+        CertificateStatus certificateStatus, boolean multiCertStatus) throws Exception
+    {
+        StatusStaplingTlsServer server = new StatusStaplingTlsServer(certificateStatus, false, null);
+        server.supportedVersions = ProtocolVersion.TLSv13.downTo(ProtocolVersion.TLSv12);
+        server.tlsFeatures = tlsFeatures;
+        server.multiCertStatus = multiCertStatus;
+
+        runHandshake(client, server);
+    }
+
     /**
      * @param attachToSecondEntry have the server attach a staple of its own to the second entry of
      *                            the Certificate its credentials supply.
@@ -279,6 +473,12 @@ public class Tls13CertificateStatusTest
     private void runHandshake(CapturingTlsClient client, CertificateStatus certificateStatus,
         boolean attachToSecondEntry, byte[] malformedExtension) throws Exception
     {
+        runHandshake(client, new StatusStaplingTlsServer(certificateStatus, attachToSecondEntry,
+            malformedExtension));
+    }
+
+    private void runHandshake(CapturingTlsClient client, StatusStaplingTlsServer server) throws Exception
+    {
         PipedInputStream clientRead = TlsTestUtils.createPipedInputStream();
         PipedInputStream serverRead = TlsTestUtils.createPipedInputStream();
         PipedOutputStream clientWrite = new PipedOutputStream(serverRead);
@@ -286,9 +486,6 @@ public class Tls13CertificateStatusTest
 
         TlsClientProtocol clientProtocol = new TlsClientProtocol(clientRead, clientWrite);
         TlsServerProtocol serverProtocol = new TlsServerProtocol(serverRead, serverWrite);
-
-        StatusStaplingTlsServer server = new StatusStaplingTlsServer(certificateStatus, attachToSecondEntry,
-            malformedExtension);
 
         ServerThread serverThread = new ServerThread(serverProtocol, server);
         serverThread.start();
@@ -393,6 +590,65 @@ public class Tls13CertificateStatusTest
                 new DEROctetString(Strings.toByteArray(marker))));
     }
 
+    private static CertificateStatus ocspSingle(String marker)
+    {
+        return new CertificateStatus(CertificateStatusType.ocsp, ocspResponse(marker));
+    }
+
+    private static CertificateStatus ocspMulti(OCSPResponse endEntity, OCSPResponse intermediate)
+    {
+        Vector ocspResponseList = new Vector();
+        ocspResponseList.addElement(endEntity);
+        ocspResponseList.addElement(intermediate);
+
+        return new CertificateStatus(CertificateStatusType.ocsp_multi, ocspResponseList);
+    }
+
+    /**
+     * The test end-entity certificate reissued by the test CA with an RFC 7633 TLS feature extension
+     * listing <code>tlsFeatures</code>, and otherwise unchanged - the same key, so it still pairs with
+     * KEY_RESOURCE.
+     */
+    private static TlsCertificate createEndEntityWithTlsFeatures(TlsCrypto crypto, int[] tlsFeatures)
+        throws IOException
+    {
+        ASN1EncodableVector tlsFeaturesVector = new ASN1EncodableVector(tlsFeatures.length);
+        for (int i = 0; i < tlsFeatures.length; ++i)
+        {
+            tlsFeaturesVector.add(new ASN1Integer(tlsFeatures[i]));
+        }
+
+        X509v3CertificateBuilder builder = new X509v3CertificateBuilder(
+            new X509CertificateHolder(TlsTestUtils.loadBcCertificateResource(CERT_CHAIN[0])));
+        builder.addExtension(TlsObjectIdentifiers.id_pe_tlsfeature, false, new DERSequence(tlsFeaturesVector));
+
+        AsymmetricKeyParameter caPrivateKey = TlsTestUtils.loadBcPrivateKeyResource(CA_KEY_RESOURCE);
+
+        ContentSigner contentSigner;
+        try
+        {
+            AlgorithmIdentifier sigAlgId = new DefaultSignatureAlgorithmIdentifierFinder().find("SHA256withRSA");
+            AlgorithmIdentifier digAlgId = new DefaultDigestAlgorithmIdentifierFinder().find(sigAlgId);
+
+            contentSigner = new BcRSAContentSignerBuilder(sigAlgId, digAlgId).build(caPrivateKey);
+        }
+        catch (Exception e)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error, e);
+        }
+
+        return crypto.createCertificate(builder.build(contentSigner).getEncoded());
+    }
+
+    private static Certificate replaceEndEntity(Certificate certificate, TlsCertificate endEntity)
+    {
+        CertificateEntry[] certificateEntryList = certificate.getCertificateEntryList();
+
+        certificateEntryList[0] = new CertificateEntry(endEntity, certificateEntryList[0].getExtensions());
+
+        return new Certificate(certificate.getCertificateRequestContext(), certificateEntryList);
+    }
+
     private static Certificate addStatusRequest(Certificate certificate, int index, OCSPResponse ocspResponse)
         throws IOException
     {
@@ -453,7 +709,15 @@ public class Tls13CertificateStatusTest
     {
         private final boolean requestStatus;
 
+        ProtocolVersion[] supportedVersions = ProtocolVersion.TLSv13.only();
+
+        /**
+         * Have the client also offer "status_request_v2" (RFC 6961), where it offers TLS 1.2.
+         */
+        boolean requestMultiCertStatus = false;
+
         CertificateEntry[] certificateEntryList = null;
+        ProtocolVersion negotiatedVersion = null;
         TlsServerCertificate serverCertificate = null;
 
         /**
@@ -471,12 +735,33 @@ public class Tls13CertificateStatusTest
 
         protected ProtocolVersion[] getSupportedVersions()
         {
-            return ProtocolVersion.TLSv13.only();
+            return supportedVersions;
         }
 
         protected CertificateStatusRequest getCertificateStatusRequest()
         {
             return requestStatus ? super.getCertificateStatusRequest() : null;
+        }
+
+        protected Vector getMultiCertStatusRequest()
+        {
+            if (!requestMultiCertStatus)
+            {
+                return null;
+            }
+
+            Vector statusRequestV2 = new Vector();
+            statusRequestV2.addElement(new CertificateStatusRequestItemV2(CertificateStatusType.ocsp_multi,
+                new OCSPStatusRequest(null, null)));
+            return statusRequestV2;
+        }
+
+        public void notifyServerVersion(ProtocolVersion serverVersion)
+            throws IOException
+        {
+            super.notifyServerVersion(serverVersion);
+
+            this.negotiatedVersion = serverVersion;
         }
 
         public TlsAuthentication getAuthentication()
@@ -508,6 +793,19 @@ public class Tls13CertificateStatusTest
         private final boolean attachToSecondEntry;
         private final byte[] malformedExtension;
 
+        ProtocolVersion[] supportedVersions = ProtocolVersion.TLSv13.only();
+
+        /**
+         * TLS features for the end-entity certificate to list (see RFC 7633), or null to serve it
+         * unchanged.
+         */
+        int[] tlsFeatures = null;
+
+        /**
+         * Answer "status_request_v2" (RFC 6961) where the client offers it.
+         */
+        boolean multiCertStatus = false;
+
         StatusStaplingTlsServer(CertificateStatus certificateStatus, boolean attachToSecondEntry,
             byte[] malformedExtension)
         {
@@ -518,7 +816,12 @@ public class Tls13CertificateStatusTest
 
         protected ProtocolVersion[] getSupportedVersions()
         {
-            return ProtocolVersion.TLSv13.only();
+            return supportedVersions;
+        }
+
+        protected boolean allowMultiCertStatus()
+        {
+            return multiCertStatus;
         }
 
         public TlsCredentials getCredentials()
@@ -527,6 +830,11 @@ public class Tls13CertificateStatusTest
             SignatureAndHashAlgorithm signatureAndHashAlgorithm = selectRSASignatureAndHashAlgorithm();
 
             Certificate certificate = TlsTestUtils.loadCertificateChain(context, CERT_CHAIN);
+            if (null != tlsFeatures)
+            {
+                certificate = replaceEndEntity(certificate,
+                    createEndEntityWithTlsFeatures(context.getCrypto(), tlsFeatures));
+            }
             if (attachToSecondEntry)
             {
                 certificate = addStatusRequest(certificate, 1, ocspResponse("attached-by-server"));

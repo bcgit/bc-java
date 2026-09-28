@@ -4840,48 +4840,119 @@ public class TlsUtils
         }
     }
 
-    static void checkTlsFeatures(Certificate serverCertificate, Hashtable clientExtensions, Hashtable serverExtensions) throws IOException
+    static void checkTlsFeatures(TlsClientContext clientContext, TlsServerCertificate serverCertificate,
+        Hashtable clientExtensions, Hashtable serverExtensions) throws IOException
     {
         /*
          * RFC 7633 4.3.3. A client MUST treat a certificate with a TLS feature extension as an
          * invalid certificate if the features offered by the server do not contain all features
          * present in both the client's ClientHello message and the TLS feature extension.
          */
-        byte[] tlsFeatures = serverCertificate.getCertificateAt(0).getExtension(TlsObjectIdentifiers.id_pe_tlsfeature);
-        if (tlsFeatures != null)
+
+        Certificate certificate = serverCertificate.getCertificate();
+        if (certificate.isEmpty())
         {
-            // TODO[tls] Proper ASN.1 type class for this extension?
-            ASN1Primitive tlsFeaturesObj = readASN1Object(tlsFeatures);
-            if (!(tlsFeaturesObj instanceof ASN1Sequence))
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        CertificateEntry eeEntry = certificate.getCertificateEntryAt(0);
+
+        byte[] tlsFeatures = eeEntry.getCertificate().getExtension(TlsObjectIdentifiers.id_pe_tlsfeature);
+        if (tlsFeatures == null)
+        {
+            return;
+        }
+
+        // TODO[tls] Proper ASN.1 type class for this extension?
+        ASN1Primitive tlsFeaturesObj = readASN1Object(tlsFeatures);
+        if (!(tlsFeaturesObj instanceof ASN1Sequence))
+        {
+            throw new TlsFatalAlert(AlertDescription.bad_certificate,
+                "Server certificate has invalid TLS Features extension");
+        }
+
+        ASN1Sequence tlsFeaturesSeq = (ASN1Sequence)tlsFeaturesObj;
+        for (int i = 0; i < tlsFeaturesSeq.size(); ++i)
+        {
+            if (!(tlsFeaturesSeq.getObjectAt(i) instanceof ASN1Integer))
             {
                 throw new TlsFatalAlert(AlertDescription.bad_certificate,
                     "Server certificate has invalid TLS Features extension");
             }
+        }
 
-            ASN1Sequence tlsFeaturesSeq = (ASN1Sequence)tlsFeaturesObj;
-            for (int i = 0; i < tlsFeaturesSeq.size(); ++i)
+        requireDEREncoding(tlsFeaturesSeq, tlsFeatures);
+
+        boolean isTLSv13 = isTLSv13(clientContext);
+        boolean mustStaple = false;
+        Hashtable eeExtensions = eeEntry.getExtensions();
+
+        for (int i = 0; i < tlsFeaturesSeq.size(); ++i)
+        {
+            BigInteger tlsExtension = ((ASN1Integer)tlsFeaturesSeq.getObjectAt(i)).getPositiveValue();
+            if (tlsExtension.bitLength() > 16)
             {
-                if (!(tlsFeaturesSeq.getObjectAt(i) instanceof ASN1Integer))
+                // Feature has invalid value - couldn't legally appear in ClientHello extensions
+                continue;
+            }
+
+            int extensionType = tlsExtension.intValue();
+            Integer extensionTypeKey = Integers.valueOf(extensionType);
+
+            if (!hasExtension(clientExtensions, extensionTypeKey))
+            {
+                // Feature only in force if actually in ClientHello extensions
+                continue;
+            }
+
+            if (isTLSv13 && ExtensionType.isRecognized(extensionType))
+            {
+                if (!isPermittedExtensionType13(HandshakeType.client_hello, extensionType))
                 {
-                    throw new TlsFatalAlert(AlertDescription.bad_certificate,
-                        "Server certificate has invalid TLS Features extension");
+                    // Feature not in force if extension not relevant to negotiated version
+                    continue;
+                }
+
+                // Note that no stapling extensions are skipped here
+                if (isPermittedExtensionType13(HandshakeType.server_hello, extensionType))
+                {
+                    // Feature not checked for TLS 1.3 ServerHello extensions - existing permitted extensions are
+                    // either not relevant to server certificate authentication, or always added. Revisit this if
+                    // one that is relevant becomes permitted there (e.g. tls_cert_with_extern_psk, RFC 8773).
+                    continue;
                 }
             }
 
-            requireDEREncoding(tlsFeaturesSeq, tlsFeatures);
+            // We now consider the feature requirement to be "in force" - check it's satisfied
 
-            for (int i = 0; i < tlsFeaturesSeq.size(); ++i)
+            if (ExtensionType.status_request == extensionType || ExtensionType.status_request_v2 == extensionType)
             {
-                BigInteger tlsExtension = ((ASN1Integer)tlsFeaturesSeq.getObjectAt(i)).getPositiveValue();
-                if (tlsExtension.bitLength() <= 16)
-                {
-                    Integer extensionType = Integers.valueOf(tlsExtension.intValue());
-                    if (clientExtensions.containsKey(extensionType) && !serverExtensions.containsKey(extensionType))
-                    {
-                        throw new TlsFatalAlert(AlertDescription.certificate_unknown,
-                            "Server extensions missing TLS Feature " + extensionType);
-                    }
-                }
+                mustStaple = true;
+            }
+
+            if (hasExtension(serverExtensions, extensionTypeKey))
+            {
+                // Feature satisfied by the ServerHello extensions (EncryptedExtensions in TLS 1.3)
+                continue;
+            }
+
+            if (hasExtension(eeExtensions, extensionTypeKey))
+            {
+                // Feature satisfied by the CertificateEntry extensions (only in TLS 1.3+)
+                continue;
+            }
+
+            throw new TlsFatalAlert(AlertDescription.certificate_unknown,
+                "Server extensions missing TLS Feature " + ExtensionType.getText(extensionType));
+        }
+
+        if (mustStaple)
+        {
+            CertificateStatus certificateStatus = serverCertificate.getCertificateStatus();
+            if (certificateStatus == null || !certificateStatus.hasLeafResponse())
+            {
+                throw new TlsFatalAlert(AlertDescription.certificate_unknown,
+                    "Server failed TLS Feature 'Must-Staple'");
             }
         }
     }
@@ -4953,8 +5024,6 @@ public class TlsUtils
 
         Certificate serverCertificate = securityParameters.getPeerCertificate();
 
-        checkTlsFeatures(serverCertificate, clientExtensions, serverExtensions);
-
         CertificateStatus certificateStatus;
         CertificateStatus[] certificateStatuses;
 
@@ -4975,8 +5044,12 @@ public class TlsUtils
             certificateStatuses = spreadCertificateStatus(serverCertificate, serverCertificateStatus);
         }
 
-        clientAuthentication.notifyServerCertificate(
-            new TlsServerCertificateImpl(serverCertificate, certificateStatus, certificateStatuses));
+        TlsServerCertificate tlsServerCertificate = new TlsServerCertificateImpl(serverCertificate,
+            certificateStatus, certificateStatuses);
+
+        checkTlsFeatures(clientContext, tlsServerCertificate, clientExtensions, serverExtensions);
+
+        clientAuthentication.notifyServerCertificate(tlsServerCertificate);
     }
 
     static SignatureAndHashAlgorithm getCertSigAndHashAlg(TlsCertificate subjectCert, TlsCertificate issuerCert)
