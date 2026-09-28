@@ -25,12 +25,17 @@ public class OCSPRequest
     private OCSPRequest(
         ASN1Sequence    seq)
     {
+        if (seq.size() < 1)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
+
         tbsRequest = TBSRequest.getInstance(seq.getObjectAt(0));
 
         if (seq.size() == 2)
         {
             optionalSignature = Signature.getInstance(
-                                (ASN1TaggedObject)seq.getObjectAt(1), true);
+                                ASN1TaggedObject.getInstance(seq.getObjectAt(1)), true);
         }
     }
     

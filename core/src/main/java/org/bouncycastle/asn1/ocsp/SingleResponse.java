@@ -67,13 +67,13 @@ public class SingleResponse
         if (seq.size() > 4)
         {
             this.nextUpdate = ASN1GeneralizedTime.getInstance(
-                                (ASN1TaggedObject)seq.getObjectAt(3), true);
+                                ASN1TaggedObject.getInstance(seq.getObjectAt(3)), true);
             this.singleExtensions = Extensions.getInstance(
-                                (ASN1TaggedObject)seq.getObjectAt(4), true);
+                                ASN1TaggedObject.getInstance(seq.getObjectAt(4)), true);
         }
         else if (seq.size() > 3)
         {
-            ASN1TaggedObject    o = (ASN1TaggedObject)seq.getObjectAt(3);
+            ASN1TaggedObject    o = ASN1TaggedObject.getInstance(seq.getObjectAt(3));
 
             if (o.getTagNo() == 0)
             {

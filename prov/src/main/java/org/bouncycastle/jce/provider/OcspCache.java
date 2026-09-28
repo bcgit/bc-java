@@ -41,6 +41,7 @@ import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.jcajce.PKIXCertRevocationCheckerParameters;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.io.StreamOverflowException;
 import org.bouncycastle.util.io.Streams;
@@ -164,17 +165,21 @@ class OcspCache
 
             InputStream reqIn = ocspCon.getInputStream();
 
-            OCSPResponse response = OCSPResponse.getInstance(
-                readResponse(reqIn, getResponseSizeLimit(ocspCon.getContentLength())));
+            OCSPResponse response = decodeResponse(readResponse(reqIn, getResponseSizeLimit(ocspCon.getContentLength())));
 
             if (OCSPResponseStatus.SUCCESSFUL == response.getResponseStatus().getIntValue())
             {
                 boolean validated = false;
-                ResponseBytes respBytes = ResponseBytes.getInstance(response.getResponseBytes());
+                ResponseBytes respBytes = response.getResponseBytes();
+
+                if (respBytes == null)
+                {
+                    throw new IOException("successful OCSP response carries no response bytes");
+                }
 
                 if (respBytes.getResponseType().equals(OCSPObjectIdentifiers.id_pkix_ocsp_basic))
                 {
-                    BasicOCSPResponse basicResp = BasicOCSPResponse.getInstance(respBytes.getResponse().getOctets());
+                    BasicOCSPResponse basicResp = decodeBasicResponse(respBytes);
 
                     validated = ProvOcspRevocationChecker.validatedOcspResponse(basicResp, parameters, nonce, responderCert, helper)
                                 && isCertIDFoundAndCurrent(basicResp, parameters.getValidDate(), certID);
@@ -218,6 +223,36 @@ class OcspCache
             // ProvRevocationChecker can fall back to CRL-based checking.
             throw new RecoverableCertPathValidatorException("unable to get OCSP response from " + ocspUrl + ": " + e.getMessage(),
                      e, parameters.getCertPath(), parameters.getIndex());
+        }
+    }
+
+    /**
+     * Decode a responder's reply. A reply that will not decode is reported as an IOException, as an
+     * unreachable responder is, so that it is recoverable and CRL checking can take over.
+     */
+    private static OCSPResponse decodeResponse(byte[] encoding)
+        throws IOException
+    {
+        try
+        {
+            return OCSPResponse.getInstance(encoding);
+        }
+        catch (RuntimeException e)
+        {
+            throw Exceptions.ioException("malformed OCSP response: " + e.getMessage(), e);
+        }
+    }
+
+    private static BasicOCSPResponse decodeBasicResponse(ResponseBytes respBytes)
+        throws IOException
+    {
+        try
+        {
+            return BasicOCSPResponse.getInstance(respBytes.getResponse().getOctets());
+        }
+        catch (RuntimeException e)
+        {
+            throw Exceptions.ioException("malformed OCSP response: " + e.getMessage(), e);
         }
     }
 

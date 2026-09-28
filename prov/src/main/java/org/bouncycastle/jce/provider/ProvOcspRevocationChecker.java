@@ -242,14 +242,29 @@ class ProvOcspRevocationChecker
 
         if (!ocspResponses.isEmpty())
         {
-            OCSPResponse ocspResponse = OCSPResponse.getInstance(ocspResponses.get(cert));
+            OCSPResponse ocspResponse;
+            try
+            {
+                ocspResponse = OCSPResponse.getInstance(ocspResponses.get(cert));
+            }
+            catch (RuntimeException e)
+            {
+                throw new CertPathValidatorException(
+                    "unable to process OCSP response", e, parameters.getCertPath(), parameters.getIndex());
+            }
             ASN1Integer serialNumber = new ASN1Integer(cert.getSerialNumber());
 
             if (ocspResponse != null)
             {
                 if (OCSPResponseStatus.SUCCESSFUL == ocspResponse.getResponseStatus().getIntValue())
                 {
-                    ResponseBytes respBytes = ResponseBytes.getInstance(ocspResponse.getResponseBytes());
+                    ResponseBytes respBytes = ocspResponse.getResponseBytes();
+
+                    if (respBytes == null)
+                    {
+                        throw new CertPathValidatorException(
+                            "unable to process OCSP response", null, parameters.getCertPath(), parameters.getIndex());
+                    }
 
                     if (respBytes.getResponseType().equals(OCSPObjectIdentifiers.id_pkix_ocsp_basic))
                     {

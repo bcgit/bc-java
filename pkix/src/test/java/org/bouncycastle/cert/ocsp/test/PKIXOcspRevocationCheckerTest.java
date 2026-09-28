@@ -1,5 +1,10 @@
 package org.bouncycastle.cert.ocsp.test;
 
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.security.KeyPair;
 import java.security.Security;
 import java.security.cert.CertPath;
@@ -19,8 +24,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x509.CRLReason;
 import org.bouncycastle.asn1.ocsp.OCSPObjectIdentifiers;
+import org.bouncycastle.asn1.ocsp.OCSPResponse;
+import org.bouncycastle.asn1.ocsp.OCSPResponseStatus;
+import org.bouncycastle.asn1.ocsp.ResponseBytes;
 import org.bouncycastle.cert.ocsp.BasicOCSPResp;
 import org.bouncycastle.cert.ocsp.BasicOCSPRespBuilder;
 import org.bouncycastle.cert.ocsp.CertificateID;
@@ -34,6 +44,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.DigestCalculatorProvider;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.test.SimpleTest;
 
 /**
@@ -154,6 +165,177 @@ public class PKIXOcspRevocationCheckerTest
             isTrue("expected a nonce-mismatch rejection, got: " + e.getMessage(),
                 e.getMessage() != null && e.getMessage().indexOf("nonce mismatch in OCSP response") >= 0);
         }
+
+        // 7) malformed responses are reported as CertPathValidatorException, stapled or fetched.
+        byte[][] malformed = malformedResponses();
+        for (int i = 0; i != malformed.length; i++)
+        {
+            responses = new HashMap();
+            responses.put(ee, malformed[i]);
+            try
+            {
+                validate(certPath, trust, responses, ocsp, true);
+                fail("malformed OCSP response " + i + " accepted");
+            }
+            catch (CertPathValidatorException e)
+            {
+                isTrue("malformed OCSP response " + i + ": " + e.getMessage(),
+                    e.getMessage().startsWith("unable to process OCSP response"));
+            }
+            catch (RuntimeException e)
+            {
+                fail("malformed OCSP response " + i + " escaped as " + e.getClass().getName(), e);
+            }
+        }
+
+        checkMalformedFetchedResponses(caKp, ca, trust, root, rootKp, ocsp);
+    }
+
+    /**
+     * An empty SEQUENCE, a non-SEQUENCE, a successful status with no response bytes, and a
+     * successful status carrying an empty BasicOCSPResponse.
+     */
+    private static byte[][] malformedResponses()
+        throws Exception
+    {
+        return new byte[][]
+        {
+            new byte[]{ 0x30, 0x00 },
+            new byte[]{ 0x02, 0x01, 0x00 },
+            new OCSPResponse(new OCSPResponseStatus(OCSPResponseStatus.SUCCESSFUL), null).getEncoded(),
+            new OCSPResponse(new OCSPResponseStatus(OCSPResponseStatus.SUCCESSFUL),
+                new ResponseBytes(OCSPObjectIdentifiers.id_pkix_ocsp_basic, new DEROctetString(new DERSequence()))).getEncoded()
+        };
+    }
+
+    /**
+     * The same responses from a responder: the reply cannot be used, so the failure is recoverable
+     * like an unreachable responder's, and with NO_FALLBACK it reaches the caller as is. It used
+     * to escape CertPathValidator.validate() as an unchecked exception.
+     */
+    private void checkMalformedFetchedResponses(KeyPair caKp, X509Certificate ca, Set trust, X509Certificate root, KeyPair rootKp, X509Certificate ocsp)
+        throws Exception
+    {
+        byte[][] malformed = malformedResponses();
+        final ServerSocket server = new ServerSocket(0, 5, InetAddress.getByName("127.0.0.1"));
+        try
+        {
+            String uri = "http://127.0.0.1:" + server.getLocalPort() + "/";
+            X509Certificate ee = OCSPTestUtil.makeCertificateWithOCSP(OCSPTestUtil.makeKeyPair(), "CN=Fetched EE", caKp, ca, false, uri);
+
+            List list = new ArrayList();
+            list.add(ee);
+            list.add(ca);
+            CertPath certPath = CertificateFactory.getInstance("X.509", BC).generateCertPath(list);
+
+            for (int i = 0; i != malformed.length; i++)
+            {
+                Thread responder = respondOnce(server, malformed[i]);
+
+                // a security property, which takes precedence over a thread override, as PKIXRevocationTest sets it.
+                String prevOcspEnable = Security.getProperty("ocsp.enable");
+                Security.setProperty("ocsp.enable", "true");
+                try
+                {
+                    CertPathValidator cpv = CertPathValidator.getInstance("PKIX", BC);
+                    PKIXRevocationChecker rv = (PKIXRevocationChecker)cpv.getRevocationChecker();
+                    Set options = new HashSet();
+                    options.add(PKIXRevocationChecker.Option.ONLY_END_ENTITY);
+                    options.add(PKIXRevocationChecker.Option.NO_FALLBACK);
+                    rv.setOptions(options);
+                    rv.setOcspResponderCert(ocsp);
+                    PKIXParameters param = new PKIXParameters(trust);
+                    param.addCertPathChecker(rv);
+
+                    cpv.validate(certPath, param);
+                    fail("malformed fetched OCSP response " + i + " accepted");
+                }
+                catch (CertPathValidatorException e)
+                {
+                    isTrue("malformed fetched OCSP response " + i + ": " + e.getMessage(),
+                        e.getMessage().startsWith("unable to get OCSP response from "));
+                }
+                catch (RuntimeException e)
+                {
+                    fail("malformed fetched OCSP response " + i + " escaped as " + e.getClass().getName(), e);
+                }
+                finally
+                {
+                    Security.setProperty("ocsp.enable", prevOcspEnable == null ? "false" : prevOcspEnable);
+                }
+
+                responder.join(10000);
+            }
+        }
+        finally
+        {
+            server.close();
+        }
+    }
+
+    /**
+     * Answer one HTTP request with the given body.
+     */
+    private static Thread respondOnce(final ServerSocket server, final byte[] body)
+    {
+        Thread t = new Thread()
+        {
+            public void run()
+            {
+                try
+                {
+                    Socket s = server.accept();
+                    try
+                    {
+                        s.setSoTimeout(10000);
+                        InputStream in = s.getInputStream();
+                        int contentLength = 0;
+                        StringBuffer line = new StringBuffer();
+                        int ch;
+                        while ((ch = in.read()) >= 0)
+                        {
+                            if (ch == '\n')
+                            {
+                                String header = line.toString().trim();
+                                if (header.length() == 0)
+                                {
+                                    break;
+                                }
+                                if (Strings.toLowerCase(header).startsWith("content-length:"))
+                                {
+                                    contentLength = Integer.parseInt(header.substring("content-length:".length()).trim());
+                                }
+                                line.setLength(0);
+                            }
+                            else
+                            {
+                                line.append((char)ch);
+                            }
+                        }
+                        for (int i = 0; i < contentLength && in.read() >= 0; i++)
+                        {
+                        }
+
+                        OutputStream out = s.getOutputStream();
+                        out.write(Strings.toByteArray("HTTP/1.0 200 OK\r\nContent-Type: application/ocsp-response\r\nContent-Length: "
+                            + body.length + "\r\n\r\n"));
+                        out.write(body);
+                        out.flush();
+                    }
+                    finally
+                    {
+                        s.close();
+                    }
+                }
+                catch (Exception e)
+                {
+                    // the validator reports what it did or did not receive
+                }
+            }
+        };
+        t.setDaemon(true);
+        t.start();
+        return t;
     }
 
     private void validateWithNonce(CertPath certPath, Set trust, Map responses, X509Certificate ocspCert)

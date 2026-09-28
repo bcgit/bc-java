@@ -38,8 +38,8 @@ public class ResponseBytes
             throw new IllegalArgumentException("Bad sequence size: " + seq.size());
         }
 
-        responseType = (ASN1ObjectIdentifier)seq.getObjectAt(0);
-        response = (ASN1OctetString)seq.getObjectAt(1);
+        responseType = ASN1ObjectIdentifier.getInstance(seq.getObjectAt(0));
+        response = ASN1OctetString.getInstance(seq.getObjectAt(1));
     }
 
     public static ResponseBytes getInstance(

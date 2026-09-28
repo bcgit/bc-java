@@ -87,16 +87,13 @@ public class OCSPReq
             }
             this.extensions = req.getTbsRequest().getRequestExtensions();
         }
-        catch (IllegalArgumentException e)
-        {
-            throw new CertIOException("malformed request: " + e.getMessage(), e);
-        }
-        catch (ClassCastException e)
-        {
-            throw new CertIOException("malformed request: " + e.getMessage(), e);
-        }
         catch (ASN1Exception e)
         {
+            throw new CertIOException("malformed request: " + e.getMessage(), e);
+        }
+        catch (RuntimeException e)
+        {
+            // any RuntimeException from the decode means malformed input - report it as the declared IOException.
             throw new CertIOException("malformed request: " + e.getMessage(), e);
         }
     }

@@ -1,5 +1,6 @@
 package org.bouncycastle.asn1.ocsp;
 
+import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
@@ -44,12 +45,12 @@ public class Signature
         }
 
         signatureAlgorithm  = AlgorithmIdentifier.getInstance(seq.getObjectAt(0));
-        signature = (DERBitString)seq.getObjectAt(1);
+        signature = DERBitString.convert(ASN1BitString.getInstance(seq.getObjectAt(1)));
 
         if (seq.size() == 3)
         {
             certs = ASN1Sequence.getInstance(
-                                (ASN1TaggedObject)seq.getObjectAt(2), true);
+                                ASN1TaggedObject.getInstance(seq.getObjectAt(2)), true);
         }
     }
 

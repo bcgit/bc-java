@@ -57,6 +57,11 @@ public class TBSRequest
     {
         int    index = 0;
 
+        if (seq.size() < 1)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
+
         if (seq.getObjectAt(0) instanceof ASN1TaggedObject)
         {
             ASN1TaggedObject    o = (ASN1TaggedObject)seq.getObjectAt(0);
@@ -77,16 +82,26 @@ public class TBSRequest
             version = V1;
         }
 
+        if (seq.size() < index + 1)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
+
         if (seq.getObjectAt(index) instanceof ASN1TaggedObject)
         {
             requestorName = GeneralName.getInstance((ASN1TaggedObject)seq.getObjectAt(index++), true);
         }
         
-        requestList = (ASN1Sequence)seq.getObjectAt(index++);
+        if (seq.size() < index + 1)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
+
+        requestList = ASN1Sequence.getInstance(seq.getObjectAt(index++));
 
         if (seq.size() == (index + 1))
         {
-            requestExtensions = Extensions.getInstance((ASN1TaggedObject)seq.getObjectAt(index), true);
+            requestExtensions = Extensions.getInstance(ASN1TaggedObject.getInstance(seq.getObjectAt(index)), true);
         }
     }
 

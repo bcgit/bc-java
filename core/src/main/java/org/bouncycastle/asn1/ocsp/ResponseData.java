@@ -80,6 +80,11 @@ public class ResponseData
     {
         int index = 0;
 
+        if (seq.size() < 3)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
+
         if (seq.getObjectAt(0) instanceof ASN1TaggedObject)
         {
             ASN1TaggedObject    o = (ASN1TaggedObject)seq.getObjectAt(0);
@@ -101,14 +106,19 @@ public class ResponseData
             this.version = V1;
         }
 
+        if (seq.size() < index + 3)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
+
         this.responderID = ResponderID.getInstance(seq.getObjectAt(index++));
         this.producedAt = ASN1GeneralizedTime.getInstance(seq.getObjectAt(index++));
-        this.responses = (ASN1Sequence)seq.getObjectAt(index++);
+        this.responses = ASN1Sequence.getInstance(seq.getObjectAt(index++));
 
         if (seq.size() > index)
         {
             this.responseExtensions = Extensions.getInstance(
-                                (ASN1TaggedObject)seq.getObjectAt(index), true);
+                                ASN1TaggedObject.getInstance(seq.getObjectAt(index)), true);
         }
     }
 

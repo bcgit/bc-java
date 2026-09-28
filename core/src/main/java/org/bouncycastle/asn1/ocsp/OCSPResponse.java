@@ -36,12 +36,17 @@ public class OCSPResponse
     private OCSPResponse(
         ASN1Sequence    seq)
     {
+        if (seq.size() < 1)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
+
         responseStatus = OCSPResponseStatus.getInstance(seq.getObjectAt(0));
 
         if (seq.size() == 2)
         {
             responseBytes = ResponseBytes.getInstance(
-                                (ASN1TaggedObject)seq.getObjectAt(1), true);
+                                ASN1TaggedObject.getInstance(seq.getObjectAt(1)), true);
         }
     }
 

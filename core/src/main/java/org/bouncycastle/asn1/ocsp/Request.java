@@ -26,12 +26,17 @@ public class Request
     private Request(
         ASN1Sequence    seq)
     {
+        if (seq.size() < 1)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
+
         reqCert = CertID.getInstance(seq.getObjectAt(0));
 
         if (seq.size() == 2)
         {
             singleRequestExtensions = Extensions.getInstance(
-                                (ASN1TaggedObject)seq.getObjectAt(1), true);
+                                ASN1TaggedObject.getInstance(seq.getObjectAt(1)), true);
         }
     }
 

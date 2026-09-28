@@ -1,5 +1,6 @@
 package org.bouncycastle.asn1.ocsp;
 
+import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
@@ -43,13 +44,18 @@ public class BasicOCSPResponse
     private BasicOCSPResponse(
         ASN1Sequence    seq)
     {
+        if (seq.size() < 3)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
+
         this.tbsResponseData = ResponseData.getInstance(seq.getObjectAt(0));
         this.signatureAlgorithm = AlgorithmIdentifier.getInstance(seq.getObjectAt(1));
-        this.signature = (DERBitString)seq.getObjectAt(2);
+        this.signature = DERBitString.convert(ASN1BitString.getInstance(seq.getObjectAt(2)));
 
         if (seq.size() > 3)
         {
-            this.certs = ASN1Sequence.getInstance((ASN1TaggedObject)seq.getObjectAt(3), true);
+            this.certs = ASN1Sequence.getInstance(ASN1TaggedObject.getInstance(seq.getObjectAt(3)), true);
         }
     }
 

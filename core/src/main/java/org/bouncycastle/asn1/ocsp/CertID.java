@@ -41,9 +41,9 @@ public class CertID
         }
 
         hashAlgorithm = AlgorithmIdentifier.getInstance(seq.getObjectAt(0));
-        issuerNameHash = (ASN1OctetString)seq.getObjectAt(1);
-        issuerKeyHash = (ASN1OctetString)seq.getObjectAt(2);
-        serialNumber = (ASN1Integer)seq.getObjectAt(3);
+        issuerNameHash = ASN1OctetString.getInstance(seq.getObjectAt(1));
+        issuerKeyHash = ASN1OctetString.getInstance(seq.getObjectAt(2));
+        serialNumber = ASN1Integer.getInstance(seq.getObjectAt(3));
     }
 
     public static CertID getInstance(
