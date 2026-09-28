@@ -624,7 +624,7 @@ public class TlsClientProtocol
                 }
                 else
                 {
-                    keyExchange.processClientCredentials(clientAuthCredentials);                    
+                    keyExchange.processClientCredentials(clientAuthCredentials);
                 }
 
                 Vector clientSupplementalData = tlsClient.getClientSupplementalData();
@@ -637,7 +637,7 @@ public class TlsClientProtocol
                 if (certificateRequest != null)
                 {
                     sendCertificateMessage(clientAuthCertificate, null);
-                    this.connection_state = CS_CLIENT_CERTIFICATE;                    
+                    this.connection_state = CS_CLIENT_CERTIFICATE;
                 }
 
                 sendClientKeyExchange();
@@ -879,7 +879,7 @@ public class TlsClientProtocol
                     continue;
                 }
 
-                if (null == TlsUtils.getExtensionData(clientExtensions, extType))
+                if (!TlsUtils.hasExtension(clientExtensions, extType))
                 {
                     throw new TlsFatalAlert(AlertDescription.unsupported_extension,
                         "Unrequested extension in HelloRetryRequest: " + ExtensionType.getText(extensionType));
@@ -1252,7 +1252,7 @@ public class TlsClientProtocol
         /*
          * RFC 3546 2.2 Note that the extended server hello message is only sent in response to an
          * extended client hello message.
-         * 
+         *
          * However, see RFC 5746 exception below. We always include the SCSV, so an Extended Server
          * Hello is always allowed.
          */
@@ -1283,7 +1283,7 @@ public class TlsClientProtocol
                  * associated ClientHello, it MUST abort the handshake with an unsupported_extension
                  * fatal alert.
                  */
-                if (null == TlsUtils.getExtensionData(clientHelloExtensions, extType))
+                if (!TlsUtils.hasExtension(clientHelloExtensions, extType))
                 {
                     throw new TlsFatalAlert(AlertDescription.unsupported_extension,
                         "Unrequested extension in ServerHello: " + ExtensionType.getText(extType.intValue()));
@@ -1508,7 +1508,7 @@ public class TlsClientProtocol
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        /* 
+        /*
          * RFC 8446 4.3.2. A server which is authenticating with a certificate MAY optionally
          * request a certificate from the client.
          */
@@ -1554,7 +1554,7 @@ public class TlsClientProtocol
             {
                 Integer extType = (Integer)e.nextElement();
 
-                if (null == TlsUtils.getExtensionData(clientExtensions, extType))
+                if (!TlsUtils.hasExtension(clientExtensions, extType))
                 {
                     throw new TlsFatalAlert(AlertDescription.unsupported_extension,
                         "Unrequested extension in EncryptedExtensions: " + ExtensionType.getText(extType.intValue()));
@@ -1918,7 +1918,7 @@ public class TlsClientProtocol
         this.clientBinders = TlsUtils.addPreSharedKeyToClientHello(tlsClientContext, tlsClient, clientExtensions,
             offeredCipherSuites);
 
-        // TODO[tls13-psk] Perhaps don't add key_share if external PSK(s) offered and 'psk_dhe_ke' not offered  
+        // TODO[tls13-psk] Perhaps don't add key_share if external PSK(s) offered and 'psk_dhe_ke' not offered
         this.clientAgreements = TlsUtils.addKeyShareToClientHello(tlsClientContext, tlsClient, clientExtensions);
 
         if (shouldUseEMS && TlsUtils.isExtendedMasterSecretOptional(supportedVersions))
@@ -1967,7 +1967,7 @@ public class TlsClientProtocol
              * TLS_EMPTY_RENEGOTIATION_INFO_SCSV signaling cipher suite value in the ClientHello.
              * Including both is NOT RECOMMENDED.
              */
-            boolean noRenegExt = (null == TlsUtils.getExtensionData(clientExtensions, EXT_RenegotiationInfo));
+            boolean noRenegExt = !TlsUtils.hasExtension(clientExtensions, EXT_RenegotiationInfo);
             boolean noRenegSCSV = !Arrays.contains(offeredCipherSuites, CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV);
 
             if (noRenegExt && noRenegSCSV)

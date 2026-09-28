@@ -1298,6 +1298,11 @@ public class TlsUtils
         return extensions == null ? null : (byte[])extensions.get(extensionType);
     }
 
+    public static boolean hasExtension(Hashtable extensions, Integer extensionType)
+    {
+        return extensions != null && extensions.containsKey(extensionType);
+    }
+
     public static boolean hasExpectedEmptyExtensionData(Hashtable extensions, Integer extensionType,
         short alertDescription) throws IOException
     {
@@ -5870,8 +5875,8 @@ public class TlsUtils
                 ?   (OCSPResponse)ocspResponseList.elementAt(i)
                 :   null;
 
-            if (null != ocspResponse
-                && null == TlsUtils.getExtensionData(extensions, TlsExtensionsUtils.EXT_status_request))
+            if (null != ocspResponse &&
+                !TlsUtils.hasExtension(extensions, TlsExtensionsUtils.EXT_status_request))
             {
                 byte[] extensionData = TlsExtensionsUtils.createStatusRequestExtension13(
                     new CertificateStatus(CertificateStatusType.ocsp, ocspResponse));
@@ -6152,6 +6157,17 @@ public class TlsUtils
         switch (extensionType)
         {
         case ExtensionType.server_name:
+        {
+            switch (handshakeType)
+            {
+            case HandshakeType.client_hello:
+            case HandshakeType.encrypted_extensions:
+            case HandshakeType.certificate_request:
+                return true;
+            default:
+                return false;
+            }
+        }
         case ExtensionType.max_fragment_length:
         case ExtensionType.supported_groups:
         case ExtensionType.use_srtp:
@@ -6159,6 +6175,8 @@ public class TlsUtils
         case ExtensionType.application_layer_protocol_negotiation:
         case ExtensionType.client_certificate_type:
         case ExtensionType.server_certificate_type:
+        case ExtensionType.cached_info:
+        case ExtensionType.record_size_limit:
         {
             switch (handshakeType)
             {
@@ -6222,6 +6240,8 @@ public class TlsUtils
             }
         }
         case ExtensionType.pre_shared_key:
+        // TODO DTLS 1.3 differences
+        // case ExtensionType.connection_id:
         {
             switch (handshakeType)
             {

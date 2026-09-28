@@ -324,7 +324,7 @@ public class DTLSServerProtocol
                     /*
                      * RFC 5246 If no suitable certificate is available, the client MUST send a
                      * certificate message containing no certificates.
-                     * 
+                     *
                      * NOTE: In previous RFCs, this was SHOULD instead of MUST.
                      */
                     throw new TlsFatalAlert(AlertDescription.unexpected_message);
@@ -612,9 +612,8 @@ public class DTLSServerProtocol
              */
             if (securityParameters.isSecureRenegotiation())
             {
-                byte[] serverRenegExtData = TlsUtils.getExtensionData(state.serverExtensions,
+                boolean noRenegExt = !TlsUtils.hasExtension(state.serverExtensions,
                     TlsProtocol.EXT_RenegotiationInfo);
-                boolean noRenegExt = (null == serverRenegExtData);
 
                 if (noRenegExt)
                 {
@@ -904,7 +903,7 @@ public class DTLSServerProtocol
         server.notifyOfferedCipherSuites(offeredCipherSuites);
 
         /*
-         * TODO[resumption] Check RFC 7627 5.4. for required behaviour 
+         * TODO[resumption] Check RFC 7627 5.4. for required behaviour
          */
 
         byte[] clientRenegExtData = TlsUtils.getExtensionData(clientHelloExtensions,

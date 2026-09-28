@@ -284,6 +284,13 @@ public class ExtensionType
         case key_share:
         case connection_id:
         case renegotiation_info:
+
+        /*
+         * WARNING: When adding a new "recognized" extension type, also register with
+         * TlsUtils.isPermittedExtensionType13 the TLS 1.3 messages it may appear in (if any). A recognized
+         * type not registered there is rejected with illegal_parameter in any TLS 1.3 message that is checked.
+         */
+
             return true;
         default:
             return false;

@@ -302,7 +302,7 @@ public class DTLSClientProtocol
         }
         else
         {
-            state.keyExchange.processClientCredentials(clientAuthCredentials);                    
+            state.keyExchange.processClientCredentials(clientAuthCredentials);
         }
 
         Vector clientSupplementalData = client.getClientSupplementalData();
@@ -547,8 +547,7 @@ public class DTLSClientProtocol
              * TLS_EMPTY_RENEGOTIATION_INFO_SCSV signaling cipher suite value in the ClientHello.
              * Including both is NOT RECOMMENDED.
              */
-            boolean noRenegExt = (null == TlsUtils.getExtensionData(state.clientExtensions,
-                TlsProtocol.EXT_RenegotiationInfo));
+            boolean noRenegExt = !TlsUtils.hasExtension(state.clientExtensions, TlsProtocol.EXT_RenegotiationInfo);
             boolean noRenegSCSV = !Arrays.contains(state.offeredCipherSuites,
                 CipherSuite.TLS_EMPTY_RENEGOTIATION_INFO_SCSV);
 
@@ -852,7 +851,6 @@ public class DTLSClientProtocol
         }
 
         /*
-         * 
          * RFC 3546 2.2 Note that the extended server hello message is only sent in response to an
          * extended client hello message. However, see RFC 5746 exception below. We always include
          * the SCSV, so an Extended Server Hello is always allowed.
@@ -884,7 +882,7 @@ public class DTLSClientProtocol
                  * associated ClientHello, it MUST abort the handshake with an unsupported_extension
                  * fatal alert.
                  */
-                if (null == TlsUtils.getExtensionData(state.clientExtensions, extType))
+                if (!TlsUtils.hasExtension(state.clientExtensions, extType))
                 {
                     throw new TlsFatalAlert(AlertDescription.unsupported_extension,
                         "Unrequested extension in ServerHello: " + ExtensionType.getText(extType.intValue()));
