@@ -533,7 +533,32 @@ public class X509CRLObject
 
         if (certs != null)
         {
-            BigInteger serial = ((X509Certificate)cert).getSerialNumber();
+            BigInteger serial;
+            X500Name issuer;
+
+            if (cert instanceof X509Certificate)
+            {
+                X509Certificate x509Cert = (X509Certificate)cert;
+
+                serial = x509Cert.getSerialNumber();
+                issuer = X500Name.getInstance(x509Cert.getIssuerX500Principal().getEncoded());
+            }
+            else
+            {
+                // an "X.509" type does not make it an X509Certificate, so both come from the encoding.
+                org.bouncycastle.asn1.x509.Certificate certStruct;
+                try
+                {
+                    certStruct = org.bouncycastle.asn1.x509.Certificate.getInstance(cert.getEncoded());
+                }
+                catch (CertificateEncodingException e)
+                {
+                    throw new RuntimeException("Cannot process certificate");
+                }
+
+                serial = certStruct.getSerialNumber().getValue();
+                issuer = certStruct.getIssuer();
+            }
 
             while (certs.hasMoreElements())
             {
@@ -545,31 +570,10 @@ public class X509CRLObject
                     caName = c.getIssuer(); // an entry with no certificate issuer of its own is the CRL issuer's
                 }
 
-                if (entry.getUserCertificate().hasValue(serial))
+                // a serial number is only unique within its issuer, so another issuer's entry is not this one.
+                if (entry.getUserCertificate().hasValue(serial) && caName.equals(issuer))
                 {
-                    X500Name issuer;
-
-                    if (cert instanceof  X509Certificate)
-                    {
-                        issuer = X500Name.getInstance(((X509Certificate)cert).getIssuerX500Principal().getEncoded());
-                    }
-                    else
-                    {
-                        try
-                        {
-                            issuer = org.bouncycastle.asn1.x509.Certificate.getInstance(cert.getEncoded()).getIssuer();
-                        }
-                        catch (CertificateEncodingException e)
-                        {
-                            throw new RuntimeException("Cannot process certificate");
-                        }
-                    }
-
-                    // a serial number is only unique within its issuer, so another issuer's entry is not this one.
-                    if (caName.equals(issuer))
-                    {
-                        return true;
-                    }
+                    return true;
                 }
             }
         }

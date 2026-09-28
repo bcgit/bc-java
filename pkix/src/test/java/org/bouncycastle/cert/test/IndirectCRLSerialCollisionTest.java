@@ -13,6 +13,8 @@ import java.security.cert.CertPath;
 import java.security.cert.CertPathValidator;
 import java.security.cert.CertPathValidatorException;
 import java.security.cert.CertStore;
+import java.security.cert.Certificate;
+import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.CollectionCertStoreParameters;
 import java.security.cert.PKIXParameters;
@@ -30,6 +32,7 @@ import java.util.Set;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.CRLReason;
+import org.bouncycastle.asn1.x509.CertificateList;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.ExtensionsGenerator;
 import org.bouncycastle.asn1.x509.GeneralName;
@@ -121,14 +124,82 @@ public class IndirectCRLSerialCollisionTest
 
     /**
      * CRL.isRevoked() stopped at the first entry carrying the serial number, and reported the
-     * certificate as not revoked when that entry was another issuer's.
+     * certificate as not revoked when that entry was another issuer's. The same checks run with the
+     * certificates presented as a Certificate of type "X.509" that is not an X509Certificate, which
+     * isRevoked() cast to one for its serial number, and against the legacy provider CRL class.
      */
     private void isRevoked(X509Certificate ee, X509Certificate other, X509CRL caFirst, X509CRL otherFirst, X509CRL otherOnly)
+        throws Exception
     {
-        isTrue("revoked certificate not reported by isRevoked() (own entry first)", caFirst.isRevoked(ee));
-        isTrue("revoked certificate not reported by isRevoked() (other issuer's entry first)", otherFirst.isRevoked(ee));
-        isTrue("other issuer's revoked certificate not reported by isRevoked()", otherFirst.isRevoked(other));
-        isTrue("another issuer's entry reported by isRevoked()", !otherOnly.isRevoked(ee));
+        Certificate opaqueEe = new OpaqueCertificate(ee);
+        Certificate opaqueOther = new OpaqueCertificate(other);
+
+        isRevoked("", ee, other, caFirst, otherFirst, otherOnly);
+        isRevoked(" [not an X509Certificate]", opaqueEe, opaqueOther, caFirst, otherFirst, otherOnly);
+
+        X509CRL legacyCaFirst = legacyCrl(caFirst);
+        X509CRL legacyOtherFirst = legacyCrl(otherFirst);
+        X509CRL legacyOtherOnly = legacyCrl(otherOnly);
+
+        isRevoked(" [legacy CRL]", ee, other, legacyCaFirst, legacyOtherFirst, legacyOtherOnly);
+        isRevoked(" [legacy CRL, not an X509Certificate]", opaqueEe, opaqueOther, legacyCaFirst, legacyOtherFirst, legacyOtherOnly);
+    }
+
+    private void isRevoked(String label, Certificate ee, Certificate other, X509CRL caFirst, X509CRL otherFirst, X509CRL otherOnly)
+    {
+        isTrue("revoked certificate not reported by isRevoked() (own entry first)" + label, caFirst.isRevoked(ee));
+        isTrue("revoked certificate not reported by isRevoked() (other issuer's entry first)" + label, otherFirst.isRevoked(ee));
+        isTrue("other issuer's revoked certificate not reported by isRevoked()" + label, otherFirst.isRevoked(other));
+        isTrue("another issuer's entry reported by isRevoked()" + label, !otherOnly.isRevoked(ee));
+    }
+
+    private static X509CRL legacyCrl(X509CRL crl)
+        throws Exception
+    {
+        return new org.bouncycastle.jce.provider.X509CRLObject(CertificateList.getInstance(crl.getEncoded()));
+    }
+
+    /**
+     * A certificate of type "X.509" that is not a java.security.cert.X509Certificate, as another
+     * provider's CertificateFactory may return.
+     */
+    private static class OpaqueCertificate
+        extends Certificate
+    {
+        private final X509Certificate cert;
+
+        OpaqueCertificate(X509Certificate cert)
+        {
+            super("X.509");
+
+            this.cert = cert;
+        }
+
+        public byte[] getEncoded()
+            throws CertificateEncodingException
+        {
+            return cert.getEncoded();
+        }
+
+        public void verify(PublicKey key)
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        public void verify(PublicKey key, String sigProvider)
+        {
+            throw new UnsupportedOperationException();
+        }
+
+        public String toString()
+        {
+            return "OpaqueCertificate: " + cert.getSubjectX500Principal();
+        }
+
+        public PublicKey getPublicKey()
+        {
+            return cert.getPublicKey();
+        }
     }
 
     private static X509CRL jdkCrl(X509CRL crl)
