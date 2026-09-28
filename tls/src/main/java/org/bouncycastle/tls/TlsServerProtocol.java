@@ -1441,11 +1441,6 @@ public class TlsServerProtocol
     protected void notifyClientCertificate(Certificate clientCertificate)
         throws IOException
     {
-        if (null == certificateRequest)
-        {
-            throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
-
         TlsUtils.processClientCertificate(tlsServerContext, clientCertificate, keyExchange, tlsServer);
     }
 
@@ -1466,6 +1461,17 @@ public class TlsServerProtocol
         Certificate clientCertificate = Certificate.parse(options, tlsServerContext, buf, null);
 
         assertEmpty(buf);
+
+        /*
+         * RFC 8446 4.4.2. If this message is in response to a CertificateRequest, the value of
+         * certificate_request_context in that message.
+         */
+        if (!certificateRequest.hasCertificateRequestContext(clientCertificate.getCertificateRequestContext()))
+        {
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter);
+        }
+
+        TlsUtils.check13CertificateEntryExtensions(clientCertificate, certificateRequest.createExtensions13());
 
         notifyClientCertificate(clientCertificate);
     }

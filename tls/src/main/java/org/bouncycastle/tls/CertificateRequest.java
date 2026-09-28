@@ -173,20 +173,7 @@ public class CertificateRequest
         {
             TlsUtils.writeOpaque8(certificateRequestContext, output);
 
-            Hashtable extensions = new Hashtable();
-            TlsExtensionsUtils.addSignatureAlgorithmsExtension(extensions, supportedSignatureAlgorithms);
-
-            if (null != supportedSignatureAlgorithmsCert)
-            {
-                TlsExtensionsUtils.addSignatureAlgorithmsCertExtension(extensions, supportedSignatureAlgorithmsCert);
-            }
-
-            if (null != certificateAuthorities)
-            {
-                TlsExtensionsUtils.addCertificateAuthoritiesExtension(extensions, certificateAuthorities);
-            }
-
-            byte[] extEncoding = TlsProtocol.writeExtensionsData(extensions);
+            byte[] extEncoding = TlsProtocol.writeExtensionsData(createExtensions13());
 
             TlsUtils.writeOpaque16(extEncoding, output);
             return;
@@ -225,6 +212,28 @@ public class CertificateRequest
                 TlsUtils.writeOpaque16(derEncoding, output);
             }
         }
+    }
+
+    /**
+     * The extensions of this (TLS 1.3) CertificateRequest, as {@link #encode(TlsContext, OutputStream)}
+     * sends them.
+     */
+    Hashtable createExtensions13() throws IOException
+    {
+        Hashtable extensions = new Hashtable();
+        TlsExtensionsUtils.addSignatureAlgorithmsExtension(extensions, supportedSignatureAlgorithms);
+
+        if (null != supportedSignatureAlgorithmsCert)
+        {
+            TlsExtensionsUtils.addSignatureAlgorithmsCertExtension(extensions, supportedSignatureAlgorithmsCert);
+        }
+
+        if (null != certificateAuthorities)
+        {
+            TlsExtensionsUtils.addCertificateAuthoritiesExtension(extensions, certificateAuthorities);
+        }
+
+        return extensions;
     }
 
     /**

@@ -218,24 +218,47 @@ public class Tls13CertificateStatusTest
     }
 
     /**
-     * RFC 8446 sec. 4.2: a server answers only the extensions the client sent, so a staple the client
-     * never asked for is ignored - not read, and not a reason to fail the handshake. The staple has to
-     * be attached to the Certificate by hand here, the protocol declining to consult
-     * getCertificateStatus() for a client that did not ask.
+     * RFC 8446 sec. 4.2: a server answers only the extensions the client sent, and an endpoint
+     * receiving any other MUST abort the handshake with unsupported_extension - so a staple the client
+     * never asked for fails it. The staple has to be attached to the Certificate by hand here, the
+     * protocol declining to consult getCertificateStatus() for a client that did not ask.
      */
-    public void testClientIgnoresAnUnsolicitedStaple()
+    public void testClientRejectsAnUnsolicitedStaple()
         throws Exception
     {
         byte[] extensionData = TlsExtensionsUtils.createStatusRequestExtension13(
             new CertificateStatus(CertificateStatusType.ocsp, ocspResponse("unsolicited")));
 
-        CapturingTlsClient client = runHandshake(null, false, false, extensionData);
+        CapturingTlsClient client = new CapturingTlsClient(false);
 
-        assertEquals("the staple should still have been on the wire", "unsolicited",
-            getStapledMarker(client.certificateEntryList[0]));
+        try
+        {
+            runHandshake(client, null, false, extensionData);
+            fail("expected an unsupported_extension");
+        }
+        catch (Exception e)
+        {
+            assertClientFailedWith(client, AlertDescription.unsupported_extension);
+        }
+    }
 
-        assertNull(client.serverCertificate.getCertificateStatus());
-        assertNull(client.serverCertificate.getCertificateStatusAt(0));
+    /**
+     * Every CertificateEntry is held to the ClientHello, not just the end-entity certificate's.
+     */
+    public void testClientRejectsAnUnsolicitedStapleOnAnIntermediate()
+        throws Exception
+    {
+        CapturingTlsClient client = new CapturingTlsClient(false);
+
+        try
+        {
+            runHandshake(client, null, true, null);
+            fail("expected an unsupported_extension");
+        }
+        catch (Exception e)
+        {
+            assertClientFailedWith(client, AlertDescription.unsupported_extension);
+        }
     }
 
     /**

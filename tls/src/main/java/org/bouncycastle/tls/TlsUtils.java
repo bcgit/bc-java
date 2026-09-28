@@ -5406,7 +5406,7 @@ public class TlsUtils
     }
 
     static TlsAuthentication receive13ServerCertificate(TlsClientContext clientContext, TlsClient client,
-        ByteArrayInputStream buf) throws IOException
+        Hashtable clientExtensions, ByteArrayInputStream buf) throws IOException
     {
         SecurityParameters securityParameters = clientContext.getSecurityParametersHandshake();
         if (null != securityParameters.getPeerCertificate())
@@ -5431,6 +5431,8 @@ public class TlsUtils
         {
             throw new TlsFatalAlert(AlertDescription.decode_error);
         }
+
+        check13CertificateEntryExtensions(serverCertificate, clientExtensions);
 
         securityParameters.peerCertificate = serverCertificate;
         securityParameters.tlsServerEndPoint = null;
@@ -6374,6 +6376,47 @@ public class TlsUtils
             if (null == extensionType || !isPermittedExtensionType13(handshakeType, extensionType.intValue()))
             {
                 throw new TlsFatalAlert(alertDescription, "Invalid extension: " + ExtensionType.getText(extensionType.intValue()));
+            }
+        }
+    }
+
+    /**
+     * RFC 8446 4.4.2. Extensions in the Certificate message from the server MUST correspond to ones
+     * from the ClientHello message. Extensions in the Certificate message from the client MUST
+     * correspond to extensions in the CertificateRequest message from the server.
+     *
+     * @param certificate       a TLS 1.3 Certificate message received from the peer.
+     * @param requestExtensions the extensions of the ClientHello (for a server Certificate) or the
+     *                          CertificateRequest (for a client Certificate) that this endpoint sent.
+     */
+    static void check13CertificateEntryExtensions(Certificate certificate, Hashtable requestExtensions)
+        throws IOException
+    {
+        int count = certificate.getLength();
+        for (int i = 0; i < count; ++i)
+        {
+            Hashtable extensions = certificate.getCertificateEntryAt(i).getExtensions();
+            if (null == extensions)
+            {
+                continue;
+            }
+
+            Enumeration e = extensions.keys();
+            while (e.hasMoreElements())
+            {
+                Integer extensionType = (Integer)e.nextElement();
+
+                /*
+                 * RFC 8446 4.2. Implementations MUST NOT send extension responses if the remote
+                 * endpoint did not send the corresponding extension requests [..]. Upon receiving
+                 * such an extension, an endpoint MUST abort the handshake with an
+                 * "unsupported_extension" alert.
+                 */
+                if (!hasExtension(requestExtensions, extensionType))
+                {
+                    throw new TlsFatalAlert(AlertDescription.unsupported_extension,
+                        "Unrequested extension in CertificateEntry: " + ExtensionType.getText(extensionType.intValue()));
+                }
             }
         }
     }

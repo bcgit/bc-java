@@ -1643,7 +1643,8 @@ public class TlsClientProtocol
             throw new TlsFatalAlert(AlertDescription.unexpected_message);
         }
 
-        this.authentication = TlsUtils.receive13ServerCertificate(tlsClientContext, tlsClient, buf);
+        this.authentication = TlsUtils.receive13ServerCertificate(tlsClientContext, tlsClient, clientExtensions,
+            buf);
 
         // NOTE: In TLS 1.3 we don't have to wait for a possible CertificateStatus message.
         handleServerCertificate();
