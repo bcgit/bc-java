@@ -69,6 +69,11 @@ public class EncryptedData
 
     private EncryptedData(ASN1Sequence seq)
     {
+        if (seq.size() < 2)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
+
         this.version = ASN1Integer.getInstance(seq.getObjectAt(0));
         this.encryptedContentInfo = EncryptedContentInfo.getInstance(seq.getObjectAt(1));
 

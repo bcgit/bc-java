@@ -91,6 +91,11 @@ public class AuthEnvelopedData
     private AuthEnvelopedData(
         ASN1Sequence seq)
     {
+        if (seq.size() < 4)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
+
         int index = 0;
 
         // "It MUST be set to 0."
@@ -118,10 +123,19 @@ public class AuthEnvelopedData
         tmp = seq.getObjectAt(index++).toASN1Primitive();
         authEncryptedContentInfo = EncryptedContentInfo.getInstance(tmp);
 
+        if (seq.size() <= index)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
+
         tmp = seq.getObjectAt(index++).toASN1Primitive();
         if (tmp instanceof ASN1TaggedObject)
         {
             authAttrs = ASN1Set.getInstance((ASN1TaggedObject)tmp, false);
+            if (seq.size() <= index)
+            {
+                throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+            }
             tmp = seq.getObjectAt(index++).toASN1Primitive();
         }
         else

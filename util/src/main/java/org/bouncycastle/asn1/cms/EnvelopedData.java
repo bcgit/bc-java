@@ -65,6 +65,11 @@ public class EnvelopedData
     private EnvelopedData(
         ASN1Sequence seq)
     {
+        if (seq.size() < 3)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
+
         int index = 0;
 
         version = (ASN1Integer)seq.getObjectAt(index++);
@@ -78,6 +83,11 @@ public class EnvelopedData
         }
 
         recipientInfos = ASN1Set.getInstance(tmp);
+
+        if (seq.size() <= index)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
 
         encryptedContentInfo = EncryptedContentInfo.getInstance(seq.getObjectAt(index++));
 
