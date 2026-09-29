@@ -10,6 +10,8 @@ import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.NamedParameterSpec;
 
 import javax.crypto.KeyAgreement;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
 
 import junit.framework.TestCase;
 import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
@@ -56,24 +58,85 @@ public class XDHKeyAgreementMRTest
         assertFalse("salt ignored in HKDF agreement", Arrays.areEqual(noSalt, salted1));
     }
 
+    /**
+     * The RFC 8418 XDHwith*HKDF agreements on both curves, without a UKM, with one, and with one
+     * plus a salt. Each result is checked against HKDF (RFC 5869) computed independently from the
+     * raw agreement with the SunJCE HMAC, and the UKM is checked to be the HKDF info, not the salt.
+     */
     public void testRFC8418HKDFAgreements()
         throws Exception
     {
-        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("X448", BC);
-
-        KeyPair kp1 = kpGen.generateKeyPair();
-        KeyPair kp2 = kpGen.generateKeyPair();
-
         String[] algorithms = new String[]{ "XDHwithSHA256HKDF", "XDHwithSHA384HKDF", "XDHwithSHA512HKDF" };
-        UserKeyingMaterialSpec ukmSpec = new UserKeyingMaterialSpec(Hex.decode("beeffeed"));
+        String[] macs = new String[]{ "HmacSHA256", "HmacSHA384", "HmacSHA512" };
+        String[] curves = new String[]{ "X25519", "X448" };
 
-        for (int i = 0; i != algorithms.length; i++)
+        byte[] ukm = Hex.decode("beeffeed");
+        byte[] salt = Hex.decode("000102030405060708090a0b0c0d0e0f");
+
+        for (int c = 0; c != curves.length; c++)
         {
-            byte[] sec1 = agree(algorithms[i], kp1.getPrivate(), kp2.getPublic(), ukmSpec);
-            byte[] sec2 = agree(algorithms[i], kp2.getPrivate(), kp1.getPublic(), ukmSpec);
+            KeyPairGenerator kpGen = KeyPairGenerator.getInstance(curves[c], BC);
 
-            assertTrue(algorithms[i] + " mismatch", Arrays.areEqual(sec1, sec2));
+            KeyPair kp1 = kpGen.generateKeyPair();
+            KeyPair kp2 = kpGen.generateKeyPair();
+
+            byte[] z = agree(curves[c], kp1.getPrivate(), kp2.getPublic(), null);
+
+            for (int i = 0; i != algorithms.length; i++)
+            {
+                String label = algorithms[i] + "/" + curves[c];
+
+                byte[] noUkm = checkHKDFAgreement(label + " no ukm", algorithms[i], kp1, kp2, null,
+                    hkdf(macs[i], null, z, new byte[0], z.length));
+                byte[] withUkm = checkHKDFAgreement(label + " ukm", algorithms[i], kp1, kp2, new UserKeyingMaterialSpec(ukm),
+                    hkdf(macs[i], null, z, ukm, z.length));
+                checkHKDFAgreement(label + " ukm+salt", algorithms[i], kp1, kp2, new UserKeyingMaterialSpec(ukm, salt),
+                    hkdf(macs[i], salt, z, ukm, z.length));
+
+                assertFalse(label + " ukm ignored", Arrays.areEqual(noUkm, withUkm));
+                assertFalse(label + " ukm used as salt", Arrays.areEqual(withUkm, hkdf(macs[i], ukm, z, new byte[0], z.length)));
+            }
         }
+    }
+
+    private byte[] checkHKDFAgreement(String label, String algorithm, KeyPair kp1, KeyPair kp2, AlgorithmParameterSpec spec, byte[] expected)
+        throws Exception
+    {
+        byte[] sec1 = agree(algorithm, kp1.getPrivate(), kp2.getPublic(), spec);
+        byte[] sec2 = agree(algorithm, kp2.getPrivate(), kp1.getPublic(), spec);
+
+        assertTrue(label + " mismatch", Arrays.areEqual(sec1, sec2));
+        assertTrue(label + " known answer", Arrays.areEqual(expected, sec1));
+
+        return sec1;
+    }
+
+    // RFC 5869 using the SunJCE HMAC, so the expected value does not come from BC's HKDF.
+    private static byte[] hkdf(String macAlg, byte[] salt, byte[] ikm, byte[] info, int length)
+        throws Exception
+    {
+        Mac mac = Mac.getInstance(macAlg, "SunJCE");
+
+        mac.init(new SecretKeySpec(salt != null ? salt : new byte[mac.getMacLength()], macAlg));
+        byte[] prk = mac.doFinal(ikm);
+
+        mac.init(new SecretKeySpec(prk, macAlg));
+
+        byte[] okm = new byte[length];
+        byte[] t = new byte[0];
+        for (int off = 0, counter = 1; off < length; counter++)
+        {
+            mac.update(t);
+            mac.update(info);
+            mac.update((byte)counter);
+            t = mac.doFinal();
+
+            int len = Math.min(t.length, length - off);
+            System.arraycopy(t, 0, okm, off, len);
+            off += len;
+        }
+
+        return okm;
     }
 
     public void testEmulateOracleProperty()
@@ -94,15 +157,26 @@ public class XDHKeyAgreementMRTest
             assertEquals("inappropriate key for X25519", e.getMessage());
         }
 
-        // ...with it the agreement behaves as Oracle's XDH and accepts either.
-        System.setProperty(Properties.EMULATE_ORACLE, "true");
+        // ...with it the agreement reports itself as Oracle's XDH, but stays bound to its curve.
+        Properties.setThreadOverride(Properties.EMULATE_ORACLE, true);
         try
         {
-            KeyAgreement.getInstance("X25519", BC).init(x448Kp.getPrivate());
+            try
+            {
+                KeyAgreement.getInstance("X25519", BC).init(x448Kp.getPrivate());
+                fail("X448 key accepted by X25519 agreement under emulate oracle");
+            }
+            catch (InvalidKeyException e)
+            {
+                assertEquals("inappropriate key for XDH", e.getMessage());
+            }
+
+            // the XDH name itself is not tied to a curve
+            KeyAgreement.getInstance("XDH", BC).init(x448Kp.getPrivate());
         }
         finally
         {
-            System.clearProperty(Properties.EMULATE_ORACLE);
+            Properties.removeThreadOverride(Properties.EMULATE_ORACLE);
         }
     }
 
