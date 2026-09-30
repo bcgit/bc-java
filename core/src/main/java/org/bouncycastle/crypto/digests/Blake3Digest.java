@@ -161,11 +161,6 @@ public class Blake3Digest
     private static final int FLAGS = 15;
 
     /**
-     * Message word permutations.
-     */
-    private static final byte[] SIGMA = {2, 6, 3, 10, 7, 0, 4, 13, 1, 11, 12, 5, 9, 14, 15, 8};
-
-    /**
      * Blake3 Initialization Vector.
      */
     private static final int[] IV = {
@@ -196,11 +191,6 @@ public class Blake3Digest
      * The message Buffer.
      */
     private final int[] theM = new int[NUMWORDS << 1];
-
-    /**
-     * The indices.
-     */
-    private final byte[] theIndices = new byte[NUMWORDS << 1];
 
     /**
      * The chainingStack.
@@ -668,40 +658,66 @@ public class Blake3Digest
     }
 
     /**
-     * Perform compression.
+     * Perform compression: the seven rounds of the BLAKE3 compression function over theV, with the message words in
+     * theM, followed by the output transformation.
+     * <p>
+     * The state and message are worked on in local variables, with the fixed message permutation applied to them
+     * between rounds, so that C2 can keep them in registers; theV receives the final state and theM is left
+     * unchanged.
+     * </p>
      */
     private void compress()
     {
-        /* Initialise the buffers */
-        initIndices();
+        final int[] v = theV, m = theM;
 
-        /* Loop through the rounds */
-        for (int round = 0; round < ROUNDS - 1; round++)
+        int v0 = v[0], v1 = v[1], v2 = v[2], v3 = v[3], v4 = v[4], v5 = v[5], v6 = v[6], v7 = v[7];
+        int v8 = v[8], v9 = v[9], v10 = v[10], v11 = v[11], v12 = v[12], v13 = v[13], v14 = v[14], v15 = v[15];
+
+        int m0 = m[0], m1 = m[1], m2 = m[2], m3 = m[3], m4 = m[4], m5 = m[5], m6 = m[6], m7 = m[7];
+        int m8 = m[8], m9 = m[9], m10 = m[10], m11 = m[11], m12 = m[12], m13 = m[13], m14 = m[14], m15 = m[15];
+
+        for (int round = 0; round < ROUNDS; round++)
         {
-            /* Perform the round and permuteM */
-            performRound();
-            permuteIndices();
+            /* Apply to columns of V */
+            v0 += v4 + m0; v12 = Integers.rotateRight(v12 ^ v0, 16); v8 += v12; v4 = Integers.rotateRight(v4 ^ v8, 12);
+            v0 += v4 + m1; v12 = Integers.rotateRight(v12 ^ v0, 8); v8 += v12; v4 = Integers.rotateRight(v4 ^ v8, 7);
+
+            v1 += v5 + m2; v13 = Integers.rotateRight(v13 ^ v1, 16); v9 += v13; v5 = Integers.rotateRight(v5 ^ v9, 12);
+            v1 += v5 + m3; v13 = Integers.rotateRight(v13 ^ v1, 8); v9 += v13; v5 = Integers.rotateRight(v5 ^ v9, 7);
+
+            v2 += v6 + m4; v14 = Integers.rotateRight(v14 ^ v2, 16); v10 += v14; v6 = Integers.rotateRight(v6 ^ v10, 12);
+            v2 += v6 + m5; v14 = Integers.rotateRight(v14 ^ v2, 8); v10 += v14; v6 = Integers.rotateRight(v6 ^ v10, 7);
+
+            v3 += v7 + m6; v15 = Integers.rotateRight(v15 ^ v3, 16); v11 += v15; v7 = Integers.rotateRight(v7 ^ v11, 12);
+            v3 += v7 + m7; v15 = Integers.rotateRight(v15 ^ v3, 8); v11 += v15; v7 = Integers.rotateRight(v7 ^ v11, 7);
+
+            /* Apply to diagonals of V */
+            v0 += v5 + m8; v15 = Integers.rotateRight(v15 ^ v0, 16); v10 += v15; v5 = Integers.rotateRight(v5 ^ v10, 12);
+            v0 += v5 + m9; v15 = Integers.rotateRight(v15 ^ v0, 8); v10 += v15; v5 = Integers.rotateRight(v5 ^ v10, 7);
+
+            v1 += v6 + m10; v12 = Integers.rotateRight(v12 ^ v1, 16); v11 += v12; v6 = Integers.rotateRight(v6 ^ v11, 12);
+            v1 += v6 + m11; v12 = Integers.rotateRight(v12 ^ v1, 8); v11 += v12; v6 = Integers.rotateRight(v6 ^ v11, 7);
+
+            v2 += v7 + m12; v13 = Integers.rotateRight(v13 ^ v2, 16); v8 += v13; v7 = Integers.rotateRight(v7 ^ v8, 12);
+            v2 += v7 + m13; v13 = Integers.rotateRight(v13 ^ v2, 8); v8 += v13; v7 = Integers.rotateRight(v7 ^ v8, 7);
+
+            v3 += v4 + m14; v14 = Integers.rotateRight(v14 ^ v3, 16); v9 += v14; v4 = Integers.rotateRight(v4 ^ v9, 12);
+            v3 += v4 + m15; v14 = Integers.rotateRight(v14 ^ v3, 8); v9 += v14; v4 = Integers.rotateRight(v4 ^ v9, 7);
+
+            /*
+             * Permute the message words for the next round: m'[i] = m[SIGMA[i]], with the BLAKE3 message
+             * permutation SIGMA = {2, 6, 3, 10, 7, 0, 4, 13, 1, 11, 12, 5, 9, 14, 15, 8}.
+             */
+            final int t0 = m0, t1 = m1, t2 = m2, t3 = m3, t4 = m4, t5 = m5, t6 = m6, t7 = m7;
+            final int t8 = m8, t9 = m9, t10 = m10, t11 = m11, t12 = m12, t13 = m13, t14 = m14, t15 = m15;
+            m0 = t2; m1 = t6; m2 = t3; m3 = t10; m4 = t7; m5 = t0; m6 = t4; m7 = t13;
+            m8 = t1; m9 = t11; m10 = t12; m11 = t5; m12 = t9; m13 = t14; m14 = t15; m15 = t8;
         }
-        performRound();
+
+        v[0] = v0; v[1] = v1; v[2] = v2; v[3] = v3; v[4] = v4; v[5] = v5; v[6] = v6; v[7] = v7;
+        v[8] = v8; v[9] = v9; v[10] = v10; v[11] = v11; v[12] = v12; v[13] = v13; v[14] = v14; v[15] = v15;
+
         adjustChaining();
-    }
-
-    /**
-     * Perform a round.
-     */
-    private void performRound()
-    {
-        /* Apply to columns of V */
-        mixG(0, CHAINING0, CHAINING4, IV0, COUNT0);
-        mixG(1, CHAINING1, CHAINING5, IV1, COUNT1);
-        mixG(2, CHAINING2, CHAINING6, IV2, DATALEN);
-        mixG(3, CHAINING3, CHAINING7, IV3, FLAGS);
-
-        /* Apply to diagonals of V */
-        mixG(4, CHAINING0, CHAINING5, IV2, FLAGS);
-        mixG(5, CHAINING1, CHAINING6, IV3, COUNT0);
-        mixG(6, CHAINING2, CHAINING7, IV0, COUNT1);
-        mixG(7, CHAINING3, CHAINING4, IV1, DATALEN);
     }
 
     /**
@@ -745,57 +761,6 @@ public class Blake3Digest
             {
                 theChaining[i] = theV[i] ^ theV[i + NUMWORDS];
             }
-        }
-    }
-
-    /**
-     * Mix function G.
-     *
-     * @param msgIdx the message index
-     * @param posA   position A in V
-     * @param posB   position B in V
-     * @param posC   position C in V
-     * @param posD   poistion D in V
-     */
-    private void mixG(final int msgIdx,
-                      final int posA,
-                      final int posB,
-                      final int posC,
-                      final int posD)
-    {
-        /* Determine indices */
-        int msg = msgIdx << 1;
-
-        /* Perform the Round */
-        theV[posA] += theV[posB] + theM[theIndices[msg++]];
-        theV[posD] = Integers.rotateRight(theV[posD] ^ theV[posA], 16);
-        theV[posC] += theV[posD];
-        theV[posB] = Integers.rotateRight(theV[posB] ^ theV[posC], 12);
-        theV[posA] += theV[posB] + theM[theIndices[msg]];
-        theV[posD] = Integers.rotateRight(theV[posD] ^ theV[posA], 8);
-        theV[posC] += theV[posD];
-        theV[posB] = Integers.rotateRight(theV[posB] ^ theV[posC], 7);
-    }
-
-    /**
-     * initialise the indices.
-     */
-    private void initIndices()
-    {
-        for (byte i = 0; i < theIndices.length; i++)
-        {
-            theIndices[i] = i;
-        }
-    }
-
-    /**
-     * PermuteIndices.
-     */
-    private void permuteIndices()
-    {
-        for (byte i = 0; i < theIndices.length; i++)
-        {
-            theIndices[i] = SIGMA[theIndices[i]];
         }
     }
 
