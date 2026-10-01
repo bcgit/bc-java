@@ -13,14 +13,6 @@ import org.bouncycastle.asn1.ASN1Primitive;
  *     CertPolicyId ::= OBJECT IDENTIFIER
  * </pre>
  */
-/**
- * CertPolicyId, used in the CertificatePolicies and PolicyMappings
- * X509V3 Extensions.
- *
- * <pre>
- *     CertPolicyId ::= OBJECT IDENTIFIER
- * </pre>
- */
 public class CertPolicyId
     extends ASN1Object
 {

@@ -131,7 +131,7 @@ public class ExternalContentSignerBuilder
                 return stubKey.getKeyIdentifier().getKeyId();
             }
 
-            /**
+            /*
              * Signing with RSA expects the digest value to be DER encoded.
              *
              * @param digest raw digest

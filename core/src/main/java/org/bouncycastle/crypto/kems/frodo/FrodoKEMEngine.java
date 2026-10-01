@@ -536,7 +536,7 @@ public class FrodoKEMEngine
         // 4. mu' = Frodo.Decode(M)
         byte[] muprime = decode(M);
 
-        /// 5. Parse pk = seedA || b  (done above)
+        // 5. Parse pk = seedA || b  (done above)
 
         // 6. seedSE' || k' = SHAKE(pkh || mu' || salt, len_seedSE + len_k) (length in bits)
         //    (salt is empty for eFrodoKEM)

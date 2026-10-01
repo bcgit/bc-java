@@ -41,7 +41,7 @@ class SignatureSchemeInfo
     private static final String PROPERTY_SERVER_SIGNATURE_SCHEMES_CERT = "org.bouncycastle.jsse.server.SignatureSchemesCert";
 
     // NOTE: Not all of these are necessarily enabled/supported; it will be checked at runtime
-    private enum All
+    enum All
     {
         ed25519(SignatureScheme.ed25519, "Ed25519", true),
         ed448(SignatureScheme.ed448, "Ed448", true),

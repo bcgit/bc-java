@@ -120,10 +120,7 @@ class OwlUtil
 
 
     /**
-     * Calculate alpha or beta as done in the second pass.
-     */
-    /**
-     * Calculate the public key from a base point and a scalar
+     * Calculate the public key from a base point and a scalar - alpha or beta as done in the second pass.
      * @param gA Base point
      * @param x2pi Scalar
      * @return [gA] * x2pi

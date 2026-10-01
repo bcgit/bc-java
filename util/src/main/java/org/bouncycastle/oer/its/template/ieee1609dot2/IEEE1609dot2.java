@@ -231,7 +231,7 @@ public class IEEE1609dot2
     ).typeName("EncryptedData");
 
 
-    /**
+    /*
      * Countersignature ::= Ieee1609Dot2Data (WITH COMPONENTS {...,
      * content (WITH COMPONENTS {...,
      * signedData  (WITH COMPONENTS {...,

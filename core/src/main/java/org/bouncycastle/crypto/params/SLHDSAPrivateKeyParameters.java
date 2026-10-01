@@ -124,7 +124,7 @@ public class SLHDSAPrivateKeyParameters
         return rv;
     }
 
-    private static class PK
+    static class PK
     {
         final byte[] seed;
         final byte[] root;
@@ -136,7 +136,7 @@ public class SLHDSAPrivateKeyParameters
         }
     }
 
-    private static class SK
+    static class SK
     {
         final byte[] seed;
         final byte[] prf;

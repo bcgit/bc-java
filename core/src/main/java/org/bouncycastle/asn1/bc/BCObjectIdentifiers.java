@@ -45,7 +45,7 @@ public interface BCObjectIdentifiers
      */
     ASN1ObjectIdentifier bc_pbe_sha224 = bc_pbe.branch("2.4");
 
-    /**
+    /*
      * PKCS-5(1)|PKCS-12(2)
      */
     /**
@@ -66,7 +66,7 @@ public interface BCObjectIdentifiers
      */
     ASN1ObjectIdentifier bc_pbe_sha256_pkcs12 = bc_pbe_sha256.branch("2");
 
-    /**
+    /*
      * AES(1) . (CBC-128(2)|CBC-192(22)|CBC-256(42))
      */
     /**
@@ -331,7 +331,7 @@ public interface BCObjectIdentifiers
     /*
      * ML-DSA
      */
-    ///** 2.16.840.1.101.3.4.3.17 OQS_OID_MLDSA44 */
+    // /** 2.16.840.1.101.3.4.3.17 OQS_OID_MLDSA44 */
     /** 1.3.9999.7.5 OQS_OID_P256_MLDSA44 */
     ASN1ObjectIdentifier p256_mldsa44 = new ASN1ObjectIdentifier("1.3.9999.7.5");
     /** 1.3.9999.7.6 OQS_OID_RSA3072_MLDSA44 */
@@ -346,7 +346,7 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier mldsa44_p256 = new ASN1ObjectIdentifier("2.16.840.1.114027.80.8.1.4");
     /** 2.16.840.1.114027.80.8.1.5 OQS_OID_MLDSA44_bp256 */
     ASN1ObjectIdentifier mldsa44_bp256 = new ASN1ObjectIdentifier("2.16.840.1.114027.80.8.1.5");
-    ///** 2.16.840.1.101.3.4.3.18 OQS_OID_MLDSA65 */
+    // /** 2.16.840.1.101.3.4.3.18 OQS_OID_MLDSA65 */
     /** 1.3.9999.7.7 OQS_OID_P384_MLDSA65 */
     ASN1ObjectIdentifier p384_mldsa65 = new ASN1ObjectIdentifier("1.3.9999.7.7");
     /** 2.16.840.1.114027.80.8.1.6 OQS_OID_MLDSA65_pss3072 */
@@ -359,7 +359,7 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier mldsa65_bp256 = new ASN1ObjectIdentifier("2.16.840.1.114027.80.8.1.9");
     /** 2.16.840.1.114027.80.8.1.10 OQS_OID_MLDSA65_ed25519 */
     ASN1ObjectIdentifier mldsa65_ed25519 = new ASN1ObjectIdentifier("2.16.840.1.114027.80.8.1.10");
-    ///** 2.16.840.1.101.3.4.3.19 OQS_OID_MLDSA87 */
+    // /** 2.16.840.1.101.3.4.3.19 OQS_OID_MLDSA87 */
     /** 1.3.9999.7.8 OQS_OID_P521_MLDSA87 */
     ASN1ObjectIdentifier p521_mldsa87 = new ASN1ObjectIdentifier("1.3.9999.7.8");
     /** 2.16.840.1.114027.80.8.1.11 OQS_OID_MLDSA87_p384 */
@@ -644,7 +644,7 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier mayo3 = mayo_3;
     ASN1ObjectIdentifier mayo5 = mayo_5;
 
-    /**
+    /*
      * cross
      */
 //    /** 1.3.6.1.4.1.62245.2.1.1.2 OQS_OID_CROSSRSDP128BALANCED */
@@ -680,9 +680,9 @@ public interface BCObjectIdentifiers
 //    /** 1.3.6.1.4.1.62245.2.1.18.2 OQS_OID_CROSSRSDPG256SMALL */
 //    ASN1ObjectIdentifier crossrsdpg_256small = new ASN1ObjectIdentifier("1.3.6.1.4.1.62245.2.1.18.2");
 
-    /**
+    /*
      * OV
-     * */
+     */
 //    /** 1.3.9999.9.1.1 OQS_OID_OV_IS */
 //    ASN1ObjectIdentifier ov_is = new ASN1ObjectIdentifier("1.3.9999.9.1.1");
 //    /** 1.3.9999.9.1.2 OQS_OID_P256_OV_IS */

@@ -233,7 +233,7 @@ public class multipart_signed
         return b.toString();
     }
 
-    private static class LineOutputStream extends FilterOutputStream
+    static class LineOutputStream extends FilterOutputStream
     {
         private static byte newline[];
 

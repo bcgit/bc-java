@@ -571,12 +571,6 @@ public class LMSPrivateKeyParameters
     }
 
     /**
-     * Return true if the top of the Merkle tree is present in the node cache - either because
-     * this key has been used/queried, or because it was decoded from the optional trailing data in
-     * a version 0 encoding (see getEncoded). Used by the regression tests that verify tree-cache
-     * persistence.
-     */
-    /**
      * The root node if it is already in the cache, otherwise null. Unlike getPublicKey() this never
      * computes it, so a caller can cross-check the root against an authoritative public key without
      * paying for a tree rebuild when there is nothing cached (github #2414).
@@ -589,6 +583,12 @@ public class LMSPrivateKeyParameters
         }
     }
 
+    /**
+     * Return true if the top of the Merkle tree is present in the node cache - either because
+     * this key has been used/queried, or because it was decoded from the optional trailing data in
+     * a version 0 encoding (see getEncoded). Used by the regression tests that verify tree-cache
+     * persistence.
+     */
     boolean isTreeCachePrimed()
     {
         synchronized (tCache)

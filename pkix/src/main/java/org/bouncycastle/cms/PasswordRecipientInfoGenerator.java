@@ -100,7 +100,7 @@ public abstract class PasswordRecipientInfoGenerator
     public RecipientInfo generate(GenericKey contentEncryptionKey)
         throws CMSException
     {
-        byte[] iv = new byte[blockSize];     /// TODO: set IV size properly!
+        byte[] iv = new byte[blockSize];     // TODO: set IV size properly!
 
         if (random == null)
         {

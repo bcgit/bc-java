@@ -263,7 +263,7 @@ configure(subprojects.findAll {it.name != 'bom'}) {
     dependencies {
         checkstyle files("$rootDir/config/checkstyle/lib/methodchecker-1.0.0.jar")
         checkstyle 'com.puppycrawl.tools:checkstyle:9.0'
-        errorprone "com.google.errorprone:error_prone_core:2.43.0"
+        errorprone "com.google.errorprone:error_prone_core:2.50.0"
     }
 
     checkstyle {

@@ -151,19 +151,6 @@ public class BDSStateMap
     }
 
     /**
-     * Validate as validate(XMSSMTParameters) and additionally tie each layer's traversal state to
-     * the enclosing private key's index. RFC 8391 sec. 1.1 requires each one-time key to be used
-     * once, and the global index and the per-layer BDS states are two records of the same position,
-     * so a stored key whose index has been rolled back while its state stayed advanced - a partial
-     * write, a restore from backup, a buggy storage layer - is detectable and must be refused: it
-     * would otherwise sign a second message under a one-time key already used, and the signature
-     * would verify. The XMSS side has done this since its own state was tied to its index; this is
-     * the multi-tree counterpart.
-     *
-     * @param params      the parameters of the enclosing key.
-     * @param globalIndex the index the enclosing key declares.
-     */
-    /**
      * Confirm the top layer's root is the one the enclosing private key declares - the top tree's
      * root is the public root. A layer with no state yet is built lazily at signing time and so is
      * not compared (github #2414).
@@ -181,6 +168,19 @@ public class BDSStateMap
         }
     }
 
+    /**
+     * Validate as validate(XMSSMTParameters) and additionally tie each layer's traversal state to
+     * the enclosing private key's index. RFC 8391 sec. 1.1 requires each one-time key to be used
+     * once, and the global index and the per-layer BDS states are two records of the same position,
+     * so a stored key whose index has been rolled back while its state stayed advanced - a partial
+     * write, a restore from backup, a buggy storage layer - is detectable and must be refused: it
+     * would otherwise sign a second message under a one-time key already used, and the signature
+     * would verify. The XMSS side has done this since its own state was tied to its index; this is
+     * the multi-tree counterpart.
+     *
+     * @param params      the parameters of the enclosing key.
+     * @param globalIndex the index the enclosing key declares.
+     */
     void validate(XMSSMTParameters params, long globalIndex)
     {
         validate(params);

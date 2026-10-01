@@ -562,10 +562,6 @@ class CMSUtils
     }
 
     /**
-     * Return the AEAD tag length carried in AuthEnvelopedData's mac field, or
-     * -1 when the algorithm is not recognised.
-     */
-    /**
      * Return the content-encryption algorithm an EncryptedContentInfo actually names, resolving the
      * RFC 9709 id-alg-cek-hkdf-sha256 wrapper to the AlgorithmIdentifier carried in its parameters.
      * <p>
@@ -601,6 +597,10 @@ class CMSUtils
         }
     }
 
+    /**
+     * Return the AEAD tag length the content-encryption parameters declare, -1 when the algorithm is
+     * not GCM or CCM, or 0 when its parameters are absent or unreadable (fail-closed).
+     */
     static int getAEADMacLength(AlgorithmIdentifier encAlgId)
     {
         ASN1ObjectIdentifier algorithm = encAlgId.getAlgorithm();

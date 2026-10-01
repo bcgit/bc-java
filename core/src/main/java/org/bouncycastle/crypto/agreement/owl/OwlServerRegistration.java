@@ -141,14 +141,6 @@ public class OwlServerRegistration
         this.registrationState = REGISTRATION_NOT_CALLED;
     }
     /**
-     * Initiates user registration with the server. Creates the registration payload {@link OwlInitialRegistration} and sends it to the server.
-     * MUST be sent over a secure channel.
-     * <p>
-     * Must be called prior to {@link #registerUseronServer(OwlInitialRegistration)}
-     * @throws IllegalStateException if this function is called more than once
-     */
-
-    /**
      * Receives the payload sent by the client as part of user registration, and stores necessary values in the server.
      * <p>
      * Must be called after {@link OwlClientRegistration#initiateUserRegistration()} by the {@link OwlClient}.

@@ -1083,7 +1083,7 @@ public class OERInputStream
 
     }
 
-    private static final class LengthInfo
+    static final class LengthInfo
     {
         private final BigInteger length;
         private final boolean shortForm;

@@ -319,11 +319,6 @@ public class XMSSUtil
     }
 
     /**
-     * Encode BDS traversal state as the versioned binary state. The legacy Java serialization is
-     * still accepted by {@link #deserialize(byte[], Class)} for keys written by earlier releases,
-     * but is no longer generated.
-     */
-    /**
      * Encode a BDS state, binding it to nothing. Prefer serialize(Object, byte[]): the encoded state
      * carries a checksum, and passing the owning key's public seed ties the state to that key, so a
      * state transplanted between two keys of the same parameters is detected (github #2414).
@@ -335,7 +330,10 @@ public class XMSSUtil
     }
 
     /**
-     * Encode a BDS state, binding its checksum to the public seed of the key it belongs to.
+     * Encode a BDS state, binding its checksum to the public seed of the key it belongs to. The
+     * state is written in the versioned binary form; the legacy Java serialization is still
+     * accepted by {@link #deserialize(byte[], Class)} for keys written by earlier releases, but is
+     * no longer generated.
      *
      * @param obj        the BDS or BDSStateMap to encode.
      * @param publicSeed the owning key's public seed, or null to bind nothing.

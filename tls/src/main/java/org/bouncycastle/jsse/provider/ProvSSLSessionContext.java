@@ -370,7 +370,7 @@ class ProvSSLSessionContext
         return false;
     }
 
-    private static final class SessionEntry
+    static final class SessionEntry
         extends SoftReference<ProvSSLSession>
     {
         private final SessionID sessionID;

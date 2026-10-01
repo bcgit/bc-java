@@ -461,10 +461,6 @@ public class PrivateKeyFactory
 
     /**
      * So it seems for the new PQC algorithms, there's a couple of approaches to what goes in the OCTET STRING
-     */
-    
-    /**
-     * So it seems for the new PQC algorithms, there's a couple of approaches to what goes in the OCTET STRING
      * and in this case there may also be SEQUENCE.
      */
     private static ASN1Primitive parsePrimitiveString(ASN1OctetString octStr, int expectedLength)

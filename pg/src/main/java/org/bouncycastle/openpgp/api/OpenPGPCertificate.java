@@ -3544,11 +3544,11 @@ public class OpenPGPCertificate
 //        public Date getSince()
 //        {
 //            // Find most recent chain link
-////            return chainLinks.stream()
-////                .map(it -> it.signature)
-////                .max(Comparator.comparing(OpenPGPComponentSignature::getCreationTime))
-////                .map(OpenPGPComponentSignature::getCreationTime)
-////                .orElse(null);
+// //            return chainLinks.stream()
+// //                .map(it -> it.signature)
+// //                .max(Comparator.comparing(OpenPGPComponentSignature::getCreationTime))
+// //                .map(OpenPGPComponentSignature::getCreationTime)
+// //                .orElse(null);
 //            return chainLinks.stream()
 //                .map(new Function<Link, Object>()
 //                {

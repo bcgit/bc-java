@@ -32,7 +32,7 @@ class NamedGroupInfo
     private static final String PROPERTY_BC_EARLY_KEY_SHARES = "org.bouncycastle.jsse.client.earlyKeyShares";
 
     // NOTE: Not all of these are necessarily enabled/supported; it will be checked at runtime
-    private enum All
+    enum All
     {
         sect163k1(NamedGroup.sect163k1, "EC"),
         sect163r1(NamedGroup.sect163r1, "EC"),

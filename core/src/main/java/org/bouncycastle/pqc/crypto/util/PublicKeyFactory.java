@@ -436,7 +436,7 @@ public class PublicKeyFactory
         }
     }
 
-    private static abstract class SubjectPublicKeyInfoConverter
+    static abstract class SubjectPublicKeyInfoConverter
     {
         abstract AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
             throws IOException;
