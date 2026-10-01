@@ -68,8 +68,25 @@ public class X509CRLEntryObject extends X509CRLEntry
         boolean isIndirect,
         X500Name previousCertificateIssuer)
     {
+        this(c, loadCertificateIssuer(c, isIndirect, previousCertificateIssuer));
+    }
+
+    /**
+     * Constructor for a CRLEntry whose certificate issuer the caller has already worked out with
+     * {@link #loadCertificateIssuer}, which it has to do anyway to track the issuer from one entry
+     * to the next.
+     *
+     * @param c
+     *            TBSCertList.CRLEntry object.
+     * @param certificateIssuer
+     *            the certificate issuer of this CRLEntry, <code>null</code> for the CRL issuer.
+     */
+    X509CRLEntryObject(
+        TBSCertList.CRLEntry c,
+        X500Name certificateIssuer)
+    {
         this.c = c;
-        this.certificateIssuer = loadCertificateIssuer(c, isIndirect, previousCertificateIssuer);
+        this.certificateIssuer = certificateIssuer;
     }
 
     /**

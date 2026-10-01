@@ -419,39 +419,21 @@ abstract class X509CRLImpl
         return null == nextUpdate ? null : nextUpdate.getDate();
     }
 
-    private Set loadCRLEntries()
-    {
-        Set entrySet = new HashSet();
-        Enumeration certs = c.getRevokedCertificateEnumeration();
-
-        X500Name previousCertificateIssuer = null; // the issuer
-        while (certs.hasMoreElements())
-        {
-            TBSCertList.CRLEntry entry = (TBSCertList.CRLEntry)certs.nextElement();
-            X509CRLEntryObject crlEntry = new X509CRLEntryObject(entry, isIndirect, previousCertificateIssuer);
-            entrySet.add(crlEntry);
-            previousCertificateIssuer = X509CRLEntryObject.loadCertificateIssuer(entry, isIndirect, previousCertificateIssuer);
-        }
-
-        return entrySet;
-    }
-
     // returns the first entry with the serial number whatever its issuer - the cert path validators rely on that.
     public X509CRLEntry getRevokedCertificate(BigInteger serialNumber)
     {
         Enumeration certs = c.getRevokedCertificateEnumeration();
 
-        X500Name previousCertificateIssuer = null; // the issuer
+        X500Name certificateIssuer = null; // null means the CRL issuer
         while (certs.hasMoreElements())
         {
             TBSCertList.CRLEntry entry = (TBSCertList.CRLEntry)certs.nextElement();
+            certificateIssuer = X509CRLEntryObject.loadCertificateIssuer(entry, isIndirect, certificateIssuer);
 
             if (entry.getUserCertificate().hasValue(serialNumber))
             {
-                return new X509CRLEntryObject(entry, isIndirect, previousCertificateIssuer);
+                return new X509CRLEntryObject(entry, certificateIssuer);
             }
-
-            previousCertificateIssuer = X509CRLEntryObject.loadCertificateIssuer(entry, isIndirect, previousCertificateIssuer);
         }
 
         return null;
@@ -475,19 +457,18 @@ abstract class X509CRLImpl
 
         Enumeration certs = c.getRevokedCertificateEnumeration();
 
-        X500Name previousCertificateIssuer = null; // the issuer
+        X500Name certificateIssuer = null; // null means the CRL issuer
         while (certs.hasMoreElements())
         {
             TBSCertList.CRLEntry entry = (TBSCertList.CRLEntry)certs.nextElement();
-            X500Name certificateIssuer = X509CRLEntryObject.loadCertificateIssuer(entry, isIndirect, previousCertificateIssuer);
+            certificateIssuer = X509CRLEntryObject.loadCertificateIssuer(entry, isIndirect, certificateIssuer);
 
-            if (entry.getUserCertificate().hasValue(serialNumber)
-                && issuer.equals(certificateIssuer == null ? c.getIssuer() : certificateIssuer))
+            // a serial number is only unique within its issuer, so another issuer's entry is not this one.
+            if (entry.getUserCertificate().hasValue(serialNumber) &&
+                issuer.equals(certificateIssuer == null ? c.getIssuer() : certificateIssuer))
             {
-                return new X509CRLEntryObject(entry, isIndirect, previousCertificateIssuer);
+                return new X509CRLEntryObject(entry, certificateIssuer);
             }
-
-            previousCertificateIssuer = certificateIssuer;
         }
 
         return null;
@@ -495,14 +476,23 @@ abstract class X509CRLImpl
 
     public Set getRevokedCertificates()
     {
-        Set entrySet = loadCRLEntries();
-
-        if (!entrySet.isEmpty())
+        Enumeration certs = c.getRevokedCertificateEnumeration();
+        if (!certs.hasMoreElements())
         {
-            return Collections.unmodifiableSet(entrySet);
+            return null;
         }
 
-        return null;
+        Set entrySet = new HashSet();
+        X500Name certificateIssuer = null; // null means the CRL issuer
+        do
+        {
+            TBSCertList.CRLEntry entry = (TBSCertList.CRLEntry)certs.nextElement();
+            certificateIssuer = X509CRLEntryObject.loadCertificateIssuer(entry, isIndirect, certificateIssuer);
+            entrySet.add(new X509CRLEntryObject(entry, certificateIssuer));
+        }
+        while (certs.hasMoreElements());
+
+        return Collections.unmodifiableSet(entrySet);
     }
 
     public byte[] getTBSCertList()
@@ -664,51 +654,59 @@ abstract class X509CRLImpl
             throw new IllegalArgumentException("X.509 CRL used with non X.509 Cert");
         }
 
-        Enumeration certs = c.getRevokedCertificateEnumeration();
+        Enumeration revokedCerts = c.getRevokedCertificateEnumeration();
 
-        X500Name caName = c.getIssuer();
-
-        if (certs.hasMoreElements())
+        if (revokedCerts.hasMoreElements())
         {
-            BigInteger serial = ((X509Certificate)cert).getSerialNumber();
+            BigInteger serial;
+            X500Name issuer;
 
-            while (certs.hasMoreElements())
+            if (cert instanceof X509Certificate)
             {
-                TBSCertList.CRLEntry entry = TBSCertList.CRLEntry.getInstance(certs.nextElement());
+                X509Certificate x509Cert = (X509Certificate)cert;
 
-                caName = X509CRLEntryObject.loadCertificateIssuer(entry, isIndirect, caName);
-                if (caName == null)
+                serial = x509Cert.getSerialNumber();
+                issuer = X500Name.getInstance(x509Cert.getIssuerX500Principal().getEncoded());
+            }
+            else
+            {
+                // an "X.509" type does not make it an X509Certificate, so both come from the encoding.
+                org.bouncycastle.asn1.x509.Certificate certStruct;
+                try
                 {
-                    caName = c.getIssuer(); // an entry with no certificate issuer of its own is the CRL issuer's
+                    certStruct = org.bouncycastle.asn1.x509.Certificate.getInstance(cert.getEncoded());
+                }
+                catch (CertificateEncodingException e)
+                {
+                    throw Exceptions.illegalArgumentException("Cannot process certificate", e);
                 }
 
-                if (entry.getUserCertificate().hasValue(serial))
+                serial = certStruct.getSerialNumber().getValue();
+                issuer = certStruct.getIssuer();
+            }
+
+            boolean issuedByCRLIssuer = issuer.equals(c.getIssuer());
+            if (!isIndirect && !issuedByCRLIssuer)
+            {
+                return false;
+            }
+
+            X500Name certificateIssuer = null; // null means the CRL issuer
+
+            do
+            {
+                TBSCertList.CRLEntry entry = TBSCertList.CRLEntry.getInstance(revokedCerts.nextElement());
+
+                certificateIssuer = X509CRLEntryObject.loadCertificateIssuer(entry, isIndirect, certificateIssuer);
+
+                // a serial number is only unique within its issuer, so another issuer's entry is not this one.
+                if (entry.getUserCertificate().hasValue(serial) &&
+                    (certificateIssuer == null ? issuedByCRLIssuer : issuer.equals(certificateIssuer)))
                 {
-                    X500Name issuer;
-
-                    if (cert instanceof X509Certificate)
-                    {
-                        issuer = X500Name.getInstance(((X509Certificate)cert).getIssuerX500Principal().getEncoded());
-                    }
-                    else
-                    {
-                        try
-                        {
-                            issuer = org.bouncycastle.asn1.x509.Certificate.getInstance(cert.getEncoded()).getIssuer();
-                        }
-                        catch (CertificateEncodingException e)
-                        {
-                            throw Exceptions.illegalArgumentException("Cannot process certificate", e);
-                        }
-                    }
-
-                    // a serial number is only unique within its issuer, so another issuer's entry is not this one.
-                    if (caName.equals(issuer))
-                    {
-                        return true;
-                    }
+                    return true;
                 }
             }
+            while (revokedCerts.hasMoreElements());
         }
 
         return false;
