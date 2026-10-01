@@ -194,6 +194,17 @@ public class Poly1305
                 currentBlockOffset = 0;
             }
 
+            /*
+             * From a block boundary, absorb whole blocks straight from the input - all but the last block, which
+             * goes to the buffer as before, so the state ends up exactly as if each block had been buffered.
+             */
+            if (currentBlockOffset == 0 && len - copied > BLOCK_SIZE)
+            {
+                int blocks = (len - copied - 1) / BLOCK_SIZE;
+                processBlocks(in, inOff + copied, blocks, 1 << 24);
+                copied += blocks * BLOCK_SIZE;
+            }
+
             int toCopy = Math.min((len - copied), BLOCK_SIZE - currentBlockOffset);
             System.arraycopy(in, copied + inOff, currentBlock, currentBlockOffset, toCopy);
             copied += toCopy;
@@ -213,35 +224,52 @@ public class Poly1305
             }
         }
 
-        final long t0 = 0xffffffffL & Pack.littleEndianToInt(currentBlock, 0);
-        final long t1 = 0xffffffffL & Pack.littleEndianToInt(currentBlock, 4);
-        final long t2 = 0xffffffffL & Pack.littleEndianToInt(currentBlock, 8);
-        final long t3 = 0xffffffffL & Pack.littleEndianToInt(currentBlock, 12);
+        processBlocks(currentBlock, 0, 1, currentBlockOffset == BLOCK_SIZE ? 1 << 24 : 0);
+    }
 
-        h0 += t0 & 0x3ffffff;
-        h1 += (((t1 << 32) | t0) >>> 26) & 0x3ffffff;
-        h2 += (((t2 << 32) | t1) >>> 20) & 0x3ffffff;
-        h3 += (((t3 << 32) | t2) >>> 14) & 0x3ffffff;
-        h4 += (t3 >>> 8);
+    /**
+     * Absorb whole 16-byte blocks into the accumulator, the accumulator and key in local variables throughout.
+     *
+     * @param in     the blocks
+     * @param inOff  the offset of the first block
+     * @param blocks the number of blocks
+     * @param hibit  1 &lt;&lt; 24, the 2^128 bit in limb 4, for full message blocks; 0 for the padded final block
+     */
+    private void processBlocks(final byte[] in, int inOff, final int blocks, final int hibit)
+    {
+        final int r0 = this.r0, r1 = this.r1, r2 = this.r2, r3 = this.r3, r4 = this.r4;
+        final int s1 = this.s1, s2 = this.s2, s3 = this.s3, s4 = this.s4;
+        int h0 = this.h0, h1 = this.h1, h2 = this.h2, h3 = this.h3, h4 = this.h4;
 
-        if (currentBlockOffset == BLOCK_SIZE)
+        for (int block = 0; block < blocks; ++block, inOff += BLOCK_SIZE)
         {
-            h4 += (1 << 24);
+            final long t0 = 0xffffffffL & Pack.littleEndianToInt(in, inOff);
+            final long t1 = 0xffffffffL & Pack.littleEndianToInt(in, inOff + 4);
+            final long t2 = 0xffffffffL & Pack.littleEndianToInt(in, inOff + 8);
+            final long t3 = 0xffffffffL & Pack.littleEndianToInt(in, inOff + 12);
+
+            h0 += t0 & 0x3ffffff;
+            h1 += (((t1 << 32) | t0) >>> 26) & 0x3ffffff;
+            h2 += (((t2 << 32) | t1) >>> 20) & 0x3ffffff;
+            h3 += (((t3 << 32) | t2) >>> 14) & 0x3ffffff;
+            h4 += (t3 >>> 8) + hibit;
+
+            long tp0 = mul32x32_64(h0,r0) + mul32x32_64(h1,s4) + mul32x32_64(h2,s3) + mul32x32_64(h3,s2) + mul32x32_64(h4,s1);
+            long tp1 = mul32x32_64(h0,r1) + mul32x32_64(h1,r0) + mul32x32_64(h2,s4) + mul32x32_64(h3,s3) + mul32x32_64(h4,s2);
+            long tp2 = mul32x32_64(h0,r2) + mul32x32_64(h1,r1) + mul32x32_64(h2,r0) + mul32x32_64(h3,s4) + mul32x32_64(h4,s3);
+            long tp3 = mul32x32_64(h0,r3) + mul32x32_64(h1,r2) + mul32x32_64(h2,r1) + mul32x32_64(h3,r0) + mul32x32_64(h4,s4);
+            long tp4 = mul32x32_64(h0,r4) + mul32x32_64(h1,r3) + mul32x32_64(h2,r2) + mul32x32_64(h3,r1) + mul32x32_64(h4,r0);
+
+            h0 = (int)tp0 & 0x3ffffff; tp1 += (tp0 >>> 26);
+            h1 = (int)tp1 & 0x3ffffff; tp2 += (tp1 >>> 26);
+            h2 = (int)tp2 & 0x3ffffff; tp3 += (tp2 >>> 26);
+            h3 = (int)tp3 & 0x3ffffff; tp4 += (tp3 >>> 26);
+            h4 = (int)tp4 & 0x3ffffff;
+            h0 += (int)(tp4 >>> 26) * 5;
+            h1 += (h0 >>> 26); h0 &= 0x3ffffff;
         }
 
-        long tp0 = mul32x32_64(h0,r0) + mul32x32_64(h1,s4) + mul32x32_64(h2,s3) + mul32x32_64(h3,s2) + mul32x32_64(h4,s1);
-        long tp1 = mul32x32_64(h0,r1) + mul32x32_64(h1,r0) + mul32x32_64(h2,s4) + mul32x32_64(h3,s3) + mul32x32_64(h4,s2);
-        long tp2 = mul32x32_64(h0,r2) + mul32x32_64(h1,r1) + mul32x32_64(h2,r0) + mul32x32_64(h3,s4) + mul32x32_64(h4,s3);
-        long tp3 = mul32x32_64(h0,r3) + mul32x32_64(h1,r2) + mul32x32_64(h2,r1) + mul32x32_64(h3,r0) + mul32x32_64(h4,s4);
-        long tp4 = mul32x32_64(h0,r4) + mul32x32_64(h1,r3) + mul32x32_64(h2,r2) + mul32x32_64(h3,r1) + mul32x32_64(h4,r0);
-
-        h0 = (int)tp0 & 0x3ffffff; tp1 += (tp0 >>> 26);
-        h1 = (int)tp1 & 0x3ffffff; tp2 += (tp1 >>> 26);
-        h2 = (int)tp2 & 0x3ffffff; tp3 += (tp2 >>> 26);
-        h3 = (int)tp3 & 0x3ffffff; tp4 += (tp3 >>> 26);
-        h4 = (int)tp4 & 0x3ffffff;
-        h0 += (int)(tp4 >>> 26) * 5;
-        h1 += (h0 >>> 26); h0 &= 0x3ffffff;
+        this.h0 = h0; this.h1 = h1; this.h2 = h2; this.h3 = h3; this.h4 = h4;
     }
 
     public int doFinal(final byte[] out, final int outOff)
