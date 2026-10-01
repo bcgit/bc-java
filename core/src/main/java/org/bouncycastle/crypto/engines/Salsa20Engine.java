@@ -278,7 +278,40 @@ public class Salsa20Engine
             throw new MaxBytesExceededException("2^70 byte limit per IV would be exceeded; Change IV");
         }
 
-        for (int i = 0; i < len; i++)
+        int i = 0;
+
+        /* The rest of a partly used block */
+        for (; i < len && index != 0; i++)
+        {
+            out[i + outOff] = (byte)(keyStream[index] ^ in[i + inOff]);
+            index = (index + 1) & 63;
+
+            if (index == 0)
+            {
+                advanceCounter();
+                generateKeyStream(keyStream);
+            }
+        }
+
+        /*
+         * Whole blocks, from the block boundary that leaves - or from i == len, where this does nothing - with no
+         * per-byte index arithmetic. Byte by byte and in order, as the other loops, so in and out may still overlap;
+         * and like them, the next block's keystream is generated as soon as one block is used up.
+         */
+        for (; len - i >= 64; i += 64)
+        {
+            final int inPos = inOff + i, outPos = outOff + i;
+            for (int j = 0; j < 64; ++j)
+            {
+                out[outPos + j] = (byte)(keyStream[j] ^ in[inPos + j]);
+            }
+
+            advanceCounter();
+            generateKeyStream(keyStream);
+        }
+
+        /* The start of the next block */
+        for (; i < len; i++)
         {
             out[i + outOff] = (byte)(keyStream[index] ^ in[i + inOff]);
             index = (index + 1) & 63;
