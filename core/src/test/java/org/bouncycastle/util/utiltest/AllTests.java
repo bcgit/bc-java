@@ -22,6 +22,7 @@ public class AllTests
         suite.addTestSuite(StringsTest.class);
         suite.addTestSuite(StreamsTest.class);
         suite.addTestSuite(AggregateRuntimeExceptionTest.class);
+        suite.addTestSuite(PackTest.class);
         return new BCTestSetup(suite);
     }
 
