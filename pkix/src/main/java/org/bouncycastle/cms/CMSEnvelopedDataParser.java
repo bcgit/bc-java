@@ -86,7 +86,13 @@ public class CMSEnvelopedDataParser
         try
         {
             this.attrNotRead = true;
-            this.envelopedData = new EnvelopedDataParser((ASN1SequenceParser)_contentInfo.getContent(BERTags.SEQUENCE));
+            ASN1SequenceParser content = (ASN1SequenceParser)_contentInfo.getContent(BERTags.SEQUENCE);
+            if (content == null)
+            {
+                throw new CMSException("Missing content.");
+            }
+
+            this.envelopedData = new EnvelopedDataParser(content);
 
             // TODO Validate version?
             //ASN1Integer version = this._envelopedData.getVersion();
@@ -108,8 +114,12 @@ public class CMSEnvelopedDataParser
             //
             EncryptedContentInfoParser encInfo = this.envelopedData.getEncryptedContentInfo();
             this.encAlg = encInfo.getContentEncryptionAlgorithm();
-            CMSReadable readable = new CMSProcessableInputStream(
-                ((ASN1OctetStringParser)encInfo.getEncryptedContent(BERTags.OCTET_STRING)).getOctetStream());
+            ASN1OctetStringParser encContent = (ASN1OctetStringParser)encInfo.getEncryptedContent(BERTags.OCTET_STRING);
+            if (encContent == null)
+            {
+                throw new CMSException("Missing content.");
+            }
+            CMSReadable readable = new CMSProcessableInputStream(encContent.getOctetStream());
             CMSSecureReadable secureReadable = new CMSEnvelopedHelper.CMSAuthEnveSecureReadable(
                 this.encAlg, encInfo.getContentType(), readable);
 

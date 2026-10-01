@@ -118,72 +118,98 @@ public class CMSAuthenticatedDataParser
     {
         super(envelopedData);
 
-        this.authAttrNotRead = true;
-        this.authData = new AuthenticatedDataParser((ASN1SequenceParser)_contentInfo.getContent(BERTags.SEQUENCE));
-
-        // TODO Validate version?
-        //ASN1Integer version = this.authData.getVersion();
-
-        OriginatorInfo info = authData.getOriginatorInfo();
-
-        if (info != null)
+        try
         {
-            this.originatorInfo = new OriginatorInformation(info);
-        }
-        //
-        // read the recipients
-        //
-        ASN1Set recipientInfos = ASN1Set.getInstance(authData.getRecipientInfos().toASN1Primitive());
+            this.authAttrNotRead = true;
 
-        this.macAlg = authData.getMacAlgorithm();
-
-        //
-        // build the RecipientInformationStore
-        //
-        AlgorithmIdentifier digestAlgorithm = authData.getDigestAlgorithm();
-
-        this.digestAlgorithmPresent = digestAlgorithm != null;
-
-        if (digestAlgorithm != null)
-        {
-            if (digestCalculatorProvider == null)
+            ASN1SequenceParser content = (ASN1SequenceParser)_contentInfo.getContent(BERTags.SEQUENCE);
+            if (content == null)
             {
-                throw new CMSException("a digest calculator provider is required if authenticated attributes are present");
+                throw new CMSException("Missing content.");
             }
 
-            //
-            // read the authenticated content info
-            //
-            ContentInfoParser data = authData.getEncapsulatedContentInfo();
-            CMSReadable readable = new CMSProcessableInputStream(
-                ((ASN1OctetStringParser)data.getContent(BERTags.OCTET_STRING)).getOctetStream());
+            this.authData = new AuthenticatedDataParser(content);
 
-            try
+            // TODO Validate version?
+            //ASN1Integer version = this.authData.getVersion();
+
+            OriginatorInfo info = authData.getOriginatorInfo();
+
+            if (info != null)
             {
-                secureReadable = new CMSEnvelopedHelper.CMSDigestAuthenticatedSecureReadable(digestCalculatorProvider.get(digestAlgorithm), data.getContentType(), readable);
+                this.originatorInfo = new OriginatorInformation(info);
+            }
+            //
+            // read the recipients
+            //
+            ASN1Set recipientInfos = ASN1Set.getInstance(authData.getRecipientInfos().toASN1Primitive());
+
+            this.macAlg = authData.getMacAlgorithm();
+
+            //
+            // build the RecipientInformationStore
+            //
+            AlgorithmIdentifier digestAlgorithm = authData.getDigestAlgorithm();
+
+            this.digestAlgorithmPresent = digestAlgorithm != null;
+
+            if (digestAlgorithm != null)
+            {
+                if (digestCalculatorProvider == null)
+                {
+                    throw new CMSException("a digest calculator provider is required if authenticated attributes are present");
+                }
+
+                //
+                // read the authenticated content info
+                //
+                ContentInfoParser data = authData.getEncapsulatedContentInfo();
+                CMSReadable readable = new CMSProcessableInputStream(getEncapsulatedContentStream(data));
+
+                try
+                {
+                    secureReadable = new CMSEnvelopedHelper.CMSDigestAuthenticatedSecureReadable(digestCalculatorProvider.get(digestAlgorithm), data.getContentType(), readable);
+
+                    this.recipientInfoStore = CMSEnvelopedHelper.buildRecipientInformationStore(recipientInfos, this.macAlg, secureReadable);
+                }
+                catch (OperatorCreationException e)
+                {
+                    throw new CMSException("unable to create digest calculator: " + e.getMessage(), e);
+                }
+            }
+            else
+            {
+                //
+                // read the authenticated content info
+                //
+                ContentInfoParser data = authData.getEncapsulatedContentInfo();
+                CMSReadable readable = new CMSProcessableInputStream(getEncapsulatedContentStream(data));
+
+                secureReadable = new CMSEnvelopedHelper.CMSAuthEnveSecureReadable(this.macAlg, data.getContentType(), readable);
 
                 this.recipientInfoStore = CMSEnvelopedHelper.buildRecipientInformationStore(recipientInfos, this.macAlg, secureReadable);
             }
-            catch (OperatorCreationException e)
-            {
-                throw new CMSException("unable to create digest calculator: " + e.getMessage(), e);
-            }
         }
-        else
+        catch (ClassCastException e)
         {
-            //
-            // read the authenticated content info
-            //
-            ContentInfoParser data = authData.getEncapsulatedContentInfo();
-            CMSReadable readable = new CMSProcessableInputStream(
-                ((ASN1OctetStringParser)data.getContent(BERTags.OCTET_STRING)).getOctetStream());
+            throw new CMSException("Malformed content.", e);
+        }
+        catch (IllegalArgumentException e)
+        {
+            throw new CMSException("Malformed content.", e);
+        }
+    }
 
-            secureReadable = new CMSEnvelopedHelper.CMSAuthEnveSecureReadable(this.macAlg, data.getContentType(), readable);
-
-            this.recipientInfoStore = CMSEnvelopedHelper.buildRecipientInformationStore(recipientInfos, this.macAlg, secureReadable);
+    private static InputStream getEncapsulatedContentStream(ContentInfoParser data)
+        throws CMSException, IOException
+    {
+        ASN1OctetStringParser octs = (ASN1OctetStringParser)data.getContent(BERTags.OCTET_STRING);
+        if (octs == null)
+        {
+            throw new CMSException("Missing content.");
         }
 
-
+        return octs.getOctetStream();
     }
 
     /**

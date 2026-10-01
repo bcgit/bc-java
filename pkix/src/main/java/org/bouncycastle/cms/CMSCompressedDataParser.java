@@ -68,17 +68,35 @@ public class CMSCompressedDataParser
     {
         try
         {
-            CompressedDataParser  comData = new CompressedDataParser((ASN1SequenceParser)_contentInfo.getContent(BERTags.SEQUENCE));
+            ASN1SequenceParser seq = (ASN1SequenceParser)_contentInfo.getContent(BERTags.SEQUENCE);
+            if (seq == null)
+            {
+                throw new CMSException("Missing content.");
+            }
+
+            CompressedDataParser  comData = new CompressedDataParser(seq);
             ContentInfoParser     content = comData.getEncapContentInfo();
             InputExpander expander = expanderProvider.get(comData.getCompressionAlgorithmIdentifier());
 
             ASN1OctetStringParser bytes = (ASN1OctetStringParser)content.getContent(BERTags.OCTET_STRING);
+            if (bytes == null)
+            {
+                throw new CMSException("Missing content.");
+            }
 
             return new CMSTypedStream(content.getContentType(), expander.getInputStream(bytes.getOctetStream()));
         }
         catch (IOException e)
         {
             throw new CMSException("IOException reading compressed content.", e);
+        }
+        catch (ClassCastException e)
+        {
+            throw new CMSException("Malformed content.", e);
+        }
+        catch (IllegalArgumentException e)
+        {
+            throw new CMSException("Malformed content.", e);
         }
     }
 }

@@ -36,6 +36,10 @@ public class EnvelopedDataParser
     {
         this._seq = seq;
         this._version = ASN1Integer.getInstance(seq.readObject());
+        if (_version == null)
+        {
+            throw new IOException("EnvelopedData missing version");
+        }
     }
 
     public ASN1Integer getVersion()
@@ -80,6 +84,11 @@ public class EnvelopedDataParser
             _nextObject = _seq.readObject();
         }
 
+        if (_nextObject == null)
+        {
+            throw new IOException("EnvelopedData missing recipientInfos");
+        }
+
         ASN1SetParser recipientInfos = (ASN1SetParser)_nextObject;
         _nextObject = null;
         return recipientInfos;
@@ -94,14 +103,14 @@ public class EnvelopedDataParser
         }
 
 
-        if (_nextObject != null)
+        if (_nextObject == null)
         {
-            ASN1SequenceParser o = (ASN1SequenceParser) _nextObject;
-            _nextObject = null;
-            return new EncryptedContentInfoParser(o);
+            throw new IOException("EnvelopedData missing encryptedContentInfo");
         }
 
-        return null;
+        ASN1SequenceParser o = (ASN1SequenceParser)_nextObject;
+        _nextObject = null;
+        return new EncryptedContentInfoParser(o);
     }
 
     public ASN1SetParser getUnprotectedAttrs()

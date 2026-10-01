@@ -2,6 +2,7 @@ package org.bouncycastle.asn1.cms;
 
 import java.util.Enumeration;
 
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
@@ -246,16 +247,21 @@ public class SignedData
     private SignedData(
         ASN1Sequence seq)
     {
+        if (seq.size() < 4)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
+
         Enumeration     e = seq.getObjects();
 
         version = ASN1Integer.getInstance(e.nextElement());
-        digestAlgorithms = ((ASN1Set)e.nextElement());
+        digestAlgorithms = ASN1Set.getInstance(e.nextElement());
         contentInfo = ContentInfo.getInstance(e.nextElement());
 
         ASN1Set sigInfs = null;
         while (e.hasMoreElements())
         {
-            ASN1Primitive o = (ASN1Primitive)e.nextElement();
+            ASN1Primitive o = ((ASN1Encodable)e.nextElement()).toASN1Primitive();
 
             //
             // an interesting feature of SignedData is that there appear

@@ -69,12 +69,17 @@ public class EncryptedData
 
     private EncryptedData(ASN1Sequence seq)
     {
+        if (seq.size() < 2)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
+
         this.version = ASN1Integer.getInstance(seq.getObjectAt(0));
         this.encryptedContentInfo = EncryptedContentInfo.getInstance(seq.getObjectAt(1));
 
         if (seq.size() == 3)
         {
-            this.unprotectedAttrs = ASN1Set.getInstance((ASN1TaggedObject)seq.getObjectAt(2), false);
+            this.unprotectedAttrs = ASN1Set.getInstance(ASN1TaggedObject.getInstance(seq.getObjectAt(2)), false);
         }
     }
 

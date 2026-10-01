@@ -9,6 +9,7 @@ import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1OctetStringParser;
+import org.bouncycastle.asn1.ASN1ParsingException;
 import org.bouncycastle.asn1.ASN1SequenceParser;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.ASN1SetParser;
@@ -85,7 +86,13 @@ public class CMSAuthEnvelopedDataParser
         {
             authAttrNotRead = true;
             unauthAttrNotRead = true;
-            authEvnData = new AuthEnvelopedDataParser((ASN1SequenceParser)_contentInfo.getContent(BERTags.SEQUENCE));
+            ASN1SequenceParser content = (ASN1SequenceParser)_contentInfo.getContent(BERTags.SEQUENCE);
+            if (content == null)
+            {
+                throw new CMSException("Missing content.");
+            }
+
+            authEvnData = new AuthEnvelopedDataParser(content);
 
             OriginatorInfo info = authEvnData.getOriginatorInfo();
 
@@ -103,8 +110,14 @@ public class CMSAuthEnvelopedDataParser
             encAlg = encInfo.getContentEncryptionAlgorithm();
             localMacProvider = new LocalMacProvider(authEvnData, this);
 
+            ASN1OctetStringParser encContent = (ASN1OctetStringParser)encInfo.getEncryptedContent(BERTags.OCTET_STRING);
+            if (encContent == null)
+            {
+                throw new CMSException("Missing content.");
+            }
+
             final CMSReadable readable = new CMSProcessableInputStream(new InputStreamWithMAC(
-                ((ASN1OctetStringParser)encInfo.getEncryptedContent(BERTags.OCTET_STRING)).getOctetStream(), localMacProvider));
+                encContent.getOctetStream(), localMacProvider));
 
             CMSSecureReadableWithAAD secureReadable = new CMSSecureReadableWithAAD()
             {
@@ -171,6 +184,10 @@ public class CMSAuthEnvelopedDataParser
             throw new CMSException("Malformed content.", e);
         }
         catch (IllegalArgumentException e)
+        {
+            throw new CMSException("Malformed content.", e);
+        }
+        catch (ASN1ParsingException e)
         {
             throw new CMSException("Malformed content.", e);
         }

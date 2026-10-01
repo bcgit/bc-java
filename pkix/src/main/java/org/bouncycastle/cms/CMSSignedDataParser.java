@@ -166,7 +166,14 @@ public class CMSSignedDataParser
         try
         {
             _signedContent = signedContent;
-            _signedData = SignedDataParser.getInstance(_contentInfo.getContent(BERTags.SEQUENCE));
+
+            ASN1Encodable content = _contentInfo.getContent(BERTags.SEQUENCE);
+            if (content == null)
+            {
+                throw new CMSException("Missing content.");
+            }
+
+            _signedData = SignedDataParser.getInstance(content);
             digests = new HashMap();
             
             ASN1SetParser digAlgs = _signedData.getDigestAlgorithms();
@@ -262,6 +269,14 @@ public class CMSSignedDataParser
         catch (IOException e)
         {
             throw new CMSException("io exception: " + e.getMessage(), e);
+        }
+        catch (ClassCastException e)
+        {
+            throw new CMSException("Malformed content.", e);
+        }
+        catch (IllegalArgumentException e)
+        {
+            throw new CMSException("Malformed content.", e);
         }
     }
 
@@ -365,6 +380,14 @@ public class CMSSignedDataParser
                 // SignerInfo this way - e.g. a malformed time in a signed attribute (github #2411);
                 // report it as the CMSException this method declares rather than letting it escape.
                 throw new CMSException("io exception: " + e.getMessage(), e);
+            }
+            catch (ClassCastException e)
+            {
+                throw new CMSException("Malformed content.", e);
+            }
+            catch (IllegalArgumentException e)
+            {
+                throw new CMSException("Malformed content.", e);
             }
 
             _signerInfoStore = new SignerInformationStore(signerInfos);

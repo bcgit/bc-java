@@ -47,6 +47,10 @@ public class AuthenticatedDataParser
     {
         this.seq = seq;
         this.version = ASN1Integer.getInstance(seq.readObject());
+        if (version == null)
+        {
+            throw new IOException("AuthenticatedData missing version");
+        }
     }
 
     public ASN1Integer getVersion()
@@ -91,6 +95,11 @@ public class AuthenticatedDataParser
             nextObject = seq.readObject();
         }
 
+        if (nextObject == null)
+        {
+            throw new IOException("AuthenticatedData missing recipientInfos");
+        }
+
         ASN1SetParser recipientInfos = (ASN1SetParser)nextObject;
         nextObject = null;
         return recipientInfos;
@@ -104,14 +113,14 @@ public class AuthenticatedDataParser
             nextObject = seq.readObject();
         }
 
-        if (nextObject != null)
+        if (nextObject == null)
         {
-            ASN1SequenceParser o = (ASN1SequenceParser)nextObject;
-            nextObject = null;
-            return AlgorithmIdentifier.getInstance(o.toASN1Primitive());
+            throw new IOException("AuthenticatedData missing macAlgorithm");
         }
 
-        return null;
+        ASN1SequenceParser o = (ASN1SequenceParser)nextObject;
+        nextObject = null;
+        return AlgorithmIdentifier.getInstance(o.toASN1Primitive());
     }
 
     public AlgorithmIdentifier getDigestAlgorithm()
@@ -140,14 +149,14 @@ public class AuthenticatedDataParser
             nextObject = seq.readObject();
         }
 
-        if (nextObject != null)
+        if (nextObject == null)
         {
-            ASN1SequenceParser o = (ASN1SequenceParser)nextObject;
-            nextObject = null;
-            return new ContentInfoParser(o);
+            throw new IOException("AuthenticatedData missing encapContentInfo");
         }
 
-        return null;
+        ASN1SequenceParser o = (ASN1SequenceParser)nextObject;
+        nextObject = null;
+        return new ContentInfoParser(o);
     }
 
     public ASN1SetParser getAuthAttrs()
@@ -174,6 +183,11 @@ public class AuthenticatedDataParser
         if (nextObject == null)
         {
             nextObject = seq.readObject();
+        }
+
+        if (nextObject == null)
+        {
+            throw new IOException("AuthenticatedData missing mac");
         }
 
         ASN1Encodable o = nextObject;

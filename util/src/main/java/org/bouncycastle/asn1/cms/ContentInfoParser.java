@@ -27,6 +27,10 @@ public class ContentInfoParser
         throws IOException
     {
         contentType = (ASN1ObjectIdentifier)seq.readObject();
+        if (contentType == null)
+        {
+            throw new IOException("ContentInfo missing contentType");
+        }
         content = (ASN1TaggedObjectParser)seq.readObject();
     }
 

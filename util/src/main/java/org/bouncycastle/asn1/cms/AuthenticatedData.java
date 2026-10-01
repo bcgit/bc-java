@@ -84,9 +84,14 @@ public class AuthenticatedData
     private AuthenticatedData(
         ASN1Sequence seq)
     {
+        if (seq.size() < 5)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
+
         int index = 0;
 
-        version = (ASN1Integer)seq.getObjectAt(index++);
+        version = ASN1Integer.getInstance(seq.getObjectAt(index++));
 
         Object tmp = seq.getObjectAt(index++);
 
@@ -104,16 +109,29 @@ public class AuthenticatedData
         if (tmp instanceof ASN1TaggedObject)
         {
             digestAlgorithm = AlgorithmIdentifier.getInstance((ASN1TaggedObject)tmp, false);
+            if (seq.size() <= index)
+            {
+                throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+            }
             tmp = seq.getObjectAt(index++);
         }
 
         encapsulatedContentInfo = ContentInfo.getInstance(tmp);
+
+        if (seq.size() <= index)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
 
         tmp = seq.getObjectAt(index++);
 
         if (tmp instanceof ASN1TaggedObject)
         {
             authAttrs = ASN1Set.getInstance((ASN1TaggedObject)tmp, false);
+            if (seq.size() <= index)
+            {
+                throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+            }
             tmp = seq.getObjectAt(index++);
         }
 
@@ -121,7 +139,7 @@ public class AuthenticatedData
 
         if (seq.size() > index)
         {
-            unauthAttrs = ASN1Set.getInstance((ASN1TaggedObject)seq.getObjectAt(index), false);
+            unauthAttrs = ASN1Set.getInstance(ASN1TaggedObject.getInstance(seq.getObjectAt(index)), false);
         }
 
         if ((digestAlgorithm != null) != (authAttrs != null))

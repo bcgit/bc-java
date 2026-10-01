@@ -40,6 +40,10 @@ public class AuthEnvelopedDataParser
 
         // "It MUST be set to 0."
         this.version = ASN1Integer.getInstance(seq.readObject());
+        if (version == null)
+        {
+            throw new IOException("AuthEnvelopedData missing version");
+        }
         if (!version.hasValue(0))
         {
             throw new ASN1ParsingException("AuthEnvelopedData version number must be 0");
@@ -88,6 +92,11 @@ public class AuthEnvelopedDataParser
             nextObject = seq.readObject();
         }
 
+        if (nextObject == null)
+        {
+            throw new IOException("AuthEnvelopedData missing recipientInfos");
+        }
+
         ASN1SetParser recipientInfos = (ASN1SetParser)nextObject;
         nextObject = null;
         return recipientInfos;
@@ -101,16 +110,16 @@ public class AuthEnvelopedDataParser
             nextObject = seq.readObject();
         }
 
-        if (nextObject != null)
+        if (nextObject == null)
         {
-            ASN1SequenceParser o = (ASN1SequenceParser) nextObject;
-            nextObject = null;
-            EncryptedContentInfoParser encryptedContentInfoParser = new EncryptedContentInfoParser(o);
-            isData = CMSObjectIdentifiers.data.equals(encryptedContentInfoParser.getContentType());
-            return encryptedContentInfoParser;
+            throw new IOException("AuthEnvelopedData missing authEncryptedContentInfo");
         }
 
-        return null;
+        ASN1SequenceParser o = (ASN1SequenceParser)nextObject;
+        nextObject = null;
+        EncryptedContentInfoParser encryptedContentInfoParser = new EncryptedContentInfoParser(o);
+        isData = CMSObjectIdentifiers.data.equals(encryptedContentInfoParser.getContentType());
+        return encryptedContentInfoParser;
     }
 
     public ASN1SetParser getAuthAttrs()
@@ -144,6 +153,11 @@ public class AuthEnvelopedDataParser
         if (nextObject == null)
         {
             nextObject = seq.readObject();
+        }
+
+        if (nextObject == null)
+        {
+            throw new IOException("AuthEnvelopedData missing mac");
         }
 
         ASN1Encodable o = nextObject;

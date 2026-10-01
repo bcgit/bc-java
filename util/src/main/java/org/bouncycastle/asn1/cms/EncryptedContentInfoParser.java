@@ -31,7 +31,18 @@ public class EncryptedContentInfoParser
         throws IOException
     {
         _contentType = (ASN1ObjectIdentifier)seq.readObject();
-        _contentEncryptionAlgorithm = AlgorithmIdentifier.getInstance(seq.readObject().toASN1Primitive());
+        if (_contentType == null)
+        {
+            throw new IOException("EncryptedContentInfo missing contentType");
+        }
+
+        ASN1Encodable alg = seq.readObject();
+        if (alg == null)
+        {
+            throw new IOException("EncryptedContentInfo missing contentEncryptionAlgorithm");
+        }
+
+        _contentEncryptionAlgorithm = AlgorithmIdentifier.getInstance(alg.toASN1Primitive());
         _encryptedContent = (ASN1TaggedObjectParser)seq.readObject();
     }
 
@@ -49,6 +60,11 @@ public class EncryptedContentInfoParser
         int  tag)
         throws IOException
     {
+        if (_encryptedContent == null)
+        {
+            return null;
+        }
+
         return ASN1Util.parseContextBaseUniversal(_encryptedContent, 0, false, tag);
     }
 }

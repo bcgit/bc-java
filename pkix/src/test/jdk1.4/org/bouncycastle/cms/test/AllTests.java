@@ -32,6 +32,7 @@ public class AllTests
         suite.addTest(MiscDataStreamTest.suite());
         suite.addTest(Rfc4134Test.suite());
         suite.addTest(ConverterTest.suite());
+        suite.addTestSuite(CMSMalformedContentTest.class);
 
         suite.addTest(BcEnvelopedDataTest.suite());
         suite.addTest(BcSignedDataTest.suite());
