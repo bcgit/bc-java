@@ -20,6 +20,12 @@ sourceSets {
 
 }
 
+configurations {
+    jakartaModulePath {
+        transitive = false
+    }
+}
+
 dependencies {
     implementation project(':prov')
     implementation project(':util')
@@ -27,6 +33,10 @@ dependencies {
 
     implementation group: 'jakarta.mail', name: 'jakarta.mail-api', version: '2.0.1'
     implementation group: 'jakarta.activation', name: 'jakarta.activation-api', version: '2.0.0'
+    // the same two as modules ("jakarta.mail", "jakarta.activation") for the module-info.java compile,
+    // resolved by coordinate so the path follows a version bump rather than naming a file under libs/.
+    jakartaModulePath group: 'jakarta.mail', name: 'jakarta.mail-api', version: '2.0.1'
+    jakartaModulePath group: 'jakarta.activation', name: 'jakarta.activation-api', version: '2.0.0'
 
     java9Implementation files(sourceSets.main.output.classesDirs) {
         builtBy compileJava
@@ -63,7 +73,7 @@ compileJava9Java {
     def pkix_jar="${project(":pkix").jar.outputs.files.getFiles().getAt(0)}"
 
     options.compilerArgs += [
-            '--module-path', "$prov_jar${File.pathSeparator}$util_jar${File.pathSeparator}$pkix_jar${File.pathSeparator}${rootProject.projectDir}/libs/jakarta.mail-2.0.1.jar${File.pathSeparator}${rootProject.projectDir}/libs/jakarta.activation-api-2.0.0.jar"
+            '--module-path', "$prov_jar${File.pathSeparator}$util_jar${File.pathSeparator}$pkix_jar${File.pathSeparator}${configurations.jakartaModulePath.asPath}"
     ]
     options.sourcepath = files(['build/src/main/java', 'src/main/jdk1.9'])
     options.compilerArgs << '-implicit:none'  // avoid recompiling every baseline class implicitly loaded via sourcepath

@@ -17,8 +17,10 @@
 #    floor for the legacy Ant distributions), so a new major of the bnd builder,
 #    Error Prone, or a mail API is a judgement call about supported Java versions
 #    rather than something to merge on green CI. Raise those by hand.
-#  * The jars pulled in with files()/fileTree() from test/libs and libs (mls, prov)
-#    are invisible to Dependabot; they still have to be refreshed manually.
+#  * Declare every external jar by coordinate, including module-path ones (see
+#    jmail's jakartaModulePath): a jar pulled in with files()/fileTree() or named by
+#    path is invisible to Dependabot. The Gradle build no longer reads libs/ or
+#    test/libs (only the legacy Ant-side scripts do).
 
 version: 2
 updates:

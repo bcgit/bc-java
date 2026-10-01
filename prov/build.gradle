@@ -5,7 +5,7 @@ plugins {
 dependencies {
     implementation project(':core')
     testImplementation project(':core')
-    testImplementation files('../libs/unboundid-ldapsdk-6.0.8.jar')
+    testImplementation group: 'com.unboundid', name: 'unboundid-ldapsdk', version: '6.0.8'
 }
 
 evaluationDependsOn(":core")
@@ -331,10 +331,10 @@ dependencies {
     test15Implementation group: 'junit', name: 'junit', version: '4.13.2'
     test17Implementation group: 'junit', name: 'junit', version: '4.13.2'
     test25Implementation group: 'junit', name: 'junit', version: '4.13.2'
-    test11Implementation files('../libs/unboundid-ldapsdk-6.0.8.jar')
-    test15Implementation files('../libs/unboundid-ldapsdk-6.0.8.jar')
-    test17Implementation files('../libs/unboundid-ldapsdk-6.0.8.jar')
-    test25Implementation files('../libs/unboundid-ldapsdk-6.0.8.jar')
+    test11Implementation group: 'com.unboundid', name: 'unboundid-ldapsdk', version: '6.0.8'
+    test15Implementation group: 'com.unboundid', name: 'unboundid-ldapsdk', version: '6.0.8'
+    test17Implementation group: 'com.unboundid', name: 'unboundid-ldapsdk', version: '6.0.8'
+    test25Implementation group: 'com.unboundid', name: 'unboundid-ldapsdk', version: '6.0.8'
     test11Implementation(project(":core"))
     test15Implementation(project(":core"))
     test17Implementation(project(":core"))
