@@ -9,7 +9,9 @@ import java.security.Security;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 
 import javax.crypto.SecretKey;
 
@@ -17,13 +19,19 @@ import junit.framework.Assert;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.DERSet;
+import org.bouncycastle.asn1.cms.Attribute;
+import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.cms.AuthenticatedData;
 import org.bouncycastle.asn1.cms.CCMParameters;
+import org.bouncycastle.asn1.cms.CMSAlgorithmProtection;
+import org.bouncycastle.asn1.cms.CMSAttributes;
 import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.cms.GCMParameters;
@@ -36,11 +44,13 @@ import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cms.CMSAlgorithm;
+import org.bouncycastle.cms.CMSAttributeTableGenerator;
 import org.bouncycastle.cms.CMSRuntimeException;
 import org.bouncycastle.cms.CMSAuthenticatedData;
 import org.bouncycastle.cms.CMSAuthenticatedDataGenerator;
 import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.CMSProcessableByteArray;
+import org.bouncycastle.cms.DefaultAuthenticatedAttributeTableGenerator;
 import org.bouncycastle.cms.OriginatorInfoGenerator;
 import org.bouncycastle.cms.PasswordRecipient;
 import org.bouncycastle.cms.PasswordRecipientInformation;
@@ -136,6 +146,51 @@ public class NewAuthenticatedDataTest
         init();
 
         return new CMSTestSetup(new TestSuite(NewAuthenticatedDataTest.class));
+    }
+
+    public void testSuppliedAlgorithmProtectionAttribute()
+        throws Exception
+    {
+        AlgorithmIdentifier sha1 = new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1);
+        AlgorithmIdentifier sha256 = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256);
+        AlgorithmIdentifier macAlgId = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_hmacWithSHA256);
+
+        Map parameters = new HashMap();
+
+        parameters.put(CMSAttributeTableGenerator.CONTENT_TYPE, CMSObjectIdentifiers.data);
+        parameters.put(CMSAttributeTableGenerator.DIGEST_ALGORITHM_IDENTIFIER, sha256);
+        parameters.put(CMSAttributeTableGenerator.MAC_ALGORITHM_IDENTIFIER, macAlgId);
+        parameters.put(CMSAttributeTableGenerator.DIGEST, new byte[32]);
+
+        // with nothing supplied the attribute is generated from the parameters
+        AttributeTable generated = new DefaultAuthenticatedAttributeTableGenerator().getAttributes(parameters);
+
+        assertEquals(new CMSAlgorithmProtection(sha256, CMSAlgorithmProtection.MAC, macAlgId),
+            algorithmProtectionOf(generated));
+
+        // an entry supplied through the constructor overrides it, as contentType and messageDigest
+        // already do
+        CMSAlgorithmProtection supplied = new CMSAlgorithmProtection(
+            sha1, CMSAlgorithmProtection.MAC, macAlgId);
+
+        ASN1EncodableVector table = new ASN1EncodableVector();
+
+        table.add(new Attribute(CMSAttributes.cmsAlgorithmProtect, new DERSet(supplied)));
+
+        AttributeTable overridden = new DefaultAuthenticatedAttributeTableGenerator(
+            new AttributeTable(table)).getAttributes(parameters);
+
+        assertEquals(supplied, algorithmProtectionOf(overridden));
+    }
+
+    private static CMSAlgorithmProtection algorithmProtectionOf(AttributeTable table)
+    {
+        Attribute attr = table.get(CMSAttributes.cmsAlgorithmProtect);
+
+        assertNotNull(attr);
+        assertEquals(1, attr.getAttrValues().size());
+
+        return CMSAlgorithmProtection.getInstance(attr.getAttrValues().getObjectAt(0));
     }
 
     public void testKeyTransDESede()

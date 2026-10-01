@@ -52,6 +52,7 @@ import org.bouncycastle.asn1.DLSequence;
 import org.bouncycastle.asn1.bsi.BSIObjectIdentifiers;
 import org.bouncycastle.asn1.cms.Attribute;
 import org.bouncycastle.asn1.cms.AttributeTable;
+import org.bouncycastle.asn1.cms.CMSAlgorithmProtection;
 import org.bouncycastle.asn1.cms.CMSAttributes;
 import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.cms.ContentInfo;
@@ -1938,6 +1939,51 @@ public class NewSignedDataTest
         //
         verifySignatures(s, md.digest("Hello world!".getBytes()));
         verifyRSASignatures(s, md.digest("Hello world!".getBytes()));
+    }
+
+    public void testSuppliedAlgorithmProtectionAttribute()
+        throws Exception
+    {
+        AlgorithmIdentifier sha1 = new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1);
+        AlgorithmIdentifier sha256 = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256);
+        AlgorithmIdentifier sigAlgId = new AlgorithmIdentifier(PKCSObjectIdentifiers.sha256WithRSAEncryption);
+
+        Map parameters = new HashMap();
+
+        parameters.put(CMSAttributeTableGenerator.CONTENT_TYPE, CMSObjectIdentifiers.data);
+        parameters.put(CMSAttributeTableGenerator.DIGEST_ALGORITHM_IDENTIFIER, sha256);
+        parameters.put(CMSAttributeTableGenerator.SIGNATURE_ALGORITHM_IDENTIFIER, sigAlgId);
+        parameters.put(CMSAttributeTableGenerator.DIGEST, new byte[32]);
+
+        // with nothing supplied the attribute is generated from the parameters
+        AttributeTable generated = new DefaultSignedAttributeTableGenerator().getAttributes(parameters);
+
+        assertEquals(new CMSAlgorithmProtection(sha256, CMSAlgorithmProtection.SIGNATURE, sigAlgId),
+            algorithmProtectionOf(generated));
+
+        // an entry supplied through the constructor overrides it, as contentType, signingTime and
+        // messageDigest already do
+        CMSAlgorithmProtection supplied = new CMSAlgorithmProtection(
+            sha1, CMSAlgorithmProtection.SIGNATURE, sigAlgId);
+
+        ASN1EncodableVector table = new ASN1EncodableVector();
+
+        table.add(new Attribute(CMSAttributes.cmsAlgorithmProtect, new DERSet(supplied)));
+
+        AttributeTable overridden = new DefaultSignedAttributeTableGenerator(
+            new AttributeTable(table)).getAttributes(parameters);
+
+        assertEquals(supplied, algorithmProtectionOf(overridden));
+    }
+
+    private static CMSAlgorithmProtection algorithmProtectionOf(AttributeTable table)
+    {
+        Attribute attr = table.get(CMSAttributes.cmsAlgorithmProtect);
+
+        assertNotNull(attr);
+        assertEquals(1, attr.getAttrValues().size());
+
+        return CMSAlgorithmProtection.getInstance(attr.getAttrValues().getObjectAt(0));
     }
 
     public void testSignerInformationExtension()

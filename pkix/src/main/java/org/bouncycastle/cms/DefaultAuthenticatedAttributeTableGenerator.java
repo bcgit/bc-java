@@ -49,9 +49,9 @@ public class DefaultAuthenticatedAttributeTableGenerator
 
     /**
      * Create a standard attribute table from the passed in parameters - this will
-     * normally include contentType and messageDigest. If the constructor
-     * using an AttributeTable was used, entries in it for contentType and
-     * messageDigest will override the generated ones.
+     * normally include contentType, messageDigest, and CMS algorithm protection. If the
+     * constructor using an AttributeTable was used, entries in it for contentType,
+     * messageDigest, and CMS algorithm protection will override the generated ones.
      *
      * @param parameters source parameters for table generation.
      *
@@ -87,7 +87,7 @@ public class DefaultAuthenticatedAttributeTableGenerator
             std.put(attr.getAttrType(), attr);
         }
 
-        if (!std.contains(CMSAttributes.cmsAlgorithmProtect))
+        if (!std.containsKey(CMSAttributes.cmsAlgorithmProtect))
         {
             Attribute attr = new Attribute(CMSAttributes.cmsAlgorithmProtect, new DERSet(new CMSAlgorithmProtection(
                 (AlgorithmIdentifier)parameters.get(CMSAttributeTableGenerator.DIGEST_ALGORITHM_IDENTIFIER),
