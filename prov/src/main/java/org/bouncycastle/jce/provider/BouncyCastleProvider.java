@@ -297,7 +297,17 @@ public final class BouncyCastleProvider extends Provider
                             {
                                 return null;
                             }
+                            // swap each service once: one reached through an alias and then its own name (or the
+                            // reverse) must not be put again, which on JDK 11 fails for a SecureRandom service.
+                            String canonicalKey = service.getType() + "." + Strings.toUpperCase(service.getAlgorithm());
+                            Service swapped = serviceMap.get(canonicalKey);
+                            if (swapped != null)
+                            {
+                                serviceMap.put(key, swapped);
+                                return swapped;
+                            }
                             serviceMap.put(key, service);
+                            serviceMap.put(canonicalKey, service);
                             // remove legacy entry and swap to service entry
                             BouncyCastleProvider.super.remove(service.getType() + "." + service.getAlgorithm());
                             BouncyCastleProvider.super.putService(service);

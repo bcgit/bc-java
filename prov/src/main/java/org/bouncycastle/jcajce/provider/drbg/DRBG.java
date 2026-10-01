@@ -118,15 +118,18 @@ public class DRBG
 
         public void configure(ConfigurableProvider provider)
         {
-            provider.addAlgorithm("SecureRandom.DEFAULT", PREFIX + "$Default");
-            provider.addAlgorithm("SecureRandom.NONCEANDIV", PREFIX + "$NonceAndIV");
+            // the DRBGSpis jdk1.9 twin swaps in SPIs that also take java.security.DrbgParameters.
+            provider.addAlgorithm("SecureRandom.DEFAULT", DRBGSpis.defaultSpi());
+            provider.addAlgorithm("SecureRandom.NONCEANDIV", DRBGSpis.nonceAndIVSpi());
+            // the name Java 9 and later give an SP 800-90A DRBG, which is what DEFAULT is.
+            provider.addAlgorithm("Alg.Alias.SecureRandom.DRBG", "DEFAULT");
         }
     }
 
     public static class Default
         extends SecureRandomSpi
     {
-        private static final SecureRandom random = createBaseRandom(true);
+        private static final SP800SecureRandom random = createBaseRandom(true);
 
         public Default()
         {
@@ -151,7 +154,7 @@ public class DRBG
     public static class NonceAndIV
         extends SecureRandomSpi
     {
-        private static final SecureRandom random = createBaseRandom(false);
+        private static final SP800SecureRandom random = createBaseRandom(false);
 
         public NonceAndIV()
         {
@@ -173,17 +176,47 @@ public class DRBG
         }
     }
 
-    private static SecureRandom createBaseRandom(boolean isPredictionResistant)
+    /**
+     * The DRBG shared by every DEFAULT SecureRandom created without parameters.
+     */
+    static SP800SecureRandom getDefaultRandom()
+    {
+        return Default.random;
+    }
+
+    /**
+     * The DRBG shared by every NONCEANDIV SecureRandom created without parameters.
+     */
+    static SP800SecureRandom getNonceAndIVRandom()
+    {
+        return NonceAndIV.random;
+    }
+
+    private static SP800SecureRandom createBaseRandom(boolean isDefault)
+    {
+        return createBaseRandom(isDefault, isDefault, 256, null);
+    }
+
+    /**
+     * Create a DRBG from the provider's configured entropy source.
+     *
+     * @param isDefault true for a DEFAULT DRBG, false for a NONCEANDIV one (selects the generated personalization string).
+     * @param isPredictionResistant true if every request should reseed.
+     * @param securityStrength the security strength of the DRBG in bits, at most 256.
+     * @param personalizationString the personalization string, or null to generate one.
+     */
+    static SP800SecureRandom createBaseRandom(boolean isDefault, boolean isPredictionResistant, int securityStrength,
+        byte[] personalizationString)
     {
         if (Properties.getPropertyValue(Properties.DRBG_ENTROPY_SOURCE) != null)
         {
-            return createBaseRandom(isPredictionResistant, 128, createEntropySource());
+            return createBaseRandom(isDefault, isPredictionResistant, securityStrength, personalizationString, 128, createEntropySource());
         }
         else if (Properties.isOverrideSet(Properties.DRBG_ENTROPY_THREAD))
         {
             initEntropyThread();
 
-            return createBaseRandom(isPredictionResistant, 256, new EntropySourceProvider()
+            return createBaseRandom(isDefault, isPredictionResistant, securityStrength, personalizationString, 256, new EntropySourceProvider()
             {
                 public EntropySource get(int bitsRequired)
                 {
@@ -193,7 +226,7 @@ public class DRBG
         }
         else
         {
-            return createBaseRandom(isPredictionResistant, 256, new EntropySourceProvider()
+            return createBaseRandom(isDefault, isPredictionResistant, securityStrength, personalizationString, 256, new EntropySourceProvider()
             {
                 public EntropySource get(int bitsRequired)
                 {
@@ -203,15 +236,17 @@ public class DRBG
         }
     }
 
-    private static SecureRandom createBaseRandom(boolean isPredictionResistant, int entropyBits,
-        EntropySourceProvider entropyProvider)
+    private static SP800SecureRandom createBaseRandom(boolean isDefault, boolean isPredictionResistant,
+        int securityStrength, byte[] personalizationString, int entropyBits, EntropySourceProvider entropyProvider)
     {
         EntropySource entropySource = entropyProvider.get(entropyBits);
 
-        byte[] personalisationString = generatePersonalizationString(isPredictionResistant, entropySource);
+        byte[] personalisationString = (personalizationString != null)
+            ? personalizationString : generatePersonalizationString(isDefault, entropySource);
 
         return new SP800SecureRandomBuilder(entropyProvider)
             .setPersonalizationString(personalisationString)
+            .setSecurityStrength(securityStrength)
             .buildHash(new SHA512Digest(), entropySource.getEntropy(), isPredictionResistant);
     }
 
@@ -328,10 +363,10 @@ public class DRBG
             Pack.longToLittleEndian(Thread.currentThread().getId()), Pack.longToLittleEndian(System.currentTimeMillis()));
     }
 
-    private static byte[] generatePersonalizationString(boolean isPredictionResistant, EntropySource entropySource)
+    private static byte[] generatePersonalizationString(boolean isDefault, EntropySource entropySource)
     {
         byte[] entropy = entropySource.getEntropy();
-        return isPredictionResistant
+        return isDefault
             ? generateDefaultPersonalizationString(entropy)
             : generateNonceIVPersonalizationString(entropy);
     }

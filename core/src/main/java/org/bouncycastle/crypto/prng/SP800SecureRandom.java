@@ -52,6 +52,18 @@ public class SP800SecureRandom
 
     public void nextBytes(byte[] bytes)
     {
+        nextBytes(bytes, (byte[])null);
+    }
+
+    /**
+     * Generate a user-specified number of random bytes, passing additional input to the DRBG.
+     *
+     * @param bytes the array to be filled in with random bytes.
+     * @param additionalInput optional additional input for the DRBG, may be null (cast a literal null to byte[], as
+     *                        Java 9 and later also have SecureRandom.nextBytes(byte[], SecureRandomParameters)).
+     */
+    public void nextBytes(byte[] bytes, byte[] additionalInput)
+    {
         synchronized (this)
         {
             if (drbg == null)
@@ -60,10 +72,10 @@ public class SP800SecureRandom
             }
 
             // check if a reseed is required...
-            if (drbg.generate(bytes, null, predictionResistant) < 0)
+            if (drbg.generate(bytes, additionalInput, predictionResistant) < 0)
             {
                 drbg.reseed(null);
-                drbg.generate(bytes, null, predictionResistant);
+                drbg.generate(bytes, additionalInput, predictionResistant);
             }
         }
     }

@@ -24,6 +24,7 @@ public class AllTests11
         suite.addTestSuite(FalconNamedParameterSpecTest.class);
         suite.addTestSuite(OpenSSHKeyFactoryMRTest.class);
         suite.addTestSuite(EdECKeyFactoryMalformedMRTest.class);
+        suite.addTestSuite(DRBGParametersMRTest.class);
         return suite;
     }
 

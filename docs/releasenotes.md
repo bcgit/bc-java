@@ -106,6 +106,8 @@ Date: 2026, TBD
 
 - The provider adds ECDHwithSHA256HKDF, ECDHwithSHA384HKDF and ECDHwithSHA512HKDF KeyAgreement algorithms: ECDH followed by HKDF (RFC 5869), the counterparts for elliptic curve keys of the XDHwithSHA\*HKDF agreements used for the RFC 8418 dhSinglePass-stdDH-hkdf schemes. As with those, a UserKeyingMaterialSpec supplies the HKDF info and, optionally, its salt. They are registered by name only; the RFC 8418 scheme object identifiers remain registered to the XDH agreements.
 
+- On Java 9 and later the provider's DEFAULT and NONCEANDIV SecureRandom implementations accept java.security.DrbgParameters: SecureRandom.getInstance() given a DrbgParameters.Instantiation creates a DRBG of its own with the requested security strength (rounded up to 112, 128, 192 or 256 bits, 256 being the default and the maximum), capability and personalization string, nextBytes() takes a DrbgParameters.NextBytes carrying additional input and a request for prediction resistance, reseed() takes a DrbgParameters.Reseed, and getParameters() reports how an instance was instantiated. An instance created without parameters uses the shared DRBG as before. DEFAULT is also registered under the alias DRBG, the name Java 9 gives an SP 800-90A DRBG, so with BC installed ahead of the SUN provider SecureRandom.getInstance("DRBG") returns BC's. Lightweight users gain SP800SecureRandom.nextBytes(byte[], byte[]) for passing additional input to the DRBG.
+
 - TLS: Added CertificateStatusType.getName and getText, and TlsUtils.hasExtension.
 
 ### 2.1.4 Additional Notes
