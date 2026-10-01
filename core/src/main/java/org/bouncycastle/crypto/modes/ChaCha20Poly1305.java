@@ -346,10 +346,14 @@ public class ChaCha20Poly1305
         {
         case State.DEC_DATA:
         {
-            for (int i = 0; i < len; ++i)
+            while (len > 0)
             {
-                buf[bufPos] = in[inOff + i];
-                if (++bufPos == buf.length)
+                int n = Math.min(len, buf.length - bufPos);
+                System.arraycopy(in, inOff, buf, bufPos, n);
+                inOff += n;
+                len -= n;
+                bufPos += n;
+                if (bufPos == buf.length)
                 {
                     poly1305.update(buf, 0, BUF_SIZE);
                     processData(buf, 0, BUF_SIZE, out, outOff + resultLen);
