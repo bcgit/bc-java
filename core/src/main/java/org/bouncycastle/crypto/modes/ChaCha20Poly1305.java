@@ -346,10 +346,57 @@ public class ChaCha20Poly1305
         {
         case State.DEC_DATA:
         {
-            for (int i = 0; i < len; ++i)
+            // A block is decrypted once MAC_SIZE more bytes follow it, since until then it may hold the tag. The
+            // blocks that start in the buffer are completed from 'in' one at a time; after that the input is
+            // block-aligned and every block the rule allows goes to the cipher as one run.
+            int pos = inOff, end = inOff + len;
+
+            while (bufPos > 0)
             {
-                buf[bufPos] = in[inOff + i];
-                if (++bufPos == buf.length)
+                int need = BUF_SIZE - bufPos;
+                if (need > 0)
+                {
+                    if (end - pos < need + MAC_SIZE)
+                    {
+                        break;
+                    }
+                    System.arraycopy(in, pos, buf, bufPos, need);
+                    pos += need;
+                    bufPos = BUF_SIZE;
+                }
+                else if (bufPos - BUF_SIZE + (end - pos) < MAC_SIZE)
+                {
+                    break;
+                }
+
+                poly1305.update(buf, 0, BUF_SIZE);
+                processData(buf, 0, BUF_SIZE, out, outOff + resultLen);
+                resultLen += BUF_SIZE;
+                bufPos -= BUF_SIZE;
+                System.arraycopy(buf, BUF_SIZE, buf, 0, bufPos);
+            }
+
+            if (bufPos == 0 && end - pos - MAC_SIZE >= BUF_SIZE)
+            {
+                int run = wholeBlockRun(Math.min(end - pos - MAC_SIZE, out.length - (outOff + resultLen)));
+                if (run > 0)
+                {
+                    poly1305.update(in, pos, run);
+                    processData(in, pos, run, out, outOff + resultLen);
+                    pos += run;
+                    resultLen += run;
+                }
+            }
+
+            // what remains - the lookahead, a partial block, and any blocks wholeBlockRun held back - goes through
+            // the buffer, as much at a time as it takes
+            while (pos < end)
+            {
+                int n = Math.min(end - pos, buf.length - bufPos);
+                System.arraycopy(in, pos, buf, bufPos, n);
+                pos += n;
+                bufPos += n;
+                if (bufPos == buf.length)
                 {
                     poly1305.update(buf, 0, BUF_SIZE);
                     processData(buf, 0, BUF_SIZE, out, outOff + resultLen);
@@ -376,6 +423,20 @@ public class ChaCha20Poly1305
                         resultLen = BUF_SIZE;
                         break;
                     }
+                }
+            }
+
+            // From two blocks: a single block is cheaper through the loop below
+            if (len >= 2 * BUF_SIZE)
+            {
+                int run = wholeBlockRun(Math.min(len, out.length - (outOff + resultLen)));
+                if (run > 0)
+                {
+                    processData(in, inOff, run, out, outOff + resultLen);
+                    poly1305.update(out, outOff + resultLen, run);
+                    inOff += run;
+                    len -= run;
+                    resultLen += run;
                 }
             }
 
@@ -550,6 +611,22 @@ public class ChaCha20Poly1305
         poly1305.doFinal(mac, 0);
 
         this.state = nextState;
+    }
+
+    /*
+     * The length, a multiple of BUF_SIZE and at most maxLen, of a run of whole blocks that may go to the cipher and
+     * to Poly1305 in one call each - long runs are what let both process whole blocks straight from the arrays
+     * rather than one 64-byte call at a time. The last block before DATA_LIMIT is left to the one-block path, and
+     * maxLen is capped by the caller at the room left in the output, so what happens at either limit is unchanged.
+     */
+    private int wholeBlockRun(int maxLen)
+    {
+        long headroom = DATA_LIMIT - BUF_SIZE - dataCount;
+        if (maxLen < BUF_SIZE || headroom < BUF_SIZE)
+        {
+            return 0;
+        }
+        return (int)Math.min(maxLen, headroom) & -BUF_SIZE;
     }
 
     private long incrementCount(long count, int increment, long limit)

@@ -59,7 +59,82 @@ public class ChaCha20Poly1305Test
 
         outputSizeTests();
         randomTests();
+        testPiecewiseDecryption();
         testExceptions();
+    }
+
+    /*
+     * Decryption holds back the last MAC_SIZE bytes it has seen, since they may be the tag, so how the ciphertext is
+     * split across calls decides what sits in the buffer when the next call arrives. Every split must decrypt as
+     * one call does.
+     */
+    private void testPiecewiseDecryption()
+        throws InvalidCipherTextException
+    {
+        SecureRandom random = new SecureRandom();
+        byte[] K = new byte[32];
+        random.nextBytes(K);
+        byte[] nonce = new byte[12];
+        random.nextBytes(nonce);
+        AEADParameters parameters = new AEADParameters(new KeyParameter(K), 16 * 8, nonce);
+
+        int[] lengths = { 0, 1, 15, 16, 17, 48, 63, 64, 65, 79, 80, 81, 127, 128, 129, 143, 144, 145, 300, 1000 };
+        for (int i = 0; i < lengths.length; ++i)
+        {
+            byte[] P = new byte[lengths[i]];
+            random.nextBytes(P);
+
+            ChaCha20Poly1305 cipher = initCipher(true, parameters);
+            byte[] C = new byte[cipher.getOutputSize(P.length)];
+            int len = cipher.processBytes(P, 0, P.length, C, 0);
+            cipher.doFinal(C, len);
+
+            // pieces of one size, then pieces of random sizes with single bytes through processByte
+            for (int piece = 1; piece <= 2 * (64 + 16) + 1; ++piece)
+            {
+                checkPiecewiseDecryption(parameters, P, C, random, piece);
+            }
+            for (int j = 0; j < 50; ++j)
+            {
+                checkPiecewiseDecryption(parameters, P, C, random, 0);
+            }
+        }
+    }
+
+    private void checkPiecewiseDecryption(AEADParameters parameters, byte[] P, byte[] C, SecureRandom random,
+        int piece)
+        throws InvalidCipherTextException
+    {
+        ChaCha20Poly1305 cipher = initCipher(false, parameters);
+        byte[] decP = new byte[cipher.getOutputSize(C.length)];
+
+        int len = 0;
+        for (int pos = 0; pos < C.length; )
+        {
+            int n = Math.min(C.length - pos, piece > 0 ? piece : random.nextInt(3 * 64));
+            int predicted = cipher.getUpdateOutputSize(n);
+            int written;
+            if (n == 1 && random.nextBoolean())
+            {
+                written = cipher.processByte(C[pos], decP, len);
+            }
+            else
+            {
+                written = cipher.processBytes(C, pos, n, decP, len);
+            }
+            if (written != predicted)
+            {
+                fail("piecewise decryption reported incorrect update length");
+            }
+            pos += n;
+            len += written;
+        }
+        len += cipher.doFinal(decP, len);
+
+        if (len != P.length || !areEqual(P, decP))
+        {
+            fail("incorrect piecewise decrypt");
+        }
     }
 
     private void checkTestCase(
