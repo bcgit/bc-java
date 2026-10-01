@@ -717,7 +717,8 @@ class BcFKSKeyStoreSpi
         {
             BigInteger entryType = ent.getType();
             return entryType.equals(PRIVATE_KEY) || entryType.equals(SECRET_KEY)
-                || entryType.equals(PROTECTED_PRIVATE_KEY) || entryType.equals(PROTECTED_SECRET_KEY);
+                || entryType.equals(PROTECTED_PRIVATE_KEY) || entryType.equals(PROTECTED_SECRET_KEY)
+                || entryType.equals(PBKDF_KEY);
         }
 
         return false;

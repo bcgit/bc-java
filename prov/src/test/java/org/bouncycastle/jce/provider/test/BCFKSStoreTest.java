@@ -1199,6 +1199,21 @@ public class BCFKSStoreTest
         isTrue("algorithm mismatch: " + rPbe.getAlgorithm(), origAlg.equals(rPbe.getAlgorithm()));
         isTrue("encoded mismatch", Arrays.areEqual(origEncoded, rPbe.getEncoded()));
 
+        // a PBE key entry is a key entry, so getEntry() must return it as a SecretKeyEntry
+        isTrue("PBE key not a key entry", store2.isKeyEntry("pbeKey"));
+        isTrue("PBE key reported as certificate entry", !store2.isCertificateEntry("pbeKey"));
+
+        KeyStore.Entry entry = store2.getEntry("pbeKey", new KeyStore.PasswordProtection(testPassword));
+        isTrue("entry not a SecretKeyEntry: " + entry, entry instanceof KeyStore.SecretKeyEntry);
+
+        SecretKey entryKey = ((KeyStore.SecretKeyEntry)entry).getSecretKey();
+        isTrue("entry key not a PBEKey", entryKey instanceof javax.crypto.interfaces.PBEKey);
+
+        javax.crypto.interfaces.PBEKey ePbe = (javax.crypto.interfaces.PBEKey)entryKey;
+        isTrue("entry password mismatch", Arrays.areEqual(pwd, ePbe.getPassword()));
+        isTrue("entry salt mismatch", Arrays.areEqual(salt, ePbe.getSalt()));
+        isEquals(iterations, ePbe.getIterationCount());
+
         // chain must be rejected
         try
         {
