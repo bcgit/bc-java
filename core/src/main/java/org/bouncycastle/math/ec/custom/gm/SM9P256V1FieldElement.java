@@ -128,8 +128,10 @@ public class SM9P256V1FieldElement extends ECFieldElement.AbstractFp
     /**
      * SM9 G1 uses only the uncompressed point encoding (0x04 || x || y), so square
      * roots (needed only for compressed-point decoding) are not implemented for this
-     * internal curve. The SM9 prime is q = 1 mod 4, which would require Tonelli-Shanks
-     * rather than the simple exponent used by SM2. Returns null (no root available).
+     * internal curve, and {@link SM9P256V1Point} refuses to write the compressed form the
+     * curve could not read back. The SM9 prime is q = 5 mod 8, so a root would take a single
+     * exponentiation by Atkin's method rather than the simple exponent SM2 uses for its
+     * q = 3 mod 4 prime. Returns null (no root available).
      */
     public ECFieldElement sqrt()
     {

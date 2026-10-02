@@ -3,6 +3,7 @@ package org.bouncycastle.jcajce.spec;
 import java.security.spec.EncodedKeySpec;
 
 import org.bouncycastle.jcajce.interfaces.SM9EncMasterPublicKey;
+import org.bouncycastle.jcajce.interfaces.SM9EncUserKeyGenerator;
 import org.bouncycastle.util.Arrays;
 
 /**
@@ -26,6 +27,22 @@ import org.bouncycastle.util.Arrays;
  * derived the key for, so the flag is the importer's claim, and the consumers
  * enforce whichever usage the rebuilt key carries ({@code KeyAgreement.SM9}
  * accepts only exchange keys; the KEM and cipher only non-exchange keys).
+ * <p>
+ * {@code KeyFactory.SM9} checks the point against the other three, by the KGC's own
+ * relation e([H1(ID || hid, N)]P1 + P_pub-e, de) = e(P_pub-e, P2), and refuses the spec
+ * with an {@link java.security.spec.InvalidKeySpecException} unless the point is the key
+ * the KGC derives for this identity and hid under this master public key.
+ * <p>
+ * The claim is not taken entirely on its own, though: the hid says which of the
+ * KGC's generation functions formed the point, so the one combination that names two
+ * keys at once - the KEM / decryption usage claimed for a point derived under
+ * {@link org.bouncycastle.jcajce.interfaces.SM9EncUserKeyGenerator#HID_EXCHANGE} - is
+ * refused where both halves are first in hand, by this spec's constructor, as well as
+ * by {@code KeyFactory.SM9} behind it.
+ * What the two cannot separate is a KGC that publishes one hid for both functions,
+ * where the exchange key and the decryption key of an identity are the same point;
+ * such a master key has to serve one function only, as the GM/T 0044.5 worked
+ * examples themselves arrange.
  */
 public class SM9EncUserPrivateKeySpec
     extends EncodedKeySpec
@@ -43,7 +60,11 @@ public class SM9EncUserPrivateKeySpec
      * @param masterPublicKey the encryption master public key the user key was derived under.
      * @param identity        the user's identity.
      * @param hid             the private-key generation function identifier the KGC
-     *                        derived the key under.
+     *                        derived the key under - its published choice,
+     *                        {@link org.bouncycastle.jcajce.interfaces.SM9EncUserKeyGenerator#HID}
+     *                        in the published examples, and never
+     *                        {@link org.bouncycastle.jcajce.interfaces.SM9EncUserKeyGenerator#HID_EXCHANGE},
+     *                        which names the key exchange.
      */
     public SM9EncUserPrivateKeySpec(byte[] pkcs8Encoding, SM9EncMasterPublicKey masterPublicKey,
                                     byte[] identity, byte hid)
@@ -73,6 +94,13 @@ public class SM9EncUserPrivateKeySpec
         if (identity == null)
         {
             throw new NullPointerException("identity cannot be null");
+        }
+        if (!exchangeKey && hid == SM9EncUserKeyGenerator.HID_EXCHANGE)
+        {
+            // the pair contradicts itself, and both halves are here: refused now rather than by
+            // the KeyFactory later, perhaps in code far from wherever the spec was assembled
+            throw new IllegalArgumentException(
+                "hid must not be HID_EXCHANGE (0x02) for a KEM or decryption user key - that hid names the key exchange");
         }
         this.masterPublicKey = masterPublicKey;
         this.identity = Arrays.clone(identity);

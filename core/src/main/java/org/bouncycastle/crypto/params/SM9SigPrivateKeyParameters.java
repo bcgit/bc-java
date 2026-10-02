@@ -1,10 +1,17 @@
 package org.bouncycastle.crypto.params;
 
+import java.math.BigInteger;
+
 import javax.security.auth.Destroyable;
 
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
+import org.bouncycastle.crypto.generators.SM9Sm3;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.math.ec.sm9.SM9Curve;
+import org.bouncycastle.math.ec.sm9.SM9G2Point;
+import org.bouncycastle.math.ec.sm9.SM9Pairing;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.BigIntegers;
 
 /**
  * A user's SM9 signature private key ds_A = [t2]P1, a point of G1
@@ -41,14 +48,19 @@ public class SM9SigPrivateKeyParameters
         return masterPublicKey;
     }
 
-    public byte[] getIdentity()
+    /**
+     * The identity this key was derived for. Synchronized with {@link #destroy()}, which zeroes
+     * the array in place: the flag is set before the clear, but reading a byte the clear has
+     * already written does not order the reader after the flag, so an unsynchronized copy could
+     * return a partly zeroed identity with the flag still reading false.
+     */
+    public synchronized byte[] getIdentity()
     {
-        byte[] value = Arrays.clone(identity);
         if (destroyed)
         {
             throw new IllegalStateException("key destroyed");
         }
-        return value;
+        return Arrays.clone(identity);
     }
 
     /**
@@ -62,10 +74,81 @@ public class SM9SigPrivateKeyParameters
         return checkedDs().getEncoded(false);
     }
 
+    /**
+     * Rebuild a signature user key from its bare point encoding, under the master public key
+     * and identity it was derived for, which the encoding does not carry. The point is refused
+     * unless it is a point of G1 other than the point at infinity.
+     * <p>
+     * The point is also checked against the master public key and identity, by the KGC's own
+     * relation e(ds, [H1(ID || hid, N)]P2 + P_pub-s) = e(P1, P_pub-s), which holds exactly when
+     * ds = [ks * (H1(ID || hid, N) + ks)^-1]P1 for the ks behind that P_pub-s: a point paired
+     * with another master public key, or filed under another identity, is refused with an
+     * {@link IllegalArgumentException} rather than imported as a key whose signatures would not
+     * verify. ds is secret and the pairing takes its G1 argument to be public, so the relation
+     * is checked on [r]ds for a random r, against e(P1, P_pub-s)^r, raised as signing raises it.
+     * The check costs a pairing and about what a signature costs.
+     *
+     * @param enc the encoding {@link #getEncoded()} writes.
+     * @param masterPublicKey the signature master public key the key was derived under.
+     * @param identity the identity the key was derived for.
+     * @return the rebuilt key.
+     */
     public static SM9SigPrivateKeyParameters fromEncoded(
         byte[] enc, SM9SigMasterPublicKeyParameters masterPublicKey, byte[] identity)
     {
-        return new SM9SigPrivateKeyParameters(SM9Curve.G1.decodePoint(enc), masterPublicKey, identity);
+        checkContext(masterPublicKey, identity);
+        ECPoint ds = SM9Curve.g1FromUncompressed(enc);
+        if (ds.isInfinity())
+        {
+            // ds_A = [t2]P1 with t2 in [1, N-1] never is; signing with it would emit an S at
+            // infinity, which encodes as the single octet 0x00 and which no verifier accepts
+            throw new IllegalArgumentException("SM9 signature private key cannot be the point at infinity");
+        }
+        return checked(ds, masterPublicKey, identity);
+    }
+
+    // the key ds is, once it is checked to be the key the KGC derives for identity under masterPublicKey:
+    // e([r]ds, [H1(ID || hid, N)]P2 + P_pub-s) = e(P1, P_pub-s)^r, for r drawn here so that the pairing,
+    // which takes its G1 point to be public, works on a uniformly random point rather than on ds
+    private static SM9SigPrivateKeyParameters checked(ECPoint ds, SM9SigMasterPublicKeyParameters masterPublicKey,
+                                                      byte[] identity)
+    {
+        BigInteger n = SM9Curve.N;
+        BigInteger h1 = SM9Sm3.h1(Arrays.append(identity, SM9SigMasterPrivateKeyParameters.HID), n);
+        SM9G2Point q = SM9Curve.P2.multiply(h1).add(masterPublicKey.getPointG2());
+        BigInteger r = BigIntegers.createRandomInRange(BigIntegers.ONE, n.subtract(BigIntegers.ONE),
+            CryptoServicesRegistrar.getSecureRandom());
+        // q at infinity is the identity no user key can be derived for under this master key
+        if (q.isInfinity() || !SM9Pairing.pairing(SM9Curve.multiplySecure(ds, r), q).equals(
+            masterPublicKey.pairingWithP1().powSecureFixedBase(r)))
+        {
+            throw new IllegalArgumentException(
+                "SM9 signature private key does not match its master public key and identity");
+        }
+        return new SM9SigPrivateKeyParameters(ds, masterPublicKey, identity);
+    }
+
+    /**
+     * The master public key and identity a rebuilt key is paired with. Neither may be absent:
+     * a null master key produced an object that threw NullPointerException from the signer or
+     * from a JCA wrapper's hashCode() much later, and an absent identity is the value most
+     * likely to have come from a lookup that failed - it would silently key the holder as
+     * whoever the empty identity is, rather than as no one.
+     */
+    static void checkContext(Object masterPublicKey, byte[] identity)
+    {
+        if (masterPublicKey == null)
+        {
+            throw new NullPointerException("masterPublicKey cannot be null");
+        }
+        if (identity == null)
+        {
+            throw new NullPointerException("identity cannot be null");
+        }
+        if (identity.length == 0)
+        {
+            throw new IllegalArgumentException("identity cannot be empty");
+        }
     }
 
     /**

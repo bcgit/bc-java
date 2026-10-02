@@ -30,6 +30,11 @@ import org.bouncycastle.util.encoders.Hex;
  * identity alone, via {@code getUserPublicKey}. The shared secret is the GM/T 0044.4
  * KDF output at the requested size; the encapsulation C is a G1 point (x || y,
  * 64 bytes).
+ * <p>
+ * <b>Usage warning:</b> an identity's key should be used for the KEM or for SM9 public-key
+ * encryption ({@link SM9EngineExample}), but not for both. A deployment needing both has its
+ * KGC publish a separate hid for each function, as it already does for the key exchange, so
+ * that the two keys are distinct.
  */
 public class SM9KEMExample
 {

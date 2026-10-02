@@ -74,6 +74,11 @@ public class SM9SigKeyEncodingExample
         PrivateKey aliceRebuilt = kf.generatePrivate(
             new SM9SigUserPrivateKeySpec(aliceEncoded, masterPublic, aliceIdentity));
 
+        //    The key bytes, the master public key and the identity arrived separately, and
+        //    nothing in the import checks that they belong together: a key filed under the wrong
+        //    identity or master public key imports, and its signatures fail to verify, as the
+        //    verification in step 6 would show.
+
         // 4. The rebuilt key knows its own identity - the signing service does not need to
         //    track it alongside the key.
         System.out.println("rebuilt key identity: " + Strings.fromByteArray(

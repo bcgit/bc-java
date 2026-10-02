@@ -1,6 +1,8 @@
 package org.bouncycastle.jcajce.provider.asymmetric.sm9;
 
+import java.io.InvalidObjectException;
 import java.io.NotSerializableException;
+import java.io.ObjectInputStream;
 import java.io.ObjectStreamException;
 
 import org.bouncycastle.crypto.params.SM9SigMasterPublicKeyParameters;
@@ -29,6 +31,9 @@ class BCSM9SigPublicKey
 
     private final transient SM9SigMasterPublicKeyParameters masterParams;
     private final transient byte[] identity;
+    // one wrapper for the life of this key, so that getMasterPublicKey() == getMasterPublicKey()
+    // holds as equals() does - it built a fresh wrapper on every call
+    private final transient BCSM9SigMasterPublicKey masterPublicKey;
 
     BCSM9SigPublicKey(SM9SigMasterPublicKeyParameters masterParams, byte[] identity)
     {
@@ -36,8 +41,15 @@ class BCSM9SigPublicKey
         {
             throw new NullPointerException("identity cannot be null");
         }
+        if (identity.length == 0)
+        {
+            // refused as the encryption side refuses it, and as the KGC does: no signing key is
+            // derived for an empty identity, so no signature verifies under one
+            throw new IllegalArgumentException("identity cannot be empty");
+        }
         this.masterParams = masterParams;
         this.identity = Arrays.clone(identity);
+        this.masterPublicKey = new BCSM9SigMasterPublicKey(masterParams);
     }
 
     SM9SigMasterPublicKeyParameters getMasterPublicKeyParameters()
@@ -45,13 +57,11 @@ class BCSM9SigPublicKey
         return masterParams;
     }
 
-    @Override
     public SM9SigMasterPublicKey getMasterPublicKey()
     {
-        return new BCSM9SigMasterPublicKey(masterParams);
+        return masterPublicKey;
     }
 
-    @Override
     public byte[] getIdentity()
     {
         return Arrays.clone(identity);
@@ -97,5 +107,16 @@ class BCSM9SigPublicKey
     {
         throw new NotSerializableException(
             "SM9 user public keys are not serializable standalone; persist the master public key and identity separately");
+    }
+
+    /**
+     * A key of this class is never written, as writeReplace says, so a stream that holds it was not
+     * written by it: the key parameters are transient, and a key read from it would have none,
+     * failing with a NullPointerException wherever it was used.
+     */
+    private void readObject(ObjectInputStream in)
+        throws InvalidObjectException
+    {
+        throw new InvalidObjectException("SM9 user keys are not serializable");
     }
 }

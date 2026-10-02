@@ -9,6 +9,11 @@ import org.bouncycastle.util.Arrays;
  * {@link SM9EncMasterPublicKeyParameters#getUserPublicKey(byte[])} and passed to the
  * {@link org.bouncycastle.crypto.kems.SM9KEMGenerator} when encapsulating a key to a
  * given identity.
+ * <p>
+ * It is also what {@link org.bouncycastle.crypto.engines.SM9Engine} encrypts to.
+ * <b>Usage warning:</b> an identity's key should be used for one of the two, but not for
+ * both. Which of the two an identity's key is for is the KGC's to fix, by publishing a
+ * separate hid for each function as it already does for the key exchange.
  */
 public class SM9EncPublicKeyParameters
     extends AsymmetricKeyParameter
@@ -25,10 +30,7 @@ public class SM9EncPublicKeyParameters
     SM9EncPublicKeyParameters(SM9EncMasterPublicKeyParameters masterPublicKey, byte[] identity, byte hid)
     {
         super(false);
-        if (identity == null)
-        {
-            throw new NullPointerException("identity cannot be null");
-        }
+        SM9SigPrivateKeyParameters.checkContext(masterPublicKey, identity);
         this.masterPublicKey = masterPublicKey;
         this.identity = Arrays.clone(identity);
         this.hid = hid;

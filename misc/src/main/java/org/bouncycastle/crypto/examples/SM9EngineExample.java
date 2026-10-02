@@ -33,6 +33,11 @@ import org.bouncycastle.util.encoders.Hex;
  * KDF-based stream cipher ({@link SM9Engine.Mode#STREAM}). The engine emits the raw
  * C1 || C3 || C2 ciphertext; the JCA {@code Cipher.SM9} wraps the same values in the
  * self-describing GM/T 0080-2020 SM9Cipher structure instead.
+ * <p>
+ * <b>Usage warning:</b> an identity's key should be used for this encryption or for the SM9
+ * KEM ({@link SM9KEMExample}), but not for both. A deployment needing both has its KGC
+ * publish a separate hid for each function, as it already does for the key exchange, so
+ * that the two keys are distinct.
  */
 public class SM9EngineExample
 {

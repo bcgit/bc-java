@@ -2,7 +2,9 @@ package org.bouncycastle.crypto.params;
 
 import javax.security.auth.Destroyable;
 
+import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.math.ec.sm9.SM9G2Point;
+import org.bouncycastle.math.ec.sm9.SM9Pairing;
 import org.bouncycastle.util.Arrays;
 
 /**
@@ -22,10 +24,21 @@ import org.bouncycastle.util.Arrays;
  * keys (distinct hid, or distinct master keys as the GM/T 0044.5 examples do)
  * is what makes sharing the master key sound.
  * <p>
+ * The usage a key records separates the key exchange from KEM / decryption; it does not
+ * separate the KEM from public-key encryption. <b>Usage warning:</b> one identity's key
+ * should be used for the KEM or for public-key encryption, but not for both. A deployment
+ * needing both has its KGC publish a separate hid for each function, which is not
+ * something this class can apply.
+ * <p>
  * A key rebuilt from its encoding ({@link #fromEncoded} /
  * {@link #fromEncodedExchangeKey}) carries the usage the importer names - the
  * point encoding itself does not record which usage the KGC derived it for -
- * so an importer must claim the usage the key was actually derived under.
+ * so an importer must claim the usage the key was actually derived under. The
+ * rest of what it carries is checked: the point is refused unless it is the key
+ * the KGC derives for the identity and hid under the master public key it is
+ * imported with. Where the KGC derives an identity's exchange key and its KEM /
+ * decryption key under one hid, the two are the same point, and the usage is the
+ * one thing that check cannot tell.
  */
 public class SM9EncPrivateKeyParameters
     extends AsymmetricKeyParameter
@@ -44,7 +57,10 @@ public class SM9EncPrivateKeyParameters
         super(true);
         this.de = de;
         this.masterPublicKey = masterPublicKey;
-        this.identity = identity;
+        // cloned here rather than trusted to the caller: destroy() zeroes this array in place, so
+        // a caller that handed over its own would find it cleared from under it. The signature
+        // sibling has always cloned in its constructor; every caller here happened to clone first.
+        this.identity = Arrays.clone(identity);
         this.hid = hid;
         this.exchangeKey = exchangeKey;
     }
@@ -80,14 +96,19 @@ public class SM9EncPrivateKeyParameters
         return exchangeKey;
     }
 
-    public byte[] getIdentity()
+    /**
+     * The identity this key was derived for. Synchronized with {@link #destroy()}, which zeroes
+     * the array in place: the flag is set before the clear, but reading a byte the clear has
+     * already written does not order the reader after the flag, so an unsynchronized copy could
+     * return a partly zeroed identity with the flag still reading false.
+     */
+    public synchronized byte[] getIdentity()
     {
-        byte[] value = Arrays.clone(identity);
         if (destroyed)
         {
             throw new IllegalStateException("key destroyed");
         }
-        return value;
+        return Arrays.clone(identity);
     }
 
     /**
@@ -107,12 +128,31 @@ public class SM9EncPrivateKeyParameters
      * the KGC derived for the key exchange use {@link #fromEncodedExchangeKey}
      * instead - the usage is the importer's claim (see the class note), and the
      * consumers enforce whichever is claimed.
+     * <p>
+     * The hid is the KGC's published choice and may be any one byte except
+     * {@link SM9EncMasterPrivateKeyParameters#HID_EXCHANGE}, as where the key is
+     * derived: a point formed under
+     * {@link SM9EncMasterPrivateKeyParameters#HID_EXCHANGE} is that identity's
+     * exchange key, so claiming the KEM / decryption usage for it here is the one
+     * combination of usage and hid that names two different keys at once. The claim
+     * is checked against the hid rather than left to stand alone.
+     * <p>
+     * The point itself is checked against the master public key, identity and hid, by
+     * the KGC's own relation e([H1(ID || hid, N)]P1 + P_pub-e, de) = e(P_pub-e, P2),
+     * which holds exactly when de = [ke * (H1(ID || hid, N) + ke)^-1]P2 for the ke
+     * behind that P_pub-e. The encoding is the point alone, and the other three arrive
+     * beside it: a point paired with another master public key, or filed under another
+     * identity or hid, is refused with an {@link IllegalArgumentException} rather than
+     * imported as a key it is not. The check costs a pairing, several times what
+     * decoding the point costs, G2 subgroup check included, and on a master public
+     * key's first use a second, e(P_pub-e, P2), which the master public key then keeps.
      */
     public static SM9EncPrivateKeyParameters fromEncoded(
         byte[] enc, SM9EncMasterPublicKeyParameters masterPublicKey, byte[] identity, byte hid)
     {
-        SM9EncMasterPrivateKeyParameters.checkHid(hid);
-        return new SM9EncPrivateKeyParameters(SM9G2Point.decode(enc), masterPublicKey, Arrays.clone(identity), hid, false);
+        SM9SigPrivateKeyParameters.checkContext(masterPublicKey, identity);
+        SM9EncMasterPrivateKeyParameters.checkEncryptionHid(hid);
+        return checked(SM9G2Point.decode(enc), masterPublicKey, identity, hid, false);
     }
 
     /**
@@ -120,7 +160,8 @@ public class SM9EncPrivateKeyParameters
      * {@link SM9EncMasterPrivateKeyParameters#HID_EXCHANGE} - the import path for
      * an exchange party that received its key from the KGC rather than deriving
      * it in-process via
-     * {@link SM9EncMasterPrivateKeyParameters#generateExchangeKey(byte[])}.
+     * {@link SM9EncMasterPrivateKeyParameters#generateExchangeKey(byte[])}. The
+     * point is checked as {@link #fromEncoded} checks it.
      */
     public static SM9EncPrivateKeyParameters fromEncodedExchangeKey(
         byte[] enc, SM9EncMasterPublicKeyParameters masterPublicKey, byte[] identity)
@@ -132,13 +173,39 @@ public class SM9EncPrivateKeyParameters
      * Rebuild a key-exchange user key from its bare point encoding under an
      * explicit hid, for a KGC whose published exchange hid is not
      * {@link SM9EncMasterPrivateKeyParameters#HID_EXCHANGE} (the official English
-     * edition's GM/T 0044.5 Annex B example runs the exchange under 0x03).
+     * edition's GM/T 0044.5 Annex B example runs the exchange under 0x03). The point
+     * is checked as {@link #fromEncoded} checks it.
      */
     public static SM9EncPrivateKeyParameters fromEncodedExchangeKey(
         byte[] enc, SM9EncMasterPublicKeyParameters masterPublicKey, byte[] identity, byte hid)
     {
-        SM9EncMasterPrivateKeyParameters.checkHid(hid);
-        return new SM9EncPrivateKeyParameters(SM9G2Point.decode(enc), masterPublicKey, Arrays.clone(identity), hid, true);
+        SM9SigPrivateKeyParameters.checkContext(masterPublicKey, identity);
+        return checked(SM9G2Point.decode(enc), masterPublicKey, identity, hid, true);
+    }
+
+    // the key de is, once it is checked to be the key the KGC derives for identity and hid under
+    // masterPublicKey: e([H1(ID || hid, N)]P1 + P_pub-e, de) = e(P_pub-e, P2). de is secret, and the
+    // pairing starts its Miller loop from a random representative of it, as decryption's does
+    private static SM9EncPrivateKeyParameters checked(SM9G2Point de, SM9EncMasterPublicKeyParameters masterPublicKey,
+                                                      byte[] identity, byte hid, boolean exchangeKey)
+    {
+        ECPoint q;
+        try
+        {
+            q = masterPublicKey.recipientPoint(identity, hid);
+        }
+        catch (IllegalArgumentException e)
+        {
+            // Q at infinity: the identity no user key can be derived for under this master key and
+            // hid, so no point is its key
+            q = null;
+        }
+        if (q == null || !SM9Pairing.pairing(q, de).equals(masterPublicKey.pairingWithP2()))
+        {
+            throw new IllegalArgumentException(
+                "SM9 encryption private key does not match its master public key, identity and hid");
+        }
+        return new SM9EncPrivateKeyParameters(de, masterPublicKey, identity, hid, exchangeKey);
     }
 
     /**

@@ -47,6 +47,7 @@ class SM9EncapsulatorSpi
     public int engineEncapsulationSize()
     {
         // C = [r]Q_B of G1, encoded x || y (GM/T 0044.4).
-        return 64;
+        // the same source the decapsulator reports through SM9KEMExtractor, rather than a literal
+        return SM9KEMGenerator.ENCAPSULATION_LENGTH;
     }
 }

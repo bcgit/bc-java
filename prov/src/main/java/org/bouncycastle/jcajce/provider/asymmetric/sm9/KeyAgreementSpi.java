@@ -59,10 +59,25 @@ public class KeyAgreementSpi
     protected void doInitFromKey(Key key, AlgorithmParameterSpec parameterSpec, SecureRandom random)
         throws InvalidKeyException, InvalidAlgorithmParameterException
     {
+        // drop the previous session before the new arguments are examined, so that a rejected
+        // init leaves the object uninitialised rather than still holding the last key, spec and
+        // ephemeral for an engineDoPhase to run against
+        this.key = null;
+        this.spec = null;
+        this.random = null;
+        this.exchange = null;
+        clearResult();
+
         if (!(key instanceof BCSM9EncPrivateKey))
         {
             throw new InvalidKeyException(
                 "SM9 key agreement requires a key-exchange user key from SM9EncMasterPrivateKey.generateExchangeKeyPair(identity)");
+        }
+        if (((BCSM9EncPrivateKey)key).isDestroyed())
+        {
+            // refused here rather than taken, when the first phase went on to send an ephemeral
+            // for an exchange the key could not complete
+            throw new InvalidKeyException("key destroyed");
         }
         SM9EncPrivateKeyParameters keyParams = ((BCSM9EncPrivateKey)key).getKeyParameters();
         if (!keyParams.isExchangeKey())
@@ -79,8 +94,6 @@ public class KeyAgreementSpi
         this.key = keyParams;
         this.spec = (SM9KeyExchangeSpec)parameterSpec;
         this.random = CryptoServicesRegistrar.getSecureRandom(random);
-        this.exchange = null;
-        this.result = null;
     }
 
     protected Key engineDoPhase(Key key, boolean lastPhase)
@@ -89,6 +102,12 @@ public class KeyAgreementSpi
         if (this.key == null)
         {
             throw new IllegalStateException("SM9 key agreement not initialised");
+        }
+        if (this.key.isDestroyed())
+        {
+            // the key is refused at init; one destroyed since cannot complete an exchange, so the
+            // first phase does not send an ephemeral for one, as the last phase cannot derive a key
+            throw new IllegalStateException("key destroyed");
         }
 
         if (!lastPhase)
@@ -117,6 +136,15 @@ public class KeyAgreementSpi
             // an invalid peer ephemeral point
             throw SecurityExceptions.invalidKeyException(e.getMessage(), e);
         }
+        finally
+        {
+            // The ephemeral answers exactly one peer value: drop it, so another last phase has to
+            // follow a first phase that draws a fresh one rather than combining this r with a
+            // second peer R. In the finally, so that a path out of calculateKey this method does
+            // not name - an unchecked throw from an outsized key length, say - cannot leave it
+            // live either; the lightweight class discards its own copy on the success path.
+            exchange = null;
+        }
 
         agreementCompleted();
 
@@ -130,6 +158,14 @@ public class KeyAgreementSpi
     private Key startExchange(Key key)
         throws InvalidKeyException
     {
+        // Drop whatever a previous agreement on this object left behind before the new peer is
+        // examined. Otherwise a first phase rejected for a third party, after a completed
+        // agreement with a second, left that second agreement's shared secret in place and
+        // generateSecret() went on returning it - now attributed to the third party.
+        clearResult();
+        this.exchange = null;
+        resetAgreement();
+
         if (!(key instanceof BCSM9EncPublicKey))
         {
             throw new InvalidKeyException(
@@ -146,12 +182,24 @@ public class KeyAgreementSpi
             throw new InvalidKeyException("SM9 key agreement peer key is not under this party's master public key");
         }
 
-        this.result = null;
         this.exchange = new SM9KeyExchange(this.key, peer.getIdentity(), spec.isInitiator());
 
         ECPoint r = exchange.generateEphemeral(random);
 
         return new BCSM9ExchangeEphemeralPublicKey(r);
+    }
+
+    /**
+     * Erase the shared secret this object holds before dropping it: generateSecret() hands out a
+     * copy, so the held array would otherwise stay live, unerased, until the object was collected.
+     */
+    private void clearResult()
+    {
+        if (result != null)
+        {
+            Arrays.clear(result);
+            result = null;
+        }
     }
 
     protected byte[] doCalcSecret()

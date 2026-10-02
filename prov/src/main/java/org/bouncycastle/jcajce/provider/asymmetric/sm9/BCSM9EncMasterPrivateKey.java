@@ -1,7 +1,9 @@
 package org.bouncycastle.jcajce.provider.asymmetric.sm9;
 
 import java.io.IOException;
+import java.io.InvalidObjectException;
 import java.io.NotSerializableException;
+import java.io.ObjectInputStream;
 import java.io.ObjectStreamException;
 import java.security.KeyPair;
 
@@ -20,12 +22,21 @@ import org.bouncycastle.jcajce.interfaces.SM9EncMasterPrivateKey;
 /**
  * JCA wrapper for an SM9 encryption master private key (ke), held by the KGC.
  * Use {@link #generateUserKeyPair(byte[], byte)} (a KGC operation) to derive a
- * user's key pair under the KGC's published hid - 0x03 for KEM / public-key
- * encryption, 0x02 for key exchange.
+ * user's KEM / public-key encryption key pair under the KGC's published hid - 0x03 in
+ * the published examples - and {@link #generateExchangeKeyPair(byte[])} for a
+ * key-exchange pair, under 0x02.
  * <p>
  * The JCA {@code getEncoded()} is a PKCS#8 PrivateKeyInfo under the GM algorithm OID
  * (the JCA convention); the bare GM/T 0080-2020 key bytes are available via the
  * lightweight key-parameter class's {@code getEncoded()}.
+ * <p>
+ * Like the provider's other private keys this one is serializable, written as that PKCS#8
+ * encoding through {@link SM9KeyProxy} and rebuilt by the KeyFactory, so any object graph that
+ * holds it and is serialized - a replicated session, a disk-backed cache - carries the master
+ * secret with it. The SM9 user keys refuse serialization because their encoding cannot be
+ * rebuilt without the master public key, identity and hid, not because they are the more
+ * sensitive; a KGC should keep this key out of structures that are serialized incidentally, and
+ * a destroyed key refuses to serialize.
  */
 class BCSM9EncMasterPrivateKey
     implements SM9EncMasterPrivateKey, Destroyable
@@ -40,9 +51,11 @@ class BCSM9EncMasterPrivateKey
     }
 
     /**
-     * Generate the key pair of the user identified by {@code identity} under the given
-     * hid (a KGC operation): for hid = 0x03 the public key to encapsulate to and
-     * the private key that decapsulates, for hid = 0x02 the key-exchange pair.
+     * Generate the KEM / public-key encryption key pair of the user identified by
+     * {@code identity} under the given hid (a KGC operation): the public key to encapsulate
+     * or encrypt to and the private key that decapsulates or decrypts. The hid may not be
+     * 0x02, which names the key exchange - a key-exchange pair comes from
+     * {@link #generateExchangeKeyPair(byte[])}.
      */
     public KeyPair generateUserKeyPair(byte[] identity, byte hid)
     {
@@ -114,7 +127,32 @@ class BCSM9EncMasterPrivateKey
         {
             return false;
         }
-        return Arrays.constantTimeAreEqual(getEncoded(), ((BCSM9EncMasterPrivateKey)o).getEncoded());
+        if (isDestroyed() || ((BCSM9EncMasterPrivateKey)o).isDestroyed())
+        {
+            // getEncoded() throws once the key is destroyed, and Object.equals is contractually
+            // non-throwing - a destroyed key in a HashSet would otherwise make contains() and
+            // remove() blow up depending on which side of the comparison it landed on. It has no
+            // key material left to compare, so it equals nothing but itself, which the identity
+            // check above has already settled. hashCode() reads only public material and is
+            // unaffected either way.
+            return false;
+        }
+        // both sides are the key parameters' own encodings of the secret, freshly made for this
+        // comparison and erased once compared. The PKCS#8 encodings getEncoded() writes, which
+        // were compared before, are made from these alone, so they compare as these do, but each
+        // left further copies of the secret, in the ASN.1 objects and buffers that built it, which
+        // nothing could erase
+        byte[] mine = keyParams.getEncoded();
+        byte[] theirs = ((BCSM9EncMasterPrivateKey)o).keyParams.getEncoded();
+        try
+        {
+            return Arrays.constantTimeAreEqual(mine, theirs);
+        }
+        finally
+        {
+            Arrays.clear(mine);
+            Arrays.clear(theirs);
+        }
     }
 
     public int hashCode()
@@ -147,5 +185,16 @@ class BCSM9EncMasterPrivateKey
             throw new NotSerializableException("key destroyed");
         }
         return new SM9KeyProxy(true, getEncoded());
+    }
+
+    /**
+     * A key of this class is written as an SM9KeyProxy, never as itself, so a stream that holds the
+     * class itself was not written by it: the key parameters are transient, and a key read from it
+     * would have none, failing with a NullPointerException wherever it was used.
+     */
+    private void readObject(ObjectInputStream in)
+        throws InvalidObjectException
+    {
+        throw new InvalidObjectException("SM9 master keys are read through their serialization proxy");
     }
 }
