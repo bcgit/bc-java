@@ -1224,6 +1224,100 @@ public class CompositeSignaturesTest
     }
 
     /**
+     * An initSign or initVerify ends the operation in progress. The message bytes update() had
+     * buffered in the pre-hash digest were kept across it and taken as the start of the next message,
+     * so a re-initialised signer signed the abandoned bytes followed by the new message and a
+     * re-initialised verifier rejected a valid signature. They are now discarded at the start of every
+     * init, before the key is examined, so an init that refuses its key ends the message as well.
+     * The -PREHASH services, whose buffer holds the caller's digest, and the generic COMPOSITE
+     * service, which learns the algorithm from the key, are covered too.
+     */
+    public void testReinitDiscardsMessage()
+        throws Exception
+    {
+        String[] algorithms = new String[]
+        {
+            "MLDSA44-RSA2048-PSS-SHA256",
+            "MLDSA44-ECDSA-P256-SHA256",
+            "MLDSA87-Ed448-SHAKE256"
+        };
+        String[] digests = new String[]{ "SHA256", "SHA256", "SHAKE256" };
+        byte[] abandoned = Strings.toByteArray("abandoned message");
+        byte[] msg = Strings.toByteArray("the message signed");
+        KeyPair other = KeyPairGenerator.getInstance("MLDSA65-ECDSA-P384-SHA512", "BC").generateKeyPair();
+
+        for (int a = 0; a != algorithms.length; a++)
+        {
+            String algorithm = algorithms[a];
+            KeyPair kp = KeyPairGenerator.getInstance(algorithm, "BC").generateKeyPair();
+            byte[] digest = MessageDigest.getInstance(digests[a], "BC").digest(msg);
+            byte[] abandonedDigest = MessageDigest.getInstance(digests[a], "BC").digest(abandoned);
+
+            String[] names = new String[]{ algorithm, "COMPOSITE", algorithm + "-PREHASH" };
+            for (int n = 0; n != names.length; n++)
+            {
+                String name = names[n];
+                boolean prehash = name.endsWith("-PREHASH");
+                byte[] junk = prehash ? abandonedDigest : abandoned;
+                byte[] input = prehash ? digest : msg;
+                Signature sig = Signature.getInstance(name, "BC");
+
+                // initSign after initSign
+                sig.initSign(kp.getPrivate());
+                sig.update(junk);
+                sig.initSign(kp.getPrivate());
+                sig.update(input);
+                byte[] signature = sig.sign();
+                assertTrue(name + ": initSign kept the message of the operation it ended",
+                    verifies(algorithm, kp.getPublic(), msg, signature));
+
+                // initSign after initVerify
+                sig.initVerify(kp.getPublic());
+                sig.update(junk);
+                sig.initSign(kp.getPrivate());
+                sig.update(input);
+                assertTrue(name + ": initSign kept the message of the verification it ended",
+                    verifies(algorithm, kp.getPublic(), msg, sig.sign()));
+
+                // initVerify after initVerify
+                sig.initVerify(kp.getPublic());
+                sig.update(junk);
+                sig.initVerify(kp.getPublic());
+                sig.update(input);
+                assertTrue(name + ": initVerify kept the message of the verification it ended", sig.verify(signature));
+
+                // an init that refuses its key ends the message as well
+                sig.initVerify(kp.getPublic());
+                sig.update(junk);
+                if (n != 1)
+                {
+                    try
+                    {
+                        sig.initVerify(other.getPublic());
+                        fail(name + ": verifier accepted a key of another composite algorithm");
+                    }
+                    catch (InvalidKeyException e)
+                    {
+                        // expected
+                    }
+                    sig.update(input);
+                    assertTrue(name + ": a refused initVerify kept the message of the verification it ended",
+                        sig.verify(signature));
+                }
+            }
+        }
+    }
+
+    private static boolean verifies(String algorithm, PublicKey key, byte[] msg, byte[] signature)
+        throws Exception
+    {
+        Signature verifier = Signature.getInstance(algorithm, "BC");
+        verifier.initVerify(key);
+        verifier.update(msg);
+        return verifier.verify(signature);
+    }
+
+    /**
      * initialize(null, random) is documented as existing only to supply a SecureRandom, but it
      * forwarded to a component only where CompositeIndex held a non-null spec for it - which was
      * never the case for ML-DSA, and for MLDSA44-Ed25519-SHA512 was true of neither component, so

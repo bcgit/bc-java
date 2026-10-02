@@ -135,6 +135,8 @@ public class SignatureSpi
     protected void engineInitVerify(PublicKey publicKey)
         throws InvalidKeyException
     {
+        discardMessage();
+
         if (!(publicKey instanceof CompositePublicKey))
         {
             throw new InvalidKeyException("public key is not composite");
@@ -199,6 +201,8 @@ public class SignatureSpi
     private void initSign(PrivateKey privateKey, SecureRandom random)
         throws InvalidKeyException
     {
+        discardMessage();
+
         this.sigRandom = random;
 
         if (!(privateKey instanceof CompositePrivateKey))
@@ -231,6 +235,20 @@ public class SignatureSpi
         createComponentSignatures(compositePrivateKey.getPrivateKeys(), compositePrivateKey.getProviders());
 
         sigInitSign();
+    }
+
+    /**
+     * An init ends the operation in progress, so the message bytes buffered for it in the pre-hash
+     * digest are dropped before the new key is examined - whether or not the init then accepts it -
+     * rather than taken as the start of the next message. The component signatures are created
+     * afresh by the init, so they carry nothing over.
+     */
+    private void discardMessage()
+    {
+        if (preHashDigest != null)
+        {
+            preHashDigest.reset();
+        }
     }
 
     private void createComponentSignatures(List keys, List<Provider> providers)
