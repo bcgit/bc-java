@@ -368,7 +368,19 @@ public abstract class JceExternalPublicKeyDataDecryptorFactoryBuilder
                 X509EncodedKeySpec keySpec = new X509EncodedKeySpec(info.toASN1Primitive().getEncoded(ASN1Encoding.DER));
                 return factory.generatePublic(keySpec);
             }
-            catch (NoSuchAlgorithmException | NoSuchProviderException | IOException | InvalidKeySpecException e)
+            catch (NoSuchAlgorithmException e)
+            {
+                throw new PGPException("Cannot convert EC public key", e);
+            }
+            catch (NoSuchProviderException e)
+            {
+                throw new PGPException("Cannot convert EC public key", e);
+            }
+            catch (IOException e)
+            {
+                throw new PGPException("Cannot convert EC public key", e);
+            }
+            catch (InvalidKeySpecException e)
             {
                 throw new PGPException("Cannot convert EC public key", e);
             }
