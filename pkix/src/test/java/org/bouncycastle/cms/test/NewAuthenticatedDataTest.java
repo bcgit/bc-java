@@ -17,13 +17,19 @@ import junit.framework.Assert;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.DERSet;
+import org.bouncycastle.asn1.cms.Attribute;
+import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.cms.AuthenticatedData;
 import org.bouncycastle.asn1.cms.CCMParameters;
+import org.bouncycastle.asn1.cms.CMSAlgorithmProtection;
+import org.bouncycastle.asn1.cms.CMSAttributes;
 import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.cms.GCMParameters;
@@ -41,6 +47,7 @@ import org.bouncycastle.cms.CMSAuthenticatedData;
 import org.bouncycastle.cms.CMSAuthenticatedDataGenerator;
 import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.CMSProcessableByteArray;
+import org.bouncycastle.cms.DefaultAuthenticatedAttributeTableGenerator;
 import org.bouncycastle.cms.OriginatorInfoGenerator;
 import org.bouncycastle.cms.PasswordRecipient;
 import org.bouncycastle.cms.PasswordRecipientInformation;
@@ -610,6 +617,42 @@ public class NewAuthenticatedDataTest
         {
             Assert.assertEquals(e.getMessage(), "CMS Algorithm Protection check failed for macAlgorithm");
         }
+    }
+
+    public void testSuppliedAlgorithmProtectionReplaced()
+        throws Exception
+    {
+        byte[] data = "Eric H. Echidna".getBytes();
+
+        // a stale attribute, as copied from a message that used another MAC
+        ASN1EncodableVector v = new ASN1EncodableVector();
+
+        v.add(new Attribute(CMSAttributes.cmsAlgorithmProtect, new DERSet(new CMSAlgorithmProtection(
+            new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1), CMSAlgorithmProtection.MAC,
+            new AlgorithmIdentifier(CMSAlgorithm.AES128_CBC)))));
+
+        CMSAuthenticatedDataGenerator adGen = new CMSAuthenticatedDataGenerator();
+        DigestCalculatorProvider calcProvider = new JcaDigestCalculatorProviderBuilder().setProvider(BC).build();
+
+        byte[] kekId = new byte[]{1, 2, 3, 4, 5};
+        SecretKey kek = CMSTestUtil.makeDesede192Key();
+
+        adGen.addRecipientInfoGenerator(new JceKEKRecipientInfoGenerator(kekId, kek).setProvider(BC));
+        adGen.setAuthenticatedAttributeGenerator(new DefaultAuthenticatedAttributeTableGenerator(new AttributeTable(v)));
+
+        CMSAuthenticatedData ad = adGen.generate(
+            new CMSProcessableByteArray(data),
+            new JceCMSMacCalculatorBuilder(CMSAlgorithm.DES_EDE3_CBC).setProvider(BC).build(),
+            calcProvider.get(new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1)));
+
+        Attribute attr = ad.getAuthAttrs().get(CMSAttributes.cmsAlgorithmProtect);
+
+        assertEquals(1, attr.getAttrValues().size());
+        assertEquals(CMSAlgorithm.DES_EDE3_CBC,
+            CMSAlgorithmProtection.getInstance(attr.getAttrValues().getObjectAt(0)).getMacAlgorithm().getAlgorithm());
+
+        // the receiver's RFC 6211 check runs on parsing
+        checkData(data, kek, new CMSAuthenticatedData(ad.getEncoded(), calcProvider));
     }
 
     private void checkData(byte[] data, SecretKey kek, CMSAuthenticatedData ad)

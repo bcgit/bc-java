@@ -87,7 +87,6 @@ configure(allprojects.findAll {it.name != 'bom'}) {
             check('ConstantOverflow', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
             check('EqualsHashCode', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
             check('EqualsNull', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
-            check('HashtableContains', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
             check('ReturnValueIgnored', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
             check('SelfEquals', net.ltgt.gradle.errorprone.CheckSeverity.OFF)
 

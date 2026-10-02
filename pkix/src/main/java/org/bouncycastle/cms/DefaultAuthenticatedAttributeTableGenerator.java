@@ -49,9 +49,11 @@ public class DefaultAuthenticatedAttributeTableGenerator
 
     /**
      * Create a standard attribute table from the passed in parameters - this will
-     * normally include contentType and messageDigest. If the constructor
+     * normally include contentType, messageDigest, and CMS algorithm protection. If the constructor
      * using an AttributeTable was used, entries in it for contentType and
-     * messageDigest will override the generated ones.
+     * messageDigest will override the generated ones. The CMS algorithm protection attribute
+     * (RFC 6211) is always generated from the digest and MAC algorithms actually used, replacing
+     * any entry for it in the AttributeTable, as its values must match those of the AuthenticatedData.
      *
      * @param parameters source parameters for table generation.
      *
@@ -87,13 +89,11 @@ public class DefaultAuthenticatedAttributeTableGenerator
             std.put(attr.getAttrType(), attr);
         }
 
-        if (!std.contains(CMSAttributes.cmsAlgorithmProtect))
-        {
-            Attribute attr = new Attribute(CMSAttributes.cmsAlgorithmProtect, new DERSet(new CMSAlgorithmProtection(
-                (AlgorithmIdentifier)parameters.get(CMSAttributeTableGenerator.DIGEST_ALGORITHM_IDENTIFIER),
-                CMSAlgorithmProtection.MAC, (AlgorithmIdentifier)parameters.get(CMSAttributeTableGenerator.MAC_ALGORITHM_IDENTIFIER))));
-            std.put(attr.getAttrType(), attr);
-        }
+        // always generated: the values must match the algorithms actually used (RFC 6211)
+        Attribute attr = new Attribute(CMSAttributes.cmsAlgorithmProtect, new DERSet(new CMSAlgorithmProtection(
+            (AlgorithmIdentifier)parameters.get(CMSAttributeTableGenerator.DIGEST_ALGORITHM_IDENTIFIER),
+            CMSAlgorithmProtection.MAC, (AlgorithmIdentifier)parameters.get(CMSAttributeTableGenerator.MAC_ALGORITHM_IDENTIFIER))));
+        std.put(attr.getAttrType(), attr);
 
         return std;
     }

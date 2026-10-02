@@ -52,6 +52,7 @@ import org.bouncycastle.asn1.DLSequence;
 import org.bouncycastle.asn1.bsi.BSIObjectIdentifiers;
 import org.bouncycastle.asn1.cms.Attribute;
 import org.bouncycastle.asn1.cms.AttributeTable;
+import org.bouncycastle.asn1.cms.CMSAlgorithmProtection;
 import org.bouncycastle.asn1.cms.CMSAttributes;
 import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.cms.ContentInfo;
@@ -1938,6 +1939,36 @@ public class NewSignedDataTest
         //
         verifySignatures(s, md.digest("Hello world!".getBytes()));
         verifyRSASignatures(s, md.digest("Hello world!".getBytes()));
+    }
+
+    public void testSuppliedAlgorithmProtectionReplaced()
+        throws Exception
+    {
+        // a stale attribute, as copied from a signer that used another algorithm
+        ASN1EncodableVector v = new ASN1EncodableVector();
+
+        v.add(new Attribute(CMSAttributes.cmsAlgorithmProtect, new DERSet(new CMSAlgorithmProtection(
+            new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256), CMSAlgorithmProtection.SIGNATURE,
+            new AlgorithmIdentifier(X9ObjectIdentifiers.ecdsa_with_SHA256)))));
+
+        CMSSignedDataGenerator gen = new CMSSignedDataGenerator();
+
+        gen.addSignerInfoGenerator(new JcaSimpleSignerInfoGeneratorBuilder().setProvider(BC)
+            .setSignedAttributeGenerator(new DefaultSignedAttributeTableGenerator(new AttributeTable(v)))
+            .build("SHA256withRSA", _origKP.getPrivate(), _origCert));
+
+        CMSSignedData s = gen.generate(new CMSProcessableByteArray("Hello world!".getBytes()), true);
+
+        SignerInformation signer = (SignerInformation)s.getSignerInfos().getSigners().iterator().next();
+        Attribute attr = signer.getSignedAttributes().get(CMSAttributes.cmsAlgorithmProtect);
+
+        assertEquals(1, attr.getAttrValues().size());
+
+        CMSAlgorithmProtection protection = CMSAlgorithmProtection.getInstance(attr.getAttrValues().getObjectAt(0));
+
+        assertEquals(NISTObjectIdentifiers.id_sha256, protection.getDigestAlgorithm().getAlgorithm());
+        assertEquals(PKCSObjectIdentifiers.sha256WithRSAEncryption, protection.getSignatureAlgorithm().getAlgorithm());
+        assertTrue(signer.verify(new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(_origCert)));
     }
 
     public void testSignerInformationExtension()
