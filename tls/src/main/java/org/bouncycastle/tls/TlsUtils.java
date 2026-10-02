@@ -4889,8 +4889,8 @@ public class TlsUtils
 
         for (int i = 0; i < tlsFeaturesSeq.size(); ++i)
         {
-            BigInteger tlsExtension = ((ASN1Integer)tlsFeaturesSeq.getObjectAt(i)).getPositiveValue();
-            if (tlsExtension.bitLength() > 16)
+            BigInteger tlsExtension = ((ASN1Integer)tlsFeaturesSeq.getObjectAt(i)).getValue();
+            if (tlsExtension.signum() < 0 || tlsExtension.bitLength() > 16)
             {
                 // Feature has invalid value - couldn't legally appear in ClientHello extensions
                 continue;
