@@ -40,7 +40,6 @@ import org.bouncycastle.jcajce.provider.asymmetric.util.BaseCipherSpi;
 import org.bouncycastle.jcajce.spec.IESKEMParameterSpec;
 import org.bouncycastle.jcajce.util.BCJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
-import org.bouncycastle.jce.interfaces.ECKey;
 import org.bouncycastle.jce.spec.IESParameterSpec;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
@@ -83,16 +82,35 @@ public class IESKEMCipher
     }
 
 
+    /**
+     * The field size of the key's curve, for any EC key init accepts - not just a BC one - so the key
+     * is converted the same way init converts it. Cipher asks for the size before init sees the key,
+     * so a key that is not an EC key is answered as BaseCipherSpi answers it, and left for init to
+     * refuse with the InvalidKeyException it declares.
+     */
     public int engineGetKeySize(Key key)
     {
-        if (key instanceof ECKey)
+        try
         {
-            return ((ECKey)key).getParameters().getCurve().getFieldSize();
+            if (key instanceof PublicKey)
+            {
+                return fieldSize(ECUtils.generatePublicKeyParameter((PublicKey)key));
+            }
+            if (key instanceof PrivateKey)
+            {
+                return fieldSize(ECUtils.generatePrivateKeyParameter((PrivateKey)key));
+            }
         }
-        else
+        catch (InvalidKeyException e)
         {
-            throw new IllegalArgumentException("not an EC key");
+            // not an EC key init would take
         }
+        return super.engineGetKeySize(key);
+    }
+
+    private static int fieldSize(AsymmetricKeyParameter keyParam)
+    {
+        return ((ECKeyParameters)keyParam).getParameters().getCurve().getFieldSize();
     }
 
 

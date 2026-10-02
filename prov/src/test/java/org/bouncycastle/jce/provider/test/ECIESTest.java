@@ -1,6 +1,7 @@
 package org.bouncycastle.jce.provider.test;
 
 import java.security.InvalidAlgorithmParameterException;
+import java.security.Key;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -25,6 +26,7 @@ import org.bouncycastle.crypto.generators.KDF2BytesGenerator;
 import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.crypto.paddings.PaddedBufferedBlockCipher;
 import org.bouncycastle.jcajce.provider.asymmetric.ec.IESCipher;
+import org.bouncycastle.jcajce.provider.asymmetric.ec.IESKEMCipher;
 import org.bouncycastle.jcajce.spec.AEADParameterSpec;
 import org.bouncycastle.jcajce.spec.IESKEMParameterSpec;
 import org.bouncycastle.jce.interfaces.ECPrivateKey;
@@ -32,6 +34,7 @@ import org.bouncycastle.jce.interfaces.ECPublicKey;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 import org.bouncycastle.jce.spec.ECPublicKeySpec;
+import org.bouncycastle.jce.spec.IEKeySpec;
 import org.bouncycastle.jce.spec.IESParameterSpec;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.util.Arrays;
@@ -71,6 +74,7 @@ public class ECIESTest
         etsiEciesTest();
         etsiEciesRandomTest();
         etsiEciesUncompressedRandomTest();
+        keySizeTest();
 
         byte[] derivation = Hex.decode("202122232425262728292a2b2c2d2e2f");
         byte[] encoding   = Hex.decode("303132333435363738393a3b3c3d3e3f");
@@ -208,6 +212,40 @@ public class ECIESTest
         }
 
         sealedObjectTest();
+    }
+
+    /**
+     * Cipher consults getKeySize under a restricted crypto policy. Both EC IES ciphers answered only
+     * for BC's own EC keys, throwing IllegalArgumentException for any other EC key init accepts - a
+     * SunEC key, an IESKey - and for any other key at all; the size is now taken from any such key,
+     * and a key that is not an EC key is answered as BaseCipherSpi answers it and left for init.
+     */
+    private void keySizeTest()
+        throws Exception
+    {
+        KeyPairGenerator bcGen = KeyPairGenerator.getInstance("EC", "BC");
+        bcGen.initialize(new ECGenParameterSpec("secp256r1"), new SecureRandom());
+        KeyPair bc = bcGen.generateKeyPair();
+        KeyPairGenerator sunGen = KeyPairGenerator.getInstance("EC", "SunEC");
+        sunGen.initialize(new ECGenParameterSpec("secp256r1"), new SecureRandom());
+        KeyPair sun = sunGen.generateKeyPair();
+        Key[] ecKeys = { bc.getPublic(), bc.getPrivate(), sun.getPublic(), sun.getPrivate(),
+            new IEKeySpec(bc.getPrivate(), bc.getPublic()) };
+        Key aes = new SecretKeySpec(new byte[16], "AES");
+
+        IESCipher ies = new IESCipher.ECIES();
+        IESKEMCipher kem = new IESKEMCipher.KEMwithSHA256();
+        for (int j = 0; j != ecKeys.length; j++)
+        {
+            isTrue("IESCipher key size of " + ecKeys[j].getClass().getName(), ies.engineGetKeySize(ecKeys[j]) == 256);
+        }
+        // the KEM cipher takes no IESKey, so the last is left out for it
+        for (int j = 0; j != ecKeys.length - 1; j++)
+        {
+            isTrue("IESKEMCipher key size of " + ecKeys[j].getClass().getName(), kem.engineGetKeySize(ecKeys[j]) == 256);
+        }
+        isTrue("IESCipher key size of a key that is not an EC key", ies.engineGetKeySize(aes) == 16);
+        isTrue("IESKEMCipher key size of a key that is not an EC key", kem.engineGetKeySize(aes) == 16);
     }
 
     private void etsiEciesTest()
