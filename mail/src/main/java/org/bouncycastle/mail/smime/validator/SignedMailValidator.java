@@ -84,8 +84,6 @@ public class SignedMailValidator
     private static final int KU_DIGITAL_SIGNATURE = 0;
     private static final int KU_NON_REPUDIATION = 1;
 
-    private static final Locale locale = Locale.getDefault();
-
     private CertStore certs;
 
     private SignerInformationStore signers;
@@ -423,7 +421,7 @@ public class SignedMailValidator
             {
                 if (PKCSObjectIdentifiers.pkcs_9_at_emailAddress.equals(atVs[j].getType()))
                 {
-                    String email = ((ASN1String)atVs[j].getValue()).getString().toLowerCase(locale);
+                    String email = ((ASN1String)atVs[j].getValue()).getString().toLowerCase(Locale.ENGLISH);
                     addresses.add(email);
                 }
             }
@@ -440,7 +438,7 @@ public class SignedMailValidator
                 GeneralName name = names[i];
                 if (name.getTagNo() == GeneralName.rfc822Name)
                 {
-                    String email = ASN1IA5String.getInstance(name.getName()).getString().toLowerCase(locale);
+                    String email = ASN1IA5String.getInstance(name.getName()).getString().toLowerCase(Locale.ENGLISH);
                     addresses.add(email);
                 }
             }
@@ -542,7 +540,7 @@ public class SignedMailValidator
         // check if email in cert is equal to the from address in the message
         for (int i = 0; i < fromAddresses.length; ++i)
         {
-            if (certEmails.contains(fromAddresses[i].toLowerCase(locale)))
+            if (certEmails.contains(fromAddresses[i].toLowerCase(Locale.ENGLISH)))
             {
                 return true;
             }
