@@ -65,6 +65,7 @@ public class SQIsignTest
         test.testBcProviderKeyInfoConverter();
         test.testSignatureWrongParameterSet();
         test.testSQIsignSign();
+        test.testReinitDiscardsBufferedMessage();
     }
 
     public void setUp()
@@ -322,6 +323,53 @@ public class SQIsignTest
         tampered[0] ^= 0x01;
         assertFalse("tampered message verified",
             doVerify("sqisign_lvl1", kp.getPublic(), tampered, sig));
+    }
+
+    /**
+     * initSign / initVerify start a new message: bytes passed to update() before a re-initialisation,
+     * or before switching between signing and verifying, must not reach the next signature.
+     */
+    public void testReinitDiscardsBufferedMessage()
+        throws Exception
+    {
+        byte[] msg = Strings.toByteArray("the cat sat on the SQIsign mat");
+        byte[] stale = Strings.toByteArray("stale");
+
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("SQIsign", "BCPQC");
+        kpg.initialize(SQIsignParameterSpec.sqisign_lvl1, new SecureRandom());
+        KeyPair kp = kpg.generateKeyPair();
+
+        Signature signer = Signature.getInstance("SQIsign", "BCPQC");
+        signer.initSign(kp.getPrivate(), new SecureRandom());
+        signer.update(msg);
+        byte[] s = signer.sign();
+
+        // an abandoned sign, then a sign of msg: the result is a signature on msg alone
+        Signature sig = Signature.getInstance("SQIsign", "BCPQC");
+        sig.initSign(kp.getPrivate(), new SecureRandom());
+        sig.update(stale);
+        sig.initSign(kp.getPrivate(), new SecureRandom());
+        sig.update(msg);
+        byte[] s2 = sig.sign();
+
+        Signature verifier = Signature.getInstance("SQIsign", "BCPQC");
+        verifier.initVerify(kp.getPublic());
+        verifier.update(msg);
+        assertTrue("re-initSign kept the earlier update", verifier.verify(s2));
+
+        // an abandoned verify, then a verify of msg
+        sig.initVerify(kp.getPublic());
+        sig.update(stale);
+        sig.initVerify(kp.getPublic());
+        sig.update(msg);
+        assertTrue("re-initVerify kept the earlier update", sig.verify(s));
+
+        // an abandoned sign, then a verify of msg on the same object
+        sig.initSign(kp.getPrivate(), new SecureRandom());
+        sig.update(stale);
+        sig.initVerify(kp.getPublic());
+        sig.update(msg);
+        assertTrue("initVerify after initSign kept the earlier update", sig.verify(s));
     }
 
     private static byte[] doSign(String alg, PrivateKey key, byte[] msg)

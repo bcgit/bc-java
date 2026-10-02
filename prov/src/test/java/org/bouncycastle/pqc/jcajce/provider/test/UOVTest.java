@@ -215,6 +215,110 @@ public class UOVTest
     }
 
     /**
+     * initSign / initVerify start a new message even when they refuse the key: bytes passed to update()
+     * before the refused call must not reach the signature the object goes on to make or check.
+     */
+    public void testRefusedInitDiscardsBufferedMessage()
+        throws Exception
+    {
+        byte[] stale = Strings.toByteArray("stale");
+
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("UOV", "BCPQC");
+        kpg.initialize(UOVParameterSpec.uov_Ip, new SecureRandom());
+        KeyPair kp = kpg.generateKeyPair();
+
+        KeyPairGenerator ecKpg = KeyPairGenerator.getInstance("EC", "BC");
+        ecKpg.initialize(256, new SecureRandom());
+        KeyPair ecKp = ecKpg.generateKeyPair();
+
+        Signature signer = Signature.getInstance("UOV", "BCPQC");
+        signer.initSign(kp.getPrivate(), new SecureRandom());
+        signer.update(msg);
+        byte[] s = signer.sign();
+
+        Signature sig = Signature.getInstance("UOV", "BCPQC");
+        Signature verifier = Signature.getInstance("UOV", "BCPQC");
+
+        // an abandoned sign, then a refused initSign and a sign of msg: the result is a signature on msg alone
+        sig.initSign(kp.getPrivate(), new SecureRandom());
+        sig.update(stale);
+        try
+        {
+            sig.initSign(ecKp.getPrivate());
+            fail("no exception");
+        }
+        catch (InvalidKeyException e)
+        {
+            // expected
+        }
+        sig.update(msg);
+        byte[] s2 = sig.sign();
+
+        verifier.initVerify(kp.getPublic());
+        verifier.update(msg);
+        assertTrue("refused initSign kept the earlier update", verifier.verify(s2));
+
+        // an abandoned verify, then a refused initVerify and a verify of msg
+        sig.initVerify(kp.getPublic());
+        sig.update(stale);
+        try
+        {
+            sig.initVerify(ecKp.getPublic());
+            fail("no exception");
+        }
+        catch (InvalidKeyException e)
+        {
+            // expected
+        }
+        sig.update(msg);
+        assertTrue("refused initVerify kept the earlier update", sig.verify(s));
+
+        // an abandoned sign, then a refused initVerify: the object is still signing, and signs msg alone
+        sig.initSign(kp.getPrivate(), new SecureRandom());
+        sig.update(stale);
+        try
+        {
+            sig.initVerify(ecKp.getPublic());
+            fail("no exception");
+        }
+        catch (InvalidKeyException e)
+        {
+            // expected
+        }
+        sig.update(msg);
+        byte[] s3 = sig.sign();
+
+        verifier.initVerify(kp.getPublic());
+        verifier.update(msg);
+        assertTrue("refused initVerify after initSign kept the earlier update", verifier.verify(s3));
+    }
+
+    /**
+     * A public key that is not a UOV key is refused with an InvalidKeyException that keeps the
+     * decoding failure as its cause.
+     */
+    public void testForeignPublicKeyKeepsCause()
+        throws Exception
+    {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC", "BC");
+        kpg.initialize(256, new SecureRandom());
+        PublicKey ecKey = kpg.generateKeyPair().getPublic();
+
+        Signature sig = Signature.getInstance("UOV", "BCPQC");
+
+        try
+        {
+            sig.initVerify(ecKey);
+            fail("no exception");
+        }
+        catch (InvalidKeyException e)
+        {
+            assertTrue(e.getMessage(), e.getMessage().startsWith("unknown public key passed to UOV: "));
+            assertNotNull("cause dropped", e.getCause());
+        }
+    }
+
+    /**
      * The BC↔BCPQC bridge regression test (skill step 11 / pitfall 1).
      * For every parameter set, generate a keypair via BCPQC, then decode both
      * key encodings through BouncyCastleProvider — exercising the

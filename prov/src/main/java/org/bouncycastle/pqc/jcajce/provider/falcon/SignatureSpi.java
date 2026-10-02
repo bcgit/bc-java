@@ -48,6 +48,8 @@ public class SignatureSpi
     protected void engineInitVerify(PublicKey publicKey)
         throws InvalidKeyException
     {
+        bOut.reset();
+
         if (!(publicKey instanceof BCFalconPublicKey))
         {
             try
@@ -84,6 +86,8 @@ public class SignatureSpi
     protected void engineInitSign(PrivateKey privateKey)
         throws InvalidKeyException
     {
+        bOut.reset();
+
         if (privateKey instanceof BCFalconPrivateKey)
         {
             BCFalconPrivateKey key = (BCFalconPrivateKey)privateKey;
@@ -138,7 +142,7 @@ public class SignatureSpi
         }
         catch (Exception e)
         {
-            throw new SignatureException(e.toString());
+            throw SecurityExceptions.signatureException(e.toString(), e);
         }
     }
 

@@ -1,9 +1,11 @@
 package org.bouncycastle.pqc.jcajce.provider.test;
 
+import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
@@ -21,6 +23,7 @@ import junit.framework.TestCase;
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.jcajce.SecretKeyWithEncapsulation;
 import org.bouncycastle.jcajce.spec.KEMExtractSpec;
 import org.bouncycastle.jcajce.spec.KEMGenerateSpec;
@@ -264,6 +267,51 @@ public class SmaugTTest
 
             assertEquals(kp.getPublic(), genericFact.generatePublic(new X509EncodedKeySpec(kp.getPublic().getEncoded())));
             assertEquals(kp.getPrivate(), genericFact.generatePrivate(new PKCS8EncodedKeySpec(kp.getPrivate().getEncoded())));
+        }
+    }
+
+    /**
+     * An unwrap that fails keeps the exception it caught as the cause of the one it throws, with the
+     * message text unchanged.
+     */
+    public void testUnwrapFailureKeepsCause()
+        throws Exception
+    {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("SMAUGT", "BCPQC");
+        kpg.initialize(SmaugTParameterSpec.smaugt_mode1, new SecureRandom());
+        KeyPair kp = kpg.generateKeyPair();
+
+        Cipher wrapper = Cipher.getInstance("SMAUGT", "BCPQC");
+        wrapper.init(Cipher.WRAP_MODE, kp.getPublic(), new SecureRandom());
+        byte[] wrapped = wrapper.wrap(new SecretKeySpec(Hex.decode("000102030405060708090a0b0c0d0e0f"), "AES"));
+
+        Cipher unwrapper = Cipher.getInstance("SMAUGT", "BCPQC");
+        unwrapper.init(Cipher.UNWRAP_MODE, kp.getPrivate());
+
+        // the key wrap's integrity check fails
+        byte[] tampered = Arrays.clone(wrapped);
+        tampered[tampered.length - 1] ^= 0x01;
+        try
+        {
+            unwrapper.unwrap(tampered, "AES", Cipher.SECRET_KEY);
+            fail("no exception");
+        }
+        catch (InvalidKeyException e)
+        {
+            assertTrue(e.getMessage(), e.getMessage().startsWith("unable to extract KTS secret: "));
+            assertTrue("cause dropped", e.getCause() instanceof InvalidCipherTextException);
+        }
+
+        // no key can be made for the algorithm named
+        try
+        {
+            unwrapper.unwrap(wrapped, null, Cipher.SECRET_KEY);
+            fail("no exception");
+        }
+        catch (NoSuchAlgorithmException e)
+        {
+            assertTrue(e.getMessage(), e.getMessage().startsWith("unable to extract KTS secret: "));
+            assertTrue("cause dropped", e.getCause() instanceof IllegalArgumentException);
         }
     }
 }

@@ -330,6 +330,63 @@ public class FalconTest
     }
 
     /**
+     * initSign / initVerify start a new message: bytes passed to update() before a re-initialisation,
+     * or before switching between signing and verifying, must not reach the next signature.
+     */
+    public void testReinitDiscardsBufferedMessage()
+        throws Exception
+    {
+        byte[] stale = Strings.toByteArray("stale");
+
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("Falcon", "BC");
+
+        kpg.initialize(FalconParameterSpec.falcon_512, new SecureRandom());
+
+        KeyPair kp = kpg.generateKeyPair();
+
+        Signature signer = Signature.getInstance("Falcon", "BC");
+
+        signer.initSign(kp.getPrivate(), new SecureRandom());
+
+        signer.update(msg, 0, msg.length);
+
+        byte[] s = signer.sign();
+
+        // an abandoned sign, then a sign of msg: the result is a signature on msg alone
+        Signature sig = Signature.getInstance("Falcon", "BC");
+
+        sig.initSign(kp.getPrivate(), new SecureRandom());
+        sig.update(stale, 0, stale.length);
+        sig.initSign(kp.getPrivate(), new SecureRandom());
+        sig.update(msg, 0, msg.length);
+
+        byte[] s2 = sig.sign();
+
+        Signature verifier = Signature.getInstance("Falcon", "BC");
+
+        verifier.initVerify(kp.getPublic());
+        verifier.update(msg, 0, msg.length);
+
+        assertTrue("re-initSign kept the earlier update", verifier.verify(s2));
+
+        // an abandoned verify, then a verify of msg
+        sig.initVerify(kp.getPublic());
+        sig.update(stale, 0, stale.length);
+        sig.initVerify(kp.getPublic());
+        sig.update(msg, 0, msg.length);
+
+        assertTrue("re-initVerify kept the earlier update", sig.verify(s));
+
+        // an abandoned sign, then a verify of msg on the same object
+        sig.initSign(kp.getPrivate(), new SecureRandom());
+        sig.update(stale, 0, stale.length);
+        sig.initVerify(kp.getPublic());
+        sig.update(msg, 0, msg.length);
+
+        assertTrue("initVerify after initSign kept the earlier update", sig.verify(s));
+    }
+
+    /**
      * count = 0
      * seed = 061550234D158C5EC95595FE04EF7A25767F2E24CC2BC479D09D86DC9ABCFDE7056A8C266F9EF97ED08541DBD2E1FFA1
      * mlen = 33
