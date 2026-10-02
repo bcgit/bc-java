@@ -164,6 +164,72 @@ public class SignedMailValidatorTest extends TestCase
         assertTrue(addresses.contains("domain-confidentiality-authority@bekb.ch "));
     }
 
+    public void testEmailAddressFoldingIsLocaleIndependent() throws Exception
+    {
+        // The Turkish and Azerbaijani rules fold 'I' (U+0049) to the dotless 'i' (U+0131), so a
+        // comparison that folds with the default locale answers differently depending on where the
+        // JVM runs. Note the folding locale used to be captured in a static field at class load, so
+        // reproducing the original defect needs -Duser.language=tr -Duser.country=TR at JVM start
+        // as well; setting it here catches a return to a dynamically read default locale.
+        Locale defaultLocale = Locale.getDefault();
+
+        try
+        {
+            Locale.setDefault(new Locale("tr", "TR"));
+
+            long now = System.currentTimeMillis();
+            long day = 1000L * 60 * 60 * 24;
+            Date notBefore = new Date(now - day);
+            Date notAfter = new Date(now + 100 * day);
+
+            String caDN = "CN=Test CA, O=Bouncy Castle, C=AU";
+            String signDN = "CN=Ian Echidna, E=IAN@EXAMPLE.ORG, O=Bouncy Castle, C=AU";
+
+            KeyPair caKP = CMSTestUtil.makeKeyPair();
+            KeyPair signKP = CMSTestUtil.makeKeyPair();
+
+            X509Certificate caCert = buildCert(caDN, caKP.getPublic(), caDN, caKP, notBefore, notAfter, true);
+            X509Certificate signCert = buildCert(signDN, signKP.getPublic(), caDN, caKP, notBefore, notAfter, false);
+
+            Set addresses = SignedMailValidator.getEmailAddresses(signCert);
+
+            assertTrue("upper case I must fold to the ASCII i", addresses.contains("ian@example.org"));
+            assertFalse("upper case I must not fold to the dotless i",
+                addresses.contains("\u0131an@example.org"));
+
+            List certList = new ArrayList();
+            certList.add(signCert);
+            certList.add(caCert);
+
+            SMIMESignedGenerator gen = new SMIMESignedGenerator();
+            gen.addSignerInfoGenerator(new JcaSimpleSignerInfoGeneratorBuilder().setProvider("BC")
+                .build("SHA256withRSA", signKP.getPrivate(), signCert));
+            gen.addCertificates(new JcaCertStore(certList));
+
+            MimeMultipart signedMsg = gen.generate(SMIMETestUtil.makeMimeBodyPart("Hello world!\n"));
+
+            Session session = Session.getDefaultInstance(System.getProperties(), null);
+            MimeMessage msg = new MimeMessage(session);
+            msg.setFrom(new InternetAddress("ian@example.org"));
+            msg.setRecipient(Message.RecipientType.TO, new InternetAddress("example@bouncycastle.org"));
+            msg.setContent(signedMsg, signedMsg.getContentType());
+            msg.saveChanges();
+
+            Set trust = new HashSet();
+            trust.add(new TrustAnchor(caCert, null));
+
+            PKIXParameters params = new PKIXParameters(trust);
+            params.setRevocationEnabled(false);
+
+            assertTrue("From address must match the certificate address whatever the default locale",
+                firstResult(new SignedMailValidator(msg, params)).isValidSignature());
+        }
+        finally
+        {
+            Locale.setDefault(defaultLocale);
+        }
+    }
+
     public void testExtKeyUsage() throws Exception
     {
         String message = "validator.extKeyUsage.eml";
