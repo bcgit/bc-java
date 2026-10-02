@@ -1,6 +1,7 @@
 package org.bouncycastle.math.ec.custom.gm;
 
 import java.math.BigInteger;
+import java.security.SecureRandom;
 
 import org.bouncycastle.math.ec.AbstractECLookupTable;
 import org.bouncycastle.math.ec.ECConstants;
@@ -150,5 +151,22 @@ public class SM9P256V1Curve extends ECCurve.AbstractFp
                 return createRawPoint(new SM9P256V1FieldElement(x), new SM9P256V1FieldElement(y), SM9P256V1_AFFINE_ZS);
             }
         };
+    }
+
+    // drawn on the fixed limbs, as SM2P256V1Curve does, rather than through the generic
+    // ECCurve.AbstractFp route of two BigInteger draws, two conversions into Montgomery form and a
+    // multiplication - ECPoint.normalize() takes one of these to blind every inversion
+    public ECFieldElement randomFieldElement(SecureRandom r)
+    {
+        int[] x = Nat256.create();
+        SM9P256V1Field.random(r, x);
+        return new SM9P256V1FieldElement(x);
+    }
+
+    public ECFieldElement randomFieldElementMult(SecureRandom r)
+    {
+        int[] x = Nat256.create();
+        SM9P256V1Field.randomMult(r, x);
+        return new SM9P256V1FieldElement(x);
     }
 }

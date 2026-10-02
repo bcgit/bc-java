@@ -1,6 +1,7 @@
 package org.bouncycastle.util;
 
 import java.io.IOException;
+import java.io.InvalidObjectException;
 
 // NOTE: jdk1.3 overlay. Throwable.initCause() is a Java 1.4 API and does not exist on JDK 1.3,
 // so the base class (which chains via initCause) will not compile here. JDK 1.3 has no
@@ -22,6 +23,11 @@ public class Exceptions
     public static IOException ioException(String message, Throwable cause)
     {
         return new IOException(message);
+    }
+
+    public static InvalidObjectException invalidObjectException(String message, Throwable cause)
+    {
+        return new InvalidObjectException(message);
     }
 
 }

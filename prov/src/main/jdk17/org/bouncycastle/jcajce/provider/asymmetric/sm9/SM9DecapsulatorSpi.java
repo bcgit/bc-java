@@ -17,11 +17,13 @@ import org.bouncycastle.jcajce.provider.asymmetric.util.KemSpiUtil;
 class SM9DecapsulatorSpi
     implements KEMSpi.DecapsulatorSpi
 {
+    private final BCSM9EncPrivateKey privateKey;
     private final KTSParameterSpec parameterSpec;
     private final SM9KEMExtractor kemExt;
 
     SM9DecapsulatorSpi(BCSM9EncPrivateKey privateKey, KTSParameterSpec parameterSpec)
     {
+        this.privateKey = privateKey;
         this.parameterSpec = parameterSpec;
         // without an external KDF the mechanism's own GM/T 0044.4 KDF produces the shared
         // secret at the requested size; with one it first produces a 256-bit shared secret.
@@ -33,6 +35,12 @@ class SM9DecapsulatorSpi
     public SecretKey engineDecapsulate(byte[] encapsulation, int from, int to, String algorithm)
         throws DecapsulateException
     {
+        if (privateKey.isDestroyed())
+        {
+            // the key is refused when the decapsulator is made; one destroyed since cannot
+            // decapsulate, and says so through the exception decapsulate() declares
+            throw new DecapsulateException("key destroyed");
+        }
         algorithm = KemSpiUtil.resolveDecapsulateAlgorithm(encapsulation, from, to, algorithm, engineSecretSize(), engineEncapsulationSize(), parameterSpec);
 
         byte[] kemSecret;

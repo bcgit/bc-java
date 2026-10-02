@@ -24,19 +24,22 @@ import org.bouncycastle.util.encoders.Hex;
  * key pair and derives each user's key pair from the user's identity - so there are no
  * certificates, and a sender forms the recipient's public key from the published master
  * public key and the recipient's identity alone, via
- * {@link SM9EncMasterPublicKey#getUserPublicKey(byte[])} - the same recipient key the
- * SM9-KEM encapsulates to. The master key pair comes from {@code KeyPairGenerator.SM9-ENC};
- * a user's key pair is derived from the master private key via
+ * {@link SM9EncMasterPublicKey#getUserPublicKey(byte[])}. The master key pair comes from
+ * {@code KeyPairGenerator.SM9-ENC}; a user's key pair is derived from the master private key via
  * {@link SM9EncMasterPrivateKey#generateUserKeyPair(byte[], byte)} (the KGC key-extraction
  * operation). The model carries inherent key escrow (the KGC can derive every user's key),
  * so the KGC must be trusted accordingly.
  * <p>
  * GM/T 0044.4 defines two data-encapsulation modes: the default wraps the message with the
  * SM4 block cipher ({@code Cipher.SM9}); {@code SM9/XOR/NoPadding} uses the KDF as a stream
- * cipher. The mode is set on the decrypting {@code Cipher} as well as the encrypting one -
- * the ciphertext (GM/T 0080-2020 SM9Cipher: enType, C1, C3, C2) names its own mode, but that
- * field is not covered by the C3 authenticator, so the mode the caller configured decides
- * and a ciphertext whose enType disagrees is rejected.
+ * cipher. The mode is set on the decrypting {@code Cipher} as well as the encrypting one:
+ * the ciphertext (GM/T 0080-2020 SM9Cipher: enType, C1, C3, C2) names its own mode, but the
+ * mode the caller configured decides, and a ciphertext whose enType disagrees is rejected.
+ * <p>
+ * <b>Usage warning:</b> an identity's key should be used for this cipher or for the SM9 KEM
+ * ({@link SM9Example}), but not for both. A deployment needing both has its KGC publish a
+ * separate hid for each function, as it already does for the key exchange, so that the two
+ * keys are distinct.
  */
 public class SM9CipherExample
 {

@@ -14,9 +14,13 @@ public interface SM9SigMasterPublicKey
      * from that user verifies against. It is derived from the master public key and the
      * identity alone, so any verifier holding the published master public key can
      * construct it - no certificate or KGC interaction is needed.
+     * <p>
+     * The key returned is always an {@link SM9SigUserPublicKey}, which gives back the identity
+     * and the master public key it was formed from, and a caller may rely on the cast; the
+     * declared type stays {@code PublicKey} so that code compiled against it keeps linking.
      *
      * @param identity the user's identity.
-     * @return the user's public key.
+     * @return the user's public key, an {@link SM9SigUserPublicKey}.
      */
     PublicKey getUserPublicKey(byte[] identity);
 }

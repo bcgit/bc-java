@@ -1,10 +1,11 @@
 package org.bouncycastle.jcajce.provider.asymmetric.sm9;
 
-import java.io.InvalidObjectException;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
+
+import org.bouncycastle.util.Exceptions;
 
 /**
  * Serialization proxy for the SM9 <b>master</b> key wrappers. It stores only the
@@ -45,7 +46,7 @@ class SM9KeyProxy
         }
         catch (Exception e)
         {
-            throw new InvalidObjectException("unable to reconstruct SM9 key: " + e.getMessage());
+            throw Exceptions.invalidObjectException("unable to reconstruct SM9 key: " + e.getMessage(), e);
         }
     }
 }

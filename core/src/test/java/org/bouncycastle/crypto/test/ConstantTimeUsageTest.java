@@ -22,8 +22,10 @@ import org.bouncycastle.util.test.SimpleTest;
  * </p><p>
  * Note what this does and does not establish. It says a named call is still being made; it says
  * nothing about whether the surrounding code is constant time, and it cannot see a secret that
- * reaches a variable-time operation by some other route. It is a regression gate for four specific
- * call sites, not a proof.
+ * reaches a variable-time operation by some other route. It is a regression gate for the call
+ * sites the table names, not a proof, and it works a class at a time: where a class makes the same
+ * call more than once, reverting one of them leaves the symbol in the constant pool and the row
+ * satisfied.
  * </p><p>
  * A scan that quietly reads nothing would pass every "must not contain" check, so the controls in
  * {@link #checkControls()} are load bearing: they run the same scan over a class in this file that
@@ -62,20 +64,172 @@ public class ConstantTimeUsageTest
         {"org/bouncycastle/crypto/signers/ECCSISigner", "modOddInverse", REQUIRED},
         {"org/bouncycastle/crypto/signers/ECCSISigner", "modInverse", FORBIDDEN},
 
-        // GM/T 0044.2 signature user key, t1 = H1 + ks then t2 = ks * t1^-1, ds = [t2]P1 in G1
-        {"org/bouncycastle/crypto/params/SM9SigMasterPrivateKeyParameters", "modAdd", REQUIRED},
-        {"org/bouncycastle/crypto/params/SM9SigMasterPrivateKeyParameters", "modMult", REQUIRED},
-        {"org/bouncycastle/crypto/params/SM9SigMasterPrivateKeyParameters", "modOddInverse", REQUIRED},
+        // GM/T 0044.2 / 0044.4 user keys, t1 = H1 + s then t2 = s * t1^-1 over the KGC's master
+        // secret s, formed for both key families by the one helper
+        {"org/bouncycastle/crypto/params/SM9KeyDerivation", "modAdd", REQUIRED},
+        {"org/bouncycastle/crypto/params/SM9KeyDerivation", "modMult", REQUIRED},
+        {"org/bouncycastle/crypto/params/SM9KeyDerivation", "modOddInverse", REQUIRED},
+        {"org/bouncycastle/crypto/params/SM9KeyDerivation", "modInverse", FORBIDDEN},
+
+        // GM/T 0044.2 signature user key ds = [t2]P1 in G1
         {"org/bouncycastle/crypto/params/SM9SigMasterPrivateKeyParameters", "multiplySecure", REQUIRED},
         {"org/bouncycastle/crypto/params/SM9SigMasterPrivateKeyParameters", "modInverse", FORBIDDEN},
 
-        // GM/T 0044.4 encryption user key, de = [t2]P2 in G2. There is deliberately no
-        // multiplySecure row: G2 has no constant-time multiplier, only the fixed-iteration ladder
-        // in SM9G2Point.multiply, which that method's javadoc records as a hardening.
-        {"org/bouncycastle/crypto/params/SM9EncMasterPrivateKeyParameters", "modAdd", REQUIRED},
-        {"org/bouncycastle/crypto/params/SM9EncMasterPrivateKeyParameters", "modMult", REQUIRED},
-        {"org/bouncycastle/crypto/params/SM9EncMasterPrivateKeyParameters", "modOddInverse", REQUIRED},
+        // ... which the key's own class neither pairs nor multiplies: multiPair, which evaluates the
+        // Miller loop's lines at its G1 points as they are and randomises nothing, and multiplyPublic,
+        // the GLV method, whose steps and reads depend on its scalar and its point, and which keeps the
+        // point's image with the point, are for public values, and neither may take the key.
+        {"org/bouncycastle/crypto/params/SM9SigPrivateKeyParameters", "multiPair", FORBIDDEN},
+        {"org/bouncycastle/crypto/params/SM9SigPrivateKeyParameters", "multiplyPublic", FORBIDDEN},
+
+        // GM/T 0044.4 encryption user key, de = [t2]P2 in G2, and the master public key
+        // P_pub-e = [ke]P1 in G1, formed from the master secret whenever a master key is generated
+        // or decoded. The multiplySecure row is the second of these: G2's multiplication is
+        // SM9G2Point.multiply, a comb for P2 and a ladder for any other point, whose hardenings that
+        // method's javadoc records.
+        {"org/bouncycastle/crypto/params/SM9EncMasterPrivateKeyParameters", "multiplySecure", REQUIRED},
         {"org/bouncycastle/crypto/params/SM9EncMasterPrivateKeyParameters", "modInverse", FORBIDDEN},
+
+        // GM/T 0044.2 signing, w = g^r and l = (r - h) mod N over the secret nonce against an h
+        // that travels in the signature, then S = [l]ds over the user's signing key. No modInverse
+        // row: the signer has no inversion to do.
+        {"org/bouncycastle/crypto/signers/SM9Signer", "powSecure", REQUIRED},
+        {"org/bouncycastle/crypto/signers/SM9Signer", "modSubtract", REQUIRED},
+        {"org/bouncycastle/crypto/signers/SM9Signer", "multiplySecure", REQUIRED},
+
+        // GM/T 0044.4 public-key encryption and key encapsulation, C1 = [r]Q_B and w = g^r over the
+        // ephemeral r, from which K - and with it the message or the encapsulated key - follows.
+        // C1 is formed by the master public key's multiplyRecipientPoint, whose own rows follow the
+        // key exchange's. As for the signer there is no FORBIDDEN row for the default forms: G1's
+        // multiply and Fp12's pow are substrings of multiplyRecipientPoint and powSecure.
+        {"org/bouncycastle/crypto/engines/SM9Engine", "multiplyRecipientPoint", REQUIRED},
+        {"org/bouncycastle/crypto/engines/SM9Engine", "powSecure", REQUIRED},
+        // GM/T 0044.4 7.2.1 B5, the received C3 against the MAC the recipient's key derives: a
+        // compare that stops at the first differing byte reports how much of a C3 was right. The
+        // engine compares nothing else, so the variable-time form is forbidden outright.
+        {"org/bouncycastle/crypto/engines/SM9Engine", "constantTimeAreEqual", REQUIRED},
+        {"org/bouncycastle/crypto/engines/SM9Engine", "areEqual", FORBIDDEN},
+        {"org/bouncycastle/crypto/kems/SM9KEMGenerator", "multiplyRecipientPoint", REQUIRED},
+        {"org/bouncycastle/crypto/kems/SM9KEMGenerator", "powSecure", REQUIRED},
+
+        // GM/T 0044.3 key exchange, R = [r]Q_peer and the powers of e(P_pub-e, P2) and of the
+        // pairing the shared key is derived from, all over the ephemeral r. The class raises to r
+        // four times and the per-class scan is satisfied by any one of them;
+        // SM9KeyExchangeTest.checkSecretPowersDraw holds each party's two to the draws of
+        // powSecureFixedBase and powSecure.
+        {"org/bouncycastle/crypto/agreement/SM9KeyExchange", "multiplyRecipientPoint", REQUIRED},
+        {"org/bouncycastle/crypto/agreement/SM9KeyExchange", "powSecure", REQUIRED},
+
+        // ... [r]Q_B and [r]Q_peer, which the three form through the master public key's
+        // multiplyRecipientPoint as [r h1]P1 + [r]P_pub-e: the product r h1 mod N by modMult, which
+        // runs the same steps whatever r is, and the sum by SM9Curve.sumOfTwoMultipliesSecure, the
+        // comb over the tables of both points. (recipientPoint, beside it, multiplies P1 by the
+        // public h1 alone.)
+        {"org/bouncycastle/crypto/params/SM9EncMasterPublicKeyParameters", "modMult", REQUIRED},
+        {"org/bouncycastle/crypto/params/SM9EncMasterPublicKeyParameters", "sumOfTwoMultipliesSecure", REQUIRED},
+        // SM9Curve.multiplyPublic, the GLV method verification multiplies the signature's S by,
+        // takes steps and reads multiples that depend on its scalar and its point, and is for public
+        // values only: none of the classes that multiply a point by an ephemeral may reach it.
+        {"org/bouncycastle/crypto/engines/SM9Engine", "multiplyPublic", FORBIDDEN},
+        {"org/bouncycastle/crypto/kems/SM9KEMGenerator", "multiplyPublic", FORBIDDEN},
+        {"org/bouncycastle/crypto/agreement/SM9KeyExchange", "multiplyPublic", FORBIDDEN},
+        {"org/bouncycastle/crypto/params/SM9EncMasterPublicKeyParameters", "multiplyPublic", FORBIDDEN},
+        // SM9Pairing.multiPair, which forms verification's product of pairings and the pairing value
+        // a master public key fixes, is for public values only as well: it computes the lines of
+        // each G2 point's Miller loop from the point as it is and keeps them with the point, and its
+        // final exponentiation takes no random factor. The user's encryption key de is a G2 point,
+        // and the four classes that pair it - decryption, decapsulation, the key exchange, and the
+        // import that checks a key against its master public key - do so through
+        // SM9Pairing.pairing, which starts from a random representative of de on every call and
+        // gives the value its final exponentiation runs on a random factor. multiPair returns the
+        // same value, so no round trip or vector tells the two apart - only for the key exchange
+        // does a test see the difference, in the number of draws SM9KeyExchangeTest holds
+        // calculateKey to - while de's lines would carry no random factor and would stay with the
+        // key: none of the four may reach it.
+        {"org/bouncycastle/crypto/engines/SM9Engine", "multiPair", FORBIDDEN},
+        {"org/bouncycastle/crypto/kems/SM9KEMExtractor", "multiPair", FORBIDDEN},
+        {"org/bouncycastle/crypto/agreement/SM9KeyExchange", "multiPair", FORBIDDEN},
+        {"org/bouncycastle/crypto/params/SM9EncPrivateKeyParameters", "multiPair", FORBIDDEN},
+
+        // The SM9 math layer, which the rows above do not reach although it is where the key is
+        // consumed. Its F_q arithmetic is Fp's, on fixed-width limbs, and the one inversion in the
+        // tower is Fp's call of the constant-time Mod.checkedModOddInverse, where the tower had inverted
+        // with BigInteger.modInverse behind a random blinding factor: Fp2, which still blinds the
+        // norm it inverts, and Fp12, which divides out powSecure's random factor, now reach it
+        // through Fp, and neither may return to modInverse. Fp12.powSecureFixedBase, the comb for the
+        // pairing values a master public key fixes, blinds the secret exponent with a random
+        // multiple of the group order before it runs, or the running time reports the exponent's
+        // bit length, and Fp12.powSecure, which splits its exponent into four through the
+        // Frobenius, a split such a multiple would not change, blinds the split with random
+        // multiples of vectors that stand for 0; both draw the random factor their running values
+        // carry. SM9Curve.blind draws the multiple, for powSecureFixedBase and for
+        // SM9G2Point.multiply, which blinds
+        // its scalar - the KGC's secret when it derives [ks]P2 and [t2]P2 - and draws the factor its
+        // comb for P2 carries the table's entries by, or starts its ladder from a random
+        // representative of the point, as isInSubgroup starts its chain for a decoded key; and
+        // SM9Pairing starts its Miller loop from a random representative of the G2 point it is
+        // given, the user's private key on the decryption, KEM and key-exchange paths, and gives the
+        // value its final exponentiation runs on a random factor, a power of a base it keeps by an
+        // exponent it draws for the call. The draws are the randomisation, so the REQUIRED rows name
+        // them. None of the three branches on its secret's bits: powSecure and powSecureFixedBase
+        // read each column's entry out of their tables in full, as the pairing's comb reads each of
+        // its own, through Fp12.lookup, the G2 comb
+        // reads each of its own through SM9G2Point.lookup, the same full scan, and the G2 ladder
+        // exchanges its running points at each bit by Fp's masked swap, both reading the blinded
+        // scalar's bits from its words rather than through BigInteger.testBit. Each of those four
+        // tables' scans starts at an entry drawn for it, so that the one step of the scan that moves
+        // the entry read into place does not give away which it is: the nextBytes rows name that
+        // draw in Fp12, which draws powSecure's blinding through it as well, and SM9G2Point, which
+        // draws nothing else through it, and SM9KeyExchangeTest counts the pairing's, whose class
+        // draws its random factor's exponent through it as well.
+        // (Fp12 has no row for blind: the name of the local holding the blinded exponent would
+        // satisfy it; nor a FORBIDDEN one for testBit, which its pow over public exponents calls;
+        // nor Fp2 one for its blinding draw, whose names its own randomNonZero also calls -
+        // SM9SignerTest counts that draw instead.)
+        {"org/bouncycastle/math/ec/sm9/Fp", "checkedModOddInverse", REQUIRED},
+        {"org/bouncycastle/math/ec/sm9/Fp", "modInverse", FORBIDDEN},
+        {"org/bouncycastle/math/ec/sm9/Fp2", "modInverse", FORBIDDEN},
+        {"org/bouncycastle/math/ec/sm9/Fp12", "getSecureRandom", REQUIRED},
+        {"org/bouncycastle/math/ec/sm9/Fp12", "nextBytes", REQUIRED},
+        {"org/bouncycastle/math/ec/sm9/Fp12", "cmov", REQUIRED},
+        {"org/bouncycastle/math/ec/sm9/Fp12", "modInverse", FORBIDDEN},
+        {"org/bouncycastle/math/ec/sm9/SM9Curve", "getSecureRandom", REQUIRED},
+        {"org/bouncycastle/math/ec/sm9/SM9G2Point", "blind", REQUIRED},
+        {"org/bouncycastle/math/ec/sm9/SM9G2Point", "randomNonZero", REQUIRED},
+        {"org/bouncycastle/math/ec/sm9/SM9G2Point", "nextBytes", REQUIRED},
+        {"org/bouncycastle/math/ec/sm9/SM9G2Point", "cswap", REQUIRED},
+        {"org/bouncycastle/math/ec/sm9/SM9G2Point", "testBit", FORBIDDEN},
+        {"org/bouncycastle/math/ec/sm9/SM9Pairing", "randomNonZero", REQUIRED},
+        {"org/bouncycastle/math/ec/sm9/SM9Pairing", "getSecureRandom", REQUIRED},
+        {"org/bouncycastle/math/ec/sm9/SM9Pairing", "lookup", REQUIRED},
+        // SM9Curve runs a secret multiplication in G1 through SM9G1Multiplier's comb, for P1, a signing
+        // key ds and an encryption master public key P_pub-e, each of which keeps the table the comb
+        // makes for it - run over the tables of P1 and P_pub-e at once for the [r h1]P1 + [r]P_pub-e
+        // encryption, encapsulation and the key exchange send. It blinds the scalar with a random
+        // multiple of N, carries the entries it reads by a random factor drawn for the call and reads
+        // each entry through a full scan of the table from an entry drawn for it: the draws are the
+        // randomisation, so the REQUIRED rows name them, and it does not read the blinded scalar's bits
+        // through BigInteger.testBit. BouncyCastle's comb and fixed-window multiplier, which SM9Curve
+        // ran before and which read the scalar's own digits from entries the same for every call, give
+        // the same points, as the default multiplier does, so only these rows see a return to one of
+        // them; no FORBIDDEN row can name the default, since ECPoint.multiply is a substring of
+        // multiplySecure.
+        {"org/bouncycastle/math/ec/sm9/SM9Curve", "SM9G1Multiplier", REQUIRED},
+        {"org/bouncycastle/math/ec/sm9/SM9Curve", "FixedPointCombMultiplier", FORBIDDEN},
+        {"org/bouncycastle/math/ec/sm9/SM9Curve", "ECConstantTimeMultiplier", FORBIDDEN},
+        {"org/bouncycastle/math/ec/sm9/SM9G1Multiplier", "blind", REQUIRED},
+        {"org/bouncycastle/math/ec/sm9/SM9G1Multiplier", "randomNonZero", REQUIRED},
+        {"org/bouncycastle/math/ec/sm9/SM9G1Multiplier", "nextBytes", REQUIRED},
+        {"org/bouncycastle/math/ec/sm9/SM9G1Multiplier", "testBit", FORBIDDEN},
+        // The field of G1, where the secret multiples are computed: the KGC's [t2]P1 and [ke]P1,
+        // the signer's [l]ds, and the ephemeral's multiples of the recipient's or the peer's
+        // point. It brings each sum, difference and product below q by a subtraction always made,
+        // kept or discarded under a mask, where it had compared the result with q through
+        // Nat256.gte and subtracted on the answer, and it inverts through
+        // Mod.checkedModOddInverse, as SM2's field does.
+        {"org/bouncycastle/math/ec/custom/gm/SM9P256V1Field", "checkedModOddInverse", REQUIRED},
+        {"org/bouncycastle/math/ec/custom/gm/SM9P256V1Field", "modInverse", FORBIDDEN},
+        {"org/bouncycastle/math/ec/custom/gm/SM9P256V1Field", "gte", FORBIDDEN},
 
         // SEC 1 sec. 4.1.3 ECDSA signing, s = k^-1 * (e + d * r) mod n, over the signing key d and
         // the nonce inverse. No modOddInverse row: verifySignature calls modOddInverseVar on the
@@ -148,7 +302,7 @@ public class ConstantTimeUsageTest
             else if (present)
             {
                 fail(name + " references the variable-time " + symbol
-                    + " - use the constant-time equivalent in BigIntegers instead");
+                    + " - use its constant-time equivalent instead");
             }
         }
 

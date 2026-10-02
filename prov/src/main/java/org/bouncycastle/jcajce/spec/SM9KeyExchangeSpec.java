@@ -42,13 +42,20 @@ public class SM9KeyExchangeSpec
 
     /**
      * @param initiator     whether this party is the initiator (user A).
-     * @param keyLengthBits the length of the agreed key in bits.
+     * @param keyLengthBits the length of the agreed key in bits, a positive whole number of
+     *                      bytes - the key is handed back as bytes, and KEM.SM9-KEM takes the same
+     *                      rule, so the two services no longer round a fractional-byte request in
+     *                      opposite directions.
      */
     public SM9KeyExchangeSpec(boolean initiator, int keyLengthBits)
     {
         if (keyLengthBits <= 0)
         {
             throw new IllegalArgumentException("keyLengthBits must be positive");
+        }
+        if ((keyLengthBits % 8) != 0)
+        {
+            throw new IllegalArgumentException("keyLengthBits must be a whole number of bytes");
         }
         this.initiator = initiator;
         this.keyLengthBits = keyLengthBits;

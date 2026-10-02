@@ -1,6 +1,7 @@
 package org.bouncycastle.util;
 
 import java.io.IOException;
+import java.io.InvalidObjectException;
 
 public class Exceptions
 {
@@ -22,6 +23,12 @@ public class Exceptions
     public static IOException ioException(String message, Throwable cause)
     {
         return (IOException)new IOException(message).initCause(cause);
+    }
+
+    // InvalidObjectException has no (String, Throwable) constructor in any Java version.
+    public static InvalidObjectException invalidObjectException(String message, Throwable cause)
+    {
+        return (InvalidObjectException)new InvalidObjectException(message).initCause(cause);
     }
 
 }

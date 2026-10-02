@@ -440,6 +440,7 @@
                 <exclude name="**/jce/provider/test/ECIESTest.java" />
                 <exclude name="**/jce/provider/test/PBETest.java" />
                 <exclude name="**/jce/provider/test/SM9SignatureTest.java" />
+                <exclude name="**/jce/provider/test/SM9EncodingTest.java" />
                 <exclude name="**/jce/provider/test/XIESTest.java" />
             </fileset>
             <fileset dir="pkix/src/test/java">

@@ -5,10 +5,15 @@ import java.security.PrivateKey;
 
 /**
  * Interface for an SM9 (GM/T 0044) encryption master private key, the KGC-held
- * root of the identity-based scheme. User key pairs are derived through the
- * {@link SM9EncUserKeyGenerator} extraction method with an explicit hid - the one
- * encryption master key serves KEM / public-key encryption (hid = 0x03) and
- * key exchange (hid = 0x02), the KGC's published hid distinguishing them.
+ * root of the identity-based scheme. The one encryption master key serves KEM /
+ * public-key encryption (hid = 0x03), whose user key pairs come from the
+ * {@link SM9EncUserKeyGenerator} extraction method, and key exchange (hid = 0x02), whose
+ * user key pairs come from {@link #generateExchangeKeyPair(byte[])} - the KGC's published
+ * hid distinguishing them.
+ * <p>
+ * <b>Usage warning:</b> the hid separates the key exchange from the other two, not the KEM
+ * from public-key encryption: an identity's key should be used for the KEM or for public-key
+ * encryption, but not for both. A KGC offering both publishes a separate hid for each.
  */
 public interface SM9EncMasterPrivateKey
     extends PrivateKey, SM9EncUserKeyGenerator

@@ -73,6 +73,11 @@ public class SM9EncKeyEncodingExample
         KeyFactory kf = KeyFactory.getInstance("SM9", "BC");
         SM9EncMasterPublicKey masterPublic = (SM9EncMasterPublicKey)kf.generatePublic(
             new X509EncodedKeySpec(masterPublicEncoded));
+
+        //    The key bytes, the master public key, the identity and the hid arrived separately,
+        //    so the KeyFactory checks that they belong together, by the KGC's own relation
+        //    between them: a key filed under the wrong master public key, identity or hid is
+        //    refused here, with an InvalidKeySpecException, rather than failing a later MAC check.
         PrivateKey bobRebuilt = kf.generatePrivate(
             new SM9EncUserPrivateKeySpec(bobEncoded, masterPublic, bobIdentity, hid));
 

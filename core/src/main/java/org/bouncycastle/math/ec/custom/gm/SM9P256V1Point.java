@@ -31,6 +31,38 @@ public class SM9P256V1Point extends ECPoint.AbstractFp
         return new SM9P256V1Point(null, getAffineXCoord(), getAffineYCoord());
     }
 
+    /**
+     * The compressed length is refused, as {@link #encodeTo(boolean, byte[], int)} refuses the
+     * compressed encoding itself.
+     */
+    public int getEncodedLength(boolean compressed)
+    {
+        checkEncoding(compressed);
+        return super.getEncodedLength(compressed);
+    }
+
+    /**
+     * Only the uncompressed encoding is written. The SM9 G1 curve cannot decompress a point - its
+     * field has no square root, see {@link SM9P256V1FieldElement#sqrt()} - so a compressed
+     * encoding written here was one {@link ECCurve#decodePoint(byte[])} on the same curve then
+     * refused. The point at infinity keeps its one-octet encoding, which decodes.
+     *
+     * @throws UnsupportedOperationException if compressed is true for a finite point.
+     */
+    public void encodeTo(boolean compressed, byte[] buf, int off)
+    {
+        checkEncoding(compressed);
+        super.encodeTo(compressed, buf, off);
+    }
+
+    private void checkEncoding(boolean compressed)
+    {
+        if (compressed && !isInfinity())
+        {
+            throw new UnsupportedOperationException("SM9 G1 points have no compressed encoding");
+        }
+    }
+
     public ECPoint add(ECPoint b)
     {
         if (this.isInfinity())

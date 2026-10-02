@@ -217,22 +217,56 @@ public class KeyAgreementKeySizeTest
         expectKey(sm9Agreement(masterPub, a, b, idA, idB, hid, 256, true), "AES", "AES", 32);
         expectKey(sm9Agreement(masterPub, a, b, idA, idB, hid, 128, true), "AES[128]", "AES", 16);
 
-        // ...and still agrees with the other party, so the guard has not disturbed the exchange.
-        // Both sides have to be completed inside one exchange - the ephemerals are generated in the
-        // provider, so a second run of the helper would be an unrelated exchange.
+        // ...and the guard works to the byte. The agreed length is the caller's choice here, in
+        // whole bytes, so SM9 is the one agreement that can stand a byte either side of a request:
+        // one short is refused, one over is cut down to the request.
+        expectNoSuchAlgorithm(sm9Agreement(masterPub, a, b, idA, idB, hid, 120, true), "AES[128]",
+            "unable to generate 128 bit key for AES[128]: shared secret is only 120 bits, use a KDF based agreement");
+        expectKey(sm9Agreement(masterPub, a, b, idA, idB, hid, 136, true), "AES[128]", "AES", 16);
+
+        // An exchange that covers the request still agrees with the other party, so the guard has
+        // not disturbed the exchange.
+        KeyAgreement[] agreed = sm9Exchange(masterPub, a, b, idA, idB, hid, 256);
+
+        isTrue("SM9 parties disagree on the derived key",
+            areEqual(agreed[0].generateSecret("AES").getEncoded(), agreed[1].generateSecret("AES").getEncoded()));
+
+        // A rejected request must not damage the agreement either: the secret the derivation step
+        // clears on the way out has to be a copy, not the SPI's own, or the key the agreed length
+        // can cover comes back as zeros on the side that was refused.
+        agreed = sm9Exchange(masterPub, a, b, idA, idB, hid, 128);
+
+        expectNoSuchAlgorithm(agreed[0], "AES",
+            "unable to generate 256 bit key for " + AES_OID + ": shared secret is only 128 bits, use a KDF based agreement");
+
+        isTrue("SM9 agreement damaged by a rejected request",
+            areEqual(agreed[0].generateSecret("AES[128]").getEncoded(), agreed[1].generateSecret("AES[128]").getEncoded()));
+    }
+
+    /**
+     * Runs one SM9 exchange to completion on both sides and returns the two agreements, initiator
+     * first, so what each derives can be compared. Both sides have to be completed inside the one
+     * exchange - the ephemerals are generated in the provider, so a second run would be an
+     * unrelated exchange.
+     */
+    private KeyAgreement[] sm9Exchange(SM9EncMasterPublicKey masterPub, KeyPair a, KeyPair b,
+                                       byte[] idA, byte[] idB, byte hid, int keyLengthBits)
+        throws Exception
+    {
+        SecureRandom random = new SecureRandom();
+
         KeyAgreement aAgree = KeyAgreement.getInstance("SM9", "BC");
-        aAgree.init(a.getPrivate(), new SM9KeyExchangeSpec(true, 256), random);
+        aAgree.init(a.getPrivate(), new SM9KeyExchangeSpec(true, keyLengthBits), random);
         Key ra = aAgree.doPhase(masterPub.getUserPublicKey(idB, hid), false);
 
         KeyAgreement bAgree = KeyAgreement.getInstance("SM9", "BC");
-        bAgree.init(b.getPrivate(), new SM9KeyExchangeSpec(false, 256), random);
+        bAgree.init(b.getPrivate(), new SM9KeyExchangeSpec(false, keyLengthBits), random);
         Key rb = bAgree.doPhase(masterPub.getUserPublicKey(idA, hid), false);
 
         aAgree.doPhase(masterPub.getExchangeEphemeral(rb.getEncoded()), true);
         bAgree.doPhase(masterPub.getExchangeEphemeral(ra.getEncoded()), true);
 
-        isTrue("SM9 parties disagree on the derived key",
-            areEqual(aAgree.generateSecret("AES").getEncoded(), bAgree.generateSecret("AES").getEncoded()));
+        return new KeyAgreement[]{aAgree, bAgree};
     }
 
     /**
