@@ -1,6 +1,8 @@
 package org.bouncycastle.jcajce.provider.asymmetric.sm9;
 
+import java.io.InvalidObjectException;
 import java.io.NotSerializableException;
+import java.io.ObjectInputStream;
 import java.io.ObjectStreamException;
 import java.security.PublicKey;
 
@@ -98,5 +100,16 @@ class BCSM9ExchangeEphemeralPublicKey
     {
         throw new NotSerializableException(
             "SM9 exchange ephemeral keys are not serializable; transport the getEncoded() form");
+    }
+
+    /**
+     * A key of this class is never written, as writeReplace says, so a stream that holds it was not
+     * written by it: the point is transient, and a key read from it would have none,
+     * failing with a NullPointerException wherever it was used.
+     */
+    private void readObject(ObjectInputStream in)
+        throws InvalidObjectException
+    {
+        throw new InvalidObjectException("SM9 exchange ephemeral keys are not serializable");
     }
 }

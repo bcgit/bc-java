@@ -27,8 +27,15 @@ import org.bouncycastle.util.Arrays;
  * have been cross-checked against the GmSSL and gmsm (emmansun) reference
  * implementations of GM/T 0080-2020. The GM/T 0080-2020 data-encapsulation type
  * values are 0 = KDF stream cipher (XOR), 1 = SM4-ECB, 2 = SM4-CBC, 4 = SM4-OFB,
- * 8 = SM4-CFB; BouncyCastle implements the stream ({@link #EN_TYPE_STREAM}) and
- * SM4-ECB ({@link #EN_TYPE_SM4}) modes and rejects the others as unsupported.
+ * 8 = SM4-CFB, and this type represents every one of them, so that a conformant ciphertext
+ * of any mode can be parsed and inspected. Which modes are <i>implemented</i> is a separate
+ * question, answered one layer up: {@code Cipher.SM9} decrypts in the stream
+ * ({@link #EN_TYPE_STREAM}) and SM4-ECB ({@link #EN_TYPE_SM4}) modes and refuses a ciphertext
+ * whose enType is not the one it was configured for. The value is never taken as the mode to
+ * decrypt in.
+ * <p>
+ * C1 and C3 have a fixed size, 65 and 32 bytes, and both constructors hold them to it; C2 is
+ * as long as the encapsulated message makes it.
  */
 public class SM9Cipher
     extends ASN1Object
@@ -37,6 +44,12 @@ public class SM9Cipher
     public static final int EN_TYPE_STREAM = 0;
     /** GM/T 0080-2020 data-encapsulation type 1: SM4 in ECB mode. */
     public static final int EN_TYPE_SM4 = 1;
+    /** GM/T 0080-2020 data-encapsulation type 2: SM4 in CBC mode (not implemented by Cipher.SM9). */
+    public static final int EN_TYPE_SM4_CBC = 2;
+    /** GM/T 0080-2020 data-encapsulation type 4: SM4 in OFB mode (not implemented by Cipher.SM9). */
+    public static final int EN_TYPE_SM4_OFB = 4;
+    /** GM/T 0080-2020 data-encapsulation type 8: SM4 in CFB mode (not implemented by Cipher.SM9). */
+    public static final int EN_TYPE_SM4_CFB = 8;
 
     private final int enType;
     private final byte[] c1;
@@ -45,10 +58,28 @@ public class SM9Cipher
 
     public SM9Cipher(int enType, byte[] c1, byte[] c3, byte[] c2)
     {
+        // the same enType values getInstance takes, so that the type never writes an encoding it
+        // would refuse to read back - it used to accept any int here
+        if (!isEnType(enType))
+        {
+            throw new IllegalArgumentException("unknown SM9 encryption type: " + enType);
+        }
+        if (c1 == null || c3 == null || c2 == null)
+        {
+            // an absent field would otherwise surface as a NullPointerException from encoding
+            throw new NullPointerException("SM9Cipher fields cannot be null");
+        }
+        checkLengths(c1, c3);
         this.enType = enType;
         this.c1 = Arrays.clone(c1);
         this.c3 = Arrays.clone(c3);
         this.c2 = Arrays.clone(c2);
+    }
+
+    private static boolean isEnType(int enType)
+    {
+        return enType == EN_TYPE_STREAM || enType == EN_TYPE_SM4
+            || enType == EN_TYPE_SM4_CBC || enType == EN_TYPE_SM4_OFB || enType == EN_TYPE_SM4_CFB;
     }
 
     private SM9Cipher(ASN1Sequence seq)
@@ -61,22 +92,42 @@ public class SM9Cipher
         // enType is read via hasValue rather than intValueExact so a crafted out-of-range
         // INTEGER yields a uniform IllegalArgumentException, not an ArithmeticException.
         ASN1Integer type = ASN1Integer.getInstance(seq.getObjectAt(0));
-        if (type.hasValue(EN_TYPE_STREAM))
+        int[] known = { EN_TYPE_STREAM, EN_TYPE_SM4, EN_TYPE_SM4_CBC, EN_TYPE_SM4_OFB, EN_TYPE_SM4_CFB };
+        int found = -1;
+        for (int i = 0; i != known.length; i++)
         {
-            this.enType = EN_TYPE_STREAM;
+            if (type.hasValue(known[i]))
+            {
+                found = known[i];
+            }
         }
-        else if (type.hasValue(EN_TYPE_SM4))
+        if (found < 0)
         {
-            this.enType = EN_TYPE_SM4;
+            throw new IllegalArgumentException("unknown SM9 encryption type");
         }
-        else
-        {
-            // GM/T 0080-2020 also defines SM4-CBC (2), SM4-OFB (4) and SM4-CFB (8), which are not implemented here.
-            throw new IllegalArgumentException("unsupported SM9 encryption type (only stream and SM4-ECB are supported)");
-        }
+        this.enType = found;
         this.c1 = octets(ASN1BitString.getInstance(seq.getObjectAt(1)));
         this.c3 = ASN1OctetString.getInstance(seq.getObjectAt(2)).getOctets();
         this.c2 = ASN1OctetString.getInstance(seq.getObjectAt(3)).getOctets();
+        checkLengths(c1, c3);
+    }
+
+    /**
+     * The engine reads C1 || C3 || C2 at fixed offsets, so with the sizes unchecked a C3 a byte
+     * short with C2 carrying its last byte - or a byte long carrying C2's first - decoded to
+     * different fields that concatenate to the identical input, and a C1 of any other length
+     * was taken as the point.
+     */
+    private static void checkLengths(byte[] c1, byte[] c3)
+    {
+        if (c1.length != 65)
+        {
+            throw new IllegalArgumentException("SM9 ciphertext C1 must be 65 bytes");
+        }
+        if (c3.length != 32)
+        {
+            throw new IllegalArgumentException("SM9 ciphertext C3 must be 32 bytes");
+        }
     }
 
     private static byte[] octets(ASN1BitString bitString)

@@ -4,7 +4,6 @@ import java.math.BigInteger;
 
 import javax.security.auth.Destroyable;
 
-import org.bouncycastle.crypto.generators.SM9Sm3;
 import org.bouncycastle.math.ec.sm9.SM9Curve;
 import org.bouncycastle.math.ec.sm9.SM9G2Point;
 import org.bouncycastle.util.Arrays;
@@ -27,8 +26,10 @@ public class SM9EncMasterPrivateKeyParameters
      * hid is not fixed by the standard: GM/T 0044.3-2016 defines it as the
      * "identifier of the encryption private key generating function, denoted by
      * one byte", which the KGC chooses and publishes. These constants are the
-     * two identifier values the published GM/T 0044 examples use, and the only
-     * values {@link #generateUserKey(byte[], byte)} accepts.
+     * two identifier values the published GM/T 0044 examples use, and the
+     * defaults here; the explicit-hid entry points take whatever value a KGC
+     * publishes, the one exception being that a KEM or decryption key may not be
+     * derived under {@link #HID_EXCHANGE}, which names the other function.
      */
     public static final byte HID = (byte)0x03;
 
@@ -92,7 +93,31 @@ public class SM9EncMasterPrivateKeyParameters
 
     public static SM9EncMasterPrivateKeyParameters fromEncoded(byte[] enc)
     {
+        SM9KeyDerivation.checkScalarEncoding(enc);
         return new SM9EncMasterPrivateKeyParameters(new BigInteger(1, enc));
+    }
+
+    /**
+     * Rebuild a master private key and check it against the master public key its KGC
+     * published. A key decoded from its scalar alone always agrees with the public key it
+     * derives from that scalar, so a stale or substituted scalar - still 32 bytes, still in
+     * [1, N-1] - imports as a well-formed key pair that is simply not the KGC's, and every user
+     * key it then issues is consistent with that wrong public key, and imports under it;
+     * comparing against the published one is the check the import of a user key cannot make.
+     */
+    public static SM9EncMasterPrivateKeyParameters fromEncoded(byte[] enc, SM9EncMasterPublicKeyParameters publicKey)
+    {
+        if (publicKey == null)
+        {
+            throw new NullPointerException("publicKey cannot be null");
+        }
+        SM9EncMasterPrivateKeyParameters key = fromEncoded(enc);
+        if (!Arrays.areEqual(key.getPublicKeyParameters().getEncoded(), publicKey.getEncoded()))
+        {
+            key.destroy();
+            throw new IllegalArgumentException("SM9 master private key does not match its master public key");
+        }
+        return key;
     }
 
     /**
@@ -103,9 +128,23 @@ public class SM9EncMasterPrivateKeyParameters
      * under. For a key-exchange user key use
      * {@link #generateExchangeKey(byte[])} - the two usages are kept on
      * separate keys and the consumers enforce it.
+     * <p>
+     * The hid is the KGC's published choice and may be any one byte, with one
+     * exception: {@link #HID_EXCHANGE} names the key exchange's generation function,
+     * and a KEM / decryption key derived under it would be the identical G2 point as
+     * the exchange key of the same identity - the collision the separate usages exist
+     * to prevent (see {@link #HID_EXCHANGE}), reached without the consumers' usage
+     * check ever being consulted. A KGC publishing neither of these two values
+     * separates its own functions by publishing two values of its own.
+     * <p>
+     * <b>Usage warning:</b> the key this returns should be used for the KEM or for
+     * public-key encryption, but not for both. A KGC offering both functions publishes a
+     * separate hid for each and calls this once per function, as it already does for the
+     * key exchange, so that the two keys are distinct.
      */
     public SM9EncPrivateKeyParameters generateUserKey(byte[] identity, byte hid)
     {
+        checkEncryptionHid(hid);
         return generateKey(identity, hid, false);
     }
 
@@ -124,6 +163,12 @@ public class SM9EncMasterPrivateKeyParameters
      * under an explicit hid, for a KGC whose published exchange hid is not
      * {@link #HID_EXCHANGE} (the official English edition's Annex B example
      * runs the exchange under 0x03, on its own master key).
+     * <p>
+     * A master key that issues exchange keys under {@link #HID} issues them as the
+     * identical points as its KEM / decryption keys, so it must serve the exchange
+     * alone - which is how the example that needs this overload is written. Where
+     * one master key serves both functions the KGC publishes two hids, and the
+     * no-argument {@link #generateExchangeKey(byte[])} is the call to make.
      */
     public SM9EncPrivateKeyParameters generateExchangeKey(byte[] identity, byte hid)
     {
@@ -132,31 +177,31 @@ public class SM9EncMasterPrivateKeyParameters
 
     private SM9EncPrivateKeyParameters generateKey(byte[] identity, byte hid, boolean exchangeKey)
     {
-        checkHid(hid);
-        BigInteger ke = checkedKe();
-        BigInteger n = SM9Curve.N;
-        // every step from here down touches ke, the master private key, so each avoids the
-        // variable-time BigInteger arithmetic: modAdd for the sum, modOddInverse rather than
-        // modInverse, and modMult for the product. N is the group order and so is odd, h1 returns
-        // a value in [1, N-1] and the constructor pins ke to [1, N-1], so both stay inside the
-        // [0, N) contract those helpers require. The identity is public and supplied by the caller,
-        // so a reduction whose cost varied with the sum or the product would answer a question
-        // about ke once per identity served, and those answers combine.
-        BigInteger t1 = BigIntegers.modAdd(n, SM9Sm3.h1(Arrays.append(identity, hid), n), ke);
-        if (t1.signum() == 0)
-        {
-            throw new IllegalStateException("SM9 encryption master key must be regenerated for this identity");
-        }
-        BigInteger t2 = BigIntegers.modMult(n, ke, BigIntegers.modOddInverse(n, t1));
+        SM9SigPrivateKeyParameters.checkContext(publicParams, identity);
+        // t2 = ke * (H1(identity || hid, N) + ke)^-1 mod N, in the constant-time arithmetic the
+        // signature derivation shares
+        BigInteger t2 = SM9KeyDerivation.t2(checkedKe(), identity, hid,
+            "SM9 encryption master key must be regenerated for this identity");
         SM9G2Point de = SM9Curve.P2.multiply(t2);
-        return new SM9EncPrivateKeyParameters(de, publicParams, Arrays.clone(identity), hid, exchangeKey);
+        return new SM9EncPrivateKeyParameters(de, publicParams, identity, hid, exchangeKey);
     }
 
-    static void checkHid(byte hid)
+    /**
+     * The hid of a KEM / decryption user key, which HID_EXCHANGE cannot be: a key
+     * derived under the exchange's generation function is the exchange key of that
+     * identity, whatever usage the resulting object claims.
+     * <p>
+     * That is the one value this refuses, and it is a rule about this API's own two named
+     * constants rather than about the KGC's choice: a KGC that publishes neither is separating
+     * its two functions by publishing two values of its own, which is what the rule exists to
+     * make it do.
+     */
+    static void checkEncryptionHid(byte hid)
     {
-        if (hid != HID && hid != HID_EXCHANGE)
+        if (hid == HID_EXCHANGE)
         {
-            throw new IllegalArgumentException("hid must be HID (0x03) or HID_EXCHANGE (0x02)");
+            throw new IllegalArgumentException(
+                "hid must not be HID_EXCHANGE (0x02) for a KEM or decryption user key - that hid names the key exchange");
         }
     }
 

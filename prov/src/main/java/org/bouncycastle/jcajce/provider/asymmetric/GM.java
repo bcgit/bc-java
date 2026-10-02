@@ -1,12 +1,10 @@
 package org.bouncycastle.jcajce.provider.asymmetric;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import org.bouncycastle.asn1.gm.GMObjectIdentifiers;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.util.AsymmetricAlgorithmProvider;
+import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
 import org.bouncycastle.jcajce.util.SpiUtil;
 
 public class GM
@@ -14,14 +12,6 @@ public class GM
     private static final String PREFIX = "org.bouncycastle.jcajce.provider.asymmetric" + ".ec.";
 
     private static final String SM9_PREFIX = "org.bouncycastle.jcajce.provider.asymmetric" + ".sm9.";
-
-    private static final Map<String, String> generalSm2Attributes = new HashMap<String, String>();
-
-    static
-    {
-        generalSm2Attributes.put("SupportedKeyClasses", "java.security.interfaces.ECPublicKey|java.security.interfaces.ECPrivateKey");
-        generalSm2Attributes.put("SupportedKeyFormats", "PKCS#8|X.509");
-    }
 
     public static class Mappings
         extends AsymmetricAlgorithmProvider
@@ -96,11 +86,33 @@ public class GM
             provider.addAlgorithm("KeyFactory.SM9", SM9_PREFIX + "KeyFactorySpi");
             provider.addAlgorithm("Alg.Alias.KeyFactory." + GMObjectIdentifiers.sm9sign, "SM9");
             provider.addAlgorithm("Alg.Alias.KeyFactory." + GMObjectIdentifiers.sm9encrypt, "SM9");
+            provider.addAlgorithm("Alg.Alias.KeyFactory.OID." + GMObjectIdentifiers.sm9sign, "SM9");
+            provider.addAlgorithm("Alg.Alias.KeyFactory.OID." + GMObjectIdentifiers.sm9encrypt, "SM9");
+            // the names the SM9 keys give from getAlgorithm(), which generic JCA code hands back to
+            // KeyFactory.getInstance to rebuild or convert a key
+            provider.addAlgorithm("Alg.Alias.KeyFactory.SM9-ENC", "SM9");
+            provider.addAlgorithm("Alg.Alias.KeyFactory.SM9-SIGN", "SM9");
+            provider.addAlgorithm("Alg.Alias.KeyPairGenerator." + GMObjectIdentifiers.sm9sign, "SM9-SIGN");
+            provider.addAlgorithm("Alg.Alias.KeyPairGenerator.OID." + GMObjectIdentifiers.sm9sign, "SM9-SIGN");
+            provider.addAlgorithm("Alg.Alias.KeyPairGenerator." + GMObjectIdentifiers.sm9encrypt, "SM9-ENC");
+            provider.addAlgorithm("Alg.Alias.KeyPairGenerator.OID." + GMObjectIdentifiers.sm9encrypt, "SM9-ENC");
+            provider.addAlgorithm("Alg.Alias.Signature.OID." + GMObjectIdentifiers.sm9sign, "SM9");
+            provider.addAlgorithm("Alg.Alias.Cipher.OID." + GMObjectIdentifiers.sm9encrypt, "SM9");
+            provider.addAlgorithm("Alg.Alias.KeyAgreement.OID." + GMObjectIdentifiers.sm9keyagreement, "SM9");
 
             if (SpiUtil.hasKEM())
             {
                 provider.addAlgorithm("KEM.SM9-KEM", SM9_PREFIX + "SM9KEMSpi");
             }
+
+            // the converter table BouncyCastleProvider.getPublicKey(SubjectPublicKeyInfo) and
+            // getPrivateKey(PrivateKeyInfo) resolve an OID through - without these an SM9 key
+            // came back null there, and only the explicit KeyFactory.getInstance("SM9") path
+            // worked. Master keys only: a user's identity-based key does not decode from its
+            // encoding alone.
+            AsymmetricKeyInfoConverter sm9KeyFact = new org.bouncycastle.jcajce.provider.asymmetric.sm9.KeyFactorySpi();
+            provider.addKeyInfoConverter(GMObjectIdentifiers.sm9sign, sm9KeyFact);
+            provider.addKeyInfoConverter(GMObjectIdentifiers.sm9encrypt, sm9KeyFact);
         }
     }
 }

@@ -1,21 +1,16 @@
 package org.bouncycastle.jce.provider.test;
 
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
 import java.math.BigInteger;
-import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.Key;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
-import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
-import java.util.HashMap;
 import java.util.Map;
 
 import javax.crypto.KeyAgreement;
@@ -33,65 +28,35 @@ import org.bouncycastle.jcajce.spec.SM9KeyExchangeSpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
-import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 import org.bouncycastle.util.test.TestRandomBigInteger;
-import org.bouncycastle.test.TestResourceFinder;
 
 /**
- * Tests for the SM9 key exchange through {@code KeyAgreement.SM9} (GM/T 0044.3-2016):
- * a full two-party agreement over freshly generated keys, both official GM/T
- * 0044.5-2016 Annex B vectors reproduced byte-for-byte through the JCA API (the
- * Chinese edition's hid = 0x02 example and the official English edition's
- * hid = 0x03 one, with party A's key rebuilt through the KeyFactory's
- * SM9EncUserPrivateKeySpec exchange-key import rather than derived from the
- * master private key), and rejection of wrong key types, a user key imported
- * without the exchange usage, a mismatched hid or master key, a malformed peer
- * ephemeral, a missing spec and out-of-order calls. The
- * ephemeral values are generated inside the provider: the first doPhase names
- * the peer and returns this party's R, the last consumes the peer's.
+ * Tests for the SM9 key exchange through {@code KeyAgreement.SM9} (GM/T 0044.3-2016): a two-party
+ * agreement over fresh keys, both GM/T 0044.5-2016 Annex B vectors (hid 0x02 and 0x03) reproduced
+ * through the JCA API with party A's key imported through SM9EncUserPrivateKeySpec, and the refusals.
+ * The ephemerals are generated inside the provider: the first doPhase names the peer and returns this
+ * party's R, the last consumes the peer's.
  */
 public class SM9KeyAgreementTest
     extends SimpleTest
 {
+    // one master key pair, and Alice's and Bob's exchange keys under it, for checkAgreement,
+    // checkRejections and checkStaleSessionState
+    private final byte hid = SM9EncMasterPublicKey.HID_EXCHANGE;
+    private SecureRandom random;
+    private KeyPairGenerator kpGen;
+    private KeyPair master;
+    private SM9EncMasterPrivateKey masterPriv;
+    private SM9EncMasterPublicKey masterPub;
+    private byte[] aliceIdentity;
+    private byte[] bobIdentity;
+    private KeyPair alice;
+    private KeyPair bob;
+
     public String getName()
     {
         return "SM9KeyAgreement";
-    }
-
-    private Map loadVectors(String fileName)
-        throws Exception
-    {
-        Map m = new HashMap();
-        BufferedReader br = new BufferedReader(
-            new InputStreamReader(TestResourceFinder.findTestResource("crypto/sm9", fileName)));
-        try
-        {
-            String line;
-            while ((line = br.readLine()) != null)
-            {
-                line = line.trim();
-                if (line.length() == 0 || line.startsWith("#"))
-                {
-                    continue;
-                }
-                int eq = line.indexOf('=');
-                if (eq > 0)
-                {
-                    m.put(line.substring(0, eq).trim(), line.substring(eq + 1).trim());
-                }
-            }
-        }
-        finally
-        {
-            br.close();
-        }
-        return m;
-    }
-
-    private byte[] hex(Map v, String key)
-    {
-        return Hex.decode((String)v.get(key));
     }
 
     public void performTest()
@@ -102,32 +67,94 @@ public class SM9KeyAgreementTest
             Security.addProvider(new BouncyCastleProvider());
         }
 
+        random = new SecureRandom();
+        kpGen = KeyPairGenerator.getInstance("SM9-ENC", "BC");
+        kpGen.initialize(256, random);
+        master = kpGen.generateKeyPair();
+        masterPriv = (SM9EncMasterPrivateKey)master.getPrivate();
+        masterPub = (SM9EncMasterPublicKey)master.getPublic();
+        aliceIdentity = "Alice".getBytes("US-ASCII");
+        bobIdentity = "Bob".getBytes("US-ASCII");
+        alice = masterPriv.generateExchangeKeyPair(aliceIdentity);
+        bob = masterPriv.generateExchangeKeyPair(bobIdentity);
+
         checkAgreement();
         checkVector("sm9_keyexchange.txt");
         checkVector("sm9_keyexchange_hid03.txt");
         checkRejections();
+        checkStaleSessionState();
+    }
+
+    /**
+     * A rejected call leaves no completed or half-completed agreement for the next to run against: a
+     * first phase refused for a third party drops the agreement completed with the second, and a
+     * rejected re-init drops the previous key, spec and ephemeral.
+     */
+    private void checkStaleSessionState()
+        throws Exception
+    {
+        // a complete agreement between Alice and Bob
+        KeyAgreement a = KeyAgreement.getInstance("SM9", "BC");
+        a.init(alice.getPrivate(), new SM9KeyExchangeSpec(true, 128), random);
+        Key ra = a.doPhase(masterPub.getUserPublicKey(bobIdentity, hid), false);
+        KeyAgreement b = KeyAgreement.getInstance("SM9", "BC");
+        b.init(bob.getPrivate(), new SM9KeyExchangeSpec(false, 128), random);
+        Key rb = b.doPhase(masterPub.getUserPublicKey(aliceIdentity, hid), false);
+        a.doPhase(rb, true);
+        b.doPhase(ra, true);
+        byte[] shared = a.generateSecret();
+        isTrue("SM9 key agreement completes", Arrays.areEqual(shared, b.generateSecret()));
+
+        // a first phase with Carol, refused for a mismatched hid, must not leave Bob's secret to be
+        // handed out as Carol's
+        byte[] carolIdentity = "Carol".getBytes("US-ASCII");
+        try
+        {
+            a.doPhase(masterPub.getUserPublicKey(carolIdentity), false);
+            fail("KeyAgreement.SM9 accepted a peer key under a mismatched hid");
+        }
+        catch (InvalidKeyException e)
+        {
+            isTrue("SM9 key agreement peer key hid does not match this party's key".equals(e.getMessage()));
+        }
+        try
+        {
+            byte[] stale = a.generateSecret();
+            fail("KeyAgreement.SM9 handed out a previous agreement's secret after a refused first phase: "
+                + (Arrays.areEqual(stale, shared) ? "the earlier one" : "some other value"));
+        }
+        catch (IllegalStateException e)
+        {
+            // expected - the refused phase dropped the completed agreement
+        }
+
+        // a rejected re-init leaves the object uninitialised
+        KeyAgreement c = KeyAgreement.getInstance("SM9", "BC");
+        c.init(alice.getPrivate(), new SM9KeyExchangeSpec(true, 128), random);
+        try
+        {
+            c.init(master.getPrivate(), new SM9KeyExchangeSpec(true, 128), random);
+            fail("KeyAgreement.SM9 accepted a master private key");
+        }
+        catch (InvalidKeyException e)
+        {
+            // expected
+        }
+        try
+        {
+            c.doPhase(masterPub.getUserPublicKey(bobIdentity, hid), false);
+            fail("KeyAgreement.SM9 ran a phase against the key of a session a rejected init replaced");
+        }
+        catch (IllegalStateException e)
+        {
+            isTrue("SM9 key agreement not initialised".equals(e.getMessage()));
+        }
     }
 
     private void checkAgreement()
         throws Exception
     {
-        SecureRandom random = new SecureRandom();
-
-        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("SM9-ENC", "BC");
-        kpGen.initialize(256, random);
-        KeyPair master = kpGen.generateKeyPair();
-        SM9EncMasterPrivateKey masterPriv = (SM9EncMasterPrivateKey)master.getPrivate();
-        SM9EncMasterPublicKey masterPub = (SM9EncMasterPublicKey)master.getPublic();
-
-        byte[] aliceIdentity = "Alice".getBytes("US-ASCII");
-        byte[] bobIdentity = "Bob".getBytes("US-ASCII");
-        KeyPair alice = masterPriv.generateExchangeKeyPair(aliceIdentity);
-        KeyPair bob = masterPriv.generateExchangeKeyPair(bobIdentity);
-
-        byte hid = SM9EncMasterPublicKey.HID_EXCHANGE;
-
-        // phase 1: each party names the peer and gets its own ephemeral R back -
-        // generated inside the provider under its own master key
+        // phase 1: each party names the peer and gets its own ephemeral R back
         KeyAgreement aliceAgree = KeyAgreement.getInstance("SM9", "BC");
         aliceAgree.init(alice.getPrivate(), new SM9KeyExchangeSpec(true), random);
         Key ra = aliceAgree.doPhase(masterPub.getUserPublicKey(bobIdentity, hid), false);
@@ -147,112 +174,134 @@ public class SM9KeyAgreementTest
 
         isTrue("shared secret is 16 bytes by default", aliceSecret.length == 16);
         isTrue("both parties agree", Arrays.areEqual(aliceSecret, bobSecret));
+
+        // an ephemeral answers one peer value: a further last phase without a new first phase is
+        // refused as out of order
+        try
+        {
+            aliceAgree.doPhase(masterPub.getExchangeEphemeral(rb.getEncoded()), true);
+            fail("KeyAgreement.SM9 reused its ephemeral for a second last phase");
+        }
+        catch (IllegalStateException e)
+        {
+            isTrue("SM9 key agreement requires doPhase with the peer's public key before the peer's ephemeral".equals(e.getMessage()));
+        }
+
+        // a new first phase draws a new ephemeral, and the same object agrees again
+        Key ra2 = aliceAgree.doPhase(masterPub.getUserPublicKey(bobIdentity, hid), false);
+        isTrue("a new first phase draws a new ephemeral", !Arrays.areEqual(ra.getEncoded(), ra2.getEncoded()));
+        KeyAgreement bobAgree2 = KeyAgreement.getInstance("SM9", "BC");
+        bobAgree2.init(bob.getPrivate(), new SM9KeyExchangeSpec(false), random);
+        Key rb2 = bobAgree2.doPhase(masterPub.getUserPublicKey(aliceIdentity, hid), false);
+        aliceAgree.doPhase(masterPub.getExchangeEphemeral(rb2.getEncoded()), true);
+        bobAgree2.doPhase(masterPub.getExchangeEphemeral(ra2.getEncoded()), true);
+        isTrue("both parties agree on a second exchange",
+            Arrays.areEqual(aliceAgree.generateSecret(), bobAgree2.generateSecret()));
     }
 
     private void checkVector(String fileName)
         throws Exception
     {
-        Map v = loadVectors(fileName);
-        byte[] identityA = hex(v, "IDA");
-        byte[] identityB = hex(v, "IDB");
+        Map v = SM9Vectors.load(fileName);
+        byte[] identityA = SM9Vectors.hex(v, "IDA");
+        byte[] identityB = SM9Vectors.hex(v, "IDB");
         int klen = Integer.parseInt((String)v.get("klen_bits"));
-        byte hid = (byte)Integer.parseInt((String)v.get("hid"), 16);
+        byte vectorHid = (byte)Integer.parseInt((String)v.get("hid"), 16);
 
         // reconstruct the vector's master key through the KeyFactory PKCS#8 path
         byte[] keScalar = BigIntegers.asUnsignedByteArray(32, new BigInteger((String)v.get("ke"), 16));
         PrivateKeyInfo pkcs8 = new PrivateKeyInfo(
             new AlgorithmIdentifier(GMObjectIdentifiers.sm9encrypt), new DEROctetString(keScalar));
         KeyFactory kf = KeyFactory.getInstance("SM9", "BC");
-        SM9EncMasterPrivateKey masterPriv = (SM9EncMasterPrivateKey)kf.generatePrivate(
+        SM9EncMasterPrivateKey vectorPriv = (SM9EncMasterPrivateKey)kf.generatePrivate(
             new PKCS8EncodedKeySpec(pkcs8.getEncoded(ASN1Encoding.DER)));
         SubjectPublicKeyInfo spki = new SubjectPublicKeyInfo(
             new AlgorithmIdentifier(GMObjectIdentifiers.sm9encrypt),
-            Arrays.concatenate(new byte[]{0x04}, hex(v, "Ppube_x"), hex(v, "Ppube_y")));
-        PublicKey masterPub = kf.generatePublic(new X509EncodedKeySpec(spki.getEncoded(ASN1Encoding.DER)));
+            Arrays.concatenate(new byte[]{0x04}, SM9Vectors.hex(v, "Ppube_x"), SM9Vectors.hex(v, "Ppube_y")));
+        SM9EncMasterPublicKey vectorPub = (SM9EncMasterPublicKey)kf.generatePublic(
+            new X509EncodedKeySpec(spki.getEncoded(ASN1Encoding.DER)));
 
-        KeyPair deA = masterPriv.generateExchangeKeyPair(identityA, hid);
-        KeyPair deB = masterPriv.generateExchangeKeyPair(identityB, hid);
-        SM9EncMasterPublicKey masterPubIface = (SM9EncMasterPublicKey)masterPub;
+        KeyPair deA = vectorPriv.generateExchangeKeyPair(identityA, vectorHid);
+        KeyPair deB = vectorPriv.generateExchangeKeyPair(identityB, vectorHid);
 
-        // party A runs on a key rebuilt through the KeyFactory from its stored
-        // encoding - the import path a party served by the KGC uses, no master
-        // private key involved - and must reproduce the exchange byte-for-byte
+        // party A runs on its key rebuilt through the KeyFactory from the stored encoding - the import
+        // a party served by the KGC uses, with no master private key - and reproduces the exchange
         PrivateKey deAImported = kf.generatePrivate(new SM9EncUserPrivateKeySpec(
-            deA.getPrivate().getEncoded(), masterPubIface, identityA, hid, true));
+            deA.getPrivate().getEncoded(), vectorPub, identityA, vectorHid, true));
         SM9EncUserPrivateKeySpec roundTrip = (SM9EncUserPrivateKeySpec)kf.getKeySpec(
             deAImported, SM9EncUserPrivateKeySpec.class);
         isTrue(fileName + " round-trip spec claims the exchange usage", roundTrip.isExchangeKey());
-        isTrue(fileName + " round-trip spec hid", roundTrip.getHid() == hid);
+        isTrue(fileName + " round-trip spec hid", roundTrip.getHid() == vectorHid);
 
-        // the provider generates each ephemeral from the SecureRandom it was given,
-        // so the vector's rA / rB drive it through the public API
+        // each ephemeral comes from the SecureRandom the provider is given, so the vector's rA / rB
+        // drive it through the public API
         KeyAgreement a = KeyAgreement.getInstance("SM9", "BC");
         a.init(deAImported, new SM9KeyExchangeSpec(true, klen),
-            new TestRandomBigInteger(256, hex(v, "rA")));
-        Key ra = a.doPhase(masterPubIface.getUserPublicKey(identityB, hid), false);
+            new TestRandomBigInteger(256, SM9Vectors.hex(v, "rA")));
+        Key ra = a.doPhase(vectorPub.getUserPublicKey(identityB, vectorHid), false);
 
         KeyAgreement b = KeyAgreement.getInstance("SM9", "BC");
         b.init(deB.getPrivate(), new SM9KeyExchangeSpec(false, klen),
-            new TestRandomBigInteger(256, hex(v, "rB")));
-        Key rb = b.doPhase(masterPubIface.getUserPublicKey(identityA, hid), false);
+            new TestRandomBigInteger(256, SM9Vectors.hex(v, "rB")));
+        Key rb = b.doPhase(vectorPub.getUserPublicKey(identityA, vectorHid), false);
 
         isTrue(fileName + " RA", Arrays.areEqual(ra.getEncoded(),
-            Arrays.concatenate(hex(v, "RA_x"), hex(v, "RA_y"))));
+            Arrays.concatenate(SM9Vectors.hex(v, "RA_x"), SM9Vectors.hex(v, "RA_y"))));
         isTrue(fileName + " RB", Arrays.areEqual(rb.getEncoded(),
-            Arrays.concatenate(hex(v, "RB_x"), hex(v, "RB_y"))));
+            Arrays.concatenate(SM9Vectors.hex(v, "RB_x"), SM9Vectors.hex(v, "RB_y"))));
 
-        a.doPhase(masterPubIface.getExchangeEphemeral(rb.getEncoded()), true);
+        a.doPhase(vectorPub.getExchangeEphemeral(rb.getEncoded()), true);
         byte[] skA = a.generateSecret();
-        b.doPhase(masterPubIface.getExchangeEphemeral(ra.getEncoded()), true);
+        b.doPhase(vectorPub.getExchangeEphemeral(ra.getEncoded()), true);
         byte[] skB = b.generateSecret();
 
-        isTrue(fileName + " SKA", Arrays.areEqual(skA, hex(v, "SK")));
-        isTrue(fileName + " SKB", Arrays.areEqual(skB, hex(v, "SK")));
+        isTrue(fileName + " SKA", Arrays.areEqual(skA, SM9Vectors.hex(v, "SK")));
+        isTrue(fileName + " SKB", Arrays.areEqual(skB, SM9Vectors.hex(v, "SK")));
     }
 
     private void checkRejections()
         throws Exception
     {
-        SecureRandom random = new SecureRandom();
-
-        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("SM9-ENC", "BC");
-        kpGen.initialize(256, random);
-        KeyPair master = kpGen.generateKeyPair();
-        SM9EncMasterPrivateKey masterPriv = (SM9EncMasterPrivateKey)master.getPrivate();
-        SM9EncMasterPublicKey masterPub = (SM9EncMasterPublicKey)master.getPublic();
-
-        byte[] aliceIdentity = "Alice".getBytes("US-ASCII");
-        byte[] bobIdentity = "Bob".getBytes("US-ASCII");
-        KeyPair alice = masterPriv.generateExchangeKeyPair(aliceIdentity);
-        byte hid = SM9EncMasterPublicKey.HID_EXCHANGE;
-
-        // a KEM/decryption-purpose user key must be rejected at init
         PrivateKey kemKey = masterPriv.generateUserKeyPair(aliceIdentity,
             SM9EncMasterPublicKey.HID).getPrivate();
         KeyAgreement agree = KeyAgreement.getInstance("SM9", "BC");
-        try
-        {
-            agree.init(kemKey, new SM9KeyExchangeSpec(true), random);
-            fail("KeyAgreement.SM9 accepted a KEM/decryption user key");
-        }
-        catch (InvalidKeyException e)
-        {
-            isTrue("SM9 key agreement requires a key-exchange user key from SM9EncMasterPrivateKey.generateExchangeKeyPair(identity)".equals(e.getMessage()));
-        }
 
-        // an exchange key's encoding rebuilt without claiming the exchange usage
-        // yields a KEM/decryption key, rejected at init the same way
+        // an exchange key's encoding cannot be described as a decryption key: the usage claimed and
+        // the hid the point was derived under would name two different keys, so the spec, where both
+        // are first in hand, checks the claim against the hid the KGC chose
         KeyFactory kf = KeyFactory.getInstance("SM9", "BC");
-        PrivateKey nonExchange = kf.generatePrivate(new SM9EncUserPrivateKeySpec(
-            alice.getPrivate().getEncoded(), masterPub, aliceIdentity, hid));
         try
         {
-            agree.init(nonExchange, new SM9KeyExchangeSpec(true), random);
-            fail("KeyAgreement.SM9 accepted an imported user key without the exchange usage");
+            new SM9EncUserPrivateKeySpec(alice.getPrivate().getEncoded(), masterPub, aliceIdentity, hid);
+            fail("SM9EncUserPrivateKeySpec described a point derived under HID_EXCHANGE as a decryption key");
         }
-        catch (InvalidKeyException e)
+        catch (IllegalArgumentException e)
         {
-            isTrue("SM9 key agreement requires a key-exchange user key from SM9EncMasterPrivateKey.generateExchangeKeyPair(identity)".equals(e.getMessage()));
+            isTrue(("hid must not be HID_EXCHANGE (0x02) for a KEM or decryption user key - that hid "
+                + "names the key exchange").equals(e.getMessage()));
+        }
+        isTrue("the same point and hid describe the exchange key they are", new SM9EncUserPrivateKeySpec(
+            alice.getPrivate().getEncoded(), masterPub, aliceIdentity, hid, true).isExchangeKey());
+
+        // a KEM/decryption user key is rejected at init, derived or imported (its encoding still
+        // round-trips)
+        PrivateKey nonExchange = kf.generatePrivate(new SM9EncUserPrivateKeySpec(
+            kemKey.getEncoded(), masterPub, aliceIdentity, SM9EncMasterPublicKey.HID));
+        Object[][] notExchange = {
+            { kemKey, "a KEM/decryption user key" },
+            { nonExchange, "an imported user key without the exchange usage" } };
+        for (int i = 0; i != notExchange.length; i++)
+        {
+            try
+            {
+                agree.init((PrivateKey)notExchange[i][0], new SM9KeyExchangeSpec(true), random);
+                fail("KeyAgreement.SM9 accepted " + (String)notExchange[i][1]);
+            }
+            catch (InvalidKeyException e)
+            {
+                isTrue("SM9 key agreement requires a key-exchange user key from SM9EncMasterPrivateKey.generateExchangeKeyPair(identity)"
+                    .equals(e.getMessage()));
+            }
         }
 
         // no spec: the role and key length have nowhere else to travel
@@ -266,54 +315,42 @@ public class SM9KeyAgreementTest
             // BaseAgreementSpi wraps the missing-spec InvalidAlgorithmParameterException
         }
 
-        // first phase with the wrong key type
-        agree.init(alice.getPrivate(), new SM9KeyExchangeSpec(true), random);
-        try
+        // a first phase with the wrong peer key, with the refusal's message where it is checked; the
+        // no-hid getUserPublicKey derives the encryption (0x03) key, ours is an exchange (0x02) key
+        Object[][] wrongPeers = {
+            { master.getPublic(), null, "a master key as the peer" },
+            { masterPub.getUserPublicKey(bobIdentity), "SM9 key agreement peer key hid does not match this party's key",
+                "a peer key under a mismatched hid" },
+            { ((SM9EncMasterPublicKey)kpGen.generateKeyPair().getPublic()).getUserPublicKey(bobIdentity, hid),
+                "SM9 key agreement peer key is not under this party's master public key", "a peer key under a different master key" } };
+        for (int i = 0; i != wrongPeers.length; i++)
         {
-            agree.doPhase(master.getPublic(), false);
-            fail("KeyAgreement.SM9 accepted a master key as the peer");
-        }
-        catch (InvalidKeyException e)
-        {
-            // expected
-        }
-
-        // a peer key under the wrong hid - the no-hid getUserPublicKey derives the
-        // encryption (0x03) key, ours is an exchange (0x02) key
-        agree.init(alice.getPrivate(), new SM9KeyExchangeSpec(true), random);
-        try
-        {
-            agree.doPhase(masterPub.getUserPublicKey(bobIdentity), false);
-            fail("KeyAgreement.SM9 accepted a peer key under a mismatched hid");
-        }
-        catch (InvalidKeyException e)
-        {
-            isTrue("SM9 key agreement peer key hid does not match this party's key".equals(e.getMessage()));
-        }
-
-        // a peer key under a different KGC's master key
-        KeyPair otherMaster = kpGen.generateKeyPair();
-        agree.init(alice.getPrivate(), new SM9KeyExchangeSpec(true), random);
-        try
-        {
-            agree.doPhase(((SM9EncMasterPublicKey)otherMaster.getPublic()).getUserPublicKey(bobIdentity, hid), false);
-            fail("KeyAgreement.SM9 accepted a peer key under a different master key");
-        }
-        catch (InvalidKeyException e)
-        {
-            isTrue("SM9 key agreement peer key is not under this party's master public key".equals(e.getMessage()));
+            agree.init(alice.getPrivate(), new SM9KeyExchangeSpec(true), random);
+            try
+            {
+                agree.doPhase((Key)wrongPeers[i][0], false);
+                fail("KeyAgreement.SM9 accepted " + (String)wrongPeers[i][2]);
+            }
+            catch (InvalidKeyException e)
+            {
+                if (wrongPeers[i][1] != null)
+                {
+                    isTrue(wrongPeers[i][1].equals(e.getMessage()));
+                }
+            }
         }
 
-        // the last phase before the first is rejected, not a silent wrong answer
+        // the last phase before the first is rejected, not a silent wrong answer. The peer value is a
+        // genuine ephemeral: an invalid point is refused before the ordering check is reached
+        KeyAgreement bobAgree = KeyAgreement.getInstance("SM9", "BC");
+        bobAgree.init(bob.getPrivate(), new SM9KeyExchangeSpec(false), random);
+        Key bobEphemeral = bobAgree.doPhase(masterPub.getUserPublicKey(aliceIdentity, hid), false);
+
         agree.init(alice.getPrivate(), new SM9KeyExchangeSpec(true), random);
         try
         {
-            agree.doPhase(masterPub.getExchangeEphemeral(new byte[64]), true);
+            agree.doPhase(bobEphemeral, true);
             fail("KeyAgreement.SM9 accepted the last phase first");
-        }
-        catch (IllegalArgumentException e)
-        {
-            // the all-zero encoding is not a valid point - rejected before ordering
         }
         catch (IllegalStateException e)
         {
@@ -331,15 +368,22 @@ public class SM9KeyAgreementTest
             isTrue("SM9 exchange ephemeral encoding must be 64 bytes".equals(e.getMessage()));
         }
 
-        // the spec rejects a non-positive key length at construction
-        try
+        // the spec refuses a key length that is not positive, or not a whole number of bytes, which
+        // the key comes back in
+        int[] badLengths = { 0, -8, 12 };
+        String[] lengthRefusals = { "keyLengthBits must be positive", "keyLengthBits must be positive",
+            "keyLengthBits must be a whole number of bytes" };
+        for (int i = 0; i != badLengths.length; i++)
         {
-            new SM9KeyExchangeSpec(true, 0);
-            fail("SM9KeyExchangeSpec accepted keyLengthBits = 0");
-        }
-        catch (IllegalArgumentException e)
-        {
-            isTrue("keyLengthBits must be positive".equals(e.getMessage()));
+            try
+            {
+                new SM9KeyExchangeSpec(true, badLengths[i]);
+                fail("SM9KeyExchangeSpec accepted keyLengthBits = " + badLengths[i]);
+            }
+            catch (IllegalArgumentException e)
+            {
+                isTrue(lengthRefusals[i].equals(e.getMessage()));
+            }
         }
     }
 

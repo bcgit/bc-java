@@ -1,6 +1,8 @@
 package org.bouncycastle.jcajce.provider.asymmetric.sm9;
 
 import java.io.IOException;
+import java.io.InvalidObjectException;
+import java.io.ObjectInputStream;
 import java.security.PublicKey;
 
 import org.bouncycastle.util.Arrays;
@@ -52,7 +54,7 @@ class BCSM9EncMasterPublicKey
     {
         return new BCSM9ExchangeEphemeralPublicKey(encoded);
     }
-    
+
     public String getAlgorithm()
     {
         return "SM9-ENC";
@@ -98,5 +100,16 @@ class BCSM9EncMasterPublicKey
     private Object writeReplace()
     {
         return new SM9KeyProxy(false, getEncoded());
+    }
+
+    /**
+     * A key of this class is written as an SM9KeyProxy, never as itself, so a stream that holds the
+     * class itself was not written by it: the key parameters are transient, and a key read from it
+     * would have none, failing with a NullPointerException wherever it was used.
+     */
+    private void readObject(ObjectInputStream in)
+        throws InvalidObjectException
+    {
+        throw new InvalidObjectException("SM9 master keys are read through their serialization proxy");
     }
 }

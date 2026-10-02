@@ -1,6 +1,10 @@
 package org.bouncycastle.jcajce.provider.asymmetric.sm9;
 
 import java.io.IOException;
+import java.io.InvalidObjectException;
+import java.io.NotSerializableException;
+import java.io.ObjectInputStream;
+import java.io.ObjectStreamException;
 
 import javax.security.auth.Destroyable;
 
@@ -30,10 +34,15 @@ class BCSM9EncPrivateKey
     private static final long serialVersionUID = 1L;
 
     private final transient SM9EncPrivateKeyParameters keyParams;
+    private final transient int hash;
 
     BCSM9EncPrivateKey(SM9EncPrivateKeyParameters keyParams)
     {
         this.keyParams = keyParams;
+        // taken now, as the identity is erased with the key: a key destroyed while in a HashSet has
+        // to go on hashing as it did when it went in
+        this.hash = 31 * (31 * Arrays.hashCode(keyParams.getMasterPublicKey().getEncoded())
+            + Arrays.hashCode(keyParams.getIdentity())) + keyParams.getHid();
     }
 
     SM9EncPrivateKeyParameters getKeyParameters()
@@ -41,7 +50,6 @@ class BCSM9EncPrivateKey
         return keyParams;
     }
 
-    @Override
     public byte[] getIdentity()
     {
         return keyParams.getIdentity();
@@ -76,6 +84,18 @@ class BCSM9EncPrivateKey
         }
     }
 
+    /**
+     * Two user keys are equal when they carry the same secret point for the same identity,
+     * under the same master public key, hid and usage. The encoding is the point alone, so
+     * none of the others would be compared if they were left out: the hid and usage are what
+     * tell the KEM / decryption key of an identity from its key-exchange key, which the
+     * consumers refuse to use in each other's place, and {@link #hashCode()} is taken from
+     * the master public key, so two keys equal without it could hash apart.
+     * <p>
+     * The public discriminators are compared first, in the ordinary way: they are the
+     * KGC's published choices and the user's identity, not secrets. Only the point
+     * comparison has to run in constant time.
+     */
     public boolean equals(Object o)
     {
         if (o == this)
@@ -86,13 +106,49 @@ class BCSM9EncPrivateKey
         {
             return false;
         }
-        return Arrays.constantTimeAreEqual(getEncoded(), ((BCSM9EncPrivateKey)o).getEncoded());
+        if (isDestroyed() || ((BCSM9EncPrivateKey)o).isDestroyed())
+        {
+            // getEncoded() throws once the key is destroyed, and Object.equals is contractually
+            // non-throwing - a destroyed key in a HashSet would otherwise make contains() and
+            // remove() blow up depending on which side of the comparison it landed on. It has no
+            // key material left to compare, so it equals nothing but itself, which the identity
+            // check above has already settled. hashCode() reads only public material and is
+            // unaffected either way.
+            return false;
+        }
+        BCSM9EncPrivateKey other = (BCSM9EncPrivateKey)o;
+        if (keyParams.getHid() != other.keyParams.getHid()
+            || keyParams.isExchangeKey() != other.keyParams.isExchangeKey()
+            || !Arrays.areEqual(keyParams.getMasterPublicKey().getEncoded(),
+                other.keyParams.getMasterPublicKey().getEncoded())
+            || !Arrays.areEqual(keyParams.getIdentity(), other.keyParams.getIdentity()))
+        {
+            return false;
+        }
+        // both sides are the key parameters' own encodings of the secret, freshly made for this
+        // comparison and erased once compared. The PKCS#8 encodings getEncoded() writes, which
+        // were compared before, are made from these alone, so they compare as these do, but each
+        // left further copies of the secret, in the ASN.1 objects and buffers that built it, which
+        // nothing could erase
+        byte[] mine = keyParams.getEncoded();
+        byte[] theirs = other.keyParams.getEncoded();
+        try
+        {
+            return Arrays.constantTimeAreEqual(mine, theirs);
+        }
+        finally
+        {
+            Arrays.clear(mine);
+            Arrays.clear(theirs);
+        }
     }
 
     public int hashCode()
     {
-        // derive from the public master key, never the secret key point
-        return Arrays.hashCode(keyParams.getMasterPublicKey().getEncoded());
+        // derived from the public master key, the identity and the hid, as the user public key's
+        // is, never the secret key point: without the identity every user key of one KGC hashed
+        // alike
+        return hash;
     }
 
     /**
@@ -111,9 +167,20 @@ class BCSM9EncPrivateKey
     }
 
     private Object writeReplace()
-        throws java.io.ObjectStreamException
+        throws ObjectStreamException
     {
-        throw new java.io.NotSerializableException(
+        throw new NotSerializableException(
             "SM9 user identity keys are not serializable standalone; re-derive from the master key via generateUserKeyPair");
+    }
+
+    /**
+     * A key of this class is never written, as writeReplace says, so a stream that holds it was not
+     * written by it: the key parameters are transient, and a key read from it would have none,
+     * failing with a NullPointerException wherever it was used.
+     */
+    private void readObject(ObjectInputStream in)
+        throws InvalidObjectException
+    {
+        throw new InvalidObjectException("SM9 user keys are not serializable");
     }
 }

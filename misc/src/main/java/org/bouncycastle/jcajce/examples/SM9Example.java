@@ -39,6 +39,10 @@ import org.bouncycastle.util.encoders.Hex;
  * The requested key length (the {@link KEMGenerateSpec}'s key size) is produced directly by SM9's own
  * GM/T 0044.4 KDF; the spec's generic KDF fields are not applied, as an external KDF on top would break
  * interoperability with other GM/T 0044.4 implementations.
+ * <p>
+ * <b>Usage warning:</b> an identity's key should be used for the KEM or for {@code Cipher.SM9}
+ * ({@link SM9CipherExample}), but not for both. A deployment needing both has its KGC publish a separate
+ * hid for each function, as it already does for the key exchange, so that the two keys are distinct.
  */
 public class SM9Example
 {

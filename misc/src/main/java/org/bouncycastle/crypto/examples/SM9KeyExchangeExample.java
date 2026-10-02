@@ -16,9 +16,11 @@ import org.bouncycastle.util.encoders.Hex;
 /**
  * Example of the SM9 identity-based key exchange protocol (GM/T 0044.3-2016) through the
  * lightweight API: two parties, knowing only each other's identities and the published
- * encryption master public key, agree a shared key and confirm it. The protocol is not
- * exposed through the JCA provider - it is a stateful two-party exchange with roles and
- * key confirmation, which the lightweight {@link SM9KeyExchange} models directly.
+ * encryption master public key, agree a shared key and confirm it. The lightweight
+ * {@link SM9KeyExchange} models the stateful two-party exchange directly, roles and key
+ * confirmation included; the provider exposes the same exchange as {@code KeyAgreement.SM9},
+ * shown in {@link org.bouncycastle.jcajce.examples.SM9KeyAgreementExample}, which yields the
+ * shared key and leaves the confirmation tags to this API.
  * <p>
  * SM9 is identity-based: a trusted Key Generation Centre (KGC) holds the encryption
  * master key pair (the key exchange reuses it under its own hid) and derives each party's

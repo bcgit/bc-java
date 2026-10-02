@@ -13,7 +13,6 @@ import java.security.spec.AlgorithmParameterSpec;
 
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
-import javax.crypto.CipherSpi;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.ShortBufferException;
@@ -33,19 +32,20 @@ import org.bouncycastle.crypto.digests.SM3Digest;
 import org.bouncycastle.crypto.digests.WhirlpoolDigest;
 import org.bouncycastle.crypto.engines.SM2Engine;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
+import org.bouncycastle.crypto.params.ECKeyParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
+import org.bouncycastle.jcajce.provider.asymmetric.util.BaseCipherSpi;
 import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
 import org.bouncycastle.jcajce.provider.util.BadBlockException;
 import org.bouncycastle.jcajce.util.BCJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
-import org.bouncycastle.jce.interfaces.ECKey;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Strings;
 
 
 public class GMCipherSpi
-    extends CipherSpi
+    extends BaseCipherSpi
 {
     private final JcaJceHelper helper = new BCJcaJceHelper();
 
@@ -68,16 +68,35 @@ public class GMCipherSpi
         return 0;
     }
 
+    /**
+     * The field size of the key's curve, for any EC key init accepts - not just a BC one - so the key
+     * is converted the same way init converts it. Cipher asks for the size before init sees the key,
+     * so a key that is not an EC key is answered as BaseCipherSpi answers it, and left for init to
+     * refuse with the InvalidKeyException it declares.
+     */
     public int engineGetKeySize(Key key)
     {
-        if (key instanceof ECKey)
+        try
         {
-            return ((ECKey)key).getParameters().getCurve().getFieldSize();
+            if (key instanceof PublicKey)
+            {
+                return fieldSize(ECUtils.generatePublicKeyParameter((PublicKey)key));
+            }
+            if (key instanceof PrivateKey)
+            {
+                return fieldSize(ECUtil.generatePrivateKeyParameter((PrivateKey)key));
+            }
         }
-        else
+        catch (InvalidKeyException e)
         {
-            throw new IllegalArgumentException("not an EC key");
+            // not an EC key init would take
         }
+        return super.engineGetKeySize(key);
+    }
+
+    private static int fieldSize(AsymmetricKeyParameter keyParam)
+    {
+        return ((ECKeyParameters)keyParam).getParameters().getCurve().getFieldSize();
     }
 
 
@@ -112,20 +131,42 @@ public class GMCipherSpi
         this.engine = new SM2Engine(digest, this.mode);
     }
 
+    /**
+     * The size of the next doFinal's output, which takes the input update() has buffered as well as
+     * inputLen more. C2 is as long as the message and C1 and C3 are of fixed size, so the answer is
+     * exact: encryption adds that overhead and decryption removes it. The sum is taken in long and
+     * capped at the largest array.
+     */
     public int engineGetOutputSize(int inputLen)
     {
         if (state == Cipher.ENCRYPT_MODE || state == Cipher.WRAP_MODE)
         {
-            return engine.getOutputSize(inputLen);
+            return outputSize((long)buffer.size() + inputLen + overhead());
         }
         else if (state == Cipher.DECRYPT_MODE || state == Cipher.UNWRAP_MODE)
         {
-            return engine.getOutputSize(inputLen);
+            return outputSize(Math.max((long)buffer.size() + inputLen - overhead(), 0L));
         }
         else
         {
             throw new IllegalStateException("cipher not initialised");
         }
+    }
+
+    /**
+     * The size of C1, an uncompressed point of the key's curve, and C3, a digest. Taken from the key
+     * rather than the engine, which learns the curve only when doFinal initialises it, so asking the
+     * engine before the first doFinal answered short by the two coordinates.
+     */
+    private long overhead()
+    {
+        return 1 + 2L * ((ECKeyParameters)key).getParameters().getCurve().getFieldElementEncodingLength()
+            + digest.getDigestSize();
+    }
+
+    private static int outputSize(long size)
+    {
+        return (size > Integer.MAX_VALUE) ? Integer.MAX_VALUE : (int)size;
     }
 
     public void engineSetPadding(String padding)
@@ -154,6 +195,9 @@ public class GMCipherSpi
 
         if (params != null)
         {
+            // a refused init ends the operation in progress as well, and this one is refused before
+            // reaching the init below, which zeroes what that operation had buffered
+            buffer.erase();
             throw new InvalidAlgorithmParameterException("cannot recognise parameters: " + params.getClass().getName());
         }
 
@@ -167,6 +211,20 @@ public class GMCipherSpi
         SecureRandom random)
         throws InvalidAlgorithmParameterException, InvalidKeyException
     {
+        // An init ends the operation in progress whether or not it succeeds, and what that
+        // operation had buffered - on encryption, the plaintext - is zeroed rather than only
+        // rewound, which left it in the backing array
+        buffer.erase();
+
+        // Nothing about the cipher is set at init - the mode and the digest come from the
+        // transformation - so a spec is refused: ignored, whatever the caller believed it was
+        // applying was silently dropped
+        if (engineSpec != null)
+        {
+            throw new InvalidAlgorithmParameterException(
+                "SM2 cipher takes no AlgorithmParameterSpec: " + engineSpec.getClass().getName());
+        }
+
         // Parse the recipient's key
         if (opmode == Cipher.ENCRYPT_MODE || opmode == Cipher.WRAP_MODE)
         {
@@ -206,7 +264,6 @@ public class GMCipherSpi
         }
 
         this.state = opmode;
-        buffer.reset();
     }
 
     public void engineInit(
@@ -312,9 +369,24 @@ public class GMCipherSpi
         int outputOffset)
         throws ShortBufferException, IllegalBlockSizeException, BadPaddingException
     {
+        // The output size is known exactly beforehand, so the array is checked before the operation
+        // runs: running it consumes the buffered input, and the JCA contract for ShortBufferException
+        // is that the call can be retried with a larger array. The result's own copy - on
+        // decryption the plaintext - is erased once the caller has theirs.
+        if (engineGetOutputSize(inputLength) > output.length - outputOffset)
+        {
+            throw new ShortBufferException("output buffer too short");
+        }
         byte[] buf = engineDoFinal(input, inputOffset, inputLength);
-        System.arraycopy(buf, 0, output, outputOffset, buf.length);
-        return buf.length;
+        try
+        {
+            System.arraycopy(buf, 0, output, outputOffset, buf.length);
+            return buf.length;
+        }
+        finally
+        {
+            Arrays.fill(buf, (byte)0);
+        }
     }
 
     /**
@@ -419,6 +491,11 @@ public class GMCipherSpi
         }
     }
 
+    /**
+     * A ByteArrayOutputStream whose contents can be zeroed: reset() only rewinds the count and
+     * leaves what was written in the backing array, and a growth, left to ByteArrayOutputStream,
+     * drops the array it replaces as it stands. The SM9 CipherSpi carries the same class.
+     */
     protected static final class ErasableOutputStream
         extends ByteArrayOutputStream
     {
@@ -435,6 +512,44 @@ public class GMCipherSpi
         {
             Arrays.fill(this.buf, (byte)0);
             reset();
+        }
+
+        public synchronized void write(int b)
+        {
+            reserve(1);
+            buf[count++] = (byte)b;
+        }
+
+        public synchronized void write(byte[] b, int off, int len)
+        {
+            if (off < 0 || len < 0 || off > b.length - len)
+            {
+                throw new IndexOutOfBoundsException();
+            }
+            reserve(len);
+            System.arraycopy(b, off, buf, count, len);
+            count += len;
+        }
+
+        /**
+         * Make room for len more bytes. ByteArrayOutputStream grows by copying its contents into a
+         * larger array and dropping the old one as it stands, which would leave a copy of what has
+         * been written so far where erase() never reaches; the array replaced here is zeroed once
+         * its contents have been copied.
+         */
+        private void reserve(int len)
+        {
+            if (len > buf.length - count)
+            {
+                if (len > Integer.MAX_VALUE - count)
+                {
+                    throw new OutOfMemoryError();
+                }
+                byte[] grown = new byte[Math.max(count + len, buf.length << 1)];
+                System.arraycopy(buf, 0, grown, 0, count);
+                Arrays.fill(buf, (byte)0);
+                buf = grown;
+            }
         }
     }
 }

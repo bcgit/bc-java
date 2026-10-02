@@ -4,7 +4,6 @@ import java.math.BigInteger;
 
 import javax.security.auth.Destroyable;
 
-import org.bouncycastle.crypto.generators.SM9Sm3;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.math.ec.sm9.SM9Curve;
 import org.bouncycastle.util.Arrays;
@@ -20,8 +19,9 @@ public class SM9SigMasterPrivateKeyParameters
     implements Destroyable, SM9SigUserKeyParametersGenerator
 {
     /**
-     * The signature private-key generation function identifier hid, fixed to
-     * 0x01 for the SM9 signature algorithm (GM/T 0044.2-2016, Annex A).
+     * The signature private-key generation function identifier hid, fixed to 0x01 for the SM9
+     * signature algorithm by GM/T 0080-2020 8.1 and GB/T 41389-2022 6.3.1; GM/T 0044.2-2016
+     * leaves it to the KGC and assigns no value.
      */
     public static final byte HID = (byte)0x01;
 
@@ -59,7 +59,33 @@ public class SM9SigMasterPrivateKeyParameters
 
     public static SM9SigMasterPrivateKeyParameters fromEncoded(byte[] enc)
     {
+        SM9KeyDerivation.checkScalarEncoding(enc);
         return new SM9SigMasterPrivateKeyParameters(new BigInteger(1, enc));
+    }
+
+    /**
+     * Rebuild a signature master key and check it against the master public key its KGC
+     * published. A key decoded from its scalar alone always agrees with the public key it
+     * derives from that scalar, so a stale or substituted scalar - still 32 bytes, still in
+     * [1, N-1] - imports as a well-formed key pair that is simply not the KGC's, and every user
+     * key it then issues is a key of that wrong public key, whose signatures verify under it and
+     * under no other; comparing against the published one catches the substitution when the
+     * master key is decoded, rather than when a verifier holding the published key rejects a
+     * signature.
+     */
+    public static SM9SigMasterPrivateKeyParameters fromEncoded(byte[] enc, SM9SigMasterPublicKeyParameters publicKey)
+    {
+        if (publicKey == null)
+        {
+            throw new NullPointerException("publicKey cannot be null");
+        }
+        SM9SigMasterPrivateKeyParameters key = fromEncoded(enc);
+        if (!Arrays.areEqual(key.getPublicKeyParameters().getEncoded(), publicKey.getEncoded()))
+        {
+            key.destroy();
+            throw new IllegalArgumentException("SM9 master private key does not match its master public key");
+        }
+        return key;
     }
 
     /**
@@ -69,22 +95,11 @@ public class SM9SigMasterPrivateKeyParameters
      */
     public SM9SigPrivateKeyParameters generateUserKey(byte[] identity)
     {
-        BigInteger ks = checkedKs();
-        BigInteger n = SM9Curve.N;
-        byte[] z = Arrays.append(identity, HID);
-        // every step from here down touches ks, the master private key, so each avoids the
-        // variable-time BigInteger arithmetic: modAdd for the sum, modOddInverse rather than
-        // modInverse, and modMult for the product. N is the group order and so is odd, h1 returns
-        // a value in [1, N-1] and the constructor pins ks to [1, N-1], so both stay inside the
-        // [0, N) contract those helpers require. The identity is public and supplied by the caller,
-        // so a reduction whose cost varied with the sum or the product would answer a question
-        // about ks once per identity served, and those answers combine.
-        BigInteger t1 = BigIntegers.modAdd(n, SM9Sm3.h1(z, n), ks);
-        if (t1.signum() == 0)
-        {
-            throw new IllegalStateException("SM9 signature master key must be regenerated for this identity");
-        }
-        BigInteger t2 = BigIntegers.modMult(n, ks, BigIntegers.modOddInverse(n, t1));
+        SM9SigPrivateKeyParameters.checkContext(publicParams, identity);
+        // t2 = ks * (H1(identity || hid, N) + ks)^-1 mod N, in the constant-time arithmetic the
+        // encryption derivation shares
+        BigInteger t2 = SM9KeyDerivation.t2(checkedKs(), identity, HID,
+            "SM9 signature master key must be regenerated for this identity");
         ECPoint ds = SM9Curve.multiplySecure(SM9Curve.P1, t2).normalize();
         return new SM9SigPrivateKeyParameters(ds, publicParams, identity);
     }
