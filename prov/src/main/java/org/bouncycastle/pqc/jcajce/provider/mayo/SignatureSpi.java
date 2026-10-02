@@ -11,6 +11,7 @@ import java.security.spec.AlgorithmParameterSpec;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
+import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 import org.bouncycastle.pqc.crypto.mayo.MayoParameters;
 import org.bouncycastle.pqc.crypto.mayo.MayoSigner;
 import org.bouncycastle.util.Strings;
@@ -44,6 +45,8 @@ public class SignatureSpi
     protected void engineInitVerify(PublicKey publicKey)
         throws InvalidKeyException
     {
+        bOut.reset();
+
         if (!(publicKey instanceof BCMayoPublicKey))
         {
             try
@@ -52,7 +55,7 @@ public class SignatureSpi
             }
             catch (Exception e)
             {
-                throw new InvalidKeyException("unknown public key passed to Mayo: " + e.getMessage());
+                throw SecurityExceptions.invalidKeyException("unknown public key passed to Mayo: " + e.getMessage(), e);
             }
         }
 
@@ -80,6 +83,8 @@ public class SignatureSpi
     protected void engineInitSign(PrivateKey privateKey)
         throws InvalidKeyException
     {
+        bOut.reset();
+
         if (privateKey instanceof BCMayoPrivateKey)
         {
             BCMayoPrivateKey key = (BCMayoPrivateKey)privateKey;
@@ -134,7 +139,7 @@ public class SignatureSpi
         }
         catch (Exception e)
         {
-            throw new SignatureException(e.toString());
+            throw SecurityExceptions.signatureException(e.toString(), e);
         }
     }
 

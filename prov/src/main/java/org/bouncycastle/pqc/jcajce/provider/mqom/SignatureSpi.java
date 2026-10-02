@@ -11,6 +11,7 @@ import java.security.spec.AlgorithmParameterSpec;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
+import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 import org.bouncycastle.pqc.crypto.mqom.MQOMParameters;
 import org.bouncycastle.pqc.crypto.mqom.MQOMSigner;
 import org.bouncycastle.util.Strings;
@@ -42,6 +43,8 @@ public class SignatureSpi
     protected void engineInitVerify(PublicKey publicKey)
             throws InvalidKeyException
     {
+        bOut.reset();
+
         if (!(publicKey instanceof BCMQOMPublicKey))
         {
             try
@@ -50,7 +53,7 @@ public class SignatureSpi
             }
             catch (Exception e)
             {
-                throw new InvalidKeyException("unknown public key passed to MQOM: " + e.getMessage());
+                throw SecurityExceptions.invalidKeyException("unknown public key passed to MQOM: " + e.getMessage(), e);
             }
         }
 
@@ -78,6 +81,8 @@ public class SignatureSpi
     protected void engineInitSign(PrivateKey privateKey)
             throws InvalidKeyException
     {
+        bOut.reset();
+
         if (privateKey instanceof BCMQOMPrivateKey)
         {
             BCMQOMPrivateKey key = (BCMQOMPrivateKey) privateKey;
@@ -130,7 +135,7 @@ public class SignatureSpi
         }
         catch (Exception e)
         {
-            throw new SignatureException(e.toString());
+            throw SecurityExceptions.signatureException(e.toString(), e);
         }
     }
 

@@ -9,6 +9,7 @@ import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.security.Signature;
@@ -16,6 +17,7 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
 import junit.framework.TestCase;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.pqc.jcajce.interfaces.SnovaKey;
 import org.bouncycastle.pqc.jcajce.provider.BouncyCastlePQCProvider;
 import org.bouncycastle.pqc.jcajce.spec.SnovaParameterSpec;
@@ -34,6 +36,8 @@ public class SnovaTest
         test.testRestrictedKeyPairGen();
         test.testSnovaRandomSig();
         test.testSnovaSign();
+        test.testReinitDiscardsBufferedMessage();
+        test.testForeignPublicKeyKeepsCause();
     }
 
     byte[] msg = Strings.toByteArray("Hello World!");
@@ -43,6 +47,10 @@ public class SnovaTest
         if (Security.getProvider(BouncyCastlePQCProvider.PROVIDER_NAME) == null)
         {
             Security.addProvider(new BouncyCastlePQCProvider());
+        }
+        if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null)
+        {
+            Security.addProvider(new BouncyCastleProvider());
         }
     }
 
@@ -202,6 +210,90 @@ public class SnovaTest
         catch (InvalidKeyException e)
         {
             assertEquals("signature configured for " + spec.getName(), e.getMessage());
+        }
+    }
+
+    /**
+     * initSign / initVerify start a new message: bytes passed to update() before a re-initialisation,
+     * or before switching between signing and verifying, must not reach the next signature.
+     */
+    public void testReinitDiscardsBufferedMessage()
+        throws Exception
+    {
+        byte[] stale = Strings.toByteArray("stale");
+
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("Snova", "BCPQC");
+
+        kpg.initialize(SnovaParameterSpec.SNOVA_24_5_4_SSK, new SecureRandom());
+
+        KeyPair kp = kpg.generateKeyPair();
+
+        Signature signer = Signature.getInstance("Snova", "BCPQC");
+
+        signer.initSign(kp.getPrivate(), new SecureRandom());
+
+        signer.update(msg, 0, msg.length);
+
+        byte[] s = signer.sign();
+
+        // an abandoned sign, then a sign of msg: the result is a signature on msg alone
+        Signature sig = Signature.getInstance("Snova", "BCPQC");
+
+        sig.initSign(kp.getPrivate(), new SecureRandom());
+        sig.update(stale, 0, stale.length);
+        sig.initSign(kp.getPrivate(), new SecureRandom());
+        sig.update(msg, 0, msg.length);
+
+        byte[] s2 = sig.sign();
+
+        Signature verifier = Signature.getInstance("Snova", "BCPQC");
+
+        verifier.initVerify(kp.getPublic());
+        verifier.update(msg, 0, msg.length);
+
+        assertTrue("re-initSign kept the earlier update", verifier.verify(s2));
+
+        // an abandoned verify, then a verify of msg
+        sig.initVerify(kp.getPublic());
+        sig.update(stale, 0, stale.length);
+        sig.initVerify(kp.getPublic());
+        sig.update(msg, 0, msg.length);
+
+        assertTrue("re-initVerify kept the earlier update", sig.verify(s));
+
+        // an abandoned sign, then a verify of msg on the same object
+        sig.initSign(kp.getPrivate(), new SecureRandom());
+        sig.update(stale, 0, stale.length);
+        sig.initVerify(kp.getPublic());
+        sig.update(msg, 0, msg.length);
+
+        assertTrue("initVerify after initSign kept the earlier update", sig.verify(s));
+    }
+
+    /**
+     * A public key that is not a SNOVA key is refused with an InvalidKeyException that keeps the
+     * decoding failure as its cause.
+     */
+    public void testForeignPublicKeyKeepsCause()
+        throws Exception
+    {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC", "BC");
+
+        kpg.initialize(256, new SecureRandom());
+
+        PublicKey ecKey = kpg.generateKeyPair().getPublic();
+
+        Signature sig = Signature.getInstance("Snova", "BCPQC");
+
+        try
+        {
+            sig.initVerify(ecKey);
+            fail("no exception");
+        }
+        catch (InvalidKeyException e)
+        {
+            assertTrue(e.getMessage(), e.getMessage().startsWith("unknown public key passed to Snova: "));
+            assertNotNull("cause dropped", e.getCause());
         }
     }
 

@@ -14,6 +14,7 @@ import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA3Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.digests.SHA512tDigest;
+import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 import org.bouncycastle.pqc.crypto.sphincs.SPHINCS256Signer;
 
 public class SignatureSpi
@@ -112,7 +113,7 @@ public class SignatureSpi
         }
         catch (Exception e)
         {
-            throw new SignatureException(e.toString());
+            throw SecurityExceptions.signatureException(e.toString(), e);
         }
     }
 

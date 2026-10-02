@@ -266,6 +266,90 @@ public class AIMerTest
     }
 
     /**
+     * initSign / initVerify start a new message: bytes passed to update() before a re-initialisation,
+     * or before switching between signing and verifying, must not reach the next signature.
+     */
+    public void testReinitDiscardsBufferedMessage()
+        throws Exception
+    {
+        byte[] stale = Strings.toByteArray("stale");
+
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("AIMer", "BCPQC");
+
+        kpg.initialize(AIMerParameterSpec.aimer128f, new SecureRandom());
+
+        KeyPair kp = kpg.generateKeyPair();
+
+        Signature signer = Signature.getInstance("AIMer", "BCPQC");
+
+        signer.initSign(kp.getPrivate(), new SecureRandom());
+
+        signer.update(msg, 0, msg.length);
+
+        byte[] s = signer.sign();
+
+        // an abandoned sign, then a sign of msg: the result is a signature on msg alone
+        Signature sig = Signature.getInstance("AIMer", "BCPQC");
+
+        sig.initSign(kp.getPrivate(), new SecureRandom());
+        sig.update(stale, 0, stale.length);
+        sig.initSign(kp.getPrivate(), new SecureRandom());
+        sig.update(msg, 0, msg.length);
+
+        byte[] s2 = sig.sign();
+
+        Signature verifier = Signature.getInstance("AIMer", "BCPQC");
+
+        verifier.initVerify(kp.getPublic());
+        verifier.update(msg, 0, msg.length);
+
+        assertTrue("re-initSign kept the earlier update", verifier.verify(s2));
+
+        // an abandoned verify, then a verify of msg
+        sig.initVerify(kp.getPublic());
+        sig.update(stale, 0, stale.length);
+        sig.initVerify(kp.getPublic());
+        sig.update(msg, 0, msg.length);
+
+        assertTrue("re-initVerify kept the earlier update", sig.verify(s));
+
+        // an abandoned sign, then a verify of msg on the same object
+        sig.initSign(kp.getPrivate(), new SecureRandom());
+        sig.update(stale, 0, stale.length);
+        sig.initVerify(kp.getPublic());
+        sig.update(msg, 0, msg.length);
+
+        assertTrue("initVerify after initSign kept the earlier update", sig.verify(s));
+    }
+
+    /**
+     * A public key that is not an AIMer key is refused with an InvalidKeyException that keeps the
+     * decoding failure as its cause.
+     */
+    public void testForeignPublicKeyKeepsCause()
+        throws Exception
+    {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC", "BC");
+
+        kpg.initialize(256, new SecureRandom());
+
+        PublicKey ecKey = kpg.generateKeyPair().getPublic();
+
+        Signature sig = Signature.getInstance("AIMer", "BCPQC");
+
+        try
+        {
+            sig.initVerify(ecKey);
+            fail("no exception");
+        }
+        catch (InvalidKeyException e)
+        {
+            assertTrue(e.getMessage(), e.getMessage().startsWith("unknown public key passed to AIMer: "));
+            assertNotNull("cause dropped", e.getCause());
+        }
+    }
+
+    /**
      * Verify that the BC provider's key-info-converter mechanism (populated by
      * {@code BouncyCastleProvider.loadPQCKeys()}) recognises every AIMer OID
      * and decodes encoded key infos to AIMer keys equal to the originals.

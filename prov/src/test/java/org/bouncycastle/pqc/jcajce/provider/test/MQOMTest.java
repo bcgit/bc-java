@@ -128,6 +128,81 @@ public class MQOMTest
         }
     }
 
+    /**
+     * initSign / initVerify start a new message: bytes passed to update() before a re-initialisation,
+     * or before switching between signing and verifying, must not reach the next signature.
+     */
+    public void testReinitDiscardsBufferedMessage()
+        throws Exception
+    {
+        byte[] stale = Strings.toByteArray("stale");
+
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("MQOM", PROVIDER);
+        kpg.initialize(MQOMParameterSpec.mqom2_cat1_gf2_fast_r3, new SecureRandom());
+        KeyPair kp = kpg.generateKeyPair();
+
+        Signature signer = Signature.getInstance("MQOM", PROVIDER);
+        signer.initSign(kp.getPrivate(), new SecureRandom());
+        signer.update(msg);
+        byte[] s = signer.sign();
+
+        // an abandoned sign, then a sign of msg: the result is a signature on msg alone
+        Signature sig = Signature.getInstance("MQOM", PROVIDER);
+        sig.initSign(kp.getPrivate(), new SecureRandom());
+        sig.update(stale);
+        sig.initSign(kp.getPrivate(), new SecureRandom());
+        sig.update(msg);
+        byte[] s2 = sig.sign();
+
+        Signature verifier = Signature.getInstance("MQOM", PROVIDER);
+        verifier.initVerify(kp.getPublic());
+        verifier.update(msg);
+        assertTrue("re-initSign kept the earlier update", verifier.verify(s2));
+
+        // an abandoned verify, then a verify of msg
+        sig.initVerify(kp.getPublic());
+        sig.update(stale);
+        sig.initVerify(kp.getPublic());
+        sig.update(msg);
+        assertTrue("re-initVerify kept the earlier update", sig.verify(s));
+
+        // an abandoned sign, then a verify of msg on the same object
+        sig.initSign(kp.getPrivate(), new SecureRandom());
+        sig.update(stale);
+        sig.initVerify(kp.getPublic());
+        sig.update(msg);
+        assertTrue("initVerify after initSign kept the earlier update", sig.verify(s));
+    }
+
+    /**
+     * A public key that is not an MQOM key is refused with an InvalidKeyException that keeps the
+     * decoding failure as its cause.
+     */
+    public void testForeignPublicKeyKeepsCause()
+        throws Exception
+    {
+        if (Security.getProvider(BouncyCastleProvider.PROVIDER_NAME) == null)
+        {
+            Security.addProvider(new BouncyCastleProvider());
+        }
+
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("EC", "BC");
+        kpg.initialize(256, new SecureRandom());
+        PublicKey ecKey = kpg.generateKeyPair().getPublic();
+
+        Signature sig = Signature.getInstance("MQOM", PROVIDER);
+        try
+        {
+            sig.initVerify(ecKey);
+            fail("no exception");
+        }
+        catch (InvalidKeyException e)
+        {
+            assertTrue(e.getMessage(), e.getMessage().startsWith("unknown public key passed to MQOM: "));
+            assertNotNull("cause dropped", e.getCause());
+        }
+    }
+
     private void runRoundTrip(String algName, MQOMParameterSpec spec)
         throws Exception
     {

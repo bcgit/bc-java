@@ -11,6 +11,7 @@ import java.security.spec.AlgorithmParameterSpec;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
+import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 import org.bouncycastle.pqc.crypto.uov.UOVParameters;
 import org.bouncycastle.pqc.crypto.uov.UOVSigner;
 import org.bouncycastle.util.Strings;
@@ -48,6 +49,8 @@ public class SignatureSpi
     protected void engineInitVerify(PublicKey publicKey)
             throws InvalidKeyException
     {
+        bOut.reset();
+
         if (!(publicKey instanceof BCUOVPublicKey))
         {
             try
@@ -56,7 +59,7 @@ public class SignatureSpi
             }
             catch (Exception e)
             {
-                throw new InvalidKeyException("unknown public key passed to UOV: " + e.getMessage());
+                throw SecurityExceptions.invalidKeyException("unknown public key passed to UOV: " + e.getMessage(), e);
             }
         }
         BCUOVPublicKey key = (BCUOVPublicKey) publicKey;
@@ -69,7 +72,6 @@ public class SignatureSpi
             }
         }
         signer.init(false, key.getKeyParams());
-        bOut.reset();
     }
 
     protected void engineInitSign(PrivateKey privateKey, SecureRandom random)
@@ -82,6 +84,8 @@ public class SignatureSpi
     protected void engineInitSign(PrivateKey privateKey)
             throws InvalidKeyException
     {
+        bOut.reset();
+
         if (!(privateKey instanceof BCUOVPrivateKey))
         {
             throw new InvalidKeyException("unknown private key passed to UOV");
@@ -101,7 +105,6 @@ public class SignatureSpi
             param = new ParametersWithRandom(param, random);
         }
         signer.init(true, param);
-        bOut.reset();
     }
 
     protected void engineUpdate(byte b)
@@ -126,7 +129,7 @@ public class SignatureSpi
         }
         catch (Exception e)
         {
-            throw new SignatureException(e.toString());
+            throw SecurityExceptions.signatureException(e.toString(), e);
         }
         finally
         {
