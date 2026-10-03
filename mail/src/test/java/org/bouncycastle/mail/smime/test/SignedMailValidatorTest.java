@@ -39,11 +39,14 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.DERSet;
+import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.cms.Attribute;
 import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.cms.CMSAttributes;
 import org.bouncycastle.asn1.cms.Time;
 import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x500.X500NameBuilder;
+import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.ExtendedKeyUsage;
@@ -162,6 +165,101 @@ public class SignedMailValidatorTest extends TestCase
 
         assertTrue(addresses.contains("domain-confidentiality-authority@family-net.ch"));
         assertTrue(addresses.contains("domain-confidentiality-authority@bekb.ch "));
+    }
+
+    public void testEmailAddressFoldingIsLocaleIndependent() throws Exception
+    {
+        // Turkish rules fold 'I' to the dotless U+0131; the class used to capture the default locale at load time.
+        Locale defaultLocale = Locale.getDefault();
+
+        try
+        {
+            Locale.setDefault(new Locale("tr", "TR"));
+
+            X500Name signDN = new X500Name("CN=Ian Echidna, E=IAN@EXAMPLE.ORG, O=Bouncy Castle, C=AU");
+
+            assertTrue("From address must match the certificate address whatever the default locale",
+                validateEmailBinding(signDN, "ian@example.org").isValidSignature());
+        }
+        finally
+        {
+            Locale.setDefault(defaultLocale);
+        }
+    }
+
+    public void testEmailAddressFoldingIsAsciiOnly() throws Exception
+    {
+        // U+212A KELVIN SIGN lower cases to 'k', U+0130 to 'i' (Turkish) or "i̇", so neither may match an ASCII mailbox.
+        checkNonAsciiEmailRejected("Kate@example.org", "kate@example.org");
+        checkNonAsciiEmailRejected("İan@example.org", "ian@example.org");
+    }
+
+    private void checkNonAsciiEmailRejected(String certEmail, String fromEmail) throws Exception
+    {
+        X500NameBuilder nameBuilder = new X500NameBuilder(BCStyle.INSTANCE);
+        nameBuilder.addRDN(BCStyle.CN, "Test Signer");
+        nameBuilder.addRDN(BCStyle.EmailAddress, new DERUTF8String(certEmail));
+        nameBuilder.addRDN(BCStyle.O, "Bouncy Castle");
+        nameBuilder.addRDN(BCStyle.C, "AU");
+
+        SignedMailValidator.ValidationResult result = validateEmailBinding(nameBuilder.build(), fromEmail);
+
+        assertTrue(result.isVerifiedSignature());
+        assertFalse(result.isValidSignature());
+
+        Iterator it = result.getErrors().iterator();
+        boolean found = false;
+        while (it.hasNext())
+        {
+            if (((ErrorBundle)it.next()).getId().equals("SignedMailValidator.emailFromCertMismatch"))
+            {
+                found = true;
+            }
+        }
+        assertTrue("expected emailFromCertMismatch for " + fromEmail, found);
+    }
+
+    private static SignedMailValidator.ValidationResult validateEmailBinding(X500Name signDN, String from)
+        throws Exception
+    {
+        long now = System.currentTimeMillis();
+        long day = 1000L * 60 * 60 * 24;
+        Date notBefore = new Date(now - day);
+        Date notAfter = new Date(now + 100 * day);
+
+        X500Name caDN = new X500Name("CN=Test CA, O=Bouncy Castle, C=AU");
+
+        KeyPair caKP = CMSTestUtil.makeKeyPair();
+        KeyPair signKP = CMSTestUtil.makeKeyPair();
+
+        X509Certificate caCert = buildCert(caDN, caKP.getPublic(), caDN, caKP, notBefore, notAfter, true);
+        X509Certificate signCert = buildCert(signDN, signKP.getPublic(), caDN, caKP, notBefore, notAfter, false);
+
+        List certList = new ArrayList();
+        certList.add(signCert);
+        certList.add(caCert);
+
+        SMIMESignedGenerator gen = new SMIMESignedGenerator();
+        gen.addSignerInfoGenerator(new JcaSimpleSignerInfoGeneratorBuilder().setProvider("BC")
+            .build("SHA256withRSA", signKP.getPrivate(), signCert));
+        gen.addCertificates(new JcaCertStore(certList));
+
+        MimeMultipart signedMsg = gen.generate(SMIMETestUtil.makeMimeBodyPart("Hello world!\n"));
+
+        Session session = Session.getDefaultInstance(System.getProperties(), null);
+        MimeMessage msg = new MimeMessage(session);
+        msg.setFrom(new InternetAddress(from));
+        msg.setRecipient(Message.RecipientType.TO, new InternetAddress("example@bouncycastle.org"));
+        msg.setContent(signedMsg, signedMsg.getContentType());
+        msg.saveChanges();
+
+        Set trust = new HashSet();
+        trust.add(new TrustAnchor(caCert, null));
+
+        PKIXParameters params = new PKIXParameters(trust);
+        params.setRevocationEnabled(false);
+
+        return firstResult(new SignedMailValidator(msg, params));
     }
 
     public void testExtKeyUsage() throws Exception
@@ -343,8 +441,15 @@ public class SignedMailValidatorTest extends TestCase
         KeyPair issKP, Date notBefore, Date notAfter, boolean ca)
         throws Exception
     {
-        JcaX509v3CertificateBuilder b = new JcaX509v3CertificateBuilder(new X500Name(issDN),
-            BigInteger.valueOf(System.nanoTime()), notBefore, notAfter, new X500Name(subDN), subPub);
+        return buildCert(new X500Name(subDN), subPub, new X500Name(issDN), issKP, notBefore, notAfter, ca);
+    }
+
+    private static X509Certificate buildCert(X500Name subDN, java.security.PublicKey subPub, X500Name issDN,
+        KeyPair issKP, Date notBefore, Date notAfter, boolean ca)
+        throws Exception
+    {
+        JcaX509v3CertificateBuilder b = new JcaX509v3CertificateBuilder(issDN,
+            BigInteger.valueOf(System.nanoTime()), notBefore, notAfter, subDN, subPub);
         b.addExtension(Extension.basicConstraints, false, new BasicConstraints(ca));
         if (ca)
         {
