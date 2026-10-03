@@ -119,4 +119,69 @@ public class Blake2bpDigestTest
             }
         }
     }
+
+    public void testMultiPartUpdate()
+    {
+        // unkeyed BLAKE2bp of the 1100 byte message 00 01 02 .. ff 00 01 ..
+        byte[] expected = Hex.decode("1fbb59626e91bb75333395159d754453bfe699609d617d0ca94fa5028aaac576f2fa9c6f31d511341256132f65e24ce78097060800465113298fbd069f3c988f");
+        byte[] key = new byte[64];
+        byte[] buf = new byte[1100];
+        byte[] hash = new byte[64];
+
+        for (int i = 0; i < key.length; i++)
+        {
+            key[i] = (byte) i;
+        }
+        for (int i = 0; i < buf.length; i++)
+        {
+            buf[i] = (byte) i;
+        }
+
+        Blake2bpDigest digest = new Blake2bpDigest(null);
+        digest.update(buf, 0, buf.length);
+        digest.doFinal(hash, 0);
+        assertTrue("BLAKE2bp mismatch on long message", Arrays.areEqual(expected, hash));
+
+        Blake2bpDigest keyedDigest = new Blake2bpDigest(key);
+        byte[] keyedExpected = new byte[64];
+        keyedDigest.update(buf, 0, buf.length);
+        keyedDigest.doFinal(keyedExpected, 0);
+
+        for (int step = 1; step <= buf.length; step++)
+        {
+            for (int pOffset = 0; pOffset < buf.length; pOffset += step)
+            {
+                int len = Math.min(step, buf.length - pOffset);
+
+                digest.update(buf, pOffset, len);
+                keyedDigest.update(buf, pOffset, len);
+            }
+
+            digest.doFinal(hash, 0);
+            assertTrue("BLAKE2bp mismatch on update step " + step, Arrays.areEqual(expected, hash));
+
+            keyedDigest.doFinal(hash, 0);
+            assertTrue("keyed BLAKE2bp mismatch on update step " + step, Arrays.areEqual(keyedExpected, hash));
+        }
+
+        for (int split = 0; split <= buf.length; split++)
+        {
+            digest.update(buf, 0, split);
+            digest.update(buf, split, buf.length - split);
+            digest.doFinal(hash, 0);
+            assertTrue("BLAKE2bp mismatch on update split " + split, Arrays.areEqual(expected, hash));
+
+            keyedDigest.update(buf, 0, split);
+            keyedDigest.update(buf, split, buf.length - split);
+            keyedDigest.doFinal(hash, 0);
+            assertTrue("keyed BLAKE2bp mismatch on update split " + split, Arrays.areEqual(keyedExpected, hash));
+        }
+
+        for (int i = 0; i < buf.length; i++)
+        {
+            digest.update(buf[i]);
+        }
+        digest.doFinal(hash, 0);
+        assertTrue("BLAKE2bp mismatch on single byte update", Arrays.areEqual(expected, hash));
+    }
 }
