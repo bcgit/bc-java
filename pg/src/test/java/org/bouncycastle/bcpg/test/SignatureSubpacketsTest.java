@@ -5,12 +5,15 @@ import org.bouncycastle.bcpg.MalformedPacketException;
 import org.bouncycastle.bcpg.SignatureSubpacket;
 import org.bouncycastle.bcpg.SignatureSubpacketInputStream;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
+import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.bcpg.sig.Exportable;
 import org.bouncycastle.bcpg.sig.Features;
 import org.bouncycastle.bcpg.sig.IssuerKeyID;
 import org.bouncycastle.bcpg.sig.KeyExpirationTime;
 import org.bouncycastle.bcpg.sig.LibrePGPPreferredEncryptionModes;
 import org.bouncycastle.bcpg.sig.NotationData;
+import org.bouncycastle.bcpg.sig.PreferredAEADCiphersuites;
+import org.bouncycastle.bcpg.sig.PreferredAlgorithms;
 import org.bouncycastle.bcpg.sig.PrimaryUserID;
 import org.bouncycastle.bcpg.sig.Revocable;
 import org.bouncycastle.bcpg.sig.RevocationKey;
@@ -19,11 +22,15 @@ import org.bouncycastle.bcpg.sig.SignatureCreationTime;
 import org.bouncycastle.bcpg.sig.SignatureExpirationTime;
 import org.bouncycastle.bcpg.sig.SignatureTarget;
 import org.bouncycastle.bcpg.sig.TrustSignature;
+import org.bouncycastle.openpgp.PGPSignatureSubpacketGenerator;
+import org.bouncycastle.openpgp.PGPSignatureSubpacketVector;
 import org.bouncycastle.util.Arrays;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class SignatureSubpacketsTest
         extends AbstractPacketTest
@@ -39,6 +46,7 @@ public class SignatureSubpacketsTest
             throws Exception
     {
         testLibrePGPPreferredEncryptionModesSubpacket();
+        testLibrePGPPreferredEncryptionModesLookup();
         testTruncatedSubpacketsRejected();
         testFixedLengthSubpacketsRejected();
     }
@@ -64,6 +72,73 @@ public class SignatureSubpacketsTest
                 AEADAlgorithmTags.EAX,
                 AEADAlgorithmTags.OCB
         }, bOut.toByteArray());
+    }
+
+    /**
+     * {@link PGPSignatureSubpacketVector#getPreferredLibrePgpEncryptionModes()} reads the LibrePGP
+     * Preferred Encryption Modes subpacket (type 34). It used to look up the RFC 9580 Preferred AEAD
+     * Ciphersuites subpacket (type 39) and cast it to the LibrePGP class, so a signature carrying
+     * only type 34 gave null and a signature carrying type 39 threw a ClassCastException. By
+     * default the OpenPGP API puts type 39 on the direct-key signature of every key it generates.
+     */
+    private void testLibrePGPPreferredEncryptionModesLookup()
+            throws IOException
+    {
+        int[] modes = new int[] {AEADAlgorithmTags.EAX, AEADAlgorithmTags.OCB};
+        PGPSignatureSubpacketGenerator gen = new PGPSignatureSubpacketGenerator();
+        gen.setPreferredLibrePgpEncryptionModes(false, modes);
+        PGPSignatureSubpacketVector libreOnly = gen.generate();
+        isTrue("LibrePGP encryption modes mismatch",
+                Arrays.areEqual(modes, libreOnly.getPreferredLibrePgpEncryptionModes()));
+        isTrue("decoded LibrePGP encryption modes mismatch",
+                Arrays.areEqual(modes, reparse(libreOnly).getPreferredLibrePgpEncryptionModes()));
+
+        gen = new PGPSignatureSubpacketGenerator();
+        gen.setPreferredAEADCiphersuites(PreferredAEADCiphersuites.builder(false)
+                .addCombination(SymmetricKeyAlgorithmTags.AES_256, AEADAlgorithmTags.OCB));
+        PGPSignatureSubpacketVector aeadOnly = gen.generate();
+        isNotNull("AEAD ciphersuites missing", aeadOnly.getPreferredAEADCiphersuites());
+        isNull("AEAD ciphersuites reported as LibrePGP encryption modes",
+                aeadOnly.getPreferredLibrePgpEncryptionModes());
+        isNull("decoded AEAD ciphersuites reported as LibrePGP encryption modes",
+                reparse(aeadOnly).getPreferredLibrePgpEncryptionModes());
+
+        gen.setPreferredLibrePgpEncryptionModes(false, modes);
+        PGPSignatureSubpacketVector both = gen.generate();
+        isTrue("LibrePGP encryption modes mismatch with AEAD ciphersuites present",
+                Arrays.areEqual(modes, both.getPreferredLibrePgpEncryptionModes()));
+        PGPSignatureSubpacketVector decoded = reparse(both);
+        isTrue("decoded LibrePGP encryption modes mismatch with AEAD ciphersuites present",
+                Arrays.areEqual(modes, decoded.getPreferredLibrePgpEncryptionModes()));
+        isTrue("decoded AEAD ciphersuites mismatch", decoded.getPreferredAEADCiphersuites().isSupported(
+                new PreferredAEADCiphersuites.Combination(SymmetricKeyAlgorithmTags.AES_256, AEADAlgorithmTags.OCB)));
+
+        // type 34 held as a plain PreferredAlgorithms, which addCustomSubpacket() and fromSubpackets() accept
+        PGPSignatureSubpacketVector generic = PGPSignatureSubpacketVector.fromSubpackets(new SignatureSubpacket[]{
+                new PreferredAlgorithms(SignatureSubpacketTags.LIBREPGP_PREFERRED_ENCRYPTION_MODES, false, modes)});
+        isTrue("generic LibrePGP encryption modes mismatch",
+                Arrays.areEqual(modes, generic.getPreferredLibrePgpEncryptionModes()));
+    }
+
+    private PGPSignatureSubpacketVector reparse(PGPSignatureSubpacketVector vector)
+            throws IOException
+    {
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        SignatureSubpacket[] packets = vector.toArray();
+        for (int i = 0; i != packets.length; i++)
+        {
+            packets[i].encode(bOut);
+        }
+
+        SignatureSubpacketInputStream sIn = new SignatureSubpacketInputStream(
+                new ByteArrayInputStream(bOut.toByteArray()));
+        List<SignatureSubpacket> decoded = new ArrayList<SignatureSubpacket>();
+        SignatureSubpacket p;
+        while ((p = sIn.readPacket()) != null)
+        {
+            decoded.add(p);
+        }
+        return PGPSignatureSubpacketVector.fromSubpackets(decoded);
     }
 
     /**
