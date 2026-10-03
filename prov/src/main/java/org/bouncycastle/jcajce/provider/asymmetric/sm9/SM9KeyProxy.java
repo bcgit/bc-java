@@ -17,6 +17,9 @@ import org.bouncycastle.util.Exceptions;
  * User identity keys are not standalone-decodable (their encoding omits the master
  * public key), so they are not serializable; their {@code writeReplace} throws
  * rather than routing through this proxy.
+ * <p>
+ * A deserialization filter sees both this class and the key readResolve returns; see the package
+ * documentation for the allow-list that follows from that.
  */
 class SM9KeyProxy
     implements Serializable
