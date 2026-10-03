@@ -40,6 +40,7 @@ public class CipherOutputStream
     private Cipher          c;
 
     private byte[]          oneByte = new byte[1];
+    private boolean         closed;
 
     /**
      * Constructs a CipherOutputStream from an OutputStream and a
@@ -163,6 +164,8 @@ public class CipherOutputStream
      * This method resets the encapsulated cipher object to its initial state
      * and calls the <code>close</code> method of the underlying output
      * stream.
+     * <p>
+     * Calling this method on a stream that is already closed has no effect.
      *
      * @exception IOException if an I/O error occurs.
      * @since JCE1.2
@@ -170,6 +173,12 @@ public class CipherOutputStream
     public void close()
            throws IOException
     {
+        if (closed)
+        {
+            return;
+        }
+        closed = true;
+
         try
         {
                 byte[]  bytes = c.doFinal();

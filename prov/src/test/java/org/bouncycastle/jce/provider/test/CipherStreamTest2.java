@@ -463,6 +463,44 @@ public class CipherStreamTest2
         return kGen.generateKey();
     }
 
+    private void testDoubleClose(String name)
+            throws Exception
+    {
+        Key key = generateKey(name);
+        Cipher encrypt = Cipher.getInstance(name, "BC");
+        Cipher decrypt = Cipher.getInstance(name, "BC");
+        encrypt.init(Cipher.ENCRYPT_MODE, key);
+        decrypt.init(Cipher.DECRYPT_MODE, key, new IvParameterSpec(encrypt.getIV()));
+
+        byte[] data = new byte[33];
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        OutputStream cOut = new CipherOutputStream(bOut, encrypt);
+
+        cOut.write(data);
+        cOut.close();
+
+        byte[] expected = bOut.toByteArray();
+
+        cOut.close();
+
+        if (!Arrays.areEqual(expected, bOut.toByteArray()))
+        {
+            fail("second close changed the output: " + name);
+        }
+
+        ByteArrayOutputStream pOut = new ByteArrayOutputStream();
+        OutputStream dOut = new CipherOutputStream(pOut, decrypt);
+
+        dOut.write(expected);
+        dOut.close();
+        dOut.close();
+
+        if (!Arrays.areEqual(data, pOut.toByteArray()))
+        {
+            fail("double closed decryption failed: " + name);
+        }
+    }
+
     public void performTest()
             throws Exception
     {
@@ -471,6 +509,14 @@ public class CipherStreamTest2
         {
             this.streamSize = testSizes[i];
             performTests();
+        }
+
+        testDoubleClose("AES/CBC/PKCS5Padding");
+        testDoubleClose("AES/EAX/NoPadding");
+        String jvm = System.getProperty("java.version");
+        if (!(jvm.length() > 2 && (jvm.charAt(2) == '5' || jvm.charAt(2) == '6')))
+        {
+            testDoubleClose("AES/GCM/NoPadding");
         }
     }
 

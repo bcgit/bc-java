@@ -494,6 +494,54 @@ public class CipherStreamTest
         }
     }
 
+    private void testDoubleClose()
+        throws Exception
+    {
+        KeyParameter key = new KeyParameter(new byte[16]);
+
+        testDoubleClose("AES/CBC/PKCS7", new PaddedBufferedBlockCipher(CBCBlockCipher.newInstance(AESEngine.newInstance()), new PKCS7Padding()),
+            new ParametersWithIV(key, new byte[16]));
+        testDoubleClose("AES/EAX", new EAXBlockCipher(AESEngine.newInstance()), new ParametersWithIV(key, new byte[16]));
+        testDoubleClose("AES/GCM", GCMBlockCipher.newInstance(AESEngine.newInstance()), new ParametersWithIV(key, new byte[12]));
+    }
+
+    private void testDoubleClose(String label, Object cipher, CipherParameters params)
+        throws Exception
+    {
+        byte[] data = new byte[33];
+
+        init(cipher, true, params);
+
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        OutputStream cOut = createCipherOutputStream(bOut, cipher);
+
+        cOut.write(data);
+        cOut.close();
+
+        byte[] expected = bOut.toByteArray();
+
+        cOut.close();
+
+        if (!Arrays.areEqual(expected, bOut.toByteArray()))
+        {
+            fail("second close changed the output for " + label);
+        }
+
+        init(cipher, false, params);
+
+        ByteArrayOutputStream pOut = new ByteArrayOutputStream();
+        OutputStream dOut = createCipherOutputStream(pOut, cipher);
+
+        dOut.write(expected);
+        dOut.close();
+        dOut.close();
+
+        if (!Arrays.areEqual(data, pOut.toByteArray()))
+        {
+            fail("double closed decryption failed for " + label);
+        }
+    }
+
     public void performTest()
         throws Exception
     {
@@ -503,6 +551,8 @@ public class CipherStreamTest
             this.streamSize = testSizes[i];
             performTests();
         }
+
+        testDoubleClose();
     }
 
     private void performTests()

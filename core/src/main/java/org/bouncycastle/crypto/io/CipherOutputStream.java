@@ -27,6 +27,7 @@ public class CipherOutputStream
 
     private final byte[] oneByte = new byte[1];
     private byte[] buf;
+    private boolean closed;
 
     /**
      * Constructs a CipherOutputStream from an OutputStream and a
@@ -215,6 +216,8 @@ public class CipherOutputStream
      * This method resets the encapsulated cipher object to its initial state
      * and calls the <code>close</code> method of the underlying output
      * stream.
+     * <p>
+     * Calling this method on a stream that is already closed has no effect.
      *
      * @throws java.io.IOException if an I/O error occurs.
      * @throws InvalidCipherTextIOException if the data written to this stream was invalid ciphertext
@@ -223,6 +226,12 @@ public class CipherOutputStream
     public void close()
         throws IOException
     {
+        if (closed)
+        {
+            return;
+        }
+        closed = true;
+
         ensureCapacity(0, true);
         IOException error = null;
         try
