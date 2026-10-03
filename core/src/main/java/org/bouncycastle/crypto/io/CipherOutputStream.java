@@ -27,6 +27,7 @@ public class CipherOutputStream
 
     private final byte[] oneByte = new byte[1];
     private byte[] buf;
+    private boolean closed;
 
     /**
      * Constructs a CipherOutputStream from an OutputStream and a
@@ -223,6 +224,12 @@ public class CipherOutputStream
     public void close()
         throws IOException
     {
+        if (closed)
+        {
+            return;
+        }
+        closed = true;
+
         ensureCapacity(0, true);
         IOException error = null;
         try

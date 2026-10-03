@@ -31,6 +31,7 @@ public class CipherOutputStream
 {
     private final Cipher cipher;
     private final byte[] oneByte = new byte[1];
+    private boolean closed;
 
     /**
      * Constructs a CipherOutputStream from an OutputStream and a Cipher.
@@ -108,6 +109,12 @@ public class CipherOutputStream
     public void close()
         throws IOException
     {
+        if (closed)
+        {
+            return;
+        }
+        closed = true;
+
         IOException error = null;
         try
         {
