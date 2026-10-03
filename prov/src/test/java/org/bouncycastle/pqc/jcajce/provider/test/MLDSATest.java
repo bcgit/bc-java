@@ -11,6 +11,7 @@ import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.security.Signature;
@@ -90,6 +91,126 @@ public class MLDSATest
         for (int i = 0; i != names.length; i++)
         {
             assertEquals(names[i], MLDSAParameterSpec.fromName(names[i]).getName());
+        }
+    }
+
+    /**
+     * KeyFactory.translateKey converts ML-DSA keys from another provider via their encodings. The
+     * JDK's own keys report only the family name, "ML-DSA", whatever their parameter set.
+     */
+    public void testTranslateForeignKeys()
+        throws Exception
+    {
+        for (int i = 0; i != names.length; i++)
+        {
+            KeyPair kp = KeyPairGenerator.getInstance(names[i], "BC").generateKeyPair();
+
+            PublicKey fPub = new ForeignPublicKey("ML-DSA", kp.getPublic().getEncoded());
+            PrivateKey fPriv = new ForeignPrivateKey("ML-DSA", kp.getPrivate().getEncoded());
+
+            String[] kfNames = { names[i].indexOf("WITH") > 0 ? "HASH-ML-DSA" : "ML-DSA", names[i] };
+            for (int j = 0; j != kfNames.length; j++)
+            {
+                KeyFactory kf = KeyFactory.getInstance(kfNames[j], "BC");
+                assertEquals(kp.getPublic(), kf.translateKey(fPub));
+                assertEquals(kp.getPrivate(), kf.translateKey(fPriv));
+            }
+        }
+
+        // a parameter set the factory is not for is refused, with the decoding failure as the cause
+        KeyPair kp65 = KeyPairGenerator.getInstance("ML-DSA-65", "BC").generateKeyPair();
+        checkTranslateRefused(KeyFactory.getInstance("ML-DSA-44", "BC"),
+            new ForeignPublicKey("ML-DSA", kp65.getPublic().getEncoded()), true);
+        checkTranslateRefused(KeyFactory.getInstance("ML-DSA-44", "BC"),
+            new ForeignPrivateKey("ML-DSA", kp65.getPrivate().getEncoded()), true);
+
+        // as is a key with no encoding, or not in the standard format
+        checkTranslateRefused(KeyFactory.getInstance("ML-DSA", "BC"), new ForeignPublicKey("ML-DSA", null), false);
+        checkTranslateRefused(KeyFactory.getInstance("ML-DSA", "BC"), new ForeignPrivateKey("ML-DSA", null), false);
+        checkTranslateRefused(KeyFactory.getInstance("ML-DSA", "BC"),
+            new ForeignPublicKey("ML-DSA", "RAW", kp65.getPublic().getEncoded()), false);
+    }
+
+    static void checkTranslateRefused(KeyFactory kf, java.security.Key key, boolean hasCause)
+    {
+        try
+        {
+            kf.translateKey(key);
+            fail("no exception");
+        }
+        catch (InvalidKeyException e)
+        {
+            assertTrue(e.getMessage(), e.getMessage().toLowerCase().startsWith("unsupported key type"));
+            assertEquals(hasCause, e.getCause() instanceof InvalidKeySpecException);
+        }
+    }
+
+    /**
+     * A public key as another provider might present it: only the algorithm family name, X.509 encoding.
+     */
+    static class ForeignPublicKey
+        implements PublicKey
+    {
+        private final String algorithm;
+        private final String format;
+        private final byte[] encoding;
+
+        ForeignPublicKey(String algorithm, byte[] encoding)
+        {
+            this(algorithm, "X.509", encoding);
+        }
+
+        ForeignPublicKey(String algorithm, String format, byte[] encoding)
+        {
+            this.algorithm = algorithm;
+            this.format = format;
+            this.encoding = encoding;
+        }
+
+        public String getAlgorithm()
+        {
+            return algorithm;
+        }
+
+        public String getFormat()
+        {
+            return format;
+        }
+
+        public byte[] getEncoded()
+        {
+            return Arrays.clone(encoding);
+        }
+    }
+
+    /**
+     * A private key as another provider might present it: only the algorithm family name, PKCS#8 encoding.
+     */
+    static class ForeignPrivateKey
+        implements PrivateKey
+    {
+        private final String algorithm;
+        private final byte[] encoding;
+
+        ForeignPrivateKey(String algorithm, byte[] encoding)
+        {
+            this.algorithm = algorithm;
+            this.encoding = encoding;
+        }
+
+        public String getAlgorithm()
+        {
+            return algorithm;
+        }
+
+        public String getFormat()
+        {
+            return "PKCS#8";
+        }
+
+        public byte[] getEncoded()
+        {
+            return Arrays.clone(encoding);
         }
     }
 

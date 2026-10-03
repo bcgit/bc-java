@@ -5,6 +5,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.security.AlgorithmParameters;
+import java.security.PrivateKey;
+import java.security.PublicKey;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -116,6 +118,41 @@ public class SLHDSATest
         {
             assertEquals(names[i], SLHDSAParameterSpec.fromName(slhdsaParameters[i].getName()).getName());
         }
+    }
+
+    /**
+     * KeyFactory.translateKey converts SLH-DSA keys from another provider via their encodings.
+     */
+    public void testTranslateForeignKeys()
+        throws Exception
+    {
+        String[] kpNames = { "SLH-DSA-SHA2-128F", "SLH-DSA-SHAKE-128F-WITH-SHAKE128" };
+        for (int i = 0; i != kpNames.length; i++)
+        {
+            KeyPair kp = KeyPairGenerator.getInstance(kpNames[i], "BC").generateKeyPair();
+
+            PublicKey fPub = new MLDSATest.ForeignPublicKey("SLH-DSA", kp.getPublic().getEncoded());
+            PrivateKey fPriv = new MLDSATest.ForeignPrivateKey("SLH-DSA", kp.getPrivate().getEncoded());
+
+            String[] kfNames = { i == 0 ? "SLH-DSA" : "HASH-SLH-DSA", kpNames[i] };
+            for (int j = 0; j != kfNames.length; j++)
+            {
+                KeyFactory kf = KeyFactory.getInstance(kfNames[j], "BC");
+                assertEquals(kp.getPublic(), kf.translateKey(fPub));
+                assertEquals(kp.getPrivate(), kf.translateKey(fPriv));
+            }
+        }
+
+        // a parameter set the factory is not for is refused, with the decoding failure as the cause
+        KeyPair kp192 = KeyPairGenerator.getInstance("SLH-DSA-SHA2-192F", "BC").generateKeyPair();
+        MLDSATest.checkTranslateRefused(KeyFactory.getInstance("SLH-DSA-SHA2-128F", "BC"),
+            new MLDSATest.ForeignPublicKey("SLH-DSA", kp192.getPublic().getEncoded()), true);
+        MLDSATest.checkTranslateRefused(KeyFactory.getInstance("SLH-DSA-SHA2-128F", "BC"),
+            new MLDSATest.ForeignPrivateKey("SLH-DSA", kp192.getPrivate().getEncoded()), true);
+
+        // as is a key with no encoding
+        MLDSATest.checkTranslateRefused(KeyFactory.getInstance("SLH-DSA", "BC"),
+            new MLDSATest.ForeignPublicKey("SLH-DSA", null), false);
     }
 
     public void testKeyFactory()

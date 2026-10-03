@@ -16,7 +16,9 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 import org.bouncycastle.pqc.jcajce.provider.util.BaseKeyFactorySpi;
+import org.bouncycastle.util.Arrays;
 
 public class SLHDSAKeyFactorySpi
     extends BaseKeyFactorySpi
@@ -111,6 +113,38 @@ public class SLHDSAKeyFactorySpi
         if (key instanceof BCSLHDSAPrivateKey || key instanceof BCSLHDSAPublicKey)
         {
             return key;
+        }
+
+        // a key from another provider is re-read from its standard encoding
+        try
+        {
+            if (key instanceof PublicKey && "X.509".equals(key.getFormat()))
+            {
+                byte[] enc = key.getEncoded();
+                if (enc != null)
+                {
+                    return engineGeneratePublic(new X509EncodedKeySpec(enc));
+                }
+            }
+            else if (key instanceof PrivateKey && "PKCS#8".equals(key.getFormat()))
+            {
+                byte[] enc = key.getEncoded();
+                if (enc != null)
+                {
+                    try
+                    {
+                        return engineGeneratePrivate(new PKCS8EncodedKeySpec(enc));
+                    }
+                    finally
+                    {
+                        Arrays.clear(enc);
+                    }
+                }
+            }
+        }
+        catch (InvalidKeySpecException e)
+        {
+            throw SecurityExceptions.invalidKeyException("Unsupported key type: " + e.getMessage(), e);
         }
 
         throw new InvalidKeyException("Unsupported key type");
