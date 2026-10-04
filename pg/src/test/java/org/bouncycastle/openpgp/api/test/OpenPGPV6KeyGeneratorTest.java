@@ -249,6 +249,10 @@ public class OpenPGPV6KeyGeneratorTest
         isFalse(keySignatures.hasNext());
         PGPSignatureSubpacketVector hashedSubpackets = directKeySignature.getHashedSubPackets();
         isEquals(KeyFlags.CERTIFY_OTHER, hashedSubpackets.getKeyFlags());
+        isNotNull("Direct-key signature MUST carry preferred AEAD ciphersuites",
+            hashedSubpackets.getPreferredAEADCiphersuites());
+        isNull("Direct-key signature MUST NOT report LibrePGP encryption modes",
+            hashedSubpackets.getPreferredLibrePgpEncryptionModes());
 
         Iterator<String> userIds = primaryKey.getUserIDs();
         isEquals(userId, userIds.next());
