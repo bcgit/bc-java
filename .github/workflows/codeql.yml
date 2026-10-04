@@ -11,14 +11,9 @@
 #
 name: "CodeQL"
 
+# Disabled: no push, pull_request or schedule triggers. Run it by hand from the Actions tab.
 on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    # The branches below must be a subset of the branches above
-    branches: [ "main" ]
-  schedule:
-    - cron: '23 12 * * 3'
+  workflow_dispatch:
 
 jobs:
   analyze:
