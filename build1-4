@@ -10,10 +10,14 @@ JDKPATH=/opt/jdk1.4.2
 JAVA_MAIL_HOME=/opt/javamail-1.3.1
 JAVA_ACTIVATION_HOME=/opt/jaf-1.0.2
 
+# Ant 1.10 needs Java 8 to run and passes -Djava.security.manager=allow, which a 1.4 VM rejects.
+ANT_HOME=/opt/apache-ant-1.6.5
+export ANT_HOME
+
 JAVA_HOME=$JDKPATH
 export JAVA_HOME
 
-PATH=$JDKPATH/bin:$PATH
+PATH=$ANT_HOME/bin:$JDKPATH/bin:$PATH
 export PATH
 
 CLASSPATH=$JAVA_MAIL_HOME/mail.jar:$JAVA_ACTIVATION_HOME/activation.jar:$CLASSPATH
