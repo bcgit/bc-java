@@ -6,8 +6,12 @@ JDK 1.4 javac** at `/opt/jdk1.4.2` and runs tests on the same JRE — so unlike 
 (compiled on JDK 8, where API breaks only surface at runtime), post-1.4 API usage fails the
 jdk1.4 build at **compile time**. A change that is Gradle-clean and jdk15to18-clean can still
 break here; when touching reachable `src/main/java`, this build is the strictest check.
-`build1-4` needs `/opt/jdk1.4.2`, `/opt/javamail-1.3.1/mail.jar` and `/opt/jaf-1.0.2/activation.jar`
-(the script sets its own JAVA_HOME/CLASSPATH).
+`build1-4` needs `/opt/jdk1.4.2`, `/opt/apache-ant-1.6.5`, `/opt/javamail-1.3.1/mail.jar` and
+`/opt/jaf-1.0.2/activation.jar` (the script sets its own ANT_HOME/JAVA_HOME/CLASSPATH and puts that
+Ant first on the PATH). Ant itself runs on the 1.4 JVM, so a modern Ant cannot drive this build: Ant
+1.10 needs Java 8, and its launcher passes `-Djava.security.manager=allow`, which a 1.4 VM reads as a
+security manager class name and dies with `UnsupportedClassVersionError: allow`. Running
+`ant -f ant/jdk14.xml ...` by hand needs the same old Ant, as the commands below set.
 
 ## Source assembly and the preprocessor
 
@@ -90,9 +94,9 @@ assertions. Rules of thumb:
 
 ```
 sh build1-4                                   # build-provider, build, zip-src
-JAVA_HOME=/opt/jdk1.4.2 ant -f ant/jdk14.xml build-test
+ANT_HOME=/opt/apache-ant-1.6.5 JAVA_HOME=/opt/jdk1.4.2 /opt/apache-ant-1.6.5/bin/ant -f ant/jdk14.xml build-test
 bcsign4 build/artifacts/jdk1.4/jars/*.jar     # release machine only
-JAVA_HOME=/opt/jdk1.4.2 ant -f ant/jdk14.xml test-signed   # NOT "test" — see below
+ANT_HOME=/opt/apache-ant-1.6.5 JAVA_HOME=/opt/jdk1.4.2 /opt/apache-ant-1.6.5/bin/ant -f ant/jdk14.xml test-signed   # NOT "test" — see below
 ```
 
 - JRE 1.4's JCE authenticates providers: unsigned bcprov jars fail with
@@ -122,7 +126,8 @@ JAVA_HOME=/opt/jdk1.4.2 ant -f ant/jdk14.xml test-signed   # NOT "test" — see 
   before rebuilding.
 - Failed suites write per-suite XML under `build/artifacts/jdk1.4/reports/xml/` — the
   junit console output hides the actual exception; read the XML.
-- Fast iteration on a single failure: `ant -f ant/jdk14.xml build-provider`, re-sign
+- Fast iteration on a single failure: `ant -f ant/jdk14.xml build-provider` (with the Ant 1.6.5
+  environment above), re-sign
   `bcprov-ext`, then run the test class directly with
   `/opt/jdk1.4.2/bin/java -Xmx1536m -cp <jars> <test class>` (SimpleTests print
   `<Name>: Okay`); the full pipeline is ~25 minutes, this loop is ~2.
