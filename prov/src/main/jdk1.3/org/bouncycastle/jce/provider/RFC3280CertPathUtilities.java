@@ -1845,7 +1845,7 @@ class RFC3280CertPathUtilities
             df.setTimeZone(TimeZone.getTimeZone("UTC"));
             String message = "Certificate revocation after " + df.format(certStatus.getRevocationDate());
             message += ", reason: " + crlReasons[certStatus.getCertStatus()];
-            throw new AnnotatedException(message);
+            throw new AnnotatedRevocationException(message);
         }
         if (!reasonsMask.isAllReasons() && certStatus.getCertStatus() == CertStatus.UNREVOKED)
         {

@@ -135,7 +135,7 @@ class ProvRevocationChecker
         {
             try
             {
-                crlChecker.check(certificate);
+                checkCRLs(certificate);
             }
             catch (RecoverableCertPathValidatorException e)
             {
@@ -159,13 +159,32 @@ class ProvRevocationChecker
             {
                 if (!hasOption(Option.NO_FALLBACK))
                 {
-                    crlChecker.check(certificate);
+                    checkCRLs(certificate);
                 }
                 else
                 {
                     throw e;
                 }
             }
+        }
+    }
+
+    private void checkCRLs(Certificate certificate)
+        throws CertPathValidatorException
+    {
+        try
+        {
+            crlChecker.check(certificate);
+        }
+        catch (CertPathValidatorException e)
+        {
+            // the CRL checker is shared with the pre-Java 7 builds, so the reason is applied here.
+            if (e.getCause() instanceof AnnotatedRevocationException)
+            {
+                throw new CertPathValidatorException(e.getMessage(), e.getCause(), e.getCertPath(), e.getIndex(),
+                    CertPathValidatorException.BasicReason.REVOKED);
+            }
+            throw e;
         }
     }
 

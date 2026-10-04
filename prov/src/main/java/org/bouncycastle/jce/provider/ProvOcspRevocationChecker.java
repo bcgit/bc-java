@@ -320,7 +320,8 @@ class ProvOcspRevocationChecker
                                             CRLReason reason = info.getRevocationReason();
                                             throw new CertPathValidatorException(
                                                 "certificate revoked, reason=(" + reason + "), date=" + info.getRevocationTime().getDate(),
-                                                null, parameters.getCertPath(), parameters.getIndex());
+                                                null, parameters.getCertPath(), parameters.getIndex(),
+                                                CertPathValidatorException.BasicReason.REVOKED);
                                         }
                                         throw new CertPathValidatorException(
                                             "certificate revoked, details unknown",

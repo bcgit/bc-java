@@ -218,6 +218,7 @@ public class PKIXRevocationTest
         {
             isEquals(0, e.getIndex());
             isTrue(e.getMessage().startsWith("certificate revoked, reason=(CRLReason: keyCompromise)"));
+            isTrue(e.getReason() == CertPathValidatorException.BasicReason.REVOKED);
         }
 
         // EE request not successful
@@ -435,6 +436,66 @@ public class PKIXRevocationTest
         {
             isEquals(0, e.getIndex());
             isTrue(e.getMessage().startsWith("unable to get OCSP response"));
+            isTrue(e.getReason() == CertPathValidatorException.BasicReason.UNSPECIFIED);
+        }
+
+        // EE revoked by CRL: the reason must be REVOKED, with the message unchanged.
+        crlGen = new JcaX509v2CRLBuilder(ca.getSubjectX500Principal(), new Date(System.currentTimeMillis() - 50000));
+
+        crlGen.setNextUpdate(new Date(System.currentTimeMillis() + 50000));
+        crlGen.addCRLEntry(ee.getSerialNumber(), new Date(System.currentTimeMillis() - 10000), CRLReason.keyCompromise);
+
+        X509CRL revokingCrl = new JcaX509CRLConverter().setProvider(BC).getCRL(
+            crlGen.build(new JcaContentSignerBuilder("SHA256WithRSAEncryption").setProvider(BC).build(caKp.getPrivate())));
+
+        crlGen = new JcaX509v2CRLBuilder(root.getSubjectX500Principal(), new Date(System.currentTimeMillis() - 50000));
+
+        crlGen.setNextUpdate(new Date(System.currentTimeMillis() + 50000));
+
+        X509CRL rootCrl = new JcaX509CRLConverter().setProvider(BC).getCRL(
+            crlGen.build(new JcaContentSignerBuilder("SHA256WithRSAEncryption").setProvider(BC).build(rootKp.getPrivate())));
+
+        List crls = new ArrayList();
+        crls.add(revokingCrl);
+        crls.add(rootCrl);
+
+        CertStore crlStore = CertStore.getInstance("Collection", new CollectionCertStoreParameters(crls), BC);
+
+        // default revocation checking (OCSP disabled, so CRLs), no checker supplied
+        param = new PKIXParameters(trust);
+
+        param.addCertStore(crlStore);
+
+        checkCrlRevoked(CertPathValidator.getInstance("PKIX", BC), certPath, param);
+
+        // the provider's own checker, preferring CRLs
+        cpv = CertPathValidator.getInstance("PKIX", BC);
+
+        rv = (PKIXRevocationChecker)cpv.getRevocationChecker();
+
+        rv.setOptions(Collections.singleton(PKIXRevocationChecker.Option.PREFER_CRLS));
+
+        param = new PKIXParameters(trust);
+
+        param.addCertPathChecker(rv);
+        param.addCertStore(crlStore);
+
+        checkCrlRevoked(cpv, certPath, param);
+
+        // a CRL path failure that is not a revocation stays UNSPECIFIED
+        param = new PKIXParameters(trust);
+
+        param.addCertStore(CertStore.getInstance("Collection", new CollectionCertStoreParameters(Collections.singleton(rootCrl)), BC));
+
+        try
+        {
+            CertPathValidator.getInstance("PKIX", BC).validate(certPath, param);
+            fail("no exception - no CRL for the end entity");
+        }
+        catch (CertPathValidatorException e)
+        {
+            isEquals(0, e.getIndex());
+            isTrue(e.getReason() == CertPathValidatorException.BasicReason.UNSPECIFIED);
         }
 
         // ocspCertChainTest() and dispPointCertChainTest() are live-network integration checks: they
@@ -442,6 +503,23 @@ public class PKIXRevocationTest
         // ocsp.globalsign.com and crl.globalsign.com endpoints. They are not part of the automated
         // suite (CI has no network access, and the sample certificates expire), but are retained below
         // for manual exercising of live OCSP / CRL-distribution-point retrieval.
+    }
+
+    private void checkCrlRevoked(CertPathValidator cpv, CertPath certPath, PKIXParameters param)
+        throws Exception
+    {
+        try
+        {
+            cpv.validate(certPath, param);
+            fail("no exception - CRL revoked end entity");
+        }
+        catch (CertPathValidatorException e)
+        {
+            isEquals(0, e.getIndex());
+            isTrue(e.getMessage(), e.getMessage().startsWith("Certificate revocation after "));
+            isTrue(e.getMessage(), e.getMessage().endsWith(", reason: keyCompromise"));
+            isTrue(e.getReason() == CertPathValidatorException.BasicReason.REVOKED);
+        }
     }
 
     private void ocspCertChainTest()
