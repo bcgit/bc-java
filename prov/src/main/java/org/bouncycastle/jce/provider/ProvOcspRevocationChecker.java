@@ -301,6 +301,11 @@ class ProvOcspRevocationChecker
                                     {
                                         throw new CertPathValidatorException("OCSP response not yet valid");
                                     }
+                                    // with no nextUpdate, thisUpdate must be sufficiently recent (RFC 6960 sec. 3.2), see Properties.OCSP_MAX_RESPONSE_AGE
+                                    if (OcspCache.isTooOld(resp.getThisUpdate(), nextUp, parameters.getValidDate()))
+                                    {
+                                        throw new CertPathValidatorException("OCSP response without nextUpdate too old");
+                                    }
                                     if (certID == null || !isEqualAlgId(certID.getHashAlgorithm(), resp.getCertID().getHashAlgorithm()))
                                     {
                                         org.bouncycastle.asn1.x509.Certificate issuer = extractCert();

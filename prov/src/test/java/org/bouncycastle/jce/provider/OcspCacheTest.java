@@ -148,6 +148,69 @@ public class OcspCacheTest
     }
 
     /**
+     * With no nextUpdate there is nothing but thisUpdate to say how old a response is, and RFC 6960
+     * sec. 3.2 has the client judge whether it is sufficiently recent - here, within
+     * Properties.OCSP_MAX_RESPONSE_AGE of the validation date.
+     */
+    public void testResponseWithoutNextUpdateMustBeRecent()
+        throws Exception
+    {
+        Date now = new Date();
+        CertID certID = certID();
+
+        BasicOCSPResponse fresh = response(certID, minutesFromNow(now, -50), null);
+        assertTrue("50 minute old response with no nextUpdate was refused",
+            OcspCache.isCertIDFoundAndCurrent(fresh, now, certID));
+
+        BasicOCSPResponse stale = response(certID, minutesFromNow(now, -70), null);
+        assertFalse("70 minute old response with no nextUpdate was current",
+            OcspCache.isCertIDFoundAndCurrent(stale, now, certID));
+
+        BasicOCSPResponse ancient = response(certID, minutesFromNow(now, -60 * 24 * 365), null);
+        assertFalse("year-old response with no nextUpdate was current",
+            OcspCache.isCertIDFoundAndCurrent(ancient, now, certID));
+
+        // a stated nextUpdate is what bounds a response that has one, however old thisUpdate is
+        BasicOCSPResponse longLived = response(certID, minutesFromNow(now, -60 * 24 * 365), minutesFromNow(now, 60));
+        assertTrue("response inside a long stated validity interval was refused",
+            OcspCache.isCertIDFoundAndCurrent(longLived, now, certID));
+
+        // the bound counts back from the date being validated for, not from the clock
+        Date past = new Date(now.getTime() - 180L * 24 * 60 * 60 * 1000);
+        assertTrue("response from just before the validation date was refused",
+            OcspCache.isCertIDFoundAndCurrent(response(certID, minutesFromNow(past, -5), null), past, certID));
+        assertFalse("response from two hours before the validation date was current",
+            OcspCache.isCertIDFoundAndCurrent(response(certID, minutesFromNow(past, -120), null), past, certID));
+
+        try
+        {
+            System.setProperty(Properties.OCSP_MAX_RESPONSE_AGE, "7200");
+            assertTrue("70 minute old response refused under a two hour bound",
+                OcspCache.isCertIDFoundAndCurrent(stale, now, certID));
+            assertFalse("year-old response current under a two hour bound",
+                OcspCache.isCertIDFoundAndCurrent(ancient, now, certID));
+
+            System.setProperty(Properties.OCSP_MAX_RESPONSE_AGE, "900");
+            assertFalse("50 minute old response current under a 15 minute bound",
+                OcspCache.isCertIDFoundAndCurrent(fresh, now, certID));
+
+            // a value that cannot be an age leaves the default in force rather than removing the bound
+            System.setProperty(Properties.OCSP_MAX_RESPONSE_AGE, "0");
+            assertFalse("zero bound accepted a 70 minute old response",
+                OcspCache.isCertIDFoundAndCurrent(stale, now, certID));
+            assertTrue("zero bound did not leave the default in force",
+                OcspCache.isCertIDFoundAndCurrent(fresh, now, certID));
+            System.setProperty(Properties.OCSP_MAX_RESPONSE_AGE, "-1");
+            assertFalse("negative bound accepted a year-old response",
+                OcspCache.isCertIDFoundAndCurrent(ancient, now, certID));
+        }
+        finally
+        {
+            System.getProperties().remove(Properties.OCSP_MAX_RESPONSE_AGE);
+        }
+    }
+
+    /**
      * "Responses whose thisUpdate time is later than the local system time SHOULD be considered
      * unreliable" - RFC 6960 sec. 4.2.2.1. Clock skew between us and the responder is allowed for.
      */

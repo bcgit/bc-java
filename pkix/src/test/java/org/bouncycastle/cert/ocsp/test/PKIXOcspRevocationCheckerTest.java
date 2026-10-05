@@ -189,6 +189,32 @@ public class PKIXOcspRevocationCheckerTest
         }
 
         checkMalformedFetchedResponses(caKp, ca, trust, root, rootKp, ocsp);
+
+        // 8) a GOOD response with no nextUpdate must be sufficiently recent (RFC 6960 sec. 3.2):
+        // one from a year ago is outside the default bound
+        long day = 24L * 60 * 60 * 1000;
+        Date now = new Date();
+        responses = new HashMap();
+        responses.put(ee, getOcspResponse(ocspKp, digCalcProv, ca, ee, new Date(now.getTime() - 365 * day), null));
+        try
+        {
+            validate(certPath, trust, responses, ocsp, true);
+            fail("year-old OCSP response with no nextUpdate accepted");
+        }
+        catch (CertPathValidatorException e)
+        {
+            isTrue("expected a too-old rejection, got: " + e.getMessage(),
+                e.getMessage() != null && e.getMessage().indexOf("OCSP response without nextUpdate too old") >= 0);
+        }
+
+        // a recent one is accepted, as is an old one whose stated nextUpdate is still ahead
+        responses = new HashMap();
+        responses.put(ee, getOcspResponse(ocspKp, digCalcProv, ca, ee, new Date(now.getTime() - 5 * 60 * 1000L), null));
+        validate(certPath, trust, responses, ocsp, true);
+
+        responses = new HashMap();
+        responses.put(ee, getOcspResponse(ocspKp, digCalcProv, ca, ee, new Date(now.getTime() - 365 * day), new Date(now.getTime() + day)));
+        validate(certPath, trust, responses, ocsp, true);
     }
 
     /**
@@ -408,6 +434,17 @@ public class PKIXOcspRevocationCheckerTest
         CertificateID eeID = new CertificateID(digCalcProv.get(CertificateID.HASH_SHA1), new JcaX509CertificateHolder(issuerCert), cert.getSerialNumber());
         respGen.addResponse(eeID, CertificateStatus.GOOD);
         BasicOCSPResp resp = respGen.build(new JcaContentSignerBuilder("SHA1withRSA").setProvider(BC).build(ocspKp.getPrivate()), null, new Date());
+        return new OCSPRespBuilder().build(OCSPRespBuilder.SUCCESSFUL, resp).getEncoded();
+    }
+
+    private byte[] getOcspResponse(KeyPair ocspKp, DigestCalculatorProvider digCalcProv, X509Certificate issuerCert, X509Certificate cert,
+        Date thisUpdate, Date nextUpdate)
+        throws Exception
+    {
+        BasicOCSPRespBuilder respGen = new JcaBasicOCSPRespBuilder(ocspKp.getPublic(), digCalcProv.get(RespID.HASH_SHA1));
+        CertificateID eeID = new CertificateID(digCalcProv.get(CertificateID.HASH_SHA1), new JcaX509CertificateHolder(issuerCert), cert.getSerialNumber());
+        respGen.addResponse(eeID, CertificateStatus.GOOD, thisUpdate, nextUpdate);
+        BasicOCSPResp resp = respGen.build(new JcaContentSignerBuilder("SHA1withRSA").setProvider(BC).build(ocspKp.getPrivate()), null, thisUpdate);
         return new OCSPRespBuilder().build(OCSPRespBuilder.SUCCESSFUL, resp).getEncoded();
     }
 

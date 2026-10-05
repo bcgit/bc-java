@@ -34,6 +34,7 @@ public class Properties
     public static final String X509_ENABLE_CRLDP = "org.bouncycastle.x509.enableCRLDP";
     public static final String X509_CRLDP_PROTOCOLS = "org.bouncycastle.x509.CRLDP_protocols";
     public static final String OCSP_MAX_RESPONSE_SIZE = "org.bouncycastle.ocsp.max_response_size";
+    public static final String OCSP_MAX_RESPONSE_AGE = "org.bouncycastle.ocsp.max_response_age";
     public static final String OPENPGP_MAX_ARMOR_HEADER_LENGTH = "org.bouncycastle.openpgp.max_armor_header_length";
     public static final String OPENPGP_MAX_ARMOR_HEADERS = "org.bouncycastle.openpgp.max_armor_headers";
     public static final String PKCS12_ALLOW_SUN_SECRET_KEYS = "org.bouncycastle.pkcs12.allow_sun_secret_keys";

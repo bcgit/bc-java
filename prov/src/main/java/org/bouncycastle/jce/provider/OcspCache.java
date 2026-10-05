@@ -57,6 +57,13 @@ class OcspCache
      */
     static final long MAX_CLOCK_SKEW_MS = 15 * 60 * 1000L;
 
+    /**
+     * Default for {@link Properties#OCSP_MAX_RESPONSE_AGE}: how old, in seconds, a response
+     * stating no nextUpdate may be. One hour, the default lifetime of a staple in SunJSSE's server
+     * cache, so a staple such a server still offers is not refused.
+     */
+    private static final int DEFAULT_MAX_RESPONSE_AGE = 60 * 60;
+
     private static Map<URI, WeakReference<Map<CertID, OCSPResponse>>> cache
         = Collections.synchronizedMap(new WeakHashMap<URI, WeakReference<Map<CertID, OCSPResponse>>>());
 
@@ -306,7 +313,7 @@ class OcspCache
     /**
      * Whether the response answers for certID and is usable at validDate. Applied to a response as
      * it arrives from the responder, so a missing nextUpdate is no objection - the responder is
-     * entitled not to state one.
+     * entitled not to state one - provided thisUpdate is recent, see {@link #isTooOld}.
      */
     static boolean isCertIDFoundAndCurrent(BasicOCSPResponse basicResp, Date validDate, CertID certID)
     {
@@ -358,6 +365,11 @@ class OcspCache
                     {
                         return false;
                     }
+
+                    if (isTooOld(resp.getThisUpdate(), nextUp, validDate))
+                    {
+                        return false;
+                    }
                 }
                 catch (ParseException e)
                 {
@@ -380,5 +392,35 @@ class OcspCache
         throws ParseException
     {
         return thisUpdate != null && thisUpdate.getDate().getTime() > (validDate.getTime() + MAX_CLOCK_SKEW_MS);
+    }
+
+    /**
+     * Whether a response stating no nextUpdate is too old to be relied on at validDate. RFC 6960
+     * sec. 3.2 leaves it to the client to judge whether thisUpdate is sufficiently recent, and with
+     * no nextUpdate nothing else says how long the response may be relied on. The bound is {@link Properties#OCSP_MAX_RESPONSE_AGE}, defaulting
+     * to one hour. A response that states a nextUpdate is judged by that and never by this.
+     */
+    static boolean isTooOld(ASN1GeneralizedTime thisUpdate, ASN1GeneralizedTime nextUpdate, Date validDate)
+        throws ParseException
+    {
+        if (nextUpdate != null || thisUpdate == null)
+        {
+            return false;
+        }
+
+        return thisUpdate.getDate().getTime() < (validDate.getTime() - getMaxResponseAgeMs());
+    }
+
+    private static long getMaxResponseAgeMs()
+    {
+        int maxResponseAge = Properties.asInteger(Properties.OCSP_MAX_RESPONSE_AGE, DEFAULT_MAX_RESPONSE_AGE);
+
+        // a configured value that cannot be an age is no reason to accept a response of any age
+        if (maxResponseAge <= 0)
+        {
+            maxResponseAge = DEFAULT_MAX_RESPONSE_AGE;
+        }
+
+        return maxResponseAge * 1000L;
     }
 }
