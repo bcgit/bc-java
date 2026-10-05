@@ -1066,7 +1066,7 @@ abstract class AEADBaseEngine
         resultLength = length + m_bufPos - (forEncryption ? 0 : MAC_SIZE);
         ensureSufficientOutputBuffer(output, outOff, resultLength - resultLength % BlockSize);
         resultLength = 0;
-        if (input == output && Arrays.segmentsOverlap(inOff, len, outOff, length))
+        if (input == output && Arrays.segmentsOverlap(inOff, len, outOff, length + m_bufPos))
         {
             input = new byte[len];
             System.arraycopy(output, inOff, input, 0, len);

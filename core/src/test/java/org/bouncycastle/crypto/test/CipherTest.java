@@ -942,5 +942,78 @@ public abstract class CipherTest
         test.isTrue("fail on testing overlapping of decryption for " + cipher.getAlgorithmName(),
             Arrays.areEqual(expected, 0, blockSize * 2, data, offset, offset + blockSize * 2));
 
+        testOverlappingSplit(test, keySize, ivSize, macSize, blockSize, cipher);
+    }
+
+    /**
+     * Encrypt and decrypt in two processBytes() calls with the input and the output in the same array, the
+     * output starting at, behind or ahead of the input, and compare with a single call into a separate array.
+     * The second call writes the bytes the first one buffered as well as its own, so its overlap check has to
+     * allow for them.
+     */
+    static void testOverlappingSplit(SimpleTest test, int keySize, int ivSize, int macSize, int blockSize, AEADCipher cipher)
+        throws Exception
+    {
+        AEADParameters parameters = new AEADParameters(new KeyParameter(new byte[keySize]), macSize * 8, new byte[ivSize], null);
+        int[] lags = new int[]{ -blockSize, 1 - blockSize, -1, 0, 1, blockSize };
+        for (int dataLen = 2; dataLen <= blockSize * 3 + 2; dataLen++)
+        {
+            byte[] data = new byte[dataLen];
+            for (int i = 0; i != dataLen; i++)
+            {
+                data[i] = (byte)i;
+            }
+            cipher.init(true, parameters);
+            byte[] expected = new byte[cipher.getOutputSize(dataLen)];
+            int len = cipher.processBytes(data, 0, dataLen, expected, 0);
+            cipher.doFinal(expected, len);
+
+            for (int i = 0; i != lags.length; i++)
+            {
+                for (int split = 1; split < data.length; split++)
+                {
+                    checkOverlappingSplit(test, true, parameters, data, expected, split, lags[i], blockSize + macSize, cipher);
+                }
+                for (int split = 1; split < expected.length; split++)
+                {
+                    checkOverlappingSplit(test, false, parameters, expected, data, split, lags[i], blockSize + macSize, cipher);
+                }
+            }
+        }
+    }
+
+    private static void checkOverlappingSplit(SimpleTest test, boolean forEncryption, AEADParameters parameters, byte[] input,
+        byte[] expected, int split, int lag, int margin, AEADCipher cipher)
+        throws Exception
+    {
+        if (lag > 0)
+        {
+            // with the output ahead of the input, a first call returning more than split - lag bytes would
+            // overwrite input the caller has not passed in yet, which is a caller error
+            cipher.init(forEncryption, parameters);
+            if (lag + cipher.processBytes(input, 0, split, new byte[input.length + margin], 0) > split)
+            {
+                return;
+            }
+        }
+        String label = (forEncryption ? "encryption" : "decryption") + " for " + cipher.getAlgorithmName()
+            + ", length " + input.length + " split " + split + " lag " + lag;
+        int inOff = margin;
+        int outOff = inOff + lag;
+        byte[] buf = new byte[inOff + input.length + 2 * margin];
+        System.arraycopy(input, 0, buf, inOff, input.length);
+        cipher.init(forEncryption, parameters);
+        int len = cipher.processBytes(buf, inOff, split, buf, outOff);
+        len += cipher.processBytes(buf, inOff + split, input.length - split, buf, outOff + len);
+        try
+        {
+            len += cipher.doFinal(buf, outOff + len);
+        }
+        catch (InvalidCipherTextException e)
+        {
+            test.fail("fail on testing split overlapping of " + label + ": " + e.getMessage());
+        }
+        test.isTrue("fail on testing split overlapping of " + label,
+            len == expected.length && Arrays.areEqual(expected, 0, expected.length, buf, outOff, outOff + len));
     }
 }
