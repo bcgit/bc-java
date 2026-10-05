@@ -45,11 +45,14 @@ public class BasicConstraintsValidation
         this.previousCertWasCA = (bc != null && bc.isCA()) || (bc == null && !this.isMandatory);
 
         // if the certificate is not self-issued (see § 4.2.1.9 and § 6.1.4 (l) of RFC 5280),
-        // it "uses up" one path length unit.
+        // it "uses up" one path length unit. The last certificate in the path is not an intermediate
+        // certificate and is not counted, so the limit is checked on the certificate that exceeds it
+        // rather than on the one after it, which is not counted either when it is self-issued.
         // NOTE: self-issued != self-signed. We only need to compare subject DN and issuer DN here.
-        if (maxPathLength != null && !certificate.getSubject().equals(certificate.getIssuer()))
+        if (!context.isEndEntity() && maxPathLength != null
+            && !certificate.getSubject().equals(certificate.getIssuer()))
         {
-            if (maxPathLength.intValue() < 0)
+            if (maxPathLength.intValue() <= 0)
             {
                 throw new CertPathValidationException("Basic constraints violated: path length exceeded");
             }
