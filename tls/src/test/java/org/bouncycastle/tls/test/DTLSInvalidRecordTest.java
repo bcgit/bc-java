@@ -26,7 +26,7 @@ import junit.framework.TestCase;
 public class DTLSInvalidRecordTest
     extends TestCase
 {
-    private static final int RECORD_HEADER_LENGTH = 13;
+    private static final int RECORD_HEADER_LENGTH = FilteredDatagramTransport.RECORD_HEADER_LENGTH;
 
     public void testAEADCipherInvalidRecordsDiscarded() throws Exception
     {
