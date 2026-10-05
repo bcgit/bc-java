@@ -73,8 +73,12 @@ nothing; use `-newermt "30 minutes ago"`).
 
 **Where core and prov write their results is not where the docs above imply.** `:core:test` puts
 its XML straight into `core/build/test-results/TEST-<fqcn>.xml` — there is no `test-results/test/`
-subdirectory — and it runs individual test classes, not only the `AllTest*` wrappers the
-per-module tasks filter on (so `crypto.params.LMSTests` appears, `crypto.params.AllTests` does not).
+subdirectory — and each file is named for a leaf `TestCase` class, not for the suite that ran it
+(so `crypto.params.LMSTests` appears and `crypto.params.AllTests` does not). That does **not** mean
+core runs classes outside the suites: the `AllTest*` filter in the root `build.gradle` applies to
+every subproject, core included, so a `TestCase` that no `AllTests` references never runs.
+`Blake2bpDigestTest` and `Blake2spDigestTest` sat in that hole until github #2488. A leaf's XML
+appearing proves a suite reached it; its absence is how a missing registration shows.
 `:prov:test` is the same shape: all 79 per-class XML files sit at `prov/build/test-results/*.xml` while
 the per-task subdirectories (`test8/`, `test11/`, …) hold only a `binary/` directory, with each task's
 totals in `prov/build/reports/tests/<task>/index.html`.
