@@ -1,6 +1,6 @@
 dependencies {
-  implementation group: 'net.java.dev.jna', name: 'jna', version: '4.3.0'
-  implementation group: 'net.java.dev.jna', name: 'jna-platform', version: '4.3.0'
+  implementation group: 'net.java.dev.jna', name: 'jna', version: '4.5.2'
+  implementation group: 'net.java.dev.jna', name: 'jna-platform', version: '4.5.2'
   implementation project(":core")
  // implementation project(":mail")
   implementation project(":pg")
@@ -8,6 +8,6 @@ dependencies {
   implementation project(":pkix")
   implementation project(":prov")
   implementation project(":tls")
-  testImplementation group: 'junit', name: 'junit', version: '4.11'
+  testImplementation group: 'junit', name: 'junit', version: '4.13.2'
 }
 

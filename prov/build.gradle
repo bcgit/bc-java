@@ -1,11 +1,11 @@
 plugins {
-  id "biz.aQute.bnd.builder" version "7.1.0"
+  id "biz.aQute.bnd.builder" version "7.4.0"
 }
 
 dependencies {
     implementation project(':core')
     testImplementation project(':core')
-    testImplementation group: 'com.unboundid', name: 'unboundid-ldapsdk', version: '6.0.8'
+    testImplementation group: 'com.unboundid', name: 'unboundid-ldapsdk', version: '6.0.11'
 }
 
 evaluationDependsOn(":core")
@@ -331,10 +331,10 @@ dependencies {
     test15Implementation group: 'junit', name: 'junit', version: '4.13.2'
     test17Implementation group: 'junit', name: 'junit', version: '4.13.2'
     test25Implementation group: 'junit', name: 'junit', version: '4.13.2'
-    test11Implementation group: 'com.unboundid', name: 'unboundid-ldapsdk', version: '6.0.8'
-    test15Implementation group: 'com.unboundid', name: 'unboundid-ldapsdk', version: '6.0.8'
-    test17Implementation group: 'com.unboundid', name: 'unboundid-ldapsdk', version: '6.0.8'
-    test25Implementation group: 'com.unboundid', name: 'unboundid-ldapsdk', version: '6.0.8'
+    test11Implementation group: 'com.unboundid', name: 'unboundid-ldapsdk', version: '6.0.11'
+    test15Implementation group: 'com.unboundid', name: 'unboundid-ldapsdk', version: '6.0.11'
+    test17Implementation group: 'com.unboundid', name: 'unboundid-ldapsdk', version: '6.0.11'
+    test25Implementation group: 'com.unboundid', name: 'unboundid-ldapsdk', version: '6.0.11'
     test11Implementation(project(":core"))
     test15Implementation(project(":core"))
     test17Implementation(project(":core"))
