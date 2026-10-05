@@ -22,9 +22,23 @@ public class ServerHello
     private final int cipherSuite;
     private final Hashtable extensions;
 
+    /**
+     * A TLS 1.3 HelloRetryRequest, i.e. the 4-argument constructor with the 0x0303 'legacy_version' RFC 8446
+     * 4.1.3 gives it.
+     */
     public ServerHello(byte[] sessionID, int cipherSuite, Hashtable extensions)
     {
-        this(ProtocolVersion.TLSv12, Arrays.clone(HELLO_RETRY_REQUEST_MAGIC), sessionID, cipherSuite, extensions);
+        this(ProtocolVersion.TLSv12, sessionID, cipherSuite, extensions);
+    }
+
+    /**
+     * RFC 8446 4.1.3 and 4.1.4. A HelloRetryRequest, which is a ServerHello whose 'random' is the special
+     * value {@link #isHelloRetryRequest()} recognises, carrying the caller's 'legacy_version': 0x0303 for
+     * TLS 1.3 and 0xFEFD for DTLS 1.3 (RFC 9147 5.3).
+     */
+    public ServerHello(ProtocolVersion version, byte[] sessionID, int cipherSuite, Hashtable extensions)
+    {
+        this(version, Arrays.clone(HELLO_RETRY_REQUEST_MAGIC), sessionID, cipherSuite, extensions);
     }
 
     public ServerHello(ProtocolVersion version, byte[] random, byte[] sessionID, int cipherSuite, Hashtable extensions)

@@ -937,6 +937,13 @@ public class TlsUtils
         return ((long)(hi & 0xffffffffL) << 24) | (long)(lo & 0xffffffffL);
     }
 
+    public static long readUint64(byte[] buf, int offset)
+    {
+        long hi = readUint32(buf, offset);
+        long lo = readUint32(buf, offset + 4);
+        return (hi << 32) | lo;
+    }
+
     public static byte[] readAllOrNothing(int length, InputStream input)
         throws IOException
     {
@@ -1781,15 +1788,16 @@ public class TlsUtils
     {
         int prfCryptoHashAlgorithm = securityParameters.getPRFCryptoHashAlgorithm();
         int prfHashLength = securityParameters.getPRFHashLength(); 
+        boolean isDTLS = isDTLS(securityParameters);
 
-        return calculateFinishedHMAC(prfCryptoHashAlgorithm, prfHashLength, baseKey, transcriptHash);
+        return calculateFinishedHMAC(prfCryptoHashAlgorithm, prfHashLength, baseKey, transcriptHash, isDTLS);
     }
 
     private static byte[] calculateFinishedHMAC(int prfCryptoHashAlgorithm, int prfHashLength, TlsSecret baseKey,
-        byte[] transcriptHash) throws IOException
+        byte[] transcriptHash, boolean isDTLS) throws IOException
     {
         TlsSecret finishedKey = TlsCryptoUtils.hkdfExpandLabel(baseKey, prfCryptoHashAlgorithm, "finished", EMPTY_BYTES,
-            prfHashLength);
+            prfHashLength, isDTLS);
 
         try
         {
@@ -1822,7 +1830,7 @@ public class TlsUtils
     }
 
     static byte[] calculatePSKBinder(TlsCrypto crypto, boolean isExternalPSK, int pskCryptoHashAlgorithm,
-        TlsSecret earlySecret, byte[] transcriptHash) throws IOException
+        TlsSecret earlySecret, byte[] transcriptHash, boolean isDTLS) throws IOException
     {
         int prfHashLength = TlsCryptoUtils.getHashOutputSize(pskCryptoHashAlgorithm);
 
@@ -1830,11 +1838,11 @@ public class TlsUtils
         byte[] emptyTranscriptHash = crypto.createHash(pskCryptoHashAlgorithm).calculateHash();
 
         TlsSecret binderKey = deriveSecret(pskCryptoHashAlgorithm, prfHashLength, earlySecret, label,
-            emptyTranscriptHash);
+            emptyTranscriptHash, isDTLS);
 
         try
         {
-            return calculateFinishedHMAC(pskCryptoHashAlgorithm, prfHashLength, binderKey, transcriptHash);
+            return calculateFinishedHMAC(pskCryptoHashAlgorithm, prfHashLength, binderKey, transcriptHash, isDTLS);
         }
         finally
         {
@@ -1930,7 +1938,14 @@ public class TlsUtils
 
         // TODO[tls13] Early data (client->server only)
 
-        recordStream.setPendingCipher(initCipher(context));
+        /*
+         * NOTE: DTLS 1.3 has no RecordStream; the DTLS protocol classes pass null here and install the
+         * cipher themselves via DTLSRecordLayer.initPendingEpoch (RFC 9147 6.1 epochs).
+         */
+        if (null != recordStream)
+        {
+            recordStream.setPendingCipher(initCipher(context));
+        }
     }
 
     static void establish13PhaseApplication(TlsContext context, byte[] serverFinishedTranscriptHash,
@@ -2017,7 +2032,21 @@ public class TlsUtils
     private static TlsSecret update13TrafficSecret(SecurityParameters securityParameters, TlsSecret secret) throws IOException
     {
         return TlsCryptoUtils.hkdfExpandLabel(secret, securityParameters.getPRFCryptoHashAlgorithm(), "traffic upd",
-            EMPTY_BYTES, securityParameters.getPRFHashLength());
+            EMPTY_BYTES, securityParameters.getPRFHashLength(), isDTLS(securityParameters));
+    }
+
+    /**
+     * Whether the (D)TLS 1.3 key schedule for these security parameters uses the DTLS 1.3 label prefix (RFC 9147
+     * 5.9), i.e. whether the negotiated version is a DTLS version.
+     */
+    private static boolean isDTLS(SecurityParameters securityParameters)
+    {
+        ProtocolVersion negotiatedVersion = securityParameters.getNegotiatedVersion();
+        if (null == negotiatedVersion)
+        {
+            throw new IllegalStateException("(D)TLS 1.3 key derivation before the version is negotiated");
+        }
+        return negotiatedVersion.isDTLS();
     }
 
     public static ASN1ObjectIdentifier getOIDForHashAlgorithm(short hashAlgorithm)
@@ -6197,18 +6226,20 @@ public class TlsUtils
         int prfCryptoHashAlgorithm = securityParameters.getPRFCryptoHashAlgorithm();
         int prfHashLength = securityParameters.getPRFHashLength();
 
-        return deriveSecret(prfCryptoHashAlgorithm, prfHashLength, secret, label, transcriptHash);
+        return deriveSecret(prfCryptoHashAlgorithm, prfHashLength, secret, label, transcriptHash,
+            isDTLS(securityParameters));
     }
 
     static TlsSecret deriveSecret(int prfCryptoHashAlgorithm, int prfHashLength, TlsSecret secret, String label,
-        byte[] transcriptHash) throws IOException
+        byte[] transcriptHash, boolean isDTLS) throws IOException
     {
         if (transcriptHash.length != prfHashLength)
         {
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
-        return TlsCryptoUtils.hkdfExpandLabel(secret, prfCryptoHashAlgorithm, label, transcriptHash, prfHashLength);
+        return TlsCryptoUtils.hkdfExpandLabel(secret, prfCryptoHashAlgorithm, label, transcriptHash, prfHashLength,
+            isDTLS);
     }
 
     static TlsSecret getSessionMasterSecret(TlsCrypto crypto, TlsSecret masterSecret)
@@ -6585,7 +6616,7 @@ public class TlsUtils
                         }
 
                         byte[] calculatedBinder = calculatePSKBinder(crypto, isExternalPSK, pskCryptoHashAlgorithm,
-                            earlySecret, transcriptHash);
+                            earlySecret, transcriptHash, serverContext.getServerVersion().isDTLS());
 
                         if (!Arrays.constantTimeAreEqual(calculatedBinder, binder))
                         {
