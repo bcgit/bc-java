@@ -8,6 +8,7 @@ import org.bouncycastle.openpgp.api.OpenPGPCertificate.OpenPGPComponentKey;
 import org.bouncycastle.openpgp.api.OpenPGPKey;
 import org.bouncycastle.openpgp.api.OpenPGPKey.OpenPGPPrivateKey;
 import org.bouncycastle.openpgp.api.exception.KeyPassphraseException;
+import org.bouncycastle.openpgp.smartcard.card.SupportedAlgorithms;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.openpgp.smartcard.card.CardException;
 
@@ -56,6 +57,8 @@ public abstract class OpenPGPSmartCard
      */
     public abstract String getVersion();
 
+    public abstract SupportedAlgorithms getSupportedAlgorithms();
+
     protected void clearKeys()
     {
         keys.clear();
@@ -75,8 +78,11 @@ public abstract class OpenPGPSmartCard
      *
      * @throws CardException if communication with the card fails
      */
-    public abstract boolean isKeySupported(byte keyRef, OpenPGPComponentKey key)
-            throws CardException;
+    public boolean isKeySupported(byte keyRef, OpenPGPComponentKey key)
+            throws CardException
+    {
+        return getSupportedAlgorithms().filter(keyRef).supports(key);
+    }
 
     /**
      * Return the {@link OpenPGPHardwareKey} identified by the given key reference.

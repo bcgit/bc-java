@@ -23,7 +23,6 @@ import org.bouncycastle.openpgp.PGPKeyPair;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPRuntimeOperationException;
 import org.bouncycastle.openpgp.api.KeyPassphraseProvider;
-import org.bouncycastle.openpgp.api.OpenPGPCertificate;
 import org.bouncycastle.openpgp.api.OpenPGPKey;
 import org.bouncycastle.openpgp.api.exception.KeyPassphraseException;
 import org.bouncycastle.openpgp.smartcard.OpenPGPHardwareKey;
@@ -121,15 +120,8 @@ public class YubikeyOpenPGPSmartCard
         return deviceInfo.getVersionName();
     }
 
-    @Override
-    public boolean isKeySupported(byte keyRef, OpenPGPCertificate.OpenPGPComponentKey key)
-            throws CardException
-    {
-        return getSupportedAlgorithms(keyRef).supports(key);
-    }
-
     /**
-     * Return all supported key algorithms of the slot identified by keyRef.
+     * Return all supported key algorithms for all key slots.
      * <p>
      * NOTE: yubikit's {@code AlgorithmAttributes.Rsa} / {@code .Ec} subclasses and their
      * {@code getAlgorithmId()} / {@code getNLen()} / {@code getCurve()} accessors are all package-private
@@ -139,42 +131,45 @@ public class YubikeyOpenPGPSmartCard
      * rather than allowed to throw, which degrades {@link #isKeySupported} to "not supported" instead of
      * failing the whole card. Replace this with the typed accessors if yubikit ever publishes them.
      *
-     * @param keyRef key reference
      * @return {@link SupportedAlgorithms}
      */
-    public SupportedAlgorithms getSupportedAlgorithms(byte keyRef)
+    @Override
+    public SupportedAlgorithms getSupportedAlgorithms()
     {
-        List<AlgorithmAttributes> attributes = supportedAlgorithms.get(from(keyRef));
-        if (attributes == null)
+        List<SupportedAlgorithms.Algorithm> algs = new ArrayList<SupportedAlgorithms.Algorithm>();
+        for (KeyRef keyRef : supportedAlgorithms.keySet())
         {
-            return new SupportedAlgorithms(new ArrayList<SupportedAlgorithms.Algorithm>());
-        }
-
-        List<SupportedAlgorithms.Algorithm> algs = new ArrayList<SupportedAlgorithms.Algorithm>(attributes.size());
-        for (Iterator<AlgorithmAttributes> it = attributes.iterator(); it.hasNext();)
-        {
-            String s = String.valueOf(it.next());
-
-            int algId = parseIntField(s, "algorithmId=");
-            if (algId < 0)
+            List<AlgorithmAttributes> attributes = supportedAlgorithms.get(keyRef);
+            if (attributes == null)
             {
                 continue;
             }
 
-            if (s.startsWith("Rsa{"))
+            for (Iterator<AlgorithmAttributes> it = attributes.iterator(); it.hasNext(); )
             {
-                int nLen = parseIntField(s, "nLen=");
-                if (nLen > 0)
+                String s = String.valueOf(it.next());
+
+                int algId = parseIntField(s, "algorithmId=");
+                if (algId < 0)
                 {
-                    algs.add(new SupportedAlgorithms.RSA(keyRef, algId, nLen));
+                    continue;
                 }
-            }
-            else if (s.startsWith("Ec{"))
-            {
-                ASN1ObjectIdentifier curve = toCurveOid(parseField(s, "curve="));
-                if (curve != null)
+
+                if (s.startsWith("Rsa{"))
                 {
-                    algs.add(new SupportedAlgorithms.EC(keyRef, algId, curve));
+                    int nLen = parseIntField(s, "nLen=");
+                    if (nLen > 0)
+                    {
+                        algs.add(new SupportedAlgorithms.RSA(keyRef.getValue(), algId, nLen));
+                    }
+                }
+                else if (s.startsWith("Ec{"))
+                {
+                    ASN1ObjectIdentifier curve = toCurveOid(parseField(s, "curve="));
+                    if (curve != null)
+                    {
+                        algs.add(new SupportedAlgorithms.EC(keyRef.getValue(), algId, curve));
+                    }
                 }
             }
         }

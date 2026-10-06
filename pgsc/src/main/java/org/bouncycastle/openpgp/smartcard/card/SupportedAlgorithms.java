@@ -27,6 +27,19 @@ public class SupportedAlgorithms
         this.algorithms.addAll(algorithms);
     }
 
+    public SupportedAlgorithms filter(byte keyRef)
+    {
+        List<Algorithm> filtered = new ArrayList<>();
+        for (Algorithm algorithm : algorithms)
+        {
+            if (algorithm.keyRef == keyRef)
+            {
+                filtered.add(algorithm);
+            }
+        }
+        return new SupportedAlgorithms(filtered);
+    }
+
     public List<Algorithm> getAlgorithms()
     {
         return new ArrayList<>(algorithms);
