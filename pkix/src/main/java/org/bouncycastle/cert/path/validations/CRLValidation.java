@@ -1,6 +1,7 @@
 package org.bouncycastle.cert.path.validations;
 
 import java.util.Collection;
+import java.util.Date;
 import java.util.Iterator;
 
 import org.bouncycastle.asn1.x500.X500Name;
@@ -20,13 +21,21 @@ import org.bouncycastle.util.Store;
 public class CRLValidation
     implements CertPathValidation
 {
+    /**
+     * Tolerance between our clock and the CRL issuer's when judging whether a CRL is dated in the
+     * future, 15 minutes as for OCSP responses.
+     */
+    private static final long MAX_CLOCK_SKEW_MS = 15 * 60 * 1000L;
+
     private Store crls;
     private X500Name workingIssuerName;
     private SubjectPublicKeyInfo workingPublicKey;
     private X509ContentVerifierProviderBuilder contentVerifierProvider;
+    private Date validDate;
 
     /**
-     * Base constructor for CRL based revocation checking with CRL signature verification.
+     * Base constructor for CRL based revocation checking with CRL signature verification, checking
+     * CRLs are current at the time each certificate is validated.
      *
      * @param trustAnchorName the name of the trust anchor the path starts from.
      * @param trustAnchorKey the public key of the trust anchor, used to verify the first CRL.
@@ -35,10 +44,35 @@ public class CRLValidation
      */
     public CRLValidation(X500Name trustAnchorName, SubjectPublicKeyInfo trustAnchorKey, X509ContentVerifierProviderBuilder contentVerifierProvider, Store crls)
     {
+        this(trustAnchorName, trustAnchorKey, contentVerifierProvider, crls, null);
+    }
+
+    /**
+     * Constructor for CRL based revocation checking with CRL signature verification at a given time.
+     * <p>
+     * A CRL is current at validDate when its thisUpdate is not later than validDate (allowing 15
+     * minutes for clock skew) and its nextUpdate, if it states one, is not earlier. Each certificate
+     * needs a current CRL from its issuer; a revocation listed on any CRL from its issuer that is
+     * not dated in the future is honoured, current or not, as a revocation does not lapse when the
+     * CRL listing it is superseded.
+     * </p>
+     * <p>
+     * Delta CRLs and the scope set by an issuingDistributionPoint extension are not processed.
+     * </p>
+     *
+     * @param trustAnchorName the name of the trust anchor the path starts from.
+     * @param trustAnchorKey the public key of the trust anchor, used to verify the first CRL.
+     * @param contentVerifierProvider builder for the verifier used to check CRL signatures.
+     * @param crls a Store of the CRLs to consult.
+     * @param validDate the time to judge the CRLs current at, null for the time of validation.
+     */
+    public CRLValidation(X500Name trustAnchorName, SubjectPublicKeyInfo trustAnchorKey, X509ContentVerifierProviderBuilder contentVerifierProvider, Store crls, Date validDate)
+    {
         this.workingIssuerName = trustAnchorName;
         this.workingPublicKey = trustAnchorKey;
         this.contentVerifierProvider = contentVerifierProvider;
         this.crls = crls;
+        this.validDate = (validDate == null) ? null : new Date(validDate.getTime());
     }
 
     /**
@@ -75,6 +109,9 @@ public class CRLValidation
             throw new CertPathValidationException("CRL for " + workingIssuerName + " not found");
         }
 
+        long now = (validDate == null) ? System.currentTimeMillis() : validDate.getTime();
+        boolean currentFound = false;
+
         for (Iterator it = matches.iterator(); it.hasNext();)
         {
             X509CRLHolder crl = (X509CRLHolder)it.next();
@@ -104,11 +141,27 @@ public class CRLValidation
                 throw new CertPathValidationException("unable to validate CRL signature: " + e.getMessage(), e);
             }
 
+            // a CRL dated ahead of us says nothing yet, about revocation or currency
+            if (crl.getThisUpdate().getTime() > now + MAX_CLOCK_SKEW_MS)
+            {
+                continue;
+            }
+
             // TODO: not quite right!
             if (crl.getRevokedCertificate(certificate.getSerialNumber()) != null)
             {
                 throw new CertPathValidationException("Certificate revoked");
             }
+
+            if (crl.getNextUpdate() == null || crl.getNextUpdate().getTime() >= now)
+            {
+                currentFound = true;
+            }
+        }
+
+        if (!currentFound)
+        {
+            throw new CertPathValidationException("no current CRL for " + workingIssuerName);
         }
 
         this.workingIssuerName = certificate.getSubject();
@@ -117,7 +170,7 @@ public class CRLValidation
 
     public Memoable copy()
     {
-        return new CRLValidation(workingIssuerName, workingPublicKey, contentVerifierProvider, crls);
+        return new CRLValidation(workingIssuerName, workingPublicKey, contentVerifierProvider, crls, validDate);
     }
 
     public void reset(Memoable other)
@@ -128,5 +181,6 @@ public class CRLValidation
         this.workingPublicKey = v.workingPublicKey;
         this.contentVerifierProvider = v.contentVerifierProvider;
         this.crls = v.crls;
+        this.validDate = v.validDate;
     }
 }

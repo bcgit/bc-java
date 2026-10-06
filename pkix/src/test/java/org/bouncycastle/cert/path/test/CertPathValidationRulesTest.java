@@ -39,7 +39,9 @@ import org.bouncycastle.cert.path.validations.KeyUsageValidation;
 import org.bouncycastle.cert.path.validations.ParentCertIssuedValidation;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
+import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.CollectionStore;
+import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Memoable;
 import org.bouncycastle.util.Store;
 import org.bouncycastle.util.test.SimpleTest;
@@ -219,6 +221,68 @@ public class CertPathValidationRulesTest
         checkFails("CRL verification not configured",
             new CertPath(path).validate(new CertPathValidation[]{ new CRLValidation(ROOT_NAME, crls) }),
             2, 0, "CRL signature verification not configured for " + ROOT_NAME);
+
+        crlDatesTest(rootCrl, caCrl);
+    }
+
+    /**
+     * Each certificate needs a CRL from its issuer that is current - thisUpdate not after the
+     * validation date beyond the clock skew allowance, nextUpdate (if stated) not before it - while a
+     * revocation on any CRL not dated in the future is honoured.
+     */
+    private void crlDatesTest(X509CRLHolder rootCrl, X509CRLHolder caCrl)
+        throws Exception
+    {
+        X509CertificateHolder[] path = path(ee, ca);
+        BigInteger eeSerial = ee.getSerialNumber();
+
+        X509CRLHolder stale = crl(CA_NAME, caKp.getPrivate(), null, -180, Integers.valueOf(-60));
+        X509CRLHolder staleRevoking = crl(CA_NAME, caKp.getPrivate(), eeSerial, -180, Integers.valueOf(-60));
+        X509CRLHolder future = crl(CA_NAME, caKp.getPrivate(), null, 60, Integers.valueOf(120));
+        X509CRLHolder futureRevoking = crl(CA_NAME, caKp.getPrivate(), eeSerial, 60, Integers.valueOf(120));
+
+        checkFails("only an out of date CRL", validateCrls(path, null, list(rootCrl, stale)), 0, 0, "no current CRL for " + CA_NAME);
+        checkValid("out of date CRL beside a current one", validateCrls(path, null, list(rootCrl, stale, caCrl)));
+        checkFails("revocation on an out of date CRL", validateCrls(path, null, list(rootCrl, staleRevoking, caCrl)),
+            0, 0, "Certificate revoked");
+
+        checkFails("only a CRL from the future", validateCrls(path, null, list(rootCrl, future)), 0, 0, "no current CRL for " + CA_NAME);
+        checkValid("revocation on a CRL from the future", validateCrls(path, null, list(rootCrl, futureRevoking, caCrl)));
+        checkValid("CRL dated inside the clock skew allowance",
+            validateCrls(path, null, list(rootCrl, crl(CA_NAME, caKp.getPrivate(), null, 5, Integers.valueOf(60)))));
+
+        checkValid("CRL stating no nextUpdate",
+            validateCrls(path, null, list(rootCrl, crl(CA_NAME, caKp.getPrivate(), null, -60, null))));
+
+        // the root's own CRL is judged the same way
+        checkFails("out of date CRL for the root", validateCrls(path, null,
+            list(crl(ROOT_NAME, rootKp.getPrivate(), null, -180, Integers.valueOf(-60)), caCrl)), 2, 0, "no current CRL for " + ROOT_NAME);
+
+        // a validation date moves the window: the out of date CRL was current two hours ago, the
+        // current one will not be in two hours
+        Date twoHoursAgo = new Date(System.currentTimeMillis() - 120 * 60 * 1000L);
+        Date inTwoHours = new Date(System.currentTimeMillis() + 120 * 60 * 1000L);
+        X509CRLHolder rootThen = crl(ROOT_NAME, rootKp.getPrivate(), null, -180, Integers.valueOf(-60));
+
+        checkValid("out of date CRL at an earlier date", validateCrls(path, twoHoursAgo, list(rootThen, stale)));
+        checkFails("current CRL at a later date", validateCrls(path, inTwoHours, list(rootCrl, caCrl)), 2, 0, "no current CRL for " + ROOT_NAME);
+
+        // the validation date is copied, not shared with the caller
+        Date mutable = new Date(twoHoursAgo.getTime());
+        CRLValidation v = new CRLValidation(ROOT_NAME, root.getSubjectPublicKeyInfo(), verifier, new CollectionStore(list(rootThen, stale)), mutable);
+        mutable.setTime(inTwoHours.getTime());
+        checkValid("validation date changed after construction", new CertPath(path).validate(new CertPathValidation[]{ v }));
+
+        // the validation date travels with a copy and a reset
+        checkMemoable("CRLValidation date", new CRLValidation(ROOT_NAME, root.getSubjectPublicKeyInfo(), verifier,
+            new CollectionStore(list(rootThen, stale)), twoHoursAgo), new CRLValidation(EE_NAME, new CollectionStore(new ArrayList())),
+            path, 1, null);
+    }
+
+    private CertPathValidationResult validateCrls(X509CertificateHolder[] path, Date validDate, List crls)
+    {
+        return new CertPath(path).validate(new CertPathValidation[]{
+            new CRLValidation(ROOT_NAME, root.getSubjectPublicKeyInfo(), verifier, new CollectionStore(crls), validDate) });
     }
 
     private void basicConstraintsTest()
@@ -415,7 +479,7 @@ public class CertPathValidationRulesTest
     {
         ASN1ObjectIdentifier[] oids = new ASN1ObjectIdentifier[]{ Extension.policyConstraints, Extension.inhibitAnyPolicy };
         ASN1Encodable[] values = new ASN1Encodable[]{
-            new PolicyConstraints(BigInteger.valueOf(0), null), new ASN1Integer(0) };
+            new PolicyConstraints(BigIntegers.ZERO, null), new ASN1Integer(0) };
 
         for (int i = 0; i != oids.length; i++)
         {
@@ -477,6 +541,11 @@ public class CertPathValidationRulesTest
 
     private static List list(Object a, Object b)
     {
+        return list(a, b, null);
+    }
+
+    private static List list(Object a, Object b, Object c)
+    {
         List l = new ArrayList();
         if (a != null)
         {
@@ -485,6 +554,10 @@ public class CertPathValidationRulesTest
         if (b != null)
         {
             l.add(b);
+        }
+        if (c != null)
+        {
+            l.add(c);
         }
         return l;
     }
@@ -522,13 +595,24 @@ public class CertPathValidationRulesTest
     private X509CRLHolder crl(X500Name issuer, PrivateKey issuerKey, BigInteger revoked)
         throws Exception
     {
-        Date now = new Date();
-        X509v2CRLBuilder bldr = new X509v2CRLBuilder(issuer, now);
+        return crl(issuer, issuerKey, revoked, 0, Integers.valueOf(60));
+    }
 
-        bldr.setNextUpdate(new Date(now.getTime() + 60 * 60 * 1000L));
+    // thisUpdate and nextUpdate in minutes from now, nextUpdate null for none
+    private X509CRLHolder crl(X500Name issuer, PrivateKey issuerKey, BigInteger revoked, int thisUpdate, Integer nextUpdate)
+        throws Exception
+    {
+        long now = System.currentTimeMillis();
+        Date thisDate = new Date(now + thisUpdate * 60 * 1000L);
+        X509v2CRLBuilder bldr = new X509v2CRLBuilder(issuer, thisDate);
+
+        if (nextUpdate != null)
+        {
+            bldr.setNextUpdate(new Date(now + nextUpdate.intValue() * 60 * 1000L));
+        }
         if (revoked != null)
         {
-            bldr.addCRLEntry(revoked, now, CRLReason.keyCompromise);
+            bldr.addCRLEntry(revoked, thisDate, CRLReason.keyCompromise);
         }
 
         return bldr.build(new JcaContentSignerBuilder("SHA256withECDSA").setProvider(BC).build(issuerKey));

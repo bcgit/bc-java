@@ -260,6 +260,8 @@ public class CertPathValidationTest
         X509CertificateHolder finalCert = new X509CertificateHolder(CertPathTest.finalCertBin);
         X509CRLHolder rootCrl = new X509CRLHolder(CertPathTest.rootCrlBin);
         X509CRLHolder interCrl =  new X509CRLHolder(CertPathTest.interCrlBin);
+        // the CRLs date from 2008 and were current for under three hours, so judge them then
+        Date crlDate = new Date(rootCrl.getThisUpdate().getTime() + 60 * 60 * 1000L);
 
         CertPath path = new CertPath(new X509CertificateHolder[] { finalCert, interCert });
         X509ContentVerifierProviderBuilder verifier = new JcaX509ContentVerifierProviderBuilder().setProvider(BouncyCastleProvider.PROVIDER_NAME);
@@ -285,14 +287,22 @@ public class CertPathValidationTest
 
         Store crls = new CollectionStore(crlList);
 
-        result = path.validate(new CertPathValidation[]{new ParentCertIssuedValidation(verifier), new BasicConstraintsValidation(), new KeyUsageValidation(), new CRLValidation(rootCert.getSubject(), rootCert.getSubjectPublicKeyInfo(), verifier, crls)});
+        result = path.validate(new CertPathValidation[]{new ParentCertIssuedValidation(verifier), new BasicConstraintsValidation(), new KeyUsageValidation(), new CRLValidation(rootCert.getSubject(), rootCert.getSubjectPublicKeyInfo(), verifier, crls, crlDate)});
 
         if (!result.isValid())
         {
             fail("basic validation (2) not working");
         }
 
-        result = path.validate(new CertPathValidation[]{new ParentCertIssuedValidation(verifier), new KeyUsageValidation(), new CRLValidation(rootCert.getSubject(), rootCert.getSubjectPublicKeyInfo(), verifier, crls)});
+        // the same CRLs judged now are long out of date
+        result = path.validate(new CertPathValidation[]{new ParentCertIssuedValidation(verifier), new BasicConstraintsValidation(), new KeyUsageValidation(), new CRLValidation(rootCert.getSubject(), rootCert.getSubjectPublicKeyInfo(), verifier, crls)});
+
+        if (result.isValid() || !("no current CRL for " + rootCert.getSubject()).equals(result.getCause().getMessage()))
+        {
+            fail("out of date CRL accepted");
+        }
+
+        result = path.validate(new CertPathValidation[]{new ParentCertIssuedValidation(verifier), new KeyUsageValidation(), new CRLValidation(rootCert.getSubject(), rootCert.getSubjectPublicKeyInfo(), verifier, crls, crlDate)});
 
         if (result.isValid() || result.getUnhandledCriticalExtensionOIDs().size() != 1
             || !result.getUnhandledCriticalExtensionOIDs().contains(Extension.basicConstraints))
@@ -300,7 +310,7 @@ public class CertPathValidationTest
             fail("basic validation (3) not working");
         }
 
-        result = path.validate(new CertPathValidation[]{new ParentCertIssuedValidation(verifier), new CRLValidation(rootCert.getSubject(), rootCert.getSubjectPublicKeyInfo(), verifier, crls)});
+        result = path.validate(new CertPathValidation[]{new ParentCertIssuedValidation(verifier), new CRLValidation(rootCert.getSubject(), rootCert.getSubjectPublicKeyInfo(), verifier, crls, crlDate)});
 
         if (result.isValid() || result.getUnhandledCriticalExtensionOIDs().size() != 2
             || !result.getUnhandledCriticalExtensionOIDs().contains(Extension.basicConstraints)
@@ -322,7 +332,7 @@ public class CertPathValidationTest
         forgedList.add(interCrl);
         Store forgedCrls = new CollectionStore(forgedList);
 
-        result = path.validate(new CertPathValidation[]{new ParentCertIssuedValidation(verifier), new BasicConstraintsValidation(), new KeyUsageValidation(), new CRLValidation(rootCert.getSubject(), rootCert.getSubjectPublicKeyInfo(), verifier, forgedCrls)});
+        result = path.validate(new CertPathValidation[]{new ParentCertIssuedValidation(verifier), new BasicConstraintsValidation(), new KeyUsageValidation(), new CRLValidation(rootCert.getSubject(), rootCert.getSubjectPublicKeyInfo(), verifier, forgedCrls, crlDate)});
 
         if (result.isValid())
         {
