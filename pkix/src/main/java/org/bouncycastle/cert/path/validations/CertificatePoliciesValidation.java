@@ -11,6 +11,14 @@ import org.bouncycastle.cert.path.CertPathValidationContext;
 import org.bouncycastle.cert.path.CertPathValidationException;
 import org.bouncycastle.util.Memoable;
 
+/**
+ * Tracks the explicit_policy, policy_mapping and inhibit_anyPolicy counters of RFC 5280 sec. 6.1
+ * along a path. It does not process certificate policies: there is no valid_policy_tree, and no
+ * certificate is rejected by it. It therefore does not report the policyConstraints or
+ * inhibitAnyPolicy extensions as handled - RFC 5280 requires both to be critical, and a path
+ * carrying them is left reported as having unhandled critical extensions rather than being
+ * accepted with its policy constraints unenforced.
+ */
 public class CertificatePoliciesValidation
     implements CertPathValidation
 {
@@ -66,9 +74,6 @@ public class CertificatePoliciesValidation
     public void validate(CertPathValidationContext context, X509CertificateHolder certificate)
         throws CertPathValidationException
     {
-        context.addHandledExtension(Extension.policyConstraints);
-        context.addHandledExtension(Extension.inhibitAnyPolicy);
-
         if (!context.isEndEntity())
         {
             if (!ValidationUtils.isSelfIssued(certificate))

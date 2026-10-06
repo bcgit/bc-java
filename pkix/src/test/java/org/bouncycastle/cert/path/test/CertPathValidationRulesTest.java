@@ -10,12 +10,16 @@ import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 
+import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.CRLReason;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.KeyUsage;
+import org.bouncycastle.asn1.x509.PolicyConstraints;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.cert.X509CRLHolder;
 import org.bouncycastle.cert.X509CertificateHolder;
@@ -30,6 +34,7 @@ import org.bouncycastle.cert.path.CertPathValidationException;
 import org.bouncycastle.cert.path.CertPathValidationResult;
 import org.bouncycastle.cert.path.validations.BasicConstraintsValidation;
 import org.bouncycastle.cert.path.validations.CRLValidation;
+import org.bouncycastle.cert.path.validations.CertificatePoliciesValidationBuilder;
 import org.bouncycastle.cert.path.validations.KeyUsageValidation;
 import org.bouncycastle.cert.path.validations.ParentCertIssuedValidation;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -95,6 +100,7 @@ public class CertPathValidationRulesTest
         basicConstraintsTest();
         memoableTest();
         validateAndEvaluateTest();
+        certificatePoliciesTest();
     }
 
     private void keyUsageTest()
@@ -396,6 +402,39 @@ public class CertPathValidationRulesTest
             isEquals(-1, results[i].getFailingCertIndex());
             isEquals(-1, results[i].getFailingRuleIndex());
             isTrue("good path " + i + " causes", results[i].getCauses() == null);
+        }
+    }
+
+    /**
+     * CertificatePoliciesValidation does not process certificate policies, so it must not report
+     * the critical policy extensions RFC 5280 requires as handled: a path carrying one is left
+     * invalid for an unhandled critical extension rather than accepted with the constraint ignored.
+     */
+    private void certificatePoliciesTest()
+        throws Exception
+    {
+        ASN1ObjectIdentifier[] oids = new ASN1ObjectIdentifier[]{ Extension.policyConstraints, Extension.inhibitAnyPolicy };
+        ASN1Encodable[] values = new ASN1Encodable[]{
+            new PolicyConstraints(BigInteger.valueOf(0), null), new ASN1Integer(0) };
+
+        for (int i = 0; i != oids.length; i++)
+        {
+            long now = System.currentTimeMillis();
+            X509v3CertificateBuilder bldr = new X509v3CertificateBuilder(ROOT_NAME, BigInteger.valueOf(serial++),
+                new Date(now - 60 * 60 * 1000L), new Date(now + 60 * 60 * 1000L), CA_NAME,
+                SubjectPublicKeyInfo.getInstance(caKp.getPublic().getEncoded()));
+            bldr.addExtension(Extension.basicConstraints, true, new BasicConstraints(true));
+            bldr.addExtension(Extension.keyUsage, true, new KeyUsage(CA_USAGE));
+            bldr.addExtension(oids[i], true, values[i]);
+            X509CertificateHolder constrained = bldr.build(new JcaContentSignerBuilder("SHA256withECDSA").setProvider(BC).build(rootKp.getPrivate()));
+
+            CertPath path = new CertPath(path(ee, constrained));
+            CertPathValidationResult result = path.validate(new CertPathValidation[]{ new ParentCertIssuedValidation(verifier),
+                new BasicConstraintsValidation(), new KeyUsageValidation(), new CertificatePoliciesValidationBuilder().build(path) });
+
+            isTrue(oids[i] + " accepted", !result.isValid());
+            isEquals(oids[i] + " unhandled", 1, result.getUnhandledCriticalExtensionOIDs().size());
+            isTrue(oids[i] + " not reported", result.getUnhandledCriticalExtensionOIDs().contains(oids[i]));
         }
     }
 
