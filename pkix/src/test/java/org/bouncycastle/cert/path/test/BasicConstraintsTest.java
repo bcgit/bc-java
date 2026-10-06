@@ -1,10 +1,20 @@
 package org.bouncycastle.cert.path.test;
 
+import java.math.BigInteger;
+import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.security.Security;
+import java.util.Date;
 
+import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x509.BasicConstraints;
+import org.bouncycastle.asn1.x509.Extension;
+import org.bouncycastle.asn1.x509.KeyUsage;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.X509ContentVerifierProviderBuilder;
+import org.bouncycastle.cert.X509v3CertificateBuilder;
 import org.bouncycastle.cert.jcajce.JcaX509ContentVerifierProviderBuilder;
+import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
 import org.bouncycastle.cert.path.CertPath;
 import org.bouncycastle.cert.path.CertPathValidation;
 import org.bouncycastle.cert.path.CertPathValidationResult;
@@ -12,6 +22,7 @@ import org.bouncycastle.cert.path.validations.BasicConstraintsValidation;
 import org.bouncycastle.cert.path.validations.KeyUsageValidation;
 import org.bouncycastle.cert.path.validations.ParentCertIssuedValidation;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -118,6 +129,85 @@ public class BasicConstraintsTest
         CertPathValidationResult cpvr = path.evaluate(validations);
 
         isTrue("Bad chain was accepted", !cpvr.isValid());
+
+        selfIssuedPathLengthTest();
+    }
+
+    private void selfIssuedPathLengthTest()
+        throws Exception
+    {
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("EC", BouncyCastleProvider.PROVIDER_NAME);
+        kpGen.initialize(256);
+
+        KeyPair rootKp = kpGen.generateKeyPair();
+        KeyPair caKp = kpGen.generateKeyPair();
+        KeyPair subKp = kpGen.generateKeyPair();
+        KeyPair eeKp = kpGen.generateKeyPair();
+
+        X500Name rootName = new X500Name("CN=Root CA");
+        X500Name caName = new X500Name("CN=pathLenConstraint 0 CA");
+        X500Name subName = new X500Name("CN=Sub CA");
+        X500Name eeName = new X500Name("CN=End Entity");
+
+        X509CertificateHolder root = makeCert(1, rootName, rootKp, rootName, rootKp, new BasicConstraints(true));
+        X509CertificateHolder ca = makeCert(2, rootName, rootKp, caName, caKp, new BasicConstraints(0));
+        X509CertificateHolder sub = makeCert(3, caName, caKp, subName, subKp, new BasicConstraints(true));
+
+        // the sub CA exceeds the path length whatever it has issued: an end entity certificate...
+        checkPath("end entity below the sub CA", false,
+            new X509CertificateHolder[]{makeCert(4, subName, subKp, eeName, eeKp, null), sub, ca, root});
+        // ...or one carrying the sub CA's own name, which is self-issued and so not counted itself
+        // (RFC 5280 sec. 6.1.4 (l)).
+        checkPath("self-issued certificate below the sub CA", false,
+            new X509CertificateHolder[]{makeCert(5, subName, subKp, subName, eeKp, null), sub, ca, root});
+
+        // paths the constraint permits: an end entity, a self-issued certificate, and an end entity
+        // below a self-issued intermediate (the shape of PKITS 4.6.15).
+        checkPath("end entity below the CA", true,
+            new X509CertificateHolder[]{makeCert(6, caName, caKp, eeName, eeKp, null), ca, root});
+        checkPath("self-issued certificate below the CA", true,
+            new X509CertificateHolder[]{makeCert(7, caName, caKp, caName, eeKp, null), ca, root});
+        X509CertificateHolder caSelfIssued = makeCert(8, caName, caKp, caName, subKp, new BasicConstraints(0));
+        checkPath("end entity below the self-issued CA", true,
+            new X509CertificateHolder[]{makeCert(9, caName, subKp, eeName, eeKp, null), caSelfIssued, ca, root});
+    }
+
+    private void checkPath(String label, boolean expectValid, X509CertificateHolder[] certs)
+    {
+        CertPathValidation[] validations = new CertPathValidation[] {
+                new ParentCertIssuedValidation(new JcaX509ContentVerifierProviderBuilder()),
+                new BasicConstraintsValidation(),
+                new KeyUsageValidation()
+        };
+        CertPathValidationResult cpvr = new CertPath(certs).validate(validations);
+
+        if (expectValid)
+        {
+            isTrue(label + " was rejected", cpvr.isValid());
+        }
+        else
+        {
+            isTrue(label + " was accepted", !cpvr.isValid());
+            isEquals("Basic constraints violated: path length exceeded", cpvr.getCause().getMessage());
+        }
+    }
+
+    private static X509CertificateHolder makeCert(int serial, X500Name issuer, KeyPair issuerKp, X500Name subject,
+        KeyPair subjectKp, BasicConstraints basicConstraints)
+        throws Exception
+    {
+        long now = System.currentTimeMillis();
+        X509v3CertificateBuilder certBldr = new JcaX509v3CertificateBuilder(issuer, BigInteger.valueOf(serial),
+            new Date(now - 60 * 60 * 1000L), new Date(now + 60 * 60 * 1000L), subject, subjectKp.getPublic());
+
+        if (basicConstraints != null)
+        {
+            certBldr.addExtension(Extension.basicConstraints, true, basicConstraints);
+            certBldr.addExtension(Extension.keyUsage, true, new KeyUsage(KeyUsage.keyCertSign | KeyUsage.cRLSign));
+        }
+
+        return certBldr.build(new JcaContentSignerBuilder("SHA256withECDSA")
+            .setProvider(BouncyCastleProvider.PROVIDER_NAME).build(issuerKp.getPrivate()));
     }
 
     public static void main(
