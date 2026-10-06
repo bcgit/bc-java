@@ -25,6 +25,7 @@ public class AllTests
         suite.addTestSuite(LeafNodeX509BindingTest.class);
         suite.addTestSuite(MessageProtectionTest.class);
         suite.addTestSuite(MLSInputStreamTest.class);
+        suite.addTestSuite(SingletonRemovalTest.class);
         suite.addTestSuite(NewMemberMessageNPETest.class);
         suite.addTestSuite(VectorTest.class);
 

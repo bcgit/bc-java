@@ -616,9 +616,12 @@ public class TreeKEMPublicKey
         NodeIndex fromNode = new NodeIndex(from);
         FilteredDirectPath dp = fdp.clone();
 
-        // removing root from fdp
-        dp.parents.remove(dp.parents.size() - 1);
-        dp.resolutions.remove(dp.resolutions.size() - 1);
+        // A singleton has no root entry in its filtered direct path.
+        if (!dp.parents.isEmpty())
+        {
+            dp.parents.remove(dp.parents.size() - 1);
+            dp.resolutions.remove(dp.resolutions.size() - 1);
+        }
 
         // special case of one-leaf tree
         if (!fromNode.equals(NodeIndex.root(size)))
