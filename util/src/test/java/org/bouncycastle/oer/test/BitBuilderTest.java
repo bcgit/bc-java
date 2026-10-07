@@ -91,6 +91,35 @@ public class BitBuilderTest
         }
     }
 
+    /** X.696 sec. 8.7.2.3: base 128, most significant group first, fewest groups, bit 8 as continuation. */
+    public void testWrite7BitBytes()
+        throws IOException
+    {
+        check7Bit(0, "00");
+        check7Bit(1, "01");
+        check7Bit(63, "3F");
+        check7Bit(127, "7F");
+        check7Bit(128, "8100");
+        check7Bit(16383, "FF7F");
+        check7Bit(16384, "818000");
+        check7Bit(Integer.MAX_VALUE, "87FFFFFF7F");
+    }
+
+    private static void check7Bit(int value, String expectedHex)
+        throws IOException
+    {
+        BitBuilder bb = new BitBuilder();
+        bb.write7BitBytes(value);
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        bb.writeAndClear(bOut);
+        assertEquals("int " + value, expectedHex, Hex.toHexString(bOut.toByteArray()).toUpperCase());
+
+        bb.write7BitBytes(java.math.BigInteger.valueOf(value));
+        bOut = new ByteArrayOutputStream();
+        bb.writeAndClear(bOut);
+        assertEquals("BigInteger " + value, expectedHex, Hex.toHexString(bOut.toByteArray()).toUpperCase());
+    }
+
     public void testWriteBitsTopBit()
         throws IOException
     {

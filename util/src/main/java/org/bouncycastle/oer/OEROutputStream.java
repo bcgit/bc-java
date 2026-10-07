@@ -367,16 +367,15 @@ public class OEROutputStream
             // Encode tag value.
             //
 
-            // Small tag value encode in remaining bits
-            if (tag <= 63)
+            // X.696 sec. 8.7.2.2: a tag number below 63 goes in bits 6 to 1 of the first octet;
+            // 8.7.2.3: from 63 up those bits are all ones and the number follows in 7-bit groups
+            if (tag < 63)
             {
                 bb.writeBits(tag, 6);
             }
             else
             {
-                // Large tag value variant.
-                bb.writeBits(0xFF, 6);
-                // Encode as 7bit bytes where MSB indicated continuing byte.
+                bb.writeBits(0x3F, 6);
                 bb.write7BitBytes(tag);
             }
 

@@ -5,6 +5,7 @@ import java.io.OutputStream;
 import java.math.BigInteger;
 
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Integers;
 
 public class BitBuilder
 {
@@ -102,45 +103,30 @@ public class BitBuilder
     }
 
 
+    /**
+     * Write {@code value} as the subsequent octets of a CHOICE tag, X.696 sec. 8.7.2.3: seven bits
+     * per octet, most significant group first, in the fewest octets that hold the value (so the
+     * first group is never all zero), with bit 8 set on every octet but the last. A negative
+     * argument is taken as its unsigned 32-bit value.
+     */
     public void write7BitBytes(int value)
     {
-
-        // Skip leading zero bytes.
-        boolean writing = false;
-        for (int t = 4; t >= 0; t--)
+        int groups = Math.max(1, (Integers.bitLength(value) + 6) / 7);
+        for (int i = groups - 1; i >= 0; i--)
         {
-            if (!writing && (value & 0xFE000000) != 0)
-            {
-                writing = true;
-            }
-            if (writing)
-            {
-                writeBit(t).writeBits(value, 32, 7);
-            }
-            value <<= 7;
+            writeBit(i).writeBits(value >>> (7 * i), 7);
         }
     }
 
+    /**
+     * As {@link #write7BitBytes(int)}, for a non-negative value of any size.
+     */
     public void write7BitBytes(BigInteger value)
     {
-        int size = ((value.bitLength() + value.bitLength() % 8) / 8);
-        BigInteger mask = BigInteger.valueOf(0xFE).shiftLeft(size * 8);
-
-
-        // Skip leading zero bytes.
-        boolean writing = false;
-        for (int t = size; t >= 0; t--)
+        int groups = Math.max(1, (value.bitLength() + 6) / 7);
+        for (int i = groups - 1; i >= 0; i--)
         {
-            if (!writing && value.and(mask).signum() != 0)
-            {
-                writing = true;
-            }
-            if (writing)
-            {
-                BigInteger b = value.and(mask).shiftRight(8 * size - 8);
-                writeBit(t).writeBits(b.intValue(), 8, 7);
-            }
-            value = value.shiftLeft(7);
+            writeBit(i).writeBits(value.shiftRight(7 * i).intValue(), 7);
         }
     }
 
