@@ -20,7 +20,7 @@ public class ASN1Integer
         }
     };
 
-    private static final ASN1Integer[] SMALL_CONSTANTS = new ASN1Integer[17];
+    private static final ASN1Integer[] SMALL_CONSTANTS = new ASN1Integer[64];
 
     public static final ASN1Integer ZERO;
     public static final ASN1Integer ONE;
@@ -306,7 +306,32 @@ public class ASN1Integer
 
     static ASN1Integer createPrimitive(byte[] contents)
     {
+        if (contents.length == 1)
+        {
+            int value = contents[0] & 0xFF;
+            if (value < SMALL_CONSTANTS.length)
+            {
+                return SMALL_CONSTANTS[value];
+            }
+        }
+
         return new ASN1Integer(contents, false);
+    }
+
+    static ASN1Integer createPrimitive(DefiniteLengthInputStream defIn) throws IOException
+    {
+        if (defIn.getRemaining() == 1)
+        {
+            int value = defIn.read();
+            if (value < SMALL_CONSTANTS.length)
+            {
+                return SMALL_CONSTANTS[value];
+            }
+
+            return new ASN1Integer(new byte[]{ (byte)value }, false);
+        }
+
+        return new ASN1Integer(defIn.toByteArray(), false);
     }
 
     static int intValue(byte[] bytes, int start, int signExt)
