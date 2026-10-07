@@ -8,8 +8,10 @@ import org.bouncycastle.util.Arrays;
 
 public class BitBuilder
 {
-    byte[] buf = new byte[1];
-    int pos = 0;
+    // a CHOICE tag, the one thing built here, is at most six octets (an int tag number is five
+    // continuation octets), so 16 never grows in practice
+    private byte[] buf = new byte[16];
+    private int pos = 0;
 
     /**
      * write a bit
@@ -22,7 +24,7 @@ public class BitBuilder
 
         if (pos / 8 >= buf.length)
         {
-            byte[] newBytes = new byte[buf.length + 4];
+            byte[] newBytes = new byte[buf.length * 2];
             System.arraycopy(buf, 0, newBytes, 0, pos / 8);
             Arrays.clear(buf);
             buf = newBytes;
@@ -46,8 +48,7 @@ public class BitBuilder
 
         for (int p = start - 1; p >= 0; p--)
         {
-            int set = (value & (1L << p)) > 0 ? 1 : 0;
-            writeBit(set);
+            writeBit((int)(value >>> p) & 1);
         }
 
         return this;
@@ -58,19 +59,25 @@ public class BitBuilder
 
         for (int p = start - 1; p >= start - len; p--)
         {
-            int set = (value & (1L << p)) != 0 ? 1 : 0;
-            writeBit(set);
+            writeBit((int)(value >>> p) & 1);
         }
 
         return this;
     }
 
 
+    /**
+     * Write the octets holding the bits so far, the last one padded with zero bits, and keep them.
+     *
+     * @deprecated the builder is left holding the octets it has just written, including a final octet
+     * that further bits would go on filling, so a second write re-emits them; use
+     * {@link #writeAndClear(OutputStream)}, which writes the same octets and resets the builder.
+     */
     public int write(OutputStream outputStream)
         throws IOException
     {
 
-        int l = (pos + (pos % 8)) / 8;
+        int l = (pos + 7) / 8; // the octets holding pos bits, the last one padded with zero bits
         outputStream.write(buf, 0, l);
         outputStream.flush();
         return l;
@@ -80,7 +87,7 @@ public class BitBuilder
         throws IOException
     {
 
-        int l = (pos + (pos % 8)) / 8;
+        int l = (pos + 7) / 8; // the octets holding pos bits, the last one padded with zero bits
         outputStream.write(buf, 0, l);
         outputStream.flush();
         zero();
@@ -88,9 +95,10 @@ public class BitBuilder
     }
 
 
+    /** Advance to the next octet boundary without writing; the skipped bits are already zero. */
     public void pad()
     {
-        pos = pos + pos % 8;
+        pos = (pos + 7) & ~7;
     }
 
 
