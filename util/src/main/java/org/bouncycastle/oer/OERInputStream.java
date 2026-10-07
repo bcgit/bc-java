@@ -390,7 +390,7 @@ public class OERInputStream
 
 
             }
-            else if (element.isLowerRangeZero()) // INTEGER(0 ... MAX) or INTEGER (0 ... n)
+            else if (element.isLowerBoundNonNegative()) // X.696 sec. 10.3 e): INTEGER (n ... MAX), n >= 0, or an upper bound past 2^64 - 1
             {
                 data = readBytes(readLength().intLength());
                 if (data.length == 0)
@@ -496,7 +496,7 @@ public class OERInputStream
             {
                 data = readBytes(element.getLowerBound().intValue() / 8);
             }
-            else if (BigInteger.ZERO.compareTo(element.getUpperBound()) > 0)
+            else if (element.getUpperBound().signum() < 0)
             {
                 // Fixed size.
                 data = readBytes(element.getUpperBound().intValue() / 8);

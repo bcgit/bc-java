@@ -46,7 +46,7 @@ public class CertificateType
 
     protected void assertValues()
     {
-        if (getValue().compareTo(BigInteger.ZERO) < 0 || getValue().compareTo(BigIntegers.ONE) > 0)
+        if (getValue().signum() < 0 || getValue().compareTo(BigIntegers.ONE) > 0)
         {
             throw new IllegalArgumentException("invalid enumeration value " + getValue());
         }

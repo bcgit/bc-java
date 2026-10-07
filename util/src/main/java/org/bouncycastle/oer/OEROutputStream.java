@@ -533,10 +533,10 @@ public class OEROutputStream
             {
                 // Unbounded at one or both ends and needs length encoding.
                 byte[] encoded;
-                if (oerElement.isLowerRangeZero())
+                if (oerElement.isLowerBoundNonNegative())
                 {
-                    // Since we have already captured the fixed with unsigned ints.
-                    // Everything is assumed unbounded we need to encode a length and write the value.
+                    // X.696 sec. 10.3 e): the fixed-width unsigned cases are handled above, so a lower
+                    // bound of zero or more means a length determinant and a variable-size unsigned number.
                     encoded = BigIntegers.asUnsignedByteArray(integer.getValue());
                 }
                 else

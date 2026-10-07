@@ -126,7 +126,7 @@ public class BitBuilder
         boolean writing = false;
         for (int t = size; t >= 0; t--)
         {
-            if (!writing && (value.and(mask)).compareTo(BigInteger.ZERO) != 0)
+            if (!writing && value.and(mask).signum() != 0)
             {
                 writing = true;
             }
