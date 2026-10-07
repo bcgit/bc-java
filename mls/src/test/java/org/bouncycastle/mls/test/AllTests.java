@@ -26,6 +26,7 @@ public class AllTests
         suite.addTestSuite(MessageProtectionTest.class);
         suite.addTestSuite(MLSInputStreamTest.class);
         suite.addTestSuite(NewMemberMessageNPETest.class);
+        suite.addTestSuite(TreeKEMParentHashTest.class);
         suite.addTestSuite(VectorTest.class);
 
         return new BCTestSetup(suite);

@@ -613,27 +613,35 @@ public class TreeKEMPublicKey
     private byte[][] parentHashes(LeafIndex from, FilteredDirectPath fdp, List<UpdatePathNode> nodes)
         throws Exception
     {
+        // an empty filtered direct path means there is nobody else in the tree, as in a one-member
+        // group where the sender's leaf is the root, so there is nothing to hash (RFC 9420 secs. 4.1.2, 7.9)
+        if (fdp.parents.isEmpty())
+        {
+            if (!nodes.isEmpty())
+            {
+                throw new Exception("Malformed UpdatePath");
+            }
+            return new byte[0][];
+        }
+
         NodeIndex fromNode = new NodeIndex(from);
         FilteredDirectPath dp = fdp.clone();
 
-        // removing root from fdp
-        dp.parents.remove(dp.parents.size() - 1);
+        // the nodes parent hashes are computed for: the filtered direct path without its last
+        // entry, plus the leaf. The last entry is the root unless the root's other subtree is
+        // entirely blank, in which case the root is filtered out and the chain starts lower.
+        NodeIndex last = dp.parents.remove(dp.parents.size() - 1);
         dp.resolutions.remove(dp.resolutions.size() - 1);
 
-        // special case of one-leaf tree
-        if (!fromNode.equals(NodeIndex.root(size)))
-        {
-            dp.parents.add(0, fromNode);
-            dp.resolutions.add(0, new ArrayList<NodeIndex>());
-        }
+        dp.parents.add(0, fromNode);
+        dp.resolutions.add(0, new ArrayList<NodeIndex>());
 
         if (dp.parents.size() != nodes.size())
         {
             throw new Exception("Malformed UpdatePath");
         }
 
-        // Parent hash for all the parents, starting from the root
-        NodeIndex last = NodeIndex.root(size);
+        // Parent hash for all the parents, starting from the last entry of the filtered direct path
         byte[] lastHash = new byte[0];
         byte[][] ph = new byte[dp.parents.size()][];
 
