@@ -11,6 +11,8 @@ public class ContentType
     public static final short application_data = 23;
     public static final short heartbeat = 24;
     public static final short tls12_cid = 25;
+    /** RFC 9147 7.1 */
+    public static final short ack = 26;
 
     public static String getName(short contentType)
     {
@@ -27,7 +29,9 @@ public class ContentType
         case heartbeat:
             return "heartbeat";
         case tls12_cid:
-            return "tls12_cid";            
+            return "tls12_cid";
+        case ack:
+            return "ack";
         default:
             return "UNKNOWN";
         }
