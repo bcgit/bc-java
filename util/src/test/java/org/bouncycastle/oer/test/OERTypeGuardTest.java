@@ -7,6 +7,9 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Enumerated;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.oer.OEROptional;
+import org.bouncycastle.oer.its.etsi102941.AuthorizationResponseCode;
+import org.bouncycastle.oer.its.etsi102941.AuthorizationValidationResponseCode;
+import org.bouncycastle.oer.its.etsi102941.EnrolmentResponseCode;
 import org.bouncycastle.oer.its.etsi102941.basetypes.Version;
 import org.bouncycastle.oer.its.etsi103097.EtsiTs103097DataEncrypted;
 import org.bouncycastle.oer.its.etsi103097.EtsiTs103097DataEncryptedUnicast;
@@ -87,6 +90,51 @@ public class OERTypeGuardTest
     }
 
     /**
+     * The three ETSI TS 102 941 response codes checked their range on intValue(), which truncates: a
+     * value of 2^32 has an intValue() of 0 and was accepted as "ok". The range check now looks at the
+     * sign and bit length before consulting intValue().
+     */
+    public void testResponseCodesRejectValuesPastIntRange()
+    {
+        BigInteger[] bad = { BigInteger.ONE.shiftLeft(32), BigInteger.ONE.shiftLeft(31), BigInteger.ONE.shiftLeft(64),
+            BigInteger.valueOf(-1), BigInteger.ONE.shiftLeft(32).negate() };
+        for (int i = 0; i != bad.length; i++)
+        {
+            try
+            {
+                new AuthorizationResponseCode(bad[i]);
+                fail("AuthorizationResponseCode accepted " + bad[i]);
+            }
+            catch (IllegalArgumentException e)
+            {
+                assertEquals("invalid enumeration value " + bad[i], e.getMessage());
+            }
+            try
+            {
+                new AuthorizationValidationResponseCode(bad[i]);
+                fail("AuthorizationValidationResponseCode accepted " + bad[i]);
+            }
+            catch (IllegalArgumentException e)
+            {
+                assertEquals("invalid enumeration value " + bad[i], e.getMessage());
+            }
+            try
+            {
+                new EnrolmentResponseCode(bad[i]);
+                fail("EnrolmentResponseCode accepted " + bad[i]);
+            }
+            catch (IllegalArgumentException e)
+            {
+                assertEquals("invalid enumeration value " + bad[i], e.getMessage());
+            }
+        }
+
+        assertTrue(new AuthorizationResponseCode(BigInteger.valueOf(26)).hasValue(26));
+        assertTrue(new AuthorizationValidationResponseCode(BigInteger.valueOf(14)).hasValue(14));
+        assertTrue(new EnrolmentResponseCode(BigInteger.valueOf(13)).hasValue(13));
+    }
+
+    /**
      * The small enumeration wrappers hand back their static constants from getInstance rather than a
      * fresh instance, and reject anything else with IllegalArgumentException - including a value past
      * the int range, which the intValueExact() switch they used to carry reported as ArithmeticException.
@@ -149,6 +197,56 @@ public class OERTypeGuardTest
         catch (IllegalArgumentException e)
         {
             assertEquals("invalid enumeration value 1", e.getMessage());
+        }
+    }
+
+    /**
+     * The three ETSI TS 102 941 response codes resolve a parsed value to their static constant
+     * through a table indexed by value, so getInstance returns the shared instance for every
+     * value the type declares and rejects everything else with the usual message.
+     */
+    public void testResponseCodesReturnConstants()
+        throws Exception
+    {
+        assertSame(AuthorizationResponseCode.ok, AuthorizationResponseCode.getInstance(ASN1Enumerated.valueOf(0)));
+        assertSame(AuthorizationResponseCode.deniedtoomanycerts, AuthorizationResponseCode.getInstance(ASN1Enumerated.valueOf(26)));
+        assertSame(AuthorizationValidationResponseCode.ok, AuthorizationValidationResponseCode.getInstance(ASN1Enumerated.valueOf(0)));
+        assertSame(AuthorizationValidationResponseCode.deniedrequest, AuthorizationValidationResponseCode.getInstance(ASN1Enumerated.valueOf(14)));
+        assertSame(EnrolmentResponseCode.ok, EnrolmentResponseCode.getInstance(ASN1Enumerated.valueOf(0)));
+        assertSame(EnrolmentResponseCode.deniedrequest, EnrolmentResponseCode.getInstance(ASN1Enumerated.valueOf(13)));
+
+        for (int i = 0; i <= 26; ++i)
+        {
+            AuthorizationResponseCode code = AuthorizationResponseCode.getInstance(ASN1Enumerated.valueOf(i));
+            assertTrue(code.hasValue(i));
+            assertSame(code, AuthorizationResponseCode.getInstance(new ASN1Enumerated(i)));
+            assertSame(code, AuthorizationResponseCode.getInstance(code.getEncoded()));
+        }
+        for (int i = 0; i <= 14; ++i)
+        {
+            AuthorizationValidationResponseCode code = AuthorizationValidationResponseCode.getInstance(ASN1Enumerated.valueOf(i));
+            assertTrue(code.hasValue(i));
+            assertSame(code, AuthorizationValidationResponseCode.getInstance(new ASN1Enumerated(i)));
+        }
+        for (int i = 0; i <= 13; ++i)
+        {
+            EnrolmentResponseCode code = EnrolmentResponseCode.getInstance(ASN1Enumerated.valueOf(i));
+            assertTrue(code.hasValue(i));
+            assertSame(code, EnrolmentResponseCode.getInstance(new ASN1Enumerated(i)));
+        }
+
+        BigInteger[] bad = { BigInteger.valueOf(27), BigInteger.valueOf(-1), BigInteger.ONE.shiftLeft(31), BigInteger.ONE.shiftLeft(32) };
+        for (int i = 0; i != bad.length; i++)
+        {
+            try
+            {
+                AuthorizationResponseCode.getInstance(new ASN1Enumerated(bad[i]));
+                fail("AuthorizationResponseCode.getInstance accepted " + bad[i]);
+            }
+            catch (IllegalArgumentException e)
+            {
+                assertEquals("invalid enumeration value " + bad[i], e.getMessage());
+            }
         }
     }
 }

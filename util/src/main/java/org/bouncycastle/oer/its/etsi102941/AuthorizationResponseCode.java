@@ -41,6 +41,43 @@ public class AuthorizationResponseCode
     public static final AuthorizationResponseCode deniedpermissions = new AuthorizationResponseCode(25); //, -- permissions not granted
     public static final AuthorizationResponseCode deniedtoomanycerts = new AuthorizationResponseCode(26); //, -- parallel limit
 
+    /**
+     * The constants indexed by value, for getInstance to return the shared instance. An entry
+     * can be null, should the value set ever become sparse, and the lookup checks for that.
+     */
+    private static final AuthorizationResponseCode[] VALUES = new AuthorizationResponseCode[27];
+
+    static
+    {
+        VALUES[0] = ok;
+        VALUES[1] = its_aa_cantparse;
+        VALUES[2] = its_aa_badcontenttype;
+        VALUES[3] = its_aa_imnottherecipient;
+        VALUES[4] = its_aa_unknownencryptionalgorithm;
+        VALUES[5] = its_aa_decryptionfailed;
+        VALUES[6] = its_aa_keysdontmatch;
+        VALUES[7] = its_aa_incompleterequest;
+        VALUES[8] = its_aa_invalidencryptionkey;
+        VALUES[9] = its_aa_outofsyncrequest;
+        VALUES[10] = its_aa_unknownea;
+        VALUES[11] = its_aa_invalidea;
+        VALUES[12] = its_aa_deniedpermissions;
+        VALUES[13] = aa_ea_cantreachea;
+        VALUES[14] = ea_aa_cantparse;
+        VALUES[15] = ea_aa_badcontenttype;
+        VALUES[16] = ea_aa_imnottherecipient;
+        VALUES[17] = ea_aa_unknownencryptionalgorithm;
+        VALUES[18] = ea_aa_decryptionfailed;
+        VALUES[19] = invalidaa;
+        VALUES[20] = invalidaasignature;
+        VALUES[21] = wrongea;
+        VALUES[22] = unknownits;
+        VALUES[23] = invalidsignature;
+        VALUES[24] = invalidencryptionkey;
+        VALUES[25] = deniedpermissions;
+        VALUES[26] = deniedtoomanycerts;
+    }
+
     public AuthorizationResponseCode(int value)
     {
         super(value);
@@ -61,18 +98,15 @@ public class AuthorizationResponseCode
 
     protected void assertValues()
     {
-        if (getValue().intValue() < 0 || getValue().intValue() > 26)
+        BigInteger value = getValue();
+        // intValue() truncates, so a value past the int range has to be rejected before it is consulted
+        if (value.signum() < 0 || value.bitLength() > 31 || value.intValue() > 26)
         {
-            throw new IllegalArgumentException("invalid enumeration value " + getValue());
+            throw new IllegalArgumentException("invalid enumeration value " + value);
         }
     }
 
 
-    private AuthorizationResponseCode(ASN1Enumerated instance)
-    {
-        super(instance.getValue());
-        assertValues();
-    }
 
     public static AuthorizationResponseCode getInstance(Object o)
     {
@@ -83,10 +117,30 @@ public class AuthorizationResponseCode
 
         if (o != null)
         {
-            return new AuthorizationResponseCode(ASN1Enumerated.getInstance(o));
+            return getInstance(ASN1Enumerated.getInstance(o));
         }
 
         return null;
+    }
+
+    private static AuthorizationResponseCode getInstance(ASN1Enumerated value)
+    {
+        BigInteger v = value.getValue();
+        // the value must index the table: non-negative and within the int range before intValue() is
+        // trusted, within the table, and held by a constant (the set may one day be sparse)
+        if (v.signum() >= 0 && v.bitLength() < 31)
+        {
+            int index = v.intValue();
+            if (index < VALUES.length)
+            {
+                AuthorizationResponseCode constant = VALUES[index];
+                if (constant != null)
+                {
+                    return constant;
+                }
+            }
+        }
+        throw new IllegalArgumentException("invalid enumeration value " + v);
     }
 
 }
