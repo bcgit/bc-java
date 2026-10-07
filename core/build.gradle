@@ -42,11 +42,22 @@ sourceSets {
             srcDirs = ['src/main/jdk1.9']
         }
     }
+    // Pack with a longToLittleEndian whose byte stores JDK 23+ C2 merges (JDK-8318446)
+    java23 {
+        java {
+            srcDirs = ['src/main/jdk23']
+        }
+    }
 }
 
 dependencies {
     java9Implementation files([sourceSets.main.output.classesDirs]) {
         builtBy compileJava
+    }
+    java23Implementation files([
+            sourceSets.main.output.classesDirs,
+            sourceSets.java9.output.classesDirs]) {
+        builtBy compileJava9Java
     }
 }
 
@@ -56,9 +67,18 @@ compileJava9Java {
     options.compilerArgs << '-implicit:none'  // avoid recompiling every baseline class implicitly loaded via sourcepath
 }
 
+compileJava23Java {
+    options.release = 23
+    options.sourcepath = files(['src/main/java', 'src/main/jdk23'])
+    options.compilerArgs << '-implicit:none'
+}
+
 jar {
     into('META-INF/versions/9') {
         from sourceSets.java9.output
+    }
+    into('META-INF/versions/23') {
+        from sourceSets.java23.output
     }
     manifest.attributes('Multi-Release': 'true')
 }

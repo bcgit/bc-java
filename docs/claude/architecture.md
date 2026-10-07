@@ -24,14 +24,14 @@ mls  ── Messaging Layer Security
 `prov`, `pkix`, `pg`, `tls`, etc. ship as MR-jars. Inside each module:
 
 - `src/main/java` — base sources, compiled with `--release 8`
-- `src/main/jdk1.9`, `jdk1.11`, `jdk1.15`, `jdk17`, `jdk25` — version-specific overlays packaged under `META-INF/versions/<n>/`
+- `src/main/jdk1.9`, `jdk1.11`, `jdk1.15`, `jdk17`, `jdk25` — version-specific overlays packaged under `META-INF/versions/<n>/`. `core` has its own `src/main/jdk23` (`Pack`, whose `longToLittleEndian` only pays off where C2 merges byte stores), built into both the `bccore` jar and, through `prov/build.gradle`'s `java23` source set, `bcprov`
 - `src/main/j2me`, `src/main/jdk1.1` … `jdk1.5`, `src/main/ext-jdk1.9` — alternate distributions for the legacy Ant builds (J2ME, pre-1.6 JDKs). **Gradle does not compile these.** Don't edit them when fixing a Gradle-build bug; they're separate trees maintained for the J2ME/legacy distributions.
 
 The same applies to tests: `src/test/java` is the Gradle-driven tree; `src/test/jdk1.4`, `src/test/j2me`, `src/test/jdk1.1` are alternate trees, while `src/test/jdk1.11`, `jdk1.15`, `jdk17`, `jdk25` are MR-jar test overlays driven by the `test11`/`test15`/`test17`/`test25` Gradle tasks.
 
 ### Always check for MR overlays when editing a class, and test the overlaid behaviour
 
-Before changing a method in `src/main/java`, check whether that class has a version-specific twin under `src/main/jdk1.9|jdk1.11|jdk1.15|jdk17|jdk25` (`find <module>/src/main -name <Class>.java`). Only classes needing JDK-version-specific integration are overlaid (e.g. `edec/BC11XDHPublicKey`, `jcajce/util/SpecUtil`), but when one is, the overlay **reimplements** the method — so a bug fix or behaviour change to the base is silently *not* applied on JDK ≥ the overlay's version unless you mirror it into every overlay. These overlays rot exactly like the legacy-Ant trees: they were forked once and forgotten.
+Before changing a method in `src/main/java`, check whether that class has a version-specific twin under `src/main/jdk1.9|jdk1.11|jdk1.15|jdk17|jdk23|jdk25` (`find <module>/src/main -name <Class>.java`; for a `core` class, look under `core/src/main` too). Only classes needing JDK-version-specific integration are overlaid (e.g. `edec/BC11XDHPublicKey`, `jcajce/util/SpecUtil`), but when one is, the overlay **reimplements** the method — so a bug fix or behaviour change to the base is silently *not* applied on JDK ≥ the overlay's version unless you mirror it into every overlay. These overlays rot exactly like the legacy-Ant trees: they were forked once and forgotten.
 
 ### Prefer hook classes to whole-SPI overlays
 

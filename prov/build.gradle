@@ -45,6 +45,12 @@ sourceSets {
             srcDirs = ['src/main/jdk17']
         }
     }
+    java23 {
+        java {
+            // core's jdk23 overlay (Pack), bundled into bcprov as core's other sources are
+            srcDirs = ['../core/src/main/jdk23']
+        }
+    }
     java25 {
         java {
             srcDirs = ['src/main/jdk25']
@@ -80,13 +86,23 @@ dependencies {
         builtBy compileJava15Java
     }
 
-    java25Implementation files([
+    java23Implementation files([
             sourceSets.main.output.classesDirs,
             sourceSets.java9.output.classesDirs,
             sourceSets.java11.output.classesDirs,
             sourceSets.java15.output.classesDirs,
             sourceSets.java17.output.classesDirs]) {
         builtBy compileJava17Java
+    }
+
+    java25Implementation files([
+            sourceSets.main.output.classesDirs,
+            sourceSets.java9.output.classesDirs,
+            sourceSets.java11.output.classesDirs,
+            sourceSets.java15.output.classesDirs,
+            sourceSets.java17.output.classesDirs,
+            sourceSets.java23.output.classesDirs]) {
+        builtBy compileJava23Java
     }
 }
 
@@ -202,6 +218,12 @@ compileJava17Java {
     options.sourcepath = files(['src/main/java', 'src/main/jdk17'])
 }
 
+compileJava23Java {
+    options.release = 23
+    options.sourcepath = files(['../core/src/main/java', '../core/src/main/jdk23'])
+    options.compilerArgs << '-implicit:none'
+}
+
 compileJava25Java {
     options.release = 25
     options.sourcepath = files(['src/main/java', 'src/main/jdk25'])
@@ -228,6 +250,9 @@ task sourcesJar(type: Jar) {
     into('META-INF/versions/17') {
         from sourceSets.java17.allSource
     }
+    into('META-INF/versions/23') {
+        from sourceSets.java23.allSource
+    }
     into('META-INF/versions/25') {
         from sourceSets.java25.allSource
     }
@@ -249,6 +274,9 @@ jar {
     }
     into('META-INF/versions/17') {
         from sourceSets.java17.output
+    }
+    into('META-INF/versions/23') {
+        from sourceSets.java23.output
     }
     into('META-INF/versions/25') {
         from sourceSets.java25.output
@@ -323,6 +351,7 @@ dependencies {
     java11Implementation project(':core')
     java15Implementation project(':core')
     java17Implementation project(':core')
+    java23Implementation project(':core')
     java25Implementation project(':core')
 }
 

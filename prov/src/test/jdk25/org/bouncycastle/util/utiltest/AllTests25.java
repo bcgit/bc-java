@@ -4,25 +4,22 @@ import junit.extensions.TestSetup;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import org.bouncycastle.test.PrintTestResult;
 
-public class AllTests
+public class AllTests25
     extends TestCase
 {
-    public static void main (String[] args)
+    public static void main(String[] args)
     {
-        junit.textui.TestRunner.run (suite());
+        PrintTestResult.printResult(junit.textui.TestRunner.run(suite()));
     }
 
     public static Test suite()
     {
-        TestSuite suite = new TestSuite("util tests");
-        suite.addTestSuite(IPTest.class);
-        suite.addTestSuite(BigIntegersTest.class);
-        suite.addTestSuite(ArraysTest.class);
-        suite.addTestSuite(StringsTest.class);
-        suite.addTestSuite(StreamsTest.class);
-        suite.addTestSuite(AggregateRuntimeExceptionTest.class);
-        suite.addTestSuite(PackTest.class);
+        TestSuite suite = new TestSuite("JDK25 Util Tests");
+
+        suite.addTestSuite(PackMRTest.class);
+
         return new BCTestSetup(suite);
     }
 
@@ -36,12 +33,10 @@ public class AllTests
 
         protected void setUp()
         {
-
         }
 
         protected void tearDown()
         {
-
         }
     }
 }

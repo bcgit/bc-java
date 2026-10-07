@@ -3,8 +3,10 @@ package org.bouncycastle.util;
 /**
  * Utility methods for converting byte arrays into ints and longs, and back again.
  * <p>
- * A copy of this class in src/main/jdk23 (META-INF/versions/23) differs only in longToLittleEndian(long, byte[], int);
- * keep the two in step.
+ * This is the JDK 23+ copy (META-INF/versions/23) of src/main/java's Pack and differs from it only in
+ * longToLittleEndian(long, byte[], int), which here writes the eight bytes of the long directly: C2 merges those
+ * stores into one from JDK 23 (JDK-8318446), while on earlier JDKs the form costs more than the base class's two
+ * intToLittleEndian() calls. Keep the two copies in step.
  */
 public abstract class Pack
 {
@@ -557,8 +559,14 @@ public abstract class Pack
 
     public static void longToLittleEndian(long n, byte[] bs, int off)
     {
-        intToLittleEndian((int)(n & 0xffffffffL), bs, off);
-        intToLittleEndian((int)(n >>> 32), bs, off + 4);
+        bs[off] = (byte)(n);
+        bs[++off] = (byte)(n >>> 8);
+        bs[++off] = (byte)(n >>> 16);
+        bs[++off] = (byte)(n >>> 24);
+        bs[++off] = (byte)(n >>> 32);
+        bs[++off] = (byte)(n >>> 40);
+        bs[++off] = (byte)(n >>> 48);
+        bs[++off] = (byte)(n >>> 56);
     }
 
     public static byte[] longToLittleEndian(long[] ns)
