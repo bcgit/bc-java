@@ -253,11 +253,11 @@ public class OERInputStream
                     {
                         if (resolvedChild.getDefaultValue() != null)
                         {
-                            avec.add(child.getDefaultValue());
+                            avec.add(resolvedChild.getDefaultValue());
                         }
                         else
                         {
-                            avec.add(absent(child));
+                            avec.add(absent(resolvedChild));
                         }
                     }
                 }
