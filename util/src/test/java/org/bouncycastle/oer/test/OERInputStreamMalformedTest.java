@@ -166,6 +166,38 @@ public class OERInputStreamMalformedTest
         }
     }
 
+    /**
+     * X.696 defines a variable-size number as one or more octets (3.7.11, 3.7.12), and the long
+     * forms of the length determinant (8.6.5) and of an ENUMERATED (11.4) carry 1 to 127 subsequent
+     * octets. The decoder used to read an empty group as zero in all of them: INTEGER with a
+     * determinant of 0, an ENUMERATED long form of 0 octets, a length determinant long form of 0
+     * octets, and a sequence-of quantity of 0 octets. Each is rejected now; the one-octet zero of
+     * each form still decodes.
+     */
+    public void testZeroOctetNumbersRejected()
+        throws IOException
+    {
+        Element unsigned = OERDefinition.integer().rangeToMAXFrom(0).build();
+        Element signed = OERDefinition.integer().build();
+        Element enumerated = OERDefinition.enumeration("a", "b").build();
+        Element octets = OERDefinition.octets().build();
+        Element seqOf = OERDefinition.seqof(OERDefinition.bool()).build();
+
+        assertRejected("unsigned INTEGER with no octets", unsigned, new byte[]{0x00});
+        assertRejected("signed INTEGER with no octets", signed, new byte[]{0x00});
+        assertRejected("ENUMERATED long form with no octets", enumerated, new byte[]{(byte)0x80});
+        assertRejected("length determinant long form with no octets", octets, new byte[]{(byte)0x80});
+        assertRejected("sequence-of quantity with no octets", seqOf, new byte[]{0x00});
+
+        assertNotNull(OERInputStream.parse(new byte[]{0x01, 0x00}, unsigned));
+        assertNotNull(OERInputStream.parse(new byte[]{0x01, 0x00}, signed));
+        assertNotNull(OERInputStream.parse(new byte[]{0x00}, enumerated));
+        assertNotNull(OERInputStream.parse(new byte[]{(byte)0x81, 0x00}, enumerated));
+        assertNotNull(OERInputStream.parse(new byte[]{0x00}, octets));
+        assertNotNull(OERInputStream.parse(new byte[]{(byte)0x81, 0x00}, octets));
+        assertNotNull(OERInputStream.parse(new byte[]{0x01, 0x00}, seqOf));
+    }
+
     /** The compatibility assertion: well-formed encodings are unaffected. */
     public void testWellFormedStillParses()
         throws IOException

@@ -137,6 +137,11 @@ public class OERInputStream
             int l = readLength().intLength();
 
             // This l is the number of bytes that holds the actual length of the sequence of.
+            // X.696 sec. 17.2: a variable-size unsigned number, which is one or more octets (3.7.12)
+            if (l == 0)
+            {
+                throw new IOException("sequence-of quantity has zero length");
+            }
 
             byte[] lenEnc = readBytes(l);
 
@@ -392,15 +397,13 @@ public class OERInputStream
             }
             else if (element.isLowerBoundNonNegative()) // X.696 sec. 10.3 e): INTEGER (n ... MAX), n >= 0, or an upper bound past 2^64 - 1
             {
+                // X.696 sec. 10.3 e): a variable-size unsigned number, which is one or more octets (3.7.12)
                 data = readBytes(readLength().intLength());
                 if (data.length == 0)
                 {
-                    bi = BigInteger.ZERO;
+                    throw new IOException("INTEGER has zero length");
                 }
-                else
-                {
-                    bi = new BigInteger(1, data);
-                }
+                bi = new BigInteger(1, data);
             }
             else
             {
@@ -408,15 +411,13 @@ public class OERInputStream
                 //
                 // Classic twos compliment.
                 //
+                // X.696 sec. 10.4 e): a variable-size signed number, which is one or more octets (3.7.11)
                 data = readBytes(readLength().intLength());
                 if (data.length == 0)
                 {
-                    bi = BigInteger.ZERO;
+                    throw new IOException("INTEGER has zero length");
                 }
-                else
-                {
-                    bi = new BigInteger(data);
-                }
+                bi = new BigInteger(data);
             }
 
 
@@ -695,10 +696,14 @@ public class OERInputStream
         }
         else
         {
-            // Long form 8.6.5
+            // Long form 8.6.5: bits 7 to 1 give the number of subsequent octets, 1 to 127
+            int octets = byteVal & 0x7F;
+            if (octets == 0)
+            {
+                throw new IOException("length determinant long form has zero length");
+            }
 
-
-            byte[] lengthInt = Streams.readLenBytesFully(this, byteVal & 0x7F);
+            byte[] lengthInt = Streams.readLenBytesFully(this, octets);
 
             // -DM Hex.toHexString
             debugPrint("Len (Long Form): " + (byteVal & 0x7F) + " actual len: " + Hex.toHexString(lengthInt));
@@ -723,11 +728,11 @@ public class OERInputStream
         //
         if ((first & 0x80) == 0x80)
         {
-            // Extended.
+            // Long form, X.696 sec. 11.4: bits 7 to 1 give the number of subsequent octets, 1 to 127
             int l = first & 0x7f;
             if (l == 0)
             {
-                return BigInteger.ZERO;
+                throw new IOException("ENUMERATED long form has zero length");
             }
             byte[] buf = Streams.readLenBytesFully(this, l);
 
