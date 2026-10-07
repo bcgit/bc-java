@@ -152,11 +152,13 @@ Date: 2026, TBD
 
 ### 2.2.1 Version
 
-Release: 1.86\
+Release: 1.86, 1.86.1, 1.86.2\
 Date: 2026, 11th September.
 
 ### 2.2.2 Defects Fixed
 
+- Release 1.86.1 generated for bctls and bctls-klog (Java 8 and later, standard and debug) to fix SSLContext.createSSLEngine() failing with NoSuchMethodError on every JDK from 9 up when the 1.86 bctls jar was used: the jdk1.9 copy of the package-private SSLEngineUtil declared create(ContextData) with a different return type from the root copy that the root ProvSSLContextSpi was compiled against, a mismatch exposed by the -implicit:none added to the java9 compile in 1.86. The jdk1.9 copy now declares the same return type. The other 1.86 jars are unchanged and the 1.86.1 BOM pins them at 1.86 (github #2448).
+- Release 1.86.2 generated for bctls and bctls-klog (Java 8 and later, standard and debug) because the 1.86.1 jars could not be resolved in an OSGi container: their Import-Package ranges for every org.bouncycastle package they use from bcprov and bcutil started at 1.86.1, the bundle's own version, but those bundles are only published at 1.86. The import floor is now the major.minor release, [1.86,1.87), and the 1.86.1 fix for SSLContext.createSSLEngine() is otherwise unchanged. The 1.86.2 BOM pins the other jars at 1.86 (github #2493).
 - The high-level OpenPGP API let a subkey inherit the primary key's Key Flags when its own Subkey Binding signature carried none, so a subkey bound with no flags counted as signing-capable for one check while the cross-certification check RFC 9580 sec. 5.2.1.8 requires of a signing subkey saw none and was skipped - letting a third party's public signing subkey be bound to an attacker's primary key and that party's genuine signatures verify under the attacker's identity. Flags are no longer inherited (CVE-2026-71887).
 - The high-level OpenPGP API used a version 6 key carrying no valid Direct Key signature, falling back to the primary user ID binding as it correctly does for version 4. RFC 9580 sec. 5.2.3.10 requires the opposite, and since a v6 certificate carries its expiration and preferences there, stripping that one packet silently dropped them - the certificate went on offering subkeys of a key set to expire. isBoundBy now requires a valid Direct Key self-signature before any v6 component is treated as bound; version 4 is unaffected.
 - The high-level OpenPGP API ignored the OpenPGPPolicy a caller had configured when verifying signatures on an inline message: OpenPGPMessageInputStream took the policy from the implementation's own default rather than from the processor doing the verification, so a hardened policy had no bearing on acceptance and getSignatures() reported isTestedCorrect() true for a signature that policy rejects. Both the one-pass and prefixed-signature paths now read the configured policy.
