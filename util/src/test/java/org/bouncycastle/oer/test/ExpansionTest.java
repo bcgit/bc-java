@@ -801,21 +801,10 @@ public class ExpansionTest
                 fail(upperLevelClass.getName() + ": private constructor, expected IllegalArgumentException on invalid enum value supplied at ASN1Enumerated constructor (below min)");
             }
 
-            if (min.equals(BigInteger.ZERO))
+            String expected = "invalid enumeration value " + min.subtract(BigInteger.ONE);
+            if (!t.getMessage().equals((expected)))
             {
-                String expected = "enumerated must be non-negative";
-                if (!t.getMessage().equals((expected)))
-                {
-                    fail(String.format(upperLevelClass.getName() + ": private constructor, expected '%s' got '%s' ", expected, t.getMessage()));
-                }
-            }
-            else
-            {
-                String expected = "invalid enumeration value " + min.subtract(BigInteger.ONE);
-                if (!t.getMessage().equals((expected)))
-                {
-                    fail(String.format(upperLevelClass.getName() + ": private constructor, expected '%s' got '%s' ", expected, t.getMessage()));
-                }
+                fail(String.format(upperLevelClass.getName() + ": private constructor, expected '%s' got '%s' ", expected, t.getMessage()));
             }
 
         }
@@ -869,21 +858,10 @@ public class ExpansionTest
                 fail(upperLevelClass.getName() + ": public constructor, expected IllegalArgumentException on invalid enum value supplied at ASN1Enumerated constructor (below min)");
             }
 
-            if (min.equals(BigInteger.ZERO))
+            String expected = "invalid enumeration value " + min.subtract(BigInteger.ONE);
+            if (!t.getMessage().equals((expected)))
             {
-                String expected = "enumerated must be non-negative";
-                if (!t.getMessage().equals((expected)))
-                {
-                    fail(String.format(upperLevelClass.getName() + ": public constructor, expected '%s' got '%s' ", expected, t.getMessage()));
-                }
-            }
-            else
-            {
-                String expected = "invalid enumeration value " + min.subtract(BigInteger.ONE);
-                if (!t.getMessage().equals((expected)))
-                {
-                    fail(String.format(upperLevelClass.getName() + ": public constructor, expected '%s' got '%s' ", expected, t.getMessage()));
-                }
+                fail(String.format(upperLevelClass.getName() + ": public constructor, expected '%s' got '%s' ", expected, t.getMessage()));
             }
 
         }

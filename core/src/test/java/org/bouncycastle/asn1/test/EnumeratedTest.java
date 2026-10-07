@@ -1,6 +1,7 @@
 package org.bouncycastle.asn1.test;
 
 import java.io.IOException;
+import java.math.BigInteger;
 
 import junit.framework.TestCase;
 
@@ -115,5 +116,59 @@ public class EnumeratedTest
         assertNotNull("OBJECT IDENTIFIER expected", objectId);
 
         assertEquals("Unexpected OBJECT IDENTIFIER value", "1.3.6.1", objectId.getId());
+    }
+
+    /**
+     * ENUMERATED values are integers (X.680 sec. 20) and may be negative.
+     */
+    public void testNegativeValues()
+        throws IOException
+    {
+        checkNegative(new ASN1Enumerated(-1), -1);
+        checkNegative(new ASN1Enumerated(BigInteger.valueOf(-1)), -1);
+        checkNegative(new ASN1Enumerated(new byte[]{ (byte)0xFF }), -1);
+        checkNegative(new ASN1Enumerated(-129), -129);
+        checkNegative(new ASN1Enumerated(Integer.MIN_VALUE), Integer.MIN_VALUE);
+
+        ASN1Enumerated beyondInt = new ASN1Enumerated(BigInteger.valueOf(Long.MIN_VALUE));
+        assertTrue(beyondInt.isNegative());
+        assertEquals(Long.MIN_VALUE, beyondInt.longValueExact());
+        try
+        {
+            beyondInt.intValueExact();
+            fail("int range");
+        }
+        catch (ArithmeticException e)
+        {
+            // expected
+        }
+
+        assertFalse(new ASN1Enumerated(0).isNegative());
+        assertFalse(new ASN1Enumerated(255).isNegative());
+        assertEquals(255L, new ASN1Enumerated(255).longValueExact());
+    }
+
+    private void checkNegative(ASN1Enumerated enumerated, int value)
+        throws IOException
+    {
+        assertTrue(enumerated.isNegative());
+        assertTrue(enumerated.hasValue(value));
+        assertTrue(enumerated.hasValue(BigInteger.valueOf(value)));
+        assertEquals(value, enumerated.intValueExact());
+        assertEquals((long)value, enumerated.longValueExact());
+        assertEquals(BigInteger.valueOf(value), enumerated.getValue());
+
+        byte[] encoding = enumerated.getEncoded();
+        assertEquals(BigInteger.valueOf(value).toByteArray().length + 2, encoding.length);
+
+        ASN1Enumerated decoded = ASN1Enumerated.getInstance(ASN1Primitive.fromByteArray(encoding));
+        assertEquals(enumerated, decoded);
+        assertEquals(enumerated.hashCode(), decoded.hashCode());
+        assertTrue(decoded.isNegative());
+        assertEquals(value, decoded.intValueExact());
+
+        decoded = ASN1Enumerated.getInstance(encoding);
+        assertEquals(enumerated, decoded);
+        assertEquals(value, decoded.intValueExact());
     }
 }

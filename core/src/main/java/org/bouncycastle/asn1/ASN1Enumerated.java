@@ -81,11 +81,6 @@ public class ASN1Enumerated
      */
     public ASN1Enumerated(int value)
     {
-        if (value < 0)
-        {
-            throw new IllegalArgumentException("enumerated must be non-negative");
-        }
-
         this.contents = BigInteger.valueOf(value).toByteArray();
         this.start = 0;
     }
@@ -97,11 +92,6 @@ public class ASN1Enumerated
      */
     public ASN1Enumerated(BigInteger value)
     {
-        if (value.signum() < 0)
-        {
-            throw new IllegalArgumentException("enumerated must be non-negative");
-        }
-
         this.contents = value.toByteArray();
         this.start = 0;
     }
@@ -121,10 +111,6 @@ public class ASN1Enumerated
         if (ASN1Integer.isMalformed(contents))
         {
             throw new IllegalArgumentException("malformed enumerated");
-        }
-        if (0 != (contents[0] & 0x80))
-        {
-            throw new IllegalArgumentException("enumerated must be non-negative");
         }
 
         this.contents = clone ? Arrays.clone(contents) : contents;
@@ -159,6 +145,22 @@ public class ASN1Enumerated
         }
 
         return ASN1Integer.intValue(contents, start, ASN1Integer.SIGN_EXT_SIGNED); 
+    }
+
+    public long longValueExact()
+    {
+        int count = contents.length - start;
+        if (count > 8)
+        {
+            throw new ArithmeticException("ASN.1 Enumerated out of long range");
+        }
+
+        return ASN1Integer.longValue(contents, start, ASN1Integer.SIGN_EXT_SIGNED);
+    }
+
+    public boolean isNegative()
+    {
+        return (contents[start] & 0x80) != 0;
     }
 
     boolean encodeConstructed()
@@ -196,14 +198,9 @@ public class ASN1Enumerated
 
     private static ASN1Enumerated createPrimitive(byte[] contents, boolean clone)
     {
-        int length = contents.length;
-        if (length > 1)
+        if (contents.length != 1)
         {
             return new ASN1Enumerated(contents, clone);
-        }
-        if (length == 0)
-        {
-            throw new IllegalArgumentException("ENUMERATED has zero length");
         }
 
         int value = contents[0] & 0xFF;
@@ -222,20 +219,15 @@ public class ASN1Enumerated
 
     static ASN1Enumerated createPrimitive(DefiniteLengthInputStream defIn) throws IOException
     {
-        int length = defIn.getRemaining();
-        if (length > 1)
+        if (defIn.getRemaining() != 1)
         {
             return new ASN1Enumerated(defIn.toByteArray(), false);
-        }
-        if (length == 0)
-        {
-            throw new IllegalArgumentException("ENUMERATED has zero length");
         }
 
         int value = defIn.read();
         if (value >= CACHE.length)
         {
-            return new ASN1Enumerated(value);
+            return new ASN1Enumerated(new byte[]{ (byte)value }, false);
         }
 
         ASN1Enumerated possibleMatch = CACHE[value];
