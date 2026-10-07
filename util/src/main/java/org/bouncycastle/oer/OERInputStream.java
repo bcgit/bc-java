@@ -150,13 +150,16 @@ public class OERInputStream
             //
             int j = BigIntegers.fromUnsignedByteArray(lenEnc).intValue();
 
-            // Every OER seq-of element occupies at least one byte, so a declared count larger than the
-            // bytes left in the input is truncated or hostile. Bound it before the parse loop so a few
-            // count bytes (e.g. a long-form 7F FF FF FF) cannot drive ~2^31 parse iterations and object
-            // allocations before the per-element reads run out of input.
-            if (j < 0 || j > available())
+            // The count comes from the wire, so bound it before the parse loop: at maxByteAllocation,
+            // the ceiling the caller has already set for what this decoder may allocate from a length
+            // (the vector grows lazily, so a short input stops at its first missing element either
+            // way). Not at available(): that is an estimate of the bytes readable without blocking,
+            // 0 from the base InputStream and from wrappers such as CipherInputStream, so it rejected
+            // valid input on any stream that had not buffered, and even where it is exact it is no
+            // bound on elements, since NULL encodes as nothing.
+            if (j < 0 || j > maxByteAllocation)
             {
-                throw new IOException("SEQUENCE OF length " + j + " out of range");
+                throw new IOException("SEQUENCE OF count " + j + " out of range (limit " + maxByteAllocation + ")");
             }
 
             debugPrint(element + ("(len = " + j + ")"));
