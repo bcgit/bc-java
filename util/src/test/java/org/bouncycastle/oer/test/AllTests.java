@@ -43,6 +43,7 @@ public class AllTests
         suite.addTestSuite(OERInputStreamLimitTest.class);
         suite.addTestSuite(OERInputStreamMalformedTest.class);
         suite.addTestSuite(OERTypeGuardTest.class);
+        suite.addTestSuite(OEREnumeratedTest.class);
 
         return new BCTestSetup(suite);
     }
