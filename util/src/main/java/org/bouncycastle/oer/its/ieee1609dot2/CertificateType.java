@@ -3,7 +3,6 @@ package org.bouncycastle.oer.its.ieee1609dot2;
 import java.math.BigInteger;
 
 import org.bouncycastle.asn1.ASN1Enumerated;
-import org.bouncycastle.util.BigIntegers;
 
 /**
  * CertificateType ::= ENUMERATED {
@@ -24,11 +23,6 @@ public class CertificateType
         assertValues();
     }
 
-    private CertificateType(ASN1Enumerated instance)
-    {
-        this(instance.getValue());
-    }
-
     public static CertificateType getInstance(Object src)
     {
         if (src instanceof CertificateType)
@@ -38,19 +32,29 @@ public class CertificateType
 
         if (src != null)
         {
-            return new CertificateType(ASN1Enumerated.getInstance(src));
+            return getInstance(ASN1Enumerated.getInstance(src));
         }
         return null;
+    }
 
+    private static CertificateType getInstance(ASN1Enumerated value)
+    {
+        if (value.hasValue(0))
+        {
+            return explicit;
+        }
+        if (value.hasValue(1))
+        {
+            return implicit;
+        }
+        throw new IllegalArgumentException("invalid enumeration value " + value.getValue());
     }
 
     protected void assertValues()
     {
-        if (getValue().signum() < 0 || getValue().compareTo(BigIntegers.ONE) > 0)
+        if (!hasValue(0) && !hasValue(1))
         {
             throw new IllegalArgumentException("invalid enumeration value " + getValue());
         }
     }
-
-
 }
