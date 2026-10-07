@@ -139,6 +139,50 @@ public class OERIntegerTest
         assertEquals(BigInteger.valueOf(-1), new OERInputStream(new ByteArrayInputStream(allOnes)).int64());
     }
 
+    /**
+     * A negative value under a non-negative lower bound is rejected rather than written through
+     * the unsigned encodings as its two's-complement octets: -1 under INTEGER (0..255) used to go
+     * out as FF, the encoding of 255, and under INTEGER (0..MAX) as 01 FF.
+     */
+    public void testNegativeValueRejectedUnderUnsignedRange()
+        throws IOException
+    {
+        Element[] unsignedRanges = { range(0, 255), range(0, 65535), range(0, 4294967295L),
+            range(BigInteger.ZERO, TWO_64.subtract(BigInteger.ONE)), range(1, 255),
+            OERDefinition.integer().rangeToMAXFrom(0).build(), OERDefinition.integer().rangeToMAXFrom(1).build(),
+            range(BigInteger.ZERO, TWO_64) };
+        BigInteger[] negatives = { BigInteger.valueOf(-1), BigInteger.valueOf(-256), TWO_63.negate() };
+        for (int i = 0; i != unsignedRanges.length; i++)
+        {
+            for (int j = 0; j != negatives.length; j++)
+            {
+                try
+                {
+                    encode(negatives[j], unsignedRanges[i]);
+                    fail(negatives[j] + " accepted under " + unsignedRanges[i].rangeExpression());
+                }
+                catch (IllegalArgumentException e)
+                {
+                    assertTrue(e.getMessage(), e.getMessage().startsWith("negative value " + negatives[j]));
+                }
+            }
+        }
+
+        // and a negative lower bound still takes them
+        check(range(-1, 1), -1, "FF");
+        check(OERDefinition.integer().build(), -256, "02FF00");
+    }
+
+    private static byte[] encode(BigInteger value, Element schema)
+        throws IOException
+    {
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        OEROutputStream oerOut = new OEROutputStream(bOut);
+        oerOut.write(new ASN1Integer(value), schema);
+        oerOut.flush();
+        return bOut.toByteArray();
+    }
+
     private static Element range(long lower, long upper)
     {
         return OERDefinition.integer(lower, upper).build();

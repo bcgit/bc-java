@@ -478,7 +478,10 @@ public class OEROutputStream
         }
         case INT:
         {
-            ASN1Integer integer = ASN1Integer.getInstance(encodable);
+            BigInteger value = ASN1Integer.getInstance(encodable).getValue();
+
+            // TODO Validate against bounds: beyond the sign, nothing below checks that value lies within
+            // the element's effective value constraint.
 
 
             // >0 = positive and <0 = negative
@@ -488,7 +491,8 @@ public class OEROutputStream
                 //
                 // For unsigned fixed length 1,2,4,8 byte integers.
                 //
-                byte[] encoded = BigIntegers.asUnsignedByteArray(intBytesForRange, integer.getValue());
+                checkNonNegative(value, oerElement);
+                byte[] encoded = BigIntegers.asUnsignedByteArray(intBytesForRange, value);
                 switch (intBytesForRange)
                 {
                 case 1:
@@ -509,20 +513,19 @@ public class OEROutputStream
                 //
 
                 byte[] encoded;
-                BigInteger number = integer.getValue();
                 switch (intBytesForRange)
                 {
                 case -1:
-                    encoded = new byte[]{BigIntegers.byteValueExact(number)};
+                    encoded = new byte[]{BigIntegers.byteValueExact(value)};
                     break;
                 case -2:
-                    encoded = Pack.shortToBigEndian(BigIntegers.shortValueExact(number));
+                    encoded = Pack.shortToBigEndian(BigIntegers.shortValueExact(value));
                     break;
                 case -4:
-                    encoded = Pack.intToBigEndian(BigIntegers.intValueExact(number));
+                    encoded = Pack.intToBigEndian(BigIntegers.intValueExact(value));
                     break;
                 case -8:
-                    encoded = Pack.longToBigEndian(BigIntegers.longValueExact(number));
+                    encoded = Pack.longToBigEndian(BigIntegers.longValueExact(value));
                     break;
                 default:
                     throw new IllegalStateException("unknown twos compliment length");
@@ -538,12 +541,13 @@ public class OEROutputStream
                 {
                     // X.696 sec. 10.3 e): the fixed-width unsigned cases are handled above, so a lower
                     // bound of zero or more means a length determinant and a variable-size unsigned number.
-                    encoded = BigIntegers.asUnsignedByteArray(integer.getValue());
+                    checkNonNegative(value, oerElement);
+                    encoded = BigIntegers.asUnsignedByteArray(value);
                 }
                 else
                 {
                     // Twos complement
-                    encoded = integer.getValue().toByteArray();
+                    encoded = value.toByteArray();
                 }
 
                 encodeLength(encoded.length); // Deals with long and short forms.
@@ -697,6 +701,19 @@ public class OEROutputStream
             }
             debugOutput.append(what).append("\n");
             debugOutput.flush();
+        }
+    }
+
+    /**
+     * A negative value is not in any type whose lower bound is zero or more, and the unsigned
+     * encodings would silently write its two's-complement octets as a different, positive value
+     * (-1 under INTEGER (0..255) came out as FF, the encoding of 255).
+     */
+    private static void checkNonNegative(BigInteger value, Element element)
+    {
+        if (value.signum() < 0)
+        {
+            throw new IllegalArgumentException("negative value " + value + " for INTEGER " + element.rangeExpression());
         }
     }
 
