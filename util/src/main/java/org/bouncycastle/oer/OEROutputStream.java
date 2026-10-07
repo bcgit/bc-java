@@ -52,6 +52,29 @@ public class OEROutputStream
     }
 
     /**
+     * Whether a SEQUENCE component is present on the wire, X.696 sec. 16.2.3: it is not an undefined
+     * OEROptional (a defined one stands for its value), and, if the component has a DEFAULT, it
+     * differs from that default - a value equal to its default is omitted, as CANONICAL-OER requires
+     * (sec. 31.9, for root components and extension additions alike). The presence bitmaps and the
+     * component values are all written from this, so they agree.
+     */
+    private static boolean isPresent(ASN1Encodable value, Element component)
+    {
+        if (value instanceof OEROptional)
+        {
+            OEROptional optional = (OEROptional)value;
+            if (!optional.isDefined())
+            {
+                return false;
+            }
+            value = optional.get();
+        }
+
+        ASN1Encodable defaultValue = component.getDefaultValue();
+        return defaultValue == null || !defaultValue.equals(value);
+    }
+
+    /**
      * Build a "call stack like" suffix identifying the offending element for diagnostic messages.
      * Returns the empty string when the child element has no label, so the existing message text is
      * preserved byte-for-byte for unlabelled elements.
@@ -121,7 +144,7 @@ public class OEROutputStream
 
                     if ((e.getBlock() > 0 && t < seq.size()))
                     {
-                        if (!OEROptional.ABSENT.equals(seq.getObjectAt(t)))
+                        if (isPresent(seq.getObjectAt(t), e))
                         {
                             // Can support extensions and one or more have been defined.
                             extensionDefined = true;
@@ -187,34 +210,9 @@ public class OEROutputStream
                 }
                 else
                 {
-                    ASN1Encodable obj = seq.getObjectAt(t);
-                    if (childOERDescription.getDefaultValue() != null)
+                    if (isPresent(asn1EncodableChild, childOERDescription))
                     {
-
-                        if (obj instanceof OEROptional)
-                        {
-                            if (((OEROptional)obj).isDefined())
-                            {
-                                if (!((OEROptional)obj).get().equals(childOERDescription.getDefaultValue()))
-                                {
-                                    mask |= bits[j];
-                                }
-                            }
-                        }
-                        else
-                        {
-                            if (!childOERDescription.getDefaultValue().equals(obj))
-                            {
-                                mask |= bits[j];
-                            }
-                        }
-                    }
-                    else
-                    {
-                        if (asn1EncodableChild != OEROptional.ABSENT)
-                        {
-                            mask |= bits[j];
-                        }
+                        mask |= bits[j];
                     }
                     j--;
                 }
@@ -252,14 +250,10 @@ public class OEROutputStream
                     childOERElement = childOERElement.getaSwitch().result(new SwitchIndexer.Asn1SequenceIndexer(seq));
                 }
 
-                if (childOERElement.getDefaultValue() != null)
+                if (isPresent(child, childOERElement))
                 {
-                    if (childOERElement.getDefaultValue().equals(child))
-                    {
-                        continue;
-                    }
+                    write(child, childOERElement);
                 }
-                write(child, childOERElement);
             }
 
             //
@@ -271,47 +265,41 @@ public class OEROutputStream
 
                 // Form presence bitmap 16.4.3
                 int start = t;
-                ByteArrayOutputStream presensceList = new ByteArrayOutputStream();
+                ByteArrayOutputStream presenceList = new ByteArrayOutputStream();
                 j = 7;
                 mask = 0;
                 for (int i = start; i < childElements.size(); i++)
                 {
                     if (j < 0)
                     {
-                        presensceList.write(mask);
+                        presenceList.write(mask);
                         j = 7;
                         mask = 0;
                     }
 
-                    if (i < seq.size() && !OEROptional.ABSENT.equals(seq.getObjectAt(i)))
+                    if (i < seq.size() && isPresent(seq.getObjectAt(i), childElements.get(i)))
                     {
                         mask |= bits[j];
                     }
                     j--;
                 }
 
-                if (j != 7)
-                {
-                    // Write the final set of bits.
-                    presensceList.write(mask);
-                }
+                // Write the final set of bits: at least one addition is present, so there is one.
+                presenceList.write(mask);
 
-                encodeLength(presensceList.size() + 1); // +1 = initial octet
-                if (j == 7)
-                {
-                    write(0);
-                }
-                else
-                {
-                    write(j + 1);
-                }// Initial octet 16.4.2
-                write(presensceList.toByteArray());
+                // 16.4.1: a length determinant covering the initial octet and the bitmap; 16.4.2: the
+                // initial octet is the number of unused bits in the final octet - j is the next free
+                // bit position in it, counting down from 7, so bits j to 0 are unused.
+                int unusedBits = j + 1;
+                encodeLength(presenceList.size() + 1);
+                write(unusedBits);
+                write(presenceList.toByteArray());
 
                 // Open encode the actual values.
                 for (; t < childElements.size(); t++)
                 {
                     // 16.5.2 Extension Addition Groups are not supported.
-                    if (t < seq.size() && !OEROptional.ABSENT.equals(seq.getObjectAt(t)))
+                    if (t < seq.size() && isPresent(seq.getObjectAt(t), childElements.get(t)))
                     {
                         writePlainType(seq.getObjectAt(t), childElements.get(t));
                     }
