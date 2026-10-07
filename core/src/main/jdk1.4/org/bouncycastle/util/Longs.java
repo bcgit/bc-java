@@ -94,6 +94,23 @@ public class Longs
         return (i >>> distance) | (i << -distance);
     }
 
+    /**
+     * Return the big-endian encoding of {@code i} taken as an unsigned 64-bit value, in the fewest
+     * octets that hold its significant bits: 0 is the empty array, 255 is {@code FF}, 256 is
+     * {@code 01 00}, and a negative argument takes all eight.
+     */
+    public static byte[] toUnsignedByteArray(long i)
+    {
+        int len = (bitLength(i) + 7) >>> 3;
+        byte[] bs = new byte[len];
+        for (int pos = len - 1; pos >= 0; --pos)
+        {
+            bs[pos] = (byte)i;
+            i >>>= 8;
+        }
+        return bs;
+    }
+
     public static Long valueOf(long value)
     {
         return new Long(value);
