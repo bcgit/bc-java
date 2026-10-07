@@ -23,6 +23,7 @@ import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.ASN1UTF8String;
 import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.Longs;
 import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
@@ -702,15 +703,23 @@ public class OEROutputStream
     private void encodeLength(long len)
         throws IOException
     {
+        // every caller passes an array length or a collection size, so this is a guard against a
+        // future mistake: a negative value would take the short form and go out as a single octet
+        // with bit 8 set, which a decoder reads as a long-form prefix - silent corruption
+        if (len < 0)
+        {
+            throw new IllegalArgumentException("negative length: " + len);
+        }
         if (len <= 127) // complies with 31.2
         {
             out.write((int)len); // short form 8.6.3
         }
         else
         {
-            // Long form,
-            byte[] value = BigIntegers.asUnsignedByteArray(BigInteger.valueOf(len));
-            out.write((value.length | 0x80));
+            // Long form, 8.6.5: bit 8 set and the octet count in the initial octet, then the length
+            // as a variable-size unsigned number in the fewest octets (31.2)
+            byte[] value = Longs.toUnsignedByteArray(len);
+            out.write(value.length | 0x80);
             out.write(value);
         }
     }
@@ -718,7 +727,13 @@ public class OEROutputStream
     private void encodeQuantity(long quantity)
         throws IOException
     {
-        byte[] quantityEncoded = BigIntegers.asUnsignedByteArray(BigInteger.valueOf(quantity));
+        if (quantity < 0)
+        {
+            throw new IllegalArgumentException("negative quantity: " + quantity);
+        }
+        // 17.2: the octet count, then the quantity as a variable-size unsigned number, which is one
+        // or more octets (3.7.12) - so zero is 01 00, not the empty encoding the helper gives it
+        byte[] quantityEncoded = quantity == 0 ? new byte[1] : Longs.toUnsignedByteArray(quantity);
         out.write(quantityEncoded.length);
         out.write(quantityEncoded);
     }
