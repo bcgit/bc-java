@@ -174,14 +174,18 @@ public class OEROutputStream
 
                 ASN1Encodable asn1EncodableChild = seq.getObjectAt(t);
 
-                if (childOERDescription.isExplicit() && asn1EncodableChild instanceof OEROptional)
+                if (childOERDescription.isExplicit())
                 {
-                    throw new IllegalStateException(
-                        "absent sequence element that is required by oer definition"
-                            + elementLabelSuffix(childOERDescription, oerElement));
+                    // a required component may arrive wrapped in a defined OEROptional, which write()
+                    // unwraps; only the undefined wrapper is an absence
+                    if (asn1EncodableChild instanceof OEROptional && !((OEROptional)asn1EncodableChild).isDefined())
+                    {
+                        throw new IllegalStateException(
+                            "absent sequence element that is required by oer definition"
+                                + elementLabelSuffix(childOERDescription, oerElement));
+                    }
                 }
-
-                if (!childOERDescription.isExplicit())
+                else
                 {
                     ASN1Encodable obj = seq.getObjectAt(t);
                     if (childOERDescription.getDefaultValue() != null)
