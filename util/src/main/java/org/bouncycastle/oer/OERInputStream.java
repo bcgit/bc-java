@@ -101,18 +101,18 @@ public class OERInputStream
         // attacker-controlled, so without a bound a few KB of crafted input drives unbounded
         // recursive-descent parsing into a StackOverflowError before any signature check. The depth
         // is threaded into open-type sub-streams (parseOpenType) so the cycle through them counts too.
-        if (++decodeDepth > maxNestingDepth)
+        if (decodeDepth >= maxNestingDepth)
         {
-            decodeDepth--;
             throw new IOException("OER decoder exceeded maximum nesting depth of " + maxNestingDepth);
         }
+        ++decodeDepth;
         try
         {
             return parseInternal(element);
         }
         finally
         {
-            decodeDepth--;
+            --decodeDepth;
         }
     }
 
@@ -161,16 +161,19 @@ public class OERInputStream
 
             debugPrint(element + ("(len = " + j + ")"));
 
-            ASN1EncodableVector avec = new ASN1EncodableVector();
-
-            if (element.getChildren().get(0).getaSwitch() != null)
+            // a SEQUENCE OF has a single child, the component type, so it and its deferred expansion
+            // are the same for every element
+            Element component = element.getChildren().get(0);
+            if (component.getaSwitch() != null)
             {
                 throw new IllegalStateException("element def for item in SEQ OF has a switch, switches only supported in sequences");
             }
+            Element def = Element.expandDeferredDefinition(component, element);
 
+            // Limit pre-allocation according to a potentially-hostile input
+            ASN1EncodableVector avec = new ASN1EncodableVector(Math.min(16, j));
             for (int n = 0; n < j; n++)
             {
-                Element def = Element.expandDeferredDefinition(element.getChildren().get(0), element);
                 avec.add(parse(def));
             }
             return new DERSequence(avec);
@@ -180,8 +183,10 @@ public class OERInputStream
         {
             Sequence sequence = new Sequence(in, element);//  sequence(countOptionalChildTypes(element), element.hasDefaultChildren(), element.isExtensionsInDefinition());
             debugPrint(element + (sequence.toString()));
-            ASN1EncodableVector avec = new ASN1EncodableVector();
             List<Element> children = element.getChildren();
+            // at most one entry per defined child: the root components and the known extension
+            // additions; presence bits beyond the definition add nothing
+            ASN1EncodableVector avec = new ASN1EncodableVector(children.size());
             int t = 0;
 
             //
@@ -280,40 +285,34 @@ public class OERInputStream
                 int presenceIndex = 8;
                 int stop = rawPresenceList.length * 8 - unusedBits;
 
-
-                for (; t < children.size() || presenceIndex < stop; t++)
+                // The extension additions the definition knows about, each against its presence bit;
+                // a bitmap shorter than the definition means the trailing ones are absent.
+                for (; t < children.size(); t++, presenceIndex++)
                 {
-                    Element child = t < children.size() ? children.get(t) : null;
+                    Element child = children.get(t);
 
-                    if (child == null)
+                    if (presenceIndex < stop && (rawPresenceList[presenceIndex / 8] & bitsR[presenceIndex % 8]) != 0)
                     {
-                        // Extensions that we do not
-                        // have a definition for need to be consumed and discarded.
-                        if ((rawPresenceList[presenceIndex / 8] & bitsR[presenceIndex % 8]) != 0)
-                        {
-                            skipUnknownExtension(readLength().intLength());
-                        }
+                        avec.add(parseOpenType(child));
+                    }
+                    else if (child.isExplicit())
+                    {
+                        throw new IOException("extension is marked as explicit but is not defined in presence list");
                     }
                     else
                     {
-                        if (presenceIndex < stop &&
-                            (rawPresenceList[presenceIndex / 8] & bitsR[presenceIndex % 8]) != 0)
-                        {
-                            avec.add(parseOpenType(child));
-                        }
-                        else
-                        {
-                            if (child.isExplicit())
-                            {
-                                throw new IOException("extension is marked as explicit but is not defined in presence list");
-                            }
-                            else
-                            {
-                                avec.add(OEROptional.ABSENT);
-                            }
-                        }
+                        avec.add(OEROptional.ABSENT);
                     }
-                    presenceIndex++;
+                }
+
+                // Any further presence bits are extension additions this definition does not know
+                // about: the ones marked present carry an open type each, consumed and discarded.
+                for (; presenceIndex < stop; presenceIndex++)
+                {
+                    if ((rawPresenceList[presenceIndex / 8] & bitsR[presenceIndex % 8]) != 0)
+                    {
+                        skipUnknownExtension(readLength().intLength());
+                    }
                 }
             }
 
