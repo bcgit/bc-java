@@ -15,15 +15,23 @@
     <prop name="import_max" value="${import_max}" find="\." replace="\\."/>
     <prop name="import_range" value="^\[${import_low}\,${import_max}\)"/>
 
+    <!-- bctls / bctls-klog can ship as a point release on their own, so their floor is major.minor (build.gradle bundle_import_floor, github #2493) -->
+    <prop name="import_floor" value="${version}" find="-SNAPSHOT" replace=""/>
+    <prop name="import_floor" value="${import_floor}" find="^([0-9]+\.[0-9]+).*$" replace="$1"/>
+    <prop name="import_floor" value="${import_floor}" find="\." replace="\\."/>
+    <prop name="tls_import_range" value="^\[${import_floor}\,${import_max}\)"/>
+
     <jar file="${ENV.BCHOME}/libs/jakarta.activation-api-2.0.0.jar"/>
     <jar file="${ENV.BCHOME}/libs/jakarta.mail-2.0.1.jar"/>
     <jar file="${ENV.BCHOME}/core/build/libs/bccore-jdk18on-${version}.jar"/>
     <jar file="${ENV.BCHOME}/jmail/build/libs/bcjmail-jdk18on-${version}.jar"/>
     <jar file="${ENV.BCHOME}/mls/build/libs/bcmls-jdk18on-${version}.jar"/>
     <jar file="${ENV.BCHOME}/pg/build/libs/bcpg-jdk18on-${version}.jar"/>
+    <jar file="${ENV.BCHOME}/pgsc/build/libs/bcpgsc-jdk18on-${version}.jar"/>
     <jar file="${ENV.BCHOME}/pkix/build/libs/bcpkix-jdk18on-${version}.jar"/>
     <jar file="${ENV.BCHOME}/prov/build/libs/bcprov-jdk18on-${version}.jar"/>
     <jar file="${ENV.BCHOME}/tls/build/libs/bctls-jdk18on-${version}.jar"/>
+    <jar file="${ENV.BCHOME}/tls-klog/build/libs/bctls-klog-jdk18on-${version}.jar"/>
     <jar file="${ENV.BCHOME}/util/build/libs/bcutil-jdk18on-${version}.jar"/>
 
     <bundle matches="^bcprov" version="${bundle_ver}">
@@ -40,7 +48,7 @@
     </bundle>
 
 
-    <bundle matches="^bc(jmail|mls|pg|pkix|tls|util)" version="${bundle_ver}">
+    <bundle matches="^bc(jmail|mls|pg|pkix|util)" version="${bundle_ver}">
         <ignore-package package="^mls_client"/>
         <ignore-package package="^org\.bouncycastle\.mls\.client"/>
 
@@ -56,6 +64,21 @@
                      on-undefined="fail"/>
         </header>
 
+
+    </bundle>
+
+    <bundle matches="^bctls" version="${bundle_ver}">
+        <header key="Bundle-Version" matches="${bundle_ver}"/>
+
+        <header key="Export-Package" matches=".*" on-undefined="fail">
+            <package matches="^org\.bouncycastle\.*" param="version" test="${bundle_ver}" on-match="pass"
+                     on-undefined="fail"/>
+        </header>
+
+        <header key="Import-Package" matches=".*" on-undefined="fail">
+            <package matches="^org\.bouncycastle\.*" param="version" test="${tls_import_range}" on-match="pass"
+                     on-undefined="fail"/>
+        </header>
 
     </bundle>
 
