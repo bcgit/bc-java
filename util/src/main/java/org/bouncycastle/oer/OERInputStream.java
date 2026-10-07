@@ -645,7 +645,7 @@ public class OERInputStream
     public BigInteger uint64()
         throws Exception
     {
-        return parseInt(false, 8);
+        return parseInt(true, 8);
     }
 
     public BigInteger int8()

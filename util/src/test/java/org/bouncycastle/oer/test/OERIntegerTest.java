@@ -1,5 +1,6 @@
 package org.bouncycastle.oer.test;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.math.BigInteger;
@@ -119,6 +120,23 @@ public class OERIntegerTest
         check(range(-200, 0), -200, "FF38");
         check(range(-1, 1), -1, "FF");
         check(range(-1, 1), 1, "01");
+    }
+
+    /** The raw word readers: uintN is unsigned (uint64 used to pass the signed flag), intN signed. */
+    public void testRawWordReaders()
+        throws Exception
+    {
+        byte[] allOnes = Hex.decode("FFFFFFFFFFFFFFFF");
+
+        assertEquals(BigInteger.valueOf(255), new OERInputStream(new ByteArrayInputStream(allOnes)).uint8());
+        assertEquals(BigInteger.valueOf(65535), new OERInputStream(new ByteArrayInputStream(allOnes)).uint16());
+        assertEquals(BigInteger.valueOf(4294967295L), new OERInputStream(new ByteArrayInputStream(allOnes)).uint32());
+        assertEquals(TWO_64.subtract(BigInteger.ONE), new OERInputStream(new ByteArrayInputStream(allOnes)).uint64());
+
+        assertEquals(BigInteger.valueOf(-1), new OERInputStream(new ByteArrayInputStream(allOnes)).int8());
+        assertEquals(BigInteger.valueOf(-1), new OERInputStream(new ByteArrayInputStream(allOnes)).int16());
+        assertEquals(BigInteger.valueOf(-1), new OERInputStream(new ByteArrayInputStream(allOnes)).int32());
+        assertEquals(BigInteger.valueOf(-1), new OERInputStream(new ByteArrayInputStream(allOnes)).int64());
     }
 
     private static Element range(long lower, long upper)
