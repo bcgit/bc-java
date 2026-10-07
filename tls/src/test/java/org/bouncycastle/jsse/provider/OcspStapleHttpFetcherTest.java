@@ -31,6 +31,7 @@ import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
+import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.Strings;
 
 /**
@@ -92,6 +93,36 @@ public class OcspStapleHttpFetcherTest
         catch (IllegalArgumentException e)
         {
             assertEquals("'responseTimeoutMs' must be positive", e.getMessage());
+        }
+    }
+
+    /**
+     * The read ceiling comes from org.bouncycastle.ocsp.max_response_size, shared with the CertPath
+     * validator's reader; a declared Content-Length may narrow it but not widen it, and a value that
+     * is not a positive integer leaves the 64K default in place rather than lifting the limit or
+     * failing the fetch.
+     */
+    public void testResponseSizeLimit()
+    {
+        int defaultLimit = 64 * 1024;
+
+        assertEquals(defaultLimit, OcspStapleHttpFetcher.getResponseSizeLimit(-1));
+        assertEquals(1000, OcspStapleHttpFetcher.getResponseSizeLimit(1000));
+        assertEquals(defaultLimit, OcspStapleHttpFetcher.getResponseSizeLimit(100 * 1024 * 1024));
+
+        String[] values = new String[]{ "4096", "0", "-1", "64k", "1.5", "", "99999999999" };
+        int[] limits = new int[]{ 4096, defaultLimit, defaultLimit, defaultLimit, defaultLimit, defaultLimit, defaultLimit };
+        for (int i = 0; i != values.length; i++)
+        {
+            System.setProperty(Properties.OCSP_MAX_RESPONSE_SIZE, values[i]);
+            try
+            {
+                assertEquals("\"" + values[i] + "\"", limits[i], OcspStapleHttpFetcher.getResponseSizeLimit(100 * 1024 * 1024));
+            }
+            finally
+            {
+                System.getProperties().remove(Properties.OCSP_MAX_RESPONSE_SIZE);
+            }
         }
     }
 

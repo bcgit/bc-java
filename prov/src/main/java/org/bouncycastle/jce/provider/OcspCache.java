@@ -294,13 +294,7 @@ class OcspCache
      */
     static int getResponseSizeLimit(int contentLength)
     {
-        int maxResponseSize = Properties.asInteger(Properties.OCSP_MAX_RESPONSE_SIZE, DEFAULT_MAX_RESPONSE_SIZE);
-
-        // a configured value that cannot be a size is no reason to read without a limit
-        if (maxResponseSize <= 0)
-        {
-            maxResponseSize = DEFAULT_MAX_RESPONSE_SIZE;
-        }
+        int maxResponseSize = getPositiveIntProperty(Properties.OCSP_MAX_RESPONSE_SIZE, DEFAULT_MAX_RESPONSE_SIZE);
 
         if (contentLength < 0 || contentLength > maxResponseSize)
         {
@@ -413,14 +407,24 @@ class OcspCache
 
     private static long getMaxResponseAgeMs()
     {
-        int maxResponseAge = Properties.asInteger(Properties.OCSP_MAX_RESPONSE_AGE, DEFAULT_MAX_RESPONSE_AGE);
+        return getPositiveIntProperty(Properties.OCSP_MAX_RESPONSE_AGE, DEFAULT_MAX_RESPONSE_AGE) * 1000L;
+    }
 
-        // a configured value that cannot be an age is no reason to accept a response of any age
-        if (maxResponseAge <= 0)
+    /**
+     * A positive integer property, the default where it is unset or is not a positive integer - a
+     * mistyped value is no reason to lift the limit it sets, or to fail the check it governs.
+     */
+    private static int getPositiveIntProperty(String propertyName, int defaultValue)
+    {
+        try
         {
-            maxResponseAge = DEFAULT_MAX_RESPONSE_AGE;
-        }
+            int value = Properties.asInteger(propertyName, defaultValue);
 
-        return maxResponseAge * 1000L;
+            return (value > 0) ? value : defaultValue;
+        }
+        catch (NumberFormatException e)
+        {
+            return defaultValue;
+        }
     }
 }

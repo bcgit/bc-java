@@ -385,15 +385,9 @@ class OcspStapleHttpFetcher
      * <p/>
      * NOTE: keep in step with the CertPath validator's OcspCache.getResponseSizeLimit.
      */
-    private static int getResponseSizeLimit(int contentLength)
+    static int getResponseSizeLimit(int contentLength)
     {
-        int maxResponseSize = Properties.asInteger(Properties.OCSP_MAX_RESPONSE_SIZE, DEFAULT_MAX_RESPONSE_SIZE);
-
-        // a configured value that cannot be a size is no reason to read without a limit
-        if (maxResponseSize <= 0)
-        {
-            maxResponseSize = DEFAULT_MAX_RESPONSE_SIZE;
-        }
+        int maxResponseSize = getPositiveIntProperty(Properties.OCSP_MAX_RESPONSE_SIZE, DEFAULT_MAX_RESPONSE_SIZE);
 
         if (contentLength < 0 || contentLength > maxResponseSize)
         {
@@ -401,5 +395,23 @@ class OcspStapleHttpFetcher
         }
 
         return contentLength;
+    }
+
+    /**
+     * A positive integer property, the default where it is unset or is not a positive integer - a
+     * mistyped value is no reason to lift the limit it sets, or to fail the check it governs.
+     */
+    private static int getPositiveIntProperty(String propertyName, int defaultValue)
+    {
+        try
+        {
+            int value = Properties.asInteger(propertyName, defaultValue);
+
+            return (value > 0) ? value : defaultValue;
+        }
+        catch (NumberFormatException e)
+        {
+            return defaultValue;
+        }
     }
 }

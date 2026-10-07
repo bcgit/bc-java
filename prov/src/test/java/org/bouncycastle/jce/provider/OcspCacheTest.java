@@ -70,7 +70,7 @@ public class OcspCacheTest
         }
 
         // a value that cannot be a size leaves the default in place rather than lifting the limit
-        String[] unusable = new String[]{ "0", "-1" };
+        String[] unusable = new String[]{ "0", "-1", "64k", "1.5", "", "99999999999" };
         for (int i = 0; i != unusable.length; i++)
         {
             System.setProperty(Properties.OCSP_MAX_RESPONSE_SIZE, unusable[i]);
@@ -203,6 +203,17 @@ public class OcspCacheTest
             System.setProperty(Properties.OCSP_MAX_RESPONSE_AGE, "-1");
             assertFalse("negative bound accepted a year-old response",
                 OcspCache.isCertIDFoundAndCurrent(ancient, now, certID));
+
+            // nor does one that is not a number: the default applies rather than the check failing
+            String[] unusable = new String[]{ "1h", "3600s", "1.5", "", "99999999999" };
+            for (int i = 0; i != unusable.length; i++)
+            {
+                System.setProperty(Properties.OCSP_MAX_RESPONSE_AGE, unusable[i]);
+                assertFalse("\"" + unusable[i] + "\" accepted a 70 minute old response",
+                    OcspCache.isCertIDFoundAndCurrent(stale, now, certID));
+                assertTrue("\"" + unusable[i] + "\" did not leave the default in force",
+                    OcspCache.isCertIDFoundAndCurrent(fresh, now, certID));
+            }
         }
         finally
         {
