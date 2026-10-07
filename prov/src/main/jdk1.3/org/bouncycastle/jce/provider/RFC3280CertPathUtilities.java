@@ -709,7 +709,7 @@ class RFC3280CertPathUtilities
     static void processCRLJ(Date validDate, X509CRL completecrl, Object cert, CertStatus certStatus)
         throws AnnotatedException
     {
-        if (certStatus.getCertStatus() == CertStatus.UNREVOKED)
+        if (!certStatus.isRevoked())
         {
             CertPathValidatorUtilities.getCertStatus(validDate, completecrl, cert, certStatus);
         }
@@ -1564,7 +1564,7 @@ class RFC3280CertPathUtilities
         AnnotatedException lastException = null;
         Iterator crl_iter = crls.iterator();
 
-        while (crl_iter.hasNext() && certStatus.getCertStatus() == CertStatus.UNREVOKED && !reasonsMask.isAllReasons())
+        while (crl_iter.hasNext() && !certStatus.isRevoked() && !reasonsMask.isAllReasons())
         {
             try
             {
@@ -1651,9 +1651,9 @@ class RFC3280CertPathUtilities
                 processCRLJ(validityDate, crl, cert, certStatus);
 
                 // (k)
-                if (certStatus.getCertStatus() == CRLReason.removeFromCRL)
+                if (certStatus.isRevoked() && certStatus.getReason() == CRLReason.removeFromCRL)
                 {
-                    certStatus.setCertStatus(CertStatus.UNREVOKED);
+                    certStatus.setUnrevoked();
                 }
 
                 // update reasons mask
@@ -1760,7 +1760,7 @@ class RFC3280CertPathUtilities
             }
             if (dps != null)
             {
-                for (int i = 0; i < dps.length && certStatus.getCertStatus() == CertStatus.UNREVOKED && !reasonsMask.isAllReasons(); i++)
+                for (int i = 0; i < dps.length && !certStatus.isRevoked() && !reasonsMask.isAllReasons(); i++)
                 {
                     try
                     {
@@ -1782,7 +1782,7 @@ class RFC3280CertPathUtilities
          * but issued by the certificate issuer.
          */
 
-        if (certStatus.getCertStatus() == CertStatus.UNREVOKED && !reasonsMask.isAllReasons())
+        if (!certStatus.isRevoked() && !reasonsMask.isAllReasons())
         {
             try
             {
@@ -1834,7 +1834,15 @@ class RFC3280CertPathUtilities
 
             throw new AnnotatedException("No valid CRL found.", lastException);
         }
-        if (certStatus.getCertStatus() != CertStatus.UNREVOKED)
+        Date revocationDate = certStatus.getRevocationDate();
+        if (revocationDate == null)
+        {
+            if (!reasonsMask.isAllReasons())
+            {
+                throw new AnnotatedException("Certificate status could not be determined.");
+            }
+        }
+        else
         {
             // jdk1.3 delta: base uses "...HH:mm:ss Z", but real JDK 1.3.1's SimpleDateFormat
             // rejects the 'Z' pattern letter ("Illegal pattern character 'Z'"). The formatter is
@@ -1843,17 +1851,9 @@ class RFC3280CertPathUtilities
             // by NistCertPathTest.testInvalidNegativeSerialNumberTest15) without needing 'Z'.
             SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss '+0000'");
             df.setTimeZone(TimeZone.getTimeZone("UTC"));
-            String message = "Certificate revocation after " + df.format(certStatus.getRevocationDate());
-            message += ", reason: " + crlReasons[certStatus.getCertStatus()];
+            String message = "Certificate revocation after " + df.format(revocationDate);
+            message += ", reason: " + certStatus.getReasonText();
             throw new AnnotatedRevocationException(message);
-        }
-        if (!reasonsMask.isAllReasons() && certStatus.getCertStatus() == CertStatus.UNREVOKED)
-        {
-            certStatus.setCertStatus(CertStatus.UNDETERMINED);
-        }
-        if (certStatus.getCertStatus() == CertStatus.UNDETERMINED)
-        {
-            throw new AnnotatedException("Certificate status could not be determined.");
         }
     }
 
@@ -2095,21 +2095,6 @@ class RFC3280CertPathUtilities
         }
         return inhibitAnyPolicy;
     }
-
-    static final String[] crlReasons = new String[]
-    {
-        "unspecified",
-        "keyCompromise",
-        "cACompromise",
-        "affiliationChanged",
-        "superseded",
-        "cessationOfOperation",
-        "certificateHold",
-        "unknown",
-        "removeFromCRL",
-        "privilegeWithdrawn",
-        "aACompromise"
-    };
 
     protected static int wrapupCertA(
         int explicitPolicy,

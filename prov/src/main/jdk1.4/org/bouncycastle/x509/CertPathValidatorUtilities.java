@@ -44,7 +44,6 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.asn1.x509.CRLReason;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.IssuingDistributionPoint;
 import org.bouncycastle.asn1.x509.PKIXCRLValidator;
@@ -58,6 +57,7 @@ import org.bouncycastle.jcajce.provider.asymmetric.x509.X509CRLEntryIssuer;
 import org.bouncycastle.jcajce.PKIXPolicyNode;
 import org.bouncycastle.jcajce.PKIXPolicyTreeUtil;
 import org.bouncycastle.util.Encodable;
+import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Selector;
 import org.bouncycastle.util.Store;
 import org.bouncycastle.util.StoreException;
@@ -87,21 +87,6 @@ class CertPathValidatorUtilities
     */
     protected static final int KEY_CERT_SIGN = 5;
     protected static final int CRL_SIGN = 6;
-
-    static final String[] crlReasons = new String[]
-    {
-        "unspecified",
-        "keyCompromise",
-        "cACompromise",
-        "affiliationChanged",
-        "superseded",
-        "cessationOfOperation",
-        "certificateHold",
-        "unknown",
-        "removeFromCRL",
-        "privilegeWithdrawn",
-        "aACompromise",
-    };
 
     /**
      * Returns the issuer of an attribute certificate or certificate.
@@ -487,7 +472,8 @@ class CertPathValidatorUtilities
             }
         }
 
-        ASN1Enumerated reasonCode = null;
+        // Kept only if it fits in an int; larger values are treated as absent
+        Integer reasonCode = null;
         if (crl_entry.hasExtensions())
         {
             if (crl_entry.hasUnsupportedCriticalExtension())
@@ -497,7 +483,15 @@ class CertPathValidatorUtilities
 
             try
             {
-                reasonCode = ASN1Enumerated.getInstance(getExtensionValue(crl_entry, REASON_CODE));
+                ASN1Enumerated reasonCodeExt = ASN1Enumerated.getInstance(getExtensionValue(crl_entry, REASON_CODE));
+                if (null != reasonCodeExt)
+                {
+                    BigInteger value = reasonCodeExt.getValue();
+                    if (value.bitLength() <= 31)
+                    {
+                        reasonCode = Integers.valueOf(value.intValue());
+                    }
+                }
             }
             catch (Exception e)
             {
@@ -505,16 +499,13 @@ class CertPathValidatorUtilities
             }
         }
 
-        int reasonCodeValue = (null == reasonCode)
-            ?   CRLReason.unspecified
-            :   reasonCode.intValueExact();
+        Date revocationDate = crl_entry.getRevocationDate();
 
         // for reason keyCompromise, caCompromise, aACompromise or unspecified
-        if (PKIXCRLValidator.isRevocationEffective(validDate, crl_entry.getRevocationDate(), reasonCodeValue))
+        if (PKIXCRLValidator.isRevocationEffective(validDate, revocationDate, CertStatus.getReason(reasonCode)))
         {
             // (i) or (j)
-            certStatus.setCertStatus(reasonCodeValue);
-            certStatus.setRevocationDate(crl_entry.getRevocationDate());
+            certStatus.setRevoked(revocationDate, reasonCode);
         }
     }
 

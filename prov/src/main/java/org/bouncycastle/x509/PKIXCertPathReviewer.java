@@ -2315,16 +2315,16 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                         // out-of-range or out-of-int value falls through to the crlReasons[7] "unknown"
                         // below rather than throwing AIOOBE / ArithmeticException from intValueExact().
                         BigInteger rc = reasonCode.getValue();
-                        if (rc.signum() >= 0 && rc.compareTo(BigInteger.valueOf(crlReasons.length)) < 0)
+                        if (rc.signum() >= 0 && rc.compareTo(BigInteger.valueOf(CertStatus.crlReasons.length)) < 0)
                         {
-                            reason = crlReasons[rc.intValue()];
+                            reason = CertStatus.crlReasons[rc.intValue()];
                         }
                     }
                 }
 
                 if (reason == null)
                 {
-                    reason = crlReasons[7]; // unknown
+                    reason = CertStatus.crlReasons[7]; // unknown
                 }
 
                 // i18n reason

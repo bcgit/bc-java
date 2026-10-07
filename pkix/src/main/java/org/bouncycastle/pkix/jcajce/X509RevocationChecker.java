@@ -795,7 +795,7 @@ public class X509RevocationChecker
                 PKIXExtendedParameters pkixParamsFinal = pkixBuilder.build();
                 Date validityDateFinal = RevocationUtilities.getValidityDate(pkixParamsFinal, currentDate);
 
-                for (int i = 0; i < dps.length && certStatus.getCertStatus() == CertStatus.UNREVOKED && !reasonsMask.isAllReasons(); i++)
+                for (int i = 0; i < dps.length && !certStatus.isRevoked() && !reasonsMask.isAllReasons(); i++)
                 {
                     try
                     {
@@ -817,7 +817,7 @@ public class X509RevocationChecker
          * but issued by the certificate issuer.
          */
 
-        if (certStatus.getCertStatus() == CertStatus.UNREVOKED && !reasonsMask.isAllReasons())
+        if (!certStatus.isRevoked() && !reasonsMask.isAllReasons())
         {
             try
             {
@@ -862,26 +862,22 @@ public class X509RevocationChecker
 
             throw new CRLNotFoundException("no valid CRL found");
         }
-        if (certStatus.getCertStatus() != CertStatus.UNREVOKED)
+        Date revocationDate = certStatus.getRevocationDate();
+        if (revocationDate == null)
+        {
+            if (!reasonsMask.isAllReasons())
+            {
+                throw new AnnotatedException("certificate status could not be determined");
+            }
+        }
+        else
         {
             SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss Z");
             df.setTimeZone(TimeZone.getTimeZone("UTC"));
             String message = "certificate [issuer=\"" + cert.getIssuerX500Principal() + "\",serialNumber="
-                                           + cert.getSerialNumber() + ",subject=\"" + cert.getSubjectX500Principal() + "\"] revoked after " + df.format(certStatus.getRevocationDate());
-            int certReason = certStatus.getCertStatus();
-            // The reason code is copied unvalidated from the (attacker-controlled) CRL entry, so an
-            // out-of-range value must not index the fixed crlReasons table out of bounds (AIOOBE).
-            message += ", reason: " + (certReason >= 0 && certReason < crlReasons.length
-                ? crlReasons[certReason] : "unknown (" + certReason + ")");
+                                           + cert.getSerialNumber() + ",subject=\"" + cert.getSubjectX500Principal() + "\"] revoked after " + df.format(revocationDate);
+            message += ", reason: " + certStatus.getReasonText();
             throw new AnnotatedException(message);
-        }
-        if (!reasonsMask.isAllReasons() && certStatus.getCertStatus() == CertStatus.UNREVOKED)
-        {
-            certStatus.setCertStatus(CertStatus.UNDETERMINED);
-        }
-        if (certStatus.getCertStatus() == CertStatus.UNDETERMINED)
-        {
-            throw new AnnotatedException("certificate status could not be determined");
         }
     }
 
