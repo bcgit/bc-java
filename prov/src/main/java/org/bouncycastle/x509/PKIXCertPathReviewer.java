@@ -47,8 +47,12 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.ASN1String;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.x500.AttributeTypeAndValue;
+import org.bouncycastle.asn1.x500.RDN;
 import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.bouncycastle.asn1.x509.AccessDescription;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.AuthorityInformationAccess;
@@ -528,6 +532,40 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                     {
                         ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.subjAltNameExtError");
                         throw new CertPathReviewerException(msg,ae,certPath,index);
+                    }
+
+                    // RFC 5280 sec. 4.2.1.10: rfc822Name constraints apply to subject DN emailAddress values (SAN or not, as processCertBC)
+                    String[] subjectEmails = extractEmailAddresses(X500Name.getInstance(dns));
+                    if (subjectEmails.length > NAME_CHECK_MAX)
+                    {
+                        ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.ncSubjectNameError",
+                                new Object[] {new UntrustedInput(principal)});
+                        throw new CertPathReviewerException(msg,certPath,index);
+                    }
+
+                    for (int j = 0; j < subjectEmails.length; j++)
+                    {
+                        try
+                        {
+                            nameConstraintValidator.checkPermittedEmail(subjectEmails[j]);
+                        }
+                        catch (PKIXNameConstraintValidatorException cpve)
+                        {
+                            ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.notPermittedEmail",
+                                    new Object[] {new UntrustedInput(subjectEmails[j])});
+                            throw new CertPathReviewerException(msg,cpve,certPath,index);
+                        }
+
+                        try
+                        {
+                            nameConstraintValidator.checkExcludedEmail(subjectEmails[j]);
+                        }
+                        catch (PKIXNameConstraintValidatorException cpve)
+                        {
+                            ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.excludedEmail",
+                                    new Object[] {new UntrustedInput(subjectEmails[j])});
+                            throw new CertPathReviewerException(msg,cpve,certPath,index);
+                        }
                     }
 
                     if (altName != null)
@@ -2737,5 +2775,27 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
             }
         }
         return trustColl;
+    }
+
+    /**
+     * Return every emailAddress value in the passed in DN, including those in multi-valued RDNs
+     * (mirrors RFC3280CertPathUtilities.extractEmailAddressesFromSubjectDN).
+     */
+    private static String[] extractEmailAddresses(X500Name dn)
+    {
+        List collected = new ArrayList();
+        RDN[] rdns = dn.getRDNs(BCStyle.EmailAddress);
+        for (int rI = 0; rI != rdns.length; rI++)
+        {
+            AttributeTypeAndValue[] tvs = rdns[rI].getTypesAndValues();
+            for (int tI = 0; tI != tvs.length; tI++)
+            {
+                if (BCStyle.EmailAddress.equals(tvs[tI].getType()) && tvs[tI].getValue() instanceof ASN1String)
+                {
+                    collected.add(((ASN1String)tvs[tI].getValue()).getString());
+                }
+            }
+        }
+        return (String[])collected.toArray(new String[collected.size()]);
     }
 }

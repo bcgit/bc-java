@@ -331,6 +331,92 @@ public class CheckNameConstraintsTest
         assertTrue("legacy reviewer rejected a compliant leaf", okLegacy.isValidCertPath());
     }
 
+    /**
+     * RFC 5280 sec. 4.2.1.10: "When constraints are imposed on the rfc822Name name form, but the
+     * certificate does not include a subject alternative name, the rfc822Name constraint MUST be
+     * applied to the attribute of type emailAddress in the subject distinguished name." Neither
+     * PKIXCertPathReviewer copy did this, so a leaf whose subject DN e-mail violated its issuing CA's
+     * permitted or excluded rfc822Name subtrees reviewed as valid with no errors, while
+     * CertPathValidator("PKIX") rejected the identical chain. Like the validator, the reviewers now
+     * check the DN e-mail whether or not a SAN is present.
+     */
+    public void testSubjectDNEmailNameConstraints()
+        throws Exception
+    {
+        Security.addProvider(new BouncyCastleProvider());
+
+        KeyPair rootKp = generateKeyPair();
+        KeyPair intKp = generateKeyPair();
+
+        X500Name rootDn = new X500Name("CN=NC Test Root CA");
+        X500Name intDn = new X500Name("CN=NC Email Constrained CA");
+
+        X509Certificate rootCert = generateRoot(rootDn, rootKp);
+        GeneralSubtree emailSubtree = new GeneralSubtree(new GeneralName(GeneralName.rfc822Name, ".example.com"));
+        X509Certificate permCA = generateCA(rootDn, rootKp, intDn, intKp,
+            new NameConstraints(new GeneralSubtree[]{emailSubtree}, null));
+        X509Certificate exclCA = generateCA(rootDn, rootKp, intDn, intKp,
+            new NameConstraints(null, new GeneralSubtree[]{
+                new GeneralSubtree(new GeneralName(GeneralName.rfc822Name, ".evil.org"))}));
+
+        Set trust = new HashSet();
+        trust.add(new TrustAnchor(rootCert, null));
+        PKIXParameters param = new PKIXParameters(trust);
+        param.setRevocationEnabled(false);
+
+        GeneralNames benignSan = new GeneralNames(new GeneralName(GeneralName.dNSName, "host.example.com"));
+
+        // outside the permitted subtree, no SAN
+        checkSubjectEmailRejected(param, generatePath(intDn, intKp, permCA,
+            new X500Name("CN=Attacker,E=attacker@evil.org"), null), "CertPathReviewer.notPermittedEmail");
+        // inside the excluded subtree, no SAN
+        checkSubjectEmailRejected(param, generatePath(intDn, intKp, exclCA,
+            new X500Name("CN=Baddie,E=user@sub.evil.org"), null), "CertPathReviewer.excludedEmail");
+        // violating e-mail inside a multi-valued RDN
+        checkSubjectEmailRejected(param, generatePath(intDn, intKp, permCA,
+            new X500Name("CN=MultiRV+E=attacker@evil.org"), null), "CertPathReviewer.notPermittedEmail");
+        // a benign SAN does not exempt the subject DN e-mail
+        checkSubjectEmailRejected(param, generatePath(intDn, intKp, permCA,
+            new X500Name("CN=SanPlus,E=attacker@evil.org"), benignSan), "CertPathReviewer.notPermittedEmail");
+
+        // compatibility control: a subject DN e-mail inside the permitted subtree still reviews as valid
+        CertPath goodPath = generatePath(intDn, intKp, permCA, new X500Name("CN=Good,E=user@sub.example.com"), null);
+        CertPathValidator.getInstance("PKIX", "BC").validate(goodPath, param);
+
+        PKIXCertPathReviewer okReviewer = new PKIXCertPathReviewer();
+        okReviewer.init(goodPath, param);
+        assertTrue("pkix reviewer rejected a compliant subject e-mail", okReviewer.isValidCertPath());
+
+        org.bouncycastle.x509.PKIXCertPathReviewer okLegacy = new org.bouncycastle.x509.PKIXCertPathReviewer();
+        okLegacy.init(goodPath, param);
+        assertTrue("legacy reviewer rejected a compliant subject e-mail", okLegacy.isValidCertPath());
+    }
+
+    private static void checkSubjectEmailRejected(PKIXParameters param, CertPath path, String errorId)
+        throws Exception
+    {
+        // ground truth: the trust-deciding validator rejects it
+        try
+        {
+            CertPathValidator.getInstance("PKIX", "BC").validate(path, param);
+            fail("CertPathValidator accepted a subject e-mail name constraint violation");
+        }
+        catch (CertPathValidatorException e)
+        {
+            // expected
+        }
+
+        PKIXCertPathReviewer reviewer = new PKIXCertPathReviewer();
+        reviewer.init(path, param);
+        assertFalse("pkix reviewer accepted a subject e-mail name constraint violation", reviewer.isValidCertPath());
+        assertTrue("pkix reviewer did not report " + errorId, hasNotification(reviewer.getErrors(0), errorId));
+
+        org.bouncycastle.x509.PKIXCertPathReviewer legacy = new org.bouncycastle.x509.PKIXCertPathReviewer();
+        legacy.init(path, param);
+        assertFalse("legacy reviewer accepted a subject e-mail name constraint violation", legacy.isValidCertPath());
+        assertTrue("legacy reviewer did not report " + errorId, hasNotification(legacy.getErrors(0), errorId));
+    }
+
     private static KeyPair generateKeyPair()
         throws Exception
     {
@@ -360,13 +446,20 @@ public class CheckNameConstraintsTest
         X500Name subjectDn, KeyPair subjectKp, String permittedDns)
         throws Exception
     {
+        GeneralSubtree permitted = new GeneralSubtree(new GeneralName(GeneralName.dNSName, permittedDns));
+        return generateCA(issuerDn, issuerKp, subjectDn, subjectKp,
+            new NameConstraints(new GeneralSubtree[]{permitted}, null));
+    }
+
+    private static X509Certificate generateCA(X500Name issuerDn, KeyPair issuerKp,
+        X500Name subjectDn, KeyPair subjectKp, NameConstraints nameConstraints)
+        throws Exception
+    {
         JcaX509v3CertificateBuilder builder = new JcaX509v3CertificateBuilder(
             issuerDn, BigInteger.valueOf(2), notBefore(), notAfter(), subjectDn, subjectKp.getPublic());
         builder.addExtension(Extension.basicConstraints, true, new BasicConstraints(0));
         builder.addExtension(Extension.keyUsage, true, new KeyUsage(KeyUsage.keyCertSign | KeyUsage.cRLSign));
-        GeneralSubtree permitted = new GeneralSubtree(new GeneralName(GeneralName.dNSName, permittedDns));
-        builder.addExtension(Extension.nameConstraints, true,
-            new NameConstraints(new GeneralSubtree[]{permitted}, null));
+        builder.addExtension(Extension.nameConstraints, true, nameConstraints);
         return sign(builder, issuerKp.getPrivate());
     }
 
@@ -374,14 +467,23 @@ public class CheckNameConstraintsTest
         String leafDns)
         throws Exception
     {
+        return generatePath(issuerDn, issuerKp, issuerCert, new X500Name("CN=" + leafDns),
+            new GeneralNames(new GeneralName(GeneralName.dNSName, leafDns)));
+    }
+
+    private static CertPath generatePath(X500Name issuerDn, KeyPair issuerKp, X509Certificate issuerCert,
+        X500Name leafDn, GeneralNames leafSan)
+        throws Exception
+    {
         KeyPair leafKp = generateKeyPair();
         JcaX509v3CertificateBuilder builder = new JcaX509v3CertificateBuilder(
-            issuerDn, BigInteger.valueOf(3), notBefore(), notAfter(),
-            new X500Name("CN=" + leafDns), leafKp.getPublic());
+            issuerDn, BigInteger.valueOf(3), notBefore(), notAfter(), leafDn, leafKp.getPublic());
         builder.addExtension(Extension.basicConstraints, true, new BasicConstraints(false));
         builder.addExtension(Extension.keyUsage, true, new KeyUsage(KeyUsage.digitalSignature));
-        builder.addExtension(Extension.subjectAlternativeName, false,
-            new GeneralNames(new GeneralName(GeneralName.dNSName, leafDns)));
+        if (leafSan != null)
+        {
+            builder.addExtension(Extension.subjectAlternativeName, false, leafSan);
+        }
         X509Certificate leafCert = sign(builder, issuerKp.getPrivate());
 
         List chain = new ArrayList();
