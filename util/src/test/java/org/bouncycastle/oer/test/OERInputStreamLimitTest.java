@@ -127,6 +127,17 @@ public class OERInputStreamLimitTest
         assertEquals(16, ((ASN1Sequence)new OERInputStream(new ByteArrayInputStream(
             Arrays.concatenate(new byte[]{0x01, 0x10}, new byte[16])), 16).parse(schema)).size());
 
+        // a count past 32 bits whose low 32 bits are small: intValue() alone would read it as 3
+        try
+        {
+            OERInputStream.parse(new byte[]{0x05, 0x01, 0x00, 0x00, 0x00, 0x03, 0x0A, 0x0B, 0x0C}, schema);
+            fail("SEQUENCE OF count past 32 bits should be rejected, not truncated");
+        }
+        catch (IOException e)
+        {
+            assertTrue(e.getMessage(), e.getMessage().contains("4294967299"));
+        }
+
         // count 100000 (3-byte count) with no element bytes at all: fails at the first element
         long start = System.currentTimeMillis();
         try

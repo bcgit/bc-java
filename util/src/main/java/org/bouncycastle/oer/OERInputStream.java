@@ -148,7 +148,7 @@ public class OERInputStream
             //
             // The actual number of elements encoded into this seq-of.
             //
-            int j = BigIntegers.fromUnsignedByteArray(lenEnc).intValue();
+            BigInteger count = BigIntegers.fromUnsignedByteArray(lenEnc);
 
             // The count comes from the wire, so bound it before the parse loop: at maxByteAllocation,
             // the ceiling the caller has already set for what this decoder may allocate from a length
@@ -156,11 +156,13 @@ public class OERInputStream
             // way). Not at available(): that is an estimate of the bytes readable without blocking,
             // 0 from the base InputStream and from wrappers such as CipherInputStream, so it rejected
             // valid input on any stream that had not buffered, and even where it is exact it is no
-            // bound on elements, since NULL encodes as nothing.
-            if (j < 0 || j > maxByteAllocation)
+            // bound on elements, since NULL encodes as nothing. The bit length is tested first because
+            // intValue() keeps only the low 32 bits, so 01 00 00 00 03 would otherwise read as 3.
+            if (count.bitLength() > 31 || count.intValue() > maxByteAllocation)
             {
-                throw new IOException("SEQUENCE OF count " + j + " out of range (limit " + maxByteAllocation + ")");
+                throw new IOException("SEQUENCE OF count " + count + " out of range (limit " + maxByteAllocation + ")");
             }
+            int j = count.intValue();
 
             debugPrint(element + ("(len = " + j + ")"));
 
@@ -440,7 +442,7 @@ public class OERInputStream
             if (element.isFixedLength())
             {
                 // X.696 sec. 14.1: the octets alone, with no length determinant
-                readSize = element.getLowerBound().intValue();
+                readSize = BigIntegers.intValueExact(element.getLowerBound());
             }
             else
             {
@@ -464,7 +466,7 @@ public class OERInputStream
 
             if (element.isFixedLength())
             {
-                data = readBytes(element.getUpperBound().intValue());
+                data = readBytes(BigIntegers.intValueExact(element.getUpperBound()));
             }
             else
             {
@@ -500,7 +502,7 @@ public class OERInputStream
             {
                 // X.696 sec. 13.2: the octets alone, with no length determinant; the size is in bits,
                 // and the unused bits of the final octet are known from it
-                int bits = element.getLowerBound().intValue();
+                int bits = BigIntegers.intValueExact(element.getLowerBound());
                 data = readBytes((bits + 7) / 8);
                 padBits = data.length * 8 - bits;
             }

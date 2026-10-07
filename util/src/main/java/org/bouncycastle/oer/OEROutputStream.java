@@ -583,7 +583,7 @@ public class OEROutputStream
             //
             // IA5Strings can be fixed length because they have a fixed multiplier.
             //
-            if (oerElement.isFixedLength() && oerElement.getUpperBound().intValue() != encoded.length)
+            if (oerElement.isFixedLength() && BigIntegers.intValueExact(oerElement.getUpperBound()) != encoded.length)
             {
                 throw new IOException("IA5String string length does not equal declared fixed length "
                     + encoded.length + " " + oerElement.getUpperBound());
