@@ -4,9 +4,9 @@ plugins {
 }
 
 
-// 1.86.1 is a point release of bctls alone (github #2448): only the tls constraint follows the
-// project version, the other seven modules stay pinned at the 1.86 artifacts already published,
-// as the 1.85.2 BOM did for its lone bcprov republish.
+// 1.86.1 and 1.86.2 are point releases of bctls alone (github #2448, #2493): only the tls
+// constraint follows the project version, the other seven modules stay pinned at the 1.86
+// artifacts already published, as the 1.85.2 BOM did for its lone bcprov republish.
 dependencies {
     constraints {
         api("org.bouncycastle:bcprov-$vmrange:1.86")

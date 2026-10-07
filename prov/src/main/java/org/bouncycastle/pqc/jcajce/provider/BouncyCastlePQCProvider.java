@@ -22,7 +22,7 @@ public class BouncyCastlePQCProvider
     extends Provider
     implements ConfigurableProvider
 {
-    private static String info = "BouncyCastle Post-Quantum Security Provider v1.86.1";
+    private static String info = "BouncyCastle Post-Quantum Security Provider v1.86.2";
 
     public static String PROVIDER_NAME = "BCPQC";
 
@@ -52,7 +52,7 @@ public class BouncyCastlePQCProvider
      */
     public BouncyCastlePQCProvider()
     {
-        super(PROVIDER_NAME, 1.8601, info);
+        super(PROVIDER_NAME, 1.8602, info);
 
         AccessController.doPrivileged(new PrivilegedAction()
         {

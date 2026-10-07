@@ -48,6 +48,10 @@ def String deriveOSGIVersion(String prjVersion) {
 ext {
     bundle_version = deriveOSGIVersion(version.toString());
 
+    // Floor for the org.bouncycastle Import-Package ranges of modules that can ship as a point release
+    // on their own (bctls): major.minor only, so bctls 1.86.2 resolves against the 1.86 bcprov/bcutil.
+    bundle_import_floor = bundle_version.tokenize('.').take(2).join('.');
+
     // Number of parallel test forks: half the available processors (at least 1). Each test JVM is
     // heavy (it re-runs the FIPS power-on self-tests on startup) and reserves a sizable heap, so
     // half-the-cores leaves headroom for per-fork memory and the gradle daemon / OS. Shared here
