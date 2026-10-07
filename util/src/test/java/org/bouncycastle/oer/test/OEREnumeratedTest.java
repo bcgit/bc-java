@@ -14,7 +14,12 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Hex;
 
 /**
- * Numbering of OER ENUMERATED items: explicit enumerand values and the automatic numbers of X.680 sec. 20.
+ * X.696 sec. 11.4 encodes an ENUMERATED value in the short form (one octet, bit 8 clear) only for
+ * 0..127; every other value, negative ones included, takes the long form: a length octet with bit 8
+ * set followed by the value as a two's-complement signed integer in the minimum number of octets.
+ * The encoder used to pick the long form only for values above 127, so a negative value was
+ * written in the short form masked to seven bits (-1 as 7F, the encoding of 127), and the decoder
+ * read the long-form payload as unsigned (81 FF, the encoding of -1, as 255).
  */
 public class OEREnumeratedTest
     extends TestCase
@@ -43,13 +48,15 @@ public class OEREnumeratedTest
             "auto",
             OERDefinition.enumItem("twenty", BigInteger.valueOf(20)),
             "zero-is-taken",
-            OERDefinition.enumItem("one", BigInteger.valueOf(1))).build();
+            OERDefinition.enumItem("one", BigInteger.valueOf(1)),
+            OERDefinition.enumItem("minus", BigInteger.valueOf(-1))).build();
 
-        assertEnumValues(schema, new long[]{ 10, 0, 20, 2, 1 });
+        assertEnumValues(schema, new long[]{ 10, 0, 20, 2, 1, -1 });
 
         assertEquals("0A", Hex.toHexString(encode(10, schema)).toUpperCase());
         assertEquals("00", Hex.toHexString(encode(0, schema)).toUpperCase());
         assertEquals("14", Hex.toHexString(encode(20, schema)).toUpperCase());
+        assertEquals("81FF", Hex.toHexString(encode(-1, schema)).toUpperCase());
 
         // the positional values the dropped explicit values used to leave behind are not enumerands
         for (int notAnEnumerand = 3; notAnEnumerand <= 5; ++notAnEnumerand)
@@ -119,6 +126,41 @@ public class OEREnumeratedTest
         {
             assertEquals("item " + i, BigInteger.valueOf(expected[i]), ((Element)schema.getChildren().get(i)).getEnumValue());
         }
+    }
+
+    public void testEncoding()
+        throws IOException
+    {
+        checkEncoding(-129, "82FF7F");
+        checkEncoding(-128, "8180");
+        checkEncoding(-1, "81FF");
+        checkEncoding(0, "00");
+        checkEncoding(127, "7F");
+        checkEncoding(128, "820080");
+        checkEncoding(0x7FFFFFFF, "847FFFFFFF");
+    }
+
+    public void testDecoding()
+        throws IOException
+    {
+        checkDecoding("82FF7F", -129);
+        checkDecoding("8180", -128);
+        checkDecoding("81FF", -1);
+        checkDecoding("00", 0);
+        checkDecoding("7F", 127);
+        checkDecoding("820080", 128);
+        checkDecoding("847FFFFFFF", 0x7FFFFFFF);
+    }
+
+    /** -1 must not collide with 127 on either side, as it used to. */
+    public void testNegativeDistinctFromShortForm()
+        throws IOException
+    {
+        assertFalse(Arrays.areEqual(encode(-1), encode(127)));
+        assertEquals(-1, decode(encode(-1)).intValueExact());
+        assertEquals(127, decode(encode(127)).intValueExact());
+        assertEquals(-1, decode(Hex.decode("81FF")).intValueExact());
+        assertEquals(255, decode(Hex.decode("8200FF")).intValueExact());
     }
 
     private static void checkEncoding(int value, String expectedHex)

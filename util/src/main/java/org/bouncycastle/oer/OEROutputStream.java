@@ -452,7 +452,9 @@ public class OEROutputStream
                 //
                 if (child.getEnumValue().equals(ordinal))
                 {
-                    if (ordinal.compareTo(BigInteger.valueOf(127)) > 0)
+                    // X.696 sec. 11.4: the short form is for 0..127 only. A negative enumeration is a
+                    // valid value and takes the long form, where toByteArray() gives its two's-complement.
+                    if (ordinal.signum() < 0 || ordinal.bitLength() > 7)
                     {
                         // Note 2 Section 11.4 of T-REC-X.696-201508-I!!PDF-E.pdf
                         byte[] val = ordinal.toByteArray();

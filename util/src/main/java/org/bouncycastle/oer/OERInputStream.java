@@ -772,7 +772,9 @@ public class OERInputStream
                 throw new EOFException("unable to fully read integer component of enumeration");
             }
 
-            return new BigInteger(1, buf);
+            // X.696 sec. 11.4: the long form carries the value as a two's-complement signed integer,
+            // so a negative enumeration (a set top bit here) is a valid value and must stay negative.
+            return new BigInteger(buf);
         }
         return BigInteger.valueOf(first);
     }
