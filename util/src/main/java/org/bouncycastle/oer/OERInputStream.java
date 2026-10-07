@@ -138,11 +138,7 @@ public class OERInputStream
 
             // This l is the number of bytes that holds the actual length of the sequence of.
 
-            byte[] lenEnc = allocateArray(l);
-            if (Streams.readFully(this, lenEnc) != lenEnc.length)
-            {
-                throw new IOException("could not read all of count of seq-of values");
-            }
+            byte[] lenEnc = readBytes(l);
 
             //
             // The actual number of elements encoded into this seq-of.
@@ -260,11 +256,7 @@ public class OERInputStream
             if (sequence.extensionFlagSet)
             {
                 int l = readLength().intLength();
-                byte[] rawPresenceList = allocateArray(l);
-                if (Streams.readFully(in, rawPresenceList) != rawPresenceList.length)
-                {
-                    throw new IOException("did not fully read presence list.");
-                }
+                byte[] rawPresenceList = readBytes(l);
 
                 // the first octet is the count of unused bits in the last one, so it must be there and
                 // must be 0..7: absent, it indexed an empty array; sign-extended from 0x80..0xFF it
@@ -385,11 +377,7 @@ public class OERInputStream
             int bytesToRead = element.intBytesForRange();
             if (bytesToRead != 0) // Fixed width
             {
-                data = allocateArray(Math.abs(bytesToRead));
-                if (Streams.readFully(this, data) != data.length)
-                {
-                    throw new EOFException("could not read all of fixed-width integer");
-                }
+                data = readBytes(Math.abs(bytesToRead));
 
                 if (bytesToRead < 0)
                 {
@@ -404,9 +392,7 @@ public class OERInputStream
             }
             else if (element.isLowerRangeZero()) // INTEGER(0 ... MAX) or INTEGER (0 ... n)
             {
-                LengthInfo lengthInfo = readLength();
-                data = allocateArray(lengthInfo.intLength());
-                Streams.readFully(this, data);
+                data = readBytes(readLength().intLength());
                 if (data.length == 0)
                 {
                     bi = BigInteger.ZERO;
@@ -422,9 +408,7 @@ public class OERInputStream
                 //
                 // Classic twos compliment.
                 //
-                LengthInfo lengthInfo = readLength();
-                data = allocateArray(lengthInfo.intLength());
-                Streams.readFully(this, data);
+                data = readBytes(readLength().intLength());
                 if (data.length == 0)
                 {
                     bi = BigInteger.ZERO;
@@ -460,13 +444,7 @@ public class OERInputStream
                 readSize = readLength().intLength();
             }
 
-            data = allocateArray(readSize);
-
-
-            if (Streams.readFully(this, data) != readSize)
-            {
-                throw new IOException("did not read all of " + element.getLabel());
-            }
+            data = readBytes(readSize);
 
             if (debugOutput != null)
             {
@@ -483,17 +461,12 @@ public class OERInputStream
 
             if (element.isFixedLength())
             {
-                data = allocateArray(element.getUpperBound().intValue());
+                data = readBytes(element.getUpperBound().intValue());
             }
             else
             {
                 // 27.3 and 27.4 a length determinant followed by a number of octets.
-                data = allocateArray(readLength().intLength());
-            }
-
-            if (Streams.readFully(this, data) != data.length)
-            {
-                throw new IOException("could not read all of IA5 string");
+                data = readBytes(readLength().intLength());
             }
             String content = Strings.fromByteArray(data);
             if (debugOutput != null)
@@ -507,11 +480,7 @@ public class OERInputStream
         case UTF8_STRING:
         {
             // 27.3 and 27.4 a length determinant followed by a number of octets.
-            byte[] data = allocateArray(readLength().intLength());
-            if (Streams.readFully(this, data) != data.length)
-            {
-                throw new IOException("could not read all of utf 8 string");
-            }
+            byte[] data = readBytes(readLength().intLength());
             String content = Strings.fromUTF8ByteArray(data);
             if (debugOutput != null)
             {
@@ -525,19 +494,18 @@ public class OERInputStream
 
             if (element.isFixedLength())
             {
-                data = new byte[element.getLowerBound().intValue() / 8];
+                data = readBytes(element.getLowerBound().intValue() / 8);
             }
             else if (BigInteger.ZERO.compareTo(element.getUpperBound()) > 0)
             {
                 // Fixed size.
-                data = allocateArray(element.getUpperBound().intValue() / 8);
+                data = readBytes(element.getUpperBound().intValue() / 8);
             }
             else
             {
                 // Length defined.
-                data = allocateArray(readLength().intLength() / 8);
+                data = readBytes(readLength().intLength() / 8);
             }
-            Streams.readFully(this, data);
             if (debugOutput != null)
             {
                 StringBuffer sb = new StringBuffer();
@@ -563,19 +531,14 @@ public class OERInputStream
 
         case EXTENSION:
 
-            LengthInfo li = readLength();
-            // Route through allocateArray so the attacker-controlled open-type length is bounded by
-            // maxByteAllocation, like every other length-driven allocation in this decoder; a raw
-            // new byte[li.intLength()] here let a long-form length (e.g. 84 7F FF FF FF) drive an
-            // immediate OutOfMemoryError.
-            byte[] value = allocateArray(li.intLength());
-            if (Streams.readFully(this, value) != li.intLength())
-            {
-                throw new IOException("could not read all of count of open value in choice (...) ");
-            }
+            // Route through readBytes so the attacker-controlled open-type length is bounded by
+            // maxByteAllocation and by what the stream actually delivers, like every other
+            // length-driven read in this decoder; a raw new byte[len] here let a long-form length
+            // (e.g. 84 7F FF FF FF) drive an immediate OutOfMemoryError.
+            byte[] value = readBytes(readLength().intLength());
 
             // -DM Hex.toHexString
-            debugPrint("ext " + li.intLength() + " " + Hex.toHexString(value));
+            debugPrint("ext " + value.length + " " + Hex.toHexString(value));
             return new DEROctetString(value);
         case BOOLEAN:
         {
@@ -633,24 +596,30 @@ public class OERInputStream
         }
     }
 
-    private byte[] allocateArray(int requiredSize)
+    /**
+     * Read exactly {@code len} bytes, the length having come from the encoding or the schema.
+     * <p>
+     * The length is capped at {@code maxByteAllocation}, and the read goes through
+     * {@link Streams#readLenBytesFully(InputStream, int)}, which does not allocate the full
+     * array until the stream has delivered a fair part of it - so a hostile length within the
+     * cap, or a cap a caller has raised, cannot drive a large allocation from a short input,
+     * and a stream that ends early fails with an {@link EOFException} rather than leaving a
+     * zero-padded buffer to be decoded as a value.
+     */
+    private byte[] readBytes(int len)
+        throws IOException
     {
-        if (requiredSize > maxByteAllocation)
+        if (len > maxByteAllocation)
         {
-            throw new IllegalArgumentException("required byte array size " + requiredSize + " was greater than " + maxByteAllocation);
+            throw new IllegalArgumentException("required byte array size " + len + " was greater than " + maxByteAllocation);
         }
-        return new byte[requiredSize];
+        return Streams.readLenBytesFully(this, len);
     }
 
     public BigInteger parseInt(boolean unsigned, int size)
         throws Exception
     {
-        byte[] buf = new byte[size];
-        int read = Streams.readFully(this, buf);
-        if (read != buf.length)
-        {
-            throw new IllegalStateException("integer not fully read");
-        }
+        byte[] buf = Streams.readLenBytesFully(this, size);
         return unsigned ? new BigInteger(1, buf) : new BigInteger(buf);
 
     }
@@ -729,11 +698,7 @@ public class OERInputStream
             // Long form 8.6.5
 
 
-            byte[] lengthInt = new byte[(byteVal & 0x7F)];
-            if (Streams.readFully(this, lengthInt) != lengthInt.length)
-            {
-                throw new EOFException("did not read all bytes of length definition");
-            }
+            byte[] lengthInt = Streams.readLenBytesFully(this, byteVal & 0x7F);
 
             // -DM Hex.toHexString
             debugPrint("Len (Long Form): " + (byteVal & 0x7F) + " actual len: " + Hex.toHexString(lengthInt));
@@ -764,13 +729,7 @@ public class OERInputStream
             {
                 return BigInteger.ZERO;
             }
-            byte[] buf = new byte[l];
-            int i = Streams.readFully(this, buf);
-
-            if (i != buf.length)
-            {
-                throw new EOFException("unable to fully read integer component of enumeration");
-            }
+            byte[] buf = Streams.readLenBytesFully(this, l);
 
             // X.696 sec. 11.4: the long form carries the value as a two's-complement signed integer,
             // so a negative enumeration (a set top bit here) is a valid value and must stay negative.
@@ -783,12 +742,7 @@ public class OERInputStream
     protected ASN1Encodable parseOpenType(Element e)
         throws IOException
     {
-        int len = readLength().intLength();
-        byte[] openTypeRaw = allocateArray(len);
-        if (Streams.readFully(in, openTypeRaw) != openTypeRaw.length)
-        {
-            throw new IOException("did not fully read open type as raw bytes");
-        }
+        byte[] openTypeRaw = readBytes(readLength().intLength());
         OERInputStream oerIn = null;
         try
         {

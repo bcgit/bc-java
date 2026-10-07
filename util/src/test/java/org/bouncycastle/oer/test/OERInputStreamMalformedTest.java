@@ -123,6 +123,49 @@ public class OERInputStreamMalformedTest
             new byte[]{(byte)0x84, 0x7F, (byte)0xFF, (byte)0xFF, (byte)0xFF}, schema));
     }
 
+    /**
+     * A truncated stream must fail, not decode what did arrive. The two length-prefixed INTEGER
+     * branches and the BIT STRING branch read with Streams.readFully and ignored its (best-effort)
+     * return, so a determinant of 4 followed by 2 bytes and end of stream decoded the zero-padded
+     * buffer as a value. Every read now goes through Streams.readLenBytesFully, which throws
+     * EOFException at the real end of input.
+     */
+    public void testTruncatedInputRejected()
+    {
+        Element unsigned = OERDefinition.integer().rangeToMAXFrom(0).build();
+        Element signed = OERDefinition.integer().build();
+        Element uint32 = OERDefinition.integer(0, 4294967295L).build();
+        Element bits = OERDefinition.bitString(16).build();
+        Element octets = OERDefinition.octets().build();
+
+        assertTruncated("unsigned INTEGER", unsigned, new byte[]{0x04, 0x01, 0x02});
+        assertTruncated("signed INTEGER", signed, new byte[]{0x04, 0x01, 0x02});
+        assertTruncated("fixed-width INTEGER", uint32, new byte[]{0x01, 0x02, 0x03});
+        assertTruncated("BIT STRING", bits, new byte[]{0x01});
+        assertTruncated("OCTET STRING", octets, new byte[]{0x04, 0x01, 0x02});
+
+        // a long-form length within the allocation cap but with nothing behind it
+        assertTruncated("large unsigned INTEGER", unsigned, new byte[]{(byte)0x83, 0x0F, 0x00, 0x00, 0x01});
+        assertTruncated("large OCTET STRING", octets, new byte[]{(byte)0x83, 0x0F, 0x00, 0x00, 0x01});
+    }
+
+    private static void assertTruncated(String what, Element schema, byte[] encoding)
+    {
+        try
+        {
+            OERInputStream.parse(encoding, schema);
+            fail(what + ": truncated input accepted");
+        }
+        catch (java.io.EOFException e)
+        {
+            // expected
+        }
+        catch (IOException e)
+        {
+            fail(what + ": truncated input rejected as " + e);
+        }
+    }
+
     /** The compatibility assertion: well-formed encodings are unaffected. */
     public void testWellFormedStillParses()
         throws IOException
