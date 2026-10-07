@@ -43,9 +43,19 @@ public class OERDefinition
         return new Builder(BaseType.INT).defaultValue(ASN1Integer.valueOf(val));
     }
 
+    public static Builder bitString()
+    {
+        return new Builder(BaseType.BIT_STRING).unbounded();
+    }
+
     public static Builder bitString(long len)
     {
         return new Builder(BaseType.BIT_STRING).fixedSize(len);
+    }
+
+    public static Builder bitString(long lowerBound, long upperBound)
+    {
+        return new Builder(BaseType.BIT_STRING).range(BigInteger.valueOf(lowerBound), BigInteger.valueOf(upperBound));
     }
 
     public static Builder integer(BigInteger lower, BigInteger upper)

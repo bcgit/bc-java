@@ -46,6 +46,7 @@ public class AllTests
         suite.addTestSuite(OEREnumeratedTest.class);
         suite.addTestSuite(OERIntegerTest.class);
         suite.addTestSuite(OERDeterminantTest.class);
+        suite.addTestSuite(OERBitStringTest.class);
 
         return new BCTestSetup(suite);
     }

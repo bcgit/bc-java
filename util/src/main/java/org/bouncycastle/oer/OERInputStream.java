@@ -435,10 +435,10 @@ public class OERInputStream
 
             int readSize = 0;
 
-            if (element.getUpperBound() != null && element.getUpperBound().equals(element.getLowerBound()))
+            if (element.isFixedLength())
             {
-                // Fixed length there is no range.
-                readSize = element.getUpperBound().intValue();
+                // X.696 sec. 14.1: the octets alone, with no length determinant
+                readSize = element.getLowerBound().intValue();
             }
             else
             {
@@ -492,20 +492,40 @@ public class OERInputStream
         case BIT_STRING:
         {
             byte[] data;
+            int padBits;
 
             if (element.isFixedLength())
             {
-                data = readBytes(element.getLowerBound().intValue() / 8);
-            }
-            else if (element.getUpperBound().signum() < 0)
-            {
-                // Fixed size.
-                data = readBytes(element.getUpperBound().intValue() / 8);
+                // X.696 sec. 13.2: the octets alone, with no length determinant; the size is in bits,
+                // and the unused bits of the final octet are known from it
+                int bits = element.getLowerBound().intValue();
+                data = readBytes((bits + 7) / 8);
+                padBits = data.length * 8 - bits;
             }
             else
             {
-                // Length defined.
-                data = readBytes(readLength().intLength() / 8);
+                // X.696 sec. 13.3: a length determinant covering an initial octet, which gives the
+                // number of unused bits (0 to 7) in the final octet, and the octets of the value
+                int length = readLength().intLength();
+                if (length == 0)
+                {
+                    throw new IOException("BIT STRING has no initial octet");
+                }
+                padBits = read();
+                if (padBits < 0)
+                {
+                    throw new EOFException("BIT STRING initial octet missing");
+                }
+                if (padBits > 7)
+                {
+                    throw new IOException("BIT STRING declares " + padBits + " unused bits");
+                }
+                data = readBytes(length - 1);
+                if (data.length == 0 && padBits != 0)
+                {
+                    // 13.3.4: an empty value has an initial octet of 0
+                    throw new IOException("empty BIT STRING declares " + padBits + " unused bits");
+                }
             }
             if (debugOutput != null)
             {
@@ -523,8 +543,8 @@ public class OERInputStream
                 debugPrint(element + (sb.toString()));
             }
 
-            return new DERBitString(data);
-
+            // TODO Reframe as (new method) DERBitString.withContents (m.m. above).
+            return new DERBitString(data, padBits);
         }
         case NULL:
             debugPrint(element + ("NULL"));
