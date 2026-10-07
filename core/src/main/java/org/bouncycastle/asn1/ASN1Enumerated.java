@@ -15,9 +15,11 @@ public class ASN1Enumerated
     {
         ASN1Primitive fromImplicitPrimitive(DEROctetString octetString)
         {
-            return createPrimitive(octetString.getOctets(), false);
+            return createPrimitive(octetString.getOctets());
         }
     };
+
+    private static final ASN1Enumerated[] SMALL_CONSTANTS = new ASN1Enumerated[16];
 
     /**
      * return an enumerated from the passed in object
@@ -69,7 +71,33 @@ public class ASN1Enumerated
         return (ASN1Enumerated)TYPE.getTagged(taggedObject, declaredExplicit);
     }
 
-    private static final ASN1Enumerated[] CACHE = new ASN1Enumerated[16];
+    public static ASN1Enumerated valueOf(int value)
+    {
+        if (value >= 0 && value < SMALL_CONSTANTS.length)
+        {
+            return SMALL_CONSTANTS[value];
+        }
+
+        return new ASN1Enumerated(value);
+    }
+
+    public static ASN1Enumerated valueOf(long value)
+    {
+        if (value >= 0L && value < SMALL_CONSTANTS.length)
+        {
+            return SMALL_CONSTANTS[(int)value];
+        }
+
+        return new ASN1Enumerated(BigInteger.valueOf(value));
+    }
+
+    static
+    {
+        for (int i = 0; i < SMALL_CONSTANTS.length; ++i)
+        {
+            SMALL_CONSTANTS[i] = new ASN1Enumerated(i);
+        }
+    }
 
     private final byte[] contents;
     private final int start;
@@ -196,45 +224,33 @@ public class ASN1Enumerated
         return Arrays.hashCode(contents);
     }
 
-    private static ASN1Enumerated createPrimitive(byte[] contents, boolean clone)
+    private static ASN1Enumerated createPrimitive(byte[] contents)
     {
-        if (contents.length != 1)
+        if (contents.length == 1)
         {
-            return new ASN1Enumerated(contents, clone);
+            int value = contents[0] & 0xFF;
+            if (value < SMALL_CONSTANTS.length)
+            {
+                return SMALL_CONSTANTS[value];
+            }
         }
 
-        int value = contents[0] & 0xFF;
-        if (value >= CACHE.length)
-        {
-            return new ASN1Enumerated(contents, clone);
-        }
-
-        ASN1Enumerated possibleMatch = CACHE[value];
-        if (possibleMatch == null)
-        {
-            CACHE[value] = possibleMatch = new ASN1Enumerated(contents, clone);
-        }
-        return possibleMatch;
+        return new ASN1Enumerated(contents, false);
     }
 
     static ASN1Enumerated createPrimitive(DefiniteLengthInputStream defIn) throws IOException
     {
-        if (defIn.getRemaining() != 1)
+        if (defIn.getRemaining() == 1)
         {
-            return new ASN1Enumerated(defIn.toByteArray(), false);
-        }
+            int value = defIn.read();
+            if (value < SMALL_CONSTANTS.length)
+            {
+                return SMALL_CONSTANTS[value];
+            }
 
-        int value = defIn.read();
-        if (value >= CACHE.length)
-        {
             return new ASN1Enumerated(new byte[]{ (byte)value }, false);
         }
 
-        ASN1Enumerated possibleMatch = CACHE[value];
-        if (possibleMatch == null)
-        {
-            CACHE[value] = possibleMatch = new ASN1Enumerated(value);
-        }
-        return possibleMatch;
+        return new ASN1Enumerated(defIn.toByteArray(), false);
     }
 }

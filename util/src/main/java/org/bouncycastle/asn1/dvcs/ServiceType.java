@@ -39,7 +39,7 @@ public class ServiceType
 
     public ServiceType(int value)
     {
-        this.value = new ASN1Enumerated(value);
+        this.value = ASN1Enumerated.valueOf(value);
     }
 
     private ServiceType(ASN1Enumerated value)

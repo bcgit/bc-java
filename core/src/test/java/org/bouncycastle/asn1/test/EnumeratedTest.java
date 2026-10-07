@@ -148,6 +148,33 @@ public class EnumeratedTest
         assertEquals(255L, new ASN1Enumerated(255).longValueExact());
     }
 
+    public void testValueOfSharedInstances()
+        throws IOException
+    {
+        for (int v = 0; v < 256; ++v)
+        {
+            ASN1Enumerated byInt = ASN1Enumerated.valueOf(v);
+            ASN1Enumerated byLong = ASN1Enumerated.valueOf((long)v);
+            ASN1Enumerated parsed = ASN1Enumerated.getInstance(ASN1Primitive.fromByteArray(byInt.getEncoded()));
+            ASN1Enumerated fromBytes = ASN1Enumerated.getInstance(byInt.getEncoded());
+
+            assertTrue(byInt.hasValue(v));
+            assertEquals(byInt, byLong);
+            assertEquals(byInt, parsed);
+            assertEquals(byInt, fromBytes);
+
+            boolean shared = v < 16;
+            assertEquals("valueOf(long) " + v, shared, byInt == byLong);
+            assertEquals("parsed " + v, shared, byInt == parsed);
+            assertEquals("fromBytes " + v, shared, byInt == fromBytes);
+        }
+
+        assertTrue(ASN1Enumerated.valueOf(-1) != ASN1Enumerated.valueOf(-1));
+        assertTrue(ASN1Enumerated.valueOf(-1).hasValue(-1));
+        assertTrue(ASN1Enumerated.valueOf(1L << 40).hasValue(BigInteger.ONE.shiftLeft(40)));
+        assertEquals(1L << 40, ASN1Enumerated.valueOf(1L << 40).longValueExact());
+    }
+
     private void checkNegative(ASN1Enumerated enumerated, int value)
         throws IOException
     {

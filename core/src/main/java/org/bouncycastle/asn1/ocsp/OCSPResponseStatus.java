@@ -54,7 +54,7 @@ public class OCSPResponseStatus
     public OCSPResponseStatus(
         int value)
     {
-        this(new ASN1Enumerated(value));
+        this(ASN1Enumerated.valueOf(value));
     }
 
     private OCSPResponseStatus(

@@ -113,7 +113,7 @@ public class CRLReason
         {
             throw new IllegalArgumentException("Invalid CRL reason : not in (0..MAX)");
         }
-        value = new ASN1Enumerated(reason);
+        value = ASN1Enumerated.valueOf(reason);
     }
 
     public String toString()
