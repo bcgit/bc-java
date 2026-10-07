@@ -71,6 +71,24 @@ public class OERDeterminantTest
         }
     }
 
+    /** byteLength is the octet count of the minimal unsigned encoding, 0 for 0 and 8 for a negative value. */
+    public void testByteLength()
+    {
+        assertEquals(0, OEROutputStream.byteLength(0L));
+        assertEquals(1, OEROutputStream.byteLength(1L));
+        assertEquals(1, OEROutputStream.byteLength(255L));
+        assertEquals(2, OEROutputStream.byteLength(256L));
+        assertEquals(8, OEROutputStream.byteLength(Long.MAX_VALUE));
+        assertEquals(8, OEROutputStream.byteLength(-1L));
+        assertEquals(8, OEROutputStream.byteLength(Long.MIN_VALUE));
+        for (int bits = 1; bits < 64; ++bits)
+        {
+            long atBoundary = 1L << bits;
+            assertEquals("2^" + bits + " - 1", (bits + 7) / 8, OEROutputStream.byteLength(atBoundary - 1));
+            assertEquals("2^" + bits, bits / 8 + 1, OEROutputStream.byteLength(atBoundary));
+        }
+    }
+
     /** 8.6.4 / 8.6.5 as the BigInteger-based encoder wrote them. */
     private static byte[] determinant(long len)
     {

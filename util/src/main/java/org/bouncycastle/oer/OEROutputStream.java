@@ -31,7 +31,6 @@ import org.bouncycastle.util.encoders.Hex;
 public class OEROutputStream
     extends OutputStream
 {
-    private static final int[] bits = new int[]{1, 2, 4, 8, 16, 32, 64, 128};
     private final OutputStream out;
     protected PrintWriter debugOutput = null;
 
@@ -40,15 +39,13 @@ public class OEROutputStream
         this.out = out;
     }
 
+    /**
+     * The number of octets {@code value} occupies as an unsigned big-endian number with no leading
+     * zero octets: 0 for 0, 1 for 1..255, 2 for 256..65535, and 8 for any negative argument.
+     */
     public static int byteLength(long value)
     {
-        long m = 0xFF00000000000000L;
-        int j = 8;
-        for (; j > 0 && (value & m) == 0; j--)
-        {
-            value <<= 8;
-        }
-        return j;
+        return (Longs.bitLength(value) + 7) >>> 3;
     }
 
     /**
@@ -155,7 +152,7 @@ public class OEROutputStream
 
                 if (extensionDefined)
                 {
-                    mask |= bits[j];
+                    mask |= 1 << j;
                 }
                 j--;
             }
@@ -212,7 +209,7 @@ public class OEROutputStream
                 {
                     if (isPresent(asn1EncodableChild, childOERDescription))
                     {
-                        mask |= bits[j];
+                        mask |= 1 << j;
                     }
                     j--;
                 }
@@ -279,7 +276,7 @@ public class OEROutputStream
 
                     if (i < seq.size() && isPresent(seq.getObjectAt(i), childElements.get(i)))
                     {
-                        mask |= bits[j];
+                        mask |= 1 << j;
                     }
                     j--;
                 }

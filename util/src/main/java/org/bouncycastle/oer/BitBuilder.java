@@ -8,9 +8,6 @@ import org.bouncycastle.util.Arrays;
 
 public class BitBuilder
 {
-    private static final byte[] bits = new byte[]{(byte)128, 64, 32, 16, 8, 4, 2, 1};
-
-
     byte[] buf = new byte[1];
     int pos = 0;
 
@@ -33,11 +30,11 @@ public class BitBuilder
 
         if (bit == 0)
         {
-            buf[pos / 8] &= ~bits[pos % 8];
+            buf[pos / 8] &= ~(0x80 >>> (pos % 8));
         }
         else
         {
-            buf[pos / 8] |= bits[pos % 8];
+            buf[pos / 8] |= 0x80 >>> (pos % 8);
         }
         pos++;
 

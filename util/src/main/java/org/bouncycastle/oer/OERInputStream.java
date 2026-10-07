@@ -33,8 +33,6 @@ public class OERInputStream
     extends FilterInputStream
 {
 
-    private static final int[] bits = new int[]{1, 2, 4, 8, 16, 32, 64, 128};
-    private static final int[] bitsR = new int[]{128, 64, 32, 16, 8, 4, 2, 1};
     protected PrintWriter debugOutput = null;
     private int maxByteAllocation = 1024 * 1024;
     private int maxNestingDepth = 256;
@@ -296,7 +294,7 @@ public class OERInputStream
                 {
                     Element child = children.get(t);
 
-                    if (presenceIndex < stop && (rawPresenceList[presenceIndex / 8] & bitsR[presenceIndex % 8]) != 0)
+                    if (presenceIndex < stop && (rawPresenceList[presenceIndex / 8] & (0x80 >>> (presenceIndex % 8))) != 0)
                     {
                         avec.add(parseOpenType(child));
                     }
@@ -314,7 +312,7 @@ public class OERInputStream
                 // about: the ones marked present carry an open type each, consumed and discarded.
                 for (; presenceIndex < stop; presenceIndex++)
                 {
-                    if ((rawPresenceList[presenceIndex / 8] & bitsR[presenceIndex % 8]) != 0)
+                    if ((rawPresenceList[presenceIndex / 8] & (0x80 >>> (presenceIndex % 8))) != 0)
                     {
                         skipUnknownExtension(readLength().intLength());
                     }
@@ -1015,7 +1013,7 @@ public class OERInputStream
                         }
                         j = 7;
                     }
-                    valuePresent[presentIndex++] = (mask & bits[j]) > 0;
+                    valuePresent[presentIndex++] = (mask & (1 << j)) != 0;
                     j--;
                 }
 
