@@ -20,6 +20,18 @@ import org.bouncycastle.util.BigIntegers;
 
 public class ECDSAEncoder
 {
+    /**
+     * Return the X9.62 DER encoding of the r and s values in the passed in IEEE 1609.2 signature.
+     * <p>
+     * IEEE 1609.2 sec. 6.3.29 and sec. 6.3.30 represent r as an EccP256CurvePoint (EccP384CurvePoint)
+     * "indicating the selection x-only", so any other choice is refused: compressed-y-0 and
+     * compressed-y-1 carry the same x octets, which would otherwise give one signature several
+     * interchangeable encodings, and fill and uncompressed carry no octet string to read at all.
+     * </p>
+     *
+     * @param signature the signature to convert.
+     * @return the DER encoded SEQUENCE of r and s.
+     */
     public static byte[] toX962(Signature signature)
     {
         byte[] r;
@@ -27,13 +39,23 @@ public class ECDSAEncoder
         if (signature.getChoice() == Signature.ecdsaNistP256Signature || signature.getChoice() == Signature.ecdsaBrainpoolP256r1Signature)
         {
             EcdsaP256Signature sig = EcdsaP256Signature.getInstance(signature.getSignature());
-            r = ASN1OctetString.getInstance(sig.getRSig().getEccp256CurvePoint()).getOctets();
+            EccP256CurvePoint rSig = sig.getRSig();
+            if (rSig.getChoice() != EccP256CurvePoint.xonly)
+            {
+                throw new IllegalArgumentException("rSig must be of form x-only");
+            }
+            r = ASN1OctetString.getInstance(rSig.getEccp256CurvePoint()).getOctets();
             s = sig.getSSig().getOctets();
         }
         else
         {
             EcdsaP384Signature sig = EcdsaP384Signature.getInstance(signature.getSignature());
-            r = ASN1OctetString.getInstance(sig.getRSig().getEccP384CurvePoint()).getOctets();
+            EccP384CurvePoint rSig = sig.getRSig();
+            if (rSig.getChoice() != EccP384CurvePoint.xonly)
+            {
+                throw new IllegalArgumentException("rSig must be of form x-only");
+            }
+            r = ASN1OctetString.getInstance(rSig.getEccP384CurvePoint()).getOctets();
             s = sig.getSSig().getOctets();
         }
 

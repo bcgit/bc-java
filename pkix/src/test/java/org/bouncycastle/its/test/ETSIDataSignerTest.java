@@ -10,6 +10,7 @@ import java.security.spec.ECGenParameterSpec;
 import java.util.Date;
 
 import junit.framework.TestCase;
+import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.nist.NISTNamedCurves;
 import org.bouncycastle.asn1.sec.SECObjectIdentifiers;
@@ -39,18 +40,24 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.oer.its.ieee1609dot2.CertificateId;
 import org.bouncycastle.oer.its.ieee1609dot2.EndEntityType;
 import org.bouncycastle.oer.its.ieee1609dot2.PsidGroupPermissions;
+import org.bouncycastle.oer.its.ieee1609dot2.CertificateBase;
+import org.bouncycastle.oer.its.ieee1609dot2.SignedData;
 import org.bouncycastle.oer.its.ieee1609dot2.SequenceOfPsidGroupPermissions;
 import org.bouncycastle.oer.its.ieee1609dot2.SubjectPermissions;
 import org.bouncycastle.oer.its.ieee1609dot2.ToBeSignedCertificate;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.BitmapSsp;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.CrlSeries;
+import org.bouncycastle.oer.its.ieee1609dot2.basetypes.EccP256CurvePoint;
+import org.bouncycastle.oer.its.ieee1609dot2.basetypes.EcdsaP256Signature;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.Hostname;
+import org.bouncycastle.oer.its.ieee1609dot2.basetypes.Point256;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.Psid;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.PsidSsp;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.PsidSspRange;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.SequenceOfPsidSsp;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.SequenceOfPsidSspRange;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.ServiceSpecificPermissions;
+import org.bouncycastle.oer.its.ieee1609dot2.basetypes.Signature;
 import org.bouncycastle.oer.its.ieee1609dot2.basetypes.SubjectAssurance;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -265,5 +272,103 @@ public class ETSIDataSignerTest
                     .build(newCert)));
     }
 
+
+
+    /**
+     * IEEE 1609.2 sec. 6.3.29 carries the ECDSA r value as the x-only choice of EccP256CurvePoint.
+     * The compressed-y-0 and compressed-y-1 choices hold the same x octets, so a signature re-encoded
+     * under either of them used to produce an identical r and verify, giving one signature three
+     * interchangeable encodings - and a certificate re-encoded that way keeps verifying while its
+     * HashedId8, the identity SignerIdentifier and the ETSI TS 102 941 CRLs use, changes with it.
+     * The fill and uncompressed choices carry no octet string to read and used to throw out of
+     * signatureValid()/isSignatureValid() unchecked.
+     */
+    public void testRSigMustBeXOnly()
+        throws Exception
+    {
+        ECKeyPairGenerator generator = new ECKeyPairGenerator();
+        X9ECParameters parameters = NISTNamedCurves.getByOID(SECObjectIdentifiers.secp256r1);
+        generator.init(new ECKeyGenerationParameters(
+            new ECNamedDomainParameters(SECObjectIdentifiers.secp256r1, parameters), new SecureRandom()));
+        AsymmetricCipherKeyPair kp = generator.generateKeyPair();
+
+        ECPublicKeyParameters publicVerificationKey = (ECPublicKeyParameters)kp.getPublic();
+        ECPrivateKeyParameters keyParameters = (ECPrivateKeyParameters)kp.getPrivate();
+        ECPrivateKeyParameters privateKeyParameters = new ECPrivateKeyParameters(keyParameters.getD(),
+            new ECNamedDomainParameters(SECObjectIdentifiers.secp256r1, keyParameters.getParameters()));
+
+        ToBeSignedCertificate.Builder tbsBuilder = new ToBeSignedCertificate.Builder();
+        tbsBuilder.setAssuranceLevel(new SubjectAssurance(new byte[]{(byte)0xC0}));
+        tbsBuilder.setCrlSeries(new CrlSeries(1));
+
+        ITSContentSigner itsContentSigner = new BcITSContentSigner(privateKeyParameters);
+        BcITSExplicitCertificateBuilder itsCertificateBuilder = new BcITSExplicitCertificateBuilder(itsContentSigner, tbsBuilder);
+
+        itsCertificateBuilder.setValidityPeriod(ITSValidityPeriod.from(new Date()).plusYears(1));
+
+        ITSCertificate newCert = itsCertificateBuilder.build(
+            CertificateId.name(new Hostname("Legion of the BouncyCastle CA")),
+            publicVerificationKey);
+
+        ETSISignedData signedData = ETSISignedDataBuilder.builder(new Psid(10))
+            .setUnsecuredData("The cat sat on the mat".getBytes())
+            .build(new BcITSContentSigner(privateKeyParameters, newCert));
+
+        SignedData sd = signedData.getSignedData();
+        EcdsaP256Signature sig = EcdsaP256Signature.getInstance(sd.getSignature().getSignature());
+
+        // the conformant encoding the signer produced
+        assertEquals(EccP256CurvePoint.xonly, sig.getRSig().getChoice());
+        assertTrue(signedData.signatureValid(new BcITSContentVerifierProvider(newCert)));
+
+        byte[] rx = ASN1OctetString.getInstance(sig.getRSig().getEccp256CurvePoint()).getOctets();
+
+        EccP256CurvePoint[] rejected = new EccP256CurvePoint[]
+        {
+            new EccP256CurvePoint(EccP256CurvePoint.compressedY0, new DEROctetString(rx)),
+            new EccP256CurvePoint(EccP256CurvePoint.compressedY1, new DEROctetString(rx)),
+            EccP256CurvePoint.fill(),
+            new EccP256CurvePoint(EccP256CurvePoint.uncompressedP256,
+                new Point256(new DEROctetString(rx), new DEROctetString(rx)))
+        };
+
+        for (int i = 0; i != rejected.length; i++)
+        {
+            ETSISignedData reEncoded = new ETSISignedData(new SignedData(sd.getHashId(), sd.getTbsData(), sd.getSigner(),
+                Signature.ecdsaNistP256Signature(new EcdsaP256Signature(rejected[i], sig.getSSig()))));
+
+            try
+            {
+                reEncoded.signatureValid(new BcITSContentVerifierProvider(newCert));
+                fail("signature with rSig choice " + rejected[i].getChoice() + " accepted");
+            }
+            catch (IllegalArgumentException e)
+            {
+                assertEquals("rSig must be of form x-only", e.getMessage());
+            }
+        }
+
+        // the same re-encoding of a certificate's own signature, which leaves its HashedId8 free to change
+        CertificateBase certBase = newCert.toASN1Structure();
+        EcdsaP256Signature certSig = EcdsaP256Signature.getInstance(certBase.getSignature().getSignature());
+        byte[] certRx = ASN1OctetString.getInstance(certSig.getRSig().getEccp256CurvePoint()).getOctets();
+
+        ITSCertificate reEncodedCert = new ITSCertificate(new CertificateBase(certBase.getVersion(), certBase.getType(),
+            certBase.getIssuer(), certBase.getToBeSigned(),
+            Signature.ecdsaNistP256Signature(new EcdsaP256Signature(
+                new EccP256CurvePoint(EccP256CurvePoint.compressedY0, new DEROctetString(certRx)), certSig.getSSig()))));
+
+        assertTrue(newCert.isSignatureValid(new BcITSContentVerifierProvider(newCert)));
+
+        try
+        {
+            reEncodedCert.isSignatureValid(new BcITSContentVerifierProvider(reEncodedCert));
+            fail("certificate signature with rSig choice compressed-y-0 accepted");
+        }
+        catch (IllegalArgumentException e)
+        {
+            assertEquals("rSig must be of form x-only", e.getMessage());
+        }
+    }
 
 }
