@@ -91,7 +91,8 @@ public class BitBuilder
         int l = (pos + 7) / 8; // the octets holding pos bits, the last one padded with zero bits
         outputStream.write(buf, 0, l);
         outputStream.flush();
-        zero();
+        Arrays.fill(buf, 0, l, (byte)0); // octets from l on were never written
+        pos = 0;
         return l;
     }
 
