@@ -23,6 +23,31 @@ public class AuthorizationValidationResponseCode
     public static final AuthorizationValidationResponseCode deniedtoomanycerts = new AuthorizationValidationResponseCode(13); //, -- parallel limit
     public static final AuthorizationValidationResponseCode deniedrequest = new AuthorizationValidationResponseCode(14); //, -- any other reason?
 
+    /**
+     * The constants indexed by value, for getInstance to return the shared instance. An entry
+     * can be null, should the value set ever become sparse, and the lookup checks for that.
+     */
+    private static final AuthorizationValidationResponseCode[] VALUES = new AuthorizationValidationResponseCode[15];
+
+    static
+    {
+        VALUES[0] = ok;
+        VALUES[1] = cantparse;
+        VALUES[2] = badcontenttype;
+        VALUES[3] = imnottherecipient;
+        VALUES[4] = unknownencryptionalgorithm;
+        VALUES[5] = decryptionfailed;
+        VALUES[6] = invalidaa;
+        VALUES[7] = invalidaasignature;
+        VALUES[8] = wrongea;
+        VALUES[9] = unknownits;
+        VALUES[10] = invalidsignature;
+        VALUES[11] = invalidencryptionkey;
+        VALUES[12] = deniedpermissions;
+        VALUES[13] = deniedtoomanycerts;
+        VALUES[14] = deniedrequest;
+    }
+
     public AuthorizationValidationResponseCode(int value)
     {
         super(value);
@@ -41,18 +66,15 @@ public class AuthorizationValidationResponseCode
         assertValues();
     }
 
-    private AuthorizationValidationResponseCode(ASN1Enumerated instance)
-    {
-        super(instance.getValue());
-        assertValues();
-    }
 
 
     protected void assertValues()
     {
-        if (getValue().intValue() < 0 || getValue().intValue() > 14)
+        BigInteger value = getValue();
+        // intValue() truncates, so a value past the int range has to be rejected before it is consulted
+        if (value.signum() < 0 || value.bitLength() > 31 || value.intValue() > 14)
         {
-            throw new IllegalArgumentException("invalid enumeration value " + getValue());
+            throw new IllegalArgumentException("invalid enumeration value " + value);
         }
     }
 
@@ -65,10 +87,30 @@ public class AuthorizationValidationResponseCode
 
         if (o != null)
         {
-            return new AuthorizationValidationResponseCode(ASN1Enumerated.getInstance(o));
+            return getInstance(ASN1Enumerated.getInstance(o));
         }
 
         return null;
+    }
+
+    private static AuthorizationValidationResponseCode getInstance(ASN1Enumerated value)
+    {
+        BigInteger v = value.getValue();
+        // the value must index the table: non-negative and within the int range before intValue() is
+        // trusted, within the table, and held by a constant (the set may one day be sparse)
+        if (v.signum() >= 0 && v.bitLength() < 31)
+        {
+            int index = v.intValue();
+            if (index < VALUES.length)
+            {
+                AuthorizationValidationResponseCode constant = VALUES[index];
+                if (constant != null)
+                {
+                    return constant;
+                }
+            }
+        }
+        throw new IllegalArgumentException("invalid enumeration value " + v);
     }
 
 }

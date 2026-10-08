@@ -33,8 +33,6 @@ public class OERInputStream
     extends FilterInputStream
 {
 
-    private static final int[] bits = new int[]{1, 2, 4, 8, 16, 32, 64, 128};
-    private static final int[] bitsR = new int[]{128, 64, 32, 16, 8, 4, 2, 1};
     protected PrintWriter debugOutput = null;
     private int maxByteAllocation = 1024 * 1024;
     private int maxNestingDepth = 256;
@@ -101,18 +99,18 @@ public class OERInputStream
         // attacker-controlled, so without a bound a few KB of crafted input drives unbounded
         // recursive-descent parsing into a StackOverflowError before any signature check. The depth
         // is threaded into open-type sub-streams (parseOpenType) so the cycle through them counts too.
-        if (++decodeDepth > maxNestingDepth)
+        if (decodeDepth >= maxNestingDepth)
         {
-            decodeDepth--;
             throw new IOException("OER decoder exceeded maximum nesting depth of " + maxNestingDepth);
         }
+        ++decodeDepth;
         try
         {
             return parseInternal(element);
         }
         finally
         {
-            decodeDepth--;
+            --decodeDepth;
         }
     }
 
@@ -137,39 +135,48 @@ public class OERInputStream
             int l = readLength().intLength();
 
             // This l is the number of bytes that holds the actual length of the sequence of.
-
-            byte[] lenEnc = allocateArray(l);
-            if (Streams.readFully(this, lenEnc) != lenEnc.length)
+            // X.696 sec. 17.2: a variable-size unsigned number, which is one or more octets (3.7.12)
+            if (l == 0)
             {
-                throw new IOException("could not read all of count of seq-of values");
+                throw new IOException("sequence-of quantity has zero length");
             }
+
+            byte[] lenEnc = readBytes(l);
 
             //
             // The actual number of elements encoded into this seq-of.
             //
-            int j = BigIntegers.fromUnsignedByteArray(lenEnc).intValue();
+            BigInteger count = BigIntegers.fromUnsignedByteArray(lenEnc);
 
-            // Every OER seq-of element occupies at least one byte, so a declared count larger than the
-            // bytes left in the input is truncated or hostile. Bound it before the parse loop so a few
-            // count bytes (e.g. a long-form 7F FF FF FF) cannot drive ~2^31 parse iterations and object
-            // allocations before the per-element reads run out of input.
-            if (j < 0 || j > available())
+            // The count comes from the wire, so bound it before the parse loop: at maxByteAllocation,
+            // the ceiling the caller has already set for what this decoder may allocate from a length
+            // (the vector grows lazily, so a short input stops at its first missing element either
+            // way). Not at available(): that is an estimate of the bytes readable without blocking,
+            // 0 from the base InputStream and from wrappers such as CipherInputStream, so it rejected
+            // valid input on any stream that had not buffered, and even where it is exact it is no
+            // bound on elements, since NULL encodes as nothing. The bit length is tested first because
+            // intValue() keeps only the low 32 bits, so 01 00 00 00 03 would otherwise read as 3.
+            if (count.bitLength() > 31 || count.intValue() > maxByteAllocation)
             {
-                throw new IOException("SEQUENCE OF length " + j + " out of range");
+                throw new IOException("SEQUENCE OF count " + count + " out of range (limit " + maxByteAllocation + ")");
             }
+            int j = count.intValue();
 
             debugPrint(element + ("(len = " + j + ")"));
 
-            ASN1EncodableVector avec = new ASN1EncodableVector();
-
-            if (element.getChildren().get(0).getaSwitch() != null)
+            // a SEQUENCE OF has a single child, the component type, so it and its deferred expansion
+            // are the same for every element
+            Element component = element.getChildren().get(0);
+            if (component.getaSwitch() != null)
             {
                 throw new IllegalStateException("element def for item in SEQ OF has a switch, switches only supported in sequences");
             }
+            Element def = Element.expandDeferredDefinition(component, element);
 
+            // Limit pre-allocation according to a potentially-hostile input
+            ASN1EncodableVector avec = new ASN1EncodableVector(Math.min(16, j));
             for (int n = 0; n < j; n++)
             {
-                Element def = Element.expandDeferredDefinition(element.getChildren().get(0), element);
                 avec.add(parse(def));
             }
             return new DERSequence(avec);
@@ -179,8 +186,10 @@ public class OERInputStream
         {
             Sequence sequence = new Sequence(in, element);//  sequence(countOptionalChildTypes(element), element.hasDefaultChildren(), element.isExtensionsInDefinition());
             debugPrint(element + (sequence.toString()));
-            ASN1EncodableVector avec = new ASN1EncodableVector();
             List<Element> children = element.getChildren();
+            // at most one entry per defined child: the root components and the known extension
+            // additions; presence bits beyond the definition add nothing
+            ASN1EncodableVector avec = new ASN1EncodableVector(children.size());
             int t = 0;
 
             //
@@ -244,11 +253,11 @@ public class OERInputStream
                     {
                         if (resolvedChild.getDefaultValue() != null)
                         {
-                            avec.add(child.getDefaultValue());
+                            avec.add(resolvedChild.getDefaultValue());
                         }
                         else
                         {
-                            avec.add(absent(child));
+                            avec.add(absent(resolvedChild));
                         }
                     }
                 }
@@ -260,11 +269,7 @@ public class OERInputStream
             if (sequence.extensionFlagSet)
             {
                 int l = readLength().intLength();
-                byte[] rawPresenceList = allocateArray(l);
-                if (Streams.readFully(in, rawPresenceList) != rawPresenceList.length)
-                {
-                    throw new IOException("did not fully read presence list.");
-                }
+                byte[] rawPresenceList = readBytes(l);
 
                 // the first octet is the count of unused bits in the last one, so it must be there and
                 // must be 0..7: absent, it indexed an empty array; sign-extended from 0x80..0xFF it
@@ -283,40 +288,34 @@ public class OERInputStream
                 int presenceIndex = 8;
                 int stop = rawPresenceList.length * 8 - unusedBits;
 
-
-                for (; t < children.size() || presenceIndex < stop; t++)
+                // The extension additions the definition knows about, each against its presence bit;
+                // a bitmap shorter than the definition means the trailing ones are absent.
+                for (; t < children.size(); t++, presenceIndex++)
                 {
-                    Element child = t < children.size() ? children.get(t) : null;
+                    Element child = children.get(t);
 
-                    if (child == null)
+                    if (presenceIndex < stop && (rawPresenceList[presenceIndex / 8] & (0x80 >>> (presenceIndex % 8))) != 0)
                     {
-                        // Extensions that we do not
-                        // have a definition for need to be consumed and discarded.
-                        if ((rawPresenceList[presenceIndex / 8] & bitsR[presenceIndex % 8]) != 0)
-                        {
-                            skipUnknownExtension(readLength().intLength());
-                        }
+                        avec.add(parseOpenType(child));
+                    }
+                    else if (child.isExplicit())
+                    {
+                        throw new IOException("extension is marked as explicit but is not defined in presence list");
                     }
                     else
                     {
-                        if (presenceIndex < stop &&
-                            (rawPresenceList[presenceIndex / 8] & bitsR[presenceIndex % 8]) != 0)
-                        {
-                            avec.add(parseOpenType(child));
-                        }
-                        else
-                        {
-                            if (child.isExplicit())
-                            {
-                                throw new IOException("extension is marked as explicit but is not defined in presence list");
-                            }
-                            else
-                            {
-                                avec.add(OEROptional.ABSENT);
-                            }
-                        }
+                        avec.add(OEROptional.ABSENT);
                     }
-                    presenceIndex++;
+                }
+
+                // Any further presence bits are extension additions this definition does not know
+                // about: the ones marked present carry an open type each, consumed and discarded.
+                for (; presenceIndex < stop; presenceIndex++)
+                {
+                    if ((rawPresenceList[presenceIndex / 8] & (0x80 >>> (presenceIndex % 8))) != 0)
+                    {
+                        skipUnknownExtension(readLength().intLength());
+                    }
                 }
             }
 
@@ -385,11 +384,7 @@ public class OERInputStream
             int bytesToRead = element.intBytesForRange();
             if (bytesToRead != 0) // Fixed width
             {
-                data = allocateArray(Math.abs(bytesToRead));
-                if (Streams.readFully(this, data) != data.length)
-                {
-                    throw new EOFException("could not read all of fixed-width integer");
-                }
+                data = readBytes(Math.abs(bytesToRead));
 
                 if (bytesToRead < 0)
                 {
@@ -402,19 +397,15 @@ public class OERInputStream
 
 
             }
-            else if (element.isLowerRangeZero()) // INTEGER(0 ... MAX) or INTEGER (0 ... n)
+            else if (element.isLowerBoundNonNegative()) // X.696 sec. 10.3 e): INTEGER (n ... MAX), n >= 0, or an upper bound past 2^64 - 1
             {
-                LengthInfo lengthInfo = readLength();
-                data = allocateArray(lengthInfo.intLength());
-                Streams.readFully(this, data);
+                // X.696 sec. 10.3 e): a variable-size unsigned number, which is one or more octets (3.7.12)
+                data = readBytes(readLength().intLength());
                 if (data.length == 0)
                 {
-                    bi = BigInteger.ZERO;
+                    throw new IOException("INTEGER has zero length");
                 }
-                else
-                {
-                    bi = new BigInteger(1, data);
-                }
+                bi = new BigInteger(1, data);
             }
             else
             {
@@ -422,17 +413,13 @@ public class OERInputStream
                 //
                 // Classic twos compliment.
                 //
-                LengthInfo lengthInfo = readLength();
-                data = allocateArray(lengthInfo.intLength());
-                Streams.readFully(this, data);
+                // X.696 sec. 10.4 e): a variable-size signed number, which is one or more octets (3.7.11)
+                data = readBytes(readLength().intLength());
                 if (data.length == 0)
                 {
-                    bi = BigInteger.ZERO;
+                    throw new IOException("INTEGER has zero length");
                 }
-                else
-                {
-                    bi = new BigInteger(data);
-                }
+                bi = new BigInteger(data);
             }
 
 
@@ -450,23 +437,17 @@ public class OERInputStream
 
             int readSize = 0;
 
-            if (element.getUpperBound() != null && element.getUpperBound().equals(element.getLowerBound()))
+            if (element.isFixedLength())
             {
-                // Fixed length there is no range.
-                readSize = element.getUpperBound().intValue();
+                // X.696 sec. 14.1: the octets alone, with no length determinant
+                readSize = BigIntegers.intValueExact(element.getLowerBound());
             }
             else
             {
                 readSize = readLength().intLength();
             }
 
-            data = allocateArray(readSize);
-
-
-            if (Streams.readFully(this, data) != readSize)
-            {
-                throw new IOException("did not read all of " + element.getLabel());
-            }
+            data = readBytes(readSize);
 
             if (debugOutput != null)
             {
@@ -483,17 +464,12 @@ public class OERInputStream
 
             if (element.isFixedLength())
             {
-                data = allocateArray(element.getUpperBound().intValue());
+                data = readBytes(BigIntegers.intValueExact(element.getUpperBound()));
             }
             else
             {
                 // 27.3 and 27.4 a length determinant followed by a number of octets.
-                data = allocateArray(readLength().intLength());
-            }
-
-            if (Streams.readFully(this, data) != data.length)
-            {
-                throw new IOException("could not read all of IA5 string");
+                data = readBytes(readLength().intLength());
             }
             String content = Strings.fromByteArray(data);
             if (debugOutput != null)
@@ -507,11 +483,7 @@ public class OERInputStream
         case UTF8_STRING:
         {
             // 27.3 and 27.4 a length determinant followed by a number of octets.
-            byte[] data = allocateArray(readLength().intLength());
-            if (Streams.readFully(this, data) != data.length)
-            {
-                throw new IOException("could not read all of utf 8 string");
-            }
+            byte[] data = readBytes(readLength().intLength());
             String content = Strings.fromUTF8ByteArray(data);
             if (debugOutput != null)
             {
@@ -522,22 +494,41 @@ public class OERInputStream
         case BIT_STRING:
         {
             byte[] data;
+            int padBits;
 
             if (element.isFixedLength())
             {
-                data = new byte[element.getLowerBound().intValue() / 8];
-            }
-            else if (BigInteger.ZERO.compareTo(element.getUpperBound()) > 0)
-            {
-                // Fixed size.
-                data = allocateArray(element.getUpperBound().intValue() / 8);
+                // X.696 sec. 13.2: the octets alone, with no length determinant; the size is in bits,
+                // and the unused bits of the final octet are known from it
+                int bits = BigIntegers.intValueExact(element.getLowerBound());
+                data = readBytes((bits + 7) / 8);
+                padBits = data.length * 8 - bits;
             }
             else
             {
-                // Length defined.
-                data = allocateArray(readLength().intLength() / 8);
+                // X.696 sec. 13.3: a length determinant covering an initial octet, which gives the
+                // number of unused bits (0 to 7) in the final octet, and the octets of the value
+                int length = readLength().intLength();
+                if (length == 0)
+                {
+                    throw new IOException("BIT STRING has no initial octet");
+                }
+                padBits = read();
+                if (padBits < 0)
+                {
+                    throw new EOFException("BIT STRING initial octet missing");
+                }
+                if (padBits > 7)
+                {
+                    throw new IOException("BIT STRING declares " + padBits + " unused bits");
+                }
+                data = readBytes(length - 1);
+                if (data.length == 0 && padBits != 0)
+                {
+                    // 13.3.4: an empty value has an initial octet of 0
+                    throw new IOException("empty BIT STRING declares " + padBits + " unused bits");
+                }
             }
-            Streams.readFully(this, data);
             if (debugOutput != null)
             {
                 StringBuffer sb = new StringBuffer();
@@ -554,8 +545,8 @@ public class OERInputStream
                 debugPrint(element + (sb.toString()));
             }
 
-            return new DERBitString(data);
-
+            // TODO Reframe as (new method) DERBitString.withContents (m.m. above).
+            return new DERBitString(data, padBits);
         }
         case NULL:
             debugPrint(element + ("NULL"));
@@ -563,19 +554,14 @@ public class OERInputStream
 
         case EXTENSION:
 
-            LengthInfo li = readLength();
-            // Route through allocateArray so the attacker-controlled open-type length is bounded by
-            // maxByteAllocation, like every other length-driven allocation in this decoder; a raw
-            // new byte[li.intLength()] here let a long-form length (e.g. 84 7F FF FF FF) drive an
-            // immediate OutOfMemoryError.
-            byte[] value = allocateArray(li.intLength());
-            if (Streams.readFully(this, value) != li.intLength())
-            {
-                throw new IOException("could not read all of count of open value in choice (...) ");
-            }
+            // Route through readBytes so the attacker-controlled open-type length is bounded by
+            // maxByteAllocation and by what the stream actually delivers, like every other
+            // length-driven read in this decoder; a raw new byte[len] here let a long-form length
+            // (e.g. 84 7F FF FF FF) drive an immediate OutOfMemoryError.
+            byte[] value = readBytes(readLength().intLength());
 
             // -DM Hex.toHexString
-            debugPrint("ext " + li.intLength() + " " + Hex.toHexString(value));
+            debugPrint("ext " + value.length + " " + Hex.toHexString(value));
             return new DEROctetString(value);
         case BOOLEAN:
         {
@@ -633,24 +619,30 @@ public class OERInputStream
         }
     }
 
-    private byte[] allocateArray(int requiredSize)
+    /**
+     * Read exactly {@code len} bytes, the length having come from the encoding or the schema.
+     * <p>
+     * The length is capped at {@code maxByteAllocation}, and the read goes through
+     * {@link Streams#readLenBytesFully(InputStream, int)}, which does not allocate the full
+     * array until the stream has delivered a fair part of it - so a hostile length within the
+     * cap, or a cap a caller has raised, cannot drive a large allocation from a short input,
+     * and a stream that ends early fails with an {@link EOFException} rather than leaving a
+     * zero-padded buffer to be decoded as a value.
+     */
+    private byte[] readBytes(int len)
+        throws IOException
     {
-        if (requiredSize > maxByteAllocation)
+        if (len > maxByteAllocation)
         {
-            throw new IllegalArgumentException("required byte array size " + requiredSize + " was greater than " + maxByteAllocation);
+            throw new IllegalArgumentException("required byte array size " + len + " was greater than " + maxByteAllocation);
         }
-        return new byte[requiredSize];
+        return Streams.readLenBytesFully(this, len);
     }
 
     public BigInteger parseInt(boolean unsigned, int size)
         throws Exception
     {
-        byte[] buf = new byte[size];
-        int read = Streams.readFully(this, buf);
-        if (read != buf.length)
-        {
-            throw new IllegalStateException("integer not fully read");
-        }
+        byte[] buf = Streams.readLenBytesFully(this, size);
         return unsigned ? new BigInteger(1, buf) : new BigInteger(buf);
 
     }
@@ -676,7 +668,7 @@ public class OERInputStream
     public BigInteger uint64()
         throws Exception
     {
-        return parseInt(false, 8);
+        return parseInt(true, 8);
     }
 
     public BigInteger int8()
@@ -726,14 +718,14 @@ public class OERInputStream
         }
         else
         {
-            // Long form 8.6.5
-
-
-            byte[] lengthInt = new byte[(byteVal & 0x7F)];
-            if (Streams.readFully(this, lengthInt) != lengthInt.length)
+            // Long form 8.6.5: bits 7 to 1 give the number of subsequent octets, 1 to 127
+            int octets = byteVal & 0x7F;
+            if (octets == 0)
             {
-                throw new EOFException("did not read all bytes of length definition");
+                throw new IOException("length determinant long form has zero length");
             }
+
+            byte[] lengthInt = Streams.readLenBytesFully(this, octets);
 
             // -DM Hex.toHexString
             debugPrint("Len (Long Form): " + (byteVal & 0x7F) + " actual len: " + Hex.toHexString(lengthInt));
@@ -758,21 +750,17 @@ public class OERInputStream
         //
         if ((first & 0x80) == 0x80)
         {
-            // Extended.
+            // Long form, X.696 sec. 11.4: bits 7 to 1 give the number of subsequent octets, 1 to 127
             int l = first & 0x7f;
             if (l == 0)
             {
-                return BigInteger.ZERO;
+                throw new IOException("ENUMERATED long form has zero length");
             }
-            byte[] buf = new byte[l];
-            int i = Streams.readFully(this, buf);
+            byte[] buf = Streams.readLenBytesFully(this, l);
 
-            if (i != buf.length)
-            {
-                throw new EOFException("unable to fully read integer component of enumeration");
-            }
-
-            return new BigInteger(1, buf);
+            // X.696 sec. 11.4: the long form carries the value as a two's-complement signed integer,
+            // so a negative enumeration (a set top bit here) is a valid value and must stay negative.
+            return new BigInteger(buf);
         }
         return BigInteger.valueOf(first);
     }
@@ -781,12 +769,7 @@ public class OERInputStream
     protected ASN1Encodable parseOpenType(Element e)
         throws IOException
     {
-        int len = readLength().intLength();
-        byte[] openTypeRaw = allocateArray(len);
-        if (Streams.readFully(in, openTypeRaw) != openTypeRaw.length)
-        {
-            throw new IOException("did not fully read open type as raw bytes");
-        }
+        byte[] openTypeRaw = readBytes(readLength().intLength());
         OERInputStream oerIn = null;
         try
         {
@@ -1030,7 +1013,7 @@ public class OERInputStream
                         }
                         j = 7;
                     }
-                    valuePresent[presentIndex++] = (mask & bits[j]) > 0;
+                    valuePresent[presentIndex++] = (mask & (1 << j)) != 0;
                     j--;
                 }
 

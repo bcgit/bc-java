@@ -2,9 +2,11 @@ package org.bouncycastle.oer.test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Member;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.math.BigInteger;
@@ -699,19 +701,38 @@ public class ExpansionTest
         }
 
 
-        Constructor privateAns1Constructor = null;
+        // Either a private constructor taking an ASN1Enumerated, or a private static factory taking
+        // one and returning the class (which lets the wrapper hand back its static constants).
+        Member enumFactory = null;
         try
         {
-            privateAns1Constructor = upperLevelClass.getDeclaredConstructor(ASN1Enumerated.class);
+            Constructor privateAns1Constructor = upperLevelClass.getDeclaredConstructor(ASN1Enumerated.class);
 
             if (!Modifier.isPrivate(privateAns1Constructor.getModifiers()))
             {
                 fail(upperLevelClass.getName() + ": ASN1Enumerated accepting constructor is not private");
             }
+            enumFactory = privateAns1Constructor;
         }
-        catch (Throwable ex)
+        catch (NoSuchMethodException ex)
         {
-            fail(upperLevelClass.getName() + ": Does not have ASN1Enumerated accepting constructor");
+            for (Method m : upperLevelClass.getDeclaredMethods())
+            {
+                Class[] params = m.getParameterTypes();
+                if (Modifier.isStatic(m.getModifiers()) && params.length == 1 && params[0] == ASN1Enumerated.class
+                    && m.getReturnType() == upperLevelClass)
+                {
+                    if (!Modifier.isPrivate(m.getModifiers()))
+                    {
+                        fail(upperLevelClass.getName() + ": ASN1Enumerated accepting factory is not private");
+                    }
+                    enumFactory = m;
+                }
+            }
+            if (enumFactory == null)
+            {
+                fail(upperLevelClass.getName() + ": Does not have ASN1Enumerated accepting constructor or static factory");
+            }
         }
 
 
@@ -732,8 +753,8 @@ public class ExpansionTest
         }
 
 
-        // Make private constructor accessible.
-        privateAns1Constructor.setAccessible(true);
+        // Make the private constructor or factory accessible.
+        ((AccessibleObject)enumFactory).setAccessible(true);
 
 
         //
@@ -743,7 +764,11 @@ public class ExpansionTest
         {
             try
             {
-                privateAns1Constructor.newInstance(new ASN1Enumerated(i));
+                Object instance = fromEnumerated(enumFactory, new ASN1Enumerated(i));
+                if (!upperLevelClass.isInstance(instance) || !((ASN1Enumerated)instance).hasValue(i))
+                {
+                    fail(upperLevelClass.getName() + ": ASN1Enumerated factory returned " + instance + " for " + i);
+                }
             }
             catch (Throwable t)
             {
@@ -785,7 +810,7 @@ public class ExpansionTest
         //
         try
         {
-            privateAns1Constructor.newInstance(new ASN1Enumerated(min.subtract(BigInteger.ONE)));
+            fromEnumerated(enumFactory, new ASN1Enumerated(min.subtract(BigInteger.ONE)));
             fail(upperLevelClass.getName() + ": should fail on unknown constant");
         }
         catch (Throwable t)
@@ -801,21 +826,10 @@ public class ExpansionTest
                 fail(upperLevelClass.getName() + ": private constructor, expected IllegalArgumentException on invalid enum value supplied at ASN1Enumerated constructor (below min)");
             }
 
-            if (min.equals(BigInteger.ZERO))
+            String expected = "invalid enumeration value " + min.subtract(BigInteger.ONE);
+            if (!t.getMessage().equals((expected)))
             {
-                String expected = "enumerated must be non-negative";
-                if (!t.getMessage().equals((expected)))
-                {
-                    fail(String.format(upperLevelClass.getName() + ": private constructor, expected '%s' got '%s' ", expected, t.getMessage()));
-                }
-            }
-            else
-            {
-                String expected = "invalid enumeration value " + min.subtract(BigInteger.ONE);
-                if (!t.getMessage().equals((expected)))
-                {
-                    fail(String.format(upperLevelClass.getName() + ": private constructor, expected '%s' got '%s' ", expected, t.getMessage()));
-                }
+                fail(String.format(upperLevelClass.getName() + ": private constructor, expected '%s' got '%s' ", expected, t.getMessage()));
             }
 
         }
@@ -826,7 +840,7 @@ public class ExpansionTest
         //
         try
         {
-            privateAns1Constructor.newInstance(new ASN1Enumerated(max.add(BigInteger.ONE)));
+            fromEnumerated(enumFactory, new ASN1Enumerated(max.add(BigInteger.ONE)));
             fail(upperLevelClass.getName() + ": private constructor, should fail on unknown constant");
         }
         catch (InvocationTargetException t)
@@ -869,21 +883,10 @@ public class ExpansionTest
                 fail(upperLevelClass.getName() + ": public constructor, expected IllegalArgumentException on invalid enum value supplied at ASN1Enumerated constructor (below min)");
             }
 
-            if (min.equals(BigInteger.ZERO))
+            String expected = "invalid enumeration value " + min.subtract(BigInteger.ONE);
+            if (!t.getMessage().equals((expected)))
             {
-                String expected = "enumerated must be non-negative";
-                if (!t.getMessage().equals((expected)))
-                {
-                    fail(String.format(upperLevelClass.getName() + ": public constructor, expected '%s' got '%s' ", expected, t.getMessage()));
-                }
-            }
-            else
-            {
-                String expected = "invalid enumeration value " + min.subtract(BigInteger.ONE);
-                if (!t.getMessage().equals((expected)))
-                {
-                    fail(String.format(upperLevelClass.getName() + ": public constructor, expected '%s' got '%s' ", expected, t.getMessage()));
-                }
+                fail(String.format(upperLevelClass.getName() + ": public constructor, expected '%s' got '%s' ", expected, t.getMessage()));
             }
 
         }
@@ -990,6 +993,29 @@ public class ExpansionTest
         if (result.getException() != null)
         {
             result.getException().printStackTrace();
+        }
+    }
+
+    /** Build a wrapper from an ASN1Enumerated through its private constructor or static factory. */
+    private static Object fromEnumerated(Member factory, ASN1Enumerated value)
+        throws InvocationTargetException
+    {
+        try
+        {
+            if (factory instanceof Constructor)
+            {
+                return ((Constructor)factory).newInstance(value);
+            }
+            return ((Method)factory).invoke(null, value);
+        }
+        catch (InvocationTargetException e)
+        {
+            throw e;
+        }
+        catch (Exception e)
+        {
+            // IllegalAccessException / InstantiationException: a test-harness failure, not the wrapper's
+            throw new IllegalStateException(factory + ": " + e, e);
         }
     }
 }

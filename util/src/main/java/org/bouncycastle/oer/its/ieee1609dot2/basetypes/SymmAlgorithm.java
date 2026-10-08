@@ -3,7 +3,6 @@ package org.bouncycastle.oer.its.ieee1609dot2.basetypes;
 import java.math.BigInteger;
 
 import org.bouncycastle.asn1.ASN1Enumerated;
-import org.bouncycastle.util.BigIntegers;
 
 /**
  * SymmAlgorithm ::= ENUMERATED {
@@ -22,22 +21,13 @@ public class SymmAlgorithm
         assertValues();
     }
 
-    private SymmAlgorithm(ASN1Enumerated enumerated)
-    {
-        super(enumerated.getValue());
-        assertValues();
-    }
-
     protected void assertValues()
     {
-        switch (BigIntegers.intValueExact(getValue()))
+        if (!hasValue(0))
         {
-        case 0:
-            return;
+            throw new IllegalArgumentException("invalid enumeration value " + getValue());
         }
-        throw new IllegalArgumentException("invalid enumeration value " + getValue());
     }
-
 
     public static SymmAlgorithm getInstance(Object src)
     {
@@ -48,11 +38,18 @@ public class SymmAlgorithm
 
         if (src != null)
         {
-            return new SymmAlgorithm(ASN1Enumerated.getInstance(src));
+            return getInstance(ASN1Enumerated.getInstance(src));
         }
 
         return null;
-
     }
 
+    private static SymmAlgorithm getInstance(ASN1Enumerated value)
+    {
+        if (value.hasValue(0))
+        {
+            return aes128Ccm;
+        }
+        throw new IllegalArgumentException("invalid enumeration value " + value.getValue());
+    }
 }

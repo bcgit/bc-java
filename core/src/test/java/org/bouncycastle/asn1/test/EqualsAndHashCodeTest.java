@@ -58,7 +58,7 @@ public class EqualsAndHashCodeTest
                 new DERBMPString("hello world"),
                 ASN1Boolean.getInstance(true),
                 ASN1Boolean.getInstance(false),
-                new ASN1Enumerated(100),
+                ASN1Enumerated.valueOf(100),
                 new DERGeneralizedTime("20070315173729Z"),
                 new DERGeneralString("hello world"),
                 new DERIA5String("hello"),

@@ -18,6 +18,8 @@ public class AllTests
         TestSuite suite = new TestSuite("util tests");
         suite.addTestSuite(IPTest.class);
         suite.addTestSuite(BigIntegersTest.class);
+        suite.addTestSuite(IntegersTest.class);
+        suite.addTestSuite(LongsTest.class);
         suite.addTestSuite(ArraysTest.class);
         suite.addTestSuite(StringsTest.class);
         suite.addTestSuite(StreamsTest.class);

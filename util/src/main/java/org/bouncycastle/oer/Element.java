@@ -174,6 +174,17 @@ public class Element
         return BigInteger.ZERO.equals(getLowerBound());
     }
 
+    /**
+     * Return true when the lower bound is present and zero or positive: X.696 sec. 10.2(a), the
+     * case in which an INTEGER takes the unsigned encodings (sec. 10.3).
+     *
+     * @return true if condition met.
+     */
+    public boolean isLowerBoundNonNegative()
+    {
+        return getLowerBound() != null && getLowerBound().signum() >= 0;
+    }
+
 
     /**
      * Return true in cases where the range is all positive (0 .. 10)
@@ -182,14 +193,14 @@ public class Element
      */
     public boolean isUnsignedWithRange()
     {
-        return isLowerRangeZero() && (getUpperBound() != null && BigInteger.ZERO.compareTo(getUpperBound()) < 0);
+        return isLowerRangeZero() && getUpperBound() != null && getUpperBound().signum() > 0;
     }
 
 
     // True for cases where there is no lower bound or lower bound is less than zero.
     public boolean canBeNegative()
     {
-        return getLowerBound() != null && BigInteger.ZERO.compareTo(getLowerBound()) > 0;
+        return getLowerBound() != null && getLowerBound().signum() < 0;
     }
 
 
@@ -202,10 +213,10 @@ public class Element
     {
         if (getLowerBound() != null && getUpperBound() != null)
         {
-            if (BigInteger.ZERO.equals(getLowerBound()))
+            if (getLowerBound().signum() >= 0)
             {
                 //
-                // Positive range.
+                // X.696 sec. 10.2(a)/10.3: a lower bound of zero or more takes the unsigned forms.
                 //
 
                 for (int i = 0, j = 1; i < OERDefinition.uIntMax.length; i++, j *= 2)
@@ -220,7 +231,8 @@ public class Element
             {
                 for (int i = 0, j = 1; i < OERDefinition.sIntRange.length; i++, j *= 2)
                 {
-                    if (getLowerBound().compareTo(OERDefinition.sIntRange[i][0]) >= 0 && getUpperBound().compareTo(OERDefinition.sIntRange[i][1]) < 0)
+                    // X.696 sec. 10.4 a)-d): both bounds inclusive, -2^(n-1) <= lower and upper <= 2^(n-1) - 1
+                    if (getLowerBound().compareTo(OERDefinition.sIntRange[i][0]) >= 0 && getUpperBound().compareTo(OERDefinition.sIntRange[i][1]) <= 0)
                     {
                         return -j;
                     }

@@ -99,7 +99,7 @@ public class ObjectDigestInfo
         AlgorithmIdentifier digestAlgorithm,
         byte[] objectDigest)
     {
-        this.digestedObjectType = new ASN1Enumerated(digestedObjectType);
+        this.digestedObjectType = ASN1Enumerated.valueOf(digestedObjectType);
         if (digestedObjectType == otherObjectDigest)
         {
             this.otherObjectTypeID = otherObjectTypeID;

@@ -3,7 +3,9 @@ package org.bouncycastle.oer.test;
 import java.io.ByteArrayOutputStream;
 
 import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.oer.Element;
 import org.bouncycastle.oer.OERDefinition;
 import org.bouncycastle.oer.OEROptional;
@@ -35,6 +37,29 @@ public class OEROutputStreamErrorTest
         absentRequiredElementNamesParentAndChild();
         absentRequiredElementNamesChildWhenParentUnlabelled();
         absentRequiredElementUnlabelledChildKeepsLegacyMessage();
+        definedOptionalWrapperAtRequiredElementIsWritten();
+    }
+
+    /**
+     * A required component wrapped in a defined OEROptional - the form the ITS classes' toASN1Primitive
+     * produce - is present, and is written like the bare value. Only the undefined wrapper is absent.
+     */
+    private void definedOptionalWrapperAtRequiredElementIsWritten()
+        throws Exception
+    {
+        Element def = OERDefinition.seq(
+            OERDefinition.integer(0, 255).label("requiredField")
+        ).build();
+
+        ByteArrayOutputStream wrapped = new ByteArrayOutputStream();
+        new OEROutputStream(wrapped).write(
+            new DERSequence(new ASN1Encodable[]{OEROptional.getInstance(new ASN1Integer(7))}), def);
+
+        ByteArrayOutputStream bare = new ByteArrayOutputStream();
+        new OEROutputStream(bare).write(new DERSequence(new ASN1Encodable[]{new ASN1Integer(7)}), def);
+
+        isTrue("defined wrapper encodes as the bare value", Arrays.areEqual(bare.toByteArray(), wrapped.toByteArray()));
+        isTrue("encoding is the single octet 07", Arrays.areEqual(new byte[]{ 0x07 }, wrapped.toByteArray()));
     }
 
     /**

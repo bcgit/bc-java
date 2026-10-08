@@ -123,6 +123,81 @@ public class OERInputStreamMalformedTest
             new byte[]{(byte)0x84, 0x7F, (byte)0xFF, (byte)0xFF, (byte)0xFF}, schema));
     }
 
+    /**
+     * A truncated stream must fail, not decode what did arrive. The two length-prefixed INTEGER
+     * branches and the BIT STRING branch read with Streams.readFully and ignored its (best-effort)
+     * return, so a determinant of 4 followed by 2 bytes and end of stream decoded the zero-padded
+     * buffer as a value. Every read now goes through Streams.readLenBytesFully, which throws
+     * EOFException at the real end of input.
+     */
+    public void testTruncatedInputRejected()
+    {
+        Element unsigned = OERDefinition.integer().rangeToMAXFrom(0).build();
+        Element signed = OERDefinition.integer().build();
+        Element uint32 = OERDefinition.integer(0, 4294967295L).build();
+        Element bits = OERDefinition.bitString(16).build();
+        Element octets = OERDefinition.octets().build();
+
+        assertTruncated("unsigned INTEGER", unsigned, new byte[]{0x04, 0x01, 0x02});
+        assertTruncated("signed INTEGER", signed, new byte[]{0x04, 0x01, 0x02});
+        assertTruncated("fixed-width INTEGER", uint32, new byte[]{0x01, 0x02, 0x03});
+        assertTruncated("BIT STRING", bits, new byte[]{0x01});
+        assertTruncated("OCTET STRING", octets, new byte[]{0x04, 0x01, 0x02});
+
+        // a long-form length within the allocation cap but with nothing behind it
+        assertTruncated("large unsigned INTEGER", unsigned, new byte[]{(byte)0x83, 0x0F, 0x00, 0x00, 0x01});
+        assertTruncated("large OCTET STRING", octets, new byte[]{(byte)0x83, 0x0F, 0x00, 0x00, 0x01});
+    }
+
+    private static void assertTruncated(String what, Element schema, byte[] encoding)
+    {
+        try
+        {
+            OERInputStream.parse(encoding, schema);
+            fail(what + ": truncated input accepted");
+        }
+        catch (java.io.EOFException e)
+        {
+            // expected
+        }
+        catch (IOException e)
+        {
+            fail(what + ": truncated input rejected as " + e);
+        }
+    }
+
+    /**
+     * X.696 defines a variable-size number as one or more octets (3.7.11, 3.7.12), and the long
+     * forms of the length determinant (8.6.5) and of an ENUMERATED (11.4) carry 1 to 127 subsequent
+     * octets. The decoder used to read an empty group as zero in all of them: INTEGER with a
+     * determinant of 0, an ENUMERATED long form of 0 octets, a length determinant long form of 0
+     * octets, and a sequence-of quantity of 0 octets. Each is rejected now; the one-octet zero of
+     * each form still decodes.
+     */
+    public void testZeroOctetNumbersRejected()
+        throws IOException
+    {
+        Element unsigned = OERDefinition.integer().rangeToMAXFrom(0).build();
+        Element signed = OERDefinition.integer().build();
+        Element enumerated = OERDefinition.enumeration("a", "b").build();
+        Element octets = OERDefinition.octets().build();
+        Element seqOf = OERDefinition.seqof(OERDefinition.bool()).build();
+
+        assertRejected("unsigned INTEGER with no octets", unsigned, new byte[]{0x00});
+        assertRejected("signed INTEGER with no octets", signed, new byte[]{0x00});
+        assertRejected("ENUMERATED long form with no octets", enumerated, new byte[]{(byte)0x80});
+        assertRejected("length determinant long form with no octets", octets, new byte[]{(byte)0x80});
+        assertRejected("sequence-of quantity with no octets", seqOf, new byte[]{0x00});
+
+        assertNotNull(OERInputStream.parse(new byte[]{0x01, 0x00}, unsigned));
+        assertNotNull(OERInputStream.parse(new byte[]{0x01, 0x00}, signed));
+        assertNotNull(OERInputStream.parse(new byte[]{0x00}, enumerated));
+        assertNotNull(OERInputStream.parse(new byte[]{(byte)0x81, 0x00}, enumerated));
+        assertNotNull(OERInputStream.parse(new byte[]{0x00}, octets));
+        assertNotNull(OERInputStream.parse(new byte[]{(byte)0x81, 0x00}, octets));
+        assertNotNull(OERInputStream.parse(new byte[]{0x01, 0x00}, seqOf));
+    }
+
     /** The compatibility assertion: well-formed encodings are unaffected. */
     public void testWellFormedStillParses()
         throws IOException

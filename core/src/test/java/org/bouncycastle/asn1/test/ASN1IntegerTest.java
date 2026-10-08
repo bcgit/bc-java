@@ -50,6 +50,8 @@ public class ASN1IntegerTest
 
         new ASN1Enumerated(Hex.decode("005a47bfc776bcd269da4832626ac332adfca6dd835e8ecd83cd1ebe7d709b0e"));
 
+        new ASN1Enumerated(Hex.decode("ffda47bfc776bcd269da4832626ac332adfca6dd835e8ecd83cd1ebe7d709b0e"));
+
         System.setProperty("org.bouncycastle.asn1.allow_unsafe_integer", "false");
         
         try

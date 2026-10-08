@@ -23,6 +23,7 @@ import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.ASN1UTF8String;
 import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.Longs;
 import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
@@ -30,7 +31,6 @@ import org.bouncycastle.util.encoders.Hex;
 public class OEROutputStream
     extends OutputStream
 {
-    private static final int[] bits = new int[]{1, 2, 4, 8, 16, 32, 64, 128};
     private final OutputStream out;
     protected PrintWriter debugOutput = null;
 
@@ -39,15 +39,36 @@ public class OEROutputStream
         this.out = out;
     }
 
+    /**
+     * The number of octets {@code value} occupies as an unsigned big-endian number with no leading
+     * zero octets: 0 for 0, 1 for 1..255, 2 for 256..65535, and 8 for any negative argument.
+     */
     public static int byteLength(long value)
     {
-        long m = 0xFF00000000000000L;
-        int j = 8;
-        for (; j > 0 && (value & m) == 0; j--)
+        return (Longs.bitLength(value) + 7) >>> 3;
+    }
+
+    /**
+     * Whether a SEQUENCE component is present on the wire, X.696 sec. 16.2.3: it is not an undefined
+     * OEROptional (a defined one stands for its value), and, if the component has a DEFAULT, it
+     * differs from that default - a value equal to its default is omitted, as CANONICAL-OER requires
+     * (sec. 31.9, for root components and extension additions alike). The presence bitmaps and the
+     * component values are all written from this, so they agree.
+     */
+    private static boolean isPresent(ASN1Encodable value, Element component)
+    {
+        if (value instanceof OEROptional)
         {
-            value <<= 8;
+            OEROptional optional = (OEROptional)value;
+            if (!optional.isDefined())
+            {
+                return false;
+            }
+            value = optional.get();
         }
-        return j;
+
+        ASN1Encodable defaultValue = component.getDefaultValue();
+        return defaultValue == null || !defaultValue.equals(value);
     }
 
     /**
@@ -120,7 +141,7 @@ public class OEROutputStream
 
                     if ((e.getBlock() > 0 && t < seq.size()))
                     {
-                        if (!OEROptional.ABSENT.equals(seq.getObjectAt(t)))
+                        if (isPresent(seq.getObjectAt(t), e))
                         {
                             // Can support extensions and one or more have been defined.
                             extensionDefined = true;
@@ -131,7 +152,7 @@ public class OEROutputStream
 
                 if (extensionDefined)
                 {
-                    mask |= bits[j];
+                    mask |= 1 << j;
                 }
                 j--;
             }
@@ -173,43 +194,22 @@ public class OEROutputStream
 
                 ASN1Encodable asn1EncodableChild = seq.getObjectAt(t);
 
-                if (childOERDescription.isExplicit() && asn1EncodableChild instanceof OEROptional)
+                if (childOERDescription.isExplicit())
                 {
-                    throw new IllegalStateException(
-                        "absent sequence element that is required by oer definition"
-                            + elementLabelSuffix(childOERDescription, oerElement));
-                }
-
-                if (!childOERDescription.isExplicit())
-                {
-                    ASN1Encodable obj = seq.getObjectAt(t);
-                    if (childOERDescription.getDefaultValue() != null)
+                    // a required component may arrive wrapped in a defined OEROptional, which write()
+                    // unwraps; only the undefined wrapper is an absence
+                    if (asn1EncodableChild instanceof OEROptional && !((OEROptional)asn1EncodableChild).isDefined())
                     {
-
-                        if (obj instanceof OEROptional)
-                        {
-                            if (((OEROptional)obj).isDefined())
-                            {
-                                if (!((OEROptional)obj).get().equals(childOERDescription.getDefaultValue()))
-                                {
-                                    mask |= bits[j];
-                                }
-                            }
-                        }
-                        else
-                        {
-                            if (!childOERDescription.getDefaultValue().equals(obj))
-                            {
-                                mask |= bits[j];
-                            }
-                        }
+                        throw new IllegalStateException(
+                            "absent sequence element that is required by oer definition"
+                                + elementLabelSuffix(childOERDescription, oerElement));
                     }
-                    else
+                }
+                else
+                {
+                    if (isPresent(asn1EncodableChild, childOERDescription))
                     {
-                        if (asn1EncodableChild != OEROptional.ABSENT)
-                        {
-                            mask |= bits[j];
-                        }
+                        mask |= 1 << j;
                     }
                     j--;
                 }
@@ -247,14 +247,10 @@ public class OEROutputStream
                     childOERElement = childOERElement.getaSwitch().result(new SwitchIndexer.Asn1SequenceIndexer(seq));
                 }
 
-                if (childOERElement.getDefaultValue() != null)
+                if (isPresent(child, childOERElement))
                 {
-                    if (childOERElement.getDefaultValue().equals(child))
-                    {
-                        continue;
-                    }
+                    write(child, childOERElement);
                 }
-                write(child, childOERElement);
             }
 
             //
@@ -266,47 +262,41 @@ public class OEROutputStream
 
                 // Form presence bitmap 16.4.3
                 int start = t;
-                ByteArrayOutputStream presensceList = new ByteArrayOutputStream();
+                ByteArrayOutputStream presenceList = new ByteArrayOutputStream();
                 j = 7;
                 mask = 0;
                 for (int i = start; i < childElements.size(); i++)
                 {
                     if (j < 0)
                     {
-                        presensceList.write(mask);
+                        presenceList.write(mask);
                         j = 7;
                         mask = 0;
                     }
 
-                    if (i < seq.size() && !OEROptional.ABSENT.equals(seq.getObjectAt(i)))
+                    if (i < seq.size() && isPresent(seq.getObjectAt(i), childElements.get(i)))
                     {
-                        mask |= bits[j];
+                        mask |= 1 << j;
                     }
                     j--;
                 }
 
-                if (j != 7)
-                {
-                    // Write the final set of bits.
-                    presensceList.write(mask);
-                }
+                // Write the final set of bits: at least one addition is present, so there is one.
+                presenceList.write(mask);
 
-                encodeLength(presensceList.size() + 1); // +1 = initial octet
-                if (j == 7)
-                {
-                    write(0);
-                }
-                else
-                {
-                    write(j + 1);
-                }// Initial octet 16.4.2
-                write(presensceList.toByteArray());
+                // 16.4.1: a length determinant covering the initial octet and the bitmap; 16.4.2: the
+                // initial octet is the number of unused bits in the final octet - j is the next free
+                // bit position in it, counting down from 7, so bits j to 0 are unused.
+                int unusedBits = j + 1;
+                encodeLength(presenceList.size() + 1);
+                write(unusedBits);
+                write(presenceList.toByteArray());
 
                 // Open encode the actual values.
                 for (; t < childElements.size(); t++)
                 {
                     // 16.5.2 Extension Addition Groups are not supported.
-                    if (t < seq.size() && !OEROptional.ABSENT.equals(seq.getObjectAt(t)))
+                    if (t < seq.size() && isPresent(seq.getObjectAt(t), childElements.get(t)))
                     {
                         writePlainType(seq.getObjectAt(t), childElements.get(t));
                     }
@@ -377,16 +367,15 @@ public class OEROutputStream
             // Encode tag value.
             //
 
-            // Small tag value encode in remaining bits
-            if (tag <= 63)
+            // X.696 sec. 8.7.2.2: a tag number below 63 goes in bits 6 to 1 of the first octet;
+            // 8.7.2.3: from 63 up those bits are all ones and the number follows in 7-bit groups
+            if (tag < 63)
             {
                 bb.writeBits(tag, 6);
             }
             else
             {
-                // Large tag value variant.
-                bb.writeBits(0xFF, 6);
-                // Encode as 7bit bytes where MSB indicated continuing byte.
+                bb.writeBits(0x3F, 6);
                 bb.write7BitBytes(tag);
             }
 
@@ -452,7 +441,9 @@ public class OEROutputStream
                 //
                 if (child.getEnumValue().equals(ordinal))
                 {
-                    if (ordinal.compareTo(BigInteger.valueOf(127)) > 0)
+                    // X.696 sec. 11.4: the short form is for 0..127 only. A negative enumeration is a
+                    // valid value and takes the long form, where toByteArray() gives its two's-complement.
+                    if (ordinal.signum() < 0 || ordinal.bitLength() > 7)
                     {
                         // Note 2 Section 11.4 of T-REC-X.696-201508-I!!PDF-E.pdf
                         byte[] val = ordinal.toByteArray();
@@ -475,7 +466,10 @@ public class OEROutputStream
         }
         case INT:
         {
-            ASN1Integer integer = ASN1Integer.getInstance(encodable);
+            BigInteger value = ASN1Integer.getInstance(encodable).getValue();
+
+            // TODO Validate against bounds: beyond the sign, nothing below checks that value lies within
+            // the element's effective value constraint.
 
 
             // >0 = positive and <0 = negative
@@ -485,7 +479,8 @@ public class OEROutputStream
                 //
                 // For unsigned fixed length 1,2,4,8 byte integers.
                 //
-                byte[] encoded = BigIntegers.asUnsignedByteArray(intBytesForRange, integer.getValue());
+                checkNonNegative(value, oerElement);
+                byte[] encoded = BigIntegers.asUnsignedByteArray(intBytesForRange, value);
                 switch (intBytesForRange)
                 {
                 case 1:
@@ -506,20 +501,19 @@ public class OEROutputStream
                 //
 
                 byte[] encoded;
-                BigInteger number = integer.getValue();
                 switch (intBytesForRange)
                 {
                 case -1:
-                    encoded = new byte[]{BigIntegers.byteValueExact(number)};
+                    encoded = new byte[]{BigIntegers.byteValueExact(value)};
                     break;
                 case -2:
-                    encoded = Pack.shortToBigEndian(BigIntegers.shortValueExact(number));
+                    encoded = Pack.shortToBigEndian(BigIntegers.shortValueExact(value));
                     break;
                 case -4:
-                    encoded = Pack.intToBigEndian(BigIntegers.intValueExact(number));
+                    encoded = Pack.intToBigEndian(BigIntegers.intValueExact(value));
                     break;
                 case -8:
-                    encoded = Pack.longToBigEndian(BigIntegers.longValueExact(number));
+                    encoded = Pack.longToBigEndian(BigIntegers.longValueExact(value));
                     break;
                 default:
                     throw new IllegalStateException("unknown twos compliment length");
@@ -531,16 +525,17 @@ public class OEROutputStream
             {
                 // Unbounded at one or both ends and needs length encoding.
                 byte[] encoded;
-                if (oerElement.isLowerRangeZero())
+                if (oerElement.isLowerBoundNonNegative())
                 {
-                    // Since we have already captured the fixed with unsigned ints.
-                    // Everything is assumed unbounded we need to encode a length and write the value.
-                    encoded = BigIntegers.asUnsignedByteArray(integer.getValue());
+                    // X.696 sec. 10.3 e): the fixed-width unsigned cases are handled above, so a lower
+                    // bound of zero or more means a length determinant and a variable-size unsigned number.
+                    checkNonNegative(value, oerElement);
+                    encoded = BigIntegers.asUnsignedByteArray(value);
                 }
                 else
                 {
                     // Twos complement
-                    encoded = integer.getValue().toByteArray();
+                    encoded = value.toByteArray();
                 }
 
                 encodeLength(encoded.length); // Deals with long and short forms.
@@ -576,7 +571,7 @@ public class OEROutputStream
             //
             // IA5Strings can be fixed length because they have a fixed multiplier.
             //
-            if (oerElement.isFixedLength() && oerElement.getUpperBound().intValue() != encoded.length)
+            if (oerElement.isFixedLength() && BigIntegers.intValueExact(oerElement.getUpperBound()) != encoded.length)
             {
                 throw new IOException("IA5String string length does not equal declared fixed length "
                     + encoded.length + " " + oerElement.getUpperBound());
@@ -697,18 +692,39 @@ public class OEROutputStream
         }
     }
 
+    /**
+     * A negative value is not in any type whose lower bound is zero or more, and the unsigned
+     * encodings would silently write its two's-complement octets as a different, positive value
+     * (-1 under INTEGER (0..255) came out as FF, the encoding of 255).
+     */
+    private static void checkNonNegative(BigInteger value, Element element)
+    {
+        if (value.signum() < 0)
+        {
+            throw new IllegalArgumentException("negative value " + value + " for INTEGER " + element.rangeExpression());
+        }
+    }
+
     private void encodeLength(long len)
         throws IOException
     {
+        // every caller passes an array length or a collection size, so this is a guard against a
+        // future mistake: a negative value would take the short form and go out as a single octet
+        // with bit 8 set, which a decoder reads as a long-form prefix - silent corruption
+        if (len < 0)
+        {
+            throw new IllegalArgumentException("negative length: " + len);
+        }
         if (len <= 127) // complies with 31.2
         {
             out.write((int)len); // short form 8.6.3
         }
         else
         {
-            // Long form,
-            byte[] value = BigIntegers.asUnsignedByteArray(BigInteger.valueOf(len));
-            out.write((value.length | 0x80));
+            // Long form, 8.6.5: bit 8 set and the octet count in the initial octet, then the length
+            // as a variable-size unsigned number in the fewest octets (31.2)
+            byte[] value = Longs.toUnsignedByteArray(len);
+            out.write(value.length | 0x80);
             out.write(value);
         }
     }
@@ -716,7 +732,13 @@ public class OEROutputStream
     private void encodeQuantity(long quantity)
         throws IOException
     {
-        byte[] quantityEncoded = BigIntegers.asUnsignedByteArray(BigInteger.valueOf(quantity));
+        if (quantity < 0)
+        {
+            throw new IllegalArgumentException("negative quantity: " + quantity);
+        }
+        // 17.2: the octet count, then the quantity as a variable-size unsigned number, which is one
+        // or more octets (3.7.12) - so zero is 01 00, not the empty encoding the helper gives it
+        byte[] quantityEncoded = quantity == 0 ? new byte[1] : Longs.toUnsignedByteArray(quantity);
         out.write(quantityEncoded.length);
         out.write(quantityEncoded);
     }

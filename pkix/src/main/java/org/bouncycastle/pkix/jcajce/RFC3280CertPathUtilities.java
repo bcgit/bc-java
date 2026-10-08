@@ -649,7 +649,7 @@ class RFC3280CertPathUtilities
     static void processCRLJ(Date validDate, X509CRL completecrl, Object cert, CertStatus certStatus)
         throws AnnotatedException
     {
-        if (certStatus.getCertStatus() == CertStatus.UNREVOKED)
+        if (!certStatus.isRevoked())
         {
             RevocationUtilities.getCertStatus(validDate, completecrl, cert, certStatus);
         }
@@ -705,7 +705,7 @@ class RFC3280CertPathUtilities
         AnnotatedException lastException = null;
         Iterator crl_iter = crls.iterator();
 
-        while (crl_iter.hasNext() && certStatus.getCertStatus() == CertStatus.UNREVOKED && !reasonsMask.isAllReasons())
+        while (crl_iter.hasNext() && !certStatus.isRevoked() && !reasonsMask.isAllReasons())
         {
             try
             {
@@ -791,9 +791,9 @@ class RFC3280CertPathUtilities
                 processCRLJ(validityDate, crl, cert, certStatus);
 
                 // (k)
-                if (certStatus.getCertStatus() == CRLReason.removeFromCRL)
+                if (certStatus.isRevoked() && certStatus.getReason() == CRLReason.removeFromCRL)
                 {
-                    certStatus.setCertStatus(CertStatus.UNREVOKED);
+                    certStatus.setUnrevoked();
                 }
 
                 // update reasons mask

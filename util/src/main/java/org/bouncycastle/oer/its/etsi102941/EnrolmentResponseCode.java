@@ -22,6 +22,30 @@ public class EnrolmentResponseCode
     public static final EnrolmentResponseCode invalidkeys = new EnrolmentResponseCode(12);
     public static final EnrolmentResponseCode deniedrequest = new EnrolmentResponseCode(13);
 
+    /**
+     * The constants indexed by value, for getInstance to return the shared instance. An entry
+     * can be null, should the value set ever become sparse, and the lookup checks for that.
+     */
+    private static final EnrolmentResponseCode[] VALUES = new EnrolmentResponseCode[14];
+
+    static
+    {
+        VALUES[0] = ok;
+        VALUES[1] = cantparse;
+        VALUES[2] = badcontenttype;
+        VALUES[3] = imnottherecipient;
+        VALUES[4] = unknownencryptionalgorithm;
+        VALUES[5] = decryptionfailed;
+        VALUES[6] = unknownits;
+        VALUES[7] = invalidsignature;
+        VALUES[8] = invalidencryptionkey;
+        VALUES[9] = baditsstatus;
+        VALUES[10] = incompleterequest;
+        VALUES[11] = deniedpermissions;
+        VALUES[12] = invalidkeys;
+        VALUES[13] = deniedrequest;
+    }
+
     public EnrolmentResponseCode(int value)
     {
         super(value);
@@ -40,10 +64,6 @@ public class EnrolmentResponseCode
         assertValues();
     }
 
-    private EnrolmentResponseCode(ASN1Enumerated enumerated)
-    {
-        this(enumerated.getValue());
-    }
 
     public static EnrolmentResponseCode getInstance(Object o)
     {
@@ -53,18 +73,38 @@ public class EnrolmentResponseCode
         }
         if (o != null)
         {
-            return new EnrolmentResponseCode(ASN1Enumerated.getInstance(o));
+            return getInstance(ASN1Enumerated.getInstance(o));
         }
         return null;
     }
 
-    protected void assertValues()
+    private static EnrolmentResponseCode getInstance(ASN1Enumerated value)
     {
-        if (getValue().intValue() < 0 || getValue().intValue() > 13)
+        BigInteger v = value.getValue();
+        // the value must index the table: non-negative and within the int range before intValue() is
+        // trusted, within the table, and held by a constant (the set may one day be sparse)
+        if (v.signum() >= 0 && v.bitLength() < 31)
         {
-            throw new IllegalArgumentException("invalid enumeration value " + getValue());
+            int index = v.intValue();
+            if (index < VALUES.length)
+            {
+                EnrolmentResponseCode constant = VALUES[index];
+                if (constant != null)
+                {
+                    return constant;
+                }
+            }
         }
+        throw new IllegalArgumentException("invalid enumeration value " + v);
     }
 
-
+    protected void assertValues()
+    {
+        BigInteger value = getValue();
+        // intValue() truncates, so a value past the int range has to be rejected before it is consulted
+        if (value.signum() < 0 || value.bitLength() > 31 || value.intValue() > 13)
+        {
+            throw new IllegalArgumentException("invalid enumeration value " + value);
+        }
+    }
 }

@@ -79,7 +79,8 @@ public class RevocationUtilitiesTest
         CertStatus certStatus = new CertStatus();
         RevocationUtilities.getCertStatus(f.now, crl, f.cert, certStatus);
 
-        assertEquals(CRLReason.keyCompromise, certStatus.getCertStatus());
+        assertTrue(certStatus.isRevoked());
+        assertEquals(CRLReason.keyCompromise, certStatus.getReason());
     }
 
     // RFC 5280 sec. 6.3.3 (i)/(j): a future-dated revocation only takes effect for the hard
@@ -96,7 +97,7 @@ public class RevocationUtilitiesTest
         CertStatus certStatus = new CertStatus();
         RevocationUtilities.getCertStatus(f.now, f.buildCRL(f.cert.getSerialNumber(), future, holdGen), f.cert, certStatus);
 
-        assertEquals(CertStatus.UNREVOKED, certStatus.getCertStatus());
+        assertFalse(certStatus.isRevoked());
 
         ExtensionsGenerator compromiseGen = new ExtensionsGenerator();
         compromiseGen.addExtension(Extension.reasonCode, false, CRLReason.lookup(CRLReason.keyCompromise));
@@ -104,7 +105,8 @@ public class RevocationUtilitiesTest
         certStatus = new CertStatus();
         RevocationUtilities.getCertStatus(f.now, f.buildCRL(f.cert.getSerialNumber(), future, compromiseGen), f.cert, certStatus);
 
-        assertEquals(CRLReason.keyCompromise, certStatus.getCertStatus());
+        assertTrue(certStatus.isRevoked());
+        assertEquals(CRLReason.keyCompromise, certStatus.getReason());
     }
 
     public void testUnlistedCertificateUnrevoked()
@@ -117,7 +119,7 @@ public class RevocationUtilitiesTest
         CertStatus certStatus = new CertStatus();
         RevocationUtilities.getCertStatus(f.now, crl, f.cert, certStatus);
 
-        assertEquals(CertStatus.UNREVOKED, certStatus.getCertStatus());
+        assertFalse(certStatus.isRevoked());
     }
 
     private static class Fixture

@@ -729,7 +729,7 @@ public class OCSPTest
             {
                 Throwable c = ((ASN1Exception)e.getCause()).getCause();
 
-                if (!c.getMessage().equals("ENUMERATED has zero length"))
+                if (!c.getMessage().equals("malformed enumerated"))
                 {
                     fail("parsing failed, but for wrong reason: " + c.getMessage());
                 }

@@ -43,9 +43,19 @@ public class OERDefinition
         return new Builder(BaseType.INT).defaultValue(ASN1Integer.valueOf(val));
     }
 
+    public static Builder bitString()
+    {
+        return new Builder(BaseType.BIT_STRING).unbounded();
+    }
+
     public static Builder bitString(long len)
     {
         return new Builder(BaseType.BIT_STRING).fixedSize(len);
+    }
+
+    public static Builder bitString(long lowerBound, long upperBound)
+    {
+        return new Builder(BaseType.BIT_STRING).range(BigInteger.valueOf(lowerBound), BigInteger.valueOf(upperBound));
     }
 
     public static Builder integer(BigInteger lower, BigInteger upper)
@@ -485,18 +495,62 @@ public class OERDefinition
             List<Element> children = new ArrayList<Element>();
             boolean hasExtensions = false;
 
-            // Duplicate check for enums.
+            // Number the enumeration items and check for duplicates.
             if (baseType == BaseType.ENUM)
             {
-                int ordinal = 0;
+                /*
+                 * X.680 sec. 20.3: an item of the root enumeration without a number takes the successive
+                 * integers from 0, skipping any number given explicitly to a root item (before or after it).
+                 * Sec. 20.6: an item of the additional enumeration without a number takes the smallest value
+                 * not defined in the root and greater than every preceding additional item. Numbers may be
+                 * negative; only the automatic ones are non-negative.
+                 */
+                HashSet<BigInteger> rootValues = new HashSet<BigInteger>();
+                for (int t = 0; t < this.children.size(); t++)
+                {
+                    Builder b = this.children.get(t);
+                    if (b.block == 0 && b.enumValue != null)
+                    {
+                        rootValues.add(b.enumValue);
+                    }
+                }
+
+                BigInteger nextRoot = BigInteger.ZERO;
+                BigInteger maxAdditional = null;
                 HashSet<BigInteger> dupCheck = new HashSet<BigInteger>();
                 for (int t = 0; t < this.children.size(); t++)
                 {
                     Builder b = this.children.get(t);
                     if (b.enumValue == null)
                     {
-                        b.enumValue = BigInteger.valueOf(ordinal);
-                        ordinal++;
+                        if (b.block == 0)
+                        {
+                            while (rootValues.contains(nextRoot))
+                            {
+                                nextRoot = nextRoot.add(BigInteger.ONE);
+                            }
+                            b.enumValue = nextRoot;
+                            rootValues.add(nextRoot);
+                            nextRoot = nextRoot.add(BigInteger.ONE);
+                        }
+                        else
+                        {
+                            BigInteger v = BigInteger.ZERO;
+                            if (maxAdditional != null && maxAdditional.signum() >= 0)
+                            {
+                                v = maxAdditional.add(BigInteger.ONE);
+                            }
+                            while (rootValues.contains(v))
+                            {
+                                v = v.add(BigInteger.ONE);
+                            }
+                            b.enumValue = v;
+                        }
+                    }
+
+                    if (b.block != 0 && (maxAdditional == null || b.enumValue.compareTo(maxAdditional) > 0))
+                    {
+                        maxAdditional = b.enumValue;
                     }
 
                     if (!dupCheck.contains(b.enumValue))
@@ -600,7 +654,7 @@ public class OERDefinition
         public Builder enumValue(BigInteger value)
         {
             Builder b = this.copy();
-            this.enumValue = value;
+            b.enumValue = value;
             return b;
         }
 
