@@ -4,12 +4,15 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Collection;
+import java.util.Date;
 import java.util.NoSuchElementException;
 
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.cms.Attribute;
 import org.bouncycastle.asn1.cms.AttributeTable;
+import org.bouncycastle.asn1.cms.CMSAttributes;
 import org.bouncycastle.asn1.cms.ContentInfo;
+import org.bouncycastle.asn1.cms.Time;
 import org.bouncycastle.asn1.ess.ESSCertID;
 import org.bouncycastle.asn1.ess.ESSCertIDv2;
 import org.bouncycastle.asn1.ess.SigningCertificate;
@@ -32,6 +35,7 @@ import org.bouncycastle.cms.SignerInformationVerifier;
 import org.bouncycastle.operator.DigestCalculator;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.Store;
 
 /**
@@ -39,9 +43,19 @@ import org.bouncycastle.util.Store;
  * content type id-ct-TSTInfo, signed by the TSA. Provides access to the embedded
  * {@link TimeStampTokenInfo} and the means to verify the token against the signing certificate
  * (see {@link #validate(SignerInformationVerifier)}).
+ * <p>
+ * Construction checks the token's structure: the content type is id-ct-TSTInfo, there is exactly one
+ * signer, a signing-certificate signed attribute is present, and a signing-time signed attribute, if
+ * present, agrees with the TSTInfo genTime to within the token's accuracy (plus a one minute allowance).
+ * The last of these is what distinguishes an RFC 3161 token from a signature a TSA has produced over
+ * an attacker-supplied TSTInfo through some other service that uses the same key, such as a legacy
+ * countersignature endpoint - the TSA sets signing-time itself, so it cannot be moved to match a forged
+ * genTime. The check can be disabled with {@link Properties#TSP_ALLOW_INCONSISTENT_SIGNING_TIME}.
  */
 public class TimeStampToken
 {
+    private static final long SIGNING_TIME_ALLOWANCE = 60 * 1000L;
+
     CMSSignedData tsToken;
 
     SignerInformation tsaSignerInfo;
@@ -110,6 +124,8 @@ public class TimeStampToken
                 throw new TSPValidationException("no signing certificate attribute found, time stamp invalid.");
             }
 
+            checkSigningTime(signedAttr);
+
             Attribute attr = signedAttr.get(PKCSObjectIdentifiers.id_aa_signingCertificate);
 
             if (attr != null)
@@ -167,6 +183,43 @@ public class TimeStampToken
         catch (NoSuchElementException e)
         {
             throw new TSPException("malformed timestamp token: " + e, e);
+        }
+    }
+
+    /**
+     * A signing-time signed attribute (RFC 5652 sec. 11.3) on a time-stamp token is, like genTime, the TSA's
+     * statement of when it produced the token; a token in which the two disagree was not produced as RFC 3161
+     * describes and is rejected unless {@link Properties#TSP_ALLOW_INCONSISTENT_SIGNING_TIME} is set.
+     */
+    private void checkSigningTime(AttributeTable signedAttr)
+        throws TSPValidationException
+    {
+        Attribute attr = signedAttr.get(CMSAttributes.signingTime);
+
+        if (attr == null || Properties.isOverrideSet(Properties.TSP_ALLOW_INCONSISTENT_SIGNING_TIME))
+        {
+            return;
+        }
+
+        if (attr.getAttrValues().size() != 1)
+        {
+            throw new TSPValidationException("signing-time attribute MUST contain exactly one value.");
+        }
+
+        Date signingTime = Time.getInstance(attr.getAttrValues().getObjectAt(0)).getDate();
+        Date genTime = tstInfo.getGenTime();
+
+        long allowance = SIGNING_TIME_ALLOWANCE;
+        GenTimeAccuracy accuracy = tstInfo.getGenTimeAccuracy();
+        if (accuracy != null)
+        {
+            allowance += accuracy.getSeconds() * 1000L + accuracy.getMillis() + 1;
+        }
+
+        long difference = signingTime.getTime() - genTime.getTime();
+        if (difference > allowance || difference < -allowance)
+        {
+            throw new TSPValidationException("signing-time attribute does not agree with genTime.");
         }
     }
 

@@ -92,6 +92,12 @@ public class Properties
      */
     public static final String CMS_ALLOW_LEGACY_KEYAGREE_KDF = "org.bouncycastle.cms.allow_legacy_keyagree_kdf";
 
+    /**
+     * Whether a time-stamp token whose signing-time signed attribute disagrees with the genTime of its
+     * TSTInfo is accepted. Default false.
+     */
+    public static final String TSP_ALLOW_INCONSISTENT_SIGNING_TIME = "org.bouncycastle.tsp.allow_inconsistent_signing_time";
+
     private Properties()
     {
     }

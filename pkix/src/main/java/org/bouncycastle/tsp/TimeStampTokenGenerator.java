@@ -23,6 +23,8 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.LocaleUtil;
 import org.bouncycastle.asn1.cms.AttributeTable;
+import org.bouncycastle.asn1.cms.CMSAttributes;
+import org.bouncycastle.asn1.cms.Time;
 import org.bouncycastle.asn1.ess.ESSCertID;
 import org.bouncycastle.asn1.ess.ESSCertIDv2;
 import org.bouncycastle.asn1.ess.SigningCertificate;
@@ -507,7 +509,7 @@ public class TimeStampTokenGenerator
                 }
             }
 
-            signedDataGenerator.addSignerInfoGenerator(signerInfoGen);
+            signedDataGenerator.addSignerInfoGenerator(withSigningTime(signerInfoGen, genTime));
 
             byte[] derEncodedTSTInfo = tstInfo.getEncoded(ASN1Encoding.DER);
 
@@ -523,6 +525,31 @@ public class TimeStampTokenGenerator
         {
             throw new TSPException("Exception encoding info", e);
         }
+    }
+
+    /**
+     * A signing-time signed attribute on a time-stamp token must agree with its genTime (TimeStampToken rejects one
+     * that does not), so a signing-time the signed attribute generator produced from the clock is replaced by genTime.
+     */
+    private SignerInfoGenerator withSigningTime(final SignerInfoGenerator signerInfoGen, final Date genTime)
+    {
+        return new SignerInfoGenerator(signerInfoGen, new CMSAttributeTableGenerator()
+        {
+            public AttributeTable getAttributes(Map parameters)
+                throws CMSAttributeTableGenerationException
+            {
+                AttributeTable table = signerInfoGen.getSignedAttributeTableGenerator().getAttributes(parameters);
+
+                if (table.get(CMSAttributes.signingTime) == null)
+                {
+                    return table;
+                }
+
+                Time signingTime = (locale == null) ? new Time(genTime) : new Time(genTime, locale);
+
+                return table.remove(CMSAttributes.signingTime).add(CMSAttributes.signingTime, signingTime);
+            }
+        }, signerInfoGen.getUnsignedAttributeTableGenerator());
     }
 
     // we need to produce a correct DER encoding GeneralizedTime here as the BC ASN.1 library doesn't handle this properly yet.
