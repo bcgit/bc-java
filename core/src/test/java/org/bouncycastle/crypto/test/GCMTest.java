@@ -312,6 +312,7 @@ public class GCMTest
         outputSizeTests();
         testExceptions();
         testResetBehavior();
+        testRefusedInit();
     }
 
 
@@ -430,6 +431,126 @@ public class GCMTest
         } catch (IllegalArgumentException e)
         {
             isTrue("wrong message", e.getMessage().equals("cannot reuse nonce for GCM encryption"));
+        }
+    }
+
+    /*
+     * An init that is refused, or fails part way, must leave the cipher unusable rather than still armed with the
+     * key and nonce of the previous encryption, and must not displace the key and nonce the reuse check remembers.
+     */
+    private void testRefusedInit() throws InvalidCipherTextException
+    {
+        byte[] P = Strings.toByteArray("Hello world!");
+        byte[] buf = new byte[100];
+        byte[] N = new byte[12];
+        AEADParameters params = new AEADParameters(new KeyParameter(new byte[16]), 128, N, Strings.toByteArray("aad"));
+
+        GCMModeCipher c = GCMBlockCipher.newInstance(AESEngine.newInstance());
+        c.init(true, params);
+        c.doFinal(buf, c.processBytes(P, 0, P.length, buf, 0));
+
+        checkEncryptionRefused(c, P, buf, "after doFinal");
+
+        try
+        {
+            c.init(true, params);
+            fail("no exception on reuse");
+        }
+        catch (IllegalArgumentException e)
+        {
+            isTrue("wrong message", e.getMessage().equals("cannot reuse nonce for GCM encryption"));
+        }
+
+        checkEncryptionRefused(c, P, buf, "after refused init");
+
+        // an init that fails on the key must not replace the remembered key, or the original pair is accepted again
+        try
+        {
+            c.init(true, new AEADParameters(new KeyParameter(new byte[15]), 128, N));
+            fail("bad key length not picked up");
+        }
+        catch (IllegalArgumentException e)
+        {
+            // expected
+        }
+
+        try
+        {
+            c.init(true, params);
+            fail("no exception on reuse after failed init");
+        }
+        catch (IllegalArgumentException e)
+        {
+            isTrue("wrong message", e.getMessage().equals("cannot reuse nonce for GCM encryption"));
+        }
+
+        // a good init afterwards, with a fresh nonce or for decryption, still works
+        byte[] N2 = new byte[12];
+        N2[0] = 1;
+        AEADParameters params2 = new AEADParameters(new KeyParameter(new byte[16]), 128, N2, Strings.toByteArray("aad"));
+        c.init(true, params2);
+        int len = c.processBytes(P, 0, P.length, buf, 0);
+        len += c.doFinal(buf, len);
+
+        try
+        {
+            c.init(true, new AEADParameters(new KeyParameter(new byte[16]), 136, N2));
+            fail("bad mac size not picked up");
+        }
+        catch (IllegalArgumentException e)
+        {
+            // expected
+        }
+
+        c.init(false, params2);
+        byte[] dec = new byte[P.length];
+        int dLen = c.processBytes(buf, 0, len, dec, 0);
+        dLen += c.doFinal(dec, dLen);
+        isTrue("decryption after refused init failed", dLen == P.length && areEqual(P, dec));
+    }
+
+    private void checkEncryptionRefused(GCMModeCipher c, byte[] P, byte[] buf, String when)
+    {
+        String expected = "GCM cipher cannot be reused for encryption";
+
+        try
+        {
+            c.processAADByte(P[0]);
+            fail("processAADByte allowed " + when);
+        }
+        catch (IllegalStateException e)
+        {
+            isTrue("wrong message", expected.equals(e.getMessage()));
+        }
+
+        try
+        {
+            c.processAADBytes(P, 0, P.length);
+            fail("processAADBytes allowed " + when);
+        }
+        catch (IllegalStateException e)
+        {
+            isTrue("wrong message", expected.equals(e.getMessage()));
+        }
+
+        try
+        {
+            c.processByte(P[0], buf, 0);
+            fail("processByte allowed " + when);
+        }
+        catch (IllegalStateException e)
+        {
+            isTrue("wrong message", expected.equals(e.getMessage()));
+        }
+
+        try
+        {
+            c.processBytes(P, 0, P.length, buf, 0);
+            fail("processBytes allowed " + when);
+        }
+        catch (IllegalStateException e)
+        {
+            isTrue("wrong message", expected.equals(e.getMessage()));
         }
     }
 

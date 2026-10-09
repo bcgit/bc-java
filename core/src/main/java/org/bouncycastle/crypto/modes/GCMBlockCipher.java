@@ -128,7 +128,8 @@ public class GCMBlockCipher
     {
         this.forEncryption = forEncryption;
         this.macBlock = null;
-        this.initialised = true;
+        // a refused or failed init must leave the cipher unusable, not armed with the previous key and nonce
+        this.initialised = false;
 
         KeyParameter keyParameter = null;
         byte[] newNonce = null;
@@ -195,12 +196,6 @@ public class GCMBlockCipher
             }
         }
 
-        nonce = newNonce;
-        if (keyParameter != null)
-        {
-            lastKey = keyParameter.getKey();
-        }
-
         // TODO Restrict macSize to 16 if nonce length not 12?
 
         // Cipher always used in forward mode
@@ -219,6 +214,13 @@ public class GCMBlockCipher
         else if (this.H == null)
         {
             throw new IllegalArgumentException("Key must be specified in initial init");
+        }
+
+        // only an init that has succeeded is remembered for the nonce-reuse check
+        nonce = newNonce;
+        if (keyParameter != null)
+        {
+            lastKey = keyParameter.getKey();
         }
 
         this.J0 = new byte[BLOCK_SIZE];
@@ -247,6 +249,8 @@ public class GCMBlockCipher
         this.blocksRemaining = -2;      // page 8, len(P) <= 2^39 - 256, 1 block used by tag but done on J0
         this.bufOff = 0;
         this.totalLength = 0;
+
+        this.initialised = true;
 
         if (initialAssociatedText != null)
         {
