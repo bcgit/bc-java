@@ -12,6 +12,7 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.DigestInfo;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
 import org.bouncycastle.crypto.CryptoException;
+import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.MD2Digest;
 import org.bouncycastle.crypto.digests.MD4Digest;
@@ -27,10 +28,13 @@ import org.bouncycastle.crypto.digests.SHA384Digest;
 import org.bouncycastle.crypto.digests.SHA3Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.digests.SHA512tDigest;
+import org.bouncycastle.crypto.engines.RSAEngine;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
+import org.bouncycastle.crypto.signers.PSSSigner;
 import org.bouncycastle.crypto.signers.RSADigestSigner;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.test.SimpleTest;
@@ -98,6 +102,69 @@ public class RSADigestSignerTest
 
         checkStrictDigestInfoIssue2273(rsaPublic, rsaPrivate);
         checkNoNullDigestInfoTailBytesChecked(rsaPublic, rsaPrivate);
+        checkSmallSignatureRepresentativeRejected(rsaPublic, rsaPrivate);
+    }
+
+    /**
+     * A signature representative below 2^(modulus bits - 64) is rejected on verification.
+     */
+    private void checkSmallSignatureRepresentativeRejected(RSAKeyParameters rsaPublic, RSAPrivateCrtKeyParameters rsaPrivate)
+        throws Exception
+    {
+        int modBits = rsaPublic.getModulus().bitLength();
+        int modBytes = (modBits + 7) / 8;
+
+        BigInteger bound = BigIntegers.ONE.shiftLeft(modBits - 64);
+
+        // the engine takes a representative at the bound and refuses one just below it.
+        RSAEngine engine = new RSAEngine();
+        engine.init(false, rsaPublic);
+
+        engine.processBlock(BigIntegers.asUnsignedByteArray(modBytes, bound), 0, modBytes);
+
+        byte[] belowBound = BigIntegers.asUnsignedByteArray(modBytes, bound.subtract(BigIntegers.ONE));
+        try
+        {
+            engine.processBlock(belowBound, 0, modBytes);
+            fail("representative below the bound accepted");
+        }
+        catch (DataLengthException e)
+        {
+            isEquals("input too small for RSA signature.", e.getMessage());
+        }
+
+        // a short encoding of the same value (leading zero bytes dropped) is the same representative.
+        try
+        {
+            engine.processBlock(bound.subtract(BigIntegers.ONE).toByteArray(), 0, bound.subtract(BigIntegers.ONE).toByteArray().length);
+            fail("short representative below the bound accepted");
+        }
+        catch (DataLengthException e)
+        {
+            isEquals("input too small for RSA signature.", e.getMessage());
+        }
+
+        // the signers answer false rather than throwing, and still sign and verify normally.
+        RSADigestSigner signer = new RSADigestSigner(SHA256Digest.newInstance());
+        signer.init(false, rsaPublic);
+        signer.update(belowBound, 0, belowBound.length);
+        isTrue("RSADigestSigner accepted a representative below the bound", !signer.verifySignature(belowBound));
+
+        PSSSigner pss = new PSSSigner(new RSAEngine(), SHA256Digest.newInstance(), 20);
+        pss.init(false, rsaPublic);
+        pss.update(belowBound, 0, belowBound.length);
+        isTrue("PSSSigner accepted a representative below the bound", !pss.verifySignature(belowBound));
+
+        pss.init(true, rsaPrivate);
+        pss.update(belowBound, 0, belowBound.length);
+        byte[] sig = pss.generateSignature();
+        pss.init(false, rsaPublic);
+        pss.update(belowBound, 0, belowBound.length);
+        isTrue("PSS round trip", pss.verifySignature(sig));
+
+        // the private key direction is not subject to the bound: a small value still decrypts.
+        engine.init(false, rsaPrivate);
+        engine.processBlock(belowBound, 0, modBytes);
     }
 
     /**

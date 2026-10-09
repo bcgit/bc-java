@@ -17,6 +17,7 @@ import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.security.Signature;
+import java.security.SignatureException;
 import java.security.interfaces.RSAPrivateCrtKey;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
@@ -54,6 +55,7 @@ import org.bouncycastle.jcajce.spec.OpenSSHPrivateKeySpec;
 import org.bouncycastle.jcajce.spec.OpenSSHPublicKeySpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
@@ -158,6 +160,8 @@ public class RSATest
         
         PrivateKey  priv2048Key = fact.generatePrivate(priv2048KeySpec);
         PublicKey   pub2048Key = fact.generatePublic(pub2048KeySpec);
+
+        malformedSignatureTest(priv2048Key, pub2048Key);
 
         // getKeySpec tests
         isTrue(fact.getKeySpec(privKey, KeySpec.class) instanceof RSAPrivateCrtKeySpec);
@@ -752,6 +756,56 @@ public class RSATest
         oaepDigestCheck("SHA3-512", NISTObjectIdentifiers.id_sha3_512, pub2048Key, priv2048Key, rand, Hex.decode("7b7870bb5ae52276a8b06b59f7321043afb1fa4e5dbca9f14bcce9efaacded531f090646ab0f8701b012cc93c51e0a8591043e6457cde1950f4ffc8ad87d946622ea48a70f95f40c22d88679eb92c10c19db487fd64857d723daf4ccfe749fdd05e6c0be28de57e09d3b5a0981322b6cc7a9743a50eec355a7af5bdcdcddc5e279ad90f599b68c47fdb39916c7a597cf989169e8667fd8602e88c9c128085d0e158ea75eeb37919a91cdf3f2cd5394adaadc4a2f25a6222d2637cb464841dc5820e54843495cb97af6b19edc72f137123813f5d78503232f79e4f617be3a9f09b0206634a2ecfe457dbd71d2d3d8e3dbca486e75e543f559dcea3112ad50a21d"));
 
         testPSSKeys();
+    }
+
+    /**
+     * Signature.verify reports a signature it cannot use as false, never as an unchecked exception: the usual
+     * malformed battery, plus a modulus-length value whose top eight bytes are zero, which the RSA engine
+     * refuses as a signature representative.
+     */
+    private void malformedSignatureTest(PrivateKey privKey, PublicKey pubKey)
+        throws Exception
+    {
+        byte[] message = Strings.toByteArray("malformed signature battery");
+        String[] algorithms = new String[]{ "SHA256withRSA", "SHA256withRSAandMGF1" };
+
+        for (int i = 0; i != algorithms.length; i++)
+        {
+            Signature signer = Signature.getInstance(algorithms[i], "BC");
+
+            signer.initSign(privKey);
+            signer.update(message);
+            byte[] sig = signer.sign();
+
+            byte[] smallRepresentative = new byte[sig.length];
+            Arrays.fill(smallRepresentative, 8, sig.length, (byte)0xff);
+
+            byte[][] malformed = new byte[][]{
+                new byte[0],
+                new byte[3],
+                new byte[sig.length],
+                Arrays.append(sig, (byte)0),
+                Arrays.copyOf(sig, sig.length - 1),
+                smallRepresentative };
+
+            for (int j = 0; j != malformed.length; j++)
+            {
+                signer.initVerify(pubKey);
+                signer.update(message);
+                try
+                {
+                    isTrue(algorithms[i] + " accepted malformed signature " + j, !signer.verify(malformed[j]));
+                }
+                catch (SignatureException e)
+                {
+                    // the JCA's documented alternative to false; an unchecked exception is not acceptable
+                }
+            }
+
+            signer.initVerify(pubKey);
+            signer.update(message);
+            isTrue(algorithms[i] + " round trip", signer.verify(sig));
+        }
     }
 
     private void testPSSKeys()
