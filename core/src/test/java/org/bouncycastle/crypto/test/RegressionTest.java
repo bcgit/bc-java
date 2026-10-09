@@ -141,6 +141,7 @@ public class RegressionTest
             new HashCommitmentTest(),
             new CipherStreamTest(),
             new BlockCipherResetTest(),
+            new ModeReinitTest(),
             new StreamCipherResetTest(),
             new SM3DigestTest(),
             new Shacal2Test(),
