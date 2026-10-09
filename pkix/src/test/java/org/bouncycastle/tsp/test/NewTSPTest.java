@@ -1292,8 +1292,7 @@ public class NewTSPTest
     /**
      * A signing-time signed attribute is the TSA's own statement of when it signed, as genTime is: a generated
      * token carries the genTime it was given as its signing-time rather than the clock, and a token in which the
-     * two disagree is rejected on construction (which is what separates a real token from a signature a TSA has
-     * put over an attacker-supplied TSTInfo through some other service that uses the same key).
+     * two disagree is rejected on construction.
      */
     public void testSigningTimeAgreesWithGenTime()
         throws Exception

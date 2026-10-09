@@ -47,10 +47,7 @@ import org.bouncycastle.util.Store;
  * Construction checks the token's structure: the content type is id-ct-TSTInfo, there is exactly one
  * signer, a signing-certificate signed attribute is present, and a signing-time signed attribute, if
  * present, agrees with the TSTInfo genTime to within the token's accuracy (plus a one minute allowance).
- * The last of these is what distinguishes an RFC 3161 token from a signature a TSA has produced over
- * an attacker-supplied TSTInfo through some other service that uses the same key, such as a legacy
- * countersignature endpoint - the TSA sets signing-time itself, so it cannot be moved to match a forged
- * genTime. The check can be disabled with {@link Properties#TSP_ALLOW_INCONSISTENT_SIGNING_TIME}.
+ * The last check can be disabled with {@link Properties#TSP_ALLOW_INCONSISTENT_SIGNING_TIME}.
  */
 public class TimeStampToken
 {
