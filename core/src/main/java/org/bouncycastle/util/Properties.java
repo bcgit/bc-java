@@ -579,6 +579,13 @@ public class Properties
      */
     public static final String TSP_ALLOW_INCONSISTENT_SIGNING_TIME = "org.bouncycastle.tsp.allow_inconsistent_signing_time";
 
+    /**
+     * The hash algorithms {@code TimeStampToken.validate(SignerInformationVerifier)} accepts for a token's message
+     * imprint, as a comma separated list of digest names or dotted OIDs (for example "SHA-256,SHA-384,SHA-512").
+     * If not set, {@code TSPAlgorithms.ALLOWED} is used. Read via {@link #asKeySet(String)}.
+     */
+    public static final String TSP_ALLOWED_IMPRINT_ALGORITHMS = "org.bouncycastle.tsp.allowed_imprint_algorithms";
+
     private Properties()
     {
     }

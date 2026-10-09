@@ -13,6 +13,7 @@ import org.bouncycastle.asn1.cmp.PKIStatus;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cmc.CMCException;
 import org.bouncycastle.cmc.SimplePKIResponse;
+import org.bouncycastle.cms.SignerInformationVerifier;
 import org.bouncycastle.cms.jcajce.JcaSimpleSignerInfoVerifierBuilder;
 import org.bouncycastle.est.CSRAttributesResponse;
 import org.bouncycastle.est.ESTException;
@@ -20,6 +21,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openssl.X509TrustedCertificateBlock;
 import org.bouncycastle.tsp.TSPAlgorithms;
 import org.bouncycastle.tsp.TSPException;
+import org.bouncycastle.tsp.TSPValidationException;
 import org.bouncycastle.tsp.TimeStampRequest;
 import org.bouncycastle.tsp.TimeStampResponse;
 import org.bouncycastle.tsp.cms.CMSTimeStampedData;
@@ -259,7 +261,7 @@ public class ParseTest
     private void requestParse(
         byte[]  request,
         ASN1ObjectIdentifier algorithm)
-        throws IOException
+        throws IOException, TSPException
     {
         TimeStampRequest    req = new TimeStampRequest(request);
         
@@ -308,11 +310,24 @@ public class ParseTest
         
         try
         {
-            req.validate(TSPAlgorithms.ALLOWED, null, null);
+            req.validate(TSPAlgorithms.LEGACY, null, null);
         }
         catch (Exception e)
         {
             fail("validation exception.");
+        }
+
+        if (TSPAlgorithms.MD5.equals(algorithm))
+        {
+            try
+            {
+                req.validate(TSPAlgorithms.ALLOWED, null, null);
+                fail("MD5 request accepted by ALLOWED.");
+            }
+            catch (TSPValidationException e)
+            {
+                assertEquals(PKIFailureInfo.badAlg, e.getFailureCode());
+            }
         }
         
         if (!Arrays.areEqual(req.getEncoded(), request))
@@ -336,7 +351,29 @@ public class ParseTest
 
         resp.validate(req);
 
-        resp.getTimeStampToken().validate(new JcaSimpleSignerInfoVerifierBuilder().setProvider("BC").build(cert));
+        SignerInformationVerifier verifier = new JcaSimpleSignerInfoVerifierBuilder().setProvider("BC").build(cert);
+
+        resp.getTimeStampToken().validate(verifier, TSPAlgorithms.LEGACY);
+
+        if (algorithm.equals(TSPAlgorithms.MD5))
+        {
+            try
+            {
+                resp.getTimeStampToken().validate(verifier);
+                fail("MD5 imprint accepted by default");
+            }
+            catch (TSPValidationException e)
+            {
+                if (e.getFailureCode() != PKIFailureInfo.badAlg)
+                {
+                    fail("MD5 imprint rejected with wrong failure code");
+                }
+            }
+        }
+        else
+        {
+            resp.getTimeStampToken().validate(verifier);
+        }
     }
     
     private void unacceptableResponseParse(

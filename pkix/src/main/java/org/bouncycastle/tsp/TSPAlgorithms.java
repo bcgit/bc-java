@@ -1,6 +1,7 @@
 package org.bouncycastle.tsp;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -44,5 +45,13 @@ public interface TSPAlgorithms
 
     public static final ASN1ObjectIdentifier SM3 = GMObjectIdentifiers.sm3;
 
-    public static final Set    ALLOWED = new HashSet(Arrays.asList(new ASN1ObjectIdentifier[] { SM3, GOST3411, GOST3411_2012_256, GOST3411_2012_512, MD5, SHA1, SHA224, SHA256, SHA384, SHA512, SHA3_224, SHA3_256, SHA3_384, SHA3_512, RIPEMD128, RIPEMD160, RIPEMD256 }));
+    /**
+     * Hash algorithms accepted for a message imprint by default (unmodifiable).
+     */
+    public static final Set    ALLOWED = Collections.unmodifiableSet(new HashSet(Arrays.asList(new ASN1ObjectIdentifier[] { SM3, GOST3411, GOST3411_2012_256, GOST3411_2012_512, SHA1, SHA224, SHA256, SHA384, SHA512, SHA3_224, SHA3_256, SHA3_384, SHA3_512, RIPEMD128, RIPEMD160, RIPEMD256 })));
+
+    /**
+     * {@link #ALLOWED} plus MD5, for processing legacy requests and tokens (unmodifiable).
+     */
+    public static final Set    LEGACY = Collections.unmodifiableSet(new HashSet(Arrays.asList(new ASN1ObjectIdentifier[] { SM3, GOST3411, GOST3411_2012_256, GOST3411_2012_512, MD5, SHA1, SHA224, SHA256, SHA384, SHA512, SHA3_224, SHA3_256, SHA3_384, SHA3_512, RIPEMD128, RIPEMD160, RIPEMD256 })));
 }

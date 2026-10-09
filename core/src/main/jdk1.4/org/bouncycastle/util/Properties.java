@@ -98,6 +98,11 @@ public class Properties
      */
     public static final String TSP_ALLOW_INCONSISTENT_SIGNING_TIME = "org.bouncycastle.tsp.allow_inconsistent_signing_time";
 
+    /**
+     * The hash algorithms (comma separated digest names or OIDs) accepted for a time-stamp token's message imprint.
+     */
+    public static final String TSP_ALLOWED_IMPRINT_ALGORITHMS = "org.bouncycastle.tsp.allowed_imprint_algorithms";
+
     private Properties()
     {
     }
