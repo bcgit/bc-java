@@ -97,53 +97,60 @@ public class JndiDANEFetcherFactory
                 {
                     DirContext ctx = new InitialDirContext(env);
 
-                    if (domainName.indexOf("_smimecert.") > 0)
+                    try
                     {
-                        // need to use fully qualified domain name if using named DNS server.
-                        Attributes attrs = ctx.getAttributes(domainName, new String[]{DANE_TYPE});
-                        Attribute smimeAttr = attrs.get(DANE_TYPE);
-
-                        if (smimeAttr != null)
+                        if (domainName.indexOf("_smimecert.") > 0)
                         {
-                            addEntries(entries, domainName, smimeAttr);
-                        }
-                    }
-                    else
-                    {
-                        // Use list() rather than listBindings() so each
-                        // NameClassPair carries only the entry's name and
-                        // class-name strings — no Java object is
-                        // materialised from the directory's reply, avoiding
-                        // the JNDI-injection / LDAP-entry-poisoning attack
-                        // surface raised in github #239.
-                        NamingEnumeration pairs = ctx.list("_smimecert." + domainName);
-
-                        while (pairs.hasMore())
-                        {
-                            NameClassPair p = (NameClassPair)pairs.next();
-
-                            // JDK 1.4's NameClassPair has no getNameInNamespace(), so the
-                            // fully-qualified name is composed from the name relative to
-                            // the listed "_smimecert.<domain>" context instead.
-                            String relName = p.getName();
-                            if (relName.length() > 1 && relName.charAt(0) == '"' && relName.charAt(relName.length() - 1) == '"')
-                            {
-                                relName = relName.substring(1, relName.length() - 1);
-                            }
-                            String name = relName + "._smimecert." + domainName;
-
                             // need to use fully qualified domain name if using named DNS server.
-                            Attributes attrs = ctx.getAttributes(name, new String[]{DANE_TYPE});
+                            Attributes attrs = ctx.getAttributes(domainName, new String[]{DANE_TYPE});
                             Attribute smimeAttr = attrs.get(DANE_TYPE);
 
                             if (smimeAttr != null)
                             {
-                                addEntries(entries, name, smimeAttr);
+                                addEntries(entries, domainName, smimeAttr);
                             }
                         }
-                    }
+                        else
+                        {
+                            // Use list() rather than listBindings() so each
+                            // NameClassPair carries only the entry's name and
+                            // class-name strings — no Java object is
+                            // materialised from the directory's reply, avoiding
+                            // the JNDI-injection / LDAP-entry-poisoning attack
+                            // surface raised in github #239.
+                            NamingEnumeration pairs = ctx.list("_smimecert." + domainName);
 
-                    return entries;
+                            while (pairs.hasMore())
+                            {
+                                NameClassPair p = (NameClassPair)pairs.next();
+
+                                // JDK 1.4's NameClassPair has no getNameInNamespace(), so the
+                                // fully-qualified name is composed from the name relative to
+                                // the listed "_smimecert.<domain>" context instead.
+                                String relName = p.getName();
+                                if (relName.length() > 1 && relName.charAt(0) == '"' && relName.charAt(relName.length() - 1) == '"')
+                                {
+                                    relName = relName.substring(1, relName.length() - 1);
+                                }
+                                String name = relName + "._smimecert." + domainName;
+
+                                // need to use fully qualified domain name if using named DNS server.
+                                Attributes attrs = ctx.getAttributes(name, new String[]{DANE_TYPE});
+                                Attribute smimeAttr = attrs.get(DANE_TYPE);
+
+                                if (smimeAttr != null)
+                                {
+                                    addEntries(entries, name, smimeAttr);
+                                }
+                            }
+                        }
+
+                        return entries;
+                    }
+                    finally
+                    {
+                        ctx.close();
+                    }
                 }
                 catch (NamingException e)
                 {

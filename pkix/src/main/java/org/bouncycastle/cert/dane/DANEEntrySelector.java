@@ -14,9 +14,12 @@ public class DANEEntrySelector
 
     public boolean match(Object obj)
     {
-        DANEEntry dEntry = (DANEEntry)obj;
+        if (!(obj instanceof DANEEntry))
+        {
+            return false;
+        }
 
-        return dEntry.getDomainName().equals(domainName);
+        return ((DANEEntry)obj).getDomainName().equals(domainName);
     }
 
     public Object clone()

@@ -22,6 +22,12 @@ import org.bouncycastle.cert.dane.DANEException;
 
 /**
  * A DANE entry fetcher implemented using JNDI.
+ * <p>
+ * Note: the JNDI DNS provider does not perform DNSSEC validation, so the entries returned are only as
+ * trustworthy as the path to the resolver used. Fetching the entries for a bare domain name relies on
+ * the provider's list() operation, which is implemented as a zone transfer and is only available from a
+ * server configured to allow one; fetching by the fully qualified name produced by
+ * {@link org.bouncycastle.cert.dane.DANEEntrySelectorFactory} is a regular query.
  */
 public class JndiDANEFetcherFactory
     implements DANEEntryFetcherFactory
@@ -97,49 +103,47 @@ public class JndiDANEFetcherFactory
                 {
                     DirContext ctx = new InitialDirContext(env);
 
-                    if (domainName.indexOf("_smimecert.") > 0)
+                    try
                     {
-                        // need to use fully qualified domain name if using named DNS server.
-                        Attributes attrs = ctx.getAttributes(domainName, new String[]{DANE_TYPE});
-                        Attribute smimeAttr = attrs.get(DANE_TYPE);
-
-                        if (smimeAttr != null)
+                        if (domainName.indexOf("_smimecert.") > 0)
                         {
-                            addEntries(entries, domainName, smimeAttr);
-                        }
-                    }
-                    else
-                    {
-                        // Use list() rather than listBindings() so each
-                        // NameClassPair carries only the entry's name and
-                        // class-name strings — no Java object is
-                        // materialised from the directory's reply, avoiding
-                        // the JNDI-injection / LDAP-entry-poisoning attack
-                        // surface raised in github #239. The only datum the
-                        // body needs is the fully-qualified name, which
-                        // NameClassPair.getNameInNamespace() exposes
-                        // directly.
-                        NamingEnumeration pairs = ctx.list("_smimecert." + domainName);
-
-                        while (pairs.hasMore())
-                        {
-                            NameClassPair p = (NameClassPair)pairs.next();
-
-                            String fullName = p.getNameInNamespace();
-                            String name = fullName.substring(1, fullName.length() - 1);
-
                             // need to use fully qualified domain name if using named DNS server.
-                            Attributes attrs = ctx.getAttributes(name, new String[]{DANE_TYPE});
+                            Attributes attrs = ctx.getAttributes(domainName, new String[]{DANE_TYPE});
                             Attribute smimeAttr = attrs.get(DANE_TYPE);
 
                             if (smimeAttr != null)
                             {
-                                addEntries(entries, name, smimeAttr);
+                                addEntries(entries, domainName, smimeAttr);
                             }
                         }
-                    }
+                        else
+                        {
+                            // list() rather than listBindings(): no Java object is materialised from the reply (github #239).
+                            NamingEnumeration pairs = ctx.list("_smimecert." + domainName);
 
-                    return entries;
+                            while (pairs.hasMore())
+                            {
+                                NameClassPair p = (NameClassPair)pairs.next();
+
+                                String name = toDomainName(p.getNameInNamespace());
+
+                                // need to use fully qualified domain name if using named DNS server.
+                                Attributes attrs = ctx.getAttributes(name, new String[]{DANE_TYPE});
+                                Attribute smimeAttr = attrs.get(DANE_TYPE);
+
+                                if (smimeAttr != null)
+                                {
+                                    addEntries(entries, name, smimeAttr);
+                                }
+                            }
+                        }
+
+                        return entries;
+                    }
+                    finally
+                    {
+                        ctx.close();
+                    }
                 }
                 catch (NamingException e)
                 {
@@ -147,6 +151,24 @@ public class JndiDANEFetcherFactory
                 }
             }
         };
+    }
+
+    /**
+     * Convert the fully qualified name the JNDI DNS provider reports for a listed entry into the
+     * domain name a DANEEntry carries. The provider returns the name in DNS presentation form,
+     * unquoted and with a trailing dot for the root label; only that dot is removed.
+     *
+     * @param nameInNamespace the value of NameClassPair.getNameInNamespace() for the entry.
+     * @return the fully qualified domain name without the root label.
+     */
+    static String toDomainName(String nameInNamespace)
+    {
+        if (nameInNamespace.length() > 1 && nameInNamespace.charAt(nameInNamespace.length() - 1) == '.')
+        {
+            return nameInNamespace.substring(0, nameInNamespace.length() - 1);
+        }
+
+        return nameInNamespace;
     }
 
     private void addEntries(List entries, String domainName, Attribute smimeAttr)

@@ -30,12 +30,36 @@ public class DANEEntry
         this.certHolder = certHolder;
     }
 
+    /**
+     * Create an entry from the RDATA of a DNS record.
+     *
+     * @param domainName the owner name of the record.
+     * @param data the record's RDATA: the three flag bytes followed by the certificate encoding.
+     * @throws IOException if the flags do not describe a full certificate entry (see {@link #isValidCertificate(byte[])})
+     * or the certificate encoding is malformed.
+     */
     public DANEEntry(String domainName, byte[] data)
         throws IOException
     {
-        this(domainName, Arrays.copyOfRange(data, 0, 3), new X509CertificateHolder(Arrays.copyOfRange(data, 3, data.length)));
+        this(domainName, flagsOf(data), new X509CertificateHolder(Arrays.copyOfRange(data, 3, data.length)));
     }
 
+    private static byte[] flagsOf(byte[] data)
+        throws IOException
+    {
+        if (!isValidCertificate(data))
+        {
+            throw new IOException("DANE record is not a full certificate entry");
+        }
+
+        return Arrays.copyOfRange(data, 0, 3);
+    }
+
+    /**
+     * Return the three flag bytes: certificate usage, selector and matching type.
+     *
+     * @return a copy of the flag bytes.
+     */
     public byte[] getFlags()
     {
         return Arrays.clone(flags);
@@ -51,6 +75,11 @@ public class DANEEntry
         return certHolder;
     }
 
+    /**
+     * Return the owner name of the DNS record this entry came from or is destined for.
+     *
+     * @return the entry's fully qualified domain name.
+     */
     public String getDomainName()
     {
         return domainName;

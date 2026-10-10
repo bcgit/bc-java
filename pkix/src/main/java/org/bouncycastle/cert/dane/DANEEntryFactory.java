@@ -13,7 +13,7 @@ public class DANEEntryFactory
     /**
      * Base constructor.
      *
-     * @param digestCalculator a calculator for the message digest to filter email addresses currently SHA-224.
+     * @param digestCalculator a calculator for the message digest to filter email addresses, currently truncated SHA-256 (RFC 8162).
      */
     public DANEEntryFactory(DigestCalculator digestCalculator)
     {
