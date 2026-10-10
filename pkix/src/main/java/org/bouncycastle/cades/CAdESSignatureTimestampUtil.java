@@ -16,10 +16,13 @@ import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.CMSSignedData;
 import org.bouncycastle.cms.SignerId;
 import org.bouncycastle.cms.SignerInformation;
 import org.bouncycastle.cms.SignerInformationStore;
+import org.bouncycastle.cms.SignerInformationVerifier;
+import org.bouncycastle.cms.SigningCertificateVerifier;
 import org.bouncycastle.operator.DigestCalculator;
 import org.bouncycastle.operator.DigestCalculatorProvider;
 import org.bouncycastle.operator.OperatorCreationException;
@@ -206,7 +209,11 @@ public final class CAdESSignatureTimestampUtil
      * that the timestamp falls within the signer cert's validity window.
      * Those steps are the caller's responsibility, built on
      * {@link #getSignatureTimestamps} plus the {@code tsp} module's token
-     * validators.</p>
+     * validators. Nor does it check that the signer's certificate is bound
+     * into the signed attributes, without which a time-stamped signature
+     * value says nothing about the key or content it is later presented
+     * with: {@link #validateSignatureTimestamps(SignerInformation, SignerInformationVerifier)}
+     * does.</p>
      *
      * @param signer      the signer to validate. Must carry at least one
      *                    {@code id-aa-signatureTimeStampToken}.
@@ -236,6 +243,73 @@ public final class CAdESSignatureTimestampUtil
                     "id-aa-signatureTimeStampToken imprint mismatch at index " + i);
             }
         }
+    }
+
+    /**
+     * Validate a B-T signer against the certificate the verifier holds: the
+     * signature must verify under it, the signed attributes must identify it
+     * through an ESS signing-certificate attribute (RFC&nbsp;5126 sec. 5.7.3,
+     * checked by {@link SigningCertificateVerifier#verifySigningCertificate}),
+     * and every {@code id-aa-signatureTimeStampToken} must carry the imprint
+     * of this signature value, as
+     * {@link #validateSignatureTimestamps(SignerInformation, DigestCalculatorProvider)}
+     * checks. The second condition is what ties the time-stamped value to the
+     * certificate and the content; a signature value alone does not commit to
+     * the key that verifies it. The tokens' own signatures and TSA
+     * certificates remain the caller's to validate.
+     *
+     * @param signer   the signer to validate. Must carry at least one
+     *                 {@code id-aa-signatureTimeStampToken}.
+     * @param verifier verifier for the signer's signature, with its associated
+     *                 certificate; its digest calculators serve for the
+     *                 certificate hash and the imprints.
+     * @throws CAdESException if the signature does not verify, the certificate
+     *                        is not bound into the signed attributes, the
+     *                        time-stamp attribute is absent, a token cannot be
+     *                        parsed, or an imprint does not match.
+     * @throws IllegalArgumentException if the verifier has no associated
+     *                                  certificate.
+     */
+    public static void validateSignatureTimestamps(SignerInformation signer,
+                                                   final SignerInformationVerifier verifier)
+        throws CAdESException, OperatorCreationException, IOException
+    {
+        if (signer == null)
+        {
+            throw new NullPointerException("signer");
+        }
+        if (verifier == null)
+        {
+            throw new NullPointerException("verifier");
+        }
+        if (!verifier.hasAssociatedCertificate())
+        {
+            throw new IllegalArgumentException("verifier needs an associated certificate");
+        }
+
+        DigestCalculatorProvider digCalcProv = new DigestCalculatorProvider()
+        {
+            public DigestCalculator get(AlgorithmIdentifier digestAlgorithmIdentifier)
+                throws OperatorCreationException
+            {
+                return verifier.getDigestCalculator(digestAlgorithmIdentifier);
+            }
+        };
+
+        try
+        {
+            if (!signer.verify(verifier))
+            {
+                throw new CAdESException("signature does not verify under the verifier's certificate");
+            }
+            SigningCertificateVerifier.verifySigningCertificate(signer, verifier.getAssociatedCertificate(), digCalcProv);
+        }
+        catch (CMSException e)
+        {
+            throw new CAdESException(e.getMessage(), e);
+        }
+
+        validateSignatureTimestamps(signer, digCalcProv);
     }
 
     private static SignerInformation addSignatureTimestamp(SignerInformation signer,
