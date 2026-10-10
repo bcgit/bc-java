@@ -121,12 +121,6 @@ class RSACoreEngine
             throw new DataLengthException("input too large for RSA cipher.");
         }
 
-        // a genuine signature is this far below the modulus with probability 2^-64, so don't accept one that is
-        if (!forEncryption && !key.isPrivate() && res.bitLength() <= key.getModulus().bitLength() - 64)
-        {
-            throw new DataLengthException("input too small for RSA signature.");
-        }
-
         return res;
     }
 
