@@ -9,4 +9,13 @@ import java.security.PrivateKey;
 public interface XMSSMTPrivateKey
     extends XMSSMTKey, org.bouncycastle.jcajce.interfaces.XMSSMTPrivateKey
 {
+    /**
+     * Return a key representing a shard of the key space that can be used usageCount times.
+     * <p>
+     * Note: this will use the range [index...index + usageCount) for the current key.
+     * </p>
+     * @param usageCount the number of usages the key should have.
+     * @return a key based on the current key that can be used usageCount times.
+     */
+    XMSSMTPrivateKey extractKeyShard(int usageCount);
 }
