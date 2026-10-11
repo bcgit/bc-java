@@ -369,8 +369,8 @@ public class AsconEngine
             x3 ^= K2;
             break;
         case 0: //ascon80pq:
-            x1 ^= (K0 << 32 | K1 >> 32);
-            x2 ^= (K1 << 32 | K2 >> 32);
+            x1 ^= (K0 << 32 | K1 >>> 32);
+            x2 ^= (K1 << 32 | K2 >>> 32);
             x3 ^= K2 << 32;
             break;
         default:
@@ -440,7 +440,7 @@ public class AsconEngine
         }
         else if (CRYPTO_KEYBYTES == 20)
         {
-            K0 = Pack.bigEndianToInt(k, 0);
+            K0 = Pack.bigEndianToInt(k, 0) & 0xffffffffL;
             K1 = Pack.bigEndianToLong(k, 4);
             K2 = Pack.bigEndianToLong(k, 12);
         }

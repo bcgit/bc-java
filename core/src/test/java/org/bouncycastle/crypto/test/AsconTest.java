@@ -100,6 +100,7 @@ public class AsconTest
         testVectorsEngine_ascon128();
         testVectorsEngine_ascon128a();
         testVectorsEngine_ascon80pq();
+        testVectorsEngine_ascon80pq_highBitKeys();
 
         testVectorsXof_AsconXof();
         testVectorsXof_AsconXofA();
@@ -533,6 +534,66 @@ public class AsconTest
         throws Exception
     {
         implTestVectorsEngine(createEngine(AsconEngine.AsconParameters.ascon80pq), "crypto/ascon", "160_128");
+    }
+
+    public void testVectorsEngine_ascon80pq_highBitKeys()
+        throws Exception
+    {
+        // Ascon-80pq v1.2 vectors with the high bit set in key[0], key[4] or key[12], which hold the sign bits
+        // of the three words the key is loaded into. LWC_AEAD_KAT_160_128.txt, read by testVectorsEngine_ascon80pq(),
+        // uses the single key 000102..13 for every Count, so it never sets those bits. Rows 1-8 are from Project
+        // Wycheproof, testvectors_v1/ascon80pq_test.json (C2SP/wycheproof commit
+        // 12fd3aaf33eb5fa1f52e026912ee00c054f9d984, Apache License 2.0); tcId 5 sets none of the three bits and
+        // tcId 6 sets all of them. Rows 9-10 are Count 1 and Count 537 of
+        // crypto_aead/ascon80pqv12/LWC_AEAD_KAT_160_128.txt in ascon/ascon-c v1.2.8 (CC0 1.0).
+        // Columns: source, key, nonce, AD, PT, CT || tag.
+        String[][] vectors = {
+            { "wycheproof tcId 1", "2d7d3ac61c1e0f719b58ae86b974b95bcc2db64c", "70c0acbaf60acd770fcd05f2d142a13c", "", "", "a781b81a25c11b25197db620d344dac2" },
+            { "wycheproof tcId 2", "8ece668f4563af8d3b24e3841f5b16a4ff1171ac", "332b95d30dd0e766ebf5e3856b437a13", "", "d9", "c160b6692f2f80c1ca8c0f28fe99a60ece" },
+            { "wycheproof tcId 3", "76b25630fa43e7eaac384cc70c17c2399a74f28c", "7aee4878415c3371952510145cdae5b6", "", "e0d1", "6f6b9b8770eaa636ad501f332b841a35e71f" },
+            { "wycheproof tcId 5", "155aaf2409925b8d524d5e62417f29e32c7ee07d", "c3fc44147fea23080d33fd8a0502c4ed", "", "3e5f3f5c", "60712f24fa0bbda5fec463fe52aa1c00a6a6997f" },
+            { "wycheproof tcId 6", "ed68af72c9c42a4a959c19e9d8188d1c334df537", "3fa0eaf5c2adc08da4e84a20ddb72437", "", "150cb5509f", "d8418513fd359dbb3f1b251cea21633047084a4941" },
+            { "wycheproof tcId 45", "d42b92e511ed3e3154a5532933e3b6a1aa050ff3", "cd1feedf847c6f9685a374a43c803904", "6a4330131c1fc63f4c0ff9", "b77be1477800ff846e304f78d351d1c3", "c0fbc6fb4e326a196033ab926ef8ad4396e50ccfe97946109b6116220c2ab685" },
+            { "wycheproof tcId 56", "70c7a9eae9d2b33dba4460d6715ab9c45fddddd2", "ae2174b0e673a222f542037ce6675fef", "00e2ccacd89efbbba2e734ed309da8b0f79b189cf13e", "dc6271f5fd658f1d7f0fb21d2ebd4599", "8c7e4ccba5d0e3b1c4cda738792af49f6c9d075212a044fe466ff0d3b7e6207a" },
+            { "wycheproof tcId 63", "3f72fa0e0cb8d314635861e8a91a61ecfd487129", "a5b6472c80556b312a681a926dc56a2d", "a888317ded5bfe341272b03548d220fb57bb9b84507abdea19262c803b", "f04dd9c98016549b2da40fc56ff5840c", "71148d442465d58af206cfaa35bcb77df8b191c15e9bdcc57c05b03e7d56a5b7" },
+            { "ascon-c KAT Count 1", "000102030405060708090A0B0C0D0E0F10111213", "000102030405060708090A0B0C0D0E0F", "", "", "ABB688EFA0B9D56B33277A2C97D2146B" },
+            { "ascon-c KAT Count 537", "000102030405060708090A0B0C0D0E0F10111213", "000102030405060708090A0B0C0D0E0F", "0001020304050607", "000102030405060708090A0B0C0D0E0F", "E16C12DD1DB74FA773415872B01CB834DBE18B2D5C6C9E77DF52E8CABB7A3283" },
+        };
+
+        for (int i = 0; i != vectors.length; i++)
+        {
+            String[] v = vectors[i];
+            byte[] key = Hex.decode(v[1]);
+            byte[] nonce = Hex.decode(v[2]);
+            byte[] ad = Hex.decode(v[3]);
+            byte[] pt = Hex.decode(v[4]);
+            byte[] ct = Hex.decode(v[5]);
+
+            AEADCipher ascon = createEngine(AsconEngine.AsconParameters.ascon80pq);
+            CipherParameters parameters = new ParametersWithIV(new KeyParameter(key), nonce);
+
+            // Encrypt
+            ascon.init(true, parameters);
+            byte[] rv = new byte[ascon.getOutputSize(pt.length)];
+            ascon.processAADBytes(ad, 0, ad.length);
+            int len = ascon.processBytes(pt, 0, pt.length, rv, 0);
+            len += ascon.doFinal(rv, len);
+            if (!areEqual(rv, 0, len, ct, 0, ct.length))
+            {
+                mismatch("Ascon-80pq " + v[0], v[5], rv);
+            }
+
+            // Decrypt
+            ascon.init(false, parameters);
+            rv = new byte[ascon.getOutputSize(ct.length)];
+            ascon.processAADBytes(ad, 0, ad.length);
+            len = ascon.processBytes(ct, 0, ct.length, rv, 0);
+            len += ascon.doFinal(rv, len);
+            if (!areEqual(rv, 0, len, pt, 0, pt.length))
+            {
+                mismatch("Ascon-80pq recover " + v[0], v[4], rv);
+            }
+        }
     }
 
     public void testVectorsEngine_asconaead128()
