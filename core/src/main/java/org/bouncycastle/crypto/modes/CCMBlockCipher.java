@@ -296,8 +296,8 @@ public class CCMBlockCipher
 
             if (!forEncryption)
             {
-                // input includes 16 additional bytes: CCM flags and n+q values.
-                inputAdjustment = 1 /* flags */ + 15 /* n + q */;
+                // input includes the tag: the limit applies to the payload only.
+                inputAdjustment = macSize;
             }
 
             if ((inLen-inputAdjustment) >= limitLen)
