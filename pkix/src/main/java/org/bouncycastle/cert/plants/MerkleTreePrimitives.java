@@ -144,6 +144,12 @@ public class MerkleTreePrimitives
             return false;
         }
 
+        // Step 2: an empty subtree has an empty proof and the hash of the empty string.
+        if (start == end)
+        {
+            return proof.isEmpty() && Arrays.areEqual(subtreeHash, hash.hashRaw(new byte[0]));
+        }
+
         long fn = start;
         long sn = end - 1;
         long tn = n - 1;
@@ -241,9 +247,11 @@ public class MerkleTreePrimitives
     /**
      * Computes the Merkle Tree Hash {@code MTH(D[start:end])} over a range of entries,
      * per <a href="https://www.rfc-editor.org/rfc/rfc9162#section-2.1.1">RFC 9162 Section 2.1.1</a>.
-     * The range need not be a subtree in the sense of Section 4.1; any non-empty
+     * The range need not be a subtree in the sense of Section 4.1; any
      * {@code [start, end)} within the list is accepted, which is what the proof
-     * generators need for the intermediate node hashes they emit.
+     * generators need for the intermediate node hashes they emit. The empty range
+     * hashes to {@code HASH("")}, the hash of the empty string, as RFC 9162 defines
+     * {@code MTH({})}.
      *
      * @param entryHashes hashes of the tree's entries, entry {@code i} at position {@code i}
      *                    (each {@code MTH({entry})}, i.e. {@link MerkleTreeHash#hashLeaf})
@@ -251,7 +259,7 @@ public class MerkleTreePrimitives
      * @param end         range end index (exclusive)
      * @param hash        the Merkle tree hash implementation
      * @return {@code MTH(D[start:end])}
-     * @throws IllegalArgumentException if the range is empty or not covered by {@code entryHashes}
+     * @throws IllegalArgumentException if the range is not covered by {@code entryHashes}
      */
     public static byte[] computeMerkleTreeHash(
         List<byte[]> entryHashes, long start, long end, MerkleTreeHash hash)
@@ -274,12 +282,17 @@ public class MerkleTreePrimitives
      * @param end   range end index (exclusive)
      * @param hash  the Merkle tree hash implementation
      * @return {@code MTH(D[start:end])}
-     * @throws IllegalArgumentException if the range is empty, or {@code nodes} cannot supply a node
+     * @throws IllegalArgumentException if the range is invalid, or {@code nodes} cannot supply a node
      */
     public static byte[] computeMerkleTreeHash(
         MerkleTreeNodeSource nodes, long start, long end, MerkleTreeHash hash)
     {
         checkRange(nodes, start, end);
+
+        if (start == end)
+        {
+            return hash.hashRaw(new byte[0]);
+        }
 
         return mth(nodes, start, end, hash);
     }
@@ -361,7 +374,7 @@ public class MerkleTreePrimitives
      * @param entryHashes hashes of the tree's entries, entry {@code i} at position {@code i};
      *                    positions {@code [0, n)} are read
      * @param hash        the Merkle tree hash implementation
-     * @return the node hashes forming the consistency proof (empty when the subtree is the whole tree)
+     * @return the node hashes forming the consistency proof (empty when the subtree is the whole tree or empty)
      * @throws IllegalArgumentException if {@code [start, end)} is not a valid subtree (Section 4.1),
      *                                  {@code end > n}, or {@code entryHashes} does not cover {@code [0, n)}
      */
@@ -389,7 +402,7 @@ public class MerkleTreePrimitives
      * @param nodes source of full-subtree hashes for the tree; only nodes within
      *              {@code [0, n)} are requested
      * @param hash  the Merkle tree hash implementation
-     * @return the node hashes forming the consistency proof (empty when the subtree is the whole tree)
+     * @return the node hashes forming the consistency proof (empty when the subtree is the whole tree or empty)
      * @throws IllegalArgumentException if {@code [start, end)} is not a valid subtree (Section 4.1),
      *                                  {@code end > n}, or {@code nodes} cannot supply a node
      */
@@ -403,7 +416,11 @@ public class MerkleTreePrimitives
         checkRange(nodes, 0, n);
 
         List<byte[]> proof = new ArrayList<byte[]>();
-        subtreeSubProof(start, end, nodes, 0, n, true, hash, proof);
+        // SUBTREE_PROOF(start, start, D_n) = {} (Section 4.4.1).
+        if (start < end)
+        {
+            subtreeSubProof(start, end, nodes, 0, n, true, hash, proof);
+        }
         return proof;
     }
 
@@ -429,9 +446,9 @@ public class MerkleTreePrimitives
         {
             throw new IllegalArgumentException("nodes must not be null");
         }
-        if (start < 0 || end <= start)
+        if (start < 0 || end < start)
         {
-            throw new IllegalArgumentException("Interval [" + start + ", " + end + ") is empty");
+            throw new IllegalArgumentException("Interval [" + start + ", " + end + ") is invalid");
         }
     }
 
@@ -542,7 +559,10 @@ public class MerkleTreePrimitives
     /**
      * Checks whether {@code [start, end)} is a valid subtree interval per
      * <a href="https://datatracker.ietf.org/doc/draft-ietf-plants-merkle-tree-certs/#section-4.1">Section 4.1</a>:
-     * 0 &lt;= start &lt; end, and start is a multiple of BIT_CEIL(end - start).
+     * 0 &lt;= start &lt;= end, and start is a multiple of BIT_CEIL(end - start).
+     * The empty interval {@code [x, x)} is a valid subtree for every x, since
+     * BIT_CEIL(0) is 1 (draft-06 made empty subtrees valid), and {@code [0, x)}
+     * is valid for every x.
      *
      * @param start subtree start (inclusive)
      * @param end   subtree end (exclusive)
@@ -550,16 +570,18 @@ public class MerkleTreePrimitives
      */
     public static boolean isValidSubtree(long start, long end)
     {
-        if (start < 0 || end <= start)
+        if (start < 0 || end < start)
         {
             return false;
         }
-        if (start == 0)
+        if (start == 0 || end == start)
         {
             return true;
         }
         long size = end - start;
-        // BIT_CEIL(size): smallest power of two greater than or equal to size.
+        // BIT_CEIL(size): smallest power of two greater than or equal to size. Above
+        // 2^62 the doubling overflows to a non-positive value; the only start that is a
+        // multiple of such a size is 0, which was accepted above (Section 4.1's overflow note).
         long bitCeil = Long.highestOneBit(size);
         if (bitCeil < size)
         {
@@ -569,27 +591,31 @@ public class MerkleTreePrimitives
     }
 
     /**
-     * Finds the minimal set of subtrees that efficiently cover the interval [start, end).
-     * Returns a list of one or two (start, end) pairs.
+     * Selects the two subtrees that efficiently cover the interval [start, end), per
+     * <a href="https://datatracker.ietf.org/doc/draft-ietf-plants-merkle-tree-certs/#section-4.5.1">Section 4.5.1</a>.
+     * The result is always two {@code {start, end}} pairs, {@code left} then
+     * {@code right}, with {@code left.start <= start <= left.end == right.start <= end == right.end};
+     * for an interval of at most one entry they are {@code [start, end)} and the
+     * empty subtree {@code [end, end)} (draft-06 changed this from returning the
+     * single subtree alone).
      *
      * @param start start index of the interval (inclusive)
-     * @param end   end index of the interval (exclusive)
-     * @return list of one or two subtrees covering the interval (as long arrays of length 2)
-     *
-     * @see <a href="https://datatracker.ietf.org/doc/draft-ietf-plants-merkle-tree-certs/#section-4.5">Section 4.5</a>
+     * @param end   end index of the interval (exclusive), at least {@code start}
+     * @return the two covering subtrees (as long arrays of length 2)
      */
     public static List<long[]> findCoveringSubtrees(long start, long end)
     {
-        if (start >= end)
+        if (start < 0 || start > end)
         {
-            throw new IllegalArgumentException("Invalid interval: start must be less than end");
+            throw new IllegalArgumentException("Invalid interval: start must not exceed end");
         }
 
         List<long[]> result = new ArrayList<long[]>();
 
-        if (end - start == 1)
+        if (end - start <= 1)
         {
             result.add(new long[]{start, end});
+            result.add(new long[]{end, end});
             return result;
         }
 

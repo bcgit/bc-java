@@ -6,11 +6,35 @@ import java.io.IOException;
 
 /**
  * Package-private TLS-wire encoding helpers for the fixed-width unsigned
- * integers used by the MTCProof / LandmarkSequence / CosignedMessage formats
+ * integers used by the MTCProof / LandmarkSequence / CosignedSubtree formats
  * defined in draft-ietf-plants-merkle-tree-certs.
  */
 class MTCEncoding
 {
+    static int readUint24(ByteArrayInputStream in)
+        throws IOException
+    {
+        int b1 = in.read();
+        int b2 = in.read();
+        int b3 = in.read();
+        if ((b1 | b2 | b3) < 0)
+        {
+            throw new IOException("Truncated uint24");
+        }
+        return (b1 << 16) | (b2 << 8) | b3;
+    }
+
+    static void writeUint24(ByteArrayOutputStream baos, int v)
+    {
+        if (v < 0 || v > 0xFFFFFF)
+        {
+            throw new IllegalArgumentException("uint24 out of range: " + v);
+        }
+        baos.write((byte)(v >>> 16));
+        baos.write((byte)(v >>> 8));
+        baos.write((byte)v);
+    }
+
     static int readUint16(ByteArrayInputStream in)
         throws IOException
     {

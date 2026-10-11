@@ -13,8 +13,8 @@ import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
 /**
- * The accumulated subtree test vectors of Appendix C of
- * draft-ietf-plants-merkle-tree-certs-05. For trees of every size up to 130,
+ * The accumulated subtree test vectors of Appendix C.1 of
+ * draft-ietf-plants-merkle-tree-certs-07. For trees of every size up to 130,
  * with leaf {@code d[i]} the single byte {@code i}, each output of the
  * Section 4 algorithms is rendered as a text line and folded into one running
  * SHA-256; the draft fixes the four resulting digests.
@@ -24,10 +24,10 @@ public class SubtreeTestVectorsTest
 {
     private static final int MAX_SIZE = 130;
 
-    private static final String SUBTREE_HASHES = "94a95384a8c69acea9b50d035a58285b3a777cb7a724005faa5e1f1e1190007f";
+    private static final String SUBTREE_HASHES = "b82806ad4265bb151c1119c0f4db437bb4d1a1f887b3a7fba1cd4ebf552e3e81";
     private static final String INCLUSION_PROOFS = "ac2a8f989e44d99e399db448050ff5f19757df53cfb716aa81015d3955d8163f";
-    private static final String CONSISTENCY_PROOFS = "c586ebbb73a5621baf2140095d87dde934e3b6503a562a1a5215b8209edd083d";
-    private static final String COVERING_SUBTREES = "e0aecb912a10c57d753b6ecc64db73217f9bc4ed10fcb4e9062be3b6fbe1ebfd";
+    private static final String CONSISTENCY_PROOFS = "10fa99b37bf9bf9ffa26b412fbd98bd75363256d0b75d61bc4538b9c9c5a0a74";
+    private static final String COVERING_SUBTREES = "7fd9c8b926e9d2b5cf831560e8ce295a5ef97ad5c5ede4ea0dea28a8c8fc8bb0";
 
     public String getName()
     {
@@ -50,13 +50,13 @@ public class SubtreeTestVectorsTest
         coveringSubtrees();
     }
 
-    // C.1: "[START, END) HASH\n" for every valid subtree.
+    // C.1.1: "[START, END) HASH\n" for every valid subtree, the empty ones included.
     private void subtreeHashes(List<byte[]> entries, MerkleTreeHash hash)
     {
         Digest acc = new SHA256Digest();
-        for (int end = 1; end <= MAX_SIZE; end++)
+        for (int end = 0; end <= MAX_SIZE; end++)
         {
-            for (int start = 0; start < end; start++)
+            for (int start = 0; start <= end; start++)
             {
                 if (MerkleTreePrimitives.isValidSubtree(start, end))
                 {
@@ -65,16 +65,16 @@ public class SubtreeTestVectorsTest
                 }
             }
         }
-        check("C.1 subtree hashes", acc, SUBTREE_HASHES);
+        check("C.1.1 subtree hashes", acc, SUBTREE_HASHES);
     }
 
-    // C.2: "INDEX [START, END)" + " HASH" per proof node + "\n" for every entry of every valid subtree.
+    // C.1.2: "INDEX [START, END)" + " HASH" per proof node + "\n" for every entry of every valid subtree.
     private void inclusionProofs(List<byte[]> entries, MerkleTreeHash hash)
     {
         Digest acc = new SHA256Digest();
-        for (int end = 1; end <= MAX_SIZE; end++)
+        for (int end = 0; end <= MAX_SIZE; end++)
         {
-            for (int start = 0; start < end; start++)
+            for (int start = 0; start <= end; start++)
             {
                 if (!MerkleTreePrimitives.isValidSubtree(start, end))
                 {
@@ -88,18 +88,18 @@ public class SubtreeTestVectorsTest
                 }
             }
         }
-        check("C.2 subtree inclusion proofs", acc, INCLUSION_PROOFS);
+        check("C.1.2 subtree inclusion proofs", acc, INCLUSION_PROOFS);
     }
 
-    // C.3: "[START, END) N" + " HASH" per proof node + "\n" for every valid subtree of every tree size n.
+    // C.1.3: "[START, END) N" + " HASH" per proof node + "\n" for every valid subtree of every tree size n.
     private void consistencyProofs(List<byte[]> entries, MerkleTreeHash hash)
     {
         Digest acc = new SHA256Digest();
         for (int n = 0; n <= MAX_SIZE; n++)
         {
-            for (int end = 1; end <= n; end++)
+            for (int end = 0; end <= n; end++)
             {
-                for (int start = 0; start < end; start++)
+                for (int start = 0; start <= end; start++)
                 {
                     if (!MerkleTreePrimitives.isValidSubtree(start, end))
                     {
@@ -111,32 +111,25 @@ public class SubtreeTestVectorsTest
                 }
             }
         }
-        check("C.3 subtree consistency proofs", acc, CONSISTENCY_PROOFS);
+        check("C.1.3 subtree consistency proofs", acc, CONSISTENCY_PROOFS);
     }
 
-    // C.4: "[START, END)\n" for a valid subtree, else the two covering subtrees "[LS, LE) [RS, RE)\n".
+    // C.1.4: the two covering subtrees "[LS, LE) [RS, RE)\n" for every interval, empty ones included.
     private void coveringSubtrees()
     {
         Digest acc = new SHA256Digest();
-        for (int end = 1; end <= MAX_SIZE; end++)
+        for (int end = 0; end <= MAX_SIZE; end++)
         {
-            for (int start = 0; start < end; start++)
+            for (int start = 0; start <= end; start++)
             {
-                if (MerkleTreePrimitives.isValidSubtree(start, end))
-                {
-                    update(acc, interval(start, end) + "\n");
-                }
-                else
-                {
-                    List<long[]> covering = MerkleTreePrimitives.findCoveringSubtrees(start, end);
-                    isTrue("two covering subtrees for " + interval(start, end), covering.size() == 2);
-                    long[] left = (long[])covering.get(0);
-                    long[] right = (long[])covering.get(1);
-                    update(acc, interval(left[0], left[1]) + " " + interval(right[0], right[1]) + "\n");
-                }
+                List<long[]> covering = MerkleTreePrimitives.findCoveringSubtrees(start, end);
+                isTrue("two covering subtrees for " + interval(start, end), covering.size() == 2);
+                long[] left = (long[])covering.get(0);
+                long[] right = (long[])covering.get(1);
+                update(acc, interval(left[0], left[1]) + " " + interval(right[0], right[1]) + "\n");
             }
         }
-        check("C.4 efficient covering subtrees", acc, COVERING_SUBTREES);
+        check("C.1.4 efficient covering subtrees", acc, COVERING_SUBTREES);
     }
 
     private static String interval(long start, long end)

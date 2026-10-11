@@ -49,24 +49,30 @@ public class ListMerkleTreeNodeSource
     }
 
     /**
-     * Returns {@code MTH(D[start:end])} computed from the entry hashes. Any non-empty
-     * range covered by the list is accepted, not only full subtrees.
+     * Returns {@code MTH(D[start:end])} computed from the entry hashes. Any range
+     * covered by the list is accepted, not only full subtrees; the empty range
+     * hashes to {@code HASH("")}.
      *
-     * @throws IllegalArgumentException if the range is empty or not covered by the list
+     * @throws IllegalArgumentException if the range is invalid or not covered by the list
      */
     public byte[] getFullSubtreeHash(long start, long end)
     {
         checkCovered(start, end);
+
+        if (start == end)
+        {
+            return hash.hashRaw(new byte[0]);
+        }
 
         return mth(start, end);
     }
 
     void checkCovered(long start, long end)
     {
-        if (start < 0 || end <= start || end > entryHashes.size())
+        if (start < 0 || end < start || end > entryHashes.size())
         {
             throw new IllegalArgumentException("Interval [" + start + ", " + end
-                + ") is empty or not covered by " + entryHashes.size() + " entry hashes");
+                + ") is invalid or not covered by " + entryHashes.size() + " entry hashes");
         }
     }
 

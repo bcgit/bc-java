@@ -84,7 +84,7 @@ public class MerkleTreeCertificateExample
         //    sibling leaf at index 1.
         //
         //    MTCContentSigner captures the TBSCertificate bytes streamed by
-        //    the X509v3CertificateBuilder, derives the MerkleTreeCertEntry
+        //    the X509v3CertificateBuilder, derives the MTCLogEntry
         //    leaf hash, asks the CA cosigner to sign the subtree, and emits
         //    the encoded MTCProof as the cert's signatureValue.
         byte[] siblingHash = hashFunc.hashLeaf("sibling-leaf-1".getBytes());
@@ -112,7 +112,7 @@ public class MerkleTreeCertificateExample
         // Lift the MTCCertificationAuthority info from our identity bundle —
         // in production the relying party would parse it out of the CA
         // certificate's id-pe-mtcCertificationAuthority extension.
-        MTCCertificationAuthority authority = ca.authorityInfo(BigInteger.ZERO, MTCCertificationAuthority.MAX_SERIAL);
+        MTCCertificationAuthority authority = ca.authorityInfo(MTCCertificationAuthority.MIN_SERIAL, MTCCertificationAuthority.MAX_SERIAL);
 
         MerkleTreeCertificateValidator.ValidationParams params =
             new MerkleTreeCertificateValidator.ValidationParams(

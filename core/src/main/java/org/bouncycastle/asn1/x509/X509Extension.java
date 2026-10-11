@@ -160,10 +160,11 @@ public class X509Extension
     public static final ASN1ObjectIdentifier auditIdentity = new ASN1ObjectIdentifier("1.3.6.1.5.5.7.1.4");
 
     /**
-     * <a href="https://davidben.github.io/merkle-tree-certs/draft-ietf-plants-merkle-tree-certs.html">Merkle Tree Certificates</a>
-     * 1.3.6.1.5.5.7.25.TBD
-     * */
-    public static final ASN1ObjectIdentifier id_rdna_trustAnchorID = new ASN1ObjectIdentifier("1.3.6.1.5.5.7.25");
+     * id-rdna-trustAnchorID, the RDN attribute carrying a trust anchor ID for
+     * <a href="https://datatracker.ietf.org/doc/draft-ietf-plants-merkle-tree-certs/">Merkle Tree Certificates</a>:
+     * 1.3.6.1.5.5.7.25.3
+     */
+    public static final ASN1ObjectIdentifier id_rdna_trustAnchorID = new ASN1ObjectIdentifier("1.3.6.1.5.5.7.25.3");
     
     /**
      * NoRevAvail extension in attribute certificates.

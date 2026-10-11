@@ -26,7 +26,7 @@ import org.bouncycastle.asn1.x509.Validity;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.plants.LandmarkCertificateManager;
-import org.bouncycastle.cert.plants.MTCSignature;
+import org.bouncycastle.cert.plants.MTCCosignature;
 import org.bouncycastle.cert.plants.MerkleTreeCertificateValidator;
 import org.bouncycastle.cert.plants.MerkleTreeHash;
 import org.bouncycastle.cert.plants.MerkleTreePrimitives;
@@ -111,9 +111,9 @@ public class LandmarkCertificateManagerTest
 
         // One valid cosignature from a single trusted cosigner, replayed to fill the list. A 2-of-N
         // threshold must not be satisfied by one distinct cosigner.
-        List<MTCSignature> replayed = new ArrayList<MTCSignature>();
-        replayed.add(new MTCSignature(cosignerId, signature));
-        replayed.add(new MTCSignature(cosignerId, signature));
+        List<MTCCosignature> replayed = new ArrayList<MTCCosignature>();
+        replayed.add(new MTCCosignature(cosignerId, signature));
+        replayed.add(new MTCCosignature(cosignerId, signature));
 
         boolean added = manager.addLandmarkSubtree(
             0, checkpointSize, checkpointRoot, checkpoint, Collections.<byte[]>emptyList(), replayed);
@@ -208,8 +208,8 @@ public class LandmarkCertificateManagerTest
         signer.init(true, ed25519KeyPair.getPrivate());
         signer.update(signedData, 0, signedData.length);
         byte[] signature = signer.generateSignature();
-        List<MTCSignature> checkpointSigs =
-            Collections.singletonList(new MTCSignature(cosignerId, signature));
+        List<MTCCosignature> checkpointSigs =
+            Collections.singletonList(new MTCCosignature(cosignerId, signature));
 
         // The trivial case: a subtree that exactly equals the checkpoint can be
         // accepted with an empty consistency proof.
@@ -232,7 +232,7 @@ public class LandmarkCertificateManagerTest
         // A tampered cosignature must be rejected.
         byte[] badSignature = signature.clone();
         badSignature[0] ^= 0x01;
-        List<MTCSignature> badSigs = Collections.singletonList(new MTCSignature(cosignerId, badSignature));
+        List<MTCCosignature> badSigs = Collections.singletonList(new MTCCosignature(cosignerId, badSignature));
         added = manager.addLandmarkSubtree(subStart, subEnd, subHash, checkpoint, consistencyProof, badSigs);
         isTrue("Tampered cosignature rejected", !added);
     }
@@ -312,6 +312,8 @@ public class LandmarkCertificateManagerTest
     private TBSCertificateLogEntry createDummyTBSCertificateLogEntry()
         throws IOException
     {
+        // Deliberately the pre-draft-06 UTF8String form of the issuer, which the
+        // validator still reads; TrustAnchorIDs.issuerName writes the RELATIVE-OID form.
         AttributeTypeAndValue attr = new AttributeTypeAndValue(
             MTCObjectIdentifiers.id_rdna_trustAnchorID,
             new DERUTF8String(LOG_TAID_STRING));

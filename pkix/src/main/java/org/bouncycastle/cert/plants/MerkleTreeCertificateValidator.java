@@ -58,9 +58,11 @@ public class MerkleTreeCertificateValidator
      *   <li>The cert's serial number lies within the CA's authorized range
      *       {@code [authorityInfo.getMinSerial(), authorityInfo.getMaxSerial()]}
      *       (Section 5.5 / 7.2).</li>
-     *   <li>The {@code hashFunction} OID matches {@code authorityInfo.getLogHash()}
-     *       (Section 7.1).</li>
      * </ul>
+     * <p>The log hash function is not part of the structure: a relying party
+     * configured from a CA certificate takes it from the extension type
+     * ({@link MTCCertificationAuthorityCertificate#logHashAlgorithm}, Section 7.1)
+     * and is responsible for supplying a matching {@code hashFunction} here.</p>
      * <p>{@code authorityInfo.getSigAlg()} is the CA cosigner's published signature
      * algorithm. {@link MTCSignatureVerifier#getAlgorithm()} surfaces the MTC
      * algorithm string a registered verifier is bound to, but the draft does
@@ -374,20 +376,7 @@ public class MerkleTreeCertificateValidator
             throw new IllegalArgumentException("id-alg-mtcProof must have absent parameters");
         }
 
-        // Cross-check the supplied hash function against the CA's published
-        // logHash (Section 7.1). When authorityInfo is null, the relying
-        // party is trusting itself to have wired the right hash.
         MTCCertificationAuthority authorityInfo = params.authorityInfo;
-        if (authorityInfo != null)
-        {
-            if (!authorityInfo.getLogHash().getAlgorithm().equals(
-                    params.hashFunction.getAlgorithmIdentifier().getAlgorithm()))
-            {
-                throw new SecurityException(
-                    "hash function " + params.hashFunction.getAlgorithmIdentifier().getAlgorithm()
-                    + " does not match CA logHash " + authorityInfo.getLogHash().getAlgorithm());
-            }
-        }
 
         // Step 2: decode the signatureValue as an MTCProof. A BIT STRING with
         // unused bits is not a multiple of 8 bits and fails verification.
@@ -440,7 +429,7 @@ public class MerkleTreeCertificateValidator
 
         // Steps 7-9: derive the entry hash from the TBSCertificate. The
         // MTCProof's extensions list is prepended (per Section 7.2 step 8.2)
-        // so that the leaf hash matches the log's view of the MerkleTreeCertEntry.
+        // so that the leaf hash matches the log's view of the MTCLogEntry.
         byte[] entryHash = computeEntryHash(certHolder, proof.getExtensionsWire(), params.hashFunction);
 
         // Step 10: evaluate the inclusion proof to recover the expected subtree hash.
@@ -493,7 +482,7 @@ public class MerkleTreeCertificateValidator
         byte[] logId = TrustAnchorIDs.logId(caId, logNumber);
 
         int validCount = 0;
-        for (MTCSignature sig : proof.getSignatures())
+        for (MTCCosignature sig : proof.getSignatures())
         {
             byte[] cosignerId = sig.getCosignerId();
             MTCCosignerVerifier verifier = params.cosignerVerifierProvider.get(cosignerId);
@@ -503,7 +492,7 @@ public class MerkleTreeCertificateValidator
                 continue;
             }
 
-            byte[] cosignedMessage = MTCCosignedMessage.encode(
+            byte[] cosignedMessage = MTCCosignedSubtree.encode(
                 logId, proof.getStart(), proof.getEnd(), expectedSubtreeHash, cosignerId);
 
             OutputStream sOut = verifier.getOutputStream();
@@ -586,12 +575,12 @@ public class MerkleTreeCertificateValidator
             computeEntryHash(tbsCertDer, EMPTY_EXTENSIONS_WIRE, hashFunc), inclusionProof);
     }
 
-    /** Wire encoding of an empty {@code MerkleTreeCertEntryExtension extensions<0..2^16-1>} (the uint16 length prefix 0x0000). */
+    /** Wire encoding of an empty {@code MTCLogEntryExtension extensions<0..2^16-1>} (the uint16 length prefix 0x0000). */
     private static final byte[] EMPTY_EXTENSIONS_WIRE = new byte[]{0, 0};
 
     /**
      * Computes the entry hash for a certificate by transforming its TBSCertificate
-     * into the equivalent {@code MerkleTreeCertEntry} of type {@code tbs_cert_entry}
+     * into the equivalent {@code MTCLogEntry} of type {@code tbs_cert_entry}
      * and hashing per Section 5.2.1 / Section 7.2.
      *
      * <p>The single-pass procedure (Section 7.2):</p>
@@ -660,7 +649,7 @@ public class MerkleTreeCertificateValidator
      * {@code hashFunc.hashLeaf(baos.toByteArray())}, but lets callers pipe the
      * bytes directly into a streaming digest (e.g.
      * {@code org.bouncycastle.crypto.io.DigestOutputStream} or
-     * {@code java.security.DigestOutputStream}) so the {@code MerkleTreeCertEntry}
+     * {@code java.security.DigestOutputStream}) so the {@code MTCLogEntry}
      * never lives fully in memory.
      *
      * <p>{@code hashFunc} is still required because Section 7.2's single-pass
@@ -721,9 +710,9 @@ public class MerkleTreeCertificateValidator
         // Step 1 of the single-pass procedure: write the extensions wire bytes
         // (the uint16 length prefix plus each extension's bytes).
         out.write(extensionsWire);
-        // MerkleTreeCertEntryType.tbs_cert_entry as a big-endian uint16.
-        out.write((MerkleTreeCertEntryType.TBS_CERT_ENTRY >>> 8) & 0xFF);
-        out.write(MerkleTreeCertEntryType.TBS_CERT_ENTRY & 0xFF);
+        // MTCLogEntryType.tbs_cert_entry as a big-endian uint16.
+        out.write((MTCLogEntryType.TBS_CERT_ENTRY >>> 8) & 0xFF);
+        out.write(MTCLogEntryType.TBS_CERT_ENTRY & 0xFF);
 
         int size = tbsSeq.size();
         int idx = 0;
@@ -782,12 +771,11 @@ public class MerkleTreeCertificateValidator
     /**
      * Extracts the binary CA trust anchor ID from the issuer field of a Merkle
      * Tree certificate. Per Section 5.1 of the draft the issuer name has a single
-     * RDN with a single attribute. For initial experimentation the attribute
-     * type is {@code id_rdna_trustAnchorID} ({@code 1.3.6.1.4.1.44363.47.1})
-     * with a UTF8String value of the dotted-decimal trust anchor ID; for the
-     * production encoding the value is a RELATIVE-OID. Both are accepted; the
-     * return value is the binary trust anchor ID per Section 3 of
-     * draft-ietf-tls-trust-anchor-ids.
+     * RDN with a single attribute of type {@code id-rdna-trustAnchorID}
+     * ({@code 1.3.6.1.5.5.7.25.3}) whose value is a RELATIVE-OID carrying the
+     * trust anchor ID. The UTF8String dotted-decimal form that earlier drafts
+     * used for experimentation is still accepted. The return value is the binary
+     * trust anchor ID per Section 4 of draft-ietf-tls-trust-anchor-ids.
      */
     public static byte[] extractCaIdFromIssuer(X500Name issuer)
         throws IOException

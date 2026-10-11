@@ -8,7 +8,9 @@ import java.security.Security;
 import java.util.Date;
 import java.util.List;
 
+import org.bouncycastle.asn1.ASN1RelativeOID;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
+import org.bouncycastle.asn1.x500.RDN;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.BasicConstraints;
@@ -19,6 +21,7 @@ import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
 import org.bouncycastle.cert.plants.LandmarkSequence;
+import org.bouncycastle.cert.plants.MerkleTreePrimitives;
 import org.bouncycastle.cert.plants.MTCCertificationAuthorityCertificate;
 import org.bouncycastle.cert.plants.TrustAnchorIDs;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -106,10 +109,10 @@ public class MTCNewFeaturesTest
             }
         });
 
-        // Section 3 / 4.1 of draft-ietf-tls-trust-anchor-ids: a trust anchor ID's
-        // binary form is opaque<1..2^8-1>, i.e. 1..255 bytes. Reject an empty caId,
-        // an ID whose encoding would exceed 255 bytes, and an over-long fromDottedDecimal.
-        testException("binary length must be 1..255", "IllegalArgumentException", new TestExceptionOperation()
+        // Section 4 of draft-ietf-tls-trust-anchor-ids-06: a trust anchor ID's
+        // binary form is opaque<1..32>, i.e. 1..32 bytes. Reject an empty caId,
+        // an ID whose encoding would exceed 32 bytes, and an over-long fromDottedDecimal.
+        testException("binary length must be 1..32", "IllegalArgumentException", new TestExceptionOperation()
         {
             public void operation()
             {
@@ -122,14 +125,14 @@ public class MTCNewFeaturesTest
         {
             maxSb.append(".1");
         }
-        final byte[] caId255 = TrustAnchorIDs.fromDottedDecimal(maxSb.toString());
-        isTrue("255-byte trust anchor ID is accepted", caId255.length == TrustAnchorIDs.MAX_ID_LENGTH);
-        testException("binary length must be 1..255", "IllegalArgumentException", new TestExceptionOperation()
+        final byte[] caId32 = TrustAnchorIDs.fromDottedDecimal(maxSb.toString());
+        isTrue("32-byte trust anchor ID is accepted", caId32.length == TrustAnchorIDs.MAX_ID_LENGTH);
+        testException("binary length must be 1..32", "IllegalArgumentException", new TestExceptionOperation()
         {
             public void operation()
             {
-                // appending the log arc + number tips a 255-byte caId over 255 bytes
-                TrustAnchorIDs.logId(caId255, 1);
+                // appending the log arc + number tips a 32-byte caId over 32 bytes
+                TrustAnchorIDs.logId(caId32, 1);
             }
         });
 
@@ -138,12 +141,12 @@ public class MTCNewFeaturesTest
         {
             overSb.append(".1");
         }
-        final String over255Dotted = overSb.toString();   // 256 single-octet components
-        testException("binary length must be 1..255", "IllegalArgumentException", new TestExceptionOperation()
+        final String over32Dotted = overSb.toString();   // 33 single-octet components
+        testException("binary length must be 1..32", "IllegalArgumentException", new TestExceptionOperation()
         {
             public void operation()
             {
-                TrustAnchorIDs.fromDottedDecimal(over255Dotted);
+                TrustAnchorIDs.fromDottedDecimal(over32Dotted);
             }
         });
 
@@ -179,7 +182,6 @@ public class MTCNewFeaturesTest
         KeyPair externalKp = kpg.generateKeyPair();
 
         MTCCertificationAuthority info = new MTCCertificationAuthority(
-            new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256),
             new AlgorithmIdentifier(new org.bouncycastle.asn1.ASN1ObjectIdentifier("1.2.840.10045.4.3.2")), // ecdsa-with-SHA256
             BigInteger.valueOf(1L << 48),                // minSerial: first entry of log 1
             BigInteger.valueOf((2L << 48) - 1));         // maxSerial: last entry of log 1
@@ -196,15 +198,27 @@ public class MTCNewFeaturesTest
             .setProvider("BC").build(externalKp.getPrivate());
         X509CertificateHolder cert = builder.build(signer);
 
-        // Subject decoding.
+        // Subject decoding: a single RDN carrying the CA ID as a RELATIVE-OID
+        // under id-rdna-trustAnchorID (Section 5.1).
         byte[] decodedCaId = MTCCertificationAuthorityCertificate.extractCaId(cert);
         isTrue("CA ID round-trips through certificate subject", areEqual(caId, decodedCaId));
+        RDN[] subjectRdns = cert.getSubject().getRDNs();
+        isTrue("single RDN", subjectRdns.length == 1 && subjectRdns[0].getTypesAndValues().length == 1);
+        isTrue("id-rdna-trustAnchorID is 1.3.6.1.5.5.7.25.3",
+            "1.3.6.1.5.5.7.25.3".equals(subjectRdns[0].getFirst().getType().getId()));
+        isTrue("subject value is a RELATIVE-OID",
+            subjectRdns[0].getFirst().getValue().toASN1Primitive() instanceof ASN1RelativeOID);
+        isTrue("RELATIVE-OID is the CA ID",
+            "32473.1".equals(((ASN1RelativeOID)subjectRdns[0].getFirst().getValue().toASN1Primitive()).getId()));
 
-        // Extension content.
+        // Extension content: the type identifies the log hash (Section 7.1).
+        isTrue("extension is id-pe-mtcCertificationAuthority-SHA256 (1.3.6.1.5.5.7.1.38)",
+            cert.getExtension(new org.bouncycastle.asn1.ASN1ObjectIdentifier("1.3.6.1.5.5.7.1.38")) != null);
+        isTrue("log hash from extension type is SHA-256",
+            NISTObjectIdentifiers.id_sha256.equals(
+                MTCCertificationAuthorityCertificate.logHashAlgorithm(cert).getAlgorithm()));
         MTCCertificationAuthority decoded =
             MTCCertificationAuthorityCertificate.extractAuthorityInfo(cert);
-        isTrue("logHash preserved",
-            NISTObjectIdentifiers.id_sha256.equals(decoded.getLogHash().getAlgorithm()));
         isTrue("sigAlg preserved",
             "1.2.840.10045.4.3.2".equals(decoded.getSigAlg().getAlgorithm().getId()));
         isTrue("minSerial preserved",
@@ -232,23 +246,32 @@ public class MTCNewFeaturesTest
     private void testLandmarkSequenceParseAndFormat()
         throws Exception
     {
-        // Synthetic sequence: last landmark = 5, 3 active, tree sizes
-        // (newest-first) 1000, 800, 500, 200. last_landmark - 3 = 2, so the
-        // oldest landmark in this view is landmark 2 with tree size 200.
+        // Section 6.4.3: a header of latest_landmark, then "<tree_size> <expiry>"
+        // per landmark newest first. latest_landmark = 5 with four lines, so the
+        // oldest landmark in this view is landmark 2. Evaluated at time 5000,
+        // landmarks 5, 4 and 3 are active and landmark 2 has expired.
+        final long now = 5000;
         String text =
-            "5 3\n" +
-            "1000\n" +
-            "800\n" +
-            "500\n" +
-            "200\n";
+            "5\n" +
+            "1000 9000\n" +
+            "800 8000\n" +
+            "500 8000\n" +
+            "200 4000\n";
 
-        LandmarkSequence seq = LandmarkSequence.parse(text);
+        LandmarkSequence seq = LandmarkSequence.parse(text, now);
         isEquals(5L, seq.getLastLandmark());
+        isEquals(2L, seq.getOldestLandmark());
         isEquals(3, seq.getNumActiveLandmarks());
         isEquals(1000L, seq.getTreeSize(5));
         isEquals(800L, seq.getTreeSize(4));
         isEquals(500L, seq.getTreeSize(3));
         isEquals(200L, seq.getTreeSize(2));
+        isEquals(9000L, seq.getExpiry(5));
+        isEquals(4000L, seq.getExpiry(2));
+        isTrue("landmark 5 active", seq.isActive(5, now));
+        isTrue("landmark 3 active", seq.isActive(3, now));
+        isTrue("landmark 2 expired", !seq.isActive(2, now));
+        isTrue("landmark 5 expired at its expiry", !seq.isActive(5, 9000));
 
         // Out-of-window lookups must throw.
         try
@@ -265,15 +288,51 @@ public class MTCNewFeaturesTest
         String reformatted = seq.format();
         isTrue("format round-trips", text.equals(reformatted));
 
-        // Active landmark subtrees: for each consecutive pair (oldest first)
-        // [200, 500), [500, 800), [800, 1000), find_subtrees covers each.
-        List<long[]> subtrees = seq.activeLandmarkSubtrees();
-        isTrue("at least 3 subtree intervals (one per gap)", subtrees.size() >= 3);
-        // Subtree starts must be non-decreasing.
+        // Landmark subtrees (Section 6.4.1): the two covering subtrees of the
+        // entries since the previous landmark.
+        List<long[]> l3 = seq.landmarkSubtrees(3);
+        isEquals(2, l3.size());
+        List<long[]> cover = MerkleTreePrimitives.findCoveringSubtrees(200, 500);
+        isEquals(cover.get(0)[0], l3.get(0)[0]);
+        isEquals(cover.get(0)[1], l3.get(0)[1]);
+        isEquals(cover.get(1)[0], l3.get(1)[0]);
+        isEquals(cover.get(1)[1], l3.get(1)[1]);
+
+        // Active landmark subtrees: two per active landmark, oldest first.
+        List<long[]> subtrees = seq.activeLandmarkSubtrees(now);
+        isEquals(6, subtrees.size());
+        isEquals(cover.get(0)[0], subtrees.get(0)[0]);
+        isEquals(1000L, subtrees.get(5)[1]);
         for (int i = 1; i < subtrees.size(); i++)
         {
             isTrue("subtree intervals non-decreasing", subtrees.get(i)[0] >= subtrees.get(i - 1)[0]);
         }
+        isEquals(2, seq.activeLandmarkSubtrees(8000).size());   // landmarks 3 and 4 expire at 8000
+        isEquals(0, seq.activeLandmarkSubtrees(9000).size());
+
+        // Section 6.4.4: the landmark for an entry is the lowest numbered one
+        // whose tree size exceeds the index, and the subtree is the one of its
+        // two that contains the index.
+        isEquals(3L, seq.landmarkFor(499));
+        isEquals(4L, seq.landmarkFor(500));
+        isEquals(5L, seq.landmarkFor(999));
+        isEquals(-1L, seq.landmarkFor(1000));
+        long[] sub = seq.landmarkSubtreeFor(250);
+        isTrue("subtree contains 250", sub != null && sub[0] <= 250 && 250 < sub[1]);
+        isTrue("subtree is a landmark 3 subtree", sub[0] == l3.get(0)[0] || sub[0] == l3.get(1)[0]);
+        isTrue("no subtree yet for 1000", seq.landmarkSubtreeFor(1000) == null);
+        // Entry 100 lies under landmark 2, whose predecessor is outside the window.
+        isEquals(2L, seq.landmarkFor(100));
+        isTrue("predecessor outside window", seq.landmarkSubtreeFor(100) == null);
+
+        // A window reaching landmark 0: its subtrees are [0, 0) twice and it is never active.
+        LandmarkSequence fromZero = LandmarkSequence.parse("1\n4 9000\n0 0\n", now);
+        List<long[]> l0 = fromZero.landmarkSubtrees(0);
+        isEquals(2, l0.size());
+        isTrue("landmark 0 subtrees are empty", l0.get(0)[0] == 0 && l0.get(0)[1] == 0 && l0.get(1)[1] == 0);
+        isTrue("landmark 0 never active", !fromZero.isActive(0, -1));
+        isEquals(2, fromZero.activeLandmarkSubtrees(now).size());
+        isTrue("[0, 2) holds entry 1", fromZero.landmarkSubtreeFor(1)[0] == 0 && fromZero.landmarkSubtreeFor(1)[1] == 2);
     }
 
     private void testLandmarkSequenceRejectsBadInput()
@@ -284,27 +343,90 @@ public class MTCNewFeaturesTest
             public void operation()
                 throws IOException
             {
-                LandmarkSequence.parse("3 2\n500\n500\n100\n");
+                LandmarkSequence.parse("3\n500 9000\n500 8000\n100 0\n", 5000);
             }
         });
 
-        // Wrong number of lines for the announced num_active_landmarks.
-        testException("expected", "IOException", new TestExceptionOperation()
+        // Expiry times not monotonically decreasing.
+        testException("expiration times must be monotonically decreasing", "IOException", new TestExceptionOperation()
         {
             public void operation()
                 throws IOException
             {
-                LandmarkSequence.parse("3 2\n500\n100\n");
+                LandmarkSequence.parse("3\n500 8000\n400 9000\n100 0\n", 5000);
             }
         });
 
-        // num_active_landmarks > last_landmark.
-        testException("num_active_landmarks", "IOException", new TestExceptionOperation()
+        // More landmarks than latest_landmark allows.
+        testException("more landmarks", "IOException", new TestExceptionOperation()
         {
             public void operation()
                 throws IOException
             {
-                LandmarkSequence.parse("2 5\n500\n400\n300\n200\n100\n0\n");
+                LandmarkSequence.parse("2\n500 9000\n400 9000\n300 9000\n200 0\n", 5000);
+            }
+        });
+
+        // No expired landmark to delimit the active set.
+        testException("no expired landmark", "IOException", new TestExceptionOperation()
+        {
+            public void operation()
+                throws IOException
+            {
+                LandmarkSequence.parse("3\n500 9000\n400 8000\n", 5000);
+            }
+        });
+
+        // Landmark 0 must have tree size 0 and expiry 0.
+        testException("landmark 0 must have", "IOException", new TestExceptionOperation()
+        {
+            public void operation()
+                throws IOException
+            {
+                LandmarkSequence.parse("1\n500 9000\n0 10\n", 5000);
+            }
+        });
+
+        // Strict syntax: the old two-field header, a missing expiry, extraneous
+        // whitespace, and a missing trailing newline are all rejected.
+        testException("not a decimal integer", "IOException", new TestExceptionOperation()
+        {
+            public void operation()
+                throws IOException
+            {
+                LandmarkSequence.parse("3 2\n500 9000\n100 0\n", 5000);
+            }
+        });
+        testException("must be \"<tree_size> <expiry>\"", "IOException", new TestExceptionOperation()
+        {
+            public void operation()
+                throws IOException
+            {
+                LandmarkSequence.parse("3\n500\n100 0\n", 5000);
+            }
+        });
+        testException("must be \"<tree_size> <expiry>\"", "IOException", new TestExceptionOperation()
+        {
+            public void operation()
+                throws IOException
+            {
+                LandmarkSequence.parse("3\n500 9000 \n100 0\n", 5000);
+            }
+        });
+        testException("must end with a newline", "IOException", new TestExceptionOperation()
+        {
+            public void operation()
+                throws IOException
+            {
+                LandmarkSequence.parse("3\n500 9000\n100 0", 5000);
+            }
+        });
+        testException("exceeds 2^48-1", "IOException", new TestExceptionOperation()
+        {
+            public void operation()
+                throws IOException
+            {
+                LandmarkSequence.parse("3\n281474976710656 9000\n100 0\n", 5000);
             }
         });
     }

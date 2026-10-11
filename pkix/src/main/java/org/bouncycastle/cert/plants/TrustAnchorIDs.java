@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.math.BigInteger;
 
 import org.bouncycastle.asn1.ASN1RelativeOID;
-import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.plants.MTCObjectIdentifiers;
 import org.bouncycastle.asn1.x500.AttributeTypeAndValue;
 import org.bouncycastle.asn1.x500.RDN;
@@ -37,12 +36,14 @@ public final class TrustAnchorIDs
 
     /**
      * Maximum length, in bytes, of a trust anchor ID's binary representation.
-     * A trust anchor ID is transmitted as {@code opaque TrustAnchorID<1..2^8-1>}
-     * (Section 4.1 of draft-ietf-tls-trust-anchor-ids) and Section 3 states its
-     * binary representation "MUST NOT exceed 255 bytes", so a valid trust anchor
-     * ID is 1..255 bytes.
+     * Section 4 of draft-ietf-tls-trust-anchor-ids-06 states that it "MUST NOT
+     * exceed 32 bytes" and transmits it as {@code opaque TrustAnchorID<1..32>},
+     * so a valid trust anchor ID is 1..32 bytes. This bounds the IDs this class
+     * builds and parses; the {@link MTCProof} wire structures still carry the
+     * one-byte length prefix of draft-ietf-plants-merkle-tree-certs and read up
+     * to 255 bytes.
      */
-    public static final int MAX_ID_LENGTH = 255;
+    public static final int MAX_ID_LENGTH = 32;
 
     private TrustAnchorIDs()
     {
@@ -103,10 +104,10 @@ public final class TrustAnchorIDs
     }
 
     /**
-     * Builds the binary trust anchor ID of a landmark (Section 8.2). Section
-     * 5.1 allocates these OIDs for positive landmark numbers only — landmark 0
-     * always has tree size zero and no landmark subtrees, so it never needs an
-     * ID.
+     * Builds the binary trust anchor ID of a landmark, {@code {caID landmarks(1) N L}}
+     * (Sections 5.1 and 8.2). Section 5.1 allocates these OIDs for positive
+     * landmark numbers only: landmark 0 always has tree size zero and the empty
+     * subtrees, so it never needs an ID.
      *
      * @param caId           binary trust anchor ID of the CA
      * @param logNumber      log number
@@ -130,9 +131,11 @@ public final class TrustAnchorIDs
     }
 
     /**
-     * Builds the binary trust anchor ID of a landmark group (Section 8.2.1).
-     * As with {@link #landmarkId}, Section 5.1 allocates these OIDs for
-     * positive landmark numbers only.
+     * Builds the binary trust anchor ID of a landmark group,
+     * {@code {caID landmarkGroups(2) N L}} (Section 8.2.1): the group of the CA
+     * ID itself, selecting standalone certificates, and the landmarks 0 to
+     * {@code L} of log {@code N}. As with {@link #landmarkId}, Section 5.1
+     * allocates these OIDs for positive landmark numbers only.
      *
      * @param caId           binary trust anchor ID of the CA
      * @param logNumber      log number
@@ -157,16 +160,16 @@ public final class TrustAnchorIDs
     }
 
     /**
-     * Builds the issuer {@link X500Name} for a Merkle Tree certificate, using
-     * the experimental {@code id_rdna_trustAnchorID} attribute with a
-     * UTF8String value of the CA's dotted-decimal trust anchor ID (Section 5.1
-     * of draft-ietf-plants-merkle-tree-certs). The validator concatenates this
+     * Builds the issuer {@link X500Name} for a Merkle Tree certificate: a
+     * single RDN whose {@code id-rdna-trustAnchorID} attribute carries the
+     * CA's trust anchor ID as a RELATIVE-OID (Section 5.1 of
+     * draft-ietf-plants-merkle-tree-certs). The validator concatenates this
      * with the cert serial's {@code log_number} to recover the issuance log's
      * full trust anchor ID.
      *
-     * <p>For the production encoding the attribute value is a RELATIVE-OID
-     * rather than a UTF8String; both are accepted on the verifier side by
-     * {@link MerkleTreeCertificateValidator#extractCaIdFromIssuer(X500Name)}.</p>
+     * <p>Earlier drafts used a UTF8String of the dotted-decimal ID for
+     * experimentation; {@link MerkleTreeCertificateValidator#extractCaIdFromIssuer(X500Name)}
+     * still reads that form but it is no longer written.</p>
      *
      * @param caTrustAnchorIdDotted dotted-decimal form of the CA's trust
      *                              anchor ID (e.g. {@code "32473.1"})
@@ -175,14 +178,14 @@ public final class TrustAnchorIDs
     {
         AttributeTypeAndValue attr = new AttributeTypeAndValue(
             MTCObjectIdentifiers.id_rdna_trustAnchorID,
-            new DERUTF8String(caTrustAnchorIdDotted));
+            new ASN1RelativeOID(caTrustAnchorIdDotted));
         return new X500Name(new RDN[]{new RDN(attr)});
     }
 
     /**
      * Converts a binary trust anchor ID into the dotted-decimal form used in
-     * ASCII representations (e.g. for the issuer field UTF8String value and
-     * inside CosignedMessage {@code cosigner_name} / {@code log_origin}).
+     * ASCII representations (e.g. inside the CosignedSubtree
+     * {@code cosigner_name} / {@code log_origin}).
      */
     public static String toDottedDecimal(byte[] binaryId)
     {
@@ -263,7 +266,7 @@ public final class TrustAnchorIDs
         if (id.length < 1 || id.length > MAX_ID_LENGTH)
         {
             throw new IllegalArgumentException(what + " binary length must be 1.." + MAX_ID_LENGTH
-                + " bytes (draft-ietf-tls-trust-anchor-ids sec. 3), got " + id.length);
+                + " bytes (draft-ietf-tls-trust-anchor-ids sec. 4), got " + id.length);
         }
         return id;
     }

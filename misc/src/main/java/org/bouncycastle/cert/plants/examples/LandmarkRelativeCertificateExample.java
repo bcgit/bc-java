@@ -19,7 +19,7 @@ import org.bouncycastle.cert.plants.LandmarkCertificateManager;
 import org.bouncycastle.cert.plants.LandmarkSequence;
 import org.bouncycastle.cert.plants.MTCCertAuth;
 import org.bouncycastle.cert.plants.MTCLog;
-import org.bouncycastle.cert.plants.MTCSignature;
+import org.bouncycastle.cert.plants.MTCCosignature;
 import org.bouncycastle.cert.plants.MerkleTreeCertificateValidator;
 import org.bouncycastle.cert.plants.MerkleTreeHash;
 import org.bouncycastle.cert.plants.TrustAnchorIDs;
@@ -82,12 +82,14 @@ public class LandmarkRelativeCertificateExample
         MerkleTreeHash hashFunc = ca.getHashFunc();
         System.out.println("CA trust anchor ID:    " + ca.getDottedCaId());
 
-        // 2. The CA publishes a landmark sequence (Section 6.4.3): landmark 1
-        //    at tree size 4, landmark 0 always at size 0. Per Section 4.5 the
-        //    interval [0, 4) is covered by the two landmark subtrees [0, 2)
-        //    and [2, 4); the EE entry at index 1 lies in the first.
-        LandmarkSequence landmarks = LandmarkSequence.parse("1 1\n4\n0\n");
-        long[] landmarkSubtree = landmarks.activeLandmarkSubtrees().get(0);
+        // 2. The CA publishes its landmarks (Section 6.4.3): landmark 1 at tree
+        //    size 4, expiring a week from now, and landmark 0, always at size 0
+        //    and already expired. Per Section 4.5 the interval [0, 4) is covered
+        //    by the two landmark subtrees [0, 2) and [2, 4); the EE entry at
+        //    index 1 lies in the first, which Section 6.4.4 selects.
+        long expiry = System.currentTimeMillis() / 1000L + 7L * 24 * 60 * 60;
+        LandmarkSequence landmarks = LandmarkSequence.parse("1\n4 " + expiry + "\n0 0\n");
+        long[] landmarkSubtree = landmarks.landmarkSubtreeFor(1);
         long start = landmarkSubtree[0];     // 0
         long end = landmarkSubtree[1];       // 2
         MTCLog landmark = new MTCLog(ca, LOG_NUMBER, start, end);
@@ -146,7 +148,7 @@ public class LandmarkRelativeCertificateExample
                 landmark.getLogId(), hashFunc, cosigners, /*minCosignaturesForCheckpoint=*/ 1);
 
         MTCLog checkpointWindow = new MTCLog(ca, LOG_NUMBER, 0, 4);
-        MTCSignature checkpointSig = new BcMTCCosigner(ca.getCaId(), caKp.getPrivate())
+        MTCCosignature checkpointSig = new BcMTCCosigner(ca.getCaId(), caKp.getPrivate())
             .cosignSubtree(checkpointWindow, checkpointRoot);
         boolean accepted = manager.addLandmarkSubtree(
             start, end, landmarkHash,

@@ -69,7 +69,7 @@ public class LandmarkCertificateManager
             landmarkSubtree.getStart(),
             landmarkSubtree.getEnd(),
             inclusionProofBytes,
-            Collections.<MTCSignature>emptyList());
+            Collections.<MTCCosignature>emptyList());
 
         AlgorithmIdentifier sigAlg = new AlgorithmIdentifier(MTCObjectIdentifiers.id_alg_mtcProof);
         DERBitString signature = new DERBitString(proof.encode());
@@ -268,7 +268,7 @@ public class LandmarkCertificateManager
             byte[] subtreeHash,
             Checkpoint referenceCheckpoint,
             List<byte[]> consistencyProof,
-            List<MTCSignature> checkpointSignatures)
+            List<? extends MTCCosignature> checkpointSignatures)
             throws IOException
         {
             if (!verifyCheckpointSignatures(referenceCheckpoint, checkpointSignatures))
@@ -292,7 +292,7 @@ public class LandmarkCertificateManager
 
         private boolean verifyCheckpointSignatures(
             Checkpoint checkpoint,
-            List<MTCSignature> signatures)
+            List<? extends MTCCosignature> signatures)
             throws IOException
         {
             // Count each distinct trusted cosigner at most once. The signature list arrives
@@ -300,7 +300,7 @@ public class LandmarkCertificateManager
             // duplicate cosigner_ids), so without this a single valid cosignature replayed N times
             // would satisfy an M-of-N threshold with one cosigner -- defeating the threshold.
             List<byte[]> countedCosignerIds = new ArrayList<byte[]>();
-            for (MTCSignature sig : signatures)
+            for (MTCCosignature sig : signatures)
             {
                 byte[] cosignerId = sig.getCosignerId();
                 MTCCosignerVerifier verifier = cosignerVerifierProvider.get(cosignerId);
@@ -315,7 +315,7 @@ public class LandmarkCertificateManager
                 }
 
                 // A checkpoint is a subtree with start == 0 (Section 5.2).
-                byte[] cosignedMessage = MTCCosignedMessage.encode(
+                byte[] cosignedMessage = MTCCosignedSubtree.encode(
                     logId, 0L, checkpoint.treeSize, checkpoint.rootHash, cosignerId);
 
                 OutputStream sOut = verifier.getOutputStream();

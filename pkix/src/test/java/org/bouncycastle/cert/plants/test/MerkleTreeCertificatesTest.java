@@ -16,17 +16,15 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1RelativeOID;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
-import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.plants.MTCObjectIdentifiers;
 import org.bouncycastle.asn1.sec.SECNamedCurves;
-import org.bouncycastle.asn1.x500.AttributeTypeAndValue;
-import org.bouncycastle.asn1.x500.RDN;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.MTCCertificationAuthority;
@@ -42,16 +40,24 @@ import org.bouncycastle.cert.X509v3CertificateBuilder;
 import org.bouncycastle.cert.plants.ListMerkleTreeNodeSource;
 import org.bouncycastle.cert.plants.MTCCertAuth;
 import org.bouncycastle.cert.plants.MTCContentSigner;
+import org.bouncycastle.cert.plants.MTCCosignature;
 import org.bouncycastle.cert.plants.MTCCosignedMessage;
+import org.bouncycastle.cert.plants.MTCCosignedSubtree;
 import org.bouncycastle.cert.plants.MTCCosignerVerifier;
 import org.bouncycastle.cert.plants.MTCLog;
+import org.bouncycastle.cert.plants.MTCLogEntry;
+import org.bouncycastle.cert.plants.MTCLogEntryExtension;
+import org.bouncycastle.cert.plants.MTCLogEntryType;
 import org.bouncycastle.cert.plants.MTCSignature;
 import org.bouncycastle.cert.plants.MTCSignatureVerifierProvider;
+import org.bouncycastle.cert.plants.MerkleTreeCertEntry;
 import org.bouncycastle.cert.plants.MerkleTreeCertEntryExtension;
+import org.bouncycastle.cert.plants.MerkleTreeCertEntryType;
 import org.bouncycastle.cert.plants.MerkleTreeCertificateValidator;
 import org.bouncycastle.cert.plants.MerkleTreeHash;
 import org.bouncycastle.cert.plants.MerkleTreeNodeSource;
 import org.bouncycastle.cert.plants.MerkleTreePrimitives;
+import org.bouncycastle.cert.plants.TrustAnchorIDs;
 import org.bouncycastle.cert.plants.bc.BcMTCCosigner;
 import org.bouncycastle.cert.plants.bc.BcMTCCosignerVerifierProvider;
 import org.bouncycastle.cert.plants.bc.BcMTCSignatureVerifier;
@@ -365,20 +371,39 @@ public class MerkleTreeCertificatesTest
                 MerkleTreePrimitives.generateSubtreeConsistencyProof(4, 8, 6, fLeaves, hashFunc); // end > n
             }
         });
-        testException("is empty or not covered by", "IllegalArgumentException", new TestExceptionOperation()
+        testException("is invalid or not covered by", "IllegalArgumentException", new TestExceptionOperation()
         {
             public void operation()
             {
                 MerkleTreePrimitives.generateSubtreeConsistencyProof(4, 8, 16, fLeaves, hashFunc); // n > entries
             }
         });
-        testException("is empty or not covered by", "IllegalArgumentException", new TestExceptionOperation()
+        testException("is invalid or not covered by", "IllegalArgumentException", new TestExceptionOperation()
         {
             public void operation()
             {
-                MerkleTreePrimitives.computeMerkleTreeHash(fLeaves, 5, 5, hashFunc);
+                MerkleTreePrimitives.computeMerkleTreeHash(fLeaves, 6, 5, hashFunc);
             }
         });
+
+        // The empty subtree [5, 5): MTH is HASH(""), its consistency proof with any
+        // tree is empty, and verification accepts exactly that pair (Section 4.4.3 step 2).
+        byte[] emptyHash = hashFunc.hashRaw(new byte[0]);
+        isTrue("MTH of empty range is HASH(\"\")",
+            areEqual(emptyHash, MerkleTreePrimitives.computeMerkleTreeHash(fLeaves, 5, 5, hashFunc)));
+        isTrue("MTH of empty range from a node source",
+            areEqual(emptyHash, new ListMerkleTreeNodeSource(fLeaves, hashFunc).getFullSubtreeHash(5, 5)));
+        List<byte[]> emptyProof = MerkleTreePrimitives.generateSubtreeConsistencyProof(5, 5, 8, fLeaves, hashFunc);
+        isTrue("empty subtree has empty consistency proof", emptyProof.isEmpty());
+        byte[] root8 = MerkleTreePrimitives.computeMerkleTreeHash(fLeaves, 0, 8, hashFunc);
+        isTrue("empty subtree consistency proof verifies", MerkleTreePrimitives.verifySubtreeConsistencyProof(
+            5, 5, 8, emptyHash, root8, emptyProof, hashFunc));
+        isTrue("empty subtree rejects a non-empty proof", !MerkleTreePrimitives.verifySubtreeConsistencyProof(
+            5, 5, 8, emptyHash, root8, Collections.singletonList(root8), hashFunc));
+        isTrue("empty subtree rejects a wrong hash", !MerkleTreePrimitives.verifySubtreeConsistencyProof(
+            5, 5, 8, root8, root8, emptyProof, hashFunc));
+        isTrue("empty subtree past the tree end is rejected", !MerkleTreePrimitives.verifySubtreeConsistencyProof(
+            9, 9, 8, emptyHash, root8, emptyProof, hashFunc));
     }
 
     public void testNodeSourceProofGeneration()
@@ -486,11 +511,16 @@ public class MerkleTreeCertificatesTest
                 }, 0, 4, hashFunc);
             }
         });
-        testException("is empty", "IllegalArgumentException", new TestExceptionOperation()
+        // The empty range is HASH("") and is answered without consulting the source.
+        int requestsBefore = requests[0];
+        isTrue("MTH of empty range from a node source is HASH(\"\")", areEqual(
+            hashFunc.hashRaw(new byte[0]), MerkleTreePrimitives.computeMerkleTreeHash(log, 4, 4, hashFunc)));
+        isTrue("empty range made no request", requests[0] == requestsBefore);
+        testException("is invalid", "IllegalArgumentException", new TestExceptionOperation()
         {
             public void operation()
             {
-                MerkleTreePrimitives.computeMerkleTreeHash(log, 4, 4, hashFunc);
+                MerkleTreePrimitives.computeMerkleTreeHash(log, 5, 4, hashFunc);
             }
         });
         testException("nodes must not be null", "IllegalArgumentException", new TestExceptionOperation()
@@ -539,10 +569,49 @@ public class MerkleTreeCertificatesTest
         isEquals(8, subtrees.get(1)[0]);
         isEquals(13, subtrees.get(1)[1]);
 
+        // Section 4.5.1 step 1: an interval of at most one entry is covered by
+        // itself and the empty subtree [end, end), so the result is always two.
         subtrees = MerkleTreePrimitives.findCoveringSubtrees(7, 8);
-        isEquals(1, subtrees.size());
+        isEquals(2, subtrees.size());
         isEquals(7, subtrees.get(0)[0]);
         isEquals(8, subtrees.get(0)[1]);
+        isEquals(8, subtrees.get(1)[0]);
+        isEquals(8, subtrees.get(1)[1]);
+
+        subtrees = MerkleTreePrimitives.findCoveringSubtrees(9, 9);
+        isEquals(2, subtrees.size());
+        isEquals(9, subtrees.get(0)[0]);
+        isEquals(9, subtrees.get(0)[1]);
+        isEquals(9, subtrees.get(1)[0]);
+        isEquals(9, subtrees.get(1)[1]);
+
+        // Appendix C.2.4 large-tree samples.
+        subtrees = MerkleTreePrimitives.findCoveringSubtrees(0x0L, 0x800000000000L);
+        isEquals(0x0L, subtrees.get(0)[0]);
+        isEquals(0x400000000000L, subtrees.get(0)[1]);
+        isEquals(0x400000000000L, subtrees.get(1)[0]);
+        isEquals(0x800000000000L, subtrees.get(1)[1]);
+
+        subtrees = MerkleTreePrimitives.findCoveringSubtrees(0x500000000000L, 0xd00000000000L);
+        isEquals(0x400000000000L, subtrees.get(0)[0]);
+        isEquals(0x800000000000L, subtrees.get(0)[1]);
+        isEquals(0x800000000000L, subtrees.get(1)[0]);
+        isEquals(0xd00000000000L, subtrees.get(1)[1]);
+
+        subtrees = MerkleTreePrimitives.findCoveringSubtrees(0x7fffffffffffL, 0x800000000001L);
+        isEquals(0x7fffffffffffL, subtrees.get(0)[0]);
+        isEquals(0x800000000000L, subtrees.get(0)[1]);
+        isEquals(0x800000000000L, subtrees.get(1)[0]);
+        isEquals(0x800000000001L, subtrees.get(1)[1]);
+
+        testException("start must not exceed end", "IllegalArgumentException", new TestExceptionOperation()
+        {
+            public void operation()
+                throws Exception
+            {
+                MerkleTreePrimitives.findCoveringSubtrees(9, 8);
+            }
+        });
 
         subtrees = MerkleTreePrimitives.findCoveringSubtrees(7, 9);
         isEquals(2, subtrees.size());
@@ -563,10 +632,21 @@ public class MerkleTreeCertificatesTest
         isTrue("[3, 5) is invalid (start not multiple of 2)", !MerkleTreePrimitives.isValidSubtree(3, 5));
         isTrue("[6, 10) is invalid (start not multiple of 4)", !MerkleTreePrimitives.isValidSubtree(6, 10));
 
-        // Degenerate ranges.
-        isTrue("end == start is invalid", !MerkleTreePrimitives.isValidSubtree(5, 5));
+        // Degenerate ranges: [x, x) is valid for every x (BIT_CEIL(0) is 1).
+        isTrue("end == start is valid", MerkleTreePrimitives.isValidSubtree(5, 5));
+        isTrue("[0, 0) is valid", MerkleTreePrimitives.isValidSubtree(0, 0));
         isTrue("end < start is invalid", !MerkleTreePrimitives.isValidSubtree(10, 5));
         isTrue("negative start is invalid", !MerkleTreePrimitives.isValidSubtree(-1, 5));
+
+        // Appendix C.2.1 large-tree cases, up to the 2^63 - 1 that a long can hold.
+        isTrue("[0, 2^47 + 1) is valid", MerkleTreePrimitives.isValidSubtree(0, (1L << 47) + 1));
+        isTrue("[0, 2^48 - 1) is valid", MerkleTreePrimitives.isValidSubtree(0, (1L << 48) - 1));
+        isTrue("[0, 2^62 + 1) is valid", MerkleTreePrimitives.isValidSubtree(0, (1L << 62) + 1));
+        isTrue("[0, 2^63 - 1) is valid", MerkleTreePrimitives.isValidSubtree(0, Long.MAX_VALUE));
+        isTrue("[2^46, 2^47 + 1) is invalid", !MerkleTreePrimitives.isValidSubtree(1L << 46, (1L << 47) + 1));
+        isTrue("[2^46, 2^48 - 1) is invalid", !MerkleTreePrimitives.isValidSubtree(1L << 46, (1L << 48) - 1));
+        isTrue("[2^61, 2^62 + 1) is invalid", !MerkleTreePrimitives.isValidSubtree(1L << 61, (1L << 62) + 1));
+        isTrue("[2^61, 2^63 - 1) is invalid", !MerkleTreePrimitives.isValidSubtree(1L << 61, Long.MAX_VALUE));
     }
 
     public void testCosignatureVerificationECDSA()
@@ -594,7 +674,7 @@ public class MerkleTreeCertificatesTest
         System.arraycopy(r, 0, signature, 0, 32);
         System.arraycopy(s, 0, signature, 32, 32);
 
-        byte[] cosignedMessage = MTCCosignedMessage.encode(logId, start, end, subtreeHash, cosignerId);
+        byte[] cosignedMessage = MTCCosignedSubtree.encode(logId, start, end, subtreeHash, cosignerId);
         BcMTCSignatureVerifier ecdsaVerifier = new BcMTCSignatureVerifier(
             "ECDSA-P256-SHA256", ecdsaKeyPair.getPublic());
 
@@ -620,7 +700,7 @@ public class MerkleTreeCertificatesTest
         signer.update(signedData, 0, signedData.length);
         byte[] signature = signer.generateSignature();
 
-        byte[] cosignedMessage = MTCCosignedMessage.encode(logId, start, end, subtreeHash, cosignerId);
+        byte[] cosignedMessage = MTCCosignedSubtree.encode(logId, start, end, subtreeHash, cosignerId);
         BcMTCSignatureVerifier ed25519Verifier = new BcMTCSignatureVerifier(
             "Ed25519", ed25519KeyPair.getPublic());
 
@@ -662,7 +742,7 @@ public class MerkleTreeCertificatesTest
         System.arraycopy(r, 0, signature, 0, 48);
         System.arraycopy(s, 0, signature, 48, 48);
 
-        byte[] cosignedMessage = MTCCosignedMessage.encode(logId, start, end, subtreeHash, cosignerId);
+        byte[] cosignedMessage = MTCCosignedSubtree.encode(logId, start, end, subtreeHash, cosignerId);
         BcMTCSignatureVerifier verifier = new BcMTCSignatureVerifier(
             "ECDSA-P384-SHA384", p384KeyPair.getPublic());
 
@@ -710,7 +790,7 @@ public class MerkleTreeCertificatesTest
         signer.update(signedData, 0, signedData.length);
         byte[] signature = signer.generateSignature();
 
-        byte[] cosignedMessage = MTCCosignedMessage.encode(logId, start, end, subtreeHash, cosignerId);
+        byte[] cosignedMessage = MTCCosignedSubtree.encode(logId, start, end, subtreeHash, cosignerId);
         BcMTCSignatureVerifier verifier = new BcMTCSignatureVerifier(alg, kp.getPublic());
 
         isTrue(alg + " cosignature verifies", verifier.verify(cosignedMessage, signature));
@@ -736,7 +816,7 @@ public class MerkleTreeCertificatesTest
         signer.update(signedData, 0, signedData.length);
         byte[] signature = signer.generateSignature();
 
-        byte[] cosignedMessage = MTCCosignedMessage.encode(logId, start, end, subtreeHash, cosignerId);
+        byte[] cosignedMessage = MTCCosignedSubtree.encode(logId, start, end, subtreeHash, cosignerId);
 
         MTCCosignerVerifier cosignerVerifier =
             BcMTCCosignerVerifierProvider.singleCosigner(cosignerId, ed25519KeyPair.getPublic())
@@ -948,7 +1028,7 @@ public class MerkleTreeCertificatesTest
         signer.update(signedData, 0, signedData.length);
         byte[] signature = signer.generateSignature();
 
-        List<MTCSignature> sigs = Collections.singletonList(new MTCSignature(cosignerId, signature));
+        List<MTCCosignature> sigs = Collections.singletonList(new MTCCosignature(cosignerId, signature));
         org.bouncycastle.cert.plants.MTCProof proof = new org.bouncycastle.cert.plants.MTCProof(
             start, end, siblingHash, sigs);
 
@@ -1080,7 +1160,7 @@ public class MerkleTreeCertificatesTest
         // 31 bytes — not a multiple of the SHA-256 hash size, so the proof's
         // hash list cannot be reconstructed.
         org.bouncycastle.cert.plants.MTCProof proof = new org.bouncycastle.cert.plants.MTCProof(
-            42, 44, new byte[31], Collections.<MTCSignature>emptyList());
+            42, 44, new byte[31], Collections.<MTCCosignature>emptyList());
 
         final X509CertificateHolder cert = new X509CertificateHolder(
             new DERSequence(new ASN1Encodable[]{tbs, sigAlg, new DERBitString(proof.encode())}).getEncoded());
@@ -1140,7 +1220,7 @@ public class MerkleTreeCertificatesTest
         byte[] subtreeHash = hashFunc.hashNode(entryHash, siblingHash);
 
         org.bouncycastle.cert.plants.MTCProof proof = new org.bouncycastle.cert.plants.MTCProof(
-            start, end, siblingHash, Collections.<MTCSignature>emptyList());
+            start, end, siblingHash, Collections.<MTCCosignature>emptyList());
 
         DERBitString signatureValue = new DERBitString(proof.encode());
         final X509CertificateHolder cert = new X509CertificateHolder(
@@ -1251,17 +1331,17 @@ public class MerkleTreeCertificatesTest
         byte[] sigBytes = new byte[64];
 
         // Correctly ordered: shorter cosigner_id first.
-        List<MTCSignature> good = new ArrayList<MTCSignature>();
-        good.add(new MTCSignature(cosignerShort, sigBytes));
-        good.add(new MTCSignature(cosignerLong, sigBytes));
+        List<MTCCosignature> good = new ArrayList<MTCCosignature>();
+        good.add(new MTCCosignature(cosignerShort, sigBytes));
+        good.add(new MTCCosignature(cosignerLong, sigBytes));
         org.bouncycastle.cert.plants.MTCProof proof = new org.bouncycastle.cert.plants.MTCProof(
             0L, 2L, hashFunc.hashLeaf("x".getBytes()), good);
         isTrue("ordered MTCProof accepted", proof.getSignatures().size() == 2);
 
         // Wrong order: longer first must be rejected by the constructor.
-        final List<MTCSignature> swapped = new ArrayList<MTCSignature>();
-        swapped.add(new MTCSignature(cosignerLong, sigBytes));
-        swapped.add(new MTCSignature(cosignerShort, sigBytes));
+        final List<MTCCosignature> swapped = new ArrayList<MTCCosignature>();
+        swapped.add(new MTCCosignature(cosignerLong, sigBytes));
+        swapped.add(new MTCCosignature(cosignerShort, sigBytes));
         testException("not in canonical order", "IllegalArgumentException", new TestExceptionOperation()
         {
             public void operation()
@@ -1272,9 +1352,9 @@ public class MerkleTreeCertificatesTest
         });
 
         // Duplicate cosigner_id must also be rejected by the constructor.
-        final List<MTCSignature> dup = new ArrayList<MTCSignature>();
-        dup.add(new MTCSignature(cosignerShort, sigBytes));
-        dup.add(new MTCSignature(cosignerShort, sigBytes));
+        final List<MTCCosignature> dup = new ArrayList<MTCCosignature>();
+        dup.add(new MTCCosignature(cosignerShort, sigBytes));
+        dup.add(new MTCCosignature(cosignerShort, sigBytes));
         testException("Duplicate cosigner_id", "IllegalArgumentException", new TestExceptionOperation()
         {
             public void operation()
@@ -1307,6 +1387,7 @@ public class MerkleTreeCertificatesTest
         sigsBaos.write((byte)0); sigsBaos.write((byte)sigBytes.length);
         sigsBaos.write(sigBytes);
         byte[] sigsBytes = sigsBaos.toByteArray();
+        baos.write((byte)(sigsBytes.length >>> 16));   // signatures<0..2^24-1>: 3-byte length prefix
         baos.write((byte)(sigsBytes.length >>> 8));
         baos.write((byte)sigsBytes.length);
         baos.write(sigsBytes);
@@ -1332,7 +1413,7 @@ public class MerkleTreeCertificatesTest
     {
         // Empty extensions list: encode begins with 0x00 0x00 followed by start.
         org.bouncycastle.cert.plants.MTCProof emptyExt = new org.bouncycastle.cert.plants.MTCProof(
-            0L, 2L, hashFunc.hashLeaf("x".getBytes()), Collections.<MTCSignature>emptyList());
+            0L, 2L, hashFunc.hashLeaf("x".getBytes()), Collections.<MTCCosignature>emptyList());
         byte[] emptyBytes = emptyExt.encode();
         isTrue("extensions length prefix is 2 bytes 0x0000",
             emptyBytes[0] == 0 && emptyBytes[1] == 0);
@@ -1344,11 +1425,11 @@ public class MerkleTreeCertificatesTest
             Arrays.equals(new byte[]{0, 0}, emptyReparsed.getExtensionsWire()));
 
         // Non-empty: two extensions in ascending type order.
-        List<MerkleTreeCertEntryExtension> exts = new ArrayList<MerkleTreeCertEntryExtension>();
-        exts.add(new MerkleTreeCertEntryExtension(1, new byte[]{1, 2, 3}));
-        exts.add(new MerkleTreeCertEntryExtension(42, new byte[0]));
+        List<MTCLogEntryExtension> exts = new ArrayList<MTCLogEntryExtension>();
+        exts.add(new MTCLogEntryExtension(1, new byte[]{1, 2, 3}));
+        exts.add(new MTCLogEntryExtension(42, new byte[0]));
         org.bouncycastle.cert.plants.MTCProof proof = new org.bouncycastle.cert.plants.MTCProof(
-            exts, 0L, 2L, hashFunc.hashLeaf("x".getBytes()), Collections.<MTCSignature>emptyList());
+            exts, 0L, 2L, hashFunc.hashLeaf("x".getBytes()), Collections.<MTCCosignature>emptyList());
 
         // extensions wire = 2-byte total-length + per-extension (uint16 type + uint16 data_len + data).
         // type=1, data=[1,2,3] → 2 + 2 + 3 = 7 bytes
@@ -1387,9 +1468,9 @@ public class MerkleTreeCertificatesTest
         throws Exception
     {
         // Constructor rejects descending order.
-        final List<MerkleTreeCertEntryExtension> descending = new ArrayList<MerkleTreeCertEntryExtension>();
-        descending.add(new MerkleTreeCertEntryExtension(5, new byte[]{1}));
-        descending.add(new MerkleTreeCertEntryExtension(1, new byte[]{2}));
+        final List<MTCLogEntryExtension> descending = new ArrayList<MTCLogEntryExtension>();
+        descending.add(new MTCLogEntryExtension(5, new byte[]{1}));
+        descending.add(new MTCLogEntryExtension(1, new byte[]{2}));
         testException("not in ascending order", "IllegalArgumentException", new TestExceptionOperation()
         {
             public void operation()
@@ -1397,14 +1478,14 @@ public class MerkleTreeCertificatesTest
             {
                 new org.bouncycastle.cert.plants.MTCProof(
                     descending, 0L, 2L, hashFunc.hashLeaf("x".getBytes()),
-                    Collections.<MTCSignature>emptyList());
+                    Collections.<MTCCosignature>emptyList());
             }
         });
 
         // Constructor rejects duplicate extension_type.
-        final List<MerkleTreeCertEntryExtension> dup = new ArrayList<MerkleTreeCertEntryExtension>();
-        dup.add(new MerkleTreeCertEntryExtension(7, new byte[]{1}));
-        dup.add(new MerkleTreeCertEntryExtension(7, new byte[]{2}));
+        final List<MTCLogEntryExtension> dup = new ArrayList<MTCLogEntryExtension>();
+        dup.add(new MTCLogEntryExtension(7, new byte[]{1}));
+        dup.add(new MTCLogEntryExtension(7, new byte[]{2}));
         testException("Duplicate extension_type", "IllegalArgumentException", new TestExceptionOperation()
         {
             public void operation()
@@ -1412,7 +1493,7 @@ public class MerkleTreeCertificatesTest
             {
                 new org.bouncycastle.cert.plants.MTCProof(
                     dup, 0L, 2L, hashFunc.hashLeaf("x".getBytes()),
-                    Collections.<MTCSignature>emptyList());
+                    Collections.<MTCCosignature>emptyList());
             }
         });
 
@@ -1454,7 +1535,7 @@ public class MerkleTreeCertificatesTest
 
         // Build a stand-in certificate so computeEntryHash has something to walk.
         org.bouncycastle.cert.plants.MTCProof emptyProof = new org.bouncycastle.cert.plants.MTCProof(
-            0L, 1L, new byte[0], Collections.<MTCSignature>emptyList());
+            0L, 1L, new byte[0], Collections.<MTCCosignature>emptyList());
         X509CertificateHolder cert = org.bouncycastle.cert.plants.LandmarkCertificateManager.buildLandmarkCertificate(
             1, 0, dummyEntry, spki,
             new MerkleTreePrimitives.SubtreeInfo(0, 1),
@@ -1469,10 +1550,10 @@ public class MerkleTreeCertificatesTest
             Arrays.equals(hashDefault, hashEmptyWire));
 
         // A different wire (a single extension) must produce a different hash.
-        List<MerkleTreeCertEntryExtension> oneExt = Collections.singletonList(
-            new MerkleTreeCertEntryExtension(99, new byte[]{(byte)0xAA, (byte)0xBB}));
+        List<MTCLogEntryExtension> oneExt = Collections.singletonList(
+            new MTCLogEntryExtension(99, new byte[]{(byte)0xAA, (byte)0xBB}));
         org.bouncycastle.cert.plants.MTCProof withExt = new org.bouncycastle.cert.plants.MTCProof(
-            oneExt, 0L, 1L, new byte[0], Collections.<MTCSignature>emptyList());
+            oneExt, 0L, 1L, new byte[0], Collections.<MTCCosignature>emptyList());
         byte[] hashWithExt = MerkleTreeCertificateValidator.computeEntryHash(
             cert, withExt.getExtensionsWire(), hashFunc);
         isTrue("entry hash changes with non-empty extensions",
@@ -1480,7 +1561,7 @@ public class MerkleTreeCertificatesTest
     }
 
     /**
-     * Section 5.2.1 MerkleTreeCertEntryType enum: {@code null_entry(0)} and
+     * Section 5.2.1 MTCLogEntryType enum: {@code null_entry(0)} and
      * {@code tbs_cert_entry(1)}. Lock the values so computeEntryHash's wire
      * output stays in sync with the spec.
      */
@@ -1488,23 +1569,23 @@ public class MerkleTreeCertificatesTest
         throws Exception
     {
         isTrue("null_entry constant",
-            org.bouncycastle.cert.plants.MerkleTreeCertEntryType.NULL_ENTRY == 0);
+            org.bouncycastle.cert.plants.MTCLogEntryType.NULL_ENTRY == 0);
         isTrue("tbs_cert_entry constant",
-            org.bouncycastle.cert.plants.MerkleTreeCertEntryType.TBS_CERT_ENTRY == 1);
+            org.bouncycastle.cert.plants.MTCLogEntryType.TBS_CERT_ENTRY == 1);
     }
 
     /**
-     * Section 7.1: "The log hash algorithm is determined from the
-     * id-pe-mtcCertificationAuthority extension." When {@code authorityInfo}
-     * is supplied, the validator must reject a {@link MerkleTreeHash} whose
-     * {@link MerkleTreeHash#getAlgorithmIdentifier() algorithm} doesn't match
-     * the CA's published {@code logHash}.
+     * Section 5.5 (draft-06 onwards): MTCCertificationAuthority is
+     * {@code SEQUENCE { sigAlg, minSerial, maxSerial }} with the log hash
+     * carried by the extension type rather than a {@code logHash} field. A
+     * structure in that form is accepted as authority info by the validator;
+     * the four-element draft-05 encoding with a leading logHash is rejected.
      */
-    public void testValidatorEnforcesLogHash()
+    public void testAuthorityInfoWithoutLogHash()
         throws Exception
     {
-        // Build a minimal valid Merkle Tree cert + provider, then run two
-        // validations differing only in whether the CA's logHash matches.
+        // Build a minimal valid Merkle Tree cert + provider and validate it
+        // against the three-field authority info.
         final long logNumber = 1;
         final long index = 42;
         final long serial = (logNumber << 48) | index;
@@ -1526,7 +1607,7 @@ public class MerkleTreeCertificatesTest
         signer.init(true, ed25519KeyPair.getPrivate());
         signer.update(signedData, 0, signedData.length);
         byte[] signature = signer.generateSignature();
-        List<MTCSignature> sigs = Collections.singletonList(new MTCSignature(cosignerId, signature));
+        List<MTCCosignature> sigs = Collections.singletonList(new MTCCosignature(cosignerId, signature));
         org.bouncycastle.cert.plants.MTCProof proof = new org.bouncycastle.cert.plants.MTCProof(
             42L, 44L, siblingHash, sigs);
         DERBitString signatureValue = new DERBitString(proof.encode());
@@ -1537,11 +1618,9 @@ public class MerkleTreeCertificatesTest
             .addCosigner(cosignerId, ed25519KeyPair.getPublic())
             .build();
 
-        // Matching authority info: sha256 logHash, supplied hashFunction is also SHA-256.
         MTCCertificationAuthority matchingAuthority = new MTCCertificationAuthority(
-            new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256),
             new AlgorithmIdentifier(MTCObjectIdentifiers.id_alg_mtcProof),
-            BigIntegers.ZERO, MTCCertificationAuthority.MAX_SERIAL);
+            MTCCertificationAuthority.MIN_SERIAL, MTCCertificationAuthority.MAX_SERIAL);
         MerkleTreeCertificateValidator.ValidationParams matching =
             new MerkleTreeCertificateValidator.ValidationParams(
                 cosigners,
@@ -1550,28 +1629,158 @@ public class MerkleTreeCertificatesTest
                 1,
                 hashFunc,
                 matchingAuthority);
-        isTrue("matching logHash accepted",
+        isTrue("three-field authority info accepted",
             MerkleTreeCertificateValidator.validateCertificate(cert, matching));
 
-        // Mismatching authority info: sha384 logHash but the test runs SHA-256.
-        final MTCCertificationAuthority mismatching = new MTCCertificationAuthority(
-            new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha384),
-            new AlgorithmIdentifier(MTCObjectIdentifiers.id_alg_mtcProof),
-            BigIntegers.ZERO, MTCCertificationAuthority.MAX_SERIAL);
-        final MerkleTreeCertificateValidator.ValidationParams strict =
-            new MerkleTreeCertificateValidator.ValidationParams(
-                cosigners,
-                Collections.<MerkleTreeCertificateValidator.TrustedSubtree>emptyList(),
-                Collections.<MerkleTreeCertificateValidator.RevokedRange>emptyList(),
-                1,
-                hashFunc,
-                mismatching);
-        testException("does not match CA logHash", "SecurityException", new TestExceptionOperation()
+        // The structure round-trips as a three-element SEQUENCE.
+        MTCCertificationAuthority decoded = MTCCertificationAuthority.getInstance(matchingAuthority.getEncoded());
+        isTrue("sigAlg round trip", MTCObjectIdentifiers.id_alg_mtcProof.equals(decoded.getSigAlg().getAlgorithm()));
+        isTrue("minSerial round trip", MTCCertificationAuthority.MIN_SERIAL.equals(decoded.getMinSerial()));
+        isTrue("maxSerial round trip", MTCCertificationAuthority.MAX_SERIAL.equals(decoded.getMaxSerial()));
+        isTrue("three elements", ASN1Sequence.getInstance(matchingAuthority.getEncoded()).size() == 3);
+
+        // The draft-05 shape, with a leading logHash AlgorithmIdentifier, is rejected.
+        final ASN1EncodableVector legacy = new ASN1EncodableVector();
+        legacy.add(new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256));
+        legacy.add(new AlgorithmIdentifier(MTCObjectIdentifiers.id_alg_mtcProof));
+        legacy.add(new ASN1Integer(MTCCertificationAuthority.MIN_SERIAL));
+        legacy.add(new ASN1Integer(MTCCertificationAuthority.MAX_SERIAL));
+        testException("SEQUENCE of 3 elements", "IllegalArgumentException", new TestExceptionOperation()
         {
             public void operation()
                 throws Exception
             {
-                MerkleTreeCertificateValidator.validateCertificate(cert, strict);
+                MTCCertificationAuthority.getInstance(new DERSequence(legacy));
+            }
+        });
+
+        // Serials below mtcMinSerial (2^48) are outside the type's range.
+        testException("minSerial out of range", "IllegalArgumentException", new TestExceptionOperation()
+        {
+            public void operation()
+                throws Exception
+            {
+                new MTCCertificationAuthority(
+                    new AlgorithmIdentifier(MTCObjectIdentifiers.id_alg_mtcProof),
+                    BigIntegers.ZERO, MTCCertificationAuthority.MAX_SERIAL);
+            }
+        });
+    }
+
+    /**
+     * The draft-05 class names survive as deprecated subclasses of the draft-07
+     * ones, so code written against them still compiles, interoperates with the
+     * new names, and produces identical encodings.
+     */
+    @SuppressWarnings("deprecation")
+    public void testDeprecatedNames()
+        throws Exception
+    {
+        byte[] cosignerId = binaryTrustAnchorID("32473.4");
+        byte[] sigBytes = new byte[]{1, 2, 3};
+        MTCSignature oldSig = new MTCSignature(cosignerId, sigBytes);
+        isTrue("MTCSignature is an MTCCosignature", oldSig instanceof MTCCosignature);
+        List<MTCSignature> oldSigs = new ArrayList<MTCSignature>();
+        oldSigs.add(oldSig);
+        byte[] leaf = hashFunc.hashLeaf("x".getBytes());
+        org.bouncycastle.cert.plants.MTCProof viaOld = new org.bouncycastle.cert.plants.MTCProof(0L, 2L, leaf, oldSigs);
+        org.bouncycastle.cert.plants.MTCProof viaNew = new org.bouncycastle.cert.plants.MTCProof(0L, 2L, leaf,
+            Collections.singletonList(new MTCCosignature(cosignerId, sigBytes)));
+        isTrue("MTCProof encodes identically from either name", areEqual(viaOld.encode(), viaNew.encode()));
+        isTrue("getSignatures returns the new type", viaOld.getSignatures().get(0) instanceof MTCCosignature);
+
+        MerkleTreeCertEntryExtension oldExt = new MerkleTreeCertEntryExtension(7, new byte[]{9});
+        isTrue("extension is an MTCLogEntryExtension", oldExt instanceof MTCLogEntryExtension);
+        List<MerkleTreeCertEntryExtension> oldExts = new ArrayList<MerkleTreeCertEntryExtension>();
+        oldExts.add(oldExt);
+        isEquals(MTCLogEntryType.TBS_CERT_ENTRY, MerkleTreeCertEntryType.TBS_CERT_ENTRY);
+        MerkleTreeCertEntry oldEntry = new MerkleTreeCertEntry(oldExts, MerkleTreeCertEntryType.NULL_ENTRY, new byte[0]);
+        MTCLogEntry newEntry = new MTCLogEntry(
+            Collections.singletonList(new MTCLogEntryExtension(7, new byte[]{9})), MTCLogEntryType.NULL_ENTRY, new byte[0]);
+        isTrue("entry is an MTCLogEntry", oldEntry instanceof MTCLogEntry);
+        isTrue("log entry encodes identically from either name", areEqual(oldEntry.encode(), newEntry.encode()));
+        isTrue("log entry reparses through the old name",
+            areEqual(new MerkleTreeCertEntry(newEntry.encode()).encode(), newEntry.encode()));
+
+        byte[] logId = binaryLogId(LOG_TAID_STRING, 1);
+        isTrue("cosigned subtree encodes identically from either name", areEqual(
+            MTCCosignedMessage.encode(logId, 0L, 2L, leaf, cosignerId),
+            MTCCosignedSubtree.encode(logId, 0L, 2L, leaf, cosignerId)));
+    }
+
+    /**
+     * Section 6.2 (draft-07): a CA MAY include GREASE cosignatures, an unused
+     * cosigner ID with an arbitrary byte string as the signature, and
+     * Section 7.2 step 12 has the relying party ignore cosigners it does not
+     * recognise. A proof carrying GREASE entries on either side of the real
+     * cosignature, in canonical order, must validate exactly as without them,
+     * and GREASE alone must not satisfy the cosigner requirement.
+     */
+    public void testGreaseCosignaturesIgnored()
+        throws Exception
+    {
+        final long logNumber = 1;
+        final long index = 42;
+        final long serial = (logNumber << 48) | index;
+
+        TBSCertificateLogEntry tbsEntry = createDummyTBSCertificateLogEntry();
+        SubjectPublicKeyInfo spki = SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(ecdsaKeyPair.getPublic());
+        AlgorithmIdentifier sigAlg = new AlgorithmIdentifier(MTCObjectIdentifiers.id_alg_mtcProof);
+        TBSCertificate tbs = buildTBSCertificate(tbsEntry, serial, sigAlg, spki);
+        X509CertificateHolder dummyHolder = new X509CertificateHolder(
+            new DERSequence(new ASN1Encodable[]{tbs, sigAlg, new DERBitString(new byte[0])}).getEncoded());
+        byte[] entryHash = MerkleTreeCertificateValidator.computeEntryHash(dummyHolder, hashFunc);
+        byte[] siblingHash = hashFunc.hashLeaf("leaf43".getBytes());
+        byte[] subtreeHash = hashFunc.hashNode(entryHash, siblingHash);
+
+        byte[] cosignedLogId = binaryLogId(LOG_TAID_STRING, logNumber);
+        byte[] cosignerId = binaryTrustAnchorID("32473.4");
+        byte[] signedData = buildSignatureInput(cosignedLogId, 42, 44, subtreeHash, cosignerId);
+        Ed25519Signer signer = new Ed25519Signer();
+        signer.init(true, ed25519KeyPair.getPrivate());
+        signer.update(signedData, 0, signedData.length);
+        byte[] signature = signer.generateSignature();
+
+        // GREASE IDs that sort before (shorter) and after (longer) the real one.
+        byte[] greaseShort = binaryTrustAnchorID("32473");
+        byte[] greaseLong = binaryTrustAnchorID("32473.4.99");
+        byte[] junk = new byte[37];
+        new SecureRandom().nextBytes(junk);
+        List<MTCCosignature> sigs = new ArrayList<MTCCosignature>();
+        sigs.add(new MTCCosignature(greaseShort, junk));
+        sigs.add(new MTCCosignature(cosignerId, signature));
+        sigs.add(new MTCCosignature(greaseLong, new byte[0]));
+        org.bouncycastle.cert.plants.MTCProof proof = new org.bouncycastle.cert.plants.MTCProof(
+            42L, 44L, siblingHash, sigs);
+        org.bouncycastle.cert.plants.MTCProof reparsed = new org.bouncycastle.cert.plants.MTCProof(proof.encode());
+        isEquals(3, reparsed.getSignatures().size());
+        X509CertificateHolder cert = new X509CertificateHolder(
+            new DERSequence(new ASN1Encodable[]{tbs, sigAlg, new DERBitString(proof.encode())}).getEncoded());
+
+        BcMTCCosignerVerifierProvider cosigners = new BcMTCCosignerVerifierProvider.Builder()
+            .addCosigner(cosignerId, ed25519KeyPair.getPublic())
+            .build();
+        MerkleTreeCertificateValidator.ValidationParams params =
+            new MerkleTreeCertificateValidator.ValidationParams(cosigners, hashFunc,
+                Collections.<MerkleTreeCertificateValidator.TrustedSubtree>emptyList(),
+                Collections.<MerkleTreeCertificateValidator.RevokedRange>emptyList(), 1);
+        isTrue("GREASE cosignatures are ignored", MerkleTreeCertificateValidator.validateCertificate(cert, params));
+
+        // GREASE alone does not meet the requirement for one valid cosignature.
+        List<MTCCosignature> greaseOnly = new ArrayList<MTCCosignature>();
+        greaseOnly.add(new MTCCosignature(greaseShort, junk));
+        greaseOnly.add(new MTCCosignature(greaseLong, new byte[0]));
+        org.bouncycastle.cert.plants.MTCProof greaseProof = new org.bouncycastle.cert.plants.MTCProof(
+            42L, 44L, siblingHash, greaseOnly);
+        final X509CertificateHolder greaseCert = new X509CertificateHolder(
+            new DERSequence(new ASN1Encodable[]{tbs, sigAlg, new DERBitString(greaseProof.encode())}).getEncoded());
+        final MerkleTreeCertificateValidator.ValidationParams greaseParams = params;
+        testException("cosign", "SecurityException", new TestExceptionOperation()
+        {
+            public void operation()
+                throws Exception
+            {
+                MerkleTreeCertificateValidator.validateCertificate(greaseCert, greaseParams);
             }
         });
     }
@@ -1596,7 +1805,7 @@ public class MerkleTreeCertificatesTest
 
         // The MTCProof has [10, 11) — a single-leaf subtree, so no inclusion siblings.
         org.bouncycastle.cert.plants.MTCProof proof = new org.bouncycastle.cert.plants.MTCProof(
-            10L, 11L, new byte[0], Collections.<MTCSignature>emptyList());
+            10L, 11L, new byte[0], Collections.<MTCCosignature>emptyList());
         DERBitString signatureValue = new DERBitString(proof.encode());
         final X509CertificateHolder cert = new X509CertificateHolder(
             new DERSequence(new ASN1Encodable[]{tbs, sigAlg, signatureValue}).getEncoded());
@@ -1605,7 +1814,6 @@ public class MerkleTreeCertificatesTest
 
         // minSerial above the cert's serial — must be rejected.
         final MTCCertificationAuthority strictMinSerial = new MTCCertificationAuthority(
-            new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256),
             new AlgorithmIdentifier(MTCObjectIdentifiers.id_alg_mtcProof),
             serial.add(BigIntegers.ONE), MTCCertificationAuthority.MAX_SERIAL);
         final MerkleTreeCertificateValidator.ValidationParams tooHigh =
@@ -1627,9 +1835,8 @@ public class MerkleTreeCertificatesTest
 
         // maxSerial below the cert's serial — must be rejected.
         final MTCCertificationAuthority strictMaxSerial = new MTCCertificationAuthority(
-            new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256),
             new AlgorithmIdentifier(MTCObjectIdentifiers.id_alg_mtcProof),
-            BigIntegers.ZERO, serial.subtract(BigIntegers.ONE));
+            MTCCertificationAuthority.MIN_SERIAL, serial.subtract(BigIntegers.ONE));
         final MerkleTreeCertificateValidator.ValidationParams tooLow =
             new MerkleTreeCertificateValidator.ValidationParams(
                 cosigners,
@@ -1655,9 +1862,8 @@ public class MerkleTreeCertificatesTest
         // same throw-it-away cosignature policy: 0 cosignatures required and
         // the subtree is single-leaf so the inclusion-proof step succeeds.)
         MTCCertificationAuthority openMinSerial = new MTCCertificationAuthority(
-            new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256),
             new AlgorithmIdentifier(MTCObjectIdentifiers.id_alg_mtcProof),
-            BigIntegers.ZERO, MTCCertificationAuthority.MAX_SERIAL);
+            MTCCertificationAuthority.MIN_SERIAL, MTCCertificationAuthority.MAX_SERIAL);
         MerkleTreeCertificateValidator.ValidationParams permissive =
             new MerkleTreeCertificateValidator.ValidationParams(
                 cosigners,
@@ -1695,7 +1901,7 @@ public class MerkleTreeCertificatesTest
     }
 
     /**
-     * MerkleTreeCertEntry should round-trip through encode/parse, and the
+     * MTCLogEntry should round-trip through encode/parse, and the
      * tbs_cert_entry body must decode into the same TBSCertificateLogEntry the
      * encoder started from.
      */
@@ -1721,10 +1927,10 @@ public class MerkleTreeCertificatesTest
         System.arraycopy(tbsDer, contentOff, tbsBody, 0, tbsBody.length);
 
         // Empty extensions, type = tbs_cert_entry.
-        org.bouncycastle.cert.plants.MerkleTreeCertEntry entry =
-            new org.bouncycastle.cert.plants.MerkleTreeCertEntry(
-                Collections.<MerkleTreeCertEntryExtension>emptyList(),
-                org.bouncycastle.cert.plants.MerkleTreeCertEntryType.TBS_CERT_ENTRY,
+        org.bouncycastle.cert.plants.MTCLogEntry entry =
+            new org.bouncycastle.cert.plants.MTCLogEntry(
+                Collections.<MTCLogEntryExtension>emptyList(),
+                org.bouncycastle.cert.plants.MTCLogEntryType.TBS_CERT_ENTRY,
                 tbsBody);
 
         byte[] encoded = entry.encode();
@@ -1732,10 +1938,10 @@ public class MerkleTreeCertificatesTest
         isTrue("entry encoding starts with empty extensions + tbs_cert_entry type",
             encoded[0] == 0 && encoded[1] == 0 && encoded[2] == 0 && encoded[3] == 1);
 
-        org.bouncycastle.cert.plants.MerkleTreeCertEntry parsed =
-            new org.bouncycastle.cert.plants.MerkleTreeCertEntry(encoded);
+        org.bouncycastle.cert.plants.MTCLogEntry parsed =
+            new org.bouncycastle.cert.plants.MTCLogEntry(encoded);
         isTrue("type round-trips",
-            parsed.getType() == org.bouncycastle.cert.plants.MerkleTreeCertEntryType.TBS_CERT_ENTRY);
+            parsed.getType() == org.bouncycastle.cert.plants.MTCLogEntryType.TBS_CERT_ENTRY);
         isTrue("extensions round-trip empty", parsed.getExtensions().isEmpty());
         isTrue("body round-trips", Arrays.equals(tbsBody, parsed.getBody()));
 
@@ -1897,13 +2103,9 @@ public class MerkleTreeCertificatesTest
     private TBSCertificateLogEntry createDummyTBSCertificateLogEntry()
         throws IOException
     {
-        // Section 5.2 (initial experimentation): the issuer name has a single
-        // RDN with attribute type id_rdna_trustAnchorID and a UTF8String value
-        // containing the dotted-decimal trust anchor ID.
-        AttributeTypeAndValue attr = new AttributeTypeAndValue(
-            MTCObjectIdentifiers.id_rdna_trustAnchorID,
-            new DERUTF8String(LOG_TAID_STRING));
-        X500Name issuer = new X500Name(new RDN[]{new RDN(attr)});
+        // Section 5.1: the issuer name has a single RDN with attribute type
+        // id-rdna-trustAnchorID and a RELATIVE-OID value carrying the CA ID.
+        X500Name issuer = TrustAnchorIDs.issuerName(LOG_TAID_STRING);
 
         Time notBefore = new Time(new Date());
         Time notAfter = new Time(new Date(System.currentTimeMillis() + 86400000L));
@@ -1962,7 +2164,9 @@ public class MerkleTreeCertificatesTest
         testMTCProofExtensionsOrdering();
         testEntryHashHonoursExtensionsWire();
         testMerkleTreeCertEntryTypeConstants();
-        testValidatorEnforcesLogHash();
+        testAuthorityInfoWithoutLogHash();
+        testGreaseCosignaturesIgnored();
+        testDeprecatedNames();
         testValidatorEnforcesMinSerial();
         testSignatureAlgorithmConstants();
         testMerkleTreeCertEntryRoundTrip();

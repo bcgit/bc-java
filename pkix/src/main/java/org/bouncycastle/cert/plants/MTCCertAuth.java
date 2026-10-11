@@ -39,10 +39,9 @@ public class MTCCertAuth
      * @param dottedCaId dotted-decimal form of the CA's trust anchor ID
      *                   (e.g. {@code "32473.1"})
      * @param hashFunc   hash function used by all issuance logs operated by
-     *                   this CA (Section 5.5) — its
-     *                   {@link MerkleTreeHash#getAlgorithmIdentifier()
-     *                   algorithm identifier} is published in the CA's
-     *                   {@link org.bouncycastle.asn1.x509.MTCCertificationAuthority#getLogHash() logHash}
+     *                   this CA (Section 5); the CA certificate identifies it
+     *                   through the type of its Merkle Tree CA extension
+     *                   (Section 5.5)
      * @param sigAlgOid  CA cosigner's signature algorithm (Section 5.5)
      */
     public MTCCertAuth(
@@ -103,8 +102,8 @@ public class MTCCertAuth
 
     /**
      * @return the issuer {@link X500Name} for certs issued by this CA, carrying
-     *         the trust anchor ID via the experimental
-     *         {@code id_rdna_trustAnchorID} attribute
+     *         the trust anchor ID as a RELATIVE-OID in the
+     *         {@code id-rdna-trustAnchorID} attribute (Section 5.1)
      */
     public X500Name issuerName()
     {
@@ -133,14 +132,14 @@ public class MTCCertAuth
     /**
      * Builds the {@link MTCCertificationAuthority} extension value that the
      * relying party needs to validate certs from this CA. Combines the CA's
-     * log hash and cosigner signature algorithm with the supplied serial range.
+     * cosigner signature algorithm with the supplied serial range.
      *
-     * @param minSerial minimum allowed cert serial from this CA (Section 5.5 / 6.1)
-     * @param maxSerial maximum allowed cert serial from this CA (Section 5.5 / 6.1)
+     * @param minSerial minimum allowed cert serial from this CA, at least
+     *                  {@link MTCCertificationAuthority#MIN_SERIAL} (Section 5.5 / 7.5)
+     * @param maxSerial maximum allowed cert serial from this CA (Section 5.5 / 7.5)
      */
     public MTCCertificationAuthority authorityInfo(BigInteger minSerial, BigInteger maxSerial)
     {
-        return new MTCCertificationAuthority(
-            hashFunc.getAlgorithmIdentifier().getAlgorithm(), sigAlgOid, minSerial, maxSerial);
+        return new MTCCertificationAuthority(sigAlgOid, minSerial, maxSerial);
     }
 }

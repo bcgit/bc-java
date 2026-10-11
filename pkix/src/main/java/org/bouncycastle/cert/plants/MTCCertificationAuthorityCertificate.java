@@ -9,11 +9,12 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1RelativeOID;
 import org.bouncycastle.asn1.ASN1String;
-import org.bouncycastle.asn1.DERUTF8String;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.plants.MTCObjectIdentifiers;
 import org.bouncycastle.asn1.x500.AttributeTypeAndValue;
 import org.bouncycastle.asn1.x500.RDN;
 import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.Extensions;
@@ -32,11 +33,12 @@ import org.bouncycastle.cert.X509v3CertificateBuilder;
  * <ul>
  *   <li>{@code subject} is the CA ID encoded as a single-RDN distinguished name,
  *       using {@link MTCObjectIdentifiers#id_rdna_trustAnchorID} with a
- *       UTF8String value of the dotted-decimal trust anchor ID</li>
+ *       RELATIVE-OID value carrying the trust anchor ID</li>
  *   <li>{@code subjectPublicKeyInfo} is the CA cosigner's public key</li>
  *   <li>{@code extensions} carries a critical
- *       {@link MTCObjectIdentifiers#id_pe_mtcCertificationAuthority}
- *       extension whose value is the {@link MTCCertificationAuthority} structure</li>
+ *       {@link MTCObjectIdentifiers#id_pe_mtcCertificationAuthority_SHA256}
+ *       extension whose value is the {@link MTCCertificationAuthority} structure;
+ *       the extension type identifies the log hash function, SHA-256 here</li>
  *   <li>{@code keyUsage} (critical) asserts at least {@code keyCertSign}</li>
  *   <li>{@code basicConstraints} (critical) sets {@code cA=true}</li>
  *   <li>{@code subjectKeyIdentifier} (when present) SHOULD be the binary CA ID</li>
@@ -50,8 +52,8 @@ import org.bouncycastle.cert.X509v3CertificateBuilder;
  */
 public final class MTCCertificationAuthorityCertificate
 {
-    /** OID for the {@code id-pe-mtcCertificationAuthority} certificate extension. */
-    public static final ASN1ObjectIdentifier EXTENSION_OID = MTCObjectIdentifiers.id_pe_mtcCertificationAuthority;
+    /** OID for the {@code id-pe-mtcCertificationAuthority-SHA256} certificate extension. */
+    public static final ASN1ObjectIdentifier EXTENSION_OID = MTCObjectIdentifiers.id_pe_mtcCertificationAuthority_SHA256;
 
     private MTCCertificationAuthorityCertificate()
     {
@@ -59,20 +61,20 @@ public final class MTCCertificationAuthorityCertificate
 
     /**
      * Builds the {@code subject} (or {@code issuer}) distinguished name for a
-     * CA whose binary trust anchor ID is {@code caId}, using the experimental
-     * encoding from Section 5.1.
+     * CA whose binary trust anchor ID is {@code caId}: a single RDN whose
+     * {@code id-rdna-trustAnchorID} attribute carries the ID as a RELATIVE-OID
+     * (Section 5.1).
      */
     public static X500Name subjectName(byte[] caId)
     {
-        String dotted = TrustAnchorIDs.toDottedDecimal(caId);
         AttributeTypeAndValue attr = new AttributeTypeAndValue(
             MTCObjectIdentifiers.id_rdna_trustAnchorID,
-            new DERUTF8String(dotted));
+            ASN1RelativeOID.fromContents(caId));
         return new X500Name(new RDN[]{new RDN(attr)});
     }
 
     /**
-     * Builds the critical {@code id-pe-mtcCertificationAuthority} extension.
+     * Builds the critical {@code id-pe-mtcCertificationAuthority-SHA256} extension.
      */
     public static Extension buildAuthorityExtension(MTCCertificationAuthority info)
         throws IOException
@@ -162,13 +164,35 @@ public final class MTCCertificationAuthorityCertificate
     }
 
     /**
+     * Returns the hash function the CA's issuance logs use, as identified by the
+     * type of the Merkle Tree CA extension (Section 7.1): SHA-256 for
+     * {@code id-pe-mtcCertificationAuthority-SHA256}, the one type the draft
+     * defines.
+     *
+     * @throws IOException if the extension is absent or not marked critical
+     */
+    public static AlgorithmIdentifier logHashAlgorithm(X509CertificateHolder cert)
+        throws IOException
+    {
+        findAuthorityExtension(cert);
+
+        return new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256);
+    }
+
+    /**
      * Extracts the {@link MTCCertificationAuthority} structure from the
-     * {@code id-pe-mtcCertificationAuthority} extension of a CA certificate.
+     * {@code id-pe-mtcCertificationAuthority-SHA256} extension of a CA certificate.
      *
      * @throws IOException if the extension is absent, not marked critical, or
      *                     cannot be parsed
      */
     public static MTCCertificationAuthority extractAuthorityInfo(X509CertificateHolder cert)
+        throws IOException
+    {
+        return MTCCertificationAuthority.getInstance(findAuthorityExtension(cert).getParsedValue());
+    }
+
+    private static Extension findAuthorityExtension(X509CertificateHolder cert)
         throws IOException
     {
         Extensions exts = cert.getExtensions();
@@ -179,12 +203,12 @@ public final class MTCCertificationAuthorityCertificate
         Extension ext = exts.getExtension(EXTENSION_OID);
         if (ext == null)
         {
-            throw new IOException("CA certificate is missing the id-pe-mtcCertificationAuthority extension");
+            throw new IOException("CA certificate is missing the id-pe-mtcCertificationAuthority-SHA256 extension");
         }
         if (!ext.isCritical())
         {
-            throw new IOException("id-pe-mtcCertificationAuthority extension must be critical");
+            throw new IOException("id-pe-mtcCertificationAuthority-SHA256 extension must be critical");
         }
-        return MTCCertificationAuthority.getInstance(ext.getParsedValue());
+        return ext;
     }
 }

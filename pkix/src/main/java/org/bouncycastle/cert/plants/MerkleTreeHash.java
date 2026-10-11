@@ -14,9 +14,9 @@ public interface MerkleTreeHash
 {
     /**
      * @return the X.509 {@code AlgorithmIdentifier} that names this hash
-     *         function. Used by {@link MerkleTreeCertificateValidator} to
-     *         cross-check the supplied hash against the {@code logHash} field
-     *         of the CA's {@code id-pe-mtcCertificationAuthority} extension.
+     *         function, for comparison with the hash the CA certificate's
+     *         Merkle Tree CA extension type identifies
+     *         ({@link MTCCertificationAuthorityCertificate#logHashAlgorithm}).
      */
     AlgorithmIdentifier getAlgorithmIdentifier();
 

@@ -24,7 +24,7 @@ import org.bouncycastle.util.Arrays;
  *   <li><b>Manual mode</b> ({@link #MTCSignatureVerifierProvider(MTCCosignerVerifier)})
  *       — {@link #get(AlgorithmIdentifier)} returns the wrapped verifier
  *       directly. Callers drive cosignature verification themselves: write the
- *       {@link MTCCosignedMessage} bytes through
+ *       {@link MTCCosignedSubtree} bytes through
  *       {@link ContentVerifier#getOutputStream()} and call
  *       {@link ContentVerifier#verify(byte[])} with the cosigner's
  *       signature.</li>
@@ -45,7 +45,7 @@ import org.bouncycastle.util.Arrays;
  *             (including the MTCProof's extensions) via
  *             {@link MerkleTreeCertificateValidator#computeEntryHash(byte[], byte[], MerkleTreeHash)},
  *             evaluates the inclusion proof for the MTCProof's subtree, builds
- *             the {@link MTCCosignedMessage} for the MTCSignature whose
+ *             the {@link MTCCosignedSubtree} for the MTCCosignature whose
  *             {@code cosigner_id} matches the wrapped verifier's
  *             {@link MTCCosignerVerifier#getCosignerId()} (signatures naming
  *             any other cosigner are unrecognized and ignored), and returns
@@ -193,7 +193,7 @@ public class MTCSignatureVerifierProvider
 
                 // Step 12, for the one cosigner this adapter knows about.
                 byte[] boundCosignerId = verifier.getCosignerId();
-                for (MTCSignature sig : proof.getSignatures())
+                for (MTCCosignature sig : proof.getSignatures())
                 {
                     // Only the signature attributed to the wrapped verifier's
                     // cosigner counts; signatures naming any other cosigner_id
@@ -203,7 +203,7 @@ public class MTCSignatureVerifierProvider
                     {
                         continue;
                     }
-                    byte[] cosignedMessage = MTCCosignedMessage.encode(
+                    byte[] cosignedMessage = MTCCosignedSubtree.encode(
                         log, subtreeHash, sig.getCosignerId());
                     OutputStream sOut = verifier.getOutputStream();
                     sOut.write(cosignedMessage);

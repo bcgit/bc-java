@@ -25,13 +25,13 @@ import org.bouncycastle.util.Arrays;
  *   <li>Takes the entry's index from the serial number the builder wrote
  *       ({@code serial = (log_number << 48) | index}, Section 6.2), checking
  *       the log number is that of the supplied {@link MTCLog}.</li>
- *   <li>Derives the {@code MerkleTreeCertEntry} leaf hash via
+ *   <li>Derives the {@code MTCLogEntry} leaf hash via
  *       {@link MerkleTreeCertificateValidator#computeEntryHash(byte[], MerkleTreeHash)}
  *       and evaluates the supplied inclusion proof for that index within the
  *       log's subtree {@code [start, end)} (Section 4.3.2) to obtain the
  *       subtree hash.</li>
  *   <li>Delegates to {@link MTCCosigner#cosignSubtree} to produce the
- *       cosigner's {@link MTCSignature}.</li>
+ *       cosigner's {@link MTCCosignature}.</li>
  *   <li>Wraps the inclusion proof and the cosigner signature in an
  *       {@link MTCProof} and returns its TLS wire encoding.</li>
  * </ol>
@@ -118,7 +118,7 @@ public class MTCContentSigner
                 index, log.getStart(), log.getEnd(), entryHash,
                 unsigned.getHashList(hashFunc.getHashSize()), hashFunc);
 
-            MTCSignature sig = cosigner.cosignSubtree(log, subtreeHash);
+            MTCCosignature sig = cosigner.cosignSubtree(log, subtreeHash);
             return new MTCProof(log, inclusionProof, sig).encode();
         }
         catch (IOException e)

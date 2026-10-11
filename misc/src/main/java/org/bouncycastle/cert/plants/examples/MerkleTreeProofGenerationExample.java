@@ -54,7 +54,7 @@ public class MerkleTreeProofGenerationExample
         MerkleTreeHash hashFunc = new BcSha256MerkleTreeHash();
 
         // 1. A log with 13 entries. In an MTC log each entry would be a
-        //    MerkleTreeCertEntry; here a short string stands in for it, and
+        //    MTCLogEntry; here a short string stands in for it, and
         //    the entry hash MTH({entry}) is all the tree code ever needs.
         int treeSize = 13;
         List<byte[]> entryHashes = new ArrayList<byte[]>();

@@ -14,49 +14,51 @@ import java.util.List;
  * Section 6.2.
  *
  * <pre>
- * opaque HashValue[HASH_SIZE];
- *
  * struct {
  *     TrustAnchorID cosigner_id;
  *     opaque signature&lt;0..2^16-1&gt;;
- * } MTCSignature;
+ * } Cosignature;
  *
  * struct {
- *     MerkleTreeCertEntryExtension extensions&lt;0..2^16-1&gt;;
+ *     MTCLogEntryExtension extensions&lt;0..2^16-1&gt;;
  *     uint48 start;
  *     uint48 end;
- *     HashValue inclusion_proof&lt;0..2^16-1&gt;;
- *     MTCSignature signatures&lt;0..2^16-1&gt;;
+ *     opaque inclusion_proof&lt;0..2^16-1&gt;;
+ *     Cosignature signatures&lt;0..2^24-1&gt;;
  * } MTCProof;
  * </pre>
  *
  * <p>{@code extensions} carries the log entry's extension list, ordered by
  * {@code extension_type} ascending with no duplicates. {@code start} and
- * {@code end} are 6-byte unsigned big-endian integers (the draft shrank these
- * from {@code uint64}). Entries of {@code signatures} MUST have unique
- * {@code cosigner_id}s and MUST be ordered first by length (shorter byte
- * strings before longer) and then lexicographically.</p>
+ * {@code end} are 6-byte unsigned big-endian integers. {@code inclusion_proof}
+ * is the proof's hashes concatenated in order. {@code signatures} carries a
+ * 3-byte length prefix (draft-06 widened it from 2 bytes); its entries, each an
+ * {@link MTCCosignature}, MUST have unique {@code cosigner_id}s and MUST be
+ * ordered first by length (shorter byte strings before longer) and then
+ * lexicographically. A cosigner ID the relying party does not recognise is
+ * ignored, which is what lets a CA include GREASE cosignatures (RFC 8701) with
+ * an unused ID and arbitrary signature bytes.</p>
  */
 public class MTCProof
 {
     /** Maximum value of a uint48 (2^48 - 1). */
     public static final long UINT48_MAX = 0xFFFFFFFFFFFFL;
 
-    private final List<MerkleTreeCertEntryExtension> extensions;
+    private final List<MTCLogEntryExtension> extensions;
     private final byte[] extensionsWire;
     private final long start;
     private final long end;
     private final byte[] inclusionProof;
-    private final List<MTCSignature> signatures;
+    private final List<MTCCosignature> signatures;
 
     /**
      * Constructs an MTCProof with an empty extensions list.
      *
      * @see #MTCProof(List, long, long, byte[], List)
      */
-    public MTCProof(long start, long end, byte[] inclusionProof, List<MTCSignature> signatures)
+    public MTCProof(long start, long end, byte[] inclusionProof, List<? extends MTCCosignature> signatures)
     {
-        this(Collections.<MerkleTreeCertEntryExtension>emptyList(), start, end, inclusionProof, signatures);
+        this(Collections.<MTCLogEntryExtension>emptyList(), start, end, inclusionProof, signatures);
     }
 
     /**
@@ -65,17 +67,17 @@ public class MTCProof
      * to {@link #MTCProof(long, long, byte[], List)} with the signatures wrapped
      * in a list; the same ordering rules in Section 6.2 apply.
      */
-    public MTCProof(long start, long end, byte[] inclusionProof, MTCSignature... signatures)
+    public MTCProof(long start, long end, byte[] inclusionProof, MTCCosignature... signatures)
     {
         this(start, end, inclusionProof, Arrays.asList(signatures));
     }
 
     /**
      * Convenience overload taking an {@link MTCLog} — equivalent to
-     * {@link #MTCProof(long, long, byte[], MTCSignature...)} with
+     * {@link #MTCProof(long, long, byte[], MTCCosignature...)} with
      * {@code start = log.getStart()} and {@code end = log.getEnd()}.
      */
-    public MTCProof(MTCLog log, byte[] inclusionProof, MTCSignature... signatures)
+    public MTCProof(MTCLog log, byte[] inclusionProof, MTCCosignature... signatures)
     {
         this(log.getStart(), log.getEnd(), inclusionProof, signatures);
     }
@@ -91,8 +93,8 @@ public class MTCProof
      *                                  cosigner_id or are not in canonical order
      */
     public MTCProof(
-        List<MerkleTreeCertEntryExtension> extensions,
-        long start, long end, byte[] inclusionProof, List<MTCSignature> signatures)
+        List<? extends MTCLogEntryExtension> extensions,
+        long start, long end, byte[] inclusionProof, List<? extends MTCCosignature> signatures)
     {
         if (start < 0 || start > UINT48_MAX)
         {
@@ -106,7 +108,7 @@ public class MTCProof
         checkSignatureOrder(signatures);
 
         this.extensions = Collections.unmodifiableList(
-            new ArrayList<MerkleTreeCertEntryExtension>(extensions));
+            new ArrayList<MTCLogEntryExtension>(extensions));
         try
         {
             this.extensionsWire = encodeExtensionsWire(this.extensions);
@@ -120,7 +122,7 @@ public class MTCProof
         this.start = start;
         this.end = end;
         this.inclusionProof = inclusionProof.clone();
-        this.signatures = Collections.unmodifiableList(new ArrayList<MTCSignature>(signatures));
+        this.signatures = Collections.unmodifiableList(new ArrayList<MTCCosignature>(signatures));
     }
 
     /**
@@ -159,7 +161,7 @@ public class MTCProof
             throw new IOException("Truncated inclusion_proof");
         }
 
-        int sigsLen = MTCEncoding.readUint16(in);
+        int sigsLen = MTCEncoding.readUint24(in);
         byte[] sigsData = new byte[sigsLen];
         if (readFully(in, sigsData) != sigsLen)
         {
@@ -170,7 +172,7 @@ public class MTCProof
             throw new IOException("Trailing bytes after MTCProof");
         }
 
-        List<MTCSignature> sigList = new ArrayList<MTCSignature>();
+        List<MTCCosignature> sigList = new ArrayList<MTCCosignature>();
         ByteArrayInputStream sigsIn = new ByteArrayInputStream(sigsData);
         byte[] prevCosignerId = null;
         while (sigsIn.available() > 0)
@@ -209,7 +211,7 @@ public class MTCProof
                     throw new IOException("MTCProof.signatures not in canonical order");
                 }
             }
-            sigList.add(new MTCSignature(cosignerId, signature));
+            sigList.add(new MTCCosignature(cosignerId, signature));
             prevCosignerId = cosignerId;
         }
         this.signatures = Collections.unmodifiableList(sigList);
@@ -236,7 +238,7 @@ public class MTCProof
         baos.write(inclusionProof);
 
         ByteArrayOutputStream sigsBaos = new ByteArrayOutputStream();
-        for (MTCSignature sig : signatures)
+        for (MTCCosignature sig : signatures)
         {
             byte[] cosignerId = sig.getCosignerId();
             byte[] signature = sig.getSignature();
@@ -256,12 +258,12 @@ public class MTCProof
             sigsBaos.write(signature);
         }
         byte[] sigsBytes = sigsBaos.toByteArray();
-        if (sigsBytes.length > 0xFFFF)
+        if (sigsBytes.length > 0xFFFFFF)
         {
             throw new IOException("signatures total length too long: " + sigsBytes.length);
         }
 
-        MTCEncoding.writeUint16(baos, sigsBytes.length);
+        MTCEncoding.writeUint24(baos, sigsBytes.length);
         baos.write(sigsBytes);
 
         return baos.toByteArray();
@@ -282,12 +284,12 @@ public class MTCProof
         return inclusionProof.clone();
     }
 
-    public List<MTCSignature> getSignatures()
+    public List<MTCCosignature> getSignatures()
     {
         return signatures;
     }
 
-    public List<MerkleTreeCertEntryExtension> getExtensions()
+    public List<MTCLogEntryExtension> getExtensions()
     {
         return extensions;
     }
@@ -345,10 +347,10 @@ public class MTCProof
         return 0;
     }
 
-    private static void checkExtensionOrder(List<MerkleTreeCertEntryExtension> exts)
+    private static void checkExtensionOrder(List<? extends MTCLogEntryExtension> exts)
     {
         int prev = -1;
-        for (MerkleTreeCertEntryExtension ext : exts)
+        for (MTCLogEntryExtension ext : exts)
         {
             int type = ext.getExtensionType();
             if (type == prev)
@@ -365,10 +367,10 @@ public class MTCProof
         }
     }
 
-    private static void checkSignatureOrder(List<MTCSignature> sigs)
+    private static void checkSignatureOrder(List<? extends MTCCosignature> sigs)
     {
         byte[] prev = null;
-        for (MTCSignature sig : sigs)
+        for (MTCCosignature sig : sigs)
         {
             byte[] id = sig.getCosignerId();
             if (prev != null)
@@ -387,11 +389,11 @@ public class MTCProof
         }
     }
 
-    private static byte[] encodeExtensionsWire(List<MerkleTreeCertEntryExtension> exts)
+    private static byte[] encodeExtensionsWire(List<MTCLogEntryExtension> exts)
         throws IOException
     {
         ByteArrayOutputStream body = new ByteArrayOutputStream();
-        for (MerkleTreeCertEntryExtension ext : exts)
+        for (MTCLogEntryExtension ext : exts)
         {
             MTCEncoding.writeUint16(body, ext.getExtensionType());
             byte[] data = ext.getExtensionData();
@@ -409,17 +411,17 @@ public class MTCProof
         return wire.toByteArray();
     }
 
-    private static List<MerkleTreeCertEntryExtension> parseExtensions(byte[] data)
+    private static List<MTCLogEntryExtension> parseExtensions(byte[] data)
         throws IOException
     {
         ByteArrayInputStream in = new ByteArrayInputStream(data);
-        List<MerkleTreeCertEntryExtension> exts = new ArrayList<MerkleTreeCertEntryExtension>();
+        List<MTCLogEntryExtension> exts = new ArrayList<MTCLogEntryExtension>();
         int prevType = -1;
         while (in.available() > 0)
         {
             if (in.available() < 4)
             {
-                throw new IOException("Truncated MerkleTreeCertEntryExtension header");
+                throw new IOException("Truncated MTCLogEntryExtension header");
             }
             int extType = MTCEncoding.readUint16(in);
             int extDataLen = MTCEncoding.readUint16(in);
@@ -436,7 +438,7 @@ public class MTCProof
             {
                 throw new IOException("MTCProof.extensions not in ascending order by extension_type");
             }
-            exts.add(new MerkleTreeCertEntryExtension(extType, extData));
+            exts.add(new MTCLogEntryExtension(extType, extData));
             prevType = extType;
         }
         return exts;

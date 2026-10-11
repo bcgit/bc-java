@@ -10,7 +10,7 @@ import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.bouncycastle.cert.plants.MTCCosignedMessage;
+import org.bouncycastle.cert.plants.MTCCosignedSubtree;
 import org.bouncycastle.cert.plants.MTCCosignerVerifier;
 import org.bouncycastle.cert.plants.MTCSignatureVerifier;
 import org.bouncycastle.cert.plants.MerkleTreeHash;
@@ -312,7 +312,7 @@ public class JcajceOperatorsTest
         byte[] subtreeHash = new byte[32];
         new Random(0x42).nextBytes(subtreeHash);
 
-        byte[] message = MTCCosignedMessage.encode(logId, 0L, 100L, 200L, subtreeHash, cosignerId);
+        byte[] message = MTCCosignedSubtree.encode(logId, 0L, 100L, 200L, subtreeHash, cosignerId);
         byte[] signature = signJca(kp, jcaSignatureAlg, message);
 
         MTCCosignerVerifier verifier = provider.get(cosignerId);
@@ -353,7 +353,7 @@ public class JcajceOperatorsTest
         byte[] cosignerId = TrustAnchorIDs.fromDottedDecimal(cosignerIdDotted);
         byte[] subtreeHash = new byte[subtreeHashLen];
         new Random(end ^ start).nextBytes(subtreeHash);
-        return MTCCosignedMessage.encode(logId, 0L, start, end, subtreeHash, cosignerId);
+        return MTCCosignedSubtree.encode(logId, 0L, start, end, subtreeHash, cosignerId);
     }
 
     public static void main(String[] args)
