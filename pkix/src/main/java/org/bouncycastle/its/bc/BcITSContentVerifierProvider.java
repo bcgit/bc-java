@@ -34,7 +34,7 @@ public class BcITSContentVerifierProvider
         throws IOException
     {
         this.issuer = issuer;
-        this.parentData = issuer.getEncoded();
+        this.parentData = issuer.getCanonicalEncoding();
         ToBeSignedCertificate toBeSignedCertificate =
             issuer.toASN1Structure().getToBeSigned();
         VerificationKeyIndicator vki = toBeSignedCertificate.getVerifyKeyIndicator();

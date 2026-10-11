@@ -45,7 +45,7 @@ public class ITSImplicitCertificateBuilder
         try
         {
             OutputStream os = calculator.getOutputStream();
-            os.write(issuer.getEncoded());
+            os.write(issuer.getCanonicalEncoding());
             os.close();
         }
         catch (IOException ioex)

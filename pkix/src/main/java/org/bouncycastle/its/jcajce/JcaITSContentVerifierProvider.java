@@ -74,7 +74,7 @@ public class JcaITSContentVerifierProvider
         this.helper = helper;
         try
         {
-            this.parentData = issuer.getEncoded();
+            this.parentData = issuer.getCanonicalEncoding();
         }
         catch (IOException e)
         {

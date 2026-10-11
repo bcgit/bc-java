@@ -77,7 +77,7 @@ public class BcITSContentSigner
         {
             try
             {
-                this.parentData = signerCert.getEncoded();
+                this.parentData = signerCert.getCanonicalEncoding();
                 this.parentDigest = new byte[digest.getDigestSize()];
 
                 digest.update(parentData, 0, parentData.length);

@@ -127,7 +127,7 @@ public class JcaITSContentSigner
         {
             try
             {
-                parentData = signerCert.getEncoded();
+                parentData = signerCert.getCanonicalEncoding();
                 OutputStream os = digest.getOutputStream();
                 os.write(parentData, 0, parentData.length);
                 os.close();
