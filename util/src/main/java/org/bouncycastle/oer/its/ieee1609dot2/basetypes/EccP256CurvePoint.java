@@ -119,35 +119,31 @@ public class EccP256CurvePoint
 
     public static EccP256CurvePoint createEncodedPoint(byte[] encoded)
     {
-        if (encoded[0] == 0x02)
+        if (encoded[0] == 0x02 || encoded[0] == 0x03)
         {
-            //33
-            byte[] copy = new byte[encoded.length - 1];
-            System.arraycopy(encoded, 1, copy, 0, copy.length);
-            return new EccP256CurvePoint(compressedY0, new DEROctetString(copy));
-        }
-        else if (encoded[0] == 0x03)
-        {
-            //33
-            byte[] copy = new byte[encoded.length - 1];
-            System.arraycopy(encoded, 1, copy, 0, copy.length);
-            return new EccP256CurvePoint(compressedY1, new DEROctetString(copy));
+            if (encoded.length != 33)
+            {
+                throw new IllegalArgumentException("compressed point encoding must be 33 bytes long");
+            }
+
+            return new EccP256CurvePoint((encoded[0] == 0x02) ? compressedY0 : compressedY1,
+                new DEROctetString(Arrays.copyOfRange(encoded, 1, 33)));
         }
         else if (encoded[0] == 0x04)
         {
-            // 65
+            if (encoded.length != 65)
+            {
+                throw new IllegalArgumentException("uncompressed point encoding must be 65 bytes long");
+            }
 
             return new EccP256CurvePoint(uncompressedP256,
-                new Point256(new DEROctetString(Arrays.copyOfRange(encoded, 1, 34)),
-                    new DEROctetString(Arrays.copyOfRange(encoded, 34, 66))));
-
+                new Point256(new DEROctetString(Arrays.copyOfRange(encoded, 1, 33)),
+                    new DEROctetString(Arrays.copyOfRange(encoded, 33, 65))));
         }
         else
         {
             throw new IllegalArgumentException("unrecognised encoding " + encoded[0]);
         }
-
-
     }
 
 

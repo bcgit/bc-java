@@ -49,6 +49,7 @@ public class AllTests
         suite.addTestSuite(OERBitStringTest.class);
         suite.addTestSuite(BitBuilderTest.class);
         suite.addTestSuite(OERChoiceTagTest.class);
+        suite.addTestSuite(EccP256CurvePointTest.class);
 
         return new BCTestSetup(suite);
     }
