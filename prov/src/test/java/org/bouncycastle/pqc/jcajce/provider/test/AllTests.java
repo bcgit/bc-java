@@ -43,6 +43,7 @@ public class AllTests
         suite.addTestSuite(XMSSTest.class);
         suite.addTestSuite(XMSSMTTest.class);
         suite.addTestSuite(LMSTest.class);
+        suite.addTestSuite(DeprecatedHashBasedKeyInterfaceTest.class);
         suite.addTestSuite(SLHDSAKeyPairGeneratorTest.class);
         suite.addTestSuite(SLHDSATest.class);
         suite.addTestSuite(CMCEKEMTest.class);

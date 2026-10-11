@@ -144,6 +144,7 @@
                 <exclude name="**/legacy/**/NTRU*.java" />
                 <exclude name="**/XMSS*.java" />
                 <exclude name="**/spec/LMS*.java" />
+                <exclude name="**/interfaces/LMS*.java" />
                 <exclude name="**/IndexGenerator.java" />
                 <exclude name="**/legacy/**/ntru/**/*.java" />
                 <exclude name="**/xmss/**/*.java" />
