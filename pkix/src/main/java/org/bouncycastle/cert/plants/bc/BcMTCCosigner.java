@@ -15,7 +15,8 @@ import org.bouncycastle.util.Exceptions;
 /**
  * Lightweight implementation of {@link MTCCosigner} for the MTC signature
  * algorithms named in {@link org.bouncycastle.cert.plants.MTCSignatureAlgorithm},
- * permitted by Section 5.3.3 of draft-ietf-plants-merkle-tree-certs:
+ * the algorithms this package binds (the draft itself fixes no list; see
+ * {@code MTCSignatureAlgorithm}):
  * {@code "ECDSA-P256-SHA256"}, {@code "ECDSA-P384-SHA384"}, {@code "Ed25519"},
  * {@code "ML-DSA-44"}, {@code "ML-DSA-65"}, {@code "ML-DSA-87"}.
  *

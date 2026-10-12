@@ -1,28 +1,50 @@
 package org.bouncycastle.cert.plants.test;
 
+import java.io.IOException;
+import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.bouncycastle.cert.plants.MerkleTreeHash;
 import org.bouncycastle.cert.plants.MerkleTreePrimitives;
 import org.bouncycastle.cert.plants.bc.BcSha256MerkleTreeHash;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
+import org.bouncycastle.test.TestResourceFinder;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
+import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
+import org.bouncycastle.util.io.Streams;
 import org.bouncycastle.util.test.SimpleTest;
 
 /**
- * The accumulated subtree test vectors of Appendix C.1 of
- * draft-ietf-plants-merkle-tree-certs-07. For trees of every size up to 130,
- * with leaf {@code d[i]} the single byte {@code i}, each output of the
- * Section 4 algorithms is rendered as a text line and folded into one running
- * SHA-256; the draft fixes the four resulting digests.
+ * The subtree test vectors of Appendix C of draft-ietf-plants-merkle-tree-certs-07.
+ *
+ * <p>Appendix C.1: for trees of every size up to 130, with leaf {@code d[i]} the
+ * single byte {@code i}, each output of the Section 4 algorithms is rendered as a
+ * text line and folded into one running SHA-256; the draft fixes the four
+ * resulting digests.</p>
+ *
+ * <p>Appendix C.2.2 and C.2.3: the large-tree inclusion and consistency proofs
+ * the draft publishes alongside, for trees of size about 2^48, 2^63 and 2^64,
+ * applied to the relying-party side (Section 4.3.2 evaluation and Section 4.4.3
+ * verification) together with the negative variants Appendix C.1 prescribes.
+ * The files are read from {@code pkix/plants} in bc-test-data.</p>
  */
 public class SubtreeTestVectorsTest
     extends SimpleTest
 {
     private static final int MAX_SIZE = 130;
+
+    /** Cases in large_inclusion_proofs.json whose tree fits a signed 64-bit integer. */
+    private static final int LARGE_INCLUSION_CASES = 16;
+    /** Cases in large_consistency_proofs.json whose tree fits a signed 64-bit integer. */
+    private static final int LARGE_CONSISTENCY_CASES = 14;
 
     private static final String SUBTREE_HASHES = "b82806ad4265bb151c1119c0f4db437bb4d1a1f887b3a7fba1cd4ebf552e3e81";
     private static final String INCLUSION_PROOFS = "ac2a8f989e44d99e399db448050ff5f19757df53cfb716aa81015d3955d8163f";
@@ -48,6 +70,144 @@ public class SubtreeTestVectorsTest
         inclusionProofs(entries, hash);
         consistencyProofs(entries, hash);
         coveringSubtrees();
+        largeInclusionProofs(hash);
+        largeConsistencyProofs(hash);
+    }
+
+    // C.2.2: evaluate each published proof (Section 4.3.2) and check that a proof one hash
+    // short, one hash long, or evaluated for the wrong entry hash fails. Trees above 2^63 - 1
+    // cannot be expressed as a long and are skipped, as Appendix C.2 permits above 2^48 - 1.
+    private void largeInclusionProofs(MerkleTreeHash hash)
+        throws IOException
+    {
+        byte[] junk = hash.hashLeaf(Strings.toByteArray("not a proof node"));
+        int checked = 0;
+        for (Map<String, String> v : readVectors("large_inclusion_proofs.json"))
+        {
+            long index = asLong(v.get("Index"));
+            long start = asLong(v.get("Start"));
+            long end = asLong(v.get("End"));
+            if (index < 0 || start < 0 || end < 0)
+            {
+                continue;
+            }
+            String name = "C.2.2 entry " + index + " of [" + start + ", " + end + ")";
+            byte[] entryHash = Base64.decode(v.get("EntryHash"));
+            byte[] subtreeHash = Base64.decode(v.get("SubtreeHash"));
+            List<byte[]> proof = split(Base64.decode(v.get("Proof")), hash.getHashSize());
+
+            isTrue(name + " verifies", MerkleTreePrimitives.verifySubtreeInclusionProof(
+                index, start, end, entryHash, subtreeHash, proof, hash));
+            isTrue(name + " rejects an extended proof", !MerkleTreePrimitives.verifySubtreeInclusionProof(
+                index, start, end, entryHash, subtreeHash, append(proof, junk), hash));
+            if (!proof.isEmpty())
+            {
+                isTrue(name + " rejects a truncated proof", !MerkleTreePrimitives.verifySubtreeInclusionProof(
+                    index, start, end, entryHash, subtreeHash, proof.subList(0, proof.size() - 1), hash));
+            }
+            isTrue(name + " rejects another entry hash", !MerkleTreePrimitives.verifySubtreeInclusionProof(
+                index, start, end, junk, subtreeHash, proof, hash));
+            checked++;
+        }
+        isTrue("C.2.2 vectors read: " + checked, checked == LARGE_INCLUSION_CASES);
+    }
+
+    // C.2.3: check each published proof (Section 4.4.3) and, per Appendix C.1.3 steps 3 to 6,
+    // that a proof one hash short or one hash long, a flipped subtree hash, and (for a non-empty
+    // subtree) a flipped tree hash all fail. Trees above 2^63 - 1 are skipped as above.
+    private void largeConsistencyProofs(MerkleTreeHash hash)
+        throws IOException
+    {
+        byte[] junk = hash.hashLeaf(Strings.toByteArray("not a proof node"));
+        int checked = 0;
+        for (Map<String, String> v : readVectors("large_consistency_proofs.json"))
+        {
+            long start = asLong(v.get("Start"));
+            long end = asLong(v.get("End"));
+            long n = asLong(v.get("TreeSize"));
+            if (start < 0 || end < 0 || n < 0)
+            {
+                continue;
+            }
+            String name = "C.2.3 subtree [" + start + ", " + end + ") of " + n;
+            byte[] subtreeHash = Base64.decode(v.get("SubtreeHash"));
+            byte[] treeHash = Base64.decode(v.get("TreeHash"));
+            List<byte[]> proof = split(Base64.decode(v.get("Proof")), hash.getHashSize());
+
+            isTrue(name + " verifies", MerkleTreePrimitives.verifySubtreeConsistencyProof(
+                start, end, n, subtreeHash, treeHash, proof, hash));
+            isTrue(name + " rejects an extended proof", !MerkleTreePrimitives.verifySubtreeConsistencyProof(
+                start, end, n, subtreeHash, treeHash, append(proof, junk), hash));
+            if (!proof.isEmpty())
+            {
+                isTrue(name + " rejects a truncated proof", !MerkleTreePrimitives.verifySubtreeConsistencyProof(
+                    start, end, n, subtreeHash, treeHash, proof.subList(0, proof.size() - 1), hash));
+            }
+            isTrue(name + " rejects a flipped subtree hash", !MerkleTreePrimitives.verifySubtreeConsistencyProof(
+                start, end, n, flipBit(subtreeHash), treeHash, proof, hash));
+            if (start != end)
+            {
+                isTrue(name + " rejects a flipped tree hash", !MerkleTreePrimitives.verifySubtreeConsistencyProof(
+                    start, end, n, subtreeHash, flipBit(treeHash), proof, hash));
+            }
+            checked++;
+        }
+        isTrue("C.2.3 vectors read: " + checked, checked == LARGE_CONSISTENCY_CASES);
+    }
+
+    /**
+     * Reads one of the vector files: a JSON list of flat objects whose values are all
+     * strings, which is all the scanner below understands.
+     */
+    private static List<Map<String, String>> readVectors(String fileName)
+        throws IOException
+    {
+        String text = Strings.fromByteArray(Streams.readAll(TestResourceFinder.findTestResource("pkix/plants", fileName)));
+        Pattern field = Pattern.compile("\"([A-Za-z]+)\"\\s*:\\s*\"([^\"]*)\"");
+        List<Map<String, String>> vectors = new ArrayList<Map<String, String>>();
+        Matcher object = Pattern.compile("\\{([^}]*)\\}").matcher(text);
+        while (object.find())
+        {
+            Map<String, String> values = new HashMap<String, String>();
+            Matcher f = field.matcher(object.group(1));
+            while (f.find())
+            {
+                values.put(f.group(1), f.group(2));
+            }
+            vectors.add(values);
+        }
+        return vectors;
+    }
+
+    /** The decimal value, or -1 when it does not fit a signed long. */
+    private static long asLong(String decimal)
+    {
+        BigInteger value = new BigInteger(decimal);
+        return value.bitLength() > 63 ? -1 : value.longValue();
+    }
+
+    private static List<byte[]> split(byte[] concatenated, int hashSize)
+    {
+        List<byte[]> hashes = new ArrayList<byte[]>();
+        for (int off = 0; off < concatenated.length; off += hashSize)
+        {
+            hashes.add(Arrays.copyOfRange(concatenated, off, off + hashSize));
+        }
+        return hashes;
+    }
+
+    private static List<byte[]> append(List<byte[]> proof, byte[] extra)
+    {
+        List<byte[]> longer = new ArrayList<byte[]>(proof);
+        longer.add(extra);
+        return longer;
+    }
+
+    private static byte[] flipBit(byte[] hash)
+    {
+        byte[] flipped = Arrays.clone(hash);
+        flipped[0] ^= 0x01;
+        return flipped;
     }
 
     // C.1.1: "[START, END) HASH\n" for every valid subtree, the empty ones included.

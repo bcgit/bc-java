@@ -253,6 +253,11 @@ public class MerkleTreePrimitives
      * hashes to {@code HASH("")}, the hash of the empty string, as RFC 9162 defines
      * {@code MTH({})}.
      *
+     * <p>This overload builds a fresh {@link ListMerkleTreeNodeSource} for the call, so it costs
+     * {@code O(n)} hashes every time; to generate many proofs over one tree, construct one
+     * {@link ListMerkleTreeNodeSource} and use the {@link MerkleTreeNodeSource} overload,
+     * which reuses the nodes it has computed.</p>
+     *
      * @param entryHashes hashes of the tree's entries, entry {@code i} at position {@code i}
      *                    (each {@code MTH({entry})}, i.e. {@link MerkleTreeHash#hashLeaf})
      * @param start       range start index (inclusive)
@@ -306,6 +311,11 @@ public class MerkleTreePrimitives
      * computed over the subtree's entries. The result is accepted by
      * {@link #evaluateSubtreeInclusionProof} and {@link #verifySubtreeInclusionProof}
      * for the same {@code index}, {@code start} and {@code end}.
+     *
+     * <p>This overload builds a fresh {@link ListMerkleTreeNodeSource} for the call, so it costs
+     * {@code O(n)} hashes every time; to generate many proofs over one tree, construct one
+     * {@link ListMerkleTreeNodeSource} and use the {@link MerkleTreeNodeSource} overload,
+     * which reuses the nodes it has computed.</p>
      *
      * @param index       absolute index of the entry in the log
      * @param start       subtree start index (inclusive)
@@ -367,6 +377,11 @@ public class MerkleTreePrimitives
      * {@code start}, {@code end} and {@code n}. As the draft notes, with {@code start == 0}
      * this is the RFC 9162 consistency proof {@code PROOF(end, D_n)}, and with
      * {@code end == start + 1} it is the inclusion proof {@code PATH(start, D_n)}.
+     *
+     * <p>This overload builds a fresh {@link ListMerkleTreeNodeSource} for the call, so it costs
+     * {@code O(n)} hashes every time; to generate many proofs over one tree, construct one
+     * {@link ListMerkleTreeNodeSource} and use the {@link MerkleTreeNodeSource} overload,
+     * which reuses the nodes it has computed.</p>
      *
      * @param start       subtree start index (inclusive)
      * @param end         subtree end index (exclusive)

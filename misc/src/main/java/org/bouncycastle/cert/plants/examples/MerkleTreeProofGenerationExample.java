@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.bouncycastle.cert.plants.ListMerkleTreeNodeSource;
 import org.bouncycastle.cert.plants.MerkleTreeHash;
 import org.bouncycastle.cert.plants.MerkleTreeNodeSource;
 import org.bouncycastle.cert.plants.MerkleTreePrimitives;
@@ -25,7 +26,10 @@ import org.bouncycastle.util.encoders.Hex;
  *   <li><b>Entry hashes</b> — each log entry is hashed once with
  *       {@link MerkleTreeHash#hashLeaf} (for certificates this is
  *       {@code MerkleTreeCertificateValidator.computeEntryHash}); the
- *       generators only ever see these hashes, never the entries.</li>
+ *       generators only ever see these hashes, never the entries. They are
+ *       wrapped once in a {@link ListMerkleTreeNodeSource}, which keeps every
+ *       tree node it computes, so the proofs that follow share one tree
+ *       rather than each rebuilding it from the entries.</li>
  *   <li><b>Subtree hashes</b> — {@link MerkleTreePrimitives#computeMerkleTreeHash}
  *       gives {@code MTH(D[start:end])} for the tree root, a landmark subtree, or
  *       any other range (RFC 9162 Section 2.1.1).</li>
@@ -64,13 +68,19 @@ public class MerkleTreeProofGenerationExample
         }
         System.out.println("Tree size:                 " + treeSize);
 
+        //    One node source for the whole run. The List overloads of the
+        //    generators would work too, but each call builds a fresh source and
+        //    recomputes the tree, which makes a batch of proofs quadratic; a CA
+        //    issuing a certificate per entry of a checkpoint wants this form.
+        ListMerkleTreeNodeSource tree = new ListMerkleTreeNodeSource(entryHashes, hashFunc);
+
         // 2. Subtree hashes. The root hash is what the log's checkpoint
         //    commits to; [8, 12) is a subtree in the Section 4.1 sense (its
         //    start is a multiple of its size), so it could be published as a
         //    landmark subtree.
-        byte[] rootHash = MerkleTreePrimitives.computeMerkleTreeHash(entryHashes, 0, treeSize, hashFunc);
+        byte[] rootHash = MerkleTreePrimitives.computeMerkleTreeHash(tree, 0, treeSize, hashFunc);
         long start = 8, end = 12;
-        byte[] subtreeHash = MerkleTreePrimitives.computeMerkleTreeHash(entryHashes, start, end, hashFunc);
+        byte[] subtreeHash = MerkleTreePrimitives.computeMerkleTreeHash(tree, start, end, hashFunc);
         System.out.println("MTH(D[0:" + treeSize + "]):              " + Hex.toHexString(rootHash));
         System.out.println("MTH(D[" + start + ":" + end + "]):              " + Hex.toHexString(subtreeHash));
         System.out.println("[" + start + ", " + end + ") is a valid subtree: "
@@ -81,7 +91,7 @@ public class MerkleTreeProofGenerationExample
         //    four-entry subtree that is two hashes.
         long index = 10;
         List<byte[]> inclusionProof = MerkleTreePrimitives.generateSubtreeInclusionProof(
-            index, start, end, entryHashes, hashFunc);
+            index, start, end, tree, hashFunc);
         System.out.println();
         System.out.println("Inclusion proof for entry " + index + " in [" + start + ", " + end + "):");
         print(inclusionProof);
@@ -97,7 +107,7 @@ public class MerkleTreeProofGenerationExample
         //    cosigned checkpoint for MTH(D[0:13]), before it will trust the
         //    subtree for landmark-relative certificates.
         List<byte[]> consistencyProof = MerkleTreePrimitives.generateSubtreeConsistencyProof(
-            start, end, treeSize, entryHashes, hashFunc);
+            start, end, treeSize, tree, hashFunc);
         System.out.println();
         System.out.println("Consistency proof for [" + start + ", " + end + ") in tree of size " + treeSize + ":");
         print(consistencyProof);
@@ -109,12 +119,14 @@ public class MerkleTreeProofGenerationExample
         // 5. The log grows. A proof generated against the old size does not
         //    verify against the new root, so the log regenerates it - the
         //    subtree hash itself is unchanged, only the path to the root is.
+        //    The node source reads the list in place, so appending to the list
+        //    is enough: the nodes it already holds are still valid.
         entryHashes.add(hashFunc.hashLeaf(Strings.toByteArray("log entry " + treeSize)));
         entryHashes.add(hashFunc.hashLeaf(Strings.toByteArray("log entry " + (treeSize + 1))));
         int newSize = entryHashes.size();
-        byte[] newRoot = MerkleTreePrimitives.computeMerkleTreeHash(entryHashes, 0, newSize, hashFunc);
+        byte[] newRoot = MerkleTreePrimitives.computeMerkleTreeHash(tree, 0, newSize, hashFunc);
         List<byte[]> newProof = MerkleTreePrimitives.generateSubtreeConsistencyProof(
-            start, end, newSize, entryHashes, hashFunc);
+            start, end, newSize, tree, hashFunc);
         System.out.println();
         System.out.println("Tree grown to size " + newSize + "; old proof verifies against new root: "
             + MerkleTreePrimitives.verifySubtreeConsistencyProof(
@@ -124,15 +136,15 @@ public class MerkleTreeProofGenerationExample
                 start, end, newSize, subtreeHash, newRoot, newProof, hashFunc));
         System.out.println("Subtree hash unchanged:                                     "
             + Arrays.areEqual(subtreeHash,
-                MerkleTreePrimitives.computeMerkleTreeHash(entryHashes, start, end, hashFunc)));
+                MerkleTreePrimitives.computeMerkleTreeHash(tree, start, end, hashFunc)));
 
         // 6. Two identities from Section 4.4.1: with start == 0 the subtree
         //    consistency proof is the RFC 9162 consistency proof PROOF(end, D_n),
         //    and with end == start + 1 it is the inclusion proof PATH(start, D_n).
         List<byte[]> asPath = MerkleTreePrimitives.generateSubtreeConsistencyProof(
-            index, index + 1, newSize, entryHashes, hashFunc);
+            index, index + 1, newSize, tree, hashFunc);
         List<byte[]> path = MerkleTreePrimitives.generateSubtreeInclusionProof(
-            index, 0, newSize, entryHashes, hashFunc);
+            index, 0, newSize, tree, hashFunc);
         System.out.println("SUBTREE_PROOF(" + index + ", " + (index + 1) + ", D_n) == PATH(" + index + ", D_n): "
             + sameHashes(asPath, path));
 
@@ -147,8 +159,7 @@ public class MerkleTreeProofGenerationExample
         {
             for (long from = 0; from + size <= newSize; from += size)
             {
-                storage.put(from + ":" + (from + size),
-                    MerkleTreePrimitives.computeMerkleTreeHash(entryHashes, from, from + size, hashFunc));
+                storage.put(from + ":" + (from + size), tree.getFullSubtreeHash(from, from + size));
             }
         }
         MerkleTreeNodeSource storedTree = new MerkleTreeNodeSource()
@@ -172,7 +183,7 @@ public class MerkleTreeProofGenerationExample
         System.out.println("Inclusion proof from storage equals in-memory proof:        "
             + sameHashes(
                 MerkleTreePrimitives.generateSubtreeInclusionProof(index, start, end, storedTree, hashFunc),
-                MerkleTreePrimitives.generateSubtreeInclusionProof(index, start, end, entryHashes, hashFunc)));
+                MerkleTreePrimitives.generateSubtreeInclusionProof(index, start, end, tree, hashFunc)));
     }
 
     private static void print(List<byte[]> proof)

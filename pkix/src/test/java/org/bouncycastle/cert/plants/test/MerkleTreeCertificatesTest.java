@@ -35,6 +35,10 @@ import org.bouncycastle.asn1.x509.Time;
 import org.bouncycastle.asn1.x509.Validity;
 import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.Extension;
+import org.bouncycastle.asn1.x509.ExtensionsGenerator;
+import org.bouncycastle.asn1.x509.GeneralName;
+import org.bouncycastle.asn1.x509.GeneralNames;
+import org.bouncycastle.asn1.x509.V3TBSCertificateGenerator;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
 import org.bouncycastle.cert.plants.ListMerkleTreeNodeSource;
@@ -85,6 +89,7 @@ import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.ContentVerifier;
 import org.bouncycastle.operator.ContentVerifierProvider;
 import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.test.SimpleTest;
 
 /**
@@ -542,6 +547,34 @@ public class MerkleTreeCertificatesTest
                 adapted.getFullSubtreeHash(8, 16);
             }
         });
+
+        // The adapter keeps the nodes it computes and reads the list in place, so a
+        // source built over a growing log answers for the appended entries too, with
+        // the same results as a source built after the fact, and the hashes it hands
+        // out are copies that a caller cannot corrupt the cache through.
+        List<byte[]> growing = new ArrayList<byte[]>(leaves.subList(0, 9));
+        ListMerkleTreeNodeSource source = new ListMerkleTreeNodeSource(growing, hashFunc);
+        byte[] root9 = MerkleTreePrimitives.computeMerkleTreeHash(source, 0, 9, hashFunc);
+        isTrue("root of 9 from a growing source", areEqual(
+            MerkleTreePrimitives.computeMerkleTreeHash(leaves, 0, 9, hashFunc), root9));
+        root9[0] ^= 0x01;
+        isTrue("a returned node is a copy", areEqual(
+            MerkleTreePrimitives.computeMerkleTreeHash(leaves, 0, 9, hashFunc),
+            MerkleTreePrimitives.computeMerkleTreeHash(source, 0, 9, hashFunc)));
+        growing.addAll(leaves.subList(9, 14));
+        isTrue("source size follows the list", source.size() == 14);
+        isTrue("root of 14 after appending", areEqual(
+            MerkleTreePrimitives.computeMerkleTreeHash(leaves, 0, 14, hashFunc),
+            MerkleTreePrimitives.computeMerkleTreeHash(source, 0, 14, hashFunc)));
+        isTrue("consistency proof after appending", sameHashes(
+            MerkleTreePrimitives.generateSubtreeConsistencyProof(8, 13, 14, leaves, hashFunc),
+            MerkleTreePrimitives.generateSubtreeConsistencyProof(8, 13, 14, source, hashFunc)));
+        for (int index = 0; index < 14; index++)
+        {
+            isTrue("inclusion proof " + index + " after appending", sameHashes(
+                MerkleTreePrimitives.generateSubtreeInclusionProof(index, 0, 14, leaves, hashFunc),
+                MerkleTreePrimitives.generateSubtreeInclusionProof(index, 0, 14, source, hashFunc)));
+        }
     }
 
     private boolean sameHashes(List<byte[]> a, List<byte[]> b)
@@ -1877,8 +1910,8 @@ public class MerkleTreeCertificatesTest
     }
 
     /**
-     * MTCSignatureAlgorithm constants must match the on-wire algorithm
-     * identifiers in Section 5.3.2. A typo here silently breaks cosignature
+     * MTCSignatureAlgorithm constants are BC's own names (the draft fixes no
+     * algorithm list) and must stay as published. A typo here silently breaks cosignature
      * dispatch in both Bc and Jca verifiers.
      */
     public void testSignatureAlgorithmConstants()
@@ -1949,6 +1982,106 @@ public class MerkleTreeCertificatesTest
         TBSCertificateLogEntry decoded = parsed.getTbsCertEntry();
         isTrue("TBSCertificateLogEntry round-trips through SEQUENCE wrapping",
             Arrays.equals(original.getEncoded(ASN1Encoding.DER), decoded.getEncoded(ASN1Encoding.DER)));
+    }
+
+    /**
+     * The CA logs an {@code MTCLogEntry} built from a {@code TBSCertificateLogEntry}
+     * (Section 5.2.1) and the relying party recomputes the entry from the
+     * TBSCertificate (Section 7.2 steps 7 to 9); the two leaf hashes must be the
+     * same bytes, or no certificate would ever verify. The TBSCertificate here
+     * carries every optional field - explicit v3 version, both unique IDs and
+     * extensions - so the tagged-field handling on both sides is covered, with
+     * an empty and a non-empty log-entry extensions list. The log entry is also
+     * taken back to a TBSCertificate through the landmark builder (Section 6.2
+     * requires the copied fields to be equal) and re-read through the
+     * {@code MTCLogEntry} parser.
+     */
+    public void testEntryHashMatchesLogEntryEncoding()
+        throws Exception
+    {
+        SubjectPublicKeyInfo spki = SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(ecdsaKeyPair.getPublic());
+        byte[] spkiHash = hashFunc.hashRaw(spki.getEncoded(ASN1Encoding.DER));
+        AlgorithmIdentifier sigAlg = new AlgorithmIdentifier(MTCObjectIdentifiers.id_alg_mtcProof);
+        long now = System.currentTimeMillis();
+
+        V3TBSCertificateGenerator tbsGen = new V3TBSCertificateGenerator();
+        tbsGen.setSerialNumber(new ASN1Integer(TrustAnchorIDs.certSerial(1, 42)));
+        tbsGen.setSignature(sigAlg);
+        tbsGen.setIssuer(TrustAnchorIDs.issuerName(LOG_TAID_STRING));
+        tbsGen.setStartDate(new Time(new Date(now)));
+        tbsGen.setEndDate(new Time(new Date(now + 86400000L)));
+        tbsGen.setSubject(new X500Name("CN=mtc-test-ee"));
+        tbsGen.setSubjectPublicKeyInfo(spki);
+        tbsGen.setIssuerUniqueID(new DERBitString(new byte[]{1, 2, 3}));
+        tbsGen.setSubjectUniqueID(new DERBitString(new byte[]{4, 5}));
+        ExtensionsGenerator extGen = new ExtensionsGenerator();
+        extGen.addExtension(Extension.basicConstraints, true, new BasicConstraints(false));
+        extGen.addExtension(Extension.subjectAlternativeName, false,
+            new GeneralNames(new GeneralName(GeneralName.dNSName, "example.com")));
+        tbsGen.setExtensions(extGen.generate());
+        TBSCertificate tbs = tbsGen.generateTBSCertificate();
+
+        TBSCertificateLogEntry logEntry = new TBSCertificateLogEntry(tbs, spkiHash);
+        isTrue("log entry keeps the unique IDs and extensions",
+            logEntry.getIssuerUniqueID() != null && logEntry.getSubjectUniqueID() != null
+                && logEntry.getExtensions() != null);
+        byte[] entryBody = derContents(logEntry.getEncoded(ASN1Encoding.DER));
+
+        List<List<MTCLogEntryExtension>> extensionLists = new ArrayList<List<MTCLogEntryExtension>>();
+        extensionLists.add(Collections.<MTCLogEntryExtension>emptyList());
+        List<MTCLogEntryExtension> two = new ArrayList<MTCLogEntryExtension>();
+        two.add(new MTCLogEntryExtension(3, new byte[]{(byte)0xAA}));
+        two.add(new MTCLogEntryExtension(0xF000, new byte[0]));
+        extensionLists.add(two);
+
+        for (List<MTCLogEntryExtension> exts : extensionLists)
+        {
+            String name = exts.size() + " log-entry extension(s)";
+            org.bouncycastle.cert.plants.MTCProof proof = new org.bouncycastle.cert.plants.MTCProof(
+                exts, 42L, 43L, new byte[0], Collections.<MTCCosignature>emptyList());
+
+            // CA side: MTH({entry}) over the encoded MTCLogEntry.
+            MTCLogEntry entry = new MTCLogEntry(exts, MTCLogEntryType.TBS_CERT_ENTRY, entryBody);
+            byte[] caSide = hashFunc.hashLeaf(entry.encode());
+
+            // Relying party side: from the TBSCertificate, and from the certificate carrying the proof.
+            byte[] fromTbs = MerkleTreeCertificateValidator.computeEntryHash(tbs, proof.getExtensionsWire(), hashFunc);
+            isTrue(name + ": entry hash from the TBSCertificate equals the log entry hash", areEqual(caSide, fromTbs));
+            X509CertificateHolder cert = new X509CertificateHolder(
+                new DERSequence(new ASN1Encodable[]{tbs, sigAlg, new DERBitString(proof.encode())}).getEncoded());
+            isTrue(name + ": entry hash from the certificate equals the log entry hash",
+                areEqual(caSide, MerkleTreeCertificateValidator.computeEntryHash(cert, proof.getExtensionsWire(), hashFunc)));
+
+            // The log entry re-read through the wire parser is the original structure.
+            TBSCertificateLogEntry reparsed = new MTCLogEntry(entry.encode()).getTbsCertEntry();
+            isTrue(name + ": log entry round-trips through MTCLogEntry",
+                areEqual(logEntry.getEncoded(ASN1Encoding.DER), reparsed.getEncoded(ASN1Encoding.DER)));
+        }
+
+        // The landmark builder reconstructs the TBSCertificate from the log entry, unique IDs
+        // and extensions included, so its certificate hashes to the same entry.
+        X509CertificateHolder rebuilt = org.bouncycastle.cert.plants.LandmarkCertificateManager.buildLandmarkCertificate(
+            1, 42, logEntry, spki, new MerkleTreePrimitives.SubtreeInfo(42, 43), Collections.<byte[]>emptyList(), hashFunc);
+        isTrue("landmark builder reproduces the TBSCertificate", areEqual(
+            tbs.getEncoded(ASN1Encoding.DER),
+            rebuilt.toASN1Structure().getTBSCertificate().getEncoded(ASN1Encoding.DER)));
+
+        // A log entry hashing a different subject key is a different entry.
+        TBSCertificateLogEntry otherKey = new TBSCertificateLogEntry(tbs, hashFunc.hashRaw(Strings.toByteArray("other key")));
+        byte[] otherKeyHash = hashFunc.hashLeaf(new MTCLogEntry(Collections.<MTCLogEntryExtension>emptyList(),
+            MTCLogEntryType.TBS_CERT_ENTRY, derContents(otherKey.getEncoded(ASN1Encoding.DER))).encode());
+        isTrue("a different subjectPublicKeyInfoHash gives a different entry hash",
+            !areEqual(otherKeyHash, MerkleTreeCertificateValidator.computeEntryHash(tbs, hashFunc)));
+    }
+
+    /** The contents octets of a DER SEQUENCE, i.e. the encoding without its identifier and length octets. */
+    private static byte[] derContents(byte[] der)
+    {
+        int lenByte = der[1] & 0xFF;
+        int contentOff = (lenByte & 0x80) == 0 ? 2 : 2 + (lenByte & 0x7F);
+        byte[] contents = new byte[der.length - contentOff];
+        System.arraycopy(der, contentOff, contents, 0, contents.length);
+        return contents;
     }
 
     /**
@@ -2170,6 +2303,7 @@ public class MerkleTreeCertificatesTest
         testValidatorEnforcesMinSerial();
         testSignatureAlgorithmConstants();
         testMerkleTreeCertEntryRoundTrip();
+        testEntryHashMatchesLogEntryEncoding();
         testWriteEntryHashInputMatchesComputeEntryHash();
     }
 
