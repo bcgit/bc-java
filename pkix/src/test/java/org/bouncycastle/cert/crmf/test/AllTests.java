@@ -528,6 +528,44 @@ public class AllTests
         TestCase.assertTrue(Arrays.areEqual(kp.getPrivate().getEncoded(), encKeyWithID.getPrivateKey().getEncoded()));
     }
 
+    public void testArchiveControlWithoutEnvelopedData()
+        throws Exception
+    {
+        EncryptedValue encValue = new EncryptedValue(null, new AlgorithmIdentifier(NISTObjectIdentifiers.id_aes128_CBC),
+            new DERBitString(new byte[16]), null, null, new DERBitString(new byte[32]));
+
+        checkArchiveControlWithoutEnvelopedData(PKIArchiveControl.keyGenParameters,
+            new PKIArchiveOptions(new DEROctetString(new byte[8])));
+        checkArchiveControlWithoutEnvelopedData(PKIArchiveControl.archiveRemGenPrivKey,
+            new PKIArchiveOptions(true));
+        checkArchiveControlWithoutEnvelopedData(PKIArchiveControl.encryptedPrivKey,
+            new PKIArchiveOptions(new EncryptedKey(encValue)));
+    }
+
+    private void checkArchiveControlWithoutEnvelopedData(int archiveType, PKIArchiveOptions options)
+        throws Exception
+    {
+        checkArchiveControlWithoutEnvelopedData(archiveType, new PKIArchiveControl(options));
+        checkArchiveControlWithoutEnvelopedData(archiveType,
+            new PKIArchiveControl(PKIArchiveOptions.getInstance(ASN1Primitive.fromByteArray(options.getEncoded()))));
+    }
+
+    private void checkArchiveControlWithoutEnvelopedData(int archiveType, PKIArchiveControl archiveControl)
+    {
+        TestCase.assertEquals(archiveType, archiveControl.getArchiveType());
+        TestCase.assertFalse(archiveControl.isEnvelopedData());
+
+        try
+        {
+            archiveControl.getEnvelopedData();
+            fail("no exception");
+        }
+        catch (CRMFException e)
+        {
+            TestCase.assertEquals("archive control does not contain enveloped data", e.getMessage());
+        }
+    }
+
     public void testProofOfPossessionWithoutSender()
         throws Exception
     {
