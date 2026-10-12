@@ -14,7 +14,6 @@ import org.bouncycastle.openpgp.smartcard.card.CardException;
 
 import java.security.PublicKey;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -247,6 +246,30 @@ public abstract class OpenPGPSmartCard
     }
 
     /**
+     * Change the user PIN (PW1,PW2) of the card.
+     *
+     * @param oldPinProvider provider for the old card user PIN
+     * @param newPinProvider provider for the new card user PIN
+     * @return this
+     * @throws CardException if the card PIN cannot be changed.
+     */
+    public abstract OpenPGPSmartCard changeUserPIN(CardPinProvider oldPinProvider,
+                                                   CardPinProvider newPinProvider)
+        throws CardException;
+
+    /**
+     * Change the admin PIN (PW3) of the card.
+     *
+     * @param oldPinProvider provider for the old card admin PIN
+     * @param newPinProvider provider for the new card admin PIN
+     * @return this
+     * @throws CardException if the card PIN cannot be changed.
+     */
+    public abstract OpenPGPSmartCard changeAdminPIN(CardPinProvider oldPinProvider,
+                                                    CardPinProvider newPinProvider)
+        throws CardException;
+
+    /**
      * Reset the smart card, clearing all key slots and resetting the admin PIN, user PIN to their defaults.
      *
      * @return this
@@ -454,4 +477,9 @@ public abstract class OpenPGPSmartCard
                           OpenPGPKey.OpenPGPSecretKey stubKey,
                           KeyPassphraseProvider userPinProvider)
             throws PGPException, CardException;
+
+    @FunctionalInterface
+    public interface CardPinProvider {
+        char[] providePIN(OpenPGPSmartCard card);
+    }
 }

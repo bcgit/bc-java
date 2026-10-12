@@ -176,6 +176,50 @@ public class YubikeyOpenPGPSmartCard
         return new SupportedAlgorithms(algs);
     }
 
+    @Override
+    public OpenPGPSmartCard changeUserPIN(CardPinProvider oldPinProvider, CardPinProvider newPinProvider)
+            throws CardException
+    {
+        char[] oldPin = oldPinProvider.providePIN(this);
+        char[] newPin = newPinProvider.providePIN(this);
+        try (OpenPgpSession session = openSession())
+        {
+            session.changeUserPin(oldPin, newPin);
+        }
+        catch (ApduException | IOException e)
+        {
+            throw new CardException("Cannot change user PIN on device " + getSerialNumber(), e);
+        }
+        catch (InvalidPinException e)
+        {
+            throw new CardException("Wrong user pin provided for device " + getSerialNumber(), e);
+        }
+        return this;
+    }
+
+    @Override
+    public OpenPGPSmartCard changeAdminPIN(CardPinProvider oldPinProvider, CardPinProvider newPinProvider)
+            throws CardException
+    {
+        char[] oldPin = oldPinProvider.providePIN(this);
+        char[] newPin = newPinProvider.providePIN(this);
+        try (OpenPgpSession session = openSession())
+        {
+            session.changeAdminPin(oldPin, newPin);
+        }
+        catch (ApduException | IOException e)
+        {
+            throw new CardException("Cannot change admin PIN on device " + getSerialNumber(), e);
+        }
+        catch (InvalidPinException e)
+        {
+            // TODO: Dedicated Exception for PIN errors?
+            //  Cannot reuse KeyPassphraseException, as those are bound to OpenPGP keys, not cards.
+            throw new CardException("Wrong admin pin provided for device " + getSerialNumber(), e);
+        }
+        return this;
+    }
+
     /**
      * Extract the value of <code>key</code> from a <code>toString()</code> rendering of the shape
      * <code>Name{a=1, b=2}</code>, or null if the field is absent or unterminated.
