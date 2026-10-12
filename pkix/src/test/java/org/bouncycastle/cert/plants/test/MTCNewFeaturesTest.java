@@ -30,9 +30,11 @@ import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.util.test.SimpleTest;
 
 /**
- * Tests for the new features added in draft-ietf-plants-merkle-tree-certs-04:
- * trust anchor ID helpers (Section 5.1), CA certificate representation
- * (Section 5.5), and landmark sequence parsing (Section 6.4.3).
+ * Tests for the trust anchor ID helpers (draft-ietf-plants-merkle-tree-certs-07
+ * Section 5.1, bounded at 32 bytes per draft-ietf-tls-trust-anchor-ids-06
+ * Section 4), the CA certificate representation (Section 5.5), the published
+ * landmark document (Section 6.4.3) and the landmark-relative certificate
+ * construction (Section 6.4.4).
  */
 public class MTCNewFeaturesTest
     extends SimpleTest

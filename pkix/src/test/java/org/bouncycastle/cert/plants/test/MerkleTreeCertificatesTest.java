@@ -90,7 +90,7 @@ import org.bouncycastle.util.test.SimpleTest;
 /**
  * Tests for the Merkle Tree Certificates implementation, exercising the
  * primitives, cosignature verification, and full certificate validation paths
- * defined by draft-ietf-plants-merkle-tree-certs-05.
+ * defined by draft-ietf-plants-merkle-tree-certs-07.
  */
 public class MerkleTreeCertificatesTest
     extends SimpleTest
