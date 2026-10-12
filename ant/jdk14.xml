@@ -246,6 +246,10 @@
                 <exclude name="**/cms/test/GOSTR3410_2012_256CmsSignVerifyDetached.java"/>
                 <exclude name="**/cert/test/GOSTR3410_2012_256GenerateCertificate.java"/>
                 <exclude name="**/bouncycastle/cms/test/*AuthEnvelopedData*Test.java"/>
+                <!-- composite signatures are excluded from this provider, so this never runs (the
+                     jdk1.4 cms AllTests does not reference it), and it builds composite keys with
+                     constructors the jdk1.4 CompositePrivateKey/CompositePublicKey overlays lack -->
+                <exclude name="**/cms/test/CompositeMLDSASignedDataTest.java"/>
                 <exclude name="**/PKIXRevocationTest.java"/>
 		<exclude name="**/its/**/*.java"/>
                 <exclude name="**/CheckNameConstraintsTest.java"/>

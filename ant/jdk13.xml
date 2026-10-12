@@ -462,6 +462,9 @@
                 <exclude name="**/bouncycastle/cms/test/CMSAuthEnvelopedDataStreamGeneratorTest.java"/>
                 <exclude name="**/bouncycastle/cms/test/GOSTR3410_2012_256CmsSignVerifyDetached.java"/>
                 <exclude name="**/bouncycastle/cert/test/GOSTR3410_2012_256GenerateCertificate.java"/>
+                <!-- parity with ant/jdk14.xml: composite signatures are not in this provider, and the
+                     test needs composite key constructors the jdk1.4 overlays lack -->
+                <exclude name="**/cms/test/CompositeMLDSASignedDataTest.java"/>
                 <exclude name="**/its/**" />
                 <!-- parity with ant/jdk14.xml: the cades main-source excludes above (CAdESLevel*,
                      CAdESLongTermValuesUtil, CAdESArchiveTimestampUtil) leave org.bouncycastle.cades

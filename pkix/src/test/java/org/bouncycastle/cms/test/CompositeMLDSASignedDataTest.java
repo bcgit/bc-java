@@ -1,6 +1,8 @@
 package org.bouncycastle.cms.test;
 
+import java.io.InputStream;
 import java.math.BigInteger;
+import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
@@ -13,6 +15,10 @@ import java.security.cert.CertificateFactory;
 import java.security.cert.PKIXParameters;
 import java.security.cert.TrustAnchor;
 import java.security.cert.X509Certificate;
+import java.security.interfaces.RSAPrivateCrtKey;
+import java.security.spec.PKCS8EncodedKeySpec;
+import java.security.spec.RSAPublicKeySpec;
+import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -21,14 +27,19 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import junit.framework.TestCase;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.iana.IANAObjectIdentifiers;
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.KeyUsage;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
@@ -38,12 +49,17 @@ import org.bouncycastle.cms.CMSSignedDataGenerator;
 import org.bouncycastle.cms.SignerInformation;
 import org.bouncycastle.cms.jcajce.JcaSignerInfoGeneratorBuilder;
 import org.bouncycastle.cms.jcajce.JcaSimpleSignerInfoVerifierBuilder;
+import org.bouncycastle.jcajce.CompositePrivateKey;
+import org.bouncycastle.jcajce.CompositePublicKey;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
+import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.CollectionStore;
 import org.bouncycastle.util.Strings;
+import org.bouncycastle.util.encoders.Base64;
+import org.bouncycastle.util.io.Streams;
 
 /**
  * CMS SignedData round-trip and PKIX CertPath validation tests for the eighteen Composite ML-DSA
@@ -53,9 +69,11 @@ import org.bouncycastle.util.Strings;
  * (chain) coverage even though they are wired through DefaultCMSSignatureAlgorithmNameGenerator and
  * the DefaultSignatureAlgorithmIdentifierFinder used on the CMS and cert-path paths.
  * <p>
- * Two key pairs per parameter set are generated once and shared by both test methods. The RSA half
- * of the larger sets costs seconds to generate on a modern JVM and far more on the genuine JRE 5 the
- * jdk15to18 suite runs against, so a key is never generated where an existing one will do.
+ * Two key pairs per parameter set are created once and shared by both test methods. Generating the
+ * RSA half takes seconds on a modern JVM, and far longer on the genuine JRE 5 that runs the
+ * jdk15to18 suite, so the RSA sets don't generate theirs: the first key comes from the draft's test
+ * vectors in bc-test-data, and the second pairs a fresh ML-DSA key with the RSA key from another
+ * vector of the same size.
  */
 public class CompositeMLDSASignedDataTest
     extends TestCase
@@ -84,6 +102,7 @@ public class CompositeMLDSASignedDataTest
     };
 
     private static final Map keyPairs = new HashMap();
+    private static Map vectorKeyPairs;
 
     public void setUp()
     {
@@ -101,11 +120,100 @@ public class CompositeMLDSASignedDataTest
 
         if (kp == null)
         {
-            kp = KeyPairGenerator.getInstance(name, BC).generateKeyPair();
+            kp = isRsa(name) ? rsaKeyPair(name, index) : KeyPairGenerator.getInstance(name, BC).generateKeyPair();
             keyPairs.put(cacheKey, kp);
         }
 
         return kp;
+    }
+
+    private static boolean isRsa(String name)
+    {
+        return name.indexOf("-RSA") >= 0;
+    }
+
+    // TODO Review the source of these test keys
+    private static KeyPair rsaKeyPair(String name, int index)
+        throws Exception
+    {
+        Map vectorKeys = getVectorKeyPairs();
+        KeyPair vectorKp = (KeyPair)vectorKeys.get(name);
+        assertNotNull(name + ": no key in the composite test vectors", vectorKp);
+
+        if (index == 0)
+        {
+            return vectorKp;
+        }
+
+        int rsaBits = rsaComponent(vectorKp).getModulus().bitLength();
+        RSAPrivateCrtKey otherRsaKey = null;
+        for (int i = 0; i != NAMES.length && otherRsaKey == null; i++)
+        {
+            KeyPair candidate = (KeyPair)vectorKeys.get(NAMES[i]);
+            if (candidate != null && !NAMES[i].equals(name)
+                && rsaComponent(candidate).getModulus().bitLength() == rsaBits)
+            {
+                otherRsaKey = rsaComponent(candidate);
+            }
+        }
+        assertNotNull(name + ": no other RSA key of the same size in the composite test vectors", otherRsaKey);
+
+        // NAMES all start "MLDSA<level>-", the level being two digits
+        KeyPair mlDsaKp = KeyPairGenerator.getInstance("ML-DSA-" + name.substring(5, 7), BC).generateKeyPair();
+        PublicKey otherRsaPub = KeyFactory.getInstance("RSA", BC).generatePublic(
+            new RSAPublicKeySpec(otherRsaKey.getModulus(), otherRsaKey.getPublicExponent()));
+        ASN1ObjectIdentifier oid = ((CompositePrivateKey)vectorKp.getPrivate()).getAlgorithmIdentifier().getAlgorithm();
+
+        return new KeyPair(new CompositePublicKey(oid, new PublicKey[]{ mlDsaKp.getPublic(), otherRsaPub }),
+            new CompositePrivateKey(oid, new PrivateKey[]{ mlDsaKp.getPrivate(), otherRsaKey }));
+    }
+
+    private static RSAPrivateCrtKey rsaComponent(KeyPair kp)
+    {
+        // the traditional component follows the ML-DSA one
+        return (RSAPrivateCrtKey)((CompositePrivateKey)kp.getPrivate()).getPrivateKeys().get(1);
+    }
+
+    /**
+     * The key pairs for the RSA combinations in the draft's test vectors, by parameter set name.
+     */
+    private static Map getVectorKeyPairs()
+        throws Exception
+    {
+        if (vectorKeyPairs == null)
+        {
+            InputStream in = TestResourceFinder.findTestResource("pqc/crypto/composite", "testvectors.json");
+            String json = Strings.fromUTF8ByteArray(Streams.readAll(in));
+            in.close();
+
+            Map result = new HashMap();
+            // each test case is a flat object of string fields, so the innermost braces delimit one
+            Matcher testCase = Pattern.compile("\\{[^{}]*\\}").matcher(json);
+            while (testCase.find())
+            {
+                String fields = testCase.group();
+                String name = jsonField(fields, "tcId").substring("id-".length());
+                if (isRsa(name))
+                {
+                    byte[] skPkcs8 = Base64.decode(jsonField(fields, "sk_pkcs8"));
+                    AlgorithmIdentifier algId = PrivateKeyInfo.getInstance(skPkcs8).getPrivateKeyAlgorithm();
+                    KeyFactory keyFact = KeyFactory.getInstance(name, BC);
+                    PublicKey pub = keyFact.generatePublic(new X509EncodedKeySpec(
+                        new SubjectPublicKeyInfo(algId, Base64.decode(jsonField(fields, "pk"))).getEncoded()));
+                    result.put(name, new KeyPair(pub, keyFact.generatePrivate(new PKCS8EncodedKeySpec(skPkcs8))));
+                }
+            }
+            vectorKeyPairs = result;
+        }
+
+        return vectorKeyPairs;
+    }
+
+    private static String jsonField(String fields, String key)
+    {
+        Matcher m = Pattern.compile("\"" + key + "\"\\s*:\\s*\"([^\"]*)\"").matcher(fields);
+        assertTrue("composite test vector without " + key, m.find());
+        return m.group(1);
     }
 
     private static X509Certificate buildCert(X500Name issuer, PrivateKey issuerKey, String sigName,
