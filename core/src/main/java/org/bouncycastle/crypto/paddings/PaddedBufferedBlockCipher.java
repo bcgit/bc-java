@@ -55,7 +55,7 @@ public class PaddedBufferedBlockCipher
      * @param forEncryption if true the cipher is initialised for
      *  encryption, if false for decryption.
      * @param params the key and other data required by the cipher.
-     * @exception IllegalArgumentException if the params argument is
+     * @throws IllegalArgumentException if the params argument is
      * inappropriate.
      */
     public void init(
@@ -139,8 +139,8 @@ public class PaddedBufferedBlockCipher
      * @param out the space for any output that might be produced.
      * @param outOff the offset from which the output will be copied.
      * @return the number of output bytes copied to out.
-     * @exception DataLengthException if there isn't enough space in out.
-     * @exception IllegalStateException if the cipher isn't initialised.
+     * @throws DataLengthException if there isn't enough space in out.
+     * @throws IllegalStateException if the cipher isn't initialised.
      */
     public int processByte(
         byte        in,
@@ -170,8 +170,8 @@ public class PaddedBufferedBlockCipher
      * @param out the space for any output that might be produced.
      * @param outOff the offset from which the output will be copied.
      * @return the number of output bytes copied to out.
-     * @exception DataLengthException if there isn't enough space in out.
-     * @exception IllegalStateException if the cipher isn't initialised.
+     * @throws DataLengthException if there isn't enough space in out.
+     * @throws IllegalStateException if the cipher isn't initialised.
      */
     public int processBytes(
         byte[]      in,
@@ -240,11 +240,11 @@ public class PaddedBufferedBlockCipher
      * @param out the array the block currently being held is copied into.
      * @param outOff the offset at which the copying starts.
      * @return the number of output bytes copied to out.
-     * @exception DataLengthException if there is insufficient space in out for
+     * @throws DataLengthException if there is insufficient space in out for
      * the output or we are decrypting and the input is not block size aligned.
-     * @exception IllegalStateException if the underlying cipher is not
+     * @throws IllegalStateException if the underlying cipher is not
      * initialised.
-     * @exception InvalidCipherTextException if padding is expected and not found.
+     * @throws InvalidCipherTextException if padding is expected and not found.
      */
     public int doFinal(
         byte[]  out,

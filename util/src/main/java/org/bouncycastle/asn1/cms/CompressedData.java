@@ -55,7 +55,7 @@ public class CompressedData
      * @param ato the tagged object holding the object we want.
      * @param isExplicit true if the object is meant to be explicitly
      *              tagged false otherwise.
-     * @exception IllegalArgumentException if the object held by the
+     * @throws IllegalArgumentException if the object held by the
      *          tagged object cannot be converted.
      */
     public static CompressedData getInstance(
@@ -76,7 +76,7 @@ public class CompressedData
      * </ul>
      *
      * @param obj the object we want converted.
-     * @exception IllegalArgumentException if the object cannot be converted.
+     * @throws IllegalArgumentException if the object cannot be converted.
      */
     public static CompressedData getInstance(
         Object obj)

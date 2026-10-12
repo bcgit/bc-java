@@ -90,8 +90,8 @@ public class NISTCTSBlockCipher
      * @param out the space for any output that might be produced.
      * @param outOff the offset from which the output will be copied.
      * @return the number of output bytes copied to out.
-     * @exception org.bouncycastle.crypto.DataLengthException if there isn't enough space in out.
-     * @exception IllegalStateException if the cipher isn't initialised.
+     * @throws org.bouncycastle.crypto.DataLengthException if there isn't enough space in out.
+     * @throws IllegalStateException if the cipher isn't initialised.
      */
     public int processByte(
         byte        in,
@@ -123,8 +123,8 @@ public class NISTCTSBlockCipher
      * @param out the space for any output that might be produced.
      * @param outOff the offset from which the output will be copied.
      * @return the number of output bytes copied to out.
-     * @exception org.bouncycastle.crypto.DataLengthException if there isn't enough space in out.
-     * @exception IllegalStateException if the cipher isn't initialised.
+     * @throws org.bouncycastle.crypto.DataLengthException if there isn't enough space in out.
+     * @throws IllegalStateException if the cipher isn't initialised.
      */
     public int processBytes(
         byte[]      in,
@@ -193,11 +193,11 @@ public class NISTCTSBlockCipher
      * @param out the array the block currently being held is copied into.
      * @param outOff the offset at which the copying starts.
      * @return the number of output bytes copied to out.
-     * @exception org.bouncycastle.crypto.DataLengthException if there is insufficient space in out for
+     * @throws org.bouncycastle.crypto.DataLengthException if there is insufficient space in out for
      * the output.
-     * @exception IllegalStateException if the underlying cipher is not
+     * @throws IllegalStateException if the underlying cipher is not
      * initialised.
-     * @exception org.bouncycastle.crypto.InvalidCipherTextException if cipher text decrypts wrongly (in
+     * @throws org.bouncycastle.crypto.InvalidCipherTextException if cipher text decrypts wrongly (in
      * case the exception will never get thrown).
      */
     public int doFinal(

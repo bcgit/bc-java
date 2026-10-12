@@ -62,7 +62,7 @@ public class KEKRecipientInfo
      * @param obj the tagged object holding the object we want.
      * @param explicit true if the object is meant to be explicitly
      *              tagged false otherwise.
-     * @exception IllegalArgumentException if the object held by the
+     * @throws IllegalArgumentException if the object held by the
      *          tagged object cannot be converted.
      */
     public static KEKRecipientInfo getInstance(
@@ -83,7 +83,7 @@ public class KEKRecipientInfo
      * </ul>
      *
      * @param obj the object we want converted.
-     * @exception IllegalArgumentException if the object cannot be converted.
+     * @throws IllegalArgumentException if the object cannot be converted.
      */
     public static KEKRecipientInfo getInstance(
         Object obj)

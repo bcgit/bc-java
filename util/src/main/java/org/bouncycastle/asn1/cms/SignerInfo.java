@@ -94,7 +94,7 @@ public class SignerInfo
      * </ul>
      *
      * @param o the object we want converted.
-     * @exception IllegalArgumentException if the object cannot be converted.
+     * @throws IllegalArgumentException if the object cannot be converted.
      */
     public static SignerInfo getInstance(
         Object  o)

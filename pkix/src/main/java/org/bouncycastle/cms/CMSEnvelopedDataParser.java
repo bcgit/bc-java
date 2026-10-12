@@ -194,7 +194,7 @@ public class CMSEnvelopedDataParser
     /**
      * return a table of the unprotected attributes indexed by
      * the OID of the attribute.
-     * @exception IOException 
+     * @throws IOException 
      */
     public AttributeTable getUnprotectedAttributes() 
         throws IOException

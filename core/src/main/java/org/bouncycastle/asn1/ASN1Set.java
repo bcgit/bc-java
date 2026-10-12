@@ -112,7 +112,7 @@ public abstract class ASN1Set
      * return an ASN1Set from the given object.
      *
      * @param obj the object we want converted.
-     * @exception IllegalArgumentException if the object cannot be converted.
+     * @throws IllegalArgumentException if the object cannot be converted.
      * @return an ASN1Set instance, or null.
      */
     public static ASN1Set getInstance(Object obj)
@@ -158,7 +158,7 @@ public abstract class ASN1Set
      * @param taggedObject the tagged object.
      * @param declaredExplicit true if the object is meant to be explicitly tagged
      *          false otherwise.
-     * @exception IllegalArgumentException if the tagged object cannot
+     * @throws IllegalArgumentException if the tagged object cannot
      *          be converted.
      * @return an ASN1Set instance.
      */

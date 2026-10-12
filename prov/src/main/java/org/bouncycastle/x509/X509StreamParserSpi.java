@@ -27,7 +27,7 @@ public abstract class X509StreamParserSpi
      *
      * @return the next X.509 object in the stream or <code>null</code> if the
      *         end of the stream is reached.
-     * @exception StreamParsingException
+     * @throws StreamParsingException
      *                if the object cannot be created from input stream.
      */
     public abstract Object engineRead() throws StreamParsingException;
@@ -38,7 +38,7 @@ public abstract class X509StreamParserSpi
      *
      * @return A collection of all X.509 objects in the input stream or
      *         <code>null</code> if the end of the stream is reached.
-     * @exception StreamParsingException
+     * @throws StreamParsingException
      *                if an object cannot be created from input stream.
      */
     public abstract Collection engineReadAll() throws StreamParsingException;

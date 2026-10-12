@@ -753,7 +753,7 @@ public class CMSSignedDataParser
      * @param attrCerts new attribute certificates to be used, if any.
      * @param out the stream to write the new signed data object to.
      * @return out.
-     * @exception CMSException if there is an error processing the CertStore
+     * @throws CMSException if there is an error processing the CertStore
      */
     public static OutputStream replaceCertificatesAndCRLs(
         InputStream   original,

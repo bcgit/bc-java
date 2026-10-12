@@ -60,7 +60,7 @@ public class SignerIdentifier
      * </ul>
      *
      * @param o the object we want converted.
-     * @exception IllegalArgumentException if the object cannot be converted.
+     * @throws IllegalArgumentException if the object cannot be converted.
      */
     public static SignerIdentifier getInstance(
         Object o)

@@ -28,7 +28,7 @@ public abstract class ASN1BMPString
      * Return a BMP String from the given object.
      *
      * @param obj the object we want converted.
-     * @exception IllegalArgumentException if the object cannot be converted.
+     * @throws IllegalArgumentException if the object cannot be converted.
      * @return an ASN1BMPString instance, or null.
      */
     public static ASN1BMPString getInstance(Object obj)
@@ -66,7 +66,7 @@ public abstract class ASN1BMPString
      * @param taggedObject      the tagged object holding the object we want
      * @param declaredExplicit true if the object is meant to be explicitly tagged false
      *                 otherwise.
-     * @exception IllegalArgumentException if the tagged object cannot be converted.
+     * @throws IllegalArgumentException if the tagged object cannot be converted.
      * @return an ASN1BMPString instance.
      */
     public static ASN1BMPString getInstance(ASN1TaggedObject taggedObject, boolean declaredExplicit)

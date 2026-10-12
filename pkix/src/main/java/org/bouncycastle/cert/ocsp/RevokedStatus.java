@@ -46,7 +46,7 @@ public class RevokedStatus
      * return the revocation reason. Note: this field is optional, test for it
      * with hasRevocationReason() first.
      * @return the revocation reason value.
-     * @exception IllegalStateException if a reason is asked for and none is avaliable
+     * @throws IllegalStateException if a reason is asked for and none is avaliable
      */
     public int getRevocationReason()
     {

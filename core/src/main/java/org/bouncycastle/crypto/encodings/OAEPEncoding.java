@@ -198,7 +198,7 @@ public class OAEPEncoding
     }
 
     /**
-     * @exception InvalidCipherTextException if the decrypted block turns out to
+     * @throws InvalidCipherTextException if the decrypted block turns out to
      * be badly formatted.
      */
     public byte[] decodeBlock(byte[] in, int inOff, int inLen) throws InvalidCipherTextException

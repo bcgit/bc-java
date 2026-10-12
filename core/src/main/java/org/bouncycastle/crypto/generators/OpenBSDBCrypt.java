@@ -423,9 +423,9 @@ public class OpenBSDBCrypt
      *
      * @param         a 22 character Bcrypt base 64 encoded String 
      * @return         the 16 byte salt
-     * @exception     DataLengthException if the length 
+     * @throws        DataLengthException if the length 
      *                 of parameter is not 22
-     * @exception     InvalidArgumentException if the parameter
+     * @throws        InvalidArgumentException if the parameter
      *                 contains a value other than from Bcrypts base 64 encoding table
      */
     private static byte[] decodeSaltString(

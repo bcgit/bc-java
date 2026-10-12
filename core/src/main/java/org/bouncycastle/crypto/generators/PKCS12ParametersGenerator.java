@@ -31,7 +31,7 @@ public class PKCS12ParametersGenerator
      * accept any digest which also implements ExtendedDigest.
      *
      * @param digest the digest to be used as the source of derived keys.
-     * @exception IllegalArgumentException if an unknown digest is passed in.
+     * @throws IllegalArgumentException if an unknown digest is passed in.
      */
     public PKCS12ParametersGenerator(
         Digest  digest)

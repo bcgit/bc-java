@@ -17,7 +17,7 @@ public class ShortenedDigest
      * 
      * @param baseDigest underlying digest to use.
      * @param length length in bytes of the output of doFinal.
-     * @exception IllegalArgumentException if baseDigest is null, or length is greater than baseDigest.getDigestSize().
+     * @throws IllegalArgumentException if baseDigest is null, or length is greater than baseDigest.getDigestSize().
      */
     public ShortenedDigest(
         ExtendedDigest baseDigest,

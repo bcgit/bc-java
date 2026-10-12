@@ -41,7 +41,7 @@ public class CertificateID
      * @param issuerCert issuing certificate
      * @param number serial number
      *
-     * @exception OCSPException if any problems occur creating the id fields.
+     * @throws OCSPException if any problems occur creating the id fields.
      */
     public CertificateID(
         DigestCalculator digestCalculator, X509CertificateHolder issuerCert,

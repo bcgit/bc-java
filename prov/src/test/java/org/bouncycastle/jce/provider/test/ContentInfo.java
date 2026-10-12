@@ -45,7 +45,7 @@ class ContentInfo
      * </ul>
      *
      * @param obj the object we want converted.
-     * @exception IllegalArgumentException if the object cannot be converted.
+     * @throws IllegalArgumentException if the object cannot be converted.
      */
     public static ContentInfo getInstance(
         Object  obj)

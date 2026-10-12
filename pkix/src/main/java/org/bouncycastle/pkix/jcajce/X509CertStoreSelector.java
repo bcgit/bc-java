@@ -45,7 +45,7 @@ class X509CertStoreSelector
      *
      * @param selector A <code>X509CertSelector</code> instance.
      * @return An instance of an <code>X509CertStoreSelector</code>.
-     * @exception IllegalArgumentException if selector is null or creation fails.
+     * @throws IllegalArgumentException if selector is null or creation fails.
      */
     public static X509CertStoreSelector getInstance(X509CertSelector selector)
     {

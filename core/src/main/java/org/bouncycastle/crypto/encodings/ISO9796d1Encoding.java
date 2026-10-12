@@ -198,7 +198,7 @@ public class ISO9796d1Encoding
     }
 
     /**
-     * @exception InvalidCipherTextException if the decrypted block is not a valid ISO 9796 bit string
+     * @throws InvalidCipherTextException if the decrypted block is not a valid ISO 9796 bit string
      */
     private byte[] decodeBlock(
         byte[]  in,

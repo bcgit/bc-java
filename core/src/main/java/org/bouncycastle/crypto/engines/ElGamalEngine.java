@@ -118,7 +118,7 @@ public class ElGamalEngine
      * @param inOff the offset into the input buffer where the data starts.
      * @param inLen the length of the data to be processed.
      * @return the result of the ElGamal process.
-     * @exception DataLengthException the input block is too large.
+     * @throws DataLengthException the input block is too large.
      */
     public byte[] processBlock(
         byte[]  in,

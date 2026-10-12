@@ -40,7 +40,7 @@ public interface BlockCipherPadding
 
     /**
      * return the number of pad bytes present in the block.
-     * @exception InvalidCipherTextException if the padding is badly formed
+     * @throws InvalidCipherTextException if the padding is badly formed
      * or invalid.
      */
     public int padCount(byte[] in)

@@ -52,7 +52,7 @@ public class NoekeonEngine
      *            whether or not we are for encryption.
      * @param params
      *            the parameters required to set up the cipher.
-     * @exception IllegalArgumentException
+     * @throws IllegalArgumentException
      *                if the params argument is inappropriate.
      */
     public void init(boolean forEncryption, CipherParameters params)

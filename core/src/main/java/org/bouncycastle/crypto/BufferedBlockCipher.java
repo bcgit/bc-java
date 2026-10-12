@@ -170,8 +170,8 @@ public class BufferedBlockCipher
      * @param out the space for any output that might be produced.
      * @param outOff the offset from which the output will be copied.
      * @return the number of output bytes copied to out.
-     * @exception DataLengthException if there isn't enough space in out.
-     * @exception IllegalStateException if the cipher isn't initialised.
+     * @throws DataLengthException if there isn't enough space in out.
+     * @throws IllegalStateException if the cipher isn't initialised.
      */
     public int processByte(
         byte        in,
@@ -200,8 +200,8 @@ public class BufferedBlockCipher
      * @param out the space for any output that might be produced.
      * @param outOff the offset from which the output will be copied.
      * @return the number of output bytes copied to out.
-     * @exception DataLengthException if there isn't enough space in out.
-     * @exception IllegalStateException if the cipher isn't initialised.
+     * @throws DataLengthException if there isn't enough space in out.
+     * @throws IllegalStateException if the cipher isn't initialised.
      */
     public int processBytes(
         byte[]      in,

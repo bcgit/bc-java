@@ -93,7 +93,7 @@ public class OpenSSLPBEParametersGenerator
      *
      * @param keySize the size of the key we want (in bits)
      * @return a KeyParameter object.
-     * @exception IllegalArgumentException if the key length larger than the base hash size.
+     * @throws IllegalArgumentException if the key length larger than the base hash size.
      */
     public CipherParameters generateDerivedParameters(
         int keySize)
@@ -113,7 +113,7 @@ public class OpenSSLPBEParametersGenerator
      * @param keySize the size of the key we want (in bits)
      * @param ivSize the size of the iv we want (in bits)
      * @return a ParametersWithIV object.
-     * @exception IllegalArgumentException if keySize + ivSize is larger than the base hash size.
+     * @throws IllegalArgumentException if keySize + ivSize is larger than the base hash size.
      */
     public CipherParameters generateDerivedParameters(
         int     keySize,
@@ -133,7 +133,7 @@ public class OpenSSLPBEParametersGenerator
      *
      * @param keySize the size of the key we want (in bits)
      * @return a KeyParameter object.
-     * @exception IllegalArgumentException if the key length larger than the base hash size.
+     * @throws IllegalArgumentException if the key length larger than the base hash size.
      */
     public CipherParameters generateDerivedMacParameters(
         int keySize)

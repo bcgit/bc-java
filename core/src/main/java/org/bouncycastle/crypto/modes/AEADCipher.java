@@ -25,7 +25,7 @@ public interface AEADCipher
      *
      * @param forEncryption true if we are setting up for encryption, false otherwise.
      * @param params the necessary parameters for the underlying cipher to be initialised.
-     * @exception IllegalArgumentException if the params argument is inappropriate.
+     * @throws IllegalArgumentException if the params argument is inappropriate.
      */
     public void init(boolean forEncryption, CipherParameters params)
         throws IllegalArgumentException;
@@ -62,7 +62,7 @@ public interface AEADCipher
      * @param out the output buffer the processed byte goes into.
      * @param outOff the offset into the output byte array the processed data starts at.
      * @return the number of bytes written to out.
-     * @exception DataLengthException if the output buffer is too small.
+     * @throws DataLengthException if the output buffer is too small.
      */
     public int processByte(byte in, byte[] out, int outOff)
         throws DataLengthException;
@@ -76,7 +76,7 @@ public interface AEADCipher
      * @param out the output buffer the processed bytes go into.
      * @param outOff the offset into the output byte array the processed data starts at.
      * @return the number of bytes written to out.
-     * @exception DataLengthException if the output buffer is too small.
+     * @throws DataLengthException if the output buffer is too small.
      */
     public int processBytes(byte[] in, int inOff, int len, byte[] out, int outOff)
         throws DataLengthException;

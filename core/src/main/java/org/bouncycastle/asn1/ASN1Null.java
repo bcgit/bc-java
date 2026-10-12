@@ -31,7 +31,7 @@ public abstract class ASN1Null
      *
      * @param o object to be converted.
      * @return an instance of ASN1Null, or null.
-     * @exception IllegalArgumentException if the object cannot be converted.
+     * @throws IllegalArgumentException if the object cannot be converted.
      */
     public static ASN1Null getInstance(Object o)
     {

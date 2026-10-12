@@ -195,7 +195,7 @@ class X509CRLStoreSelector
      * 
      * @param selector A <code>X509CRLSelector</code> instance.
      * @return An instance of an <code>X509CRLStoreSelector</code>.
-     * @exception IllegalArgumentException if selector is null or creation
+     * @throws IllegalArgumentException if selector is null or creation
      *                fails.
      */
     public static X509CRLStoreSelector getInstance(X509CRLSelector selector)
