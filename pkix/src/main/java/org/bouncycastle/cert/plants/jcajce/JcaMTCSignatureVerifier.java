@@ -4,6 +4,7 @@ import java.security.GeneralSecurityException;
 import java.security.Provider;
 import java.security.PublicKey;
 import java.security.Signature;
+import java.security.SignatureException;
 import java.security.interfaces.ECPublicKey;
 
 import org.bouncycastle.cert.plants.MTCSignatureAlgorithm;
@@ -24,11 +25,10 @@ import org.bouncycastle.util.Exceptions;
  * {@code "ECDSA-P256-SHA256"}, {@code "ECDSA-P384-SHA384"}, {@code "Ed25519"},
  * {@code "ML-DSA-44"}, {@code "ML-DSA-65"}, {@code "ML-DSA-87"}.</p>
  *
- * <p>The draft identifiers are mapped to JCA Signature names internally —
- * the plain (r||s) ECDSA encoding used by MTCProof requires
- * {@code SHA256WITHPLAIN-ECDSA} / {@code SHA384WITHPLAIN-ECDSA}, which BC's
- * JCE provider registers (DER-encoded {@code SHA256withECDSA} is wire-incompatible
- * with the MTCProof signature byte format).</p>
+ * <p>The algorithm names are mapped to JCA Signature names internally; the
+ * two ECDSA names map to {@code SHA256withECDSA} / {@code SHA384withECDSA},
+ * so an ECDSA cosignature is the DER-encoded X9.62 {@code ECDSA-Sig-Value},
+ * the form the working group's reference implementation uses.</p>
  *
  * <p>Instances are created via {@link Builder}.</p>
  */
@@ -60,6 +60,11 @@ public class JcaMTCSignatureVerifier
             sig.update(cosignedMessage);
             return sig.verify(signature);
         }
+        catch (SignatureException e)
+        {
+            // a signature the algorithm cannot decode is an invalid signature, not an error
+            return false;
+        }
         catch (GeneralSecurityException e)
         {
             throw Exceptions.illegalStateException(
@@ -74,11 +79,11 @@ public class JcaMTCSignatureVerifier
     {
         if (MTCSignatureAlgorithm.ECDSA_P256_SHA256.equals(mtcAlgorithm))
         {
-            return "SHA256WITHPLAIN-ECDSA";
+            return "SHA256withECDSA";
         }
         if (MTCSignatureAlgorithm.ECDSA_P384_SHA384.equals(mtcAlgorithm))
         {
-            return "SHA384WITHPLAIN-ECDSA";
+            return "SHA384withECDSA";
         }
         if (MTCSignatureAlgorithm.ED25519.equals(mtcAlgorithm))
         {

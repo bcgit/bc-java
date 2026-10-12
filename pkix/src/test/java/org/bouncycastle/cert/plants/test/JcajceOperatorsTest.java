@@ -161,11 +161,13 @@ public class JcajceOperatorsTest
         KeyPair kp = generateEcKeyPair("P-256");
 
         byte[] message = buildCosignedMessage("32473.1.0.1", "32473.2", 100, 200, 32);
-        byte[] signature = signJca(kp, "SHA256WITHPLAIN-ECDSA", message);
+        byte[] signature = signJca(kp, "SHA256withECDSA", message);
+        isTrue("ECDSA-P256 cosignature is DER encoded", signature[0] == 0x30 && signature.length != 64);
 
         MTCSignatureVerifier v = new JcaMTCSignatureVerifier.Builder()
             .setProvider("BC").build("ECDSA-P256-SHA256", kp.getPublic());
         isTrue("ECDSA-P256 cosignature verifies", v.verify(message, signature));
+        isTrue("ECDSA-P256 plain r||s form rejected", !v.verify(message, signJca(kp, "SHA256WITHPLAIN-ECDSA", message)));
         isTrue("bound algorithm surfaced", "ECDSA-P256-SHA256".equals(v.getAlgorithm()));
 
         // The detect-based build overload must arrive at the same algorithm.
@@ -173,8 +175,11 @@ public class JcajceOperatorsTest
             .setProvider("BC").build(kp.getPublic());
         isTrue("ECDSA-P256 detect-based verifier verifies", detected.verify(message, signature));
 
-        signature[0] ^= 0x01;
+        signature[signature.length - 1] ^= 0x01;
         isTrue("ECDSA-P256 tampered signature rejected", !v.verify(message, signature));
+
+        signature[0] ^= 0x01;
+        isTrue("ECDSA-P256 undecodable signature rejected", !v.verify(message, signature));
     }
 
     private void testJcaSignatureVerifierEcdsaP384()
@@ -183,7 +188,7 @@ public class JcajceOperatorsTest
         KeyPair kp = generateEcKeyPair("P-384");
 
         byte[] message = buildCosignedMessage("32473.1.0.1", "32473.3", 0, 1024, 32);
-        byte[] signature = signJca(kp, "SHA384WITHPLAIN-ECDSA", message);
+        byte[] signature = signJca(kp, "SHA384withECDSA", message);
 
         MTCSignatureVerifier v = new JcaMTCSignatureVerifier.Builder()
             .setProvider("BC").build("ECDSA-P384-SHA384", kp.getPublic());
@@ -278,7 +283,7 @@ public class JcajceOperatorsTest
             .addCosigner(mlId, ml.getPublic())
             .build();
 
-        verifyThroughProvider(provider, ec256, ec256Id, "SHA256WITHPLAIN-ECDSA");
+        verifyThroughProvider(provider, ec256, ec256Id, "SHA256withECDSA");
         verifyThroughProvider(provider, ed, edId, "Ed25519");
         verifyThroughProvider(provider, ml, mlId, "ML-DSA-65");
     }

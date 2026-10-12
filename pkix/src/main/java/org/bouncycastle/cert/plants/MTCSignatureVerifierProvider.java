@@ -53,7 +53,7 @@ import org.bouncycastle.util.Arrays;
  *             to decode, or a serial that does not name a valid log entry,
  *             is a signature that does not verify ({@code false}). This
  *             matches single-cosigner deployments — a multi-cosigner /
- *             {@code minCosignatures > 1} policy, trusted subtrees or revoked
+ *             {@code minCosignatures > 1} policy, a {@link CosignerRequirement}, trusted subtrees or revoked
  *             ranges need {@link MerkleTreeCertificateValidator}.</li>
  *       </ol>
  *   </li>

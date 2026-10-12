@@ -15,12 +15,15 @@ import org.bouncycastle.crypto.signers.ECDSASigner;
 import org.bouncycastle.crypto.signers.Ed25519Signer;
 import org.bouncycastle.crypto.signers.HMacDSAKCalculator;
 import org.bouncycastle.crypto.signers.MLDSASigner;
-import org.bouncycastle.crypto.signers.PlainDSAEncoding;
+import org.bouncycastle.crypto.signers.StandardDSAEncoding;
 
 /**
  * Shared algorithm-string to lightweight {@link Signer} dispatch for the
  * MTC signature algorithms named in {@link org.bouncycastle.cert.plants.MTCSignatureAlgorithm},
- * the algorithms this package binds.
+ * the algorithms this package binds. The ECDSA signatures are DER-encoded
+ * (X9.62 {@code ECDSA-Sig-Value}), the encoding the working group's reference
+ * implementation produces and consumes; see
+ * {@link org.bouncycastle.cert.plants.MTCSignatureAlgorithm}.
  */
 final class BcMTCSigners
 {
@@ -35,14 +38,14 @@ final class BcMTCSigners
             return new DSADigestSigner(
                 new ECDSASigner(new HMacDSAKCalculator(new SHA256Digest())),
                 new SHA256Digest(),
-                PlainDSAEncoding.INSTANCE);
+                StandardDSAEncoding.INSTANCE);
         }
         if (MTCSignatureAlgorithm.ECDSA_P384_SHA384.equals(algorithm))
         {
             return new DSADigestSigner(
                 new ECDSASigner(new HMacDSAKCalculator(new SHA384Digest())),
                 new SHA384Digest(),
-                PlainDSAEncoding.INSTANCE);
+                StandardDSAEncoding.INSTANCE);
         }
         if (MTCSignatureAlgorithm.ED25519.equals(algorithm))
         {

@@ -41,6 +41,7 @@ import org.bouncycastle.asn1.x509.GeneralNames;
 import org.bouncycastle.asn1.x509.V3TBSCertificateGenerator;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
+import org.bouncycastle.cert.plants.CosignerRequirement;
 import org.bouncycastle.cert.plants.ListMerkleTreeNodeSource;
 import org.bouncycastle.cert.plants.MTCCertAuth;
 import org.bouncycastle.cert.plants.MTCContentSigner;
@@ -75,6 +76,7 @@ import org.bouncycastle.crypto.generators.MLDSAKeyPairGenerator;
 import org.bouncycastle.crypto.params.Ed25519KeyGenerationParameters;
 import org.bouncycastle.crypto.params.ECKeyGenerationParameters;
 import org.bouncycastle.crypto.params.ECNamedDomainParameters;
+import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.Ed25519PrivateKeyParameters;
 import org.bouncycastle.crypto.params.Ed25519PublicKeyParameters;
 import org.bouncycastle.crypto.params.MLDSAKeyGenerationParameters;
@@ -83,6 +85,8 @@ import org.bouncycastle.crypto.signers.ECDSASigner;
 import org.bouncycastle.crypto.signers.Ed25519Signer;
 import org.bouncycastle.crypto.signers.HMacDSAKCalculator;
 import org.bouncycastle.crypto.signers.MLDSASigner;
+import org.bouncycastle.crypto.signers.PlainDSAEncoding;
+import org.bouncycastle.crypto.signers.StandardDSAEncoding;
 import org.bouncycastle.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.ContentSigner;
@@ -701,11 +705,9 @@ public class MerkleTreeCertificatesTest
         digest.doFinal(hash, 0);
 
         BigInteger[] rs = signer.generateSignature(hash);
-        byte[] r = BigIntegers.asUnsignedByteArray(32, rs[0]);
-        byte[] s = BigIntegers.asUnsignedByteArray(32, rs[1]);
-        byte[] signature = new byte[64];
-        System.arraycopy(r, 0, signature, 0, 32);
-        System.arraycopy(s, 0, signature, 32, 32);
+        BigInteger order = ((ECPublicKeyParameters)ecdsaKeyPair.getPublic()).getParameters().getN();
+        byte[] signature = StandardDSAEncoding.INSTANCE.encode(order, rs[0], rs[1]);
+        isTrue("ECDSA cosignature is DER encoded", signature[0] == 0x30);
 
         byte[] cosignedMessage = MTCCosignedSubtree.encode(logId, start, end, subtreeHash, cosignerId);
         BcMTCSignatureVerifier ecdsaVerifier = new BcMTCSignatureVerifier(
@@ -714,8 +716,15 @@ public class MerkleTreeCertificatesTest
         isTrue("ECDSA cosignature verifies", ecdsaVerifier.verify(cosignedMessage, signature));
         isTrue("bound algorithm surfaced", "ECDSA-P256-SHA256".equals(ecdsaVerifier.getAlgorithm()));
 
-        signature[0] ^= 0x01;
+        // the fixed-width r||s form used before 1.87 is no longer accepted
+        byte[] plain = PlainDSAEncoding.INSTANCE.encode(order, rs[0], rs[1]);
+        isTrue("plain r||s ECDSA signature rejected", !ecdsaVerifier.verify(cosignedMessage, plain));
+
+        signature[signature.length - 1] ^= 0x01;
         isTrue("Tampered ECDSA signature rejected", !ecdsaVerifier.verify(cosignedMessage, signature));
+
+        signature[0] ^= 0x01;
+        isTrue("Undecodable ECDSA signature rejected", !ecdsaVerifier.verify(cosignedMessage, signature));
     }
 
     public void testCosignatureVerificationEd25519()
@@ -769,11 +778,7 @@ public class MerkleTreeCertificatesTest
         digest.doFinal(hash, 0);
 
         BigInteger[] rs = signer.generateSignature(hash);
-        byte[] r = BigIntegers.asUnsignedByteArray(48, rs[0]);
-        byte[] s = BigIntegers.asUnsignedByteArray(48, rs[1]);
-        byte[] signature = new byte[96];
-        System.arraycopy(r, 0, signature, 0, 48);
-        System.arraycopy(s, 0, signature, 48, 48);
+        byte[] signature = StandardDSAEncoding.INSTANCE.encode(ecParams.getN(), rs[0], rs[1]);
 
         byte[] cosignedMessage = MTCCosignedSubtree.encode(logId, start, end, subtreeHash, cosignerId);
         BcMTCSignatureVerifier verifier = new BcMTCSignatureVerifier(
@@ -781,7 +786,7 @@ public class MerkleTreeCertificatesTest
 
         isTrue("ECDSA-P384 cosignature verifies", verifier.verify(cosignedMessage, signature));
 
-        signature[0] ^= 0x01;
+        signature[signature.length - 1] ^= 0x01;
         isTrue("Tampered ECDSA-P384 signature rejected", !verifier.verify(cosignedMessage, signature));
     }
 
@@ -1819,6 +1824,224 @@ public class MerkleTreeCertificatesTest
     }
 
     /**
+     * Section 7.3: the relying party's cosigner policy is a quorum over named
+     * cosigners and the issuing CA, evaluated over the cosignatures that verify.
+     */
+    public void testCosignerRequirements()
+        throws Exception
+    {
+        final long logNumber = 1;
+        final long index = 42;
+        final long serial = (logNumber << 48) | index;
+
+        // The issuer is LOG_TAID_STRING, so the CA cosigner ID is that CA ID.
+        byte[] caId = binaryTrustAnchorID(LOG_TAID_STRING);
+        byte[] witnessA = binaryTrustAnchorID("32473.3.1");
+        byte[] witnessB = binaryTrustAnchorID("32473.3.2");
+        byte[] witnessC = binaryTrustAnchorID("32473.3.3");
+        byte[][] ids = new byte[][]{caId, witnessA, witnessB, witnessC};
+        AsymmetricCipherKeyPair[] keys = new AsymmetricCipherKeyPair[ids.length];
+        for (int i = 0; i != keys.length; i++)
+        {
+            Ed25519PrivateKeyParameters priv = new Ed25519PrivateKeyParameters(new SecureRandom());
+            keys[i] = new AsymmetricCipherKeyPair(priv.generatePublicKey(), priv);
+        }
+
+        TBSCertificateLogEntry tbsEntry = createDummyTBSCertificateLogEntry();
+        SubjectPublicKeyInfo spki = SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(ecdsaKeyPair.getPublic());
+        AlgorithmIdentifier sigAlg = new AlgorithmIdentifier(MTCObjectIdentifiers.id_alg_mtcProof);
+        TBSCertificate tbs = buildTBSCertificate(tbsEntry, serial, sigAlg, spki);
+        X509CertificateHolder dummyHolder = new X509CertificateHolder(
+            new DERSequence(new ASN1Encodable[]{tbs, sigAlg, new DERBitString(new byte[0])}).getEncoded());
+        byte[] entryHash = MerkleTreeCertificateValidator.computeEntryHash(dummyHolder, hashFunc);
+        byte[] siblingHash = hashFunc.hashLeaf("leaf43".getBytes());
+        byte[] subtreeHash = hashFunc.hashNode(entryHash, siblingHash);
+        byte[] cosignedLogId = binaryLogId(LOG_TAID_STRING, logNumber);
+
+        BcMTCCosignerVerifierProvider.Builder providerBuilder = new BcMTCCosignerVerifierProvider.Builder();
+        for (int i = 0; i != ids.length; i++)
+        {
+            providerBuilder.addCosigner(ids[i], keys[i].getPublic());
+        }
+        BcMTCCosignerVerifierProvider cosigners = providerBuilder.build();
+
+        // Certificates cosigned by each subset of {CA, A, B, C}, as a bit mask over ids.
+        X509CertificateHolder[] certs = new X509CertificateHolder[1 << ids.length];
+        for (int mask = 0; mask != certs.length; mask++)
+        {
+            List<MTCCosignature> sigs = new ArrayList<MTCCosignature>();
+            for (int i = 0; i != ids.length; i++)
+            {
+                if ((mask & (1 << i)) != 0)
+                {
+                    byte[] signedData = buildSignatureInput(cosignedLogId, 42, 44, subtreeHash, ids[i]);
+                    Ed25519Signer signer = new Ed25519Signer();
+                    signer.init(true, keys[i].getPrivate());
+                    signer.update(signedData, 0, signedData.length);
+                    sigs.add(new MTCCosignature(ids[i], signer.generateSignature()));
+                }
+            }
+            org.bouncycastle.cert.plants.MTCProof proof = new org.bouncycastle.cert.plants.MTCProof(
+                42L, 44L, siblingHash, sigs);
+            certs[mask] = new X509CertificateHolder(
+                new DERSequence(new ASN1Encodable[]{tbs, sigAlg, new DERBitString(proof.encode())}).getEncoded());
+        }
+        final int CA = 1, A = 2, B = 4, C = 8;
+
+        MerkleTreeCertificateValidator.ValidationParams base =
+            new MerkleTreeCertificateValidator.ValidationParams(cosigners, hashFunc, 1, null);
+        isTrue("no requirements by default", base.getCosignerRequirements().isEmpty());
+
+        // Requiring the issuing CA: the CA cosignature decides, the count does not.
+        MerkleTreeCertificateValidator.ValidationParams caRequired =
+            base.requireCosigners(CosignerRequirement.issuingCA());
+        isTrue("requireCosigners leaves the original untouched", base.getCosignerRequirements().isEmpty());
+        isEquals(1, caRequired.getCosignerRequirements().size());
+        isTrue("CA alone", MerkleTreeCertificateValidator.validateCertificate(certs[CA], caRequired));
+        isTrue("CA with witnesses", MerkleTreeCertificateValidator.validateCertificate(certs[CA | A | B], caRequired));
+        expectRejected(certs[A | B | C], caRequired, "Cosigner requirement not satisfied: CA");
+
+        // The Section 7.3 shape: the CA plus two of three independent witnesses.
+        MerkleTreeCertificateValidator.ValidationParams twoWitnesses = base.requireCosigners(
+            CosignerRequirement.allOf(
+                CosignerRequirement.issuingCA(),
+                CosignerRequirement.atLeast(2,
+                    CosignerRequirement.cosigner(witnessA),
+                    CosignerRequirement.cosigner(witnessB),
+                    CosignerRequirement.cosigner(witnessC))));
+        isTrue("CA + A + B", MerkleTreeCertificateValidator.validateCertificate(certs[CA | A | B], twoWitnesses));
+        isTrue("CA + B + C", MerkleTreeCertificateValidator.validateCertificate(certs[CA | B | C], twoWitnesses));
+        isTrue("everyone", MerkleTreeCertificateValidator.validateCertificate(certs[CA | A | B | C], twoWitnesses));
+        expectRejected(certs[CA | A], twoWitnesses,
+            "Cosigner requirement not satisfied: allOf(CA, atLeast(2: 32473.3.1, 32473.3.2, 32473.3.3))");
+        expectRejected(certs[A | B | C], twoWitnesses, "Cosigner requirement not satisfied");
+        expectRejected(certs[0], twoWitnesses, "Insufficient valid cosignatures: 0 < 1");
+
+        // Several requirements all apply; anyOf is a threshold of one.
+        MerkleTreeCertificateValidator.ValidationParams stacked = caRequired
+            .requireCosigners(CosignerRequirement.anyOf(
+                CosignerRequirement.cosigner(witnessA), CosignerRequirement.cosigner(witnessC)))
+            .requireCosigners(CosignerRequirement.cosigner(witnessB));
+        isEquals(3, stacked.getCosignerRequirements().size());
+        isTrue("CA + A + B", MerkleTreeCertificateValidator.validateCertificate(certs[CA | A | B], stacked));
+        isTrue("CA + B + C", MerkleTreeCertificateValidator.validateCertificate(certs[CA | B | C], stacked));
+        expectRejected(certs[CA | A | C], stacked, "Cosigner requirement not satisfied: 32473.3.2");
+        expectRejected(certs[CA | B], stacked, "Cosigner requirement not satisfied: anyOf(32473.3.1, 32473.3.3)");
+
+        // A cosigner the provider does not know never satisfies a requirement, even if it cosigned.
+        MerkleTreeCertificateValidator.ValidationParams unknownRequired =
+            new MerkleTreeCertificateValidator.ValidationParams(
+                BcMTCCosignerVerifierProvider.singleCosigner(caId, keys[0].getPublic()), hashFunc, 1, null)
+                .requireCosigners(CosignerRequirement.cosigner(witnessA));
+        expectRejected(certs[CA | A], unknownRequired, "Cosigner requirement not satisfied: 32473.3.1");
+
+        // A cosignature that fails to verify does not count towards a requirement.
+        BcMTCCosignerVerifierProvider wrongKeyForA = new BcMTCCosignerVerifierProvider.Builder()
+            .addCosigner(caId, keys[0].getPublic())
+            .addCosigner(witnessA, keys[2].getPublic())
+            .build();
+        MerkleTreeCertificateValidator.ValidationParams badA =
+            new MerkleTreeCertificateValidator.ValidationParams(wrongKeyForA, hashFunc, 1, null)
+                .requireCosigners(CosignerRequirement.cosigner(witnessA));
+        expectRejected(certs[CA | A], badA, "Cosigner requirement not satisfied: 32473.3.1");
+
+        // The count floor and the requirements are both enforced.
+        MerkleTreeCertificateValidator.ValidationParams floorAndCa =
+            new MerkleTreeCertificateValidator.ValidationParams(cosigners, hashFunc, 3, null)
+                .requireCosigners(CosignerRequirement.issuingCA());
+        isTrue("CA + A + B meets both", MerkleTreeCertificateValidator.validateCertificate(certs[CA | A | B], floorAndCa));
+        expectRejected(certs[CA | A], floorAndCa, "Insufficient valid cosignatures: 2 < 3");
+        expectRejected(certs[A | B | C], floorAndCa, "Cosigner requirement not satisfied: CA");
+
+        // A trusted subtree waives the cosigner policy (Section 7.2 step 11).
+        List<MerkleTreeCertificateValidator.TrustedSubtree> trusted =
+            new ArrayList<MerkleTreeCertificateValidator.TrustedSubtree>();
+        trusted.add(new MerkleTreeCertificateValidator.TrustedSubtree(logNumber, 42, 44, subtreeHash));
+        MerkleTreeCertificateValidator.ValidationParams trustedParams =
+            new MerkleTreeCertificateValidator.ValidationParams(cosigners, trusted,
+                Collections.<MerkleTreeCertificateValidator.RevokedRange>emptyList(), 2, hashFunc, null)
+                .requireCosigners(CosignerRequirement.issuingCA());
+        isTrue("trusted subtree accepts an uncosigned certificate",
+            MerkleTreeCertificateValidator.validateCertificate(certs[0], trustedParams));
+
+        // CosignerRequirement itself.
+        isEquals("CA", CosignerRequirement.issuingCA().toString());
+        isEquals("32473.3.1", CosignerRequirement.cosigner(witnessA).toString());
+        isTrue("cosigner id is copied", Arrays.equals(witnessA, CosignerRequirement.cosigner(witnessA).getCosignerId()));
+        CosignerRequirement quorum = CosignerRequirement.atLeast(2,
+            CosignerRequirement.cosigner(witnessA), CosignerRequirement.cosigner(witnessB), CosignerRequirement.issuingCA());
+        isEquals(2, quorum.getThreshold());
+        isEquals(3, quorum.getMembers().size());
+        isEquals("atLeast(2: 32473.3.1, 32473.3.2, CA)", quorum.toString());
+        isEquals("allOf(32473.3.1, 32473.3.2)", CosignerRequirement.allOf(
+            CosignerRequirement.cosigner(witnessA), CosignerRequirement.cosigner(witnessB)).toString());
+        List<byte[]> verified = new ArrayList<byte[]>();
+        verified.add(witnessA);
+        isTrue("one of two", !quorum.isSatisfiedBy(verified, caId));
+        verified.add(caId);
+        isTrue("two of three", quorum.isSatisfiedBy(verified, caId));
+        isTrue("CA leaf needs a CA id", !CosignerRequirement.issuingCA().isSatisfiedBy(verified, null));
+        isTrue("CA leaf", CosignerRequirement.issuingCA().isSatisfiedBy(verified, caId));
+        isTrue("single-member allOf", CosignerRequirement.allOf(CosignerRequirement.issuingCA()).isSatisfiedBy(verified, caId));
+        expectIllegalArgument(new TestExceptionOperation()
+        {
+            public void operation()
+            {
+                CosignerRequirement.atLeast(0, CosignerRequirement.issuingCA());
+            }
+        });
+        expectIllegalArgument(new TestExceptionOperation()
+        {
+            public void operation()
+            {
+                CosignerRequirement.atLeast(2, CosignerRequirement.issuingCA());
+            }
+        });
+        expectIllegalArgument(new TestExceptionOperation()
+        {
+            public void operation()
+            {
+                CosignerRequirement.anyOf();
+            }
+        });
+        expectIllegalArgument(new TestExceptionOperation()
+        {
+            public void operation()
+            {
+                CosignerRequirement.cosigner(new byte[0]);
+            }
+        });
+        expectIllegalArgument(new TestExceptionOperation()
+        {
+            public void operation()
+            {
+                CosignerRequirement.anyOf(CosignerRequirement.issuingCA(), null);
+            }
+        });
+    }
+
+    private void expectRejected(X509CertificateHolder cert, MerkleTreeCertificateValidator.ValidationParams params,
+        String messagePrefix)
+        throws Exception
+    {
+        try
+        {
+            MerkleTreeCertificateValidator.validateCertificate(cert, params);
+            fail("expected rejection: " + messagePrefix);
+        }
+        catch (SecurityException e)
+        {
+            isTrue("unexpected message: " + e.getMessage(), e.getMessage().startsWith(messagePrefix));
+        }
+    }
+
+    private void expectIllegalArgument(TestExceptionOperation op)
+        throws Exception
+    {
+        testException(null, "IllegalArgumentException", op);
+    }
+
+    /**
      * Section 5.5: {@code minSerial} sets a lower bound the CA undertakes not to
      * have issued below. The validator rejects any cert whose serial is below
      * {@code authorityInfo.getMinSerial()} when the authority info is supplied.
@@ -2299,6 +2522,7 @@ public class MerkleTreeCertificatesTest
         testMerkleTreeCertEntryTypeConstants();
         testAuthorityInfoWithoutLogHash();
         testGreaseCosignaturesIgnored();
+        testCosignerRequirements();
         testDeprecatedNames();
         testValidatorEnforcesMinSerial();
         testSignatureAlgorithmConstants();

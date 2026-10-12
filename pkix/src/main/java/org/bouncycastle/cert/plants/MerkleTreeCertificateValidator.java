@@ -4,6 +4,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -40,8 +41,10 @@ import org.bouncycastle.util.BigIntegers;
  * recomputes the entry hash from the TBSCertificate, evaluates the inclusion
  * proof against the supplied {@link MerkleTreeHash}, and then either matches
  * the resulting subtree hash against a {@link TrustedSubtree}
- * or counts valid cosignatures against the relying party's
- * {@link MTCCosignerVerifierProvider} until {@code minCosignatures} is met.</p>
+ * or verifies the cosignatures against the relying party's
+ * {@link MTCCosignerVerifierProvider} and checks the cosigners that verified
+ * against the policy: at least {@code minCosignatures} of them, and every
+ * {@link CosignerRequirement} the parameters carry.</p>
  */
 public class MerkleTreeCertificateValidator
 {
@@ -65,12 +68,20 @@ public class MerkleTreeCertificateValidator
      * and is responsible for supplying a matching {@code hashFunction} here.</p>
      * <p>{@code authorityInfo.getSigAlg()} is the CA cosigner's published signature
      * algorithm. {@link MTCSignatureVerifier#getAlgorithm()} surfaces the MTC
-     * algorithm string a registered verifier is bound to, but the draft does
-     * not pin OID identifiers for the plain (r||s) ECDSA forms, so the
-     * validator does not map {@code sigAlg} to that string itself. Callers
+     * algorithm string a registered verifier is bound to, but the draft fixes
+     * no mapping from signature algorithm identifiers to cosigner algorithms,
+     * so the validator does not map {@code sigAlg} to that string itself. Callers
      * building the provider for the CA cosigner remain responsible for
      * checking the verifier they register against
      * {@code authorityInfo.getSigAlg()}.</p>
+     * <p>The cosigner policy (Section 7.3) has two parts. {@code minCosignatures}
+     * is a floor on the number of registered cosigners whose cosignatures
+     * verify. {@link #requireCosigners(CosignerRequirement)} adds a
+     * {@link CosignerRequirement}, a quorum over named cosigners and the
+     * issuing CA, each of which must also be satisfied; a relying party
+     * following the Section 7.3 guidance requires
+     * {@link CosignerRequirement#issuingCA()} and a quorum of independent
+     * witnesses. Both parts are waived for a certificate in a trusted subtree.</p>
      */
     public static class ValidationParams
     {
@@ -80,6 +91,7 @@ public class MerkleTreeCertificateValidator
         private final int minCosignatures;
         private final MerkleTreeHash hashFunction;
         private final MTCCertificationAuthority authorityInfo;
+        private final List<CosignerRequirement> cosignerRequirements;
 
         public ValidationParams(
             MTCCosignerVerifierProvider cosignerVerifierProvider,
@@ -118,12 +130,46 @@ public class MerkleTreeCertificateValidator
             MerkleTreeHash hashFunction,
             MTCCertificationAuthority authorityInfo)
         {
+            this(cosignerVerifierProvider, trustedSubtrees, revokedRanges, minCosignatures, hashFunction,
+                authorityInfo, Collections.<CosignerRequirement>emptyList());
+        }
+
+        private ValidationParams(
+            MTCCosignerVerifierProvider cosignerVerifierProvider,
+            List<TrustedSubtree> trustedSubtrees,
+            List<RevokedRange> revokedRanges,
+            int minCosignatures,
+            MerkleTreeHash hashFunction,
+            MTCCertificationAuthority authorityInfo,
+            List<CosignerRequirement> cosignerRequirements)
+        {
             this.cosignerVerifierProvider = cosignerVerifierProvider;
             this.trustedSubtrees = trustedSubtrees;
             this.revokedRanges = revokedRanges;
             this.minCosignatures = minCosignatures;
             this.hashFunction = hashFunction;
             this.authorityInfo = authorityInfo;
+            this.cosignerRequirements = cosignerRequirements;
+        }
+
+        /**
+         * Returns a copy of these parameters that additionally requires
+         * {@code requirement} to be satisfied by the cosigners whose
+         * cosignatures verify. Each call adds a requirement; all of them must
+         * hold. The cosigners a requirement names must be registered with the
+         * {@link MTCCosignerVerifierProvider}, since only a verified cosignature
+         * satisfies a requirement.
+         */
+        public ValidationParams requireCosigners(CosignerRequirement requirement)
+        {
+            if (requirement == null)
+            {
+                throw new NullPointerException("requirement");
+            }
+            List<CosignerRequirement> reqs = new ArrayList<CosignerRequirement>(cosignerRequirements);
+            reqs.add(requirement);
+            return new ValidationParams(cosignerVerifierProvider, trustedSubtrees, revokedRanges, minCosignatures,
+                hashFunction, authorityInfo, Collections.unmodifiableList(reqs));
         }
 
         public MTCCosignerVerifierProvider getCosignerVerifierProvider()
@@ -154,6 +200,15 @@ public class MerkleTreeCertificateValidator
         public MTCCertificationAuthority getAuthorityInfo()
         {
             return authorityInfo;
+        }
+
+        /**
+         * The cosigner requirements added with {@link #requireCosigners(CosignerRequirement)},
+         * all of which must be satisfied; empty if none.
+         */
+        public List<CosignerRequirement> getCosignerRequirements()
+        {
+            return cosignerRequirements;
         }
     }
 
@@ -481,7 +536,7 @@ public class MerkleTreeCertificateValidator
         byte[] caId = extractCaIdFromIssuer(certHolder.getIssuer());
         byte[] logId = TrustAnchorIDs.logId(caId, logNumber);
 
-        int validCount = 0;
+        List<byte[]> verifiedCosigners = new ArrayList<byte[]>();
         for (MTCCosignature sig : proof.getSignatures())
         {
             byte[] cosignerId = sig.getCosignerId();
@@ -500,14 +555,23 @@ public class MerkleTreeCertificateValidator
             sOut.close();
             if (verifier.verify(sig.getSignature()))
             {
-                validCount++;
+                verifiedCosigners.add(cosignerId);
             }
         }
 
-        if (validCount < params.minCosignatures)
+        if (verifiedCosigners.size() < params.minCosignatures)
         {
-            throw new SecurityException("Insufficient valid cosignatures: " + validCount +
+            throw new SecurityException("Insufficient valid cosignatures: " + verifiedCosigners.size() +
                 " < " + params.minCosignatures);
+        }
+
+        // Section 7.3: every cosigner requirement in the policy must hold.
+        for (CosignerRequirement requirement : params.cosignerRequirements)
+        {
+            if (!requirement.isSatisfiedBy(verifiedCosigners, caId))
+            {
+                throw new SecurityException("Cosigner requirement not satisfied: " + requirement);
+            }
         }
 
         return true;

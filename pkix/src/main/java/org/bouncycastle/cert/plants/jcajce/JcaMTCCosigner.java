@@ -28,11 +28,11 @@ import org.bouncycastle.util.Arrays;
  *
  * <p>Symmetric counterpart of {@link JcaMTCSignatureVerifier} — encapsulates
  * the {@link MTCCosignedSubtree} encode plus the underlying JCA
- * {@link Signature} ceremony. The draft identifiers are mapped to JCA Signature
- * names internally; the plain (r||s) ECDSA encoding used by MTCProof requires
- * {@code SHA256WITHPLAIN-ECDSA} / {@code SHA384WITHPLAIN-ECDSA}, which BC's
- * JCE provider registers (DER-encoded {@code SHA256withECDSA} is wire-incompatible
- * with the MTCProof signature byte format).</p>
+ * {@link Signature} ceremony. The algorithm names are mapped to JCA Signature
+ * names internally; the two ECDSA names map to {@code SHA256withECDSA} /
+ * {@code SHA384withECDSA}, so an ECDSA cosignature is the DER-encoded X9.62
+ * {@code ECDSA-Sig-Value}, the form the working group's reference
+ * implementation uses.</p>
  *
  * <p>Instances are created via {@link Builder}.</p>
  */
