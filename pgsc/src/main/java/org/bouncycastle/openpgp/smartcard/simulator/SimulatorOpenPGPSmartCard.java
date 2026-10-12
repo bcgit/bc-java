@@ -163,28 +163,40 @@ public class SimulatorOpenPGPSmartCard
         supported.add(new SupportedAlgorithms.RSA(OpenPGPHardwareKey.KEY_REF_SIGNATURE, PublicKeyAlgorithmTags.RSA_GENERAL, 2048));
         supported.add(new SupportedAlgorithms.RSA(OpenPGPHardwareKey.KEY_REF_SIGNATURE, PublicKeyAlgorithmTags.RSA_GENERAL, 3072));
         supported.add(new SupportedAlgorithms.RSA(OpenPGPHardwareKey.KEY_REF_SIGNATURE, PublicKeyAlgorithmTags.RSA_GENERAL, 4096));
-        supported.add(new SupportedAlgorithms.EC(OpenPGPHardwareKey.KEY_REF_SIGNATURE, PublicKeyAlgorithmTags.ECDSA, X9ObjectIdentifiers.primeCurve)); // prime256v1 etc. 1.2.840.10045.3.1
-        supported.add(new SupportedAlgorithms.EC(OpenPGPHardwareKey.KEY_REF_SIGNATURE, PublicKeyAlgorithmTags.ECDSA, SECObjectIdentifiers.ellipticCurve)); // secp256r1 etc. 1.3.132.0
-        supported.add(new SupportedAlgorithms.EC(OpenPGPHardwareKey.KEY_REF_SIGNATURE, PublicKeyAlgorithmTags.ECDSA, TeleTrusTObjectIdentifiers.versionOne)); // brainpool 1.3.36.3.3.2.8.1.1
-        supported.add(new SupportedAlgorithms.EC(OpenPGPHardwareKey.KEY_REF_SIGNATURE, PublicKeyAlgorithmTags.EDDSA_LEGACY, GNUObjectIdentifiers.ellipticCurve)); // ed25519 1.3.6.1.4.1.11591.15
+        supported.add(new SupportedAlgorithms.EC(OpenPGPHardwareKey.KEY_REF_SIGNATURE, PublicKeyAlgorithmTags.ECDSA, X9ObjectIdentifiers.prime256v1)); // prime256v1 1.2.840.10045.3.1.7
+        supported.add(new SupportedAlgorithms.EC(OpenPGPHardwareKey.KEY_REF_SIGNATURE, PublicKeyAlgorithmTags.ECDSA, SECObjectIdentifiers.secp384r1)); // secp384r1 1.3.132.0.34
+        supported.add(new SupportedAlgorithms.EC(OpenPGPHardwareKey.KEY_REF_SIGNATURE, PublicKeyAlgorithmTags.ECDSA, SECObjectIdentifiers.secp521r1)); // secp384r1 1.3.132.0.35
+        supported.add(new SupportedAlgorithms.EC(OpenPGPHardwareKey.KEY_REF_SIGNATURE, PublicKeyAlgorithmTags.ECDSA, SECObjectIdentifiers.secp256k1)); // secp256k1 1.3.132.0.10
+        supported.add(new SupportedAlgorithms.EC(OpenPGPHardwareKey.KEY_REF_SIGNATURE, PublicKeyAlgorithmTags.ECDSA, TeleTrusTObjectIdentifiers.brainpoolP256r1)); // brainpoolP256r1 1.3.36.3.3.2.8.1.1.7
+        supported.add(new SupportedAlgorithms.EC(OpenPGPHardwareKey.KEY_REF_SIGNATURE, PublicKeyAlgorithmTags.ECDSA, TeleTrusTObjectIdentifiers.brainpoolP384r1)); // brainpoolP384r1 1.3.36.3.3.2.8.1.1.11
+        supported.add(new SupportedAlgorithms.EC(OpenPGPHardwareKey.KEY_REF_SIGNATURE, PublicKeyAlgorithmTags.ECDSA, TeleTrusTObjectIdentifiers.brainpoolP512r1)); // brainpoolP512r1 1.3.36.3.3.2.8.1.1.13
+        supported.add(new SupportedAlgorithms.EC(OpenPGPHardwareKey.KEY_REF_SIGNATURE, PublicKeyAlgorithmTags.EDDSA_LEGACY, GNUObjectIdentifiers.Ed25519)); // ed25519 1.3.6.1.4.1.11591.15.1
 
         // Encryption
         supported.add(new SupportedAlgorithms.RSA(OpenPGPHardwareKey.KEY_REF_DECRYPTION, PublicKeyAlgorithmTags.RSA_GENERAL, 2048));
         supported.add(new SupportedAlgorithms.RSA(OpenPGPHardwareKey.KEY_REF_DECRYPTION, PublicKeyAlgorithmTags.RSA_GENERAL, 3072));
         supported.add(new SupportedAlgorithms.RSA(OpenPGPHardwareKey.KEY_REF_DECRYPTION, PublicKeyAlgorithmTags.RSA_GENERAL, 4096));
-        supported.add(new SupportedAlgorithms.EC(OpenPGPHardwareKey.KEY_REF_DECRYPTION, PublicKeyAlgorithmTags.ECDH, X9ObjectIdentifiers.primeCurve)); // prime256v1 etc. 1.2.840.10045.3.1
-        supported.add(new SupportedAlgorithms.EC(OpenPGPHardwareKey.KEY_REF_DECRYPTION, PublicKeyAlgorithmTags.ECDH, SECObjectIdentifiers.ellipticCurve)); // secp256r1 etc. 1.3.132.0
-        supported.add(new SupportedAlgorithms.EC(OpenPGPHardwareKey.KEY_REF_DECRYPTION, PublicKeyAlgorithmTags.ECDH, TeleTrusTObjectIdentifiers.versionOne)); // brainpool 1.3.36.3.3.2.8.1.1
-        supported.add(new SupportedAlgorithms.EC(OpenPGPHardwareKey.KEY_REF_DECRYPTION, PublicKeyAlgorithmTags.ECDH, CryptlibObjectIdentifiers.ecc)); // curve25519 (X25519) 1.3.6.1.4.1.3029.1.5
+        supported.add(new SupportedAlgorithms.EC(OpenPGPHardwareKey.KEY_REF_SIGNATURE, PublicKeyAlgorithmTags.ECDSA, X9ObjectIdentifiers.prime256v1)); // prime256v1 1.2.840.10045.3.1.7
+        supported.add(new SupportedAlgorithms.EC(OpenPGPHardwareKey.KEY_REF_SIGNATURE, PublicKeyAlgorithmTags.ECDSA, SECObjectIdentifiers.secp384r1)); // secp384r1 1.3.132.0.34
+        supported.add(new SupportedAlgorithms.EC(OpenPGPHardwareKey.KEY_REF_SIGNATURE, PublicKeyAlgorithmTags.ECDSA, SECObjectIdentifiers.secp521r1)); // secp384r1 1.3.132.0.35
+        supported.add(new SupportedAlgorithms.EC(OpenPGPHardwareKey.KEY_REF_SIGNATURE, PublicKeyAlgorithmTags.ECDSA, SECObjectIdentifiers.secp256k1)); // secp256k1 1.3.132.0.10
+        supported.add(new SupportedAlgorithms.EC(OpenPGPHardwareKey.KEY_REF_SIGNATURE, PublicKeyAlgorithmTags.ECDSA, TeleTrusTObjectIdentifiers.brainpoolP256r1)); // brainpoolP256r1 1.3.36.3.3.2.8.1.1.7
+        supported.add(new SupportedAlgorithms.EC(OpenPGPHardwareKey.KEY_REF_SIGNATURE, PublicKeyAlgorithmTags.ECDSA, TeleTrusTObjectIdentifiers.brainpoolP384r1)); // brainpoolP384r1 1.3.36.3.3.2.8.1.1.11
+        supported.add(new SupportedAlgorithms.EC(OpenPGPHardwareKey.KEY_REF_SIGNATURE, PublicKeyAlgorithmTags.ECDSA, TeleTrusTObjectIdentifiers.brainpoolP512r1)); // brainpoolP512r1 1.3.36.3.3.2.8.1.1.13
+        supported.add(new SupportedAlgorithms.EC(OpenPGPHardwareKey.KEY_REF_DECRYPTION, PublicKeyAlgorithmTags.ECDH, CryptlibObjectIdentifiers.curvey25519)); // curve25519 (X25519) 1.3.6.1.4.1.3029.1.5.1
 
         // Authentication
         supported.add(new SupportedAlgorithms.RSA(OpenPGPHardwareKey.KEY_REF_AUTHENTICATION, PublicKeyAlgorithmTags.RSA_GENERAL, 2048));
         supported.add(new SupportedAlgorithms.RSA(OpenPGPHardwareKey.KEY_REF_AUTHENTICATION, PublicKeyAlgorithmTags.RSA_GENERAL, 3072));
         supported.add(new SupportedAlgorithms.RSA(OpenPGPHardwareKey.KEY_REF_AUTHENTICATION, PublicKeyAlgorithmTags.RSA_GENERAL, 4096));
-        supported.add(new SupportedAlgorithms.EC(OpenPGPHardwareKey.KEY_REF_AUTHENTICATION, PublicKeyAlgorithmTags.ECDSA, X9ObjectIdentifiers.primeCurve)); // prime256v1 etc. 1.2.840.10045.3.1
-        supported.add(new SupportedAlgorithms.EC(OpenPGPHardwareKey.KEY_REF_AUTHENTICATION, PublicKeyAlgorithmTags.ECDSA, SECObjectIdentifiers.ellipticCurve)); // secp256r1 etc. 1.3.132.0
-        supported.add(new SupportedAlgorithms.EC(OpenPGPHardwareKey.KEY_REF_AUTHENTICATION, PublicKeyAlgorithmTags.ECDSA, TeleTrusTObjectIdentifiers.versionOne)); // brainpool 1.3.36.3.3.2.8.1.1
-        supported.add(new SupportedAlgorithms.EC(OpenPGPHardwareKey.KEY_REF_AUTHENTICATION, PublicKeyAlgorithmTags.EDDSA_LEGACY, GNUObjectIdentifiers.ellipticCurve)); // ed25519 1.3.6.1.4.1.11591.15
+        supported.add(new SupportedAlgorithms.EC(OpenPGPHardwareKey.KEY_REF_SIGNATURE, PublicKeyAlgorithmTags.ECDSA, X9ObjectIdentifiers.prime256v1)); // prime256v1 1.2.840.10045.3.1.7
+        supported.add(new SupportedAlgorithms.EC(OpenPGPHardwareKey.KEY_REF_SIGNATURE, PublicKeyAlgorithmTags.ECDSA, SECObjectIdentifiers.secp384r1)); // secp384r1 1.3.132.0.34
+        supported.add(new SupportedAlgorithms.EC(OpenPGPHardwareKey.KEY_REF_SIGNATURE, PublicKeyAlgorithmTags.ECDSA, SECObjectIdentifiers.secp521r1)); // secp384r1 1.3.132.0.35
+        supported.add(new SupportedAlgorithms.EC(OpenPGPHardwareKey.KEY_REF_SIGNATURE, PublicKeyAlgorithmTags.ECDSA, SECObjectIdentifiers.secp256k1)); // secp256k1 1.3.132.0.10
+        supported.add(new SupportedAlgorithms.EC(OpenPGPHardwareKey.KEY_REF_SIGNATURE, PublicKeyAlgorithmTags.ECDSA, TeleTrusTObjectIdentifiers.brainpoolP256r1)); // brainpoolP256r1 1.3.36.3.3.2.8.1.1.7
+        supported.add(new SupportedAlgorithms.EC(OpenPGPHardwareKey.KEY_REF_SIGNATURE, PublicKeyAlgorithmTags.ECDSA, TeleTrusTObjectIdentifiers.brainpoolP384r1)); // brainpoolP384r1 1.3.36.3.3.2.8.1.1.11
+        supported.add(new SupportedAlgorithms.EC(OpenPGPHardwareKey.KEY_REF_SIGNATURE, PublicKeyAlgorithmTags.ECDSA, TeleTrusTObjectIdentifiers.brainpoolP512r1)); // brainpoolP512r1 1.3.36.3.3.2.8.1.1.13
+        supported.add(new SupportedAlgorithms.EC(OpenPGPHardwareKey.KEY_REF_SIGNATURE, PublicKeyAlgorithmTags.EDDSA_LEGACY, GNUObjectIdentifiers.Ed25519)); // ed25519 1.3.6.1.4.1.11591.15.1
 
         return new SupportedAlgorithms(supported);
     }
