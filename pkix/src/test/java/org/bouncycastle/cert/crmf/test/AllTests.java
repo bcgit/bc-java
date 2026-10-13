@@ -44,6 +44,7 @@ import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.X509v1CertificateBuilder;
 import org.bouncycastle.cert.crmf.CRMFException;
 import org.bouncycastle.cert.crmf.CertificateRequestMessage;
+import org.bouncycastle.cert.crmf.CertificateRequestMessageBuilder;
 import org.bouncycastle.cert.crmf.EncryptedValueBuilder;
 import org.bouncycastle.cert.crmf.EncryptedValuePadder;
 import org.bouncycastle.cert.crmf.EncryptedValueParser;
@@ -86,6 +87,7 @@ import org.bouncycastle.cms.jcajce.JceKeyTransRecipientInfoGenerator;
 import org.bouncycastle.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.OutputEncryptor;
 import org.bouncycastle.operator.bc.BcRSAAsymmetricKeyWrapper;
@@ -762,6 +764,54 @@ public class AllTests
         assertTrue(certReqMsg.isValidSigningKeyPOP(new JcaContentVerifierProviderBuilder().setProvider(BC).build(kp.getPublic())));
 
         assertEquals(kp.getPublic(), certReqMsg.getPublicKey());
+    }
+
+    public void testProofOfPossessionSigningKeyIncomplete()
+        throws Exception
+    {
+        // a signing key POP the builder cannot form must be refused with a CRMFException, not a NullPointerException
+        KeyPairGenerator kGen = KeyPairGenerator.getInstance("RSA", BC);
+
+        kGen.initialize(512);
+
+        KeyPair kp = kGen.generateKeyPair();
+        ContentSigner signer = new JcaContentSignerBuilder("SHA1withRSA").setProvider(BC).build(kp.getPrivate());
+
+        String noPublicKey = "signing key proof of possession requires a public key in the certificate template";
+        String noAuthInfo = "signing key proof of possession without a subject in the certificate template requires an authInfo sender or PKMAC";
+
+        // no public key, sender set
+        checkIncompleteSigningKeyPOP(new JcaCertificateRequestMessageBuilder(BigInteger.ONE)
+            .setSubject(new X500Principal("CN=Test"))
+            .setAuthInfoSender(new X500Principal("CN=Test"))
+            .setProofOfPossessionSigningKeySigner(signer), noPublicKey);
+
+        // no public key, PKMAC set
+        checkIncompleteSigningKeyPOP(new JcaCertificateRequestMessageBuilder(BigInteger.ONE)
+            .setAuthInfoPKMAC(new PKMACBuilder(new JcePKMACValuesCalculator()), "fred".toCharArray())
+            .setProofOfPossessionSigningKeySigner(signer), noPublicKey);
+
+        // no public key, no subject, no authInfo
+        checkIncompleteSigningKeyPOP(new JcaCertificateRequestMessageBuilder(BigInteger.ONE)
+            .setProofOfPossessionSigningKeySigner(signer), noPublicKey);
+
+        // public key, no subject, neither sender nor PKMAC
+        checkIncompleteSigningKeyPOP(new JcaCertificateRequestMessageBuilder(BigInteger.ONE)
+            .setPublicKey(kp.getPublic())
+            .setProofOfPossessionSigningKeySigner(signer), noAuthInfo);
+    }
+
+    private void checkIncompleteSigningKeyPOP(CertificateRequestMessageBuilder certReqBuild, String expectedMessage)
+    {
+        try
+        {
+            certReqBuild.build();
+            fail("no exception");
+        }
+        catch (CRMFException e)
+        {
+            assertEquals(expectedMessage, e.getMessage());
+        }
     }
 
     public void testKeySizes()
