@@ -19,7 +19,7 @@ public final class SerpentEngine
      * Expand a user-supplied key material into a session key.
      *
      * @param key  The user-key bytes (multiples of 4) to use.
-     * @exception IllegalArgumentException
+     * @throws IllegalArgumentException
      */
     protected int[] makeWorkingKey(
         byte[] key)

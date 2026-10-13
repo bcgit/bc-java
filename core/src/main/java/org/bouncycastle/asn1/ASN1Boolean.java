@@ -51,7 +51,7 @@ public class ASN1Boolean
      * Return a boolean from the passed in object.
      *
      * @param obj an ASN1Boolean or an object that can be converted into one.
-     * @exception IllegalArgumentException if the object cannot be converted.
+     * @throws IllegalArgumentException if the object cannot be converted.
      * @return an ASN1Boolean instance.
      */
     public static ASN1Boolean getInstance(
@@ -104,7 +104,7 @@ public class ASN1Boolean
      * @param taggedObject the tagged object holding the object we want
      * @param declaredExplicit true if the object is meant to be explicitly
      *              tagged false otherwise.
-     * @exception IllegalArgumentException if the tagged object cannot
+     * @throws IllegalArgumentException if the tagged object cannot
      *               be converted.
      * @return an ASN1Boolean instance.
      */

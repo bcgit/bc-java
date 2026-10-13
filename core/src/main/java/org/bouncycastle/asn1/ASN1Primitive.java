@@ -35,7 +35,7 @@ public abstract class ASN1Primitive
      *
      * @param data the byte array to parse.
      * @return the base ASN.1 object parsed from the byte array.
-     * @exception IOException if there is a problem parsing the data, or parsing did not exhaust the available data.
+     * @throws IOException if there is a problem parsing the data, or parsing did not exhaust the available data.
      */
     public static ASN1Primitive fromByteArray(byte[] data)
         throws IOException
@@ -65,7 +65,7 @@ public abstract class ASN1Primitive
      *
      * @param input the stream to parse.
      * @return the base ASN.1 object parsed from the stream.
-     * @exception IOException if there is a problem parsing the data.
+     * @throws IOException if there is a problem parsing the data.
      */
     public static ASN1Primitive fromStream(InputStream input)
         throws IOException

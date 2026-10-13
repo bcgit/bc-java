@@ -49,9 +49,9 @@ public class ByteArrayHandler
      * 
      * @return Clear text as a byte array.  I18N considerations are
      *         not handled by this routine
-     * @exception IOException
-     * @exception PGPException
-     * @exception NoSuchProviderException
+     * @throws IOException
+     * @throws PGPException
+     * @throws NoSuchProviderException
      */
     public static byte[] decrypt(
         byte[] encrypted,
@@ -112,9 +112,9 @@ public class ByteArrayHandler
      * @param armor
      * 
      * @return encrypted data.
-     * @exception IOException
-     * @exception PGPException
-     * @exception NoSuchProviderException
+     * @throws IOException
+     * @throws PGPException
+     * @throws NoSuchProviderException
      */
     public static byte[] encrypt(
         byte[]  clearData,

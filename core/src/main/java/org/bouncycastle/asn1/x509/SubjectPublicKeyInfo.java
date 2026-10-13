@@ -109,7 +109,7 @@ public class SubjectPublicKeyInfo
      * for when the public key is an encoded object - if the bitstring
      * can't be decoded this routine throws an IOException.
      *
-     * @exception IOException - if the bit string doesn't represent a DER
+     * @throws IOException - if the bit string doesn't represent a DER
      * encoded object.
      * @return the public key as an ASN.1 primitive.
      */
@@ -123,7 +123,7 @@ public class SubjectPublicKeyInfo
      * for when the public key is an encoded object - if the bitstring
      * can't be decoded this routine throws an IOException.
      *
-     * @exception IOException - if the bit string doesn't represent a DER
+     * @throws IOException - if the bit string doesn't represent a DER
      * encoded object.
      * @deprecated use parsePublicKey
      * @return the public key as an ASN.1 primitive.

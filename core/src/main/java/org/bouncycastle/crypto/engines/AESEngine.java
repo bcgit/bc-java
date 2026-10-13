@@ -446,7 +446,7 @@ private static final int[] Tinv0 =
      *
      * @param forEncryption whether or not we are for encryption.
      * @param params the parameters required to set up the cipher.
-     * @exception IllegalArgumentException if the params argument is
+     * @throws IllegalArgumentException if the params argument is
      * inappropriate.
      */
     public void init(

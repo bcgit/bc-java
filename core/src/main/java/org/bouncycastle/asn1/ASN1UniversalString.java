@@ -27,7 +27,7 @@ public abstract class ASN1UniversalString
      *
      * @param obj an ASN1UniversalString or an object that can be converted into
      *            one.
-     * @exception IllegalArgumentException if the object cannot be converted.
+     * @throws IllegalArgumentException if the object cannot be converted.
      * @return an ASN1UniversalString instance, or null
      */
     public static ASN1UniversalString getInstance(Object obj)
@@ -65,7 +65,7 @@ public abstract class ASN1UniversalString
      * @param taggedObject      the tagged object holding the object we want
      * @param declaredExplicit true if the object is meant to be explicitly tagged false
      *                 otherwise.
-     * @exception IllegalArgumentException if the tagged object cannot be converted.
+     * @throws IllegalArgumentException if the tagged object cannot be converted.
      * @return a ASN1UniversalString instance, or null
      */
     public static ASN1UniversalString getInstance(ASN1TaggedObject taggedObject, boolean declaredExplicit)

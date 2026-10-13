@@ -241,7 +241,7 @@ public  class PKIXCertPath
      * the default encoding.
      *
      * @return the encoded bytes
-     * @exception java.security.cert.CertificateEncodingException if an encoding error occurs
+     * @throws java.security.cert.CertificateEncodingException if an encoding error occurs
      **/
     public byte[] getEncoded()
         throws CertificateEncodingException
@@ -264,7 +264,7 @@ public  class PKIXCertPath
      *
      * @param encoding the name of the encoding to use
      * @return the encoded bytes
-     * @exception java.security.cert.CertificateEncodingException if an encoding error
+     * @throws java.security.cert.CertificateEncodingException if an encoding error
      * occurs or the encoding requested is not supported
      *
      **/

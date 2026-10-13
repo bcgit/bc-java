@@ -28,7 +28,7 @@ public abstract class ASN1GeneralString
      * Return a GeneralString from the given object.
      *
      * @param obj the object we want converted.
-     * @exception IllegalArgumentException if the object cannot be converted.
+     * @throws IllegalArgumentException if the object cannot be converted.
      * @return an ASN1GeneralString instance, or null.
      */
     public static ASN1GeneralString getInstance(Object obj)
@@ -67,7 +67,7 @@ public abstract class ASN1GeneralString
      * @param taggedObject      the tagged object holding the object we want
      * @param declaredExplicit true if the object is meant to be explicitly tagged false
      *                 otherwise.
-     * @exception IllegalArgumentException if the tagged object cannot be converted.
+     * @throws IllegalArgumentException if the tagged object cannot be converted.
      * @return an ASN1GeneralString instance.
      */
     public static ASN1GeneralString getInstance(ASN1TaggedObject taggedObject, boolean declaredExplicit)

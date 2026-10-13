@@ -136,9 +136,9 @@ public class SMIMESignedParser
      *
      * @param digCalcProvider provider for digest calculators.
      * @param message signed message with signature.
-     * @exception MessagingException on an error extracting the signature or
+     * @throws MessagingException on an error extracting the signature or
      * otherwise processing the message.
-     * @exception CMSException if some other problem occurs.
+     * @throws CMSException if some other problem occurs.
      */
     public SMIMESignedParser(
         DigestCalculatorProvider digCalcProvider,
@@ -154,9 +154,9 @@ public class SMIMESignedParser
      * @param digCalcProvider provider for digest calculators.
      * @param message signed message with signature.
      * @param backingFile the temporary file to use to back the signed data.
-     * @exception MessagingException on an error extracting the signature or
+     * @throws MessagingException on an error extracting the signature or
      * otherwise processing the message.
-     * @exception CMSException if some other problem occurs.
+     * @throws CMSException if some other problem occurs.
      */
     public SMIMESignedParser(
         DigestCalculatorProvider digCalcProvider,
@@ -174,9 +174,9 @@ public class SMIMESignedParser
      * @param digCalcProvider provider for digest calculators.
      * @param message the signed message with signature.
      * @param defaultContentTransferEncoding new default to use.
-     * @exception MessagingException on an error extracting the signature or
+     * @throws MessagingException on an error extracting the signature or
      * otherwise processing the message.
-     * @exception CMSException if some other problem occurs.r
+     * @throws CMSException if some other problem occurs.r
      */
     public SMIMESignedParser(
         DigestCalculatorProvider digCalcProvider,
@@ -194,9 +194,9 @@ public class SMIMESignedParser
      * @param message the signed message with signature.
      * @param defaultContentTransferEncoding new default to use.
      * @param backingFile the temporary file to use to back the signed data.
-     * @exception MessagingException on an error extracting the signature or
+     * @throws MessagingException on an error extracting the signature or
      * otherwise processing the message.
-     * @exception CMSException if some other problem occurs.
+     * @throws CMSException if some other problem occurs.
      */
     public SMIMESignedParser(
         DigestCalculatorProvider digCalcProvider,
@@ -222,10 +222,10 @@ public class SMIMESignedParser
      * </p>
      * @param digCalcProvider provider for digest calculators.
      * @param message the message containing the encapsulated signed data.
-     * @exception MessagingException on an error extracting the signature or
+     * @throws MessagingException on an error extracting the signature or
      * otherwise processing the message.
-     * @exception SMIMEException if the body part encapsulated in the message cannot be extracted.
-     * @exception CMSException if some other problem occurs.
+     * @throws SMIMEException if the body part encapsulated in the message cannot be extracted.
+     * @throws CMSException if some other problem occurs.
      */
     public SMIMESignedParser(
         DigestCalculatorProvider digCalcProvider,
@@ -417,10 +417,10 @@ public class SMIMESignedParser
      * @param message the Part containing the signed content.
      * @param file the file the encapsulated part is to be written to after it has been decoded.
      *
-     * @exception MessagingException on an error extracting the signature or
+     * @throws MessagingException on an error extracting the signature or
      * otherwise processing the message.
-     * @exception SMIMEException if the body part encapsulated in the message cannot be extracted.
-     * @exception CMSException if some other problem occurs.
+     * @throws SMIMEException if the body part encapsulated in the message cannot be extracted.
+     * @throws CMSException if some other problem occurs.
      */
     public SMIMESignedParser(
         DigestCalculatorProvider digCalcProvider,

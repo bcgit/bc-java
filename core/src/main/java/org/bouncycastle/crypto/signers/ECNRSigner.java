@@ -76,7 +76,7 @@ public class ECNRSigner
      * ECNR it *must* be at least as long.  
      *
      * @param digest  the digest to be signed.
-     * @exception DataLengthException if the digest is longer than the key allows
+     * @throws DataLengthException if the digest is longer than the key allows
      */
     public BigInteger[] generateSignature(
         byte[] digest)
@@ -144,7 +144,7 @@ public class ECNRSigner
      * @param digest  the digest to be verified.
      * @param r       the r value of the signature.
      * @param s       the s value of the signature.
-     * @exception DataLengthException if the digest is longer than the key allows
+     * @throws DataLengthException if the digest is longer than the key allows
      */
     public boolean verifySignature(
         byte[]      digest,

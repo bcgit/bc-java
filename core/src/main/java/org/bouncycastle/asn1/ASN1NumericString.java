@@ -31,7 +31,7 @@ public abstract class ASN1NumericString
      * Return a Numeric string from the passed in object
      *
      * @param obj an ASN1NumericString or an object that can be converted into one.
-     * @exception IllegalArgumentException if the object cannot be converted.
+     * @throws IllegalArgumentException if the object cannot be converted.
      * @return an ASN1NumericString instance, or null
      */
     public static ASN1NumericString getInstance(Object obj)
@@ -69,7 +69,7 @@ public abstract class ASN1NumericString
      * @param taggedObject the tagged object holding the object we want
      * @param declaredExplicit true if the object is meant to be explicitly tagged false
      *                     otherwise.
-     * @exception IllegalArgumentException if the tagged object cannot be converted.
+     * @throws IllegalArgumentException if the tagged object cannot be converted.
      * @return an ASN1NumericString instance, or null.
      */
     public static ASN1NumericString getInstance(ASN1TaggedObject taggedObject, boolean declaredExplicit)

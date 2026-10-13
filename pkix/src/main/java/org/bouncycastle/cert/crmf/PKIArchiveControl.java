@@ -66,12 +66,18 @@ public class PKIArchiveControl
     }
 
     /**
-     * Return whether this control contains enveloped data.
+     * Return whether this control contains enveloped data. Only an encryptedPrivKey control can, and
+     * only when its EncryptedKey is the envelopedData choice rather than the deprecated encryptedValue.
      *
      * @return true if the control contains enveloped data, false otherwise.
      */
     public boolean isEnvelopedData()
     {
+        if (pkiArchiveOptions.getType() != encryptedPrivKey)
+        {
+            return false;
+        }
+
         EncryptedKey encKey = EncryptedKey.getInstance(pkiArchiveOptions.getValue());
 
         return !encKey.isEncryptedValue();
@@ -81,10 +87,17 @@ public class PKIArchiveControl
      * Return the enveloped data structure contained in this control.
      *
      * @return a CMSEnvelopedData object.
+     * @throws CRMFException if the control does not contain enveloped data (see {@link #isEnvelopedData()}),
+     * or the enveloped data cannot be parsed.
      */
     public CMSEnvelopedData getEnvelopedData()
         throws CRMFException
     {
+        if (!isEnvelopedData())
+        {
+            throw new CRMFException("archive control does not contain enveloped data");
+        }
+
         try
         {
             EncryptedKey encKey = EncryptedKey.getInstance(pkiArchiveOptions.getValue());

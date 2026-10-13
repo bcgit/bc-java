@@ -238,7 +238,7 @@ public class X509Extension
      * Convert the value of the passed in extension to an object
      * @param ext the extension to parse
      * @return the object the value string contains
-     * @exception IllegalArgumentException if conversion is not possible
+     * @throws IllegalArgumentException if conversion is not possible
      */
     public static ASN1Primitive convertValueToObject(
         X509Extension ext)

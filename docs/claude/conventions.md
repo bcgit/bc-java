@@ -457,6 +457,8 @@ The rule applies symmetrically to URLs you delete: if you're removing the only c
 
 Match the surrounding file: Allman braces (open brace on its own line for class / method / control structures), 4-space indentation, no tabs. Don't reformat untouched code while editing — diffs that include unrelated whitespace changes are noisy and slow review.
 
+In Javadoc, write `@throws`, not `@exception` (Error Prone prefers it; the Gradle-compiled trees were converted in one sweep, the legacy overlays and `jce/` were not).
+
 The brace convention is **machine-enforced** on every module's `src/main` by the Gradle `checkstyle` plugin against `config/checkstyle/checkstyle.xml`:
 
 - `LeftCurly option="nl"` — every opening `{` on its own new line. This uses checkstyle's default token set, so it covers not just classes / methods / control structures (`if` / `for` / `while` / `try` / `switch` / …) but also **lambda bodies** — an inline `{` on a lambda trips it too. (Array initializers are *not* in the default set.)

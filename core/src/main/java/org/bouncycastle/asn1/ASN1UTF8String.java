@@ -21,7 +21,7 @@ public abstract class ASN1UTF8String
      * Return a UTF8 string from the passed in object.
      *
      * @param obj an ASN1UTF8String or an object that can be converted into one.
-     * @exception IllegalArgumentException if the object cannot be converted.
+     * @throws IllegalArgumentException if the object cannot be converted.
      * @return an ASN1UTF8String instance, or null
      */
     public static ASN1UTF8String getInstance(Object obj)
@@ -59,7 +59,7 @@ public abstract class ASN1UTF8String
      * @param taggedObject the tagged object holding the object we want
      * @param declaredExplicit true if the object is meant to be explicitly tagged false
      *                     otherwise.
-     * @exception IllegalArgumentException if the tagged object cannot be converted.
+     * @throws IllegalArgumentException if the tagged object cannot be converted.
      * @return a DERUTF8String instance, or null
      */
     public static ASN1UTF8String getInstance(ASN1TaggedObject taggedObject, boolean declaredExplicit)

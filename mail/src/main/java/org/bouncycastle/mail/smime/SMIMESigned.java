@@ -87,9 +87,9 @@ public class SMIMESigned
     /**
      * base constructor using a defaultContentTransferEncoding of 7bit
      *
-     * @exception MessagingException on an error extracting the signature or
+     * @throws MessagingException on an error extracting the signature or
      * otherwise processing the message.
-     * @exception CMSException if some other problem occurs.
+     * @throws CMSException if some other problem occurs.
      */
     public SMIMESigned(
         MimeMultipart message) 
@@ -225,9 +225,9 @@ public class SMIMESigned
      *
      * @param message the signed message
      * @param defaultContentTransferEncoding new default to use
-     * @exception MessagingException on an error extracting the signature or
+     * @throws MessagingException on an error extracting the signature or
      * otherwise processing the message.
-     * @exception CMSException if some other problem occurs.
+     * @throws CMSException if some other problem occurs.
      */
     public SMIMESigned(
         MimeMultipart message,
@@ -242,10 +242,10 @@ public class SMIMESigned
     /**
      * base constructor for a signed message with encapsulated content.
      *
-     * @exception MessagingException on an error extracting the signature or
+     * @throws MessagingException on an error extracting the signature or
      * otherwise processing the message.
-     * @exception SMIMEException if the body part encapsulated in the message cannot be extracted.
-     * @exception CMSException if some other problem occurs.
+     * @throws SMIMEException if the body part encapsulated in the message cannot be extracted.
+     * @throws CMSException if some other problem occurs.
      */
     public SMIMESigned(
         Part message) 

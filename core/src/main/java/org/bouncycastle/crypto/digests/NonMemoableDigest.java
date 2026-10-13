@@ -14,7 +14,7 @@ public class NonMemoableDigest
      * Base constructor.
      *
      * @param baseDigest underlying digest to use.
-     * @exception IllegalArgumentException if baseDigest is null
+     * @throws IllegalArgumentException if baseDigest is null
      */
     public NonMemoableDigest(
         ExtendedDigest baseDigest)

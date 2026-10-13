@@ -45,7 +45,7 @@ class MacCFBBlockCipher
      * An IV which is too short is handled in FIPS compliant fashion.
      *
      * @param param the key and other data required by the cipher.
-     * @exception IllegalArgumentException if the params argument is
+     * @throws IllegalArgumentException if the params argument is
      * inappropriate.
      */
     public void init(
@@ -107,9 +107,9 @@ class MacCFBBlockCipher
      * @param inOff offset into the in array the data starts at.
      * @param out the array the output data will be copied into.
      * @param outOff the offset into the out array the output will start at.
-     * @exception DataLengthException if there isn't enough data in in, or
+     * @throws DataLengthException if there isn't enough data in in, or
      * space in out.
-     * @exception IllegalStateException if the cipher isn't initialised.
+     * @throws IllegalStateException if the cipher isn't initialised.
      * @return the number of bytes processed and produced.
      */
     public int processBlock(

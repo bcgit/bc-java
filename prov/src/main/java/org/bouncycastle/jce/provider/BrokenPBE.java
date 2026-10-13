@@ -44,7 +44,7 @@ class OldPKCS12ParametersGenerator
      * accept MD5, SHA1, and RIPEMD160.
      *
      * @param digest the digest to be used as the source of derived keys.
-     * @exception IllegalArgumentException if an unknown digest is passed in.
+     * @throws IllegalArgumentException if an unknown digest is passed in.
      */
     public OldPKCS12ParametersGenerator(
         Digest  digest)

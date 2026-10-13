@@ -78,7 +78,7 @@ public class PackedDate
      * standardised processing use getAdjustedDate().
      *
      * @return the resulting date
-     * @exception java.text.ParseException if the date string cannot be parsed.
+     * @throws java.text.ParseException if the date string cannot be parsed.
      */
     public Date getDate()
         throws ParseException

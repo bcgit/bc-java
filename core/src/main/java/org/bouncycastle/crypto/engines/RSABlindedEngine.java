@@ -77,7 +77,7 @@ public class RSABlindedEngine
      * @param inOff the offset into the input buffer where the data starts.
      * @param inLen the length of the data to be processed.
      * @return the result of the RSA process.
-     * @exception DataLengthException the input block is too large.
+     * @throws DataLengthException the input block is too large.
      */
     public byte[] processBlock(byte[] in, int inOff, int inLen)
     {

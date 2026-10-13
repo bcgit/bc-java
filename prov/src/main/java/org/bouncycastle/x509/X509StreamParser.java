@@ -38,7 +38,7 @@ public class X509StreamParser
      *            The name of the requested X.509 object type.
      * @return a StreamParser object for the specified type.
      *
-     * @exception NoSuchParserException
+     * @throws NoSuchParserException
      *                if the requested type is not available in the default
      *                provider package or any of the other provider packages
      *                that were searched.
@@ -69,10 +69,10 @@ public class X509StreamParser
      *
      * @return a X509StreamParser object for the specified type.
      *
-     * @exception NoSuchParserException
+     * @throws NoSuchParserException
      *                if the type is not available from the specified provider.
      *
-     * @exception NoSuchProviderException
+     * @throws NoSuchProviderException
      *                if the provider can not be found.
      *
      * @see Provider
@@ -94,7 +94,7 @@ public class X509StreamParser
      *
      * @return a X509StreamParser object for the specified type.
      *
-     * @exception NoSuchParserException
+     * @throws NoSuchParserException
      *                if the type is not available from the specified provider.
      *
      * @see Provider

@@ -120,7 +120,7 @@ public abstract class ASN1OctetString
      * @param taggedObject the tagged object holding the object we want.
      * @param declaredExplicit true if the object is meant to be explicitly
      *              tagged false otherwise.
-     * @exception IllegalArgumentException if the tagged object cannot
+     * @throws IllegalArgumentException if the tagged object cannot
      *              be converted.
      */
     public static ASN1OctetString getInstance(ASN1TaggedObject taggedObject, boolean declaredExplicit)
@@ -137,7 +137,7 @@ public abstract class ASN1OctetString
      * return an Octet String from the given object.
      *
      * @param obj the object we want converted.
-     * @exception IllegalArgumentException if the object cannot be converted.
+     * @throws IllegalArgumentException if the object cannot be converted.
      */
     public static ASN1OctetString getInstance(Object obj)
     {

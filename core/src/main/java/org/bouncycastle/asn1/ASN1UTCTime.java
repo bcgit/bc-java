@@ -48,7 +48,7 @@ public class ASN1UTCTime
      * Return an UTC Time from the passed in object.
      *
      * @param obj an ASN1UTCTime or an object that can be converted into one.
-     * @exception IllegalArgumentException if the object cannot be converted.
+     * @throws IllegalArgumentException if the object cannot be converted.
      * @return an ASN1UTCTime instance, or null.
      */
     public static ASN1UTCTime getInstance(
@@ -87,7 +87,7 @@ public class ASN1UTCTime
      * @param taggedObject the tagged object holding the object we want
      * @param declaredExplicit true if the object is meant to be explicitly tagged false
      *                     otherwise.
-     * @exception IllegalArgumentException if the tagged object cannot be converted.
+     * @throws IllegalArgumentException if the tagged object cannot be converted.
      * @return an ASN1UTCTime instance, or null.
      */
     public static ASN1UTCTime getInstance(ASN1TaggedObject taggedObject, boolean declaredExplicit)
@@ -182,7 +182,7 @@ public class ASN1UTCTime
      * standardised processing use getAdjustedDate().
      *
      * @return the resulting date
-     * @exception ParseException if the date string cannot be parsed.
+     * @throws ParseException if the date string cannot be parsed.
      */
     public Date getDate()
         throws ParseException
@@ -197,7 +197,7 @@ public class ASN1UTCTime
      * in the range of 1950 - 2049.
      *
      * @return a date in the range of 1950 to 2049.
-     * @exception ParseException if the date string cannot be parsed.
+     * @throws ParseException if the date string cannot be parsed.
      */
     public Date getAdjustedDate()
         throws ParseException

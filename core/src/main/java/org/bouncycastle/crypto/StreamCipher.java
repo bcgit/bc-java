@@ -11,7 +11,7 @@ public interface StreamCipher
      * @param forEncryption if true the cipher is initialised for
      *  encryption, if false for decryption.
      * @param params the key and other data required by the cipher.
-     * @exception IllegalArgumentException if the params argument is
+     * @throws IllegalArgumentException if the params argument is
      * inappropriate.
      */
     public void init(boolean forEncryption, CipherParameters params)
@@ -41,7 +41,7 @@ public interface StreamCipher
      * @param out the output buffer the processed bytes go into.
      * @param outOff the offset into the output byte array the processed data starts at.
      * @return the number of bytes produced - should always be len.
-     * @exception DataLengthException if the output buffer is too small.
+     * @throws DataLengthException if the output buffer is too small.
      */
     public int processBytes(byte[] in, int inOff, int len, byte[] out, int outOff)
         throws DataLengthException;

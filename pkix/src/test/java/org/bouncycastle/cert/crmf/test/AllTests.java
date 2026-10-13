@@ -448,8 +448,8 @@ public class AllTests
         TestCase.assertEquals(new X500Principal("CN=Test"), certReqMsg.getSubjectX500Principal());
         TestCase.assertEquals(kp.getPublic(), certReqMsg.getPublicKey());
 
-        checkCertReqMsgWithArchiveControl(kp, cert, certReqMsg);
-        checkCertReqMsgWithArchiveControl(kp, cert, new JcaCertificateRequestMessage(certReqMsg.getEncoded()));
+        checkCertReqMsgWithArchiveControl(kp, kp.getPrivate(), cert, certReqMsg);
+        checkCertReqMsgWithArchiveControl(kp, kp.getPrivate(), cert, new JcaCertificateRequestMessage(certReqMsg.getEncoded()));
     }
 
     public void testECBasicMessageWithArchiveControl()
@@ -471,7 +471,7 @@ public class AllTests
         certReqBuild.addControl(new JcaPKIArchiveControlBuilder(clientKp.getPrivate(), new X500Principal("CN=Test"))
             .addRecipientGenerator(new JceKeyAgreeRecipientInfoGenerator(
                         CMSAlgorithm.ECCDH_SHA256KDF,
-                        clientKp.getPrivate(), serverKp.getPublic(),
+                        clientKp.getPrivate(), clientKp.getPublic(),
                         CMSAlgorithm.AES256_WRAP)
                         .addRecipient(serverCert)
                         .setProvider(BC))
@@ -482,11 +482,11 @@ public class AllTests
         TestCase.assertEquals(new X500Principal("CN=Test"), certReqMsg.getSubjectX500Principal());
         TestCase.assertEquals(clientKp.getPublic(), certReqMsg.getPublicKey());
 
-        checkCertReqMsgWithArchiveControl(clientKp, serverCert, certReqMsg);
-        checkCertReqMsgWithArchiveControl(clientKp, serverCert, new JcaCertificateRequestMessage(certReqMsg.getEncoded()));
+        checkCertReqMsgWithArchiveControl(clientKp, serverKp.getPrivate(), serverCert, certReqMsg);
+        checkCertReqMsgWithArchiveControl(clientKp, serverKp.getPrivate(), serverCert, new JcaCertificateRequestMessage(certReqMsg.getEncoded()));
     }
 
-    private void checkCertReqMsgWithArchiveControl(KeyPair kp, X509Certificate cert, JcaCertificateRequestMessage certReqMsg)
+    private void checkCertReqMsgWithArchiveControl(KeyPair kp, PrivateKey recipientKey, X509Certificate cert, JcaCertificateRequestMessage certReqMsg)
         throws CRMFException, CMSException, IOException
     {
         PKIArchiveControl archiveControl = (PKIArchiveControl)certReqMsg.getControl(CRMFObjectIdentifiers.id_regCtrl_pkiArchiveOptions);
@@ -508,12 +508,12 @@ public class AllTests
         {
             recipientId = new JceKeyAgreeRecipientId(cert);
             recipientInformation = recips.get(recipientId);
-            recipient = new JceKeyAgreeEnvelopedRecipient(kp.getPrivate()).setProvider(BC);
+            recipient = new JceKeyAgreeEnvelopedRecipient(recipientKey).setProvider(BC);
             TestCase.assertEquals(CMSAlgorithm.ECCDH_SHA256KDF, recipientInformation.getKeyEncryptionAlgorithm().getAlgorithm());
         }
         else
         {
-            recipient = new JceKeyTransEnvelopedRecipient(kp.getPrivate()).setProvider(BC);
+            recipient = new JceKeyTransEnvelopedRecipient(recipientKey).setProvider(BC);
             TestCase.assertEquals(PKCSObjectIdentifiers.rsaEncryption, recipientInformation.getKeyEncryptionAlgorithm().getAlgorithm());
         }
 
@@ -526,6 +526,44 @@ public class AllTests
 
         TestCase.assertEquals(new GeneralName(X500Name.getInstance(new X500Principal("CN=Test").getEncoded())), encKeyWithID.getIdentifier());
         TestCase.assertTrue(Arrays.areEqual(kp.getPrivate().getEncoded(), encKeyWithID.getPrivateKey().getEncoded()));
+    }
+
+    public void testArchiveControlWithoutEnvelopedData()
+        throws Exception
+    {
+        EncryptedValue encValue = new EncryptedValue(null, new AlgorithmIdentifier(NISTObjectIdentifiers.id_aes128_CBC),
+            new DERBitString(new byte[16]), null, null, new DERBitString(new byte[32]));
+
+        checkArchiveControlWithoutEnvelopedData(PKIArchiveControl.keyGenParameters,
+            new PKIArchiveOptions(new DEROctetString(new byte[8])));
+        checkArchiveControlWithoutEnvelopedData(PKIArchiveControl.archiveRemGenPrivKey,
+            new PKIArchiveOptions(true));
+        checkArchiveControlWithoutEnvelopedData(PKIArchiveControl.encryptedPrivKey,
+            new PKIArchiveOptions(new EncryptedKey(encValue)));
+    }
+
+    private void checkArchiveControlWithoutEnvelopedData(int archiveType, PKIArchiveOptions options)
+        throws Exception
+    {
+        checkArchiveControlWithoutEnvelopedData(archiveType, new PKIArchiveControl(options));
+        checkArchiveControlWithoutEnvelopedData(archiveType,
+            new PKIArchiveControl(PKIArchiveOptions.getInstance(ASN1Primitive.fromByteArray(options.getEncoded()))));
+    }
+
+    private void checkArchiveControlWithoutEnvelopedData(int archiveType, PKIArchiveControl archiveControl)
+    {
+        TestCase.assertEquals(archiveType, archiveControl.getArchiveType());
+        TestCase.assertFalse(archiveControl.isEnvelopedData());
+
+        try
+        {
+            archiveControl.getEnvelopedData();
+            fail("no exception");
+        }
+        catch (CRMFException e)
+        {
+            TestCase.assertEquals("archive control does not contain enveloped data", e.getMessage());
+        }
     }
 
     public void testProofOfPossessionWithoutSender()
