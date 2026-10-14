@@ -7,11 +7,23 @@ import org.bouncycastle.math.raw.Nat;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Pack;
 
+/**
+ * HQC-PKE and HQC-KEM of the HQC specification of 2026-10-12 (Sections 3.6 and 3.7).
+ * <p>
+ * The decapsulation key dkKEM is the 32-byte seedKEM alone. Everything decapsulation needs is
+ * re-derived from it - ctxKEM = XOF.Init(seedKEM || k), seedPKE = GetBytes(32), sigma = GetBytes(k),
+ * (ekPKE, dkPKE) = HQC-PKE.Keygen(seedPKE) - and that derivation costs a key generation, so
+ * {@link #expandSecretKey} performs it once into the "expanded key" ekPKE || seedPKE.dk || sigma,
+ * which {@link HQCPrivateKeyParameters} caches and {@link #decaps} consumes. The reference
+ * implementation absorbs seedKEM followed by k as a single byte when it initialises ctxKEM, so a
+ * seed reused across parameter sets yields unrelated keys; the specification text writes
+ * XOF.Init(seedKEM) without the byte, and the known-answer tests follow the code.
+ */
 class HQCEngine
 {
     static final int SHARED_SECRET_BYTES = 32;
+    static final int SEED_BYTES = 32;
     private static final int SALT_BYTES = 16;
-    private static final int SEED_BYTES = 32;
 
     private final int n;
     private final int n1;
@@ -59,44 +71,73 @@ class HQCEngine
     }
 
     /**
-     * Generate key pairs - Secret key : (x,y) - Public key: (h,s)
-     *
-     * @param pk output pk = (publicSeed||s)
-     **/
-    void genKeyPair(byte[] pk, byte[] sk, SecureRandom secureRandom)
+     * Size of the expanded decapsulation key ekPKE || seedPKE.dk || sigma.
+     */
+    int getExpandedKeyBytes()
     {
-        // Randomly generate seeds for secret keys and public keys
-        byte[] seedKem = new byte[SEED_BYTES]; // seedKem
-        byte[] keypairSeed = new byte[SEED_BYTES << 1];
-        long[] yLongBytes = gf2x.create();
-        long[] h = gf2x.create(); // s
+        return pkSize + SEED_BYTES + k;
+    }
 
+    /**
+     * HQC-KEM.Keygen: sample seedKEM, which is the decapsulation key, and expand it.
+     *
+     * @param pk      output ekKEM = ekPKE = (seedPKE.ek || s)
+     * @param seedKem output dkKEM = seedKEM
+     * @return the expanded key ekPKE || seedPKE.dk || sigma, for {@link #decaps}
+     */
+    byte[] genKeyPair(byte[] pk, byte[] seedKem, SecureRandom secureRandom)
+    {
         secureRandom.nextBytes(seedKem);
-        Shake256RandomGenerator ctxKem = new Shake256RandomGenerator(seedKem, (byte)1);
-        System.arraycopy(seedKem, 0, sk, pkSize + SEED_BYTES + k, SEED_BYTES);
 
-        ctxKem.nextBytes(seedKem);
-        ctxKem.nextBytes(sk, pkSize + SEED_BYTES, k);
+        byte[] expanded = expandSecretKey(seedKem);
+        System.arraycopy(expanded, 0, pk, 0, pkSize);
+        return expanded;
+    }
 
-        hashHI(keypairSeed, 512, seedKem, seedKem.length, (byte)2);
-        ctxKem.init(keypairSeed, 0, SEED_BYTES, (byte)1);
+    /**
+     * Derive from dkKEM = seedKEM everything HQC-KEM.Decaps needs: seedPKE and sigma from
+     * ctxKEM = XOF.Init(seedKEM || k), then (ekPKE, dkPKE) = HQC-PKE.Keygen(seedPKE) with
+     * dkPKE = seedPKE.dk, (seedPKE.dk, seedPKE.ek) = I(seedPKE), y then x sampled from
+     * XOF(seedPKE.dk) by SampleFixedWeightVect$, h from XOF(seedPKE.ek) and s = x + h.y.
+     *
+     * @param seedKem the 32-byte seedKEM
+     * @return ekPKE || seedPKE.dk || sigma
+     */
+    byte[] expandSecretKey(byte[] seedKem)
+    {
+        byte[] expanded = new byte[getExpandedKeyBytes()];
+        byte[] seedPke = new byte[SEED_BYTES];
+        byte[] keypairSeed = new byte[SEED_BYTES << 1];
+        long[] y = gf2x.create();
+        long[] h = gf2x.create(); // becomes s
+
+        Shake256RandomGenerator ctxKem = new Shake256RandomGenerator(seedKem, 0, SEED_BYTES, (byte)k);
+        ctxKem.nextBytes(seedPke);
+        ctxKem.nextBytes(expanded, pkSize + SEED_BYTES, k); // sigma
+
+        hashHI(keypairSeed, 512, seedPke, SEED_BYTES, (byte)2); // (seedPKE.dk, seedPKE.ek) = I(seedPKE)
+        ctxKem.init(keypairSeed, 0, SEED_BYTES); // XOF(seedPKE.dk)
 
         int[] ySupport = sampleSupport1(ctxKem, w);
         int[] xSupport = sampleSupport1(ctxKem, w);
-        writeSupportToVector(yLongBytes, ySupport, w);
-        System.arraycopy(keypairSeed, SEED_BYTES, pk, 0, SEED_BYTES);
-        ctxKem.init(keypairSeed, SEED_BYTES, SEED_BYTES, (byte)1);
+        writeSupportToVector(y, ySupport, w);
+
+        ctxKem.init(keypairSeed, SEED_BYTES, SEED_BYTES); // XOF(seedPKE.ek)
         gf2x.random(ctxKem, h);
-        gf2x.mul(h, yLongBytes, h); // h is s as the output
-        addSupportTo(h, xSupport, w); // h ^= x
-        Utils.fromLongArrayToByteArray(pk, SEED_BYTES, pk.length - SEED_BYTES, h);
-        System.arraycopy(keypairSeed, 0, sk, pkSize, SEED_BYTES);
-        System.arraycopy(pk, 0, sk, 0, pkSize);
+        gf2x.mul(h, y, h); // s = h.y
+        addSupportTo(h, xSupport, w); // s ^= x
+
+        System.arraycopy(keypairSeed, SEED_BYTES, expanded, 0, SEED_BYTES); // ekPKE = seedPKE.ek || s
+        Utils.fromLongArrayToByteArray(expanded, SEED_BYTES, pkSize - SEED_BYTES, h);
+        System.arraycopy(keypairSeed, 0, expanded, pkSize, SEED_BYTES); // dkPKE = seedPKE.dk
+
+        Arrays.clear(seedPke);
         Arrays.clear(keypairSeed);
         Arrays.clear(ySupport);
         Arrays.clear(xSupport);
-        gf2x.clear(yLongBytes);
+        gf2x.clear(y);
         gf2x.clear(h);
+        return expanded;
     }
 
     /**
@@ -130,16 +171,16 @@ class HQCEngine
     }
 
     /**
-     * HQC Decapsulation - Input: ct, sk - Output: ss
+     * HQC Decapsulation - Input: ct, expanded sk - Output: ss
      *
      * @param ss session key
      * @param ct ciphertext
-     * @param sk secret key
+     * @param sk the expanded decapsulation key ekPKE || seedPKE.dk || sigma from {@link #expandSecretKey}
      * @return 0 if decapsulation is successful, -1 otherwise
      **/
     int decaps(byte[] ss, byte[] ct, byte[] sk)
     {
-        // Extract Y and Public Keys from sk
+        // Recompute y from seedPKE.dk; ekPKE and sigma are read from sk in place
         long[] u64 = gf2x.create();
         long[] v64 = new long[N1N2_BYTE_64]; // ciphertext v: an n1*n2-bit codeword, not a ring element
         long[] cKemPrimeU64 = gf2x.create(); // tmpLong
@@ -150,7 +191,7 @@ class HQCEngine
         byte[] kBar = new byte[32];
         byte[] tmp = new byte[n1];
 
-        Shake256RandomGenerator generator = new Shake256RandomGenerator(sk, pkSize, SEED_BYTES, (byte)1);
+        Shake256RandomGenerator generator = new Shake256RandomGenerator(sk, pkSize, SEED_BYTES);
         int[] ySupport = sampleSupport1(generator, w);
         writeSupportToVector(cKemPrimeV64, ySupport, w); // cKemPrimeV64 holds dense y for the multiply
 
@@ -209,10 +250,10 @@ class HQCEngine
         ReedSolomon.encode(res, m, n1, k, generatorPoly);
         ReedMuller.encode(v, res, n1, mulParam);
 
-        Shake256RandomGenerator randomGenerator = new Shake256RandomGenerator(ekPke, 0, SEED_BYTES, (byte)1);
+        Shake256RandomGenerator randomGenerator = new Shake256RandomGenerator(ekPke, 0, SEED_BYTES);
         gf2x.random(randomGenerator, tmp);
 
-        randomGenerator.init(theta, thetaOff, SEED_BYTES, (byte)1);
+        randomGenerator.init(theta, thetaOff, SEED_BYTES);
         int[] r2Support = sampleSupport2(randomGenerator, wr);
         writeSupportToVector(r2Dense, r2Support, wr);
         gf2x.mul(tmp, r2Dense, u);
@@ -241,65 +282,60 @@ class HQCEngine
     }
 
     /**
-     * Rejection-sample {@code weight} distinct positions in [0, n) into {@code support}.
+     * SampleSupport1: rejection-sample {@code weight} distinct positions in [0, n) into
+     * {@code support}, squeezing one 3-byte little-endian candidate at a time from the XOF and
+     * keeping it when it lies below rejection_threshold_n (so that reduction modulo n is unbiased)
+     * and is not already in the support.
      * <p>
      * NOTE: this runs on secret data at both of its call sites - it samples the secret key
-     * supports x and y in {@link #genKeyPair}, and re-expands y from the long-term secret key
-     * seed on every {@link #decaps}, where the same seed produces the same draw sequence every
+     * supports y and x in {@link #expandSecretKey}, which also happens on every decapsulation of a
+     * key whose expansion is not cached, where the same seed produces the same draw sequence every
      * time and so any timing variation is a fixed, repeatedly measurable function of the private
-     * key. Everything within a batch of candidates is therefore branch-free and fixed-count: all
-     * {@code weight} candidates are examined even once enough have been accepted, the duplicate
+     * key. The work done on each candidate is therefore branch-free and fixed-count: the duplicate
      * scan visits every slot with no early exit, and an accepted candidate is written by masking
      * across all slots rather than by indexing with the secret running count. Do not "optimise"
      * any of that back into a break, a continue, or a {@code support[count]} store.
      * <p>
-     * The candidate stream is squeezed in fixed 3*weight byte batches and any tail is discarded,
-     * exactly as before, because two of these calls share one generator in
-     * {@link #genKeyPair} - consuming a different number of bytes would change the generated key.
-     * A batch is only re-squeezed when it failed to yield {@code weight} accepted positions, so
-     * the number of batches remains data-dependent; that residual (a second squeeze is needed
-     * with probability roughly 0.15 to 0.3 depending on the parameter set) is inherent to the
-     * specified sampler and cannot be removed without diverging from the algorithm's byte
-     * consumption, and therefore from its output.
+     * The number of candidates drawn before {@code weight} are accepted is data-dependent, which
+     * is inherent to the specified sampler (the reference implementation's loop is the same shape)
+     * and cannot be removed without changing the bytes consumed from the XOF, and therefore the key.
      */
     private void generateRandomSupport(int[] support, int weight, Shake256RandomGenerator random)
     {
-        int randomBytesSize = 3 * weight;
-        byte[] randBytes = new byte[randomBytesSize];
+        byte[] randBytes = new byte[3];
 
         int count = 0;
         while (count < weight)
         {
-            random.xofGetBytes(randBytes, randomBytesSize);
+            random.nextBytes(randBytes);
 
-            for (int i = 0, off = 0; i < weight; ++i, off += 3)
+            int candidate = (randBytes[0] & 0xFF)
+                | ((randBytes[1] & 0xFF) << 8)
+                | ((randBytes[2] & 0xFF) << 16);
+
+            // in range for an unbiased reduction
+            int accept = (candidate - rejectionThreshold) >> 31;
+            int reduced = barrettReduce(candidate);
+
+            // drop a repeat: every slot is compared, the not-yet-filled ones counting as
+            // non-matching, so neither the trip count nor the exit depends on the values
+            for (int t = 0; t < weight; ++t)
             {
-                int candidate = ((randBytes[off] & 0xFF) << 16)
-                    | ((randBytes[off + 1] & 0xFF) << 8)
-                    | (randBytes[off + 2] & 0xFF);
-
-                // in range for an unbiased reduction, and a position is still wanted
-                int accept = ((candidate - rejectionThreshold) >> 31) & ((count - weight) >> 31);
-                int reduced = barrettReduce(candidate);
-
-                // drop a repeat: every slot is compared, the not-yet-filled ones counting as
-                // non-matching, so neither the trip count nor the exit depends on the values
-                for (int t = 0; t < weight; ++t)
-                {
-                    int live = (t - count) >> 31;
-                    accept &= cdiff(reduced, support[t]) | ~live;
-                }
-
-                // store at index count without using count as an index
-                for (int t = 0; t < weight; ++t)
-                {
-                    int hit = accept & ~cdiff(t, count);
-                    support[t] = (support[t] & ~hit) | (reduced & hit);
-                }
-
-                count -= accept; // accept is 0 or -1
+                int live = (t - count) >> 31;
+                accept &= cdiff(reduced, support[t]) | ~live;
             }
+
+            // store at index count without using count as an index
+            for (int t = 0; t < weight; ++t)
+            {
+                int hit = accept & ~cdiff(t, count);
+                support[t] = (support[t] & ~hit) | (reduced & hit);
+            }
+
+            count -= accept; // accept is 0 or -1
         }
+
+        Arrays.clear(randBytes);
     }
 
     /**

@@ -2,49 +2,60 @@ package org.bouncycastle.pqc.crypto.hqc;
 
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 
+/**
+ * The XOF of the HQC specification (2026-10-12, Section 3.1): XOF.Init(seed) absorbs the seed into
+ * SHAKE256 and XOF.GetBytes squeezes. Earlier specifications appended a fixed domain byte (0x01) to
+ * every seed; the current one does not, and the only domain separation left on the XOF is the
+ * parameter set's k appended to seedKEM when the KEM key is expanded, see
+ * {@link HQCEngine#expandSecretKey}.
+ */
 class Shake256RandomGenerator
 {
     private final SHAKEDigest digest = new SHAKEDigest(256);
 
-    public Shake256RandomGenerator(byte[] seed, byte domain)
+    /**
+     * XOF.Init(seed).
+     */
+    Shake256RandomGenerator(byte[] seed, int off, int len)
     {
-        digest.update(seed, 0, seed.length);
-        digest.update(domain);
+        digest.update(seed, off, len);
     }
 
-    public Shake256RandomGenerator(byte[] seed, int off, int len, byte domain)
+    /**
+     * XOF.Init(seed || domain), the KEM seed expansion's parameter-set binding.
+     */
+    Shake256RandomGenerator(byte[] seed, int off, int len, byte domain)
     {
         digest.update(seed, off, len);
         digest.update(domain);
     }
 
-    public void init(byte[] seed, int off, int len, byte domain)
+    /**
+     * Re-initialise as XOF.Init(seed), discarding any state.
+     */
+    void init(byte[] seed, int off, int len)
     {
         digest.reset();
         digest.update(seed, off, len);
-        digest.update(domain);
     }
 
-    public void nextBytes(byte[] bytes)
+    void nextBytes(byte[] bytes)
     {
         digest.doOutput(bytes, 0, bytes.length);
     }
 
-    public void nextBytes(byte[] output, int off, int len)
+    void nextBytes(byte[] output, int off, int len)
     {
         digest.doOutput(output, off, len);
     }
 
-    public void xofGetBytes(byte[] output, int outLen)
+    /**
+     * XOF.GetBytes: a plain squeeze of exactly {@code outLen} bytes. The earlier reference code
+     * squeezed in 8-byte units and discarded the tail of the last unit; the 2026-10-12 reference
+     * code squeezes exactly what it uses, so a short read no longer skips bytes of the stream.
+     */
+    void xofGetBytes(byte[] output, int outLen)
     {
-        final int remainder = outLen & 7;
-        int tmpLen = outLen - remainder;
-        digest.doOutput(output, 0, tmpLen);
-        if (remainder != 0)
-        {
-            byte[] tmp = new byte[8];
-            digest.doOutput(tmp, 0, 8);
-            System.arraycopy(tmp, 0, output, tmpLen, remainder);
-        }
+        digest.doOutput(output, 0, outLen);
     }
 }

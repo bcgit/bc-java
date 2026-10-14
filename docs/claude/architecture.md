@@ -223,6 +223,20 @@ Concrete: `MQOMKeyPairGenerator.generateKeyPair` reads `2 * seedSize` bytes via 
 
 If you find yourself unable to demote `<Alg>Engine` to package-private without breaking tests, that is the symptom — rewrite the tests against the public `<Alg>KeyPairGenerator` / `<Alg>Signer` with `FixedSecureRandom` / `NISTSecureRandom` first, then demote.
 
+A KAT that fails on the *first* vector's public key after a reference-implementation update is as
+likely to be the harness as the engine: check which `randombytes` the reference's KAT driver links
+before touching the port. HQC's 2025-08-22 reference generated its KATs from a SHAKE256 PRNG
+(`prng_init`, seed || 0x00), so `HQCTest` carried a private `Shake256SecureRandom`; the 2026-10-12
+reference deleted that PRNG and its `tests/kats/test_kat.c` seeds `lib/nist-rng/rng.c`'s AES-256
+CTR-DRBG again (`randombytes_init(seed, NULL, 256)`), i.e. `NISTSecureRandom(seed, null)`. The engine
+was right and every round-trip test was green; only the DRBG differed. The reference's
+`kats/*/intermediates_values` dumps (seed_pke, y, x, h, s, the RS and RM codewords, ...) are the
+oracle for the next step when the DRBG is not the cause. HQC's reference lives at
+`gitlab.com/pqc-hqc/hqc`; pre-release work lands on its `next-release` branch, with `main` and the
+tag lagging, so diff `v<last tag>..origin/next-release` to see what a specification update changed
+in code (the spec's changelog page lists the design changes, but code-level ones such as a KAT RNG
+swap, an XOF domain byte or a bit order only show in the diff).
+
 ## Package layering: `.bc` (lightweight) vs `.jcajce` (JCA/JCE)
 
 The high-level modules (`pkix`, `pg`, `mail`/`jmail`, `tls`, `mls`) split their public surface by which low-level crypto stack a class touches:

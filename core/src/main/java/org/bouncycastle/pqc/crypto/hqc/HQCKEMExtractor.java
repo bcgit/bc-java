@@ -27,9 +27,8 @@ public class HQCKEMExtractor
             throw new IllegalArgumentException("encapsulation wrong length");
         }
         byte[] session_key = new byte[64];
-        byte[] sk = privateKey.getPrivateKey();
 
-        engine.decaps(session_key, encapsulation, sk);
+        engine.decaps(session_key, encapsulation, privateKey.getExpandedKey());
 
         return Arrays.copyOfRange(session_key, 0, 32);
     }

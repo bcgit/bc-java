@@ -5,6 +5,7 @@ import java.security.SecureRandom;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
 import org.bouncycastle.crypto.KeyGenerationParameters;
+import org.bouncycastle.util.Arrays;
 
 public class HQCKeyPairGenerator
     implements AsymmetricCipherKeyPairGenerator
@@ -23,12 +24,18 @@ public class HQCKeyPairGenerator
     public AsymmetricCipherKeyPair generateKeyPair()
     {
         byte[] pk = new byte[parameters.getPublicKeyBytes()];
-        byte[] sk = new byte[parameters.getSecretKeyBytes()];
+        byte[] seed = new byte[parameters.getSecretKeyBytes()];
 
-        parameters.getEngine().genKeyPair(pk, sk, random);
+        // the expansion key generation already did is handed to the private key so that its first
+        // decapsulation does not repeat it
+        byte[] expanded = parameters.getEngine().genKeyPair(pk, seed, random);
 
         HQCPublicKeyParameters publicKey = new HQCPublicKeyParameters(parameters, pk);
-        HQCPrivateKeyParameters privateKey = new HQCPrivateKeyParameters(parameters, sk);
+        HQCPrivateKeyParameters privateKey = new HQCPrivateKeyParameters(parameters, seed, expanded);
+
+        Arrays.clear(seed);
+        Arrays.clear(expanded);
+
         return new AsymmetricCipherKeyPair(publicKey, privateKey);
     }
 }

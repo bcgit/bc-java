@@ -12,14 +12,16 @@ import junit.framework.TestCase;
  * subset of inputs they exercise.
  * <p>
  * The expected values come from an independent construction: log and exp tables built here by
- * iterating the generator X over GF(2)[X]/(X^8 + X^4 + X^3 + X^2 + 1), so the oracle takes a
- * different computational route (discrete logs) from the implementation (carryless multiply and
- * reduce). Field laws are checked as well, in case both sides were to be wrong the same way.
+ * iterating the generator X + 1 over GF(2)[X]/(X^8 + X^4 + X^3 + X + 1), the field of the HQC
+ * specification of 2026-10-12 (X alone is not primitive in this field, its order is 51), so the
+ * oracle takes a different computational route (discrete logs) from the implementation (carryless
+ * multiply and reduce). Field laws are checked as well, in case both sides were to be wrong the
+ * same way.
  */
 public class GFTest
     extends TestCase
 {
-    private static final int MODULUS = 0x11D;
+    private static final int MODULUS = 0x11B;
     private static final int ORDER = 255;
 
     private final int[] exp = new int[ORDER];
@@ -33,7 +35,8 @@ public class GFTest
             exp[i] = x;
             log[x] = i;
 
-            int t = x << 1;
+            // multiply by the generator X + 1
+            int t = (x << 1) ^ x;
             if ((t & 0x100) != 0)
             {
                 t ^= MODULUS;
@@ -43,12 +46,13 @@ public class GFTest
     }
 
     /**
-     * Guard the oracle itself: these are the opening entries of the classic GF(256) exp table
-     * for this field polynomial, and the cycle must close back on 1.
+     * Guard the oracle itself: these are the opening entries of the exp table for this field
+     * polynomial and generator (the reference implementation's gf_exp), and the cycle must close
+     * back on 1.
      */
     public void testOracleIsTheExpectedField()
     {
-        int[] expected = new int[]{1, 2, 4, 8, 16, 32, 64, 128, 29, 58, 116, 232, 205, 135, 19, 38};
+        int[] expected = new int[]{1, 3, 5, 15, 17, 51, 85, 255, 26, 46, 114, 150, 161, 248, 19, 53};
         for (int i = 0; i < expected.length; ++i)
         {
             assertEquals("exp[" + i + "]", expected[i], exp[i]);
