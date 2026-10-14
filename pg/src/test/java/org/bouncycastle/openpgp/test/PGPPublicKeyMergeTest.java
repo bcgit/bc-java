@@ -883,6 +883,8 @@ public class PGPPublicKeyMergeTest
 
         mergeCert2SignsBaseWithCert3SignsBase();
         mergeAllCert2AndCert3Certifications();
+
+        mergeDoesNotModifyItsInputs();
     }
 
     public void cannotMergeDifferentCerts()
@@ -1083,6 +1085,28 @@ public class PGPPublicKeyMergeTest
         PGPPublicKeyRing merged = PGPPublicKeyRing.join(base, cert2SignsBase);
 
         isTrue(areEqual(cert2SignsBase.getEncoded(), merged.getEncoded()));
+    }
+
+    /**
+     * regression test for #2508: PGPPublicKey.join copied the per-user-id signature lists only shallowly and then
+     * merged the copy's certifications into them, so joining added the certification to the base key the caller
+     * passed in as well as to the result.
+     */
+    public void mergeDoesNotModifyItsInputs()
+        throws IOException, PGPException
+    {
+        PGPPublicKeyRing base = readCert(CERT_1_BASE);
+        PGPPublicKeyRing cert2SignsBase = readCert(CERT_2_SIGNS_CERT_1_BASE);
+        byte[] baseEncoding = base.getEncoded();
+        byte[] cert2SignsBaseEncoding = cert2SignsBase.getEncoded();
+
+        PGPPublicKeyRing merged = PGPPublicKeyRing.join(base, cert2SignsBase);
+
+        // the merge did add the certification, to the result
+        isTrue(!areEqual(baseEncoding, merged.getEncoded()));
+
+        isTrue("base modified by join", areEqual(baseEncoding, base.getEncoded()));
+        isTrue("copy modified by join", areEqual(cert2SignsBaseEncoding, cert2SignsBase.getEncoded()));
     }
 
     public void mergeCert2SignsAllUserIdsWithBaseYieldsCert2SignsAllUserIds()
