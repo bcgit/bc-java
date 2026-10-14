@@ -13,12 +13,14 @@ import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.jce.X509LDAPCertStoreParameters;
 import java.security.cert.CertPathBuilderException;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.ldap.LDAPUtils;
 import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.test.SimpleTest;
 
 import javax.net.ServerSocketFactory;
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLSocketFactory;
+import javax.security.auth.x500.X500Principal;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -44,6 +46,8 @@ public class X509LDAPCertStoreTest
     public void performTest()
         throws Exception
     {
+        checkParseDN();
+
         BcFilterCheck filterCheck = new BcFilterCheck();
 
         //start mock ldap server for logging
@@ -89,6 +93,43 @@ public class X509LDAPCertStoreTest
         ds.shutDown(true);
 
         isTrue(filterCheck.isUsed());
+    }
+
+    // attribute name only matches where it is followed by '=', and an empty value is not an error.
+    private void checkParseDN()
+    {
+        String dn = new X500Principal("CN=Bob Root CA, OU=Trust Services, O=Example, C=DE").getName("RFC1779");
+
+        checkParseDN(dn, "cn", "Bob Root CA");
+        checkParseDN(dn, "ou", "Trust Services");
+        checkParseDN(dn, "o", "Example");
+        checkParseDN(dn, "O", "Example");
+
+        checkParseDN("O=Acn Corp,CN=Alice", "cn", "Alice");
+        checkParseDN("O=cn,L=y", "cn", "");
+        checkParseDN("O=x,CN=", "cn", "");
+        checkParseDN("CN=", "cn", "");
+        checkParseDN("O=x", "cn", "");
+
+        checkParseDN("CN= Bob,O=x", "cn", "Bob");
+        checkParseDN("CN=Bob\\, Jr.,O=x", "cn", "Bob\\5c, Jr.");
+        checkParseDN("CN=a*)(uid=*,O=x", "cn", "a\\2a\\29\\28uid=\\2a");
+    }
+
+    private void checkParseDN(String dn, String attributeName, String expected)
+    {
+        String value;
+        try
+        {
+            value = LDAPUtils.parseDN(dn, attributeName);
+        }
+        catch (RuntimeException e)
+        {
+            fail("parseDN(\"" + dn + "\", \"" + attributeName + "\") threw " + e);
+            return;
+        }
+
+        isEquals("parseDN(\"" + dn + "\", \"" + attributeName + "\")", expected, value);
     }
 
     private static InMemoryDirectoryServer mockLdapServer(BcFilterCheck filterCheck)

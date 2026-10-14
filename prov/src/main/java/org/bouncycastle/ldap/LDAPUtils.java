@@ -37,7 +37,7 @@ public class LDAPUtils
     public static String parseDN(String subject, String subjectAttributeName)
     {
         String temp = subject;
-        int begin = Strings.toLowerCase(temp).indexOf(Strings.toLowerCase(subjectAttributeName));
+        int begin = Strings.toLowerCase(temp).indexOf(Strings.toLowerCase(subjectAttributeName) + "=");
         if (begin == -1)
         {
             return "";
@@ -59,7 +59,7 @@ public class LDAPUtils
         temp = temp.substring(0, end);
         begin = temp.indexOf('=');
         temp = temp.substring(begin + 1);
-        if (temp.charAt(0) == ' ')
+        if (temp.length() > 0 && temp.charAt(0) == ' ')
         {
             temp = temp.substring(1);
         }
