@@ -1189,7 +1189,13 @@ public class PGPPublicKey
         List<PGPSignature> keySigs = new ArrayList<PGPSignature>(key.keySigs);
         List<UserDataPacket> ids = new ArrayList<UserDataPacket>(key.ids);
         List<TrustPacket> idTrusts = new ArrayList<TrustPacket>(key.idTrusts);
-        List<List<PGPSignature>> idSigs = new ArrayList<List<PGPSignature>>(key.idSigs);
+        // also copy each user-id's list: the merge below adds to and replaces in these lists,
+        // which would otherwise be the ones key itself holds
+        List<List<PGPSignature>> idSigs = new ArrayList<List<PGPSignature>>(key.idSigs.size());
+        for (int i = 0; i != key.idSigs.size(); i++)
+        {
+            idSigs.add(new ArrayList<PGPSignature>((List<PGPSignature>)key.idSigs.get(i)));
+        }
         List<PGPSignature> subSigs = key.subSigs == null ? null : new ArrayList<PGPSignature>(key.subSigs);
 
         if (joinTrustPackets)
