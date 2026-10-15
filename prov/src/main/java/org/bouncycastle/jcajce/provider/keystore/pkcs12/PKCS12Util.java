@@ -41,9 +41,13 @@ class PKCS12Util
 
     /**
      * The PBE iteration count used when writing a PKCS#12 file, and half the count used for its
-     * integrity MAC. 600,000 is the OWASP figure for PBKDF2-HMAC-SHA256.
+     * integrity MAC. Just under the OWASP figure of 600,000 for PBKDF2-HMAC-SHA256.
+     * <p>
+     * <b>Do not raise this to 600,000 or more without testing on Windows:</b> Windows currently
+     * reports an error importing a PKCS#12 file written with an iteration count of 600,000 or
+     * greater. That limit may change in later Windows releases, so recheck it before moving this.
      */
-    static final int DEFAULT_STORE_IT_COUNT = 600000;
+    static final int DEFAULT_STORE_IT_COUNT = 599000;
 
     /**
      * Largest count {@link Properties#PKCS12_STORE_IT_COUNT} may name. Half of
