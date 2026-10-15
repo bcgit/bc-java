@@ -2,12 +2,19 @@ package org.bouncycastle.pqc.crypto.hqc;
 
 class ReedMuller
 {
+    /**
+     * RM.Encode of the HQC specification (2026-10-12, Section 3.5.3): the 128-bit RM(1,7) codeword is the
+     * message bits times rm_generator_matrix, held here as four 32-bit words. Message bit 7 selects the
+     * all-ones row, bits 0-4 the rows 0x55.., 0x33.., 0x0f.., 0xff00.., 0xffff0000 and bits 5 and 6 the
+     * word-selecting rows, with bit i of a codeword byte read as ByteToBit(byte, 7 - i) - so, relative to
+     * the 2025-08-22 specification, the bits of every codeword byte are in the reverse order.
+     */
     static void encodeSub(int[] out, int m)
     {
         int word1 = Bit0Mask(m >> 7);
-        word1 ^= Bit0Mask(m) & 0xaaaaaaaa;
-        word1 ^= Bit0Mask(m >> 1) & 0xcccccccc;
-        word1 ^= Bit0Mask(m >> 2) & 0xf0f0f0f0;
+        word1 ^= Bit0Mask(m) & 0x55555555;
+        word1 ^= Bit0Mask(m >> 1) & 0x33333333;
+        word1 ^= Bit0Mask(m >> 2) & 0x0f0f0f0f;
         word1 ^= Bit0Mask(m >> 3) & 0xff00ff00;
         word1 ^= Bit0Mask(m >> 4) & 0xffff0000;
         out[0] = word1;
@@ -38,6 +45,10 @@ class ReedMuller
         }
     }
 
+    /**
+     * dRM.Decode.ExpandAndSum: bit_sums[8j + k] counts, over the rm_multiplicity copies, ByteToBit(byte j, 7 - k),
+     * hence the {@code ^ 7} on the bit index within each byte of the 32-bit words.
+     */
     private static void expandThenSum(int[] desCode, int[] byteCodewords, int off, int mulParam)
     {
         int base = off * 4;
@@ -47,7 +58,7 @@ class ReedMuller
             int destBase = i * 32;
             for (int j = 0; j < 32; j++)
             {
-                desCode[destBase + j] = (t >> j) & 1;
+                desCode[destBase + j] = (t >> (j ^ 7)) & 1;
             }
         }
 
@@ -60,7 +71,7 @@ class ReedMuller
                 int destBase = j * 32;
                 for (int k = 0; k < 32; k++)
                 {
-                    desCode[destBase + k] += (t >> k) & 1;
+                    desCode[destBase + k] += (t >> (k ^ 7)) & 1;
                 }
             }
         }

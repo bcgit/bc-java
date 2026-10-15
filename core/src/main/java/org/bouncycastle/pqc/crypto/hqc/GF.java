@@ -1,8 +1,10 @@
 package org.bouncycastle.pqc.crypto.hqc;
 
 /**
- * Arithmetic in GF(2^8) = GF(2)[X]/(X^8 + X^4 + X^3 + X^2 + 1), the field underlying HQC's
- * Reed-Solomon code.
+ * Arithmetic in GF(2^8) = GF(2)[X]/(X^8 + X^4 + X^3 + X + 1), the field underlying HQC's
+ * Reed-Solomon code (HQC specification of 2026-10-12, Section 2.1; the 2025-08-22 specification
+ * used X^8 + X^4 + X^3 + X^2 + 1, so the Reed-Solomon generator polynomials and the alpha power
+ * tables in {@link ReedSolomon} changed with it).
  * <p>
  * NOTE: every operation here is table-free and branch-free on purpose. These routines run on
  * secret-derived values on both sides of the KEM - {@link ReedSolomon#encode} multiplies by
@@ -19,9 +21,9 @@ package org.bouncycastle.pqc.crypto.hqc;
 class GF
 {
     /**
-     * The field polynomial X^8 + X^4 + X^3 + X^2 + 1, including its X^8 term, as a bit pattern.
+     * The field polynomial X^8 + X^4 + X^3 + X + 1, including its X^8 term, as a bit pattern.
      */
-    private static final int MODULUS = 0x11D;
+    private static final int MODULUS = 0x11B;
 
     /**
      * Reduce a carryless product of two field elements (degree at most 14) modulo

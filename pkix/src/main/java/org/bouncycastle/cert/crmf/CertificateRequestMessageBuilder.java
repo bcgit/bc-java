@@ -293,19 +293,30 @@ public class CertificateRequestMessageBuilder
         {
             CertTemplate template = request.getCertTemplate();
 
-            ProofOfPossessionSigningKeyBuilder builder;
-            if (template.getSubject() == null || template.getPublicKey() == null)
+            // RFC 4211 sec. 4.1: the signature can only be verified against the public key in the
+            // template, which poposkInput (when present) must also carry.
+            SubjectPublicKeyInfo pubKeyInfo = template.getPublicKey();
+            if (pubKeyInfo == null)
             {
-                SubjectPublicKeyInfo pubKeyInfo = request.getCertTemplate().getPublicKey();
+                throw new CRMFException("signing key proof of possession requires a public key in the certificate template");
+            }
+
+            ProofOfPossessionSigningKeyBuilder builder;
+            if (template.getSubject() == null)
+            {
                 builder = new ProofOfPossessionSigningKeyBuilder(pubKeyInfo);
 
                 if (sender != null)
                 {
                     builder.setSender(sender);
                 }
-                else
+                else if (pkmacBuilder != null)
                 {
                     builder.setPublicKeyMac(pkmacBuilder, password);
+                }
+                else
+                {
+                    throw new CRMFException("signing key proof of possession without a subject in the certificate template requires an authInfo sender or PKMAC");
                 }
             }
             else

@@ -10,7 +10,6 @@ import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.jcajce.provider.asymmetric.util.NamedParameterSpecUtil;
 import org.bouncycastle.pqc.crypto.hqc.HQCPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.hqc.HQCPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.pqc.jcajce.interfaces.HQCKey;
@@ -75,10 +74,7 @@ public class BCHQCPrivateKey
 
     private BCHQCPublicKey getPublicKey()
     {
-        byte[] sk = params.getPrivateKey();
-        int pkSize = params.getParameters().getPublicKeyBytes();
-        byte[] pk = Arrays.copyOfRange(sk, 0, pkSize);
-        return new BCHQCPublicKey(new HQCPublicKeyParameters(params.getParameters(), pk));
+        return new BCHQCPublicKey(params.getPublicKeyParameters());
     }
 
     /**
