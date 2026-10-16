@@ -7,6 +7,7 @@ import org.bouncycastle.openpgp.smartcard.test.AbstractOpenPGPSmartCardTest;
 import org.bouncycastle.openpgp.smartcard.test.AnonymousRecipientSmartCardDecryptionTest;
 import org.bouncycastle.openpgp.smartcard.test.MultiBackendTest;
 import org.bouncycastle.openpgp.smartcard.test.OpenPGPSmartCardBackendTest;
+import org.bouncycastle.openpgp.smartcard.test.SmartCardKeyGenerationTest;
 import org.bouncycastle.openpgp.smartcard.test.SmartCardMessageDecryptionTest;
 import org.bouncycastle.openpgp.smartcard.test.SmartCardMessageSigningTest;
 import org.bouncycastle.openpgp.smartcard.test.SmartCardUserPinOwnershipTest;
@@ -31,6 +32,7 @@ public class SimulatorTests
                         new SimulatorSmartCardTest(m, p),
                         new SmartCardMessageDecryptionTest(m, p),
                         new SmartCardMessageSigningTest(m, p),
+                        new SmartCardKeyGenerationTest(m, p),
                         new AnonymousRecipientSmartCardDecryptionTest(m, p),
                         new UnrelatedSmartCardMessageDecryptionTest(m, p),
                         new SmartCardWithV6KeysTest(m, p),
@@ -47,5 +49,10 @@ public class SimulatorTests
                 fail(result.toString());
             }
         }
+    }
+
+    public static void main(String[] args)
+    {
+        new SimulatorTests().testOnSimulatorSmartCard();
     }
 }

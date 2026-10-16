@@ -8,9 +8,9 @@ import org.bouncycastle.openpgp.api.OpenPGPCertificate.OpenPGPComponentKey;
 import org.bouncycastle.openpgp.api.OpenPGPKey;
 import org.bouncycastle.openpgp.api.OpenPGPKey.OpenPGPPrivateKey;
 import org.bouncycastle.openpgp.api.exception.KeyPassphraseException;
+import org.bouncycastle.openpgp.smartcard.card.CardException;
 import org.bouncycastle.openpgp.smartcard.card.SupportedAlgorithms;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.openpgp.smartcard.card.CardException;
 
 import java.security.PublicKey;
 import java.util.List;
@@ -231,7 +231,7 @@ public abstract class OpenPGPSmartCard
      */
     public abstract OpenPGPSmartCard changeUserPIN(CardPinProvider oldPinProvider,
                                                    CardPinProvider newPinProvider)
-        throws CardException;
+            throws CardException;
 
     /**
      * Change the admin PIN (PW3) of the card.
@@ -243,7 +243,7 @@ public abstract class OpenPGPSmartCard
      */
     public abstract OpenPGPSmartCard changeAdminPIN(CardPinProvider oldPinProvider,
                                                     CardPinProvider newPinProvider)
-        throws CardException;
+            throws CardException;
 
     /**
      * Factory-reset the smart card, clearing all key slots and resetting the admin PIN, user PIN to their defaults.
@@ -337,10 +337,26 @@ public abstract class OpenPGPSmartCard
      * @throws PGPException if the key cannot be prepared for the card
      */
     protected abstract OpenPGPSmartCard uploadKey(byte keyRef,
-                                               OpenPGPPrivateKey key,
-                                               char[] adminPin)
+                                                  OpenPGPPrivateKey key,
+                                                  char[] adminPin)
             throws CardException, PGPException;
 
+    /**
+     * Generate an OpenPGP key on the device.
+     * @param algorithm algorithm description
+     * @param keyVersion OpenPGP key version
+     * @param publicKeyAlgorithmTag OpenPGP Public Key Algorithm Tag
+     * @param subkey whether the key is a subkey
+     * @param adminPinProvider provider for the devices admin PIN
+     * @return generated bare OpenPGP public key
+     * @throws CardException
+     */
+    public abstract PGPPublicKey generateKey(SupportedAlgorithms.Algorithm algorithm,
+                                             int keyVersion,
+                                             int publicKeyAlgorithmTag,
+                                             boolean subkey,
+                                             CardPinProvider adminPinProvider)
+            throws CardException;
 
     /**
      * Return the {@link PGPPublicKey} component of the key in the slot identified by keyRef.
@@ -401,7 +417,7 @@ public abstract class OpenPGPSmartCard
                                 OpenPGPHardwareKey key,
                                 OpenPGPKey.OpenPGPSecretKey stubKey,
                                 KeyPassphraseProvider userPinProvider)
-        throws KeyPassphraseException, CardException;
+            throws KeyPassphraseException, CardException;
 
     /**
      * Fetch the card's user PIN. A {@link KeyPassphraseProvider} keeps ownership of the array it
@@ -432,9 +448,9 @@ public abstract class OpenPGPSmartCard
      * @throws CardException if the message cannot be decrypted, e.g. because communication fails
      */
     public abstract byte[] decrypt(byte[] message,
-                          OpenPGPHardwareKey openPGPHardwareKey,
-                          OpenPGPKey.OpenPGPSecretKey stubKey,
-                          KeyPassphraseProvider userPinProvider)
+                                   OpenPGPHardwareKey openPGPHardwareKey,
+                                   OpenPGPKey.OpenPGPSecretKey stubKey,
+                                   KeyPassphraseProvider userPinProvider)
             throws PGPException, CardException;
 
     /**
@@ -449,9 +465,9 @@ public abstract class OpenPGPSmartCard
      * @throws CardException if the message cannot be decrypted, e.g. because communication fails
      */
     public abstract byte[] decrypt(PublicKey publicKey,
-                          OpenPGPHardwareKey openPGPHardwareKey,
-                          OpenPGPKey.OpenPGPSecretKey stubKey,
-                          KeyPassphraseProvider userPinProvider)
+                                   OpenPGPHardwareKey openPGPHardwareKey,
+                                   OpenPGPKey.OpenPGPSecretKey stubKey,
+                                   KeyPassphraseProvider userPinProvider)
             throws PGPException, CardException;
 
     @FunctionalInterface

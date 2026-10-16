@@ -46,7 +46,8 @@ public class FailingBackendTest
         OpenPGPKey externalKey = keyUtils.toExternalKey(key);
 
         OpenPGPSmartCardManager manager = new OpenPGPSmartCardManager();
-        SimulatorOpenPGPSmartCardBackend failingBackend = new SimulatorOpenPGPSmartCardBackend() {
+        SimulatorOpenPGPSmartCardBackend failingBackend = new SimulatorOpenPGPSmartCardBackend()
+        {
             @Override
             public String getName()
             {
@@ -73,7 +74,8 @@ public class FailingBackendTest
             }
         };
 
-        SimulatorOpenPGPSmartCardBackend workingBackend = new SimulatorOpenPGPSmartCardBackend() {
+        SimulatorOpenPGPSmartCardBackend workingBackend = new SimulatorOpenPGPSmartCardBackend()
+        {
             @Override
             public String getName()
             {

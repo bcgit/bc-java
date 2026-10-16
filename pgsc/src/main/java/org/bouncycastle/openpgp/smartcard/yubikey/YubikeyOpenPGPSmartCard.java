@@ -13,6 +13,7 @@ import com.yubico.yubikit.openpgp.AlgorithmAttributes;
 import com.yubico.yubikit.openpgp.DiscretionaryDataObjects;
 import com.yubico.yubikit.openpgp.KeyRef;
 import com.yubico.yubikit.openpgp.KeyStatus;
+import com.yubico.yubikit.openpgp.OpenPgpCurve;
 import com.yubico.yubikit.openpgp.OpenPgpSession;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.cryptlib.CryptlibObjectIdentifiers;
@@ -334,6 +335,56 @@ public class YubikeyOpenPGPSmartCard
         }
 
         return uploadKey(keyRefByte, key.getKeyPair(), adminPin);
+    }
+
+    @Override
+    public PGPPublicKey generateKey(SupportedAlgorithms.Algorithm algorithm,
+                                    int keyVersion,
+                                    int publicKeyAlgorithmTag,
+                                    boolean subkey,
+                                    CardPinProvider adminPinProvider)
+            throws CardException
+    {
+        KeyRef keyRef = from(algorithm.keyRef);
+        char[] adminPin = adminPinProvider.providePIN(this);
+
+        try (OpenPgpSession session = openSession())
+        {
+            session.verifyAdminPin(adminPin);
+            PublicKeyValues pkVals;
+            if (algorithm instanceof SupportedAlgorithms.RSA)
+            {
+                SupportedAlgorithms.RSA rsa = (SupportedAlgorithms.RSA) algorithm;
+                pkVals = session.generateRsaKey(keyRef, rsa.keySize);
+            }
+            else if (algorithm instanceof SupportedAlgorithms.EC)
+            {
+                SupportedAlgorithms.EC ec = (SupportedAlgorithms.EC) algorithm;
+                OpenPgpCurve curve = getBackend().curveFromOID(ec.curve);
+                pkVals = session.generateEcKey(keyRef, curve);
+            }
+            else
+            {
+                throw new IllegalArgumentException("Unknown algorithm " + algorithm);
+            }
+
+            Date now = new Date();
+            session.setGenerationTime(keyRef, (int) (now.getTime() / 1000));
+            PGPPublicKey publicKey = getBackend().convertPublicKey(pkVals, keyVersion, publicKeyAlgorithmTag, now, subkey);
+            return publicKey;
+        }
+        catch (ApduException | IOException e)
+        {
+            throw new CardException("Cannot communicate with device " + getSerialNumber(), e);
+        }
+        catch (InvalidPinException e)
+        {
+            throw new CardException("Wrong user pin provided for device " + getSerialNumber(), e);
+        }
+        catch (BadResponseException | NoSuchAlgorithmException | InvalidKeySpecException | PGPException e)
+        {
+            throw new CardException("Cannot generate key on device " + getSerialNumber(), e);
+        }
     }
 
     public YubikeyOpenPGPSmartCard uploadKey(byte keyRefByte,

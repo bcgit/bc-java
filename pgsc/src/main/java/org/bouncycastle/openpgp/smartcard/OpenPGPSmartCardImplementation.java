@@ -13,7 +13,7 @@ import org.bouncycastle.openpgp.smartcard.operator.ExternalContentSignerBuilder;
 
 public abstract class OpenPGPSmartCardImplementation
 {
-    protected final OpenPGPImplementation implementation;
+    public final OpenPGPImplementation implementation;
 
     public OpenPGPSmartCardImplementation(OpenPGPImplementation implementation)
     {

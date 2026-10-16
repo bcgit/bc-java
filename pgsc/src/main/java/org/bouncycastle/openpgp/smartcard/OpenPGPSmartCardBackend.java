@@ -8,11 +8,13 @@ import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
+import org.bouncycastle.bcpg.PublicSubkeyPacket;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.api.KeyPassphraseProvider;
 import org.bouncycastle.openpgp.api.OpenPGPCertificate;
 import org.bouncycastle.openpgp.api.OpenPGPKey.OpenPGPSecretKey;
+import org.bouncycastle.openpgp.operator.KeyFingerPrintCalculator;
 import org.bouncycastle.openpgp.operator.PGPContentSignerBuilderProvider;
 import org.bouncycastle.openpgp.api.operator.PGPContentSignerBuilderProviderFactory;
 import org.bouncycastle.openpgp.operator.PublicKeyDataDecryptorFactory;
@@ -389,6 +391,23 @@ public abstract class OpenPGPSmartCardBackend<T extends OpenPGPSmartCard>
                                           Date creationTime)
             throws PGPException
     {
+        int[] candidates = determineAlgorithmCandidates(pk);
+
+        PGPPublicKey pgpKey = bruteForcePublicKey(pk, creationTime, storedFingerprint, candidates);
+        if (pgpKey == null)
+        {
+            throw new PGPException("Cannot reconstruct public " + pk.getAlgorithm() + " PGP key.");
+        }
+        return pgpKey;
+    }
+
+    private int[] determineAlgorithmCandidates(PublicKey pk)
+            throws PGPException
+    {
+        // OpenPGP defines different Public Key Algorithm IDs.
+        // Some key types have multiple possible pk alg IDs which could be assigned,
+        // e.g. Brainpool / NIST curves can be ECDSA or ECDH, X25519 keys can have ID X25519 or ECDH (legacy).
+        // Here, we determine suitable algorithm ID candidates for the given public key.
         ASN1Sequence seq = ASN1Sequence.getInstance(pk.getEncoded());
         SubjectPublicKeyInfo spki = SubjectPublicKeyInfo.getInstance(seq);
         if (spki == null)
@@ -402,7 +421,7 @@ public abstract class OpenPGPSmartCardBackend<T extends OpenPGPSmartCard>
         if (PKCSObjectIdentifiers.rsaEncryption.equals(oid))
         {
             candidates = new int[]{PublicKeyAlgorithmTags.RSA_GENERAL, PublicKeyAlgorithmTags.RSA_ENCRYPT,
-                PublicKeyAlgorithmTags.RSA_SIGN};
+                    PublicKeyAlgorithmTags.RSA_SIGN};
         }
         // ECDH / ECDSA with NIST or Brainpool
         else if (X9ObjectIdentifiers.id_ecPublicKey.equals(oid))
@@ -433,13 +452,7 @@ public abstract class OpenPGPSmartCardBackend<T extends OpenPGPSmartCard>
         {
             throw new PGPException("Unknown public key algorithm OID: " + oid.getId());
         }
-
-        PGPPublicKey pgpKey = bruteForcePublicKey(pk, creationTime, storedFingerprint, candidates);
-        if (pgpKey == null)
-        {
-            throw new PGPException("Cannot reconstruct public " + pk.getAlgorithm() + " PGP key.");
-        }
-        return pgpKey;
+        return candidates;
     }
 
     protected PGPPublicKey bruteForcePublicKey(
@@ -472,5 +485,63 @@ public abstract class OpenPGPSmartCardBackend<T extends OpenPGPSmartCard>
             }
         }
         return null;
+    }
+
+    /**
+     * Convert the given {@link PublicKey} to an OpenPGP {@link PGPPublicKey}.
+     *
+     * @param pubKey public key
+     * @param keyVersion OpenPGP key version (4,5,6...)
+     * @param publicKeyAlgorithmTag OpenPGP Public Key Algorithm ID
+     * @param creationTime key creation time
+     * @param subkey whether the key is an OpenPGP subkey
+     * @return pgp public key
+     * @throws PGPException
+     */
+    public PGPPublicKey convertPublicKey(PublicKey pubKey,
+                                         int keyVersion,
+                                         int publicKeyAlgorithmTag,
+                                         Date creationTime,
+                                         boolean subkey)
+            throws PGPException
+    {
+        validatePublicKeyAlgorithm(pubKey, publicKeyAlgorithmTag);
+
+        KeyFingerPrintCalculator fpCalc = implementation.implementation.keyFingerPrintCalculator();
+        PGPPublicKey pgpPublicKey = converter.getPGPPublicKey(keyVersion, publicKeyAlgorithmTag, pubKey, creationTime);
+        if (subkey)
+        {
+            PublicSubkeyPacket subkeyPacket = new PublicSubkeyPacket(
+                    keyVersion, publicKeyAlgorithmTag, creationTime, pgpPublicKey.getPublicKeyPacket().getKey());
+            pgpPublicKey = new PGPPublicKey(subkeyPacket, fpCalc);
+        }
+
+        return pgpPublicKey;
+    }
+
+    /**
+     * Verify that the given <pre>publicKeyAlgorithmTag</pre> is assignable to the given public key.
+     * @param pubKey public key
+     * @param publicKeyAlgorithmTag OpenPGP Public Key Algorithm
+     * @throws PGPException unknown public key type
+     */
+    private void validatePublicKeyAlgorithm(PublicKey pubKey, int publicKeyAlgorithmTag)
+            throws PGPException
+    {
+        int[] candidates = determineAlgorithmCandidates(pubKey);
+        boolean validAlgorithmTag = false;
+        for (int i = 0; i < candidates.length; i++)
+        {
+            if (candidates[i] == publicKeyAlgorithmTag)
+            {
+                validAlgorithmTag = true;
+                break;
+            }
+        }
+        if (!validAlgorithmTag)
+        {
+            throw new IllegalArgumentException("Cannot assign public key algorithm ID " + publicKeyAlgorithmTag +
+                    " to " + pubKey.getClass().getName() + " (" + java.util.Arrays.toString(candidates) + ")");
+        }
     }
 }
