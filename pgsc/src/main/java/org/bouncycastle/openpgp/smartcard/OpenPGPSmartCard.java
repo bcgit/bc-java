@@ -13,10 +13,7 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.openpgp.smartcard.card.CardException;
 
 import java.security.PublicKey;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.NoSuchElementException;
 
 /**
@@ -26,7 +23,6 @@ public abstract class OpenPGPSmartCard
 {
 
     private final OpenPGPSmartCardBackend backend;
-    private final Map<Byte, OpenPGPHardwareKey> keys = new HashMap<>();
 
     public OpenPGPSmartCard(OpenPGPSmartCardBackend backend)
     {
@@ -59,16 +55,6 @@ public abstract class OpenPGPSmartCard
 
     public abstract SupportedAlgorithms getSupportedAlgorithms();
 
-    protected void clearKeys()
-    {
-        keys.clear();
-    }
-
-    protected void putKey(OpenPGPHardwareKey key)
-    {
-        keys.put(key.getKeyRef(), key);
-    }
-
     /**
      * Return true, if the smart card supports the given {@link OpenPGPComponentKey}.
      *
@@ -90,16 +76,9 @@ public abstract class OpenPGPSmartCard
      *
      * @param keyRef key reference
      * @return hardware key
+     * @throws NoSuchElementException if no key with the given key ref is found
      */
-    public OpenPGPHardwareKey getKeyByKeyRef(byte keyRef)
-    {
-        OpenPGPHardwareKey hwKey = keys.get(keyRef);
-        if (hwKey == null)
-        {
-            throw new NoSuchElementException("No key with keyRef " + keyRef);
-        }
-        return hwKey;
-    }
+    public abstract OpenPGPHardwareKey getKeyByKeyRef(byte keyRef);
 
     /**
      * Return the {@link OpenPGPHardwareKey} from the slot that contains the given fingerprint.
@@ -135,10 +114,7 @@ public abstract class OpenPGPSmartCard
      *
      * @return list of all keys
      */
-    public List<OpenPGPHardwareKey> getKeys()
-    {
-        return new ArrayList<>(keys.values());
-    }
+    public abstract List<OpenPGPHardwareKey> getKeys();
 
     /**
      * Return true, if the card has a key with the given key reference.
@@ -270,7 +246,7 @@ public abstract class OpenPGPSmartCard
         throws CardException;
 
     /**
-     * Reset the smart card, clearing all key slots and resetting the admin PIN, user PIN to their defaults.
+     * Factory-reset the smart card, clearing all key slots and resetting the admin PIN, user PIN to their defaults.
      *
      * @return this
      * @throws CardException if communication with the card failed
@@ -479,7 +455,8 @@ public abstract class OpenPGPSmartCard
             throws PGPException, CardException;
 
     @FunctionalInterface
-    public interface CardPinProvider {
+    public interface CardPinProvider
+    {
         char[] providePIN(OpenPGPSmartCard card);
     }
 }

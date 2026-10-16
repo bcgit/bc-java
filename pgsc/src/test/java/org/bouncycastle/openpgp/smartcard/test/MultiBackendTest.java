@@ -65,8 +65,8 @@ public class MultiBackendTest extends SimpleTest
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         OpenPGPMessageOutputStream mOut = api.signAndOrEncryptMessage()
                 .addCustomPGPContentSignerBuilderProviderFactory(manager)
-                .addSigningKey(aliceExt)
-                .addSigningKey(bobExt)
+                .addSigningKey(aliceExt, k -> SimulatorOpenPGPSmartCard.DEFAULT_USER_PIN)
+                .addSigningKey(bobExt, k -> SimulatorOpenPGPSmartCard.DEFAULT_USER_PIN)
                 .addEncryptionCertificate(aliceExt)
                 .addEncryptionCertificate(bobExt)
                 .open(bOut);
@@ -79,8 +79,8 @@ public class MultiBackendTest extends SimpleTest
                 .addVerificationCertificate(aliceExt)
                 .addVerificationCertificate(bobExt)
                 .addPublicKeyDataDecryptorFactoryProvider(manager)
-                .addDecryptionKey(aliceExt)
-                .addDecryptionKey(bobExt)
+                .addDecryptionKey(aliceExt, SimulatorOpenPGPSmartCard.DEFAULT_USER_PIN)
+                .addDecryptionKey(bobExt, SimulatorOpenPGPSmartCard.DEFAULT_USER_PIN)
                 .process(bIn);
         bOut = new ByteArrayOutputStream();
         Streams.pipeAll(mIn, bOut);

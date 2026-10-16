@@ -47,21 +47,21 @@ public abstract class AbstractOpenPGPSmartCardTest
         if (!signingKeys.isEmpty())
         {
             OpenPGPKey.OpenPGPSecretKey secretKey = key.getSecretKey(signingKeys.get(0));
-            card.uploadSigningKey(secretKey.unlock(), properties.getAdminPin());
+            card.uploadSigningKey(secretKey.unlock(), k -> properties.getAdminPin());
         }
 
         List<OpenPGPCertificate.OpenPGPComponentKey> decryptionKeys = key.getEncryptionKeys();
         if (!decryptionKeys.isEmpty())
         {
             OpenPGPKey.OpenPGPSecretKey secretKey = key.getSecretKey(decryptionKeys.get(0));
-            card.uploadDecryptionKey(secretKey.unlock(), properties.getAdminPin());
+            card.uploadDecryptionKey(secretKey.unlock(), k -> properties.getAdminPin());
         }
 
         List<OpenPGPCertificate.OpenPGPComponentKey> authenticationKeys = key.getComponentKeysWithFlag(new Date(), KeyFlags.AUTHENTICATION);
         if (!authenticationKeys.isEmpty())
         {
             OpenPGPKey.OpenPGPSecretKey secretKey = key.getSecretKey(authenticationKeys.get(0));
-            card.uploadAuthenticationKey(secretKey.unlock(), properties.getAdminPin());
+            card.uploadAuthenticationKey(secretKey.unlock(), k -> properties.getAdminPin());
         }
     }
 

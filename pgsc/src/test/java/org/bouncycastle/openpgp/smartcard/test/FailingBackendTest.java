@@ -89,7 +89,7 @@ public class FailingBackendTest
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         OpenPGPMessageOutputStream mOut = api.signAndOrEncryptMessage()
                 .addCustomPGPContentSignerBuilderProviderFactory(manager)
-                .addSigningKey(externalKey)
+                .addSigningKey(externalKey, k -> SimulatorOpenPGPSmartCard.DEFAULT_USER_PIN)
                 .addEncryptionCertificate(key.toCertificate())
                 .open(bOut);
         mOut.write(message);
@@ -99,7 +99,7 @@ public class FailingBackendTest
         OpenPGPMessageInputStream mIn = api.decryptAndOrVerifyMessage()
                 .addPublicKeyDataDecryptorFactoryProvider(manager)
                 .addVerificationCertificate(key.toCertificate())
-                .addDecryptionKey(externalKey)
+                .addDecryptionKey(externalKey, SimulatorOpenPGPSmartCard.DEFAULT_USER_PIN)
                 .process(bIn);
         bOut = new ByteArrayOutputStream();
         Streams.pipeAll(mIn, bOut);

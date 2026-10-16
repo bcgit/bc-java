@@ -109,7 +109,7 @@ public class AnonymousRecipientSmartCardDecryptionTest
         // move the decryption key onto the card, then strip the private key material from our copy
         OpenPGPKey.OpenPGPSecretKey decryptionKey =
                 softwareKey.getSecretKey(softwareKey.getEncryptionKeys().get(0));
-        card.uploadDecryptionKey(decryptionKey.unlock(), properties.getAdminPin());
+        card.uploadDecryptionKey(decryptionKey.unlock(), k -> properties.getAdminPin());
         OpenPGPKey externalKey = cardUtils.toExternalKey(softwareKey);
 
         isTrue(label + ": the stripped key must be marked external",

@@ -37,6 +37,7 @@ import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -47,6 +48,7 @@ public class YubikeyOpenPGPSmartCard
 
     private final DeviceInfo deviceInfo;
     private final YubiKeyDevice device;
+    private final Map<KeyRef, OpenPGPHardwareKey> hardwareKeys = new HashMap<>();
     private final Map<KeyRef, List<AlgorithmAttributes>> supportedAlgorithms;
 
     public YubikeyOpenPGPSmartCard(YubikeyOpenPGPSmartCardBackend backend,
@@ -72,7 +74,7 @@ public class YubikeyOpenPGPSmartCard
     private void readMetadata(OpenPgpSession session)
             throws CardException
     {
-        clearKeys();
+        hardwareKeys.clear();
         DiscretionaryDataObjects discretionary = getDiscretionary(session);
 
         for (KeyRef keyRef : KeyRef.values())
@@ -85,7 +87,7 @@ public class YubikeyOpenPGPSmartCard
 
             byte[] fingerprint = discretionary.getFingerprint(keyRef);
             Date generationTime = new Date(discretionary.getGenerationTime(keyRef) * 1000L);
-            putKey(new OpenPGPHardwareKey(
+            hardwareKeys.put(keyRef, new OpenPGPHardwareKey(
                     this,
                     keyRef.getValue(),
                     keyStatus.value,
@@ -174,6 +176,18 @@ public class YubikeyOpenPGPSmartCard
             }
         }
         return new SupportedAlgorithms(algs);
+    }
+
+    @Override
+    public OpenPGPHardwareKey getKeyByKeyRef(byte keyRef)
+    {
+        return hardwareKeys.get(from(keyRef));
+    }
+
+    @Override
+    public List<OpenPGPHardwareKey> getKeys()
+    {
+        return new ArrayList<>(hardwareKeys.values());
     }
 
     @Override
