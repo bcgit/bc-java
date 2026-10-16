@@ -315,6 +315,8 @@ public class OpenBSDBCryptTest
 
         oldPrefixTest(twoVec);
 
+        lengthMismatchTest();
+
         int costFactor = 4;
         SecureRandom random = new SecureRandom();
         salt = new byte[16];
@@ -327,6 +329,24 @@ public class OpenBSDBCryptTest
             isTrue(OpenBSDBCrypt.checkPassword(tokenString, "test-token".toCharArray()));
             isTrue(!OpenBSDBCrypt.checkPassword(tokenString, "wrong-token".toCharArray()));
         }
+    }
+
+    /**
+     * A 60 character string carrying the 59 character "$2$" prefix passes the length check and
+     * parses back to the same version, cost and salt, so the hash it is compared against is one
+     * character shorter. That is a mismatch and must be reported as one, not as an exception from
+     * the comparison.
+     */
+    private void lengthMismatchTest()
+    {
+        char[] password = "password".toCharArray();
+        String encoded = OpenBSDBCrypt.generate("2", password, new byte[16], 4);
+        isEquals(59, encoded.length());
+        isTrue("$2$ string rejected", OpenBSDBCrypt.checkPassword(encoded, password));
+
+        String padded = encoded.substring(0, 6) + "$" + encoded.substring(6);
+        isEquals(60, padded.length());
+        isTrue("padded $2$ string accepted", !OpenBSDBCrypt.checkPassword(padded, password));
     }
 
     private void oldPrefixTest(String[][] twoXVec)
