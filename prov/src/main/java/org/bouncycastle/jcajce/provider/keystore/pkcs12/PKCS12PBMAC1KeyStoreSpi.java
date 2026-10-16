@@ -228,13 +228,17 @@ public class PKCS12PBMAC1KeyStoreSpi
     private ASN1ObjectIdentifier keyAlgorithm;
     private ASN1ObjectIdentifier certAlgorithm;
 
-    private AlgorithmIdentifier macAlgorithm = new AlgorithmIdentifier(id_PBMAC1);
+    // what a store writes its MAC with until a file it loads, or a caller, says otherwise
+    private static final AlgorithmIdentifier DEFAULT_MAC_ALGORITHM = new AlgorithmIdentifier(id_PBMAC1);
+    private static final int DEFAULT_MAC_SALT_LENGTH = 20;
+
+    private AlgorithmIdentifier macAlgorithm = DEFAULT_MAC_ALGORITHM;
     // true when macAlgorithm came from a PKCS12StoreParameter rather than from a file we loaded
     private boolean callerMacAlgorithm = false;
     // The MAC iteration count: taken from a loaded file so that storing it again preserves it,
     // and -1 until then, meaning doStore should use the store-time default.
     private int itCount = -1;
-    private int saltLength = 20;
+    private int saltLength = DEFAULT_MAC_SALT_LENGTH;
 
     private boolean useISO8859d1ForDecryption = false;
     
@@ -1077,6 +1081,15 @@ public class PKCS12PBMAC1KeyStoreSpi
             {
                 throw Exceptions.ioException("error constructing MAC: " + e.toString(), e);
             }
+        }
+        else
+        {
+            // a file with no MAC has no shape for a write to inherit, so put the defaults back
+            // rather than let one loaded, or supplied by a caller, earlier carry over to it
+            macAlgorithm = DEFAULT_MAC_ALGORITHM;
+            callerMacAlgorithm = false;
+            itCount = -1;
+            saltLength = DEFAULT_MAC_SALT_LENGTH;
         }
 
         keys = new IgnoresCaseHashtable();

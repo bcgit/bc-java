@@ -863,6 +863,12 @@ public class PKCS12KeyStoreSpi
                 throw new IOException("error constructing MAC: " + e.toString());
             }
         }
+        else
+        {
+            // a file with no MAC has no count for a write to inherit, so put the default back
+            // rather than let one loaded earlier into this store carry over to it
+            itCount = -1;
+        }
 
         keys = new IgnoresCaseHashtable();
         localIds = new Hashtable();

@@ -225,11 +225,15 @@ public class PKCS12KeyStoreSpi
     private ASN1ObjectIdentifier keyAlgorithm;
     private ASN1ObjectIdentifier certAlgorithm;
 
-    private AlgorithmIdentifier macAlgorithm = new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1, DERNull.INSTANCE);
+    // what a store writes its MAC with until a file it loads says otherwise
+    private static final AlgorithmIdentifier DEFAULT_MAC_ALGORITHM = new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1, DERNull.INSTANCE);
+    private static final int DEFAULT_MAC_SALT_LENGTH = 20;
+
+    private AlgorithmIdentifier macAlgorithm = DEFAULT_MAC_ALGORITHM;
     // The MAC iteration count: taken from a loaded file so that storing it again preserves it,
     // and -1 until then, meaning doStore should use the store-time default.
     private int itCount = -1;
-    private int saltLength = 20;
+    private int saltLength = DEFAULT_MAC_SALT_LENGTH;
 
     private class CertId
     {
@@ -1072,6 +1076,14 @@ public class PKCS12KeyStoreSpi
             {
                 throw Exceptions.ioException("error constructing MAC: " + e.toString(), e);
             }
+        }
+        else
+        {
+            // a file with no MAC has no shape for a write to inherit, so put the defaults back
+            // rather than let one loaded earlier into this store carry over to it
+            macAlgorithm = DEFAULT_MAC_ALGORITHM;
+            itCount = -1;
+            saltLength = DEFAULT_MAC_SALT_LENGTH;
         }
 
         keys = new IgnoresCaseHashtable();

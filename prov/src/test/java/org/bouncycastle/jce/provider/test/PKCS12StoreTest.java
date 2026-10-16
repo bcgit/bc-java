@@ -3216,6 +3216,83 @@ public class PKCS12StoreTest
         isEquals("a caller supplied iteration count was not used", 4096, callerOut.getIterationCount().intValue());
     }
 
+    private void testMacParametersResetByUnprotectedLoad()
+        throws Exception
+    {
+        char[] vectorPassword = "1234".toCharArray();
+
+        KeyStore src = KeyStore.getInstance("PKCS12-PBMAC1", BC);
+
+        src.load(new ByteArrayInputStream(pkcs12WithPBMac1PBKdf2_a1), vectorPassword);
+
+        Certificate cert = src.getCertificate((String)src.aliases().nextElement());
+
+        // certificates only, stored without a password, so the file carries no MacData at all
+        KeyStore certsOnly = KeyStore.getInstance("PKCS12", BC);
+
+        certsOnly.load(null, null);
+        certsOnly.setCertificateEntry("cert", cert);
+
+        byte[] noMacFile = storeToBytes(certsOnly, null);
+
+        isTrue("the certificate only file has a MAC", Pfx.getInstance(noMacFile).getMacData() == null);
+
+        // MAC'd files shaped unlike either store's own: the RFC 9579 vector, and a SHA-1 MAC
+        // with a zero length salt at one iteration
+        byte[][] macFiles = new byte[][]{pkcs12WithPBMac1PBKdf2_a1, withZeroLengthMacSalt(storeToBytes(certsOnly, passwd), passwd)};
+        char[][] macPasswords = new char[][]{vectorPassword, passwd};
+        String[] types = new String[]{"PKCS12", "PKCS12-PBMAC1"};
+
+        for (int t = 0; t != types.length; t++)
+        {
+            KeyStore fresh = KeyStore.getInstance(types[t], BC);
+
+            fresh.load(null, null);
+            fresh.setCertificateEntry("cert", cert);
+
+            String expected = macShapeOf(storeToBytes(fresh, passwd));
+
+            for (int f = 0; f != macFiles.length; f++)
+            {
+                String label = types[t] + ", file " + (f + 1) + ": ";
+                KeyStore store = KeyStore.getInstance(types[t], BC);
+
+                store.load(new ByteArrayInputStream(macFiles[f]), macPasswords[f]);
+
+                // otherwise the check below cannot tell an inherited shape from the default
+                isTrue(label + "the MAC'd file's shape was not inherited",
+                    !expected.equals(macShapeOf(storeToBytes(store, passwd))));
+
+                store.load(new ByteArrayInputStream(noMacFile), null);
+
+                isEquals(label + "MAC shape carried over a load with no MAC", expected, macShapeOf(storeToBytes(store, passwd)));
+            }
+        }
+
+        // nor does an AlgorithmIdentifier a caller supplied to an earlier write
+        byte[] callerSalt = Hex.decode("0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20");
+        AlgorithmIdentifier callerMac = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_PBMAC1,
+            new PBMAC1Params(new AlgorithmIdentifier(PKCSObjectIdentifiers.id_PBKDF2,
+                new PBKDF2Params(callerSalt, 4096, 32,
+                    new AlgorithmIdentifier(PKCSObjectIdentifiers.id_hmacWithSHA256))),
+                new AlgorithmIdentifier(PKCSObjectIdentifiers.id_hmacWithSHA256)));
+
+        KeyStore caller = KeyStore.getInstance("PKCS12-PBMAC1", BC);
+
+        caller.load(null, null);
+        caller.setCertificateEntry("cert", cert);
+
+        caller.store(PKCS12StoreParameter.builder(new ByteArrayOutputStream(), passwd).setMacAlgorithm(callerMac).build());
+
+        isTrue("the caller supplied PBKDF2 salt was not kept",
+            Arrays.areEqual(callerSalt, pbkdf2ParamsOf(storeToBytes(caller, passwd)).getSalt()));
+
+        caller.load(new ByteArrayInputStream(noMacFile), null);
+
+        isTrue("a caller supplied PBKDF2 salt carried over a load with no MAC",
+            !Arrays.areEqual(callerSalt, pbkdf2ParamsOf(storeToBytes(caller, passwd)).getSalt()));
+    }
+
     private void testPbkdf2IterationCount()
         throws Exception
     {
@@ -3295,6 +3372,26 @@ public class PKCS12StoreTest
         return PBKDF2Params.getInstance(pbmac1ParamsOf(pfx).getKeyDerivationFunc().getParameters());
     }
 
+    // the parts of a file's MAC a later write of the same store may inherit, salts aside
+    private static String macShapeOf(byte[] pfx)
+    {
+        MacData macData = Pfx.getInstance(pfx).getMacData();
+        AlgorithmIdentifier macAlgorithm = macData.getMac().getAlgorithmId();
+        String shape = macAlgorithm.getAlgorithm() + ", MAC salt length " + macData.getSalt().length
+            + ", MAC count " + macData.getIterationCount();
+
+        if (PKCSObjectIdentifiers.id_PBMAC1.equals(macAlgorithm.getAlgorithm()))
+        {
+            PBKDF2Params kdf = pbkdf2ParamsOf(pfx);
+
+            shape += ", PBKDF2 count " + kdf.getIterationCount() + ", key length " + kdf.getKeyLength()
+                + ", PRF " + kdf.getPrf().getAlgorithm()
+                + ", auth " + pbmac1ParamsOf(pfx).getMessageAuthScheme().getAlgorithm();
+        }
+
+        return shape;
+    }
+
     // the same content with a zero length MAC salt at one iteration, MAC recomputed so it verifies
     private static byte[] withZeroLengthMacSalt(byte[] pfx, char[] password)
         throws Exception
@@ -3337,6 +3434,7 @@ public class PKCS12StoreTest
         testAES256GCM_AES128_GCM();
         testPKCS12StoreWrongPassword();
         testMacKdfParametersNotInherited();
+        testMacParametersResetByUnprotectedLoad();
         testPbkdf2IterationCount();
 
         // converter tests
