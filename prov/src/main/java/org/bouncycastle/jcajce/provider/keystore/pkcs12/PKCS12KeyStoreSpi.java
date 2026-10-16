@@ -1108,7 +1108,10 @@ public class PKCS12KeyStoreSpi
                             }
                             else if (b.getBagId().equals(secretBag))
                             {
-                                processSecretBag(b, password, wrongPKCS12Zero);
+                                if (processSecretBag(b, password, wrongPKCS12Zero))
+                                {
+                                    noEnc = false;
+                                }
                             }
                             else
                             {
@@ -1483,14 +1486,18 @@ public class PKCS12KeyStoreSpi
      *     bytes.</li>
      * </ul>
      * Unrecognised secretTypeId OIDs are reported as an IOException.
+     *
+     * @return true if the bag was decrypted with the password (the SunJCE
+     * encoding), false if its key was held in the clear.
      */
-    private void processSecretBag(SafeBag b, char[] password, boolean wrongPKCS12Zero)
+    private boolean processSecretBag(SafeBag b, char[] password, boolean wrongPKCS12Zero)
         throws IOException
     {
         SecretBag sBag = SecretBag.getInstance(b.getBagValue());
         ASN1ObjectIdentifier secretTypeId = sBag.getSecretTypeId();
 
         SecretKey secretKey;
+        boolean decrypted;
         if (PKCSObjectIdentifiers.pkcs8ShroudedKeyBag.equals(secretTypeId))
         {
             // SunJCE's non-standard nested encoding (Phase 2) — only honoured
@@ -1501,12 +1508,14 @@ public class PKCS12KeyStoreSpi
                 throw new IOException("unrecognised PKCS12 secretBag algorithm: " + secretTypeId);
             }
             secretKey = decodeSunStyleSecretBag(sBag, password, wrongPKCS12Zero);
+            decrypted = true;
         }
         else
         {
             String alg = PKCS12Util.resolveSecretKeyAlgName(secretTypeId);
             byte[] keyBytes = ASN1OctetString.getInstance(sBag.getSecretValue()).getOctets();
             secretKey = new SecretKeySpec(keyBytes, alg);
+            decrypted = false;
         }
 
         String alias = null;
@@ -1530,6 +1539,8 @@ public class PKCS12KeyStoreSpi
         {
             keys.put("unmarked", secretKey);
         }
+
+        return decrypted;
     }
 
     /**
