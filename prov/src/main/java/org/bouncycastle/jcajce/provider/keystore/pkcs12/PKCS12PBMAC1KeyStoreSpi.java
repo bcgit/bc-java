@@ -2135,10 +2135,6 @@ public class PKCS12PBMAC1KeyStoreSpi
         //
         // create the mac
         //
-        byte[] mSalt = new byte[saltLength];
-
-        random.nextBytes(mSalt);
-
         byte[] data = PKCS12Util.getContentOctets(mainInfo);
 
         MacData mData;
@@ -2149,6 +2145,10 @@ public class PKCS12PBMAC1KeyStoreSpi
         }
         else
         {
+            byte[] mSalt = new byte[saltLength];
+
+            random.nextBytes(mSalt);
+
             try
             {
                 AlgorithmIdentifier writeMacAlgorithm = getWriteMacAlgorithm();

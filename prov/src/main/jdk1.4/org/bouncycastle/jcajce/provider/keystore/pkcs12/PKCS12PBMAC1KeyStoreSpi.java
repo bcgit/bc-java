@@ -1814,10 +1814,6 @@ public class PKCS12PBMAC1KeyStoreSpi
         //
         // create the mac
         //
-        byte[] mSalt = new byte[saltLength];
-
-        random.nextBytes(mSalt);
-
         byte[] data = PKCS12Util.getContentOctets(mainInfo);
 
         MacData mData;
@@ -1828,6 +1824,10 @@ public class PKCS12PBMAC1KeyStoreSpi
         }
         else
         {
+            byte[] mSalt = new byte[saltLength];
+
+            random.nextBytes(mSalt);
+
             try
             {
                 // a PBMAC1 algorithm here came from a file we loaded, and carries that file's PBKDF2 salt
