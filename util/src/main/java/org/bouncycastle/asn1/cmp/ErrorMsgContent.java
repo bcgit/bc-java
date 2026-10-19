@@ -34,18 +34,21 @@ public class ErrorMsgContent
 
         pkiStatusInfo = PKIStatusInfo.getInstance(en.nextElement());
 
-        while (en.hasMoreElements())
+        // errorCode INTEGER OPTIONAL, then errorDetails PKIFreeText OPTIONAL
+        Object o = en.hasMoreElements() ? en.nextElement() : null;
+        if (o instanceof ASN1Integer)
         {
-            Object o = en.nextElement();
+            errorCode = ASN1Integer.getInstance(o);
+            o = en.hasMoreElements() ? en.nextElement() : null;
+        }
+        if (o != null)
+        {
+            errorDetails = PKIFreeText.getInstance(o);
+        }
 
-            if (o instanceof ASN1Integer)
-            {
-                errorCode = ASN1Integer.getInstance(o);
-            }
-            else
-            {
-                errorDetails = PKIFreeText.getInstance(o);
-            }
+        if (en.hasMoreElements())
+        {
+            throw new IllegalArgumentException("unexpected element after errorDetails");
         }
     }
 

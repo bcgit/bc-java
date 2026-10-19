@@ -29,6 +29,11 @@ public class PKIStatusInfo
     private PKIStatusInfo(
         ASN1Sequence seq)
     {
+        if (seq.size() < 1 || seq.size() > 3)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
+
         this.status = ASN1Integer.getInstance(seq.getObjectAt(0));
 
         this.statusString = null;

@@ -8,6 +8,7 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.crmf.CertId;
@@ -39,9 +40,15 @@ public class RevRepContent
         Enumeration en = seq.getObjects();
 
         status = ASN1Sequence.getInstance(en.nextElement());
+        int lastTagNo = -1;
         while (en.hasMoreElements())
         {
-            ASN1TaggedObject tObj = ASN1TaggedObject.getInstance(en.nextElement());
+            ASN1TaggedObject tObj = ASN1TaggedObject.getInstance(en.nextElement(), BERTags.CONTEXT_SPECIFIC);
+            if (tObj.getTagNo() <= lastTagNo)
+            {
+                throw new IllegalArgumentException("tag [" + tObj.getTagNo() + "] repeated or out of order");
+            }
+            lastTagNo = tObj.getTagNo();
 
             if (tObj.hasContextTag(0))
             {
@@ -50,6 +57,10 @@ public class RevRepContent
             else if (tObj.hasContextTag(1))
             {
                 crls = ASN1Sequence.getInstance(tObj, true);
+            }
+            else
+            {
+                throw new IllegalArgumentException("unknown tag: " + tObj.getTagNo());
             }
         }
     }

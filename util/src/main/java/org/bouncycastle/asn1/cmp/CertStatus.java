@@ -10,7 +10,7 @@ import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
-import org.bouncycastle.asn1.ASN1Util;
+import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
@@ -43,28 +43,23 @@ public class CertStatus
         this.certHash = ASN1OctetString.getInstance(seq.getObjectAt(0));
         this.certReqId = ASN1Integer.getInstance(seq.getObjectAt(1));
 
-        PKIStatusInfo statusInfo = null;
-        AlgorithmIdentifier hashAlg = null;
+        int count = seq.size(), pos = 2;
 
-        if (seq.size() > 2)
+        // statusInfo PKIStatusInfo OPTIONAL, then hashAlg [0] OPTIONAL
+        PKIStatusInfo statusInfo = null;
+        if (pos < count && seq.getObjectAt(pos).toASN1Primitive() instanceof ASN1Sequence)
         {
-            for (int t = 2; t < seq.size(); t++)
-            {
-                ASN1Primitive p = seq.getObjectAt(t).toASN1Primitive();
-                if (p instanceof ASN1Sequence)
-                {
-                    statusInfo = PKIStatusInfo.getInstance(p);
-                }
-                if (p instanceof ASN1TaggedObject)
-                {
-                    ASN1TaggedObject dto = (ASN1TaggedObject)p;
-                    if (!dto.hasContextTag(0))
-                    {
-                        throw new IllegalArgumentException("unknown tag " + ASN1Util.getTagText(dto));
-                    }
-                    hashAlg = AlgorithmIdentifier.getInstance(dto, true);
-                }
-            }
+            statusInfo = PKIStatusInfo.getInstance(seq.getObjectAt(pos++));
+        }
+        AlgorithmIdentifier hashAlg = null;
+        if (pos < count)
+        {
+            hashAlg = AlgorithmIdentifier.getInstance(ASN1TaggedObject.getInstance(seq.getObjectAt(pos++), BERTags.CONTEXT_SPECIFIC, 0), true);
+        }
+
+        if (pos != count)
+        {
+            throw new IllegalArgumentException("unexpected element at position " + pos);
         }
 
         this.statusInfo = statusInfo;

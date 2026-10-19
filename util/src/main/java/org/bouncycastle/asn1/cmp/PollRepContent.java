@@ -29,6 +29,10 @@ public class PollRepContent
         for (int i = 0; i != seq.size(); i++)
         {
             ASN1Sequence s = ASN1Sequence.getInstance(seq.getObjectAt(i));
+            if (s.size() < 2 || s.size() > 3)
+            {
+                throw new IllegalArgumentException("Bad sequence size: " + s.size());
+            }
 
             certReqId[i] = ASN1Integer.getInstance(s.getObjectAt(0));
             checkAfter[i] = ASN1Integer.getInstance(s.getObjectAt(1));

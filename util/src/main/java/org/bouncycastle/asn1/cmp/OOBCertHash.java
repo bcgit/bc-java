@@ -7,7 +7,6 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
-import org.bouncycastle.asn1.ASN1Util;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
@@ -34,30 +33,35 @@ public class OOBCertHash
 
     private OOBCertHash(ASN1Sequence seq)
     {
-        int index = seq.size() - 1;
+        int count = seq.size(), pos = 0;
 
-        this.hashVal = ASN1BitString.getInstance(seq.getObjectAt(index--));
-
+        // hashAlg [0] and certId [1], each optional, then hashVal
         AlgorithmIdentifier hashAlg = null;
-        CertId certId = null;
-
-        for (int i = index; i >= 0; i--)
+        if (pos < count)
         {
-            ASN1TaggedObject tObj = (ASN1TaggedObject)seq.getObjectAt(i);
-
-            if (tObj.hasContextTag(0))
+            ASN1TaggedObject tag0 = ASN1TaggedObject.getContextOptional(seq.getObjectAt(pos), 0);
+            if (tag0 != null)
             {
-                hashAlg = AlgorithmIdentifier.getInstance(tObj, true);
-            }
-            else if (tObj.hasContextTag(1))
-            {
-                certId = CertId.getInstance(tObj, true);
-            }
-            else
-            {
-                throw new IllegalArgumentException("unknown tag " + ASN1Util.getTagText(tObj));
+                pos++;
+                hashAlg = AlgorithmIdentifier.getInstance(tag0, true);
             }
         }
+        CertId certId = null;
+        if (pos < count)
+        {
+            ASN1TaggedObject tag1 = ASN1TaggedObject.getContextOptional(seq.getObjectAt(pos), 1);
+            if (tag1 != null)
+            {
+                pos++;
+                certId = CertId.getInstance(tag1, true);
+            }
+        }
+
+        if (pos != count - 1)
+        {
+            throw new IllegalArgumentException("unexpected element at position " + pos);
+        }
+        this.hashVal = ASN1BitString.getInstance(seq.getObjectAt(pos));
 
         this.hashAlg = hashAlg;
         this.certId = certId;

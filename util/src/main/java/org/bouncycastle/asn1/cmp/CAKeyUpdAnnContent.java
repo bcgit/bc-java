@@ -22,7 +22,7 @@ public class CAKeyUpdAnnContent
 
     private CAKeyUpdAnnContent(ASN1Sequence seq)
     {
-        if (seq.size() < 3)
+        if (seq.size() != 3)
         {
             throw new IllegalArgumentException("expected sequence size of 3");
         }

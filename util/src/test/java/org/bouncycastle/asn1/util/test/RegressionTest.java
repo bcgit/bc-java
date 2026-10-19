@@ -33,6 +33,7 @@ import org.bouncycastle.asn1.cmc.test.TaggedAttributeTest;
 import org.bouncycastle.asn1.cmc.test.TaggedCertificationRequestTest;
 import org.bouncycastle.asn1.cmc.test.TaggedContentInfoTest;
 import org.bouncycastle.asn1.cmc.test.TaggedRequestTest;
+import org.bouncycastle.asn1.cmp.test.CMPSequenceFieldOrderTest;
 import org.bouncycastle.asn1.cmp.test.CertifiedKeyPairTest;
 import org.bouncycastle.asn1.cmp.test.PKIFailureInfoTest;
 import org.bouncycastle.asn1.cmp.test.PollReqContentTest;
@@ -110,6 +111,7 @@ public class RegressionTest
         new CertifiedKeyPairTest(),
         new PKIFailureInfoTest(),
         new PollReqContentTest(),
+        new CMPSequenceFieldOrderTest(),
         new AttributeTableUnitTest(),
         new CMSTest(),
         new SignerInfoTest(),

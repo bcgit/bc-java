@@ -8,6 +8,7 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 
@@ -58,9 +59,15 @@ public class RootCaKeyUpdateContent
         Iterator<ASN1Encodable> encodable = seq.iterator();
 
         newWithNew = CMPCertificate.getInstance(encodable.next());
+        int lastTagNo = -1;
         while (encodable.hasNext())
         {
-            ASN1TaggedObject ato = ASN1TaggedObject.getInstance(encodable.next());
+            ASN1TaggedObject ato = ASN1TaggedObject.getInstance(encodable.next(), BERTags.CONTEXT_SPECIFIC);
+            if (ato.getTagNo() <= lastTagNo)
+            {
+                throw new IllegalArgumentException("tag [" + ato.getTagNo() + "] repeated or out of order");
+            }
+            lastTagNo = ato.getTagNo();
             if (ato.hasContextTag(0))
             {
                 newWithOld = CMPCertificate.getInstance(ato, true);
@@ -68,6 +75,10 @@ public class RootCaKeyUpdateContent
             else if (ato.hasContextTag(1))
             {
                 oldWithNew = CMPCertificate.getInstance(ato, true);
+            }
+            else
+            {
+                throw new IllegalArgumentException("unknown tag: " + ato.getTagNo());
             }
         }
 

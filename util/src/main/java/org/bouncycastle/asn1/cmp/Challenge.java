@@ -8,6 +8,7 @@ import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
@@ -70,11 +71,16 @@ public class Challenge
             {
                 throw new IllegalArgumentException("ambigous challenge");
             }
-            encryptedRand = EnvelopedData.getInstance(ASN1TaggedObject.getInstance(seq.getObjectAt(index)), true);
+            encryptedRand = EnvelopedData.getInstance(ASN1TaggedObject.getInstance(seq.getObjectAt(index++), BERTags.CONTEXT_SPECIFIC, 0), true);
         }
         else
         {
             encryptedRand = null;
+        }
+
+        if (index != seq.size())
+        {
+            throw new IllegalArgumentException("unexpected element at position " + index);
         }
     }
 

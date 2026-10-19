@@ -5,6 +5,7 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.crmf.EncryptedKey;
@@ -30,26 +31,35 @@ public class CertifiedKeyPair
 
     private CertifiedKeyPair(ASN1Sequence seq)
     {
+        if (seq.size() < 1 || seq.size() > 3)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
+
         certOrEncCert = CertOrEncCert.getInstance(seq.getObjectAt(0));
 
-        if (seq.size() >= 2)
+        // privateKey [0] and publicationInfo [1], each optional, in that order
+        int lastTagNo = -1;
+        for (int i = 1; i < seq.size(); i++)
         {
-            if (seq.size() == 2)
+            ASN1TaggedObject tagged = ASN1TaggedObject.getInstance(seq.getObjectAt(i), BERTags.CONTEXT_SPECIFIC);
+            if (tagged.getTagNo() <= lastTagNo)
             {
-                ASN1TaggedObject tagged = ASN1TaggedObject.getContextInstance(seq.getObjectAt(1));
-                if (tagged.getTagNo() == 0)
-                {
-                    privateKey = EncryptedKey.getInstance(tagged.getExplicitBaseObject());
-                }
-                else
-                {
-                    publicationInfo = PKIPublicationInfo.getInstance(tagged.getExplicitBaseObject());
-                }
+                throw new IllegalArgumentException("tag [" + tagged.getTagNo() + "] repeated or out of order");
+            }
+            lastTagNo = tagged.getTagNo();
+
+            if (tagged.getTagNo() == 0)
+            {
+                privateKey = EncryptedKey.getInstance(tagged.getExplicitBaseObject());
+            }
+            else if (tagged.getTagNo() == 1)
+            {
+                publicationInfo = PKIPublicationInfo.getInstance(tagged.getExplicitBaseObject());
             }
             else
             {
-                privateKey = EncryptedKey.getInstance(ASN1TaggedObject.getContextInstance(seq.getObjectAt(1)).getExplicitBaseObject());
-                publicationInfo = PKIPublicationInfo.getInstance(ASN1TaggedObject.getContextInstance(seq.getObjectAt(2)).getExplicitBaseObject());
+                throw new IllegalArgumentException("unknown tag: " + tagged.getTagNo());
             }
         }
     }

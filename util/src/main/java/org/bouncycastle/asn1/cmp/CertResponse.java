@@ -29,6 +29,11 @@ public class CertResponse
 
     private CertResponse(ASN1Sequence seq)
     {
+        if (seq.size() < 2 || seq.size() > 4)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
+
         certReqId = ASN1Integer.getInstance(seq.getObjectAt(0));
         status = PKIStatusInfo.getInstance(seq.getObjectAt(1));
 

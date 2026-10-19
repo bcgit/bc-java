@@ -35,9 +35,15 @@ public class KeyRecRepContent
 
         status = PKIStatusInfo.getInstance(en.nextElement());
 
+        int lastTagNo = -1;
         while (en.hasMoreElements())
         {
             ASN1TaggedObject tObj = ASN1TaggedObject.getContextInstance(en.nextElement());
+            if (tObj.getTagNo() <= lastTagNo)
+            {
+                throw new IllegalArgumentException("tag [" + tObj.getTagNo() + "] repeated or out of order");
+            }
+            lastTagNo = tObj.getTagNo();
 
             switch (tObj.getTagNo())
             {
