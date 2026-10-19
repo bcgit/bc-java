@@ -108,6 +108,9 @@ public class ValidateSignedMail
         param.addCertStore(certStore);
         param.setRevocationEnabled(true);
 
+        // allow CRLs to be fetched from the distribution points of certificates that chain to a trust anchor
+        System.setProperty(org.bouncycastle.util.Properties.X509_ENABLE_CRLDP, "true");
+
         // or disable revocation checking
         // param.setRevocationEnabled(false);
 

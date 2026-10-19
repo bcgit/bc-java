@@ -258,6 +258,7 @@
                 <exclude name="**/pkcs/test/PBETest.java"/>
                 <exclude name="**/pkix/test/PKIXCertPathReviewerCrlReasonTest.java"/>
                 <exclude name="**/pkix/test/PKIXCertPathReviewerCrlScopeTest.java"/>
+                <exclude name="**/pkix/test/PKIXCertPathReviewerCrlDistPointTest.java"/>
                 <exclude name="**/cert/c509/**/*.java"/>
             </fileset>
             <fileset dir="mail/src/test/java">

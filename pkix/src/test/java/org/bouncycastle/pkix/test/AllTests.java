@@ -29,6 +29,7 @@ public class AllTests
         suite.addTestSuite(PKIXCertPathReviewerPolicyTreeTest.class);
         suite.addTestSuite(PKIXCertPathReviewerCrlReasonTest.class);
         suite.addTestSuite(PKIXCertPathReviewerCrlScopeTest.class);
+        suite.addTestSuite(PKIXCertPathReviewerCrlDistPointTest.class);
 
         return new BCTestSetup(suite);
     }

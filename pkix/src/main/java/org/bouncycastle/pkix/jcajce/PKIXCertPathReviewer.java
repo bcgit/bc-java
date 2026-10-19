@@ -101,6 +101,9 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
     private static final String AUTH_INFO_ACCESS = Extension.authorityInfoAccess.getId();
     
     private static final String RESOURCE_NAME = "org.bouncycastle.pkix.CertPathReviewerMessages";
+
+    // connect and read timeout, in milliseconds, for a CRL distribution point fetch - as CrlCache
+    private static final int CRL_FETCH_TIMEOUT = 15000;
     
     private static final int NAME_CHECK_MAX = (1 << 10);
 
@@ -124,6 +127,9 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
     protected List[] notifications;
     protected List[] errors;
     protected TrustAnchor trustAnchor;
+
+    // true while the certificate being checked chains, by verified signatures, to a trust anchor
+    private boolean issuerChainVerified;
     protected PublicKey subjectPublicKey;
     protected PolicyNode policyTree;
     
@@ -872,6 +878,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
 
         X509Certificate cert = null;
         int i;
+        boolean chainVerified = (workingPublicKey != null);
 
         for (int index = certs.size() - 1; index >= 0; index--)
         {
@@ -897,6 +904,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                 }
                 catch (GeneralSecurityException ex)
                 {
+                    chainVerified = false;
                     ErrorBundle msg = createErrorBundle("CertPathReviewer.signatureNotVerified",
                             new Object[] {ex.getMessage(),ex,ex.getClass().getName()}); 
                     addError(msg,index);
@@ -904,6 +912,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
             }
             else if (isSelfIssued(cert))
             {
+                chainVerified = false;
                 try
                 {
                     CertPathValidatorUtilities.verifyX509Certificate(cert, cert.getPublicKey(),
@@ -920,6 +929,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
             }
             else
             {
+                chainVerified = false;
                 ErrorBundle msg = createErrorBundle("CertPathReviewer.NoIssuerPublicKey");
                 // if there is an authority key extension add the serial and issuer of the missing certificate
                 byte[] akiExtValue = cert.getExtensionValue(Extension.authorityKeyIdentifier.getId());
@@ -1021,6 +1031,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                 
                 // TODO also support Netscapes revocation-url and/or OCSP instead of CRLs for revocation checking
                 // check CRLs
+                issuerChainVerified = chainVerified;
                 try 
                 {
                     checkRevocation(pkixParams, cert, validDate, sign, workingPublicKey, crlDistPointUrls, ocspUrls, index);
@@ -1107,6 +1118,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
             }
             catch (CertPathValidatorException ex)
             {
+                chainVerified = false;
                 ErrorBundle msg = createErrorBundle("CertPathReviewer.pubKeyError");
                 addError(msg,index);
                 workingAlgId = null;
@@ -2208,8 +2220,27 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
         }
 
         // if no valid crl was found in the CertStores try to get one from a
-        // crl distribution point
-        if (!validCrlFound)
+        // crl distribution point - only when CRLDP fetching is enabled and the issuer chain verified
+        boolean fetchOnline = false;
+        if (!validCrlFound && !crlDistPointUrls.isEmpty())
+        {
+            if (!Properties.isOverrideSet(Properties.X509_ENABLE_CRLDP))
+            {
+                ErrorBundle msg = createErrorBundle("CertPathReviewer.crlDistPtFetchDisabled");
+                addNotification(msg, index);
+            }
+            else if (!issuerChainVerified)
+            {
+                ErrorBundle msg = createErrorBundle("CertPathReviewer.crlDistPtFetchUntrusted");
+                addNotification(msg, index);
+            }
+            else
+            {
+                fetchOnline = true;
+            }
+        }
+
+        if (fetchOnline)
         {
             X500Principal certIssuer = cert.getIssuerX500Principal();
 
@@ -2689,8 +2720,8 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
             {
                 URLConnection conn = url.openConnection();
                 conn.setUseCaches(false);
-                // NOTE: URLConnection.setConnectTimeout and setReadTimeout are Java 5, and this
-                // class is still compiled by the jdk1.4 build, so no timeout can be set here.
+                conn.setConnectTimeout(CRL_FETCH_TIMEOUT);
+                conn.setReadTimeout(CRL_FETCH_TIMEOUT);
                 conn.setDoInput(true);
                 conn.connect();
 
