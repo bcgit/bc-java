@@ -769,7 +769,7 @@ public class OpenPGPCertificate
 
         // Key Signatures
         addSignaturesToChains(keySignatures, keySignatureChains);
-        componentSignatureChains.put(primaryKey, keySignatureChains);
+        componentSignatureChains.put(primaryKey, keySignatureChains.removeBrokenSelfSigs(implementation.pgpContentVerifierBuilderProvider(), policy));
 
         // Identities
         for (Iterator<OpenPGPIdentityComponent> it = primaryKey.identityComponents.iterator(); it.hasNext(); )
@@ -787,7 +787,7 @@ public class OpenPGPCertificate
                 bindings = primaryKey.getUserAttributeSignatures((OpenPGPUserAttribute)identity);
             }
             addSignaturesToChains(bindings, identityChains);
-            componentSignatureChains.put(identity, identityChains);
+            componentSignatureChains.put(identity, identityChains.removeBrokenSelfSigs(implementation.pgpContentVerifierBuilderProvider(), policy));
         }
     }
 
@@ -823,7 +823,7 @@ public class OpenPGPCertificate
                 subkeyChains.add(new OpenPGPSignatureChain(OpenPGPSignatureChain.Link.create(sig)));
             }
         }
-        this.componentSignatureChains.put(subkey, subkeyChains);
+        this.componentSignatureChains.put(subkey, subkeyChains.removeBrokenSelfSigs(implementation.pgpContentVerifierBuilderProvider(), policy));
     }
 
     /**
@@ -4064,6 +4064,46 @@ public class OpenPGPCertificate
                 }
             }
             return null;
+        }
+
+        /**
+         * Return an {@link OpenPGPSignatureChains} instance with chains with broken self-signatures removed.
+         * This is done by attempting to verify signature chains where possible.
+         * Signatures by third-party keys cannot be verified, so their chains are left as-is.
+         * However, malformed, broken signatures are filtered out by this method, so broken signatures do not
+         * invalidate certificate components.
+         *
+         * @param verifier verifier builder provider
+         * @param policy policy
+         * @return signature chains with broken self-sigs filtered out
+         */
+        private OpenPGPSignatureChains removeBrokenSelfSigs(PGPContentVerifierBuilderProvider verifier, OpenPGPPolicy policy)
+        {
+            OpenPGPSignatureChains retain = new OpenPGPSignatureChains(targetComponent);
+            for (Iterator<OpenPGPSignatureChain> it = chains.iterator(); it.hasNext(); )
+            {
+                OpenPGPSignatureChain chain = it.next();
+                boolean isSelfSig = chain.getRootLinkIssuer() != null;
+                if (!isSelfSig)
+                {
+                    retain.add(chain);
+                    continue;
+                }
+
+                try
+                {
+                    // Attempt to verify self-signatures
+                    if (chain.isValid(verifier, policy))
+                    {
+                        retain.add(chain);
+                    }
+                }
+                catch (PGPSignatureException e)
+                {
+                    // Ignore broken chain
+                }
+            }
+            return retain;
         }
 
         @Override
