@@ -16,6 +16,11 @@ public class ServiceLocator
 
     private ServiceLocator(ASN1Sequence sequence)
     {
+        if (sequence.size() < 1 || sequence.size() > 2)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + sequence.size());
+        }
+
         this.issuer = X500Name.getInstance(sequence.getObjectAt(0));
         if (sequence.size() == 2)
         {

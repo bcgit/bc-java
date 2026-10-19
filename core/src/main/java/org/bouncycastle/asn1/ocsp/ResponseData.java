@@ -7,6 +7,7 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.x509.Extensions;
@@ -118,7 +119,12 @@ public class ResponseData
         if (seq.size() > index)
         {
             this.responseExtensions = Extensions.getInstance(
-                                ASN1TaggedObject.getInstance(seq.getObjectAt(index)), true);
+                                ASN1TaggedObject.getInstance(seq.getObjectAt(index++), BERTags.CONTEXT_SPECIFIC, 1), true);
+        }
+
+        if (seq.size() != index)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
         }
     }
 

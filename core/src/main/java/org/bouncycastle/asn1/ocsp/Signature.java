@@ -6,6 +6,7 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
@@ -39,7 +40,7 @@ public class Signature
     private Signature(
         ASN1Sequence    seq)
     {
-        if (seq.size() < 2)
+        if (seq.size() < 2 || seq.size() > 3)
         {
             throw new IllegalArgumentException("Bad sequence size: " + seq.size());
         }
@@ -50,7 +51,7 @@ public class Signature
         if (seq.size() == 3)
         {
             certs = ASN1Sequence.getInstance(
-                                ASN1TaggedObject.getInstance(seq.getObjectAt(2)), true);
+                                ASN1TaggedObject.getInstance(seq.getObjectAt(2), BERTags.CONTEXT_SPECIFIC, 0), true);
         }
     }
 

@@ -6,6 +6,7 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
@@ -44,7 +45,7 @@ public class BasicOCSPResponse
     private BasicOCSPResponse(
         ASN1Sequence    seq)
     {
-        if (seq.size() < 3)
+        if (seq.size() < 3 || seq.size() > 4)
         {
             throw new IllegalArgumentException("Bad sequence size: " + seq.size());
         }
@@ -55,7 +56,7 @@ public class BasicOCSPResponse
 
         if (seq.size() > 3)
         {
-            this.certs = ASN1Sequence.getInstance(ASN1TaggedObject.getInstance(seq.getObjectAt(3)), true);
+            this.certs = ASN1Sequence.getInstance(ASN1TaggedObject.getInstance(seq.getObjectAt(3), BERTags.CONTEXT_SPECIFIC, 0), true);
         }
     }
 

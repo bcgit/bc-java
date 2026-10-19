@@ -5,6 +5,7 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 
@@ -25,7 +26,7 @@ public class OCSPRequest
     private OCSPRequest(
         ASN1Sequence    seq)
     {
-        if (seq.size() < 1)
+        if (seq.size() < 1 || seq.size() > 2)
         {
             throw new IllegalArgumentException("Bad sequence size: " + seq.size());
         }
@@ -35,7 +36,7 @@ public class OCSPRequest
         if (seq.size() == 2)
         {
             optionalSignature = Signature.getInstance(
-                                ASN1TaggedObject.getInstance(seq.getObjectAt(1)), true);
+                                ASN1TaggedObject.getInstance(seq.getObjectAt(1), BERTags.CONTEXT_SPECIFIC, 0), true);
         }
     }
     

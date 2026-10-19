@@ -64,25 +64,30 @@ public class SingleResponse
         this.certStatus = CertStatus.getInstance(seq.getObjectAt(1));
         this.thisUpdate = ASN1GeneralizedTime.getInstance(seq.getObjectAt(2));
 
-        if (seq.size() > 4)
+        // nextUpdate [0] and singleExtensions [1], each optional, in that order
+        int index = 3;
+        if (index < seq.size())
         {
-            this.nextUpdate = ASN1GeneralizedTime.getInstance(
-                                ASN1TaggedObject.getInstance(seq.getObjectAt(3)), true);
-            this.singleExtensions = Extensions.getInstance(
-                                ASN1TaggedObject.getInstance(seq.getObjectAt(4)), true);
+            ASN1TaggedObject tag0 = ASN1TaggedObject.getContextOptional(seq.getObjectAt(index), 0);
+            if (tag0 != null)
+            {
+                index++;
+                this.nextUpdate = ASN1GeneralizedTime.getInstance(tag0, true);
+            }
         }
-        else if (seq.size() > 3)
+        if (index < seq.size())
         {
-            ASN1TaggedObject    o = ASN1TaggedObject.getInstance(seq.getObjectAt(3));
+            ASN1TaggedObject tag1 = ASN1TaggedObject.getContextOptional(seq.getObjectAt(index), 1);
+            if (tag1 != null)
+            {
+                index++;
+                this.singleExtensions = Extensions.getInstance(tag1, true);
+            }
+        }
 
-            if (o.getTagNo() == 0)
-            {
-                this.nextUpdate = ASN1GeneralizedTime.getInstance(o, true);
-            }
-            else
-            {
-                this.singleExtensions = Extensions.getInstance(o, true);
-            }
+        if (index != seq.size())
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
         }
     }
 

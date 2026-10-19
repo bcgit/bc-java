@@ -33,7 +33,7 @@ public class ResponseBytes
     private ResponseBytes(
         ASN1Sequence    seq)
     {
-        if (seq.size() < 2)
+        if (seq.size() != 2)
         {
             throw new IllegalArgumentException("Bad sequence size: " + seq.size());
         }

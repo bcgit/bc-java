@@ -7,19 +7,33 @@ import java.util.List;
 
 import org.bouncycastle.asn1.ASN1Boolean;
 import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1Enumerated;
 import org.bouncycastle.asn1.ASN1GeneralizedTime;
 import org.bouncycastle.asn1.ASN1Integer;
-import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERBitString;
+import org.bouncycastle.asn1.DERIA5String;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.DERUTCTime;
+import org.bouncycastle.asn1.ocsp.BasicOCSPResponse;
+import org.bouncycastle.asn1.ocsp.CertID;
+import org.bouncycastle.asn1.ocsp.CrlID;
+import org.bouncycastle.asn1.ocsp.OCSPRequest;
+import org.bouncycastle.asn1.ocsp.OCSPResponse;
+import org.bouncycastle.asn1.ocsp.Request;
+import org.bouncycastle.asn1.ocsp.ResponseBytes;
+import org.bouncycastle.asn1.ocsp.ResponseData;
+import org.bouncycastle.asn1.ocsp.RevokedInfo;
+import org.bouncycastle.asn1.ocsp.ServiceLocator;
+import org.bouncycastle.asn1.ocsp.SingleResponse;
+import org.bouncycastle.asn1.ocsp.TBSRequest;
 import org.bouncycastle.asn1.pkcs.Attribute;
 import org.bouncycastle.asn1.pkcs.ContentInfo;
 import org.bouncycastle.asn1.pkcs.IssuerAndSerialNumber;
@@ -65,7 +79,7 @@ import org.bouncycastle.asn1.x509.Validity;
 import org.bouncycastle.util.test.SimpleTest;
 
 /**
- * The OPTIONAL tagged fields of the core SEQUENCE types (X.509, PKCS) may each appear at most once
+ * The OPTIONAL tagged fields of the core SEQUENCE types (X.509, PKCS, OCSP) may each appear at most once
  * and only in definition order: duplicates, reordered fields, non-context tags and trailing elements
  * are rejected, while every legal combination still parses (github #2516).
  */
@@ -82,6 +96,7 @@ public class SequenceFieldOrderTest
     private static final X500Name NAME = new X500Name("CN=Test");
     private static final GeneralNames GN = new GeneralNames(new GeneralName(GeneralName.dNSName, "a.example"));
     private static final ASN1Integer ONE = new ASN1Integer(1);
+    private static final ASN1Integer ZERO_INT = new ASN1Integer(0);
     private static final SubjectPublicKeyInfo SPKI = new SubjectPublicKeyInfo(RSA, new byte[]{ 0 });
 
     public String getName()
@@ -175,6 +190,8 @@ public class SequenceFieldOrderTest
         privateKeyInfo();
         pkcs7SignerInfo();
         pkcs7SignedData();
+        ocspRequests();
+        ocspResponses();
     }
 
     private void authorityKeyIdentifier()
@@ -591,6 +608,188 @@ public class SequenceFieldOrderTest
         rejects("SignedData two signerInfos", p, concat(head, els(signerInfos, new DERSet(ONE))));
         rejects("SignedData certificates after signerInfos", p, concat(head, els(signerInfos, certs)));
         rejects("SignedData unknown tag", p, concat(head, els(ctx(2, false, new DERSet()), signerInfos)));
+    }
+
+    private static ASN1Encodable certId()
+    {
+        return new DERSequence(new ASN1Encodable[]{ SHA256_RSA, new DEROctetString(new byte[20]), new DEROctetString(new byte[20]), ONE });
+    }
+
+    private void ocspRequests()
+        throws IOException
+    {
+        ASN1Encodable exts = extensionsBlock(false);
+
+        Parser certIdParser = new Parser()
+        {
+            public Object parse(ASN1Sequence seq)
+            {
+                return CertID.getInstance(seq);
+            }
+        };
+        accepts("CertID", certIdParser, ((ASN1Sequence)certId()).toArray());
+        rejects("CertID trailing element", certIdParser, concat(((ASN1Sequence)certId()).toArray(), els(ONE)));
+
+        Parser request = new Parser()
+        {
+            public Object parse(ASN1Sequence seq)
+            {
+                return Request.getInstance(seq);
+            }
+        };
+        accepts("Request", request, els(certId(), ctx(0, true, exts)));
+        rejects("Request [1] as singleRequestExtensions", request, els(certId(), ctx(1, true, exts)));
+        rejects("Request trailing element", request, els(certId(), ctx(0, true, exts), ONE));
+
+        Parser tbs = new Parser()
+        {
+            public Object parse(ASN1Sequence seq)
+            {
+                return TBSRequest.getInstance(seq);
+            }
+        };
+        ASN1Encodable requestList = new DERSequence(new DERSequence(certId()));
+        ASN1Encodable requestor = ctx(1, true, new GeneralName(NAME));
+        accepts("TBSRequest", tbs, els(requestList));
+        accepts("TBSRequest", tbs, els(ctx(0, true, ZERO_INT), requestor, requestList, ctx(2, true, exts)));
+        rejects("TBSRequest [3] as requestorName", tbs, els(ctx(3, true, new GeneralName(NAME)), requestList));
+        rejects("TBSRequest [1] as requestExtensions", tbs, els(requestList, ctx(1, true, exts)));
+        rejects("TBSRequest trailing element", tbs, els(requestList, ctx(2, true, exts), ONE));
+
+        Parser signature = new Parser()
+        {
+            public Object parse(ASN1Sequence seq)
+            {
+                return org.bouncycastle.asn1.ocsp.Signature.getInstance(seq);
+            }
+        };
+        ASN1Encodable sigBits = new DERBitString(new byte[]{ 1 });
+        accepts("Signature", signature, els(SHA256_RSA, sigBits, ctx(0, true, new DERSequence())));
+        rejects("Signature [1] as certs", signature, els(SHA256_RSA, sigBits, ctx(1, true, new DERSequence())));
+        rejects("Signature trailing element", signature, els(SHA256_RSA, sigBits, ctx(0, true, new DERSequence()), ONE));
+
+        Parser ocspRequest = new Parser()
+        {
+            public Object parse(ASN1Sequence seq)
+            {
+                return OCSPRequest.getInstance(seq);
+            }
+        };
+        ASN1Encodable tbsRequest = new DERSequence(requestList);
+        ASN1Encodable optSig = ctx(0, true, new DERSequence(new ASN1Encodable[]{ SHA256_RSA, sigBits }));
+        accepts("OCSPRequest", ocspRequest, els(tbsRequest, optSig));
+        rejects("OCSPRequest [1] as optionalSignature", ocspRequest, els(tbsRequest, ctx(1, true, new DERSequence(new ASN1Encodable[]{ SHA256_RSA, sigBits }))));
+        rejects("OCSPRequest trailing element", ocspRequest, els(tbsRequest, optSig, ONE));
+
+        Parser crlId = new Parser()
+        {
+            public Object parse(ASN1Sequence seq)
+            {
+                return CrlID.getInstance(seq);
+            }
+        };
+        ASN1Encodable url = ctx(0, true, new DERIA5String("http://a.example/crl"));
+        ASN1Encodable num = ctx(1, true, ONE);
+        accepts("CrlID", crlId, els(url, num));
+        rejects("CrlID duplicate", crlId, els(num, num));
+        rejects("CrlID order", crlId, els(num, url));
+        rejects("CrlID untagged", crlId, els(url, ONE));
+
+        Parser locator = new Parser()
+        {
+            public Object parse(ASN1Sequence seq)
+            {
+                return ServiceLocator.getInstance(seq);
+            }
+        };
+        accepts("ServiceLocator", locator, els(NAME));
+        rejects("ServiceLocator trailing element", locator, els(NAME, new DERSequence(), ONE));
+    }
+
+    private void ocspResponses()
+        throws IOException
+    {
+        ASN1Encodable exts = extensionsBlock(false);
+        ASN1Encodable producedAt = new ASN1GeneralizedTime(new Date(0));
+        ASN1Encodable byName = ctx(1, true, NAME);
+
+        Parser single = new Parser()
+        {
+            public Object parse(ASN1Sequence seq)
+            {
+                return SingleResponse.getInstance(seq);
+            }
+        };
+        ASN1Encodable good = ctx(0, false, DERNull.INSTANCE);
+        ASN1Encodable nextUpdate = ctx(0, true, new ASN1GeneralizedTime(new Date(1000000000000L)));
+        ASN1Encodable singleExts = ctx(1, true, exts);
+        ASN1Encodable[] head = new ASN1Encodable[]{ certId(), good, producedAt };
+        accepts("SingleResponse", single, head);
+        accepts("SingleResponse", single, concat(head, els(nextUpdate, singleExts)));
+        accepts("SingleResponse", single, concat(head, els(singleExts)));
+        rejects("SingleResponse order", single, concat(head, els(singleExts, nextUpdate)));
+        rejects("SingleResponse unknown tag", single, concat(head, els(ctx(5, true, exts))));
+        rejects("SingleResponse trailing element", single, concat(head, els(nextUpdate, singleExts, ONE)));
+
+        Parser data = new Parser()
+        {
+            public Object parse(ASN1Sequence seq)
+            {
+                return ResponseData.getInstance(seq);
+            }
+        };
+        ASN1Encodable responses = new DERSequence(new DERSequence(head));
+        accepts("ResponseData", data, els(byName, producedAt, responses, ctx(1, true, exts)));
+        rejects("ResponseData [2] as responseExtensions", data, els(byName, producedAt, responses, ctx(2, true, exts)));
+        rejects("ResponseData trailing element", data, concat(els(byName, producedAt, responses), els(ctx(1, true, exts), ONE)));
+
+        Parser basic = new Parser()
+        {
+            public Object parse(ASN1Sequence seq)
+            {
+                return BasicOCSPResponse.getInstance(seq);
+            }
+        };
+        ASN1Encodable tbsData = new DERSequence(els(byName, producedAt, responses));
+        ASN1Encodable sigBits = new DERBitString(new byte[]{ 1 });
+        accepts("BasicOCSPResponse", basic, els(tbsData, SHA256_RSA, sigBits, ctx(0, true, new DERSequence())));
+        rejects("BasicOCSPResponse [1] as certs", basic, els(tbsData, SHA256_RSA, sigBits, ctx(1, true, new DERSequence())));
+        rejects("BasicOCSPResponse trailing element", basic, concat(els(tbsData, SHA256_RSA, sigBits), els(ctx(0, true, new DERSequence()), ONE)));
+
+        Parser bytes = new Parser()
+        {
+            public Object parse(ASN1Sequence seq)
+            {
+                return ResponseBytes.getInstance(seq);
+            }
+        };
+        ASN1Encodable basicOid = new ASN1ObjectIdentifier("1.3.6.1.5.5.7.48.1.1");
+        accepts("ResponseBytes", bytes, els(basicOid, new DEROctetString(new byte[1])));
+        rejects("ResponseBytes trailing element", bytes, els(basicOid, new DEROctetString(new byte[1]), ONE));
+
+        Parser response = new Parser()
+        {
+            public Object parse(ASN1Sequence seq)
+            {
+                return OCSPResponse.getInstance(seq);
+            }
+        };
+        ASN1Encodable status = new ASN1Enumerated(0);
+        ASN1Encodable respBytes = ctx(0, true, new DERSequence(els(basicOid, new DEROctetString(new byte[1]))));
+        accepts("OCSPResponse", response, els(status, respBytes));
+        rejects("OCSPResponse [1] as responseBytes", response, els(status, ctx(1, true, new DERSequence(els(basicOid, new DEROctetString(new byte[1]))))));
+        rejects("OCSPResponse trailing element", response, els(status, respBytes, ONE));
+
+        Parser revoked = new Parser()
+        {
+            public Object parse(ASN1Sequence seq)
+            {
+                return RevokedInfo.getInstance(seq);
+            }
+        };
+        accepts("RevokedInfo", revoked, els(producedAt, ctx(0, true, new ASN1Enumerated(1))));
+        rejects("RevokedInfo [1] as revocationReason", revoked, els(producedAt, ctx(1, true, new ASN1Enumerated(1))));
+        rejects("RevokedInfo trailing element", revoked, els(producedAt, ctx(0, true, new ASN1Enumerated(1)), ONE));
     }
 
     public static void main(String[] args)

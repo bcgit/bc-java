@@ -6,6 +6,7 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.x509.Extensions;
@@ -89,7 +90,7 @@ public class TBSRequest
 
         if (seq.getObjectAt(index) instanceof ASN1TaggedObject)
         {
-            requestorName = GeneralName.getInstance((ASN1TaggedObject)seq.getObjectAt(index++), true);
+            requestorName = GeneralName.getInstance(ASN1TaggedObject.getInstance(seq.getObjectAt(index++), BERTags.CONTEXT_SPECIFIC, 1), true);
         }
         
         if (seq.size() < index + 1)
@@ -99,9 +100,14 @@ public class TBSRequest
 
         requestList = ASN1Sequence.getInstance(seq.getObjectAt(index++));
 
-        if (seq.size() == (index + 1))
+        if (seq.size() > index)
         {
-            requestExtensions = Extensions.getInstance(ASN1TaggedObject.getInstance(seq.getObjectAt(index)), true);
+            requestExtensions = Extensions.getInstance(ASN1TaggedObject.getInstance(seq.getObjectAt(index++), BERTags.CONTEXT_SPECIFIC, 2), true);
+        }
+
+        if (seq.size() != index)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
         }
     }
 
