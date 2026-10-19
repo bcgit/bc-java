@@ -1017,6 +1017,7 @@
              <fileset dir="${src.dir}" includes="**/crypto/*/*Test.java" />
              <fileset dir="${src.dir}" includes="**/crypto/agreement/owl/*Test.java" />
              <fileset dir="${src.dir}" includes="org/bouncycastle/tls/SpreadCertificateStatusTest.java" />
+             <fileset dir="${src.dir}" includes="org/bouncycastle/cert/dane/fetcher/JndiDANEFetcherFactoryTest.java" />
              <!-- main-namespace test fixture the bcpg copy now excludes; the openpgp.api tests resolve it from here -->
              <fileset dir="${src.dir}" includes="org/bouncycastle/openpgp/OpenPGPTestKeys.java" />
              <fileset dir="${src.dir}" includes="**/pqc/crypto/hqc/*Test.java" />

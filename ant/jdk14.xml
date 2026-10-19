@@ -223,6 +223,8 @@
                      excluded with the api package above; the jdk1.4 RegressionTest overlay does not
                      reference it -->
                 <exclude name="**/JceExternalPublicKeyDataDecryptorFactoryBuilderTest.java"/>
+                <!-- builds its keys through the openpgp.api package, excluded above; the jdk1.4 RegressionTest overlay does not reference it -->
+                <exclude name="**/PGPSignatureMergeTest.java"/>
             </fileset>
             <fileset dir="pkix/src/test/java">
                 <exclude name="**/est/**/*.java"/>
@@ -259,6 +261,12 @@
                 <exclude name="**/pkix/test/PKIXCertPathReviewerCrlReasonTest.java"/>
                 <exclude name="**/pkix/test/PKIXCertPathReviewerCrlScopeTest.java"/>
                 <exclude name="**/pkix/test/PKIXCertPathReviewerCrlDistPointTest.java"/>
+                <!-- uses X509RevocationChecker from the excluded pkix/jcajce package; the jdk1.4 pkix AllTests overlay does not reference it -->
+                <exclude name="**/pkix/test/CrlReasonCodeTest.java"/>
+                <!-- tests JndiDANEFetcherFactory.toDomainName, which the jdk1.4 overlay has no need of: JDK 1.4's NameClassPair
+                     lacks getNameInNamespace, so the overlay composes the name from getName() instead -->
+                <exclude name="**/cert/dane/fetcher/JndiDANEFetcherFactoryTest.java"/>
+                <exclude name="**/cert/dane/fetcher/AllTests.java"/>
                 <exclude name="**/cert/c509/**/*.java"/>
             </fileset>
             <fileset dir="mail/src/test/java">
