@@ -991,11 +991,47 @@ public class PGPSignature
     }
 
     /**
+     * Return true, if the two signatures are copies of the same signature, differing at most in their unhashed
+     * subpacket area. Unlike {@link #isSignatureEncodingEqual(PGPSignature, PGPSignature)} this also compares
+     * the version, the algorithms, the salt and everything the signature value is computed over (signature type
+     * and hashed subpackets, or for a version 3 signature its type, creation time and issuer key ID), so a copy
+     * whose hashed data was rewritten while the signature value was kept - which no longer verifies - is not
+     * mistaken for the original.
+     *
+     * @param sig1 first signature
+     * @param sig2 second signature
+     * @return true if both are copies of the same signature
+     */
+    static boolean isSameSignature(PGPSignature sig1, PGPSignature sig2)
+    {
+        SignaturePacket p1 = sig1.sigPck;
+        SignaturePacket p2 = sig2.sigPck;
+
+        if (p1.getVersion() != p2.getVersion()
+            || p1.getKeyAlgorithm() != p2.getKeyAlgorithm()
+            || p1.getHashAlgorithm() != p2.getHashAlgorithm())
+        {
+            return false;
+        }
+
+        // only a version 2/3 signature carries the issuer key ID outside its subpackets
+        if (p1.getVersion() < SignaturePacket.VERSION_4 && p1.getKeyID() != p2.getKeyID())
+        {
+            return false;
+        }
+
+        return Arrays.areEqual(p1.getSignatureTrailer(), p2.getSignatureTrailer())
+            && Arrays.areEqual(p1.getSalt(), p2.getSalt())
+            && Arrays.areEqual(p1.getSignatureBytes(), p2.getSignatureBytes());
+    }
+
+    /**
      * Join two copies of the same signature.
      * As an entity might append additional information to an existing signatures unhashed subpacket area
      * (e.g. an embedded {@link #THIRD_PARTY_CONFIRMATION} signature), an implementation might want to
      * join an existing instance of a signature with an updated copy, e.g. retrieved from a key server.
-     * This method merges both signature instances by joining unhashed subpackets.
+     * This method merges both signature instances by joining unhashed subpackets. The two must be copies of the
+     * same signature, differing at most in their unhashed subpacket area.
      *
      * @param sig1 first signature
      * @param sig2 second signature
@@ -1005,16 +1041,15 @@ public class PGPSignature
     public static PGPSignature join(PGPSignature sig1, PGPSignature sig2)
         throws PGPException
     {
+        if (!isSameSignature(sig1, sig2))
+        {
+            throw new IllegalArgumentException("These are different signatures.");
+        }
+
         if (sig1.getVersion() < SignaturePacket.VERSION_4)
         {
             // Version 2/3 signatures have no subpackets, so don't need to get merged.
             return sig1;
-        }
-
-        if (sig1.getVersion() != sig2.getVersion() ||
-            !isSignatureEncodingEqual(sig1, sig2))
-        {
-            throw new IllegalArgumentException("These are different signatures.");
         }
 
         // merge unhashed subpackets

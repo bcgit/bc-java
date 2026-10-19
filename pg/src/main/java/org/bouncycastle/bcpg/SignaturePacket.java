@@ -518,7 +518,7 @@ public class SignaturePacket
         }
         else
         {
-            return new SignaturePacket(
+            SignaturePacket copy = new SignaturePacket(
                 packet.getVersion(),
                 packet.hasNewPacketFormat(),
                 packet.getSignatureType(),
@@ -530,6 +530,9 @@ public class SignaturePacket
                 packet.getFingerPrint(),
                 packet.getSignature()
             );
+            // a version 4 signature by e.g. Ed25519 carries its value as a native encoding, not as MPIs
+            copy.signatureEncoding = Arrays.clone(packet.signatureEncoding);
+            return copy;
         }
     }
 

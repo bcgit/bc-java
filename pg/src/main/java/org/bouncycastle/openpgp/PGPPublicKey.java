@@ -1189,7 +1189,12 @@ public class PGPPublicKey
         List<PGPSignature> keySigs = new ArrayList<PGPSignature>(key.keySigs);
         List<UserDataPacket> ids = new ArrayList<UserDataPacket>(key.ids);
         List<TrustPacket> idTrusts = new ArrayList<TrustPacket>(key.idTrusts);
-        List<List<PGPSignature>> idSigs = new ArrayList<List<PGPSignature>>(key.idSigs);
+        List<List<PGPSignature>> idSigs = new ArrayList<List<PGPSignature>>(key.idSigs.size());
+        for (int i = 0; i != key.idSigs.size(); i++)
+        {
+            // copy each list too, the merge below adds to them and key must be left as it was
+            idSigs.add(new ArrayList<PGPSignature>((List<PGPSignature>)key.idSigs.get(i)));
+        }
         List<PGPSignature> subSigs = key.subSigs == null ? null : new ArrayList<PGPSignature>(key.subSigs);
 
         if (joinTrustPackets)
@@ -1276,8 +1281,7 @@ public class PGPPublicKey
             for (int i = 0; isNotNull && i < rlt.size(); i++)
             {
                 PGPSignature existingSubSig = (PGPSignature)rlt.get(i);
-                if (existingSubSig.getVersion() == copySubSig.getVersion() &&
-                    PGPSignature.isSignatureEncodingEqual(existingSubSig, copySubSig))
+                if (PGPSignature.isSameSignature(existingSubSig, copySubSig))
                 {
                     found = true;
                     // join existing sig with copy to apply modifications in unhashed subpackets
