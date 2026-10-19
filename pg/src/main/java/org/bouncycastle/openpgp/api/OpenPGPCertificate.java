@@ -716,7 +716,7 @@ public class OpenPGPCertificate
         // Check if there are signatures at all for the component
         OpenPGPSignatureChains chainsForComponent = getAllSignatureChainsFor(component)
             .fromOrigin(origin);
-        boolean isPrimaryKey = component == getPrimaryKey();
+        boolean isPrimaryKey = component.getPublicComponent() == getPrimaryKey();
         if (isPrimaryKey && chainsForComponent.getCertificationAt(evaluationDate) == null)
         {
             // If cert has no direct-key signatures, consider primary UID bindings instead.
@@ -874,7 +874,7 @@ public class OpenPGPCertificate
 
         // An expired primary key can no longer certify, so a longer-lived subkey it bound is not usable either.
         OpenPGPComponentKey primaryKey = getPrimaryKey();
-        if (component != primaryKey && isExpired(primaryKey, evaluationTime))
+        if (component.getPublicComponent() != primaryKey && isExpired(primaryKey, evaluationTime))
         {
             return false;
         }
