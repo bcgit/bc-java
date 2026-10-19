@@ -594,8 +594,8 @@ public class PGPSecretKeyRing
                 if (sk.getKeyID() == publicKey.getKeyID())
                 {
                     sk = PGPSecretKey.replacePublicKey(secretKey, publicKey);
-                    newList.add(sk);
                 }
+                newList.add(sk);
             }
 
             return new PGPSecretKeyRing(newList);
