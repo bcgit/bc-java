@@ -9,6 +9,7 @@ import org.bouncycastle.asn1.ASN1Boolean;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1GeneralizedTime;
 import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.BERTags;
@@ -16,9 +17,18 @@ import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.DERUTCTime;
+import org.bouncycastle.asn1.pkcs.Attribute;
+import org.bouncycastle.asn1.pkcs.ContentInfo;
+import org.bouncycastle.asn1.pkcs.IssuerAndSerialNumber;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.asn1.pkcs.RSAESOAEPparams;
+import org.bouncycastle.asn1.pkcs.RSASSAPSSparams;
+import org.bouncycastle.asn1.pkcs.SignedData;
+import org.bouncycastle.asn1.pkcs.SignerInfo;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.AuthorityKeyIdentifier;
@@ -55,11 +65,11 @@ import org.bouncycastle.asn1.x509.Validity;
 import org.bouncycastle.util.test.SimpleTest;
 
 /**
- * The OPTIONAL tagged fields of the X.509 SEQUENCE types may each appear at most once and only
- * in definition order: duplicates, reordered fields, non-context tags and trailing elements are
- * rejected, while every legal combination still parses (github #2516).
+ * The OPTIONAL tagged fields of the core SEQUENCE types (X.509, PKCS) may each appear at most once
+ * and only in definition order: duplicates, reordered fields, non-context tags and trailing elements
+ * are rejected, while every legal combination still parses (github #2516).
  */
-public class X509SequenceFieldOrderTest
+public class SequenceFieldOrderTest
     extends SimpleTest
 {
     private interface Parser
@@ -76,7 +86,7 @@ public class X509SequenceFieldOrderTest
 
     public String getName()
     {
-        return "X509SequenceFieldOrder";
+        return "SequenceFieldOrder";
     }
 
     private static ASN1Encodable ctx(int tagNo, boolean explicit, ASN1Encodable base)
@@ -161,6 +171,10 @@ public class X509SequenceFieldOrderTest
         tbsCertList();
         deltaCertificateDescriptor();
         relatedCertificateDescriptor();
+        rsaParams();
+        privateKeyInfo();
+        pkcs7SignerInfo();
+        pkcs7SignedData();
     }
 
     private void authorityKeyIdentifier()
@@ -484,8 +498,103 @@ public class X509SequenceFieldOrderTest
         rejects("RelatedCertificateDescriptor unknown tag", p, els(method, ctx(2, false, RSA)));
     }
 
+    private void rsaParams()
+        throws IOException
+    {
+        Parser pss = new Parser()
+        {
+            public Object parse(ASN1Sequence seq)
+            {
+                return RSASSAPSSparams.getInstance(seq);
+            }
+        };
+        ASN1Encodable hash = ctx(0, true, SHA256_RSA);
+        ASN1Encodable salt = ctx(2, true, new ASN1Integer(32));
+        accepts("RSASSAPSSparams", pss, new ASN1Encodable[0]);
+        accepts("RSASSAPSSparams", pss, els(hash, salt));
+        rejects("RSASSAPSSparams duplicate", pss, els(hash, ctx(0, true, RSA)));
+        rejects("RSASSAPSSparams order", pss, els(salt, hash));
+        rejects("RSASSAPSSparams untagged", pss, els(hash, ONE));
+
+        Parser oaep = new Parser()
+        {
+            public Object parse(ASN1Sequence seq)
+            {
+                return RSAESOAEPparams.getInstance(seq);
+            }
+        };
+        ASN1Encodable pSource = ctx(2, true, new AlgorithmIdentifier(PKCSObjectIdentifiers.id_pSpecified, new DEROctetString(new byte[0])));
+        accepts("RSAESOAEPparams", oaep, els(hash, pSource));
+        rejects("RSAESOAEPparams duplicate", oaep, els(hash, hash));
+        rejects("RSAESOAEPparams order", oaep, els(pSource, hash));
+        rejects("RSAESOAEPparams class", oaep, els(app(0, true, SHA256_RSA)));
+    }
+
+    private void privateKeyInfo()
+        throws IOException
+    {
+        Parser p = new Parser()
+        {
+            public Object parse(ASN1Sequence seq)
+            {
+                return PrivateKeyInfo.getInstance(seq);
+            }
+        };
+        ASN1Encodable[] head = new ASN1Encodable[]{ ONE, RSA, new DEROctetString(new byte[]{ 1 }) };
+        ASN1Encodable attrs = ctx(0, false, new DERSet());
+        ASN1Encodable pub = ctx(1, false, new DERBitString(new byte[]{ 1 }));
+        accepts("PrivateKeyInfo", p, concat(head, els(attrs, pub)));
+        rejects("PrivateKeyInfo duplicate", p, concat(head, els(attrs, attrs)));
+        rejects("PrivateKeyInfo order", p, concat(head, els(pub, attrs)));
+        rejects("PrivateKeyInfo untagged", p, concat(head, els(attrs, ONE)));
+    }
+
+    private void pkcs7SignerInfo()
+        throws IOException
+    {
+        Parser p = new Parser()
+        {
+            public Object parse(ASN1Sequence seq)
+            {
+                return SignerInfo.getInstance(seq);
+            }
+        };
+        ASN1Set attrSet = new DERSet(new Attribute(PKCSObjectIdentifiers.pkcs_9_at_contentType, new DERSet(PKCSObjectIdentifiers.data)));
+        ASN1Encodable[] head = new ASN1Encodable[]{ ONE, new IssuerAndSerialNumber(NAME, BigInteger.ONE), SHA256_RSA };
+        ASN1Encodable digest = new DEROctetString(new byte[32]);
+        accepts("SignerInfo", p, concat(head, els(RSA, digest)));
+        accepts("SignerInfo", p, concat(head, concat(els(ctx(0, false, attrSet), RSA, digest), els(ctx(1, false, attrSet)))));
+        rejects("SignerInfo [1] as authenticatedAttributes", p, concat(head, els(ctx(1, false, attrSet), RSA, digest)));
+        rejects("SignerInfo [0] as unauthenticatedAttributes", p, concat(head, els(RSA, digest, ctx(0, false, attrSet))));
+        rejects("SignerInfo trailing element", p, concat(head, els(RSA, digest, ctx(1, false, attrSet), ONE)));
+    }
+
+    private void pkcs7SignedData()
+        throws IOException
+    {
+        Parser p = new Parser()
+        {
+            public Object parse(ASN1Sequence seq)
+            {
+                return SignedData.getInstance(seq);
+            }
+        };
+        ASN1Encodable[] head = new ASN1Encodable[]{ ONE, new DERSet(), new ContentInfo(PKCSObjectIdentifiers.data, null) };
+        ASN1Encodable certs = ctx(0, false, new DERSet(certificate()));
+        ASN1Encodable crls = ctx(1, false, new DERSet());
+        ASN1Encodable signerInfos = new DERSet();
+        accepts("SignedData", p, concat(head, els(signerInfos)));
+        accepts("SignedData", p, concat(head, els(certs, crls, signerInfos)));
+        accepts("SignedData without signerInfos", p, concat(head, els(certs)));
+        rejects("SignedData duplicate certificates", p, concat(head, els(certs, certs, signerInfos)));
+        rejects("SignedData order", p, concat(head, els(crls, certs, signerInfos)));
+        rejects("SignedData two signerInfos", p, concat(head, els(signerInfos, new DERSet(ONE))));
+        rejects("SignedData certificates after signerInfos", p, concat(head, els(signerInfos, certs)));
+        rejects("SignedData unknown tag", p, concat(head, els(ctx(2, false, new DERSet()), signerInfos)));
+    }
+
     public static void main(String[] args)
     {
-        runTest(new X509SequenceFieldOrderTest());
+        runTest(new SequenceFieldOrderTest());
     }
 }

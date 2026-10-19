@@ -14,6 +14,7 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
@@ -213,7 +214,7 @@ public class PrivateKeyInfo
         int lastTag = -1;
         while (e.hasMoreElements())
         {
-            ASN1TaggedObject tagged = (ASN1TaggedObject)e.nextElement();
+            ASN1TaggedObject tagged = ASN1TaggedObject.getInstance(e.nextElement(), BERTags.CONTEXT_SPECIFIC);
 
             int tag = tagged.getTagNo();
             if (tag <= lastTag)

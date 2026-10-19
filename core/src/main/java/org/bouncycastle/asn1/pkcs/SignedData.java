@@ -1,7 +1,5 @@
 package org.bouncycastle.asn1.pkcs;
 
-import java.util.Enumeration;
-
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
@@ -60,40 +58,44 @@ public class SignedData
     public SignedData(
         ASN1Sequence seq)
     {
-        Enumeration     e = seq.getObjects();
-
-        version = (ASN1Integer)e.nextElement();
-        digestAlgorithms = ((ASN1Set)e.nextElement());
-        contentInfo = ContentInfo.getInstance(e.nextElement());
-
-        while (e.hasMoreElements())
+        int count = seq.size(), pos = 0;
+        if (count < 3)
         {
-            ASN1Primitive o = (ASN1Primitive)e.nextElement();
+            throw new IllegalArgumentException("Bad sequence size: " + count);
+        }
 
-            //
-            // an interesting feature of SignedData is that there appear to be varying implementations...
-            // for the moment we ignore anything which doesn't fit.
-            //
-            if (o instanceof ASN1TaggedObject)
-            {
-                ASN1TaggedObject tagged = (ASN1TaggedObject)o;
+        version = ASN1Integer.getInstance(seq.getObjectAt(pos++));
+        digestAlgorithms = ASN1Set.getInstance(seq.getObjectAt(pos++));
+        contentInfo = ContentInfo.getInstance(seq.getObjectAt(pos++));
 
-                switch (tagged.getTagNo())
-                {
-                case 0:
-                    certificates = ASN1Set.getInstance(tagged, false);
-                    break;
-                case 1:
-                    crls = ASN1Set.getInstance(tagged, false);
-                    break;
-                default:
-                    throw new IllegalArgumentException("unknown tag value " + tagged.getTagNo());
-                }
-            }
-            else
+        // certificates [0] and crls [1], each optional, then signerInfos
+        if (pos < count)
+        {
+            ASN1TaggedObject tag0 = ASN1TaggedObject.getContextOptional(seq.getObjectAt(pos), 0);
+            if (tag0 != null)
             {
-                signerInfos = (ASN1Set)o;
+                pos++;
+                certificates = ASN1Set.getInstance(tag0, false);
             }
+        }
+        if (pos < count)
+        {
+            ASN1TaggedObject tag1 = ASN1TaggedObject.getContextOptional(seq.getObjectAt(pos), 1);
+            if (tag1 != null)
+            {
+                pos++;
+                crls = ASN1Set.getInstance(tag1, false);
+            }
+        }
+        // signerInfos is required, but its absence has always been tolerated; nothing may follow it
+        if (pos < count && !(seq.getObjectAt(pos).toASN1Primitive() instanceof ASN1TaggedObject))
+        {
+            signerInfos = ASN1Set.getInstance(seq.getObjectAt(pos++));
+        }
+
+        if (pos != count)
+        {
+            throw new IllegalArgumentException("unexpected element at position " + pos);
         }
     }
 

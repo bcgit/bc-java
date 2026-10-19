@@ -5,6 +5,7 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
@@ -65,10 +66,16 @@ public class RSAESOAEPparams
         maskGenAlgorithm = DEFAULT_MASK_GEN_FUNCTION;
         pSourceAlgorithm = DEFAULT_P_SOURCE_ALGORITHM;
         
+        int lastTagNo = -1;
         for (int i = 0; i != seq.size(); i++)
         {
-            ASN1TaggedObject    o = (ASN1TaggedObject)seq.getObjectAt(i);
-            
+            ASN1TaggedObject    o = ASN1TaggedObject.getInstance(seq.getObjectAt(i), BERTags.CONTEXT_SPECIFIC);
+            if (o.getTagNo() <= lastTagNo)
+            {
+                throw new IllegalArgumentException("tag [" + o.getTagNo() + "] repeated or out of order");
+            }
+            lastTagNo = o.getTagNo();
+
             switch (o.getTagNo())
             {
             case 0:
