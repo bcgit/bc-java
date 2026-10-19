@@ -10,7 +10,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -567,22 +569,29 @@ public class PGPPublicKeyRing
             throw new IllegalArgumentException("Cannot merge certificates with differing primary keys.");
         }
 
-        Set<Long> secondKeys = new HashSet<Long>();
+        // second's keys by ID, in second's order, the first carrying an ID kept as getPublicKey(long) would return it
+        Map<Long, PGPPublicKey> secondKeys = new LinkedHashMap<Long, PGPPublicKey>();
         for (Iterator<PGPPublicKey> it = second.iterator(); it.hasNext(); )
         {
             PGPPublicKey key = (PGPPublicKey)it.next();
-            secondKeys.add(Longs.valueOf(key.getKeyID()));
+            Long keyId = Longs.valueOf(key.getKeyID());
+            if (!secondKeys.containsKey(keyId))
+            {
+                secondKeys.put(keyId, key);
+            }
         }
 
+        Set<Long> joinedKeys = new HashSet<Long>();
         List<PGPPublicKey> merged = new ArrayList<PGPPublicKey>();
         for (Iterator<PGPPublicKey> it = first.iterator(); it.hasNext(); )
         {
             PGPPublicKey key = (PGPPublicKey)it.next();
-            PGPPublicKey copy = second.getPublicKey(key.getKeyID());
+            Long keyId = Longs.valueOf(key.getKeyID());
+            PGPPublicKey copy = (PGPPublicKey)secondKeys.get(keyId);
             if (copy != null)
             {
                 merged.add(PGPPublicKey.join(key, copy, joinTrustPackets, allowSubkeySigsOnNonSubkey));
-                secondKeys.remove(Longs.valueOf(key.getKeyID()));
+                joinedKeys.add(keyId);
             }
             else
             {
@@ -590,10 +599,14 @@ public class PGPPublicKeyRing
             }
         }
 
-        for (Iterator<Long> it = secondKeys.iterator(); it.hasNext(); )
+        // the keys only second carries, in the order it carries them
+        for (Iterator<Map.Entry<Long, PGPPublicKey>> it = secondKeys.entrySet().iterator(); it.hasNext(); )
         {
-            Long additionalKeyId = (Long)it.next();
-            merged.add(second.getPublicKey(additionalKeyId.longValue()));
+            Map.Entry<Long, PGPPublicKey> entry = (Map.Entry<Long, PGPPublicKey>)it.next();
+            if (!joinedKeys.contains(entry.getKey()))
+            {
+                merged.add((PGPPublicKey)entry.getValue());
+            }
         }
 
         return new PGPPublicKeyRing(merged);

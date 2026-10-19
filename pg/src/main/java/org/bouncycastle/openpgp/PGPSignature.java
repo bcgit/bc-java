@@ -5,8 +5,10 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
@@ -1004,25 +1006,68 @@ public class PGPSignature
      */
     static boolean isSameSignature(PGPSignature sig1, PGPSignature sig2)
     {
-        SignaturePacket p1 = sig1.sigPck;
-        SignaturePacket p2 = sig2.sigPck;
+        return new Identity(sig1).equals(new Identity(sig2));
+    }
 
-        if (p1.getVersion() != p2.getVersion()
-            || p1.getKeyAlgorithm() != p2.getKeyAlgorithm()
-            || p1.getHashAlgorithm() != p2.getHashAlgorithm())
+    /**
+     * What two copies of the same signature have in common, as a hash key: the test {@link #isSameSignature}
+     * applies, with the signature value and trailer encoded once at construction, so that a merge can look a
+     * signature up in a table rather than compare it against every signature already held - each comparison
+     * re-encoding both - which made merging a certificate flooded with certifications quadratic.
+     */
+    static final class Identity
+    {
+        private final SignaturePacket packet;
+        private final byte[] trailer;
+        private final byte[] signatureBytes;
+        private final int hashCode;
+
+        Identity(PGPSignature signature)
         {
-            return false;
+            this.packet = signature.sigPck;
+            this.trailer = packet.getSignatureTrailer();
+            this.signatureBytes = packet.getSignatureBytes();
+            this.hashCode = 31 * Arrays.hashCode(signatureBytes) + packet.getVersion();
         }
 
-        // only a version 2/3 signature carries the issuer key ID outside its subpackets
-        if (p1.getVersion() < SignaturePacket.VERSION_4 && p1.getKeyID() != p2.getKeyID())
+        public boolean equals(Object o)
         {
-            return false;
+            if (o == this)
+            {
+                return true;
+            }
+
+            if (!(o instanceof Identity))
+            {
+                return false;
+            }
+
+            Identity other = (Identity)o;
+            SignaturePacket p1 = packet;
+            SignaturePacket p2 = other.packet;
+
+            if (p1.getVersion() != p2.getVersion()
+                || p1.getKeyAlgorithm() != p2.getKeyAlgorithm()
+                || p1.getHashAlgorithm() != p2.getHashAlgorithm())
+            {
+                return false;
+            }
+
+            // only a version 2/3 signature carries the issuer key ID outside its subpackets
+            if (p1.getVersion() < SignaturePacket.VERSION_4 && p1.getKeyID() != p2.getKeyID())
+            {
+                return false;
+            }
+
+            return Arrays.areEqual(trailer, other.trailer)
+                && Arrays.areEqual(p1.getSalt(), p2.getSalt())
+                && Arrays.areEqual(signatureBytes, other.signatureBytes);
         }
 
-        return Arrays.areEqual(p1.getSignatureTrailer(), p2.getSignatureTrailer())
-            && Arrays.areEqual(p1.getSalt(), p2.getSalt())
-            && Arrays.areEqual(p1.getSignatureBytes(), p2.getSignatureBytes());
+        public int hashCode()
+        {
+            return hashCode;
+        }
     }
 
     /**
@@ -1056,22 +1101,13 @@ public class PGPSignature
         SignatureSubpacket[] sig1Unhashed = sig1.getUnhashedSubPackets().packets;
         SignatureSubpacket[] sig2Unhashed = sig2.getUnhashedSubPackets().packets;
         List<SignatureSubpacket> merged = new ArrayList<SignatureSubpacket>(java.util.Arrays.asList(sig1Unhashed));
+        // a set lookup, not a scan of sig1's area for each of sig2's subpackets - the unhashed area is not signed, so anyone can fill it
+        Set<SignatureSubpacket> existing = new HashSet<SignatureSubpacket>(merged);
 
         for (int i = 0; i != sig2Unhashed.length; i++)
         {
             SignatureSubpacket subpacket = sig2Unhashed[i];
-            boolean found = false;
-            for (int j = 0; j != sig1Unhashed.length; j++)
-            {
-                SignatureSubpacket existing = sig1Unhashed[j];
-
-                if (subpacket.equals(existing))
-                {
-                    found = true;
-                    break;
-                }
-            }
-            if (!found)
+            if (!existing.contains(subpacket))
             {
                 merged.add(subpacket);
             }

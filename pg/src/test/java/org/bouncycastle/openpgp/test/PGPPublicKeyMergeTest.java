@@ -1,14 +1,28 @@
 package org.bouncycastle.openpgp.test;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.math.BigInteger;
 import java.security.Security;
+import java.util.Date;
 import java.util.Iterator;
 
 import org.bouncycastle.bcpg.ArmoredInputStream;
+import org.bouncycastle.bcpg.BCPGInputStream;
+import org.bouncycastle.bcpg.HashAlgorithmTags;
+import org.bouncycastle.bcpg.MPInteger;
+import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
+import org.bouncycastle.bcpg.SignaturePacket;
+import org.bouncycastle.bcpg.SignatureSubpacket;
+import org.bouncycastle.bcpg.sig.IssuerKeyID;
+import org.bouncycastle.bcpg.sig.SignatureCreationTime;
+import org.bouncycastle.bcpg.sig.TrustSignature;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.PGPException;
+import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPPublicKeyRing;
+import org.bouncycastle.openpgp.PGPSignature;
 import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.test.SimpleTest;
@@ -883,6 +897,10 @@ public class PGPPublicKeyMergeTest
 
         mergeCert2SignsBaseWithCert3SignsBase();
         mergeAllCert2AndCert3Certifications();
+
+        // flooded certificates
+        mergeManyCertificationsStaysLinear();
+        joinSignaturesWithLargeUnhashedAreasStaysLinear();
     }
 
     public void cannotMergeDifferentCerts()
@@ -1161,6 +1179,149 @@ public class PGPPublicKeyMergeTest
             2, count((Iterator)finalMerge.getPublicKey().getSignaturesForID((String)userIds.next())) - secondUserIdSelfSigs);
         isEquals("there should be one certification from each cert on the third UID",
             2, count((Iterator)finalMerge.getPublicKey().getSignaturesForID((String)userIds.next())) - thirdUserIdSelfSigs);
+    }
+
+    /**
+     * PGPPublicKey.join matched each signature of the copy by scanning the key's signatures, and
+     * every comparison re-encoded both signatures' MPIs: O(n * m) encodings, about 40 seconds for
+     * 10,000 + 10,000 certifications on one user ID - and certificates flooded with third-party
+     * certifications on keyservers carry far more. A join never verifies a certification, so the
+     * ones here are synthetic: distinct signature values from a made-up issuer.
+     */
+    public void mergeManyCertificationsStaysLinear()
+        throws IOException, PGPException
+    {
+        int count = 20000;
+        PGPPublicKeyRing base = readCert(CERT_1_BASE);
+        String userId = lastUserId(base.getPublicKey());
+        int selfSigs = count((Iterator)base.getPublicKey().getSignaturesForID(userId));
+
+        // the key holds certifications [0, count), the copy [count / 2, count + count / 2) with an extra unhashed subpacket each
+        PGPPublicKeyRing key = withCertifications(base, 0, count, false);
+        PGPPublicKeyRing copy = withCertifications(base, count / 2, count, true);
+
+        long start = System.currentTimeMillis();
+
+        PGPPublicKeyRing joined = PGPPublicKeyRing.join(key, copy);
+
+        long elapsed = System.currentTimeMillis() - start;
+
+        // scanning this is over a minute; indexing it is milliseconds
+        isTrue("join took " + elapsed + "ms", elapsed < 20000L);
+
+        // the key's own certifications in order, then those only the copy had, in the copy's order
+        Iterator sigs = joined.getPublicKey().getSignaturesForID(userId);
+        for (int i = 0; i < selfSigs; i++)
+        {
+            sigs.next();
+        }
+        for (int v = 0; v < count + count / 2; v++)
+        {
+            PGPSignature sig = (PGPSignature)sigs.next();
+            isEquals("certification " + v, CERTIFICATION_TIME + v * 1000L, sig.getCreationTime().getTime());
+            isEquals("unhashed subpackets of certification " + v, v < count / 2 ? 1 : 2,
+                sig.getUnhashedSubPackets().toArray().length);
+        }
+        isTrue("more signatures than expected", !sigs.hasNext());
+    }
+
+    /**
+     * PGPSignature.join, which PGPPublicKey.join applies to every signature the two copies share,
+     * merged the unhashed areas by scanning all of the first signature's subpackets for each of the
+     * second's - about half a second for two full (64 KB) unhashed areas, for every shared signature.
+     */
+    public void joinSignaturesWithLargeUnhashedAreasStaysLinear()
+        throws IOException, PGPException
+    {
+        int count = 16000;      // 4-octet subpackets: 64,000 octets, as near full as the area gets
+        PGPSignature first = withUnhashedSubpackets(0, count);
+        PGPSignature second = withUnhashedSubpackets(count, count);
+
+        long start = System.currentTimeMillis();
+
+        // as for a certificate whose shared signatures all carry full unhashed areas
+        PGPSignature joined = null;
+        for (int i = 0; i < 60; i++)
+        {
+            joined = PGPSignature.join(first, second);
+        }
+
+        long elapsed = System.currentTimeMillis() - start;
+
+        // scanning this is over half a minute; a set lookup is milliseconds
+        isTrue("joins took " + elapsed + "ms", elapsed < 20000L);
+
+        // the first signature's subpackets, then those of the second it lacks, each in order
+        SignatureSubpacket[] unhashed = joined.getUnhashedSubPackets().toArray();
+        isEquals("merged unhashed subpackets", 2 * count, unhashed.length);
+        for (int i = 0; i < unhashed.length; i++)
+        {
+            byte[] data = unhashed[i].getData();
+            isEquals("unhashed subpacket " + i, i, ((data[0] & 0xff) << 8) | (data[1] & 0xff));
+        }
+
+        // a subpacket both carry is not repeated
+        PGPSignature overlapping = withUnhashedSubpackets(count / 2, count);
+        isEquals("merged overlapping subpackets", count + count / 2,
+            PGPSignature.join(first, overlapping).getUnhashedSubPackets().toArray().length);
+    }
+
+    private static final long CERTIFICATION_TIME = 1500000000000L;
+    private static final long CERTIFIER_KEY_ID = 0x0123456789ABCDEFL;
+
+    /**
+     * base's primary key with certifications first .. first + count - 1 appended to its last user
+     * ID, each told apart by its signature value and creation time.
+     */
+    private PGPPublicKeyRing withCertifications(PGPPublicKeyRing base, int first, int count, boolean extraUnhashed)
+        throws IOException
+    {
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        bOut.write(base.getPublicKey().getEncoded());
+        for (int v = first; v < first + count; v++)
+        {
+            SignatureSubpacket[] unhashed = extraUnhashed
+                ? new SignatureSubpacket[]{ new IssuerKeyID(false, CERTIFIER_KEY_ID), new TrustSignature(false, 1, 120) }
+                : new SignatureSubpacket[]{ new IssuerKeyID(false, CERTIFIER_KEY_ID) };
+            SignaturePacket sig = new SignaturePacket(PGPSignature.DEFAULT_CERTIFICATION, CERTIFIER_KEY_ID,
+                PublicKeyAlgorithmTags.RSA_GENERAL, HashAlgorithmTags.SHA256,
+                new SignatureSubpacket[]{ new SignatureCreationTime(false, new Date(CERTIFICATION_TIME + v * 1000L)) },
+                unhashed, new byte[2], new MPInteger[]{ new MPInteger(BigInteger.ONE.shiftLeft(255).add(BigInteger.valueOf(v))) });
+            bOut.write(sig.getEncoded());
+        }
+
+        return new PGPPublicKeyRing(bOut.toByteArray(), new BcKeyFingerprintCalculator());
+    }
+
+    /**
+     * One certification whose unhashed area holds count trust signature subpackets carrying the
+     * values first .. first + count - 1 in their two data octets.
+     */
+    private PGPSignature withUnhashedSubpackets(int first, int count)
+        throws IOException, PGPException
+    {
+        SignatureSubpacket[] unhashed = new SignatureSubpacket[count];
+        for (int i = 0; i < count; i++)
+        {
+            int v = first + i;
+            unhashed[i] = new TrustSignature(false, (v >>> 8) & 0xff, v & 0xff);
+        }
+        SignaturePacket sig = new SignaturePacket(PGPSignature.DEFAULT_CERTIFICATION, CERTIFIER_KEY_ID,
+            PublicKeyAlgorithmTags.RSA_GENERAL, HashAlgorithmTags.SHA256,
+            new SignatureSubpacket[]{ new SignatureCreationTime(false, new Date(CERTIFICATION_TIME)) },
+            unhashed, new byte[2], new MPInteger[]{ new MPInteger(BigInteger.ONE.shiftLeft(255)) });
+
+        return new PGPSignature(new BCPGInputStream(new ByteArrayInputStream(sig.getEncoded())));
+    }
+
+    private String lastUserId(PGPPublicKey key)
+    {
+        String last = null;
+        for (Iterator it = key.getUserIDs(); it.hasNext();)
+        {
+            last = (String)it.next();
+        }
+        return last;
     }
 
     private PGPPublicKeyRing readCert(String encodedCertificate)
