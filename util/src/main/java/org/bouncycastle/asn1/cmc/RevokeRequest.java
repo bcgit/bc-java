@@ -74,7 +74,12 @@ public class RevokeRequest
         }
         if (seq.size() > index && seq.getObjectAt(index).toASN1Primitive() instanceof ASN1UTF8String)
         {
-            this.comment = ASN1UTF8String.getInstance(seq.getObjectAt(index));
+            this.comment = ASN1UTF8String.getInstance(seq.getObjectAt(index++));
+        }
+
+        if (index != seq.size())
+        {
+            throw new IllegalArgumentException("incorrect sequence size");
         }
     }
 

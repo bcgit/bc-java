@@ -86,6 +86,12 @@ public class DSTU4145ECBinary
         n = ASN1Integer.getInstance(seq.getObjectAt(index));
         index++;
         bp = ASN1OctetString.getInstance(seq.getObjectAt(index));
+        index++;
+
+        if (index != seq.size())
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
     }
 
     public static DSTU4145ECBinary getInstance(Object obj)

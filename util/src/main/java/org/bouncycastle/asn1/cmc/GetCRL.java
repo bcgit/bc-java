@@ -59,7 +59,12 @@ public class GetCRL
         }
         if (seq.size() > index && seq.getObjectAt(index).toASN1Primitive() instanceof ASN1BitString)
         {
-            this.reasons = new ReasonFlags(ASN1BitString.getInstance(seq.getObjectAt(index)));
+            this.reasons = new ReasonFlags(ASN1BitString.getInstance(seq.getObjectAt(index++)));
+        }
+
+        if (index != seq.size())
+        {
+            throw new IllegalArgumentException("incorrect sequence size");
         }
     }
 

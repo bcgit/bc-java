@@ -36,14 +36,22 @@ public class ContentHints
     private ContentHints(ASN1Sequence seq)
     {
         ASN1Encodable field = seq.getObjectAt(0);
+        int expected;
         if (field.toASN1Primitive() instanceof ASN1UTF8String)
         {
             contentDescription = ASN1UTF8String.getInstance(field);
             contentType = ASN1ObjectIdentifier.getInstance(seq.getObjectAt(1));
+            expected = 2;
         }
         else
         {
             contentType = ASN1ObjectIdentifier.getInstance(seq.getObjectAt(0));
+            expected = 1;
+        }
+
+        if (seq.size() != expected)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
         }
     }
 

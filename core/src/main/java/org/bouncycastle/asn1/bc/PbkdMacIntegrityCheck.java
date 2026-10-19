@@ -36,7 +36,7 @@ public class PbkdMacIntegrityCheck
 
     private PbkdMacIntegrityCheck(ASN1Sequence seq)
     {
-        if (seq.size() < 3)
+        if (seq.size() != 3)
         {
             throw new IllegalArgumentException("Bad sequence size: " + seq.size());
         }

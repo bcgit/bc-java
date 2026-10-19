@@ -21,7 +21,11 @@ import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.DERTaggedObject;
+import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.DERUTCTime;
+import org.bouncycastle.asn1.bc.LinkedCertificate;
+import org.bouncycastle.asn1.bc.PbkdKeyData;
+import org.bouncycastle.asn1.bc.PbkdMacIntegrityCheck;
 import org.bouncycastle.asn1.ocsp.BasicOCSPResponse;
 import org.bouncycastle.asn1.ocsp.CertID;
 import org.bouncycastle.asn1.ocsp.CrlID;
@@ -44,6 +48,8 @@ import org.bouncycastle.asn1.pkcs.RSASSAPSSparams;
 import org.bouncycastle.asn1.pkcs.SignedData;
 import org.bouncycastle.asn1.pkcs.SignerInfo;
 import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.ua.DSTU4145ECBinary;
+import org.bouncycastle.asn1.ua.DSTU4145NamedCurves;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.AuthorityKeyIdentifier;
 import org.bouncycastle.asn1.x509.BasicConstraints;
@@ -75,11 +81,13 @@ import org.bouncycastle.asn1.x509.TBSCertificateStructure;
 import org.bouncycastle.asn1.x509.Time;
 import org.bouncycastle.asn1.x509.V2Form;
 import org.bouncycastle.asn1.x509.V3TBSCertificateGenerator;
+import org.bouncycastle.asn1.x9.DomainParameters;
+import org.bouncycastle.asn1.x9.ValidationParams;
 import org.bouncycastle.asn1.x509.Validity;
 import org.bouncycastle.util.test.SimpleTest;
 
 /**
- * The OPTIONAL tagged fields of the core SEQUENCE types (X.509, PKCS, OCSP) may each appear at most once
+ * The OPTIONAL tagged fields of the core SEQUENCE types (X.509, PKCS, OCSP, BC, X9, UA) may each appear at most once
  * and only in definition order: duplicates, reordered fields, non-context tags and trailing elements
  * are rejected, while every legal combination still parses (github #2516).
  */
@@ -192,6 +200,8 @@ public class SequenceFieldOrderTest
         pkcs7SignedData();
         ocspRequests();
         ocspResponses();
+        bcTypes();
+        domainParameters();
     }
 
     private void authorityKeyIdentifier()
@@ -790,6 +800,78 @@ public class SequenceFieldOrderTest
         accepts("RevokedInfo", revoked, els(producedAt, ctx(0, true, new ASN1Enumerated(1))));
         rejects("RevokedInfo [1] as revocationReason", revoked, els(producedAt, ctx(1, true, new ASN1Enumerated(1))));
         rejects("RevokedInfo trailing element", revoked, els(producedAt, ctx(0, true, new ASN1Enumerated(1)), ONE));
+    }
+
+    private void bcTypes()
+        throws IOException
+    {
+        Parser keyData = new Parser()
+        {
+            public Object parse(ASN1Sequence seq)
+            {
+                return PbkdKeyData.getInstance(seq);
+            }
+        };
+        ASN1Encodable[] head = new ASN1Encodable[]{ new DERUTF8String("AES"), new DEROctetString(new byte[8]) };
+        ASN1Encodable salt = ctx(0, false, new DEROctetString(new byte[16]));
+        ASN1Encodable count = ctx(1, false, new ASN1Integer(1000));
+        accepts("PbkdKeyData", keyData, concat(head, els(salt, count)));
+        rejects("PbkdKeyData duplicate", keyData, concat(head, els(salt, salt)));
+        rejects("PbkdKeyData order", keyData, concat(head, els(count, salt)));
+
+        Parser linked = new Parser()
+        {
+            public Object parse(ASN1Sequence seq)
+            {
+                return LinkedCertificate.getInstance(seq);
+            }
+        };
+        ASN1Encodable digest = new DERSequence(els(SHA256_RSA, new DEROctetString(new byte[32])));
+        ASN1Encodable location = new GeneralName(GeneralName.uniformResourceIdentifier, "http://a.example/cert");
+        ASN1Encodable certIssuer = ctx(0, true, NAME);
+        ASN1Encodable caCerts = ctx(1, false, new GeneralNames(new GeneralName(NAME)));
+        accepts("LinkedCertificate", linked, els(digest, location, certIssuer, caCerts));
+        rejects("LinkedCertificate order", linked, els(digest, location, caCerts, certIssuer));
+        rejects("LinkedCertificate duplicate", linked, els(digest, location, certIssuer, certIssuer));
+
+        Parser macCheck = new Parser()
+        {
+            public Object parse(ASN1Sequence seq)
+            {
+                return PbkdMacIntegrityCheck.getInstance(seq);
+            }
+        };
+        ASN1Encodable kdf = new DERSequence(els(PKCSObjectIdentifiers.id_PBKDF2, new DERSequence(els(new DEROctetString(new byte[16]), new ASN1Integer(1000)))));
+        accepts("PbkdMacIntegrityCheck", macCheck, els(SHA256_RSA, kdf, new DEROctetString(new byte[32])));
+        rejects("PbkdMacIntegrityCheck trailing element", macCheck, els(SHA256_RSA, kdf, new DEROctetString(new byte[32]), ONE));
+    }
+
+    private void domainParameters()
+        throws IOException
+    {
+        Parser p = new Parser()
+        {
+            public Object parse(ASN1Sequence seq)
+            {
+                return DomainParameters.getInstance(seq);
+            }
+        };
+        ASN1Encodable[] pgq = new ASN1Encodable[]{ new ASN1Integer(23), new ASN1Integer(5), new ASN1Integer(11) };
+        ASN1Encodable validation = new ValidationParams(new byte[20], 7);
+        accepts("DomainParameters", p, concat(pgq, els(new ASN1Integer(2), validation)));
+        accepts("DomainParameters", p, concat(pgq, els(validation)));
+        rejects("DomainParameters element after validationParams", p, concat(pgq, els(validation, new ASN1Integer(2))));
+
+        Parser dstu = new Parser()
+        {
+            public Object parse(ASN1Sequence seq)
+            {
+                return DSTU4145ECBinary.getInstance(seq);
+            }
+        };
+        ASN1Encodable[] curve = ((ASN1Sequence)new DSTU4145ECBinary(DSTU4145NamedCurves.getByOID(DSTU4145NamedCurves.getOIDs()[0])).toASN1Primitive()).toArray();
+        accepts("DSTU4145ECBinary", dstu, curve);
+        rejects("DSTU4145ECBinary trailing element", dstu, concat(curve, els(ONE)));
     }
 
     public static void main(String[] args)

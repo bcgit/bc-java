@@ -8,6 +8,7 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.ASN1UTF8String;
+import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
@@ -55,9 +56,15 @@ public class PbkdKeyData
         ASN1Integer iterationCount = null;
         ASN1OctetString encoded = null;
 
+        int lastTagNo = -1;
         for (int i = 2; i != seq.size(); i++)
         {
-            ASN1TaggedObject tagged = ASN1TaggedObject.getInstance(seq.getObjectAt(i));
+            ASN1TaggedObject tagged = ASN1TaggedObject.getInstance(seq.getObjectAt(i), BERTags.CONTEXT_SPECIFIC);
+            if (tagged.getTagNo() <= lastTagNo)
+            {
+                throw new IllegalArgumentException("tag [" + tagged.getTagNo() + "] repeated or out of order");
+            }
+            lastTagNo = tagged.getTagNo();
 
             switch (tagged.getTagNo())
             {

@@ -5,6 +5,7 @@ import java.util.Date;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1GeneralizedTime;
 import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.cmc.GetCRL;
 import org.bouncycastle.asn1.x500.X500Name;
@@ -119,5 +120,27 @@ public class GetCRLTest
             }
         }
 
+        // the optional fields come once each in definition order, and nothing else may follow (github #2516)
+        X500Name issuer = new X500Name("CN=Issuer");
+        ASN1Encodable time = new ASN1GeneralizedTime(new Date());
+        ASN1Encodable reasons = new DERBitString(new byte[]{ (byte)0x80 }, 7);
+        try
+        {
+            GetCRL.getInstance(new DERSequence(new ASN1Encodable[]{ issuer, reasons, time }));
+            fail("reasons before time accepted");
+        }
+        catch (IllegalArgumentException e)
+        {
+            // expected
+        }
+        try
+        {
+            GetCRL.getInstance(new DERSequence(new ASN1Encodable[]{ issuer, new ASN1Integer(1) }));
+            fail("element of unexpected type accepted");
+        }
+        catch (IllegalArgumentException e)
+        {
+            // expected
+        }
     }
 }

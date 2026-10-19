@@ -134,6 +134,11 @@ public class DomainParameters
         {
             this.validationParams = null;
         }
+
+        if (e.hasMoreElements())
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
     }
 
     private static ASN1Encodable getNext(Enumeration e)
