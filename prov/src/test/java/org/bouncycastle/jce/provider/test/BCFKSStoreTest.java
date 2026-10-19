@@ -24,8 +24,10 @@ import java.security.interfaces.RSAPrivateCrtKey;
 import java.security.spec.ECGenParameterSpec;
 import java.security.spec.RSAPrivateCrtKeySpec;
 import java.security.spec.X509EncodedKeySpec;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.crypto.Mac;
@@ -250,6 +252,9 @@ public class BCFKSStoreTest
     private void checkInvalidLoadForPassword(KeyStore store, char[] password, byte[] data)
         throws NoSuchAlgorithmException, CertificateException, KeyStoreException
     {
+        int sizeBefore = store.size();
+        List aliasesBefore = Collections.list(store.aliases());
+
         try
         {
             store.load(new ByteArrayInputStream(data), password);
@@ -257,6 +262,11 @@ public class BCFKSStoreTest
         catch (IOException e)
         {
             isTrue("wrong message", "BCFKS KeyStore corrupted: MAC calculation failed".equals(e.getMessage()));
+
+            // a load that fails leaves the store as it was
+            isTrue("failed load changed the store size", sizeBefore == store.size());
+            isTrue("failed load changed the store aliases", aliasesBefore.equals(Collections.list(store.aliases())));
+            return;
         }
 
         isTrue("", 0 == store.size());
@@ -1615,18 +1625,22 @@ public class BCFKSStoreTest
         isEquals("privkey", en2.nextElement());
         isTrue(!en2.hasMoreElements());
 
-        // check invalid load with content
+        // check invalid load with content: a load that fails leaves the store as it was, still usable
 
         checkInvalidLoad(store1, passwd, data);
 
+        isEquals(1, store1.size());
+        store1.store(new ByteArrayOutputStream(), passwd);
+
+        KeyStore unloaded = KeyStore.getInstance("BCFKS", "BC");
         try
         {
-            store1.store(new ByteArrayOutputStream(), passwd);
+            unloaded.store(new ByteArrayOutputStream(), passwd);
             fail("no exception");
         }
-        catch (IOException e)
+        catch (KeyStoreException e)
         {
-            isEquals("KeyStore not initialized", e.getMessage());
+            // never loaded, so the KeyStore itself refuses
         }
 
         // check deletion on purpose

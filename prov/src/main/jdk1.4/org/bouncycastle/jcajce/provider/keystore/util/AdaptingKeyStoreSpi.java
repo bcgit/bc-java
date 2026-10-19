@@ -130,32 +130,46 @@ public class AdaptingKeyStoreSpi
         }
         else
         {
-            // the FIPS BCFKS/JKS compatibility is explicit and doesn't use the override.
-            if (Properties.isOverrideSet(COMPAT_OVERRIDE) || !(primaryStore instanceof PKCS12KeyStoreSpi))
+            // a load that fails leaves the store showing what it showed before, not the other delegate
+            KeyStoreSpi previous = keyStoreSpi;
+            boolean loaded = false;
+            try
             {
-                if (!stream.markSupported())
+                // the FIPS BCFKS/JKS compatibility is explicit and doesn't use the override.
+                if (Properties.isOverrideSet(COMPAT_OVERRIDE) || !(primaryStore instanceof PKCS12KeyStoreSpi))
                 {
-                    stream = new BufferedInputStream(stream);
-                }
+                    if (!stream.markSupported())
+                    {
+                        stream = new BufferedInputStream(stream);
+                    }
 
-                stream.mark(8);
-                if (jksStore.engineProbe(stream))
-                {
-                    keyStoreSpi = jksStore;
+                    stream.mark(8);
+                    if (jksStore.engineProbe(stream))
+                    {
+                        keyStoreSpi = jksStore;
+                    }
+                    else
+                    {
+                        keyStoreSpi = primaryStore;
+                    }
+
+                    stream.reset();
                 }
                 else
                 {
                     keyStoreSpi = primaryStore;
                 }
 
-                stream.reset();
+                keyStoreSpi.engineLoad(stream, password);
+                loaded = true;
             }
-            else
+            finally
             {
-                keyStoreSpi = primaryStore;
+                if (!loaded)
+                {
+                    keyStoreSpi = previous;
+                }
             }
-
-            keyStoreSpi.engineLoad(stream, password);
         }
     }
 }

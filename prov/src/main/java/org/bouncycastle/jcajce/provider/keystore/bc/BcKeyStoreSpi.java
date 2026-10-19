@@ -875,14 +875,42 @@ public class BcKeyStoreSpi
         dOut.write(NULL);
     }
 
+    /**
+     * Load the store from a stream, or make it empty when the stream is null, as KeyStore.load() specifies.
+     * A load that fails leaves the store as it was before the call.
+     */
     public void engineLoad(
         InputStream stream,
-        char[]      password) 
+        char[]      password)
         throws IOException
     {
-        table.clear();
+        Hashtable savedTable = table;
+        table = new Hashtable();
 
-        if (stream == null)     // just initialising
+        boolean loaded = false;
+        try
+        {
+            loadTable(stream, password);
+            loaded = true;
+        }
+        finally
+        {
+            if (!loaded)
+            {
+                table = savedTable;
+            }
+        }
+    }
+
+    /**
+     * Read the entries of a store into the (empty) table, or leave it empty when the stream is null.
+     */
+    protected void loadTable(
+        InputStream stream,
+        char[]      password)
+        throws IOException
+    {
+        if (stream == null)     // an empty store
         {
             return;
         }
@@ -1038,14 +1066,12 @@ public class BcKeyStoreSpi
             super(1);
         }
 
-        public void engineLoad(
+        protected void loadTable(
             InputStream stream,
-            char[]      password) 
+            char[]      password)
             throws IOException
         {
-            table.clear();
-    
-            if (stream == null)     // just initialising
+            if (stream == null)     // an empty store
             {
                 return;
             }

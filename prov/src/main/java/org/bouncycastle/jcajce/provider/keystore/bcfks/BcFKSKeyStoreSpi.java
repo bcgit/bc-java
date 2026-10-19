@@ -1292,12 +1292,35 @@ class BcFKSKeyStoreSpi
         return encStoreData;
     }
 
+    /**
+     * Load the store as the parameter describes, or make it empty when the parameter is null. A load that
+     * fails leaves the store as it was before the call.
+     */
     public void engineLoad(KeyStore.LoadStoreParameter parameter)
+        throws CertificateException, NoSuchAlgorithmException, IOException
+    {
+        LoadState saved = new LoadState();
+        boolean loaded = false;
+        try
+        {
+            doLoad(parameter);
+            loaded = true;
+        }
+        finally
+        {
+            if (!loaded)
+            {
+                saved.restore();
+            }
+        }
+    }
+
+    private void doLoad(KeyStore.LoadStoreParameter parameter)
         throws CertificateException, NoSuchAlgorithmException, IOException
     {
         if (parameter == null)
         {
-            engineLoad(null, null);
+            doLoad((InputStream)null, null);
         }
         else if (parameter instanceof BCFKSLoadStoreParameter)
         {
@@ -1334,7 +1357,7 @@ class BcFKSKeyStoreSpi
 
             InputStream inputStream = bcParam.getInputStream();
 
-            engineLoad(inputStream, password);
+            doLoad(inputStream, password);
 
             if (inputStream != null)
             {
@@ -1350,7 +1373,7 @@ class BcFKSKeyStoreSpi
         {
             BCLoadStoreParameter bcParam = (BCLoadStoreParameter)parameter;
 
-            engineLoad(bcParam.getInputStream(), ParameterUtil.extractPassword(parameter));
+            doLoad(bcParam.getInputStream(), ParameterUtil.extractPassword(parameter));
         }
         else
         {
@@ -1408,7 +1431,63 @@ class BcFKSKeyStoreSpi
         return true;
     }
     
+    /**
+     * Load the store from a stream, or make it empty when the stream is null, as KeyStore.load() specifies.
+     * A load that fails leaves the store as it was before the call.
+     */
     public void engineLoad(InputStream inputStream, char[] password)
+        throws IOException, NoSuchAlgorithmException, CertificateException
+    {
+        LoadState saved = new LoadState();
+        boolean loaded = false;
+        try
+        {
+            doLoad(inputStream, password);
+            loaded = true;
+        }
+        finally
+        {
+            if (!loaded)
+            {
+                saved.restore();
+            }
+        }
+    }
+
+    /**
+     * Everything a load can change, captured so that a load that fails can put it back.
+     */
+    private class LoadState
+    {
+        private final Map<String, ObjectData> savedEntries = new HashMap<String, ObjectData>(entries);
+        private final Map<String, PrivateKey> savedPrivateKeyCache = new HashMap<String, PrivateKey>(privateKeyCache);
+        private final AlgorithmIdentifier savedHmacAlgorithm = hmacAlgorithm;
+        private final KeyDerivationFunc savedHmacPkbdAlgorithm = hmacPkbdAlgorithm;
+        private final AlgorithmIdentifier savedSignatureAlgorithm = signatureAlgorithm;
+        private final Date savedCreationDate = creationDate;
+        private final Date savedLastModifiedDate = lastModifiedDate;
+        private final ASN1ObjectIdentifier savedStoreEncryptionAlgorithm = storeEncryptionAlgorithm;
+        private final PublicKey savedVerificationKey = verificationKey;
+        private final BCFKSLoadStoreParameter.CertChainValidator savedValidator = validator;
+
+        void restore()
+        {
+            entries.clear();
+            entries.putAll(savedEntries);
+            privateKeyCache.clear();
+            privateKeyCache.putAll(savedPrivateKeyCache);
+            hmacAlgorithm = savedHmacAlgorithm;
+            hmacPkbdAlgorithm = savedHmacPkbdAlgorithm;
+            signatureAlgorithm = savedSignatureAlgorithm;
+            creationDate = savedCreationDate;
+            lastModifiedDate = savedLastModifiedDate;
+            storeEncryptionAlgorithm = savedStoreEncryptionAlgorithm;
+            verificationKey = savedVerificationKey;
+            validator = savedValidator;
+        }
+    }
+
+    private void doLoad(InputStream inputStream, char[] password)
         throws IOException, NoSuchAlgorithmException, CertificateException
     {
         // reset any current values

@@ -68,6 +68,7 @@ public class RegressionTest
         new KeyAgreementInitParametersTest(),
         new Argon2KeyFactoryTest(),
         new KeyStoreTest(),
+        new KeyStoreLoadTest(),
         new MacTest(),
         new MalformedKeyInfoTest(),
         new MessageDigestUtilsTest(),

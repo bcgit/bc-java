@@ -822,7 +822,55 @@ class BcFKSKeyStoreSpi
         outputStream.flush();
     }
 
+    /**
+     * Load the store from a stream, or make it empty when the stream is null, as KeyStore.load() specifies.
+     * A load that fails leaves the store as it was before the call.
+     */
     public void engineLoad(InputStream inputStream, char[] password)
+        throws IOException, NoSuchAlgorithmException, CertificateException
+    {
+        LoadState saved = new LoadState();
+        boolean loaded = false;
+        try
+        {
+            doLoad(inputStream, password);
+            loaded = true;
+        }
+        finally
+        {
+            if (!loaded)
+            {
+                saved.restore();
+            }
+        }
+    }
+
+    /**
+     * Everything a load can change, captured so that a load that fails can put it back.
+     */
+    private class LoadState
+    {
+        private final Map savedEntries = new HashMap(entries);
+        private final Map savedPrivateKeyCache = new HashMap(privateKeyCache);
+        private final AlgorithmIdentifier savedHmacAlgorithm = hmacAlgorithm;
+        private final KeyDerivationFunc savedHmacPkbdAlgorithm = hmacPkbdAlgorithm;
+        private final Date savedCreationDate = creationDate;
+        private final Date savedLastModifiedDate = lastModifiedDate;
+
+        void restore()
+        {
+            entries.clear();
+            entries.putAll(savedEntries);
+            privateKeyCache.clear();
+            privateKeyCache.putAll(savedPrivateKeyCache);
+            hmacAlgorithm = savedHmacAlgorithm;
+            hmacPkbdAlgorithm = savedHmacPkbdAlgorithm;
+            creationDate = savedCreationDate;
+            lastModifiedDate = savedLastModifiedDate;
+        }
+    }
+
+    private void doLoad(InputStream inputStream, char[] password)
         throws IOException, NoSuchAlgorithmException, CertificateException
     {
         // reset any current values

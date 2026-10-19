@@ -782,13 +782,62 @@ public class PKCS12KeyStoreSpi
         return cipher;
     }
 
+    /**
+     * Load the store from a stream, or make it empty when the stream is null, as KeyStore.load() specifies.
+     * A load that fails leaves the store as it was before the call.
+     */
     public void engineLoad(
         InputStream stream,
         char[] password)
         throws IOException
     {
-        if (stream == null)     // just initialising
+        IgnoresCaseHashtable savedKeys = keys;
+        Hashtable savedLocalIds = localIds;
+        IgnoresCaseHashtable savedCerts = certs;
+        Hashtable savedChainCerts = chainCerts;
+        Hashtable savedKeyCerts = keyCerts;
+        AlgorithmIdentifier savedMacAlgorithm = macAlgorithm;
+        int savedItCount = itCount;
+        int savedSaltLength = saltLength;
+
+        boolean loaded = false;
+        try
         {
+            doLoad(stream, password);
+            loaded = true;
+        }
+        finally
+        {
+            if (!loaded)
+            {
+                keys = savedKeys;
+                localIds = savedLocalIds;
+                certs = savedCerts;
+                chainCerts = savedChainCerts;
+                keyCerts = savedKeyCerts;
+                macAlgorithm = savedMacAlgorithm;
+                itCount = savedItCount;
+                saltLength = savedSaltLength;
+            }
+        }
+    }
+
+    private void doLoad(
+        InputStream stream,
+        char[] password)
+        throws IOException
+    {
+        if (stream == null)     // an empty store
+        {
+            keys = new IgnoresCaseHashtable();
+            localIds = new Hashtable();
+            certs = new IgnoresCaseHashtable();
+            chainCerts = new Hashtable();
+            keyCerts = new Hashtable();
+            macAlgorithm = DEFAULT_MAC_ALGORITHM;
+            itCount = -1;
+            saltLength = DEFAULT_MAC_SALT_LENGTH;
+
             return;
         }
 

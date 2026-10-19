@@ -186,10 +186,39 @@ public class JKSKeyStoreSpi
         throw new IOException(NOT_IMPLEMENTED_MESSAGE);
     }
 
+    /**
+     * Load the store from a stream, replacing whatever it held, or make it empty when the stream is null, as
+     * KeyStore.load() specifies. A load that fails leaves the store as it was before the call.
+     */
     public void engineLoad(InputStream stream, char[] password)
         throws IOException, NoSuchAlgorithmException, CertificateException
     {
-        if (stream == null)
+        synchronized (certificateEntries)
+        {
+            Hashtable<String, BCJKSTrustedCertEntry> saved = new Hashtable<String, BCJKSTrustedCertEntry>(certificateEntries);
+            certificateEntries.clear();
+
+            boolean loaded = false;
+            try
+            {
+                doLoad(stream, password);
+                loaded = true;
+            }
+            finally
+            {
+                if (!loaded)
+                {
+                    certificateEntries.clear();
+                    certificateEntries.putAll(saved);
+                }
+            }
+        }
+    }
+
+    private void doLoad(InputStream stream, char[] password)
+        throws IOException, NoSuchAlgorithmException, CertificateException
+    {
+        if (stream == null)     // an empty store
         {
             return;
         }
