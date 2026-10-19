@@ -101,28 +101,31 @@ public class Headers
     private void init(String defaultContentTransferEncoding)
         throws IOException
     {
-        String header = "";
+        // a builder: concatenation copied the header so far per continuation line, quadratic in its length
+        StringBuilder header = new StringBuilder();
         for (Iterator it = headersAsPresented.iterator(); it.hasNext();)
         {
             String line = (String)it.next();
             if (line.startsWith(" ") || line.startsWith("\t"))
             {
-                header = header + line.trim();
+                header.append(line.trim());
             }
             else
             {
                 if (header.length() != 0)
                 {
-                    putHeader(header);
+                    putHeader(header.toString());
                 }
-                header = line;
+                header.setLength(0);
+                header.append(line);
             }
         }
 
         // pick up last header line
-        if (header.trim().length() != 0)
+        String lastHeader = header.toString();
+        if (lastHeader.trim().length() != 0)
         {
-            putHeader(header);
+            putHeader(lastHeader);
         }
 
         String contentTypeHeader = (this.getValues("Content-Type") == null) ? "text/plain" : this.getValues("Content-Type")[0];

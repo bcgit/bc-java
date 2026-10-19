@@ -142,6 +142,39 @@ public class HeadersTest
         assertNull(plain.getBoundary());
     }
 
+    /**
+     * Continuation lines were joined with String concatenation, which copies the whole header so
+     * far for each line, so parsing a folded header was quadratic in its length: a 1 MB header block
+     * of short continuation lines took about 17 seconds. The header block is the message's own
+     * bytes and nothing bounds it, so this was attacker-controlled CPU.
+     */
+    public void testLongFoldedHeaderStaysLinear()
+        throws IOException
+    {
+        int lines = 200000;
+        StringBuilder sb = new StringBuilder("Content-Type: text/plain\r\nX-Folded: start\r\n");
+        for (int i = 0; i < lines; i++)
+        {
+            sb.append(" 12345678\r\n");
+        }
+        sb.append("\r\nbody");
+
+        long start = System.currentTimeMillis();
+
+        Headers h = fromStream(sb.toString());
+
+        long elapsed = System.currentTimeMillis() - start;
+
+        // concatenating this is ~60s; appending it is milliseconds
+        assertTrue("parsing took " + elapsed + "ms", elapsed < 10000L);
+
+        String value = h.getValues("X-Folded")[0];
+        assertEquals("start".length() + lines * 8, value.length());
+        assertTrue(value.startsWith("start12345678"));
+        assertTrue(value.endsWith("1234567812345678"));
+        assertEquals("text/plain", h.getContentType());
+    }
+
     /** The compatibility assertion: well-formed header blocks are unchanged. */
     public void testWellFormedHeadersUnchanged()
         throws IOException
