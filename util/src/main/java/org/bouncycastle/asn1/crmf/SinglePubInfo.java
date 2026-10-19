@@ -32,6 +32,11 @@ public class SinglePubInfo
 
     private SinglePubInfo(ASN1Sequence seq)
     {
+        if (seq.size() < 1 || seq.size() > 2)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
+
         pubMethod = ASN1Integer.getInstance(seq.getObjectAt(0));
 
         if (seq.size() == 2)

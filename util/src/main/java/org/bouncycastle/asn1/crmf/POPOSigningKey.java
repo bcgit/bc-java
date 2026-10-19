@@ -31,7 +31,12 @@ public class POPOSigningKey
                 ASN1Util.getContextBaseUniversal(tagObj, 0, false, BERTags.SEQUENCE));
         }
         algorithmIdentifier = AlgorithmIdentifier.getInstance(seq.getObjectAt(index++));
-        signature = ASN1BitString.getInstance(seq.getObjectAt(index));
+        signature = ASN1BitString.getInstance(seq.getObjectAt(index++));
+
+        if (index != seq.size())
+        {
+            throw new IllegalArgumentException("unexpected element at position " + index);
+        }
     }
 
     public static POPOSigningKey getInstance(Object o)

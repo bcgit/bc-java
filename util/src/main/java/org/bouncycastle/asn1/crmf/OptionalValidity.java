@@ -7,6 +7,7 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.x509.Time;
@@ -45,17 +46,27 @@ public class OptionalValidity
     private OptionalValidity(ASN1Sequence seq)
     {
         Enumeration en = seq.getObjects();
+        int lastTagNo = -1;
         while (en.hasMoreElements())
         {
-            ASN1TaggedObject tObj = (ASN1TaggedObject)en.nextElement();
+            ASN1TaggedObject tObj = ASN1TaggedObject.getInstance(en.nextElement(), BERTags.CONTEXT_SPECIFIC);
+            if (tObj.getTagNo() <= lastTagNo)
+            {
+                throw new IllegalArgumentException("tag [" + tObj.getTagNo() + "] repeated or out of order");
+            }
+            lastTagNo = tObj.getTagNo();
 
             if (tObj.getTagNo() == 0)
             {
                 notBefore = Time.getInstance(tObj, true); // CHOICE
             }
-            else
+            else if (tObj.getTagNo() == 1)
             {
                 notAfter = Time.getInstance(tObj, true); // CHOICE
+            }
+            else
+            {
+                throw new IllegalArgumentException("unknown tag: " + tObj.getTagNo());
             }
         }
 

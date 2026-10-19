@@ -16,9 +16,9 @@ public class CertRequest
 
     private CertRequest(ASN1Sequence seq)
     {
-        if (seq.size() < 2)
+        if (seq.size() < 2 || seq.size() > 3)
         {
-            throw new IllegalArgumentException("expected sequence size of 2");
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
         }
 
         certReqId = new ASN1Integer(ASN1Integer.getInstance(seq.getObjectAt(0)).getValue());

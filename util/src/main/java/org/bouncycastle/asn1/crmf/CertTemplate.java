@@ -8,6 +8,7 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.Extensions;
@@ -34,9 +35,15 @@ public class CertTemplate
         this.seq = seq;
 
         Enumeration en = seq.getObjects();
+        int lastTagNo = -1;
         while (en.hasMoreElements())
         {
-            ASN1TaggedObject tObj = (ASN1TaggedObject)en.nextElement();
+            ASN1TaggedObject tObj = ASN1TaggedObject.getInstance(en.nextElement(), BERTags.CONTEXT_SPECIFIC);
+            if (tObj.getTagNo() <= lastTagNo)
+            {
+                throw new IllegalArgumentException("tag [" + tObj.getTagNo() + "] repeated or out of order");
+            }
+            lastTagNo = tObj.getTagNo();
 
             switch (tObj.getTagNo())
             {

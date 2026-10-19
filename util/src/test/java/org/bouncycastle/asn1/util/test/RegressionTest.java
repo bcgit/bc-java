@@ -41,6 +41,7 @@ import org.bouncycastle.asn1.cms.test.CMSSequenceFieldOrderTest;
 import org.bouncycastle.asn1.cms.test.CMSTest;
 import org.bouncycastle.asn1.cms.test.ContentTypeSequenceSizeTest;
 import org.bouncycastle.asn1.cms.test.SignerInfoTest;
+import org.bouncycastle.asn1.crmf.test.CRMFSequenceFieldOrderTest;
 import org.bouncycastle.asn1.crmf.test.DhSigStaticTest;
 import org.bouncycastle.asn1.crmf.test.PKIPublicationInfoTest;
 import org.bouncycastle.asn1.esf.test.CommitmentTypeIndicationUnitTest;
@@ -116,6 +117,7 @@ public class RegressionTest
         new ContentTypeSequenceSizeTest(),
         new DhSigStaticTest(),
         new PKIPublicationInfoTest(),
+        new CRMFSequenceFieldOrderTest(),
         new CommitmentTypeIndicationUnitTest(),
         new CommitmentTypeQualifierUnitTest(),
         new SignerLocationUnitTest(),

@@ -8,6 +8,7 @@ import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -37,9 +38,15 @@ public class EncryptedValue
     private EncryptedValue(ASN1Sequence seq)
     {
         int index = 0;
-        while (seq.getObjectAt(index) instanceof ASN1TaggedObject)
+        int lastTagNo = -1;
+        while (index < seq.size() && seq.getObjectAt(index) instanceof ASN1TaggedObject)
         {
-            ASN1TaggedObject tObj = (ASN1TaggedObject)seq.getObjectAt(index);
+            ASN1TaggedObject tObj = ASN1TaggedObject.getInstance(seq.getObjectAt(index), BERTags.CONTEXT_SPECIFIC);
+            if (tObj.getTagNo() <= lastTagNo)
+            {
+                throw new IllegalArgumentException("tag [" + tObj.getTagNo() + "] repeated or out of order");
+            }
+            lastTagNo = tObj.getTagNo();
 
             switch (tObj.getTagNo())
             {
@@ -59,11 +66,15 @@ public class EncryptedValue
                 valueHint = ASN1OctetString.getInstance(tObj, false);
                 break;
             default:
-                throw new IllegalArgumentException("Unknown tag encountered: " + tObj.getTagNo());
+                throw new IllegalArgumentException("unknown tag encountered: " + tObj.getTagNo());
             }
             index++;
         }
 
+        if (index != seq.size() - 1)
+        {
+            throw new IllegalArgumentException("unexpected element at position " + index);
+        }
         encValue = ASN1BitString.getInstance(seq.getObjectAt(index));
     }
 

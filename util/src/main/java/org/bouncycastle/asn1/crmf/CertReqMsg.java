@@ -1,7 +1,5 @@
 package org.bouncycastle.asn1.crmf;
 
-import java.util.Enumeration;
-
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
@@ -19,21 +17,27 @@ public class CertReqMsg
 
     private CertReqMsg(ASN1Sequence seq)
     {
-        Enumeration en = seq.getObjects();
-
-        certReq = CertRequest.getInstance(en.nextElement());
-        while (en.hasMoreElements())
+        int count = seq.size(), pos = 0;
+        if (count < 1 || count > 3)
         {
-            Object o = en.nextElement();
+            throw new IllegalArgumentException("Bad sequence size: " + count);
+        }
 
-            if (o instanceof ASN1TaggedObject || o instanceof ProofOfPossession)
-            {
-                pop = ProofOfPossession.getInstance(o);
-            }
-            else
-            {
-                regInfo = ASN1Sequence.getInstance(o);
-            }
+        certReq = CertRequest.getInstance(seq.getObjectAt(pos++));
+
+        // popo ProofOfPossession OPTIONAL (a CHOICE of tagged alternatives), then regInfo OPTIONAL
+        if (pos < count && seq.getObjectAt(pos).toASN1Primitive() instanceof ASN1TaggedObject)
+        {
+            pop = ProofOfPossession.getInstance(seq.getObjectAt(pos++));
+        }
+        if (pos < count)
+        {
+            regInfo = ASN1Sequence.getInstance(seq.getObjectAt(pos++));
+        }
+
+        if (pos != count)
+        {
+            throw new IllegalArgumentException("unexpected element at position " + pos);
         }
     }
 
