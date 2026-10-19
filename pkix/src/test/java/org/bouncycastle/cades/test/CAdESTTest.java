@@ -461,6 +461,10 @@ public class CAdESTTest
     public void testVerifierOverloadRejectsWrongCertificate()
         throws Exception
     {
+        // made before signing: its notBefore is the time of creation, so made after it could postdate signingTime
+        KeyPair otherKP = CMSTestUtil.makeKeyPair();
+        X509Certificate otherCert = CMSTestUtil.makeCertificate(otherKP, "CN=Other, C=AU", otherKP, "CN=Other, C=AU");
+
         DigestCalculatorProvider digProv = new JcaDigestCalculatorProviderBuilder().setProvider(BC).build();
         ContentSigner cs = new JcaContentSignerBuilder("SHA256withRSA").setProvider(BC).build(signKP.getPrivate());
         X509CertificateHolder ch = new JcaX509CertificateHolder(signCert);
@@ -472,8 +476,6 @@ public class CAdESTTest
         SignerInformation bbSigner = (SignerInformation)bb.getSignerInfos().getSigners().iterator().next();
         SignerInformation btSigner = timestamped(bb, bbSigner, digProv);
 
-        KeyPair otherKP = CMSTestUtil.makeKeyPair();
-        X509Certificate otherCert = CMSTestUtil.makeCertificate(otherKP, "CN=Other, C=AU", otherKP, "CN=Other, C=AU");
         try
         {
             CAdESSignatureTimestampUtil.validateSignatureTimestamps(btSigner,
