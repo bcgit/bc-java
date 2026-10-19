@@ -62,48 +62,33 @@ public class TimeStampReq
 
         seqStart++;
 
-        for (int opt = seqStart; opt < nbObjects; opt++)
+        // reqPolicy, nonce, certReq (DEFAULT FALSE) and extensions [0], each optional, in that order
+        int pos = seqStart;
+        if (pos < nbObjects && seq.getObjectAt(pos).toASN1Primitive() instanceof ASN1ObjectIdentifier)
         {
-            // tsaPolicy
-            if (seq.getObjectAt(opt) instanceof ASN1ObjectIdentifier)
+            tsaPolicy = ASN1ObjectIdentifier.getInstance(seq.getObjectAt(pos++));
+        }
+        if (pos < nbObjects && seq.getObjectAt(pos).toASN1Primitive() instanceof ASN1Integer)
+        {
+            nonce = ASN1Integer.getInstance(seq.getObjectAt(pos++));
+        }
+        if (pos < nbObjects && seq.getObjectAt(pos).toASN1Primitive() instanceof ASN1Boolean)
+        {
+            certReq = ASN1Boolean.getInstance(seq.getObjectAt(pos++));
+        }
+        if (pos < nbObjects)
+        {
+            ASN1TaggedObject tag0 = ASN1TaggedObject.getContextOptional(seq.getObjectAt(pos), 0);
+            if (tag0 != null)
             {
-                checkOption(tsaPolicy, opt, 2);
-                tsaPolicy = ASN1ObjectIdentifier.getInstance(seq.getObjectAt(opt));
-            }
-            // nonce
-            else if (seq.getObjectAt(opt) instanceof ASN1Integer)
-            {
-                checkOption(nonce, opt, 3);
-                nonce = ASN1Integer.getInstance(seq.getObjectAt(opt));
-            }
-            // certReq
-            else if (seq.getObjectAt(opt) instanceof ASN1Boolean)
-            {
-                checkOption(certReq, opt, 4);
-                certReq = ASN1Boolean.getInstance(seq.getObjectAt(opt));
-            }
-            // extensions
-            else if (seq.getObjectAt(opt) instanceof ASN1TaggedObject)
-            {
-                checkOption(extensions, opt, 5);
-                ASN1TaggedObject    tagged = (ASN1TaggedObject)seq.getObjectAt(opt);
-                if (tagged.getTagNo() == 0)
-                {
-                    extensions = Extensions.getInstance(tagged, false);
-                }
-            }
-            else
-            {
-                throw new IllegalArgumentException("unidentified structure in sequence");
+                pos++;
+                extensions = Extensions.getInstance(tag0, false);
             }
         }
-    }
 
-    private void checkOption(Object o, int index, int maxOption)
-    {
-        if (o != null || index > maxOption)
+        if (pos != nbObjects)
         {
-            throw new IllegalArgumentException("badly placed optional in sequence");
+            throw new IllegalArgumentException("unexpected element at position " + pos);
         }
     }
 

@@ -49,6 +49,11 @@ public class TimeStampResp
         {
             timeStampToken = ContentInfo.getInstance(e.nextElement());
         }
+
+        if (e.hasMoreElements())
+        {
+            throw new IllegalArgumentException("unexpected element after timeStampToken");
+        }
     }
 
     public TimeStampResp(PKIStatusInfo pkiStatusInfo, ContentInfo timeStampToken)

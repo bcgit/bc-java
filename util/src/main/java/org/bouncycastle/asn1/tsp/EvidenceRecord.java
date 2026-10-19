@@ -10,6 +10,7 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -169,13 +170,19 @@ public class EvidenceRecord
         this.version = versionNumber;
 
         this.digestAlgorithms = ASN1Sequence.getInstance(sequence.getObjectAt(1));
+        int lastTagNo = -1;
         for (int i = 2; i != sequence.size() - 1; i++)
         {
             ASN1Encodable object = sequence.getObjectAt(i);
 
             if (object instanceof ASN1TaggedObject)
             {
-                ASN1TaggedObject asn1TaggedObject = (ASN1TaggedObject)object;
+                ASN1TaggedObject asn1TaggedObject = ASN1TaggedObject.getInstance(object, BERTags.CONTEXT_SPECIFIC);
+                if (asn1TaggedObject.getTagNo() <= lastTagNo)
+                {
+                    throw new IllegalArgumentException("tag [" + asn1TaggedObject.getTagNo() + "] repeated or out of order");
+                }
+                lastTagNo = asn1TaggedObject.getTagNo();
                 switch (asn1TaggedObject.getTagNo())
                 {
                 case 0:

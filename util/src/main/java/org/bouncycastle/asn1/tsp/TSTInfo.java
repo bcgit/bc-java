@@ -73,39 +73,42 @@ public class TSTInfo
         // default for ordering
         ordering = ASN1Boolean.getInstance(false);
 
-        while (e.hasMoreElements())
+        // accuracy, ordering (DEFAULT FALSE), nonce, tsa [0] and extensions [1], each optional, in that order
+        int pos = 5;
+        if (pos < count && seq.getObjectAt(pos).toASN1Primitive() instanceof ASN1Sequence)
         {
-            ASN1Object o = (ASN1Object) e.nextElement();
+            accuracy = Accuracy.getInstance(seq.getObjectAt(pos++));
+        }
+        if (pos < count && seq.getObjectAt(pos).toASN1Primitive() instanceof ASN1Boolean)
+        {
+            ordering = ASN1Boolean.getInstance(seq.getObjectAt(pos++));
+        }
+        if (pos < count && seq.getObjectAt(pos).toASN1Primitive() instanceof ASN1Integer)
+        {
+            nonce = ASN1Integer.getInstance(seq.getObjectAt(pos++));
+        }
+        if (pos < count)
+        {
+            ASN1TaggedObject tag0 = ASN1TaggedObject.getContextOptional(seq.getObjectAt(pos), 0);
+            if (tag0 != null)
+            {
+                pos++;
+                tsa = GeneralName.getInstance(tag0, true);
+            }
+        }
+        if (pos < count)
+        {
+            ASN1TaggedObject tag1 = ASN1TaggedObject.getContextOptional(seq.getObjectAt(pos), 1);
+            if (tag1 != null)
+            {
+                pos++;
+                extensions = Extensions.getInstance(tag1, false);
+            }
+        }
 
-            if (o instanceof ASN1TaggedObject)
-            {
-                ASN1TaggedObject tagged = (ASN1TaggedObject) o;
-
-                switch (tagged.getTagNo())
-                {
-                case 0:
-                    tsa = GeneralName.getInstance(tagged, true);
-                    break;
-                case 1:
-                    extensions = Extensions.getInstance(tagged, false);
-                    break;
-                default:
-                    throw new IllegalArgumentException("Unknown tag value " + tagged.getTagNo());
-                }
-            }
-            else if (o instanceof ASN1Sequence || o instanceof Accuracy)
-            {
-                accuracy = Accuracy.getInstance(o);
-            }
-            else if (o instanceof ASN1Boolean)
-            {
-                ordering = ASN1Boolean.getInstance(o);
-            }
-            else if (o instanceof ASN1Integer)
-            {
-                nonce = ASN1Integer.getInstance(o);
-            }
-
+        if (pos != count)
+        {
+            throw new IllegalArgumentException("unexpected element at position " + pos);
         }
     }
 
