@@ -10,6 +10,7 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.x509.Extensions;
@@ -68,50 +69,47 @@ public class DVCSRequestInformation
 
         this.service = ServiceType.getInstance(seq.getObjectAt(i++));
 
+        // nonce and requestTime, then requester [0] .. extensions [4], each optional, in that order
+        if (i < seq.size() && seq.getObjectAt(i) instanceof ASN1Integer)
+        {
+            this.nonce = ASN1Integer.getInstance(seq.getObjectAt(i++)).getValue();
+        }
+        if (i < seq.size() && !(seq.getObjectAt(i) instanceof ASN1TaggedObject))
+        {
+            this.requestTime = DVCSTime.getInstance(seq.getObjectAt(i++));
+        }
+
+        int lastTagNo = -1;
         while (i < seq.size())
         {
-            ASN1Encodable x = seq.getObjectAt(i);
+            ASN1TaggedObject t = ASN1TaggedObject.getInstance(seq.getObjectAt(i++), BERTags.CONTEXT_SPECIFIC);
+            int tagNo = t.getTagNo();
+            if (tagNo <= lastTagNo)
+            {
+                throw new IllegalArgumentException("tag [" + tagNo + "] repeated or out of order");
+            }
+            lastTagNo = tagNo;
 
-            if (x instanceof ASN1Integer)
+            switch (tagNo)
             {
-                this.nonce = ASN1Integer.getInstance(x).getValue();
+            case TAG_REQUESTER:
+                this.requester = GeneralNames.getInstance(t, false);
+                break;
+            case TAG_REQUEST_POLICY:
+                this.requestPolicy = PolicyInformation.getInstance(ASN1Sequence.getInstance(t, false));
+                break;
+            case TAG_DVCS:
+                this.dvcs = GeneralNames.getInstance(t, false);
+                break;
+            case TAG_DATA_LOCATIONS:
+                this.dataLocations = GeneralNames.getInstance(t, false);
+                break;
+            case TAG_EXTENSIONS:
+                this.extensions = Extensions.getInstance(t, false);
+                break;
+            default:
+                throw new IllegalArgumentException("unknown tag number encountered: " + tagNo);
             }
-            else if (x instanceof ASN1GeneralizedTime)
-            {
-                this.requestTime = DVCSTime.getInstance(x);
-            }
-            else if (x instanceof ASN1TaggedObject)
-            {
-                ASN1TaggedObject t = ASN1TaggedObject.getInstance(x);
-                int tagNo = t.getTagNo();
-
-                switch (tagNo)
-                {
-                case TAG_REQUESTER:
-                    this.requester = GeneralNames.getInstance(t, false);
-                    break;
-                case TAG_REQUEST_POLICY:
-                    this.requestPolicy = PolicyInformation.getInstance(ASN1Sequence.getInstance(t, false));
-                    break;
-                case TAG_DVCS:
-                    this.dvcs = GeneralNames.getInstance(t, false);
-                    break;
-                case TAG_DATA_LOCATIONS:
-                    this.dataLocations = GeneralNames.getInstance(t, false);
-                    break;
-                case TAG_EXTENSIONS:
-                    this.extensions = Extensions.getInstance(t, false);
-                    break;
-                default:
-                    throw new IllegalArgumentException("unknown tag number encountered: " + tagNo);
-                }
-            }
-            else
-            {
-                this.requestTime = DVCSTime.getInstance(x);
-            }
-
-            i++;
         }
     }
 

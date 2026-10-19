@@ -9,6 +9,7 @@ import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
@@ -56,13 +57,19 @@ public class ECDSAPublicKey
         this.usage = ASN1ObjectIdentifier.getInstance(en.nextElement());
 
         options = 0;
+        int lastTagNo = 0;
         while (en.hasMoreElements())
         {
             Object obj = en.nextElement();
 
             if (obj instanceof ASN1TaggedObject)
             {
-                ASN1TaggedObject to = (ASN1TaggedObject)obj;
+                ASN1TaggedObject to = ASN1TaggedObject.getInstance(obj, BERTags.CONTEXT_SPECIFIC);
+                if (to.getTagNo() <= lastTagNo)
+                {
+                    throw new IllegalArgumentException("tag [" + to.getTagNo() + "] repeated or out of order");
+                }
+                lastTagNo = to.getTagNo();
                 switch (to.getTagNo())
                 {
                 case 0x1:

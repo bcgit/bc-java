@@ -73,6 +73,11 @@ public class CertificateHolderAuthorization
 
     private void setPrivateData(ASN1Sequence seq)
     {
+        if (seq.size() != 2)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
+
         ASN1Primitive obj;
         obj = (ASN1Primitive)seq.getObjectAt(0);
         if (obj instanceof ASN1ObjectIdentifier)

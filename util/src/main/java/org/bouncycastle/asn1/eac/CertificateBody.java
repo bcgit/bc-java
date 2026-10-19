@@ -69,6 +69,29 @@ public class CertificateBody
     private static final int requestType_m = 0x0D;// Request type Certificate MUST
     private static final int requestType_r = 0x02;// Request type Certificate SHOULD
 
+    // the body's data objects in the order TR-03110 defines them
+    private static final int[] FIELD_ORDER = {
+        EACTags.INTERCHANGE_PROFILE,
+        EACTags.ISSUER_IDENTIFICATION_NUMBER,
+        EACTags.CARDHOLDER_PUBLIC_KEY_TEMPLATE,
+        EACTags.CARDHOLDER_NAME,
+        EACTags.CERTIFICATE_HOLDER_AUTHORIZATION_TEMPLATE,
+        EACTags.APPLICATION_EFFECTIVE_DATE,
+        EACTags.APPLICATION_EXPIRATION_DATE
+    };
+
+    private static int fieldIndex(int tagNo)
+    {
+        for (int i = 0; i != FIELD_ORDER.length; i++)
+        {
+            if (FIELD_ORDER[i] == tagNo)
+            {
+                return i;
+            }
+        }
+        return -1;
+    }
+
     private void setIso7816CertificateBody(ASN1TaggedObject appSpe)
         throws IOException
     {
@@ -82,9 +105,19 @@ public class CertificateBody
             throw new IOException("Bad tag : not an iso7816 CERTIFICATE_CONTENT_TEMPLATE");
         }
 
+        int lastField = -1;
         for (int i = 0, count = content.size(); i < count; ++i)
         {
             ASN1TaggedObject aSpe = ASN1TaggedObject.getInstance(content.getObjectAt(i), BERTags.APPLICATION);
+            int field = fieldIndex(aSpe.getTagNo());
+            if (field >= 0)
+            {
+                if (field <= lastField)
+                {
+                    throw new IOException("tag " + aSpe.getTagNo() + " repeated or out of order");
+                }
+                lastField = field;
+            }
 
             switch (aSpe.getTagNo())
             {

@@ -35,10 +35,22 @@ public class CVCertificateRequest
         {
             ASN1Sequence seq = ASN1Sequence.getInstance(request.getBaseUniversal(false, BERTags.SEQUENCE));
 
+            // the inner request, an optional certification authority reference, then the outer signature
+            if (seq.size() < 2 || seq.size() > 3)
+            {
+                throw new IOException("Bad sequence size: " + seq.size());
+            }
+
             initCertBody(ASN1TaggedObject.getInstance(seq.getObjectAt(0), BERTags.APPLICATION));
 
+            if (seq.size() == 3)
+            {
+                ASN1TaggedObject.getInstance(seq.getObjectAt(1), BERTags.APPLICATION, EACTags.ISSUER_IDENTIFICATION_NUMBER);
+            }
+
             outerSignature = ASN1OctetString.getInstance(
-                ASN1TaggedObject.getInstance(seq.getObjectAt(seq.size() - 1)).getBaseUniversal(false, BERTags.OCTET_STRING)).getOctets();
+                ASN1TaggedObject.getInstance(seq.getObjectAt(seq.size() - 1), BERTags.APPLICATION, EACTags.STATIC_INTERNAL_AUTHENTIFICATION_ONE_STEP)
+                    .getBaseUniversal(false, BERTags.OCTET_STRING)).getOctets();
         }
         else
         {
@@ -59,10 +71,18 @@ public class CVCertificateRequest
                 switch (tObj.getTagNo())
                 {
                 case EACTags.CERTIFICATE_CONTENT_TEMPLATE:
+                    if (valid != 0)
+                    {
+                        throw new IOException("certificate body repeated or out of order");
+                    }
                     certificateBody = CertificateBody.getInstance(tObj);
                     valid |= bodyValid;
                     break;
                 case EACTags.STATIC_INTERNAL_AUTHENTIFICATION_ONE_STEP:
+                    if ((valid & signValid) != 0)
+                    {
+                        throw new IOException("signature repeated");
+                    }
                     innerSignature = ASN1OctetString.getInstance(
                                             tObj.getBaseUniversal(false, BERTags.OCTET_STRING)).getOctets();
                     valid |= signValid;

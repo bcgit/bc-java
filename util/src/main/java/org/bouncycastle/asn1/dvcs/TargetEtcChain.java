@@ -6,6 +6,7 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 
@@ -56,6 +57,11 @@ public class TargetEtcChain
 
     private TargetEtcChain(ASN1Sequence seq)
     {
+        if (seq.size() < 1 || seq.size() > 3)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
+
         int i = 0;
         ASN1Encodable obj = seq.getObjectAt(i++);
         this.target = CertEtcToken.getInstance(obj);
@@ -65,6 +71,10 @@ public class TargetEtcChain
             obj = seq.getObjectAt(i++);
             if (obj instanceof ASN1TaggedObject)
             {
+                if (seq.size() > 2)
+                {
+                    throw new IllegalArgumentException("unexpected element at position " + i);
+                }
                 extractPathProcInput(obj);
             }
             else
@@ -81,14 +91,14 @@ public class TargetEtcChain
 
     private void extractPathProcInput(ASN1Encodable obj)
     {
-        ASN1TaggedObject tagged = ASN1TaggedObject.getInstance(obj);
+        ASN1TaggedObject tagged = ASN1TaggedObject.getInstance(obj, BERTags.CONTEXT_SPECIFIC);
         switch (tagged.getTagNo())
         {
         case 0:
             this.pathProcInput = PathProcInput.getInstance(tagged, false);
             break;
         default:
-            throw new IllegalArgumentException("Unknown tag encountered: " + tagged.getTagNo());
+            throw new IllegalArgumentException("unknown tag encountered: " + tagged.getTagNo());
         }
     }
 

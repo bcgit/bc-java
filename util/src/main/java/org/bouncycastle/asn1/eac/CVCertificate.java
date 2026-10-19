@@ -56,10 +56,18 @@ public class CVCertificate
                     switch (aSpe.getTagNo())
                     {
                     case EACTags.CERTIFICATE_CONTENT_TEMPLATE:
+                        if (valid != 0)
+                        {
+                            throw new IOException("certificate body repeated or out of order");
+                        }
                         certificateBody = CertificateBody.getInstance(aSpe);
                         valid |= bodyValid;
                         break;
                     case EACTags.STATIC_INTERNAL_AUTHENTIFICATION_ONE_STEP:
+                        if (valid != bodyValid)
+                        {
+                            throw new IOException("signature repeated or out of order");
+                        }
                         signature = ASN1OctetString.getInstance(aSpe.getBaseUniversal(false, BERTags.OCTET_STRING)).getOctets();
                         valid |= signValid;
                         break;

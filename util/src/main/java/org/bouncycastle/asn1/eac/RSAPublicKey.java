@@ -37,9 +37,15 @@ public class RSAPublicKey
 
         this.usage = ASN1ObjectIdentifier.getInstance(en.nextElement());
 
+        int lastTagNo = 0;
         while (en.hasMoreElements())
         {
             UnsignedInteger val = UnsignedInteger.getInstance(en.nextElement());
+            if (val.getTagNo() <= lastTagNo)
+            {
+                throw new IllegalArgumentException("tag [" + val.getTagNo() + "] repeated or out of order");
+            }
+            lastTagNo = val.getTagNo();
 
             switch (val.getTagNo())
             {

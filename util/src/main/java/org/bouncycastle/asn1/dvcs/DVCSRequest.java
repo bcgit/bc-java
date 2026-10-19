@@ -40,6 +40,11 @@ public class DVCSRequest
 
     private DVCSRequest(ASN1Sequence seq)
     {
+        if (seq.size() < 2 || seq.size() > 3)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
+
         requestInformation = DVCSRequestInformation.getInstance(seq.getObjectAt(0));
         data = Data.getInstance(seq.getObjectAt(1));
         if (seq.size() > 2)

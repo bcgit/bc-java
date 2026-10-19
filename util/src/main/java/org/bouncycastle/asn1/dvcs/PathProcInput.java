@@ -8,6 +8,7 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.x509.PolicyInformation;
@@ -68,32 +69,35 @@ public class PathProcInput
             ASN1Sequence policies = ASN1Sequence.getInstance(seq.getObjectAt(0));
             PathProcInput result = new PathProcInput(fromSequence(policies));
 
-            for (int i = 1; i < seq.size(); i++)
+            // inhibitPolicyMapping, then explicitPolicyReqd [0] and inhibitAnyPolicy [1], each optional, in that order
+            int i = 1;
+            if (i < seq.size() && seq.getObjectAt(i) instanceof ASN1Boolean)
             {
-                Object o = seq.getObjectAt(i);
+                result.setInhibitPolicyMapping(ASN1Boolean.getInstance(seq.getObjectAt(i++)).isTrue());
+            }
 
-                if (o instanceof ASN1Boolean)
+            int lastTagNo = -1;
+            for (; i < seq.size(); i++)
+            {
+                ASN1TaggedObject t = ASN1TaggedObject.getInstance(seq.getObjectAt(i), BERTags.CONTEXT_SPECIFIC);
+                if (t.getTagNo() <= lastTagNo)
                 {
-                    ASN1Boolean x = ASN1Boolean.getInstance(o);
-                    result.setInhibitPolicyMapping(x.isTrue());
+                    throw new IllegalArgumentException("tag [" + t.getTagNo() + "] repeated or out of order");
                 }
-                else if (o instanceof ASN1TaggedObject)
+                lastTagNo = t.getTagNo();
+                ASN1Boolean x;
+                switch (t.getTagNo())
                 {
-                    ASN1TaggedObject t = ASN1TaggedObject.getInstance(o);
-                    ASN1Boolean x;
-                    switch (t.getTagNo())
-                    {
-                    case 0:
-                        x = ASN1Boolean.getInstance(t, false);
-                        result.setExplicitPolicyReqd(x.isTrue());
-                        break;
-                    case 1:
-                        x = ASN1Boolean.getInstance(t, false);
-                        result.setInhibitAnyPolicy(x.isTrue());
-                        break;
-                    default:
-                        throw new IllegalArgumentException("Unknown tag encountered: " + t.getTagNo());
-                    }
+                case 0:
+                    x = ASN1Boolean.getInstance(t, false);
+                    result.setExplicitPolicyReqd(x.isTrue());
+                    break;
+                case 1:
+                    x = ASN1Boolean.getInstance(t, false);
+                    result.setInhibitAnyPolicy(x.isTrue());
+                    break;
+                default:
+                    throw new IllegalArgumentException("unknown tag encountered: " + t.getTagNo());
                 }
             }
             return result;
