@@ -68,6 +68,11 @@ public class MetaData
         {
             this.otherMetaData = Attributes.getInstance(seq.getObjectAt(index++));
         }
+
+        if (index != seq.size())
+        {
+            throw new IllegalArgumentException("unexpected element at position " + index);
+        }
     }
 
     /**

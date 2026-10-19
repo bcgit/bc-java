@@ -9,6 +9,7 @@ import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.BERSequence;
 import org.bouncycastle.asn1.BERTaggedObject;
+import org.bouncycastle.asn1.BERTags;
 
 /**
  * <a href="https://tools.ietf.org/html/rfc5652#section-8">RFC 5652</a> EncryptedData object.
@@ -69,7 +70,7 @@ public class EncryptedData
 
     private EncryptedData(ASN1Sequence seq)
     {
-        if (seq.size() < 2)
+        if (seq.size() < 2 || seq.size() > 3)
         {
             throw new IllegalArgumentException("Bad sequence size: " + seq.size());
         }
@@ -79,7 +80,7 @@ public class EncryptedData
 
         if (seq.size() == 3)
         {
-            this.unprotectedAttrs = ASN1Set.getInstance(ASN1TaggedObject.getInstance(seq.getObjectAt(2)), false);
+            this.unprotectedAttrs = ASN1Set.getInstance(ASN1TaggedObject.getInstance(seq.getObjectAt(2), BERTags.CONTEXT_SPECIFIC, 1), false);
         }
     }
 

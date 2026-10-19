@@ -34,7 +34,7 @@ public class OtherRevocationInfoFormat
     private OtherRevocationInfoFormat(
         ASN1Sequence seq)
     {
-        if (seq.size() < 2)
+        if (seq.size() != 2)
         {
             throw new IllegalArgumentException("expected sequence size of 2");
         }

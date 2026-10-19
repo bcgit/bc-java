@@ -11,6 +11,7 @@ import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.BERSequence;
 import org.bouncycastle.asn1.BERSet;
+import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.DLSequence;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -97,7 +98,7 @@ public class AuthenticatedData
 
         if (tmp instanceof ASN1TaggedObject)
         {
-            originatorInfo = OriginatorInfo.getInstance((ASN1TaggedObject)tmp, false);
+            originatorInfo = OriginatorInfo.getInstance(ASN1TaggedObject.getInstance(tmp, BERTags.CONTEXT_SPECIFIC, 0), false);
             tmp = seq.getObjectAt(index++);
         }
 
@@ -108,7 +109,7 @@ public class AuthenticatedData
 
         if (tmp instanceof ASN1TaggedObject)
         {
-            digestAlgorithm = AlgorithmIdentifier.getInstance((ASN1TaggedObject)tmp, false);
+            digestAlgorithm = AlgorithmIdentifier.getInstance(ASN1TaggedObject.getInstance(tmp, BERTags.CONTEXT_SPECIFIC, 1), false);
             if (seq.size() <= index)
             {
                 throw new IllegalArgumentException("Bad sequence size: " + seq.size());
@@ -127,7 +128,7 @@ public class AuthenticatedData
 
         if (tmp instanceof ASN1TaggedObject)
         {
-            authAttrs = ASN1Set.getInstance((ASN1TaggedObject)tmp, false);
+            authAttrs = ASN1Set.getInstance(ASN1TaggedObject.getInstance(tmp, BERTags.CONTEXT_SPECIFIC, 2), false);
             if (seq.size() <= index)
             {
                 throw new IllegalArgumentException("Bad sequence size: " + seq.size());
@@ -139,7 +140,12 @@ public class AuthenticatedData
 
         if (seq.size() > index)
         {
-            unauthAttrs = ASN1Set.getInstance(ASN1TaggedObject.getInstance(seq.getObjectAt(index)), false);
+            unauthAttrs = ASN1Set.getInstance(ASN1TaggedObject.getInstance(seq.getObjectAt(index++), BERTags.CONTEXT_SPECIFIC, 3), false);
+        }
+
+        if (index != seq.size())
+        {
+            throw new IllegalArgumentException("unexpected element at position " + index);
         }
 
         if ((digestAlgorithm != null) != (authAttrs != null))

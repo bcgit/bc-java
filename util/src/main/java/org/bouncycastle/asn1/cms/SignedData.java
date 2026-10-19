@@ -2,7 +2,6 @@ package org.bouncycastle.asn1.cms;
 
 import java.util.Enumeration;
 
-import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
@@ -252,56 +251,50 @@ public class SignedData
             throw new IllegalArgumentException("Bad sequence size: " + seq.size());
         }
 
-        Enumeration     e = seq.getObjects();
+        int count = seq.size(), pos = 0;
 
-        version = ASN1Integer.getInstance(e.nextElement());
-        digestAlgorithms = ASN1Set.getInstance(e.nextElement());
-        contentInfo = ContentInfo.getInstance(e.nextElement());
+        version = ASN1Integer.getInstance(seq.getObjectAt(pos++));
+        digestAlgorithms = ASN1Set.getInstance(seq.getObjectAt(pos++));
+        contentInfo = ContentInfo.getInstance(seq.getObjectAt(pos++));
 
-        ASN1Set sigInfs = null;
-        while (e.hasMoreElements())
+        // certificates [0] and crls [1], each optional, then signerInfos
+        if (pos < count)
         {
-            ASN1Primitive o = ((ASN1Encodable)e.nextElement()).toASN1Primitive();
-
-            //
-            // an interesting feature of SignedData is that there appear
-            // to be varying implementations...
-            // for the moment we ignore anything which doesn't fit.
-            //
-            if (o instanceof ASN1TaggedObject)
+            ASN1TaggedObject tag0 = ASN1TaggedObject.getContextOptional(seq.getObjectAt(pos), 0);
+            if (tag0 != null)
             {
-                ASN1TaggedObject tagged = (ASN1TaggedObject)o;
-
-                switch (tagged.getTagNo())
-                {
-                case 0:
-                    certsBer = tagged instanceof BERTaggedObject;
-                    certificates = ASN1Set.getInstance(tagged, false);
-                    break;
-                case 1:
-                    crlsBer = tagged instanceof BERTaggedObject;
-                    crls = ASN1Set.getInstance(tagged, false);
-                    break;
-                default:
-                    throw new IllegalArgumentException("unknown tag value " + tagged.getTagNo());
-                }
+                pos++;
+                certsBer = tag0 instanceof BERTaggedObject;
+                certificates = ASN1Set.getInstance(tag0, false);
             }
-            else
+        }
+        if (pos < count)
+        {
+            ASN1TaggedObject tag1 = ASN1TaggedObject.getContextOptional(seq.getObjectAt(pos), 1);
+            if (tag1 != null)
             {
-                if (!(o instanceof ASN1Set))
-                {
-                    throw new IllegalArgumentException("SET expected, not encountered");
-                }
-                sigInfs = (ASN1Set)o;
+                pos++;
+                crlsBer = tag1 instanceof BERTaggedObject;
+                crls = ASN1Set.getInstance(tag1, false);
             }
         }
 
-        if (sigInfs == null)
+        if (pos >= count)
         {
             throw new IllegalArgumentException("signerInfos not set");
         }
+        ASN1Primitive sigInfs = seq.getObjectAt(pos++).toASN1Primitive();
+        if (!(sigInfs instanceof ASN1Set))
+        {
+            throw new IllegalArgumentException("SET expected, not encountered");
+        }
 
-        signerInfos = sigInfs;
+        if (pos != count)
+        {
+            throw new IllegalArgumentException("unexpected element at position " + pos);
+        }
+
+        signerInfos = (ASN1Set)sigInfs;
         digsBer = digestAlgorithms instanceof BERSet;
         sigsBer = signerInfos instanceof BERSet;
     }

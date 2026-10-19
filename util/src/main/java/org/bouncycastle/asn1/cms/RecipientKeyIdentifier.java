@@ -74,7 +74,7 @@ public class RecipientKeyIdentifier
             }
             else
             {
-                other = OtherKeyAttribute.getInstance(seq.getObjectAt(2));
+                other = OtherKeyAttribute.getInstance(seq.getObjectAt(1));
             }
             break;
         case 3:

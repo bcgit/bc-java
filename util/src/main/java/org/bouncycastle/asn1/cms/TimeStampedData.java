@@ -59,7 +59,12 @@ public class TimeStampedData
         {
             this.content = ASN1OctetString.getInstance(seq.getObjectAt(index++));
         }
-        this.temporalEvidence = Evidence.getInstance(seq.getObjectAt(index));
+        this.temporalEvidence = Evidence.getInstance(seq.getObjectAt(index++));
+
+        if (index != seq.size())
+        {
+            throw new IllegalArgumentException("unexpected element at position " + index);
+        }
     }
 
     /**

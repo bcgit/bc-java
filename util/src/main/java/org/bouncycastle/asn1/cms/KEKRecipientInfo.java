@@ -45,7 +45,7 @@ public class KEKRecipientInfo
     public KEKRecipientInfo(
         ASN1Sequence seq)
     {
-        if (seq.size() < 4)
+        if (seq.size() != 4)
         {
             throw new IllegalArgumentException("expected sequence size of 4");
         }

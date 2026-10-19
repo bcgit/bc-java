@@ -10,6 +10,7 @@ import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.BEROctetString;
 import org.bouncycastle.asn1.BERSequence;
 import org.bouncycastle.asn1.BERTaggedObject;
+import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DLSequence;
 import org.bouncycastle.asn1.DLTaggedObject;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -45,9 +46,9 @@ public class EncryptedContentInfo
     private EncryptedContentInfo(
         ASN1Sequence seq)
     {
-        if (seq.size() < 2)
+        if (seq.size() < 2 || seq.size() > 3)
         {
-            throw new IllegalArgumentException("Truncated Sequence Found");
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
         }
 
         contentType = (ASN1ObjectIdentifier)seq.getObjectAt(0);
@@ -56,7 +57,7 @@ public class EncryptedContentInfo
         if (seq.size() > 2)
         {
             encryptedContent = ASN1OctetString.getInstance(
-                                (ASN1TaggedObject)seq.getObjectAt(2), false);
+                                ASN1TaggedObject.getInstance(seq.getObjectAt(2), BERTags.CONTEXT_SPECIFIC, 0), false);
         }
     }
 

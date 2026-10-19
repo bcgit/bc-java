@@ -56,7 +56,12 @@ public class OtherKeyAttribute
     private OtherKeyAttribute(
         ASN1Sequence seq)
     {
-        keyAttrId = (ASN1ObjectIdentifier)seq.getObjectAt(0);
+        if (seq.size() < 1 || seq.size() > 2)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
+
+        keyAttrId = ASN1ObjectIdentifier.getInstance(seq.getObjectAt(0));
 
         if (seq.size() > 1)
         {

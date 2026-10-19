@@ -10,6 +10,7 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
@@ -193,7 +194,7 @@ public class SignerInfo
 
         if (obj instanceof ASN1TaggedObject)
         {
-            authenticatedAttributes = ASN1Set.getInstance((ASN1TaggedObject)obj, false);
+            authenticatedAttributes = ASN1Set.getInstance(ASN1TaggedObject.getInstance(obj, BERTags.CONTEXT_SPECIFIC, 0), false);
 
             digEncryptionAlgorithm = AlgorithmIdentifier.getInstance(e.nextElement());
         }
@@ -207,11 +208,16 @@ public class SignerInfo
 
         if (e.hasMoreElements())
         {
-            unauthenticatedAttributes = ASN1Set.getInstance(ASN1TaggedObject.getInstance(e.nextElement()), false);
+            unauthenticatedAttributes = ASN1Set.getInstance(ASN1TaggedObject.getInstance(e.nextElement(), BERTags.CONTEXT_SPECIFIC, 1), false);
         }
         else
         {
             unauthenticatedAttributes = null;
+        }
+
+        if (e.hasMoreElements())
+        {
+            throw new IllegalArgumentException("unexpected element after unsignedAttrs");
         }
     }
 
