@@ -2668,8 +2668,8 @@ public class PKCS12StoreTest
 
             byte[] ignored = storeFreshPKCS12();
 
-            isEquals("out of range key bag iteration count honoured", 599000, keyBagIterationCount(ignored));
-            isEquals("out of range MAC iteration count honoured", 1198000, macIterationCount(ignored));
+            isEquals("out of range key bag iteration count honoured", 300000, keyBagIterationCount(ignored));
+            isEquals("out of range MAC iteration count honoured", 600000, macIterationCount(ignored));
         }
         finally
         {

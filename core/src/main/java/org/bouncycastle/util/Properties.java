@@ -39,11 +39,11 @@ public class Properties
     /**
      * The PBE iteration count the PKCS12 keystore uses when <b>writing</b> a file - the write-side
      * counterpart of {@link #PKCS12_MAX_IT_COUNT}, which only bounds what is accepted on load.
-     * Default 599,000 for the key and certificate encryption, twice that for the integrity MAC.
+     * Default 300,000 for the key and certificate encryption, twice that for the integrity MAC.
      * <p>
-     * Note that Windows currently reports an error importing a PKCS#12 file written with an
-     * iteration count of 600,000 or greater, which is why the default sits just below that figure;
-     * setting this property to 600,000 or more produces files Windows may refuse.
+     * Note that Windows currently reports an error importing a PKCS#12 file whose key and
+     * certificate encryption uses a PBE iteration count of 600,000 or greater (it accepts 600,000
+     * for the MAC), so setting this property to 600,000 or more produces files Windows may refuse.
      * <p>
      * Lowering this trades password-cracking resistance for store/load time, and is only worth
      * doing where something other than the passphrase carries the confidentiality of the file -

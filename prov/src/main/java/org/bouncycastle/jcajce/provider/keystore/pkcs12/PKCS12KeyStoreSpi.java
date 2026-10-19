@@ -175,7 +175,7 @@ import org.bouncycastle.util.encoders.Hex;
  * <li>{@link Properties#PKCS12_MAX_IT_COUNT} — caps the PBE iteration count
  *     accepted on load.</li>
  * <li>{@link Properties#PKCS12_STORE_IT_COUNT} — the PBE iteration count used
- *     when writing (default 599,000, twice that for the MAC).</li>
+ *     when writing (default 300,000, twice that for the MAC).</li>
  * <li>{@link Properties#PKCS12_IGNORE_USELESS_PASSWD} — accepts a password
  *     supplied where none is needed.</li>
  * <li>{@link Properties#PKCS12_ALLOW_SUN_SECRET_KEYS} — opt-in SunJCE

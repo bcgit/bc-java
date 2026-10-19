@@ -315,7 +315,7 @@ configure(subprojects.findAll {it.name != 'bom'}) {
             junitXml.outputLocation = layout.buildDirectory.dir("test-results")
         }
 
-        // The PKCS#12 keystore writes with a 599,000 iteration PBE by default, and BCFKS
+        // The PKCS#12 keystore writes with a 300,000 iteration PBE by default, and BCFKS
         // with a 51,200 iteration PBKDF2-HMAC-SHA512, which is several seconds per store and
         // dominates the wall time of any suite that touches a keystore. The tests are not
         // measuring the KDF, so write cheap files here. Runs after testFull's
