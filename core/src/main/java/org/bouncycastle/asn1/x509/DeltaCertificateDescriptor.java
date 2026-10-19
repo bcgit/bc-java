@@ -3,7 +3,6 @@ package org.bouncycastle.asn1.x509;
 import java.util.Enumeration;
 
 import org.bouncycastle.asn1.ASN1BitString;
-import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
@@ -69,18 +68,30 @@ public class DeltaCertificateDescriptor
 
     private DeltaCertificateDescriptor(ASN1Sequence seq)
     {
-        ASN1Integer serialNumber = ASN1Integer.getInstance(seq.getObjectAt(0));
+        int count = seq.size(), pos = 0;
+        if (count < 3)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + count);
+        }
 
-        int idx = 1;
-        ASN1Encodable next = seq.getObjectAt(idx++);
+        ASN1Integer serialNumber = ASN1Integer.getInstance(seq.getObjectAt(pos++));
 
         AlgorithmIdentifier signature = null;
         X500Name issuer = null;
         Validity validity = null;
         X500Name subject = null;
-        while (next instanceof ASN1TaggedObject)
+        // signature [0], issuer [1], validity [2] and subject [3], each optional, at most once and in that order
+        int lastTagNo = -1;
+        ASN1TaggedObject tagged;
+        while (pos < count && (tagged = ASN1TaggedObject.getContextOptional(seq.getObjectAt(pos))) != null && tagged.getTagNo() <= 3)
         {
-            ASN1TaggedObject tagged = ASN1TaggedObject.getInstance(next);
+            if (tagged.getTagNo() <= lastTagNo)
+            {
+                throw new IllegalArgumentException("tag [" + tagged.getTagNo() + "] repeated or out of order");
+            }
+            lastTagNo = tagged.getTagNo();
+            pos++;
+
             switch (tagged.getTagNo())
             {
             case 0:
@@ -96,27 +107,30 @@ public class DeltaCertificateDescriptor
                 subject = X500Name.getInstance(tagged, true);   // subject
                 break;
             }
-            next = seq.getObjectAt(idx++);
         }
 
-        SubjectPublicKeyInfo subjectPublicKeyInfo = SubjectPublicKeyInfo.getInstance(next);
-
-        next = seq.getObjectAt(idx);
+        if (pos >= count)
+        {
+            throw new IllegalArgumentException("missing subjectPublicKeyInfo");
+        }
+        SubjectPublicKeyInfo subjectPublicKeyInfo = SubjectPublicKeyInfo.getInstance(seq.getObjectAt(pos++));
 
         Extensions extensions = null;
-        while (next instanceof ASN1TaggedObject)
+        if (pos < count)
         {
-            ASN1TaggedObject tagged = ASN1TaggedObject.getInstance(next);
-            switch (tagged.getTagNo())
+            ASN1TaggedObject tag4 = ASN1TaggedObject.getContextOptional(seq.getObjectAt(pos), 4);
+            if (tag4 != null)
             {
-            case 4:
-                extensions = Extensions.getInstance(tagged, true);
-                break;
+                pos++;
+                extensions = Extensions.getInstance(tag4, true);
             }
-            next = seq.getObjectAt(idx++);
         }
 
-        ASN1BitString signatureValue = ASN1BitString.getInstance(next);
+        if (pos != count - 1)
+        {
+            throw new IllegalArgumentException("unexpected element at position " + pos);
+        }
+        ASN1BitString signatureValue = ASN1BitString.getInstance(seq.getObjectAt(pos));
 
         this.serialNumber = serialNumber;
         this.signature = signature;

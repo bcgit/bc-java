@@ -8,6 +8,7 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 
@@ -37,9 +38,15 @@ public class PolicyConstraints
 
     private PolicyConstraints(ASN1Sequence seq)
     {
+        int lastTagNo = -1;
         for (int i = 0; i != seq.size(); i++)
         {
-            ASN1TaggedObject to = ASN1TaggedObject.getInstance(seq.getObjectAt(i));
+            ASN1TaggedObject to = ASN1TaggedObject.getInstance(seq.getObjectAt(i), BERTags.CONTEXT_SPECIFIC);
+            if (to.getTagNo() <= lastTagNo)
+            {
+                throw new IllegalArgumentException("tag [" + to.getTagNo() + "] repeated or out of order");
+            }
+            lastTagNo = to.getTagNo();
 
             if (to.getTagNo() == 0)
             {
@@ -51,7 +58,7 @@ public class PolicyConstraints
             }
             else
             {
-                throw new IllegalArgumentException("Unknown tag encountered.");
+                throw new IllegalArgumentException("unknown tag encountered.");
             }
         }
     }

@@ -7,6 +7,7 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 
@@ -32,9 +33,15 @@ public class NameConstraints
     private NameConstraints(ASN1Sequence seq)
     {
         Enumeration e = seq.getObjects();
+        int lastTagNo = -1;
         while (e.hasMoreElements())
         {
-            ASN1TaggedObject o = ASN1TaggedObject.getInstance(e.nextElement());
+            ASN1TaggedObject o = ASN1TaggedObject.getInstance(e.nextElement(), BERTags.CONTEXT_SPECIFIC);
+            if (o.getTagNo() <= lastTagNo)
+            {
+                throw new IllegalArgumentException("tag [" + o.getTagNo() + "] repeated or out of order");
+            }
+            lastTagNo = o.getTagNo();
             switch (o.getTagNo())
             {
             case 0:
@@ -44,7 +51,7 @@ public class NameConstraints
                 excluded = createArray(ASN1Sequence.getInstance(o, false));
                 break;
             default:
-                throw new IllegalArgumentException("Unknown tag encountered: " + o.getTagNo());
+                throw new IllegalArgumentException("unknown tag encountered: " + o.getTagNo());
             }
         }
     }

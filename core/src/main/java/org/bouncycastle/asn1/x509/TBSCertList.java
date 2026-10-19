@@ -11,6 +11,7 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.ASN1UTCTime;
+import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.x500.X500Name;
@@ -213,7 +214,13 @@ public class TBSCertList
         if (seqPos < seq.size()
             && seq.getObjectAt(seqPos) instanceof ASN1TaggedObject)
         {
-            crlExtensions = Extensions.getInstance(ASN1Sequence.getInstance((ASN1TaggedObject)seq.getObjectAt(seqPos), true));
+            ASN1TaggedObject extTag = ASN1TaggedObject.getInstance(seq.getObjectAt(seqPos++), BERTags.CONTEXT_SPECIFIC, 0);
+            crlExtensions = Extensions.getInstance(ASN1Sequence.getInstance(extTag, true));
+        }
+
+        if (seqPos != seq.size())
+        {
+            throw new IllegalArgumentException("unexpected element at position " + seqPos);
         }
     }
 

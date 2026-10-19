@@ -9,6 +9,7 @@ import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
@@ -88,9 +89,15 @@ public class TBSCertificateLogEntry
         subjectPublicKeyAlgorithm = AlgorithmIdentifier.getInstance(seq.getObjectAt(index++));
         subjectPublicKeyInfoHash = ASN1OctetString.getInstance(seq.getObjectAt(index++));
 
+        int lastTagNo = 0;
         while (index < seq.size())
         {
-            ASN1TaggedObject tagged = ASN1TaggedObject.getInstance(seq.getObjectAt(index++));
+            ASN1TaggedObject tagged = ASN1TaggedObject.getInstance(seq.getObjectAt(index++), BERTags.CONTEXT_SPECIFIC);
+            if (tagged.getTagNo() <= lastTagNo)
+            {
+                throw new IllegalArgumentException("tag [" + tagged.getTagNo() + "] repeated or out of order");
+            }
+            lastTagNo = tagged.getTagNo();
 
             switch (tagged.getTagNo())
             {
@@ -104,7 +111,7 @@ public class TBSCertificateLogEntry
                 extensions = Extensions.getInstance(tagged, true);
                 break;
             default:
-                throw new IllegalArgumentException("Unknown tag in TBSCertificateLogEntry: " + tagged.getTagNo());
+                throw new IllegalArgumentException("unknown tag: " + tagged.getTagNo());
             }
         }
     }

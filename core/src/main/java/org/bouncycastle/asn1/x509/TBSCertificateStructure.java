@@ -6,6 +6,7 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x500.X500Name;
 
@@ -97,9 +98,16 @@ public class TBSCertificateStructure
         subject = X500Name.getInstance(seq.getObjectAt(seqStart + 5));
         subjectPublicKeyInfo = SubjectPublicKeyInfo.getInstance(seq.getObjectAt(seqStart + 6));
 
-        for (int extras = seq.size() - (seqStart + 6) - 1; extras > 0; extras--)
+        // issuerUniqueID [1], subjectUniqueID [2] and extensions [3], each at most once and in that order
+        int lastTagNo = 0;
+        for (int pos = seqStart + 7; pos < seq.size(); pos++)
         {
-            ASN1TaggedObject extra = ASN1TaggedObject.getInstance(seq.getObjectAt(seqStart + 6 + extras));
+            ASN1TaggedObject extra = ASN1TaggedObject.getInstance(seq.getObjectAt(pos), BERTags.CONTEXT_SPECIFIC);
+            if (extra.getTagNo() <= lastTagNo)
+            {
+                throw new IllegalArgumentException("tag [" + extra.getTagNo() + "] repeated or out of order");
+            }
+            lastTagNo = extra.getTagNo();
 
             switch (extra.getTagNo())
             {
@@ -111,6 +119,9 @@ public class TBSCertificateStructure
                 break;
             case 3:
                 extensions = X509Extensions.getInstance(extra);
+                break;
+            default:
+                throw new IllegalArgumentException("unknown tag encountered: " + extra.getTagNo());
             }
         }
     }

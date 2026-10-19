@@ -176,9 +176,22 @@ public class TBSCertificate
             reportProblem(errors, "version 1 certificate contains extra data");
         }
 
-        while (extras > 0)
+        // issuerUniqueID [1], subjectUniqueID [2] and extensions [3], each at most once and in that order
+        int lastTagNo = 0;
+        for (int pos = seqStart + 7; pos < seq.size(); pos++)
         {
-            ASN1TaggedObject extra = (ASN1TaggedObject)seq.getObjectAt(seqStart + 6 + extras);
+            ASN1TaggedObject extra = ASN1TaggedObject.getContextOptional(seq.getObjectAt(pos));
+            if (extra == null)
+            {
+                reportProblem(errors, "unexpected element at position " + pos);
+                continue;
+            }
+            if (extra.getTagNo() <= lastTagNo)
+            {
+                reportProblem(errors, "tag [" + extra.getTagNo() + "] repeated or out of order");
+                continue;
+            }
+            lastTagNo = extra.getTagNo();
 
             switch (extra.getTagNo())
             {
@@ -212,9 +225,8 @@ public class TBSCertificate
                 break;
             }
             default:
-                reportProblem(errors, "Unknown tag encountered in structure: " + extra.getTagNo());
+                reportProblem(errors, "unknown tag encountered: " + extra.getTagNo());
             }
-            extras--;
         }
     }
 

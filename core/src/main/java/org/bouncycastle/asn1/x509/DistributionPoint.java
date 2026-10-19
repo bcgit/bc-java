@@ -6,6 +6,7 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.util.Strings;
@@ -53,9 +54,16 @@ public class DistributionPoint
     public DistributionPoint(
         ASN1Sequence seq)
     {
+        int lastTagNo = -1;
         for (int i = 0; i != seq.size(); i++)
         {
-            ASN1TaggedObject    t = ASN1TaggedObject.getInstance(seq.getObjectAt(i));
+            ASN1TaggedObject    t = ASN1TaggedObject.getInstance(seq.getObjectAt(i), BERTags.CONTEXT_SPECIFIC);
+            if (t.getTagNo() <= lastTagNo)
+            {
+                throw new IllegalArgumentException("tag [" + t.getTagNo() + "] repeated or out of order");
+            }
+            lastTagNo = t.getTagNo();
+
             switch (t.getTagNo())
             {
             case 0:
@@ -69,7 +77,7 @@ public class DistributionPoint
                 cRLIssuer = GeneralNames.getInstance(t, false);
                 break;
             default:
-                throw new IllegalArgumentException("Unknown tag encountered in structure: " + t.getTagNo());
+                throw new IllegalArgumentException("unknown tag encountered: " + t.getTagNo());
             }
         }
     }

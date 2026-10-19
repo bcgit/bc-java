@@ -81,50 +81,39 @@ public class RelatedCertificateDescriptor
 
         this.method = CertDiscoveryMethod.getInstance(seq.getObjectAt(0));
 
+        int count = seq.size(), pos = 1;
+
         ASN1ObjectIdentifier intent = null;
-        AlgorithmIdentifier signatureAlgorithm = null;
-        AlgorithmIdentifier publicKeyAlgorithm = null;
-
-        for (int i = 1; i < seq.size(); i++)
+        if (pos < count && seq.getObjectAt(pos).toASN1Primitive() instanceof ASN1ObjectIdentifier)
         {
-            ASN1Encodable element = seq.getObjectAt(i);
-            ASN1Primitive prim = element.toASN1Primitive();
+            intent = ASN1ObjectIdentifier.getInstance(seq.getObjectAt(pos++));
+        }
 
-            if (prim instanceof ASN1ObjectIdentifier)
+        AlgorithmIdentifier signatureAlgorithm = null;
+        if (pos < count)
+        {
+            ASN1TaggedObject tag0 = ASN1TaggedObject.getContextOptional(seq.getObjectAt(pos), 0);
+            if (tag0 != null)
             {
-                if (intent != null)
-                {
-                    throw new IllegalArgumentException("duplicate intent OID in RelatedCertificateDescriptor");
-                }
-                intent = (ASN1ObjectIdentifier)prim;
+                pos++;
+                signatureAlgorithm = AlgorithmIdentifier.getInstance(tag0, false);
             }
-            else if (prim instanceof ASN1TaggedObject)
+        }
+
+        AlgorithmIdentifier publicKeyAlgorithm = null;
+        if (pos < count)
+        {
+            ASN1TaggedObject tag1 = ASN1TaggedObject.getContextOptional(seq.getObjectAt(pos), 1);
+            if (tag1 != null)
             {
-                ASN1TaggedObject tagged = (ASN1TaggedObject)prim;
-                switch (tagged.getTagNo())
-                {
-                case 0:
-                    if (signatureAlgorithm != null)
-                    {
-                        throw new IllegalArgumentException("duplicate signatureAlgorithm in RelatedCertificateDescriptor");
-                    }
-                    signatureAlgorithm = AlgorithmIdentifier.getInstance(tagged, false);
-                    break;
-                case 1:
-                    if (publicKeyAlgorithm != null)
-                    {
-                        throw new IllegalArgumentException("duplicate publicKeyAlgorithm in RelatedCertificateDescriptor");
-                    }
-                    publicKeyAlgorithm = AlgorithmIdentifier.getInstance(tagged, false);
-                    break;
-                default:
-                    throw new IllegalArgumentException("unknown tag in RelatedCertificateDescriptor: " + tagged.getTagNo());
-                }
+                pos++;
+                publicKeyAlgorithm = AlgorithmIdentifier.getInstance(tag1, false);
             }
-            else
-            {
-                throw new IllegalArgumentException("unexpected element in RelatedCertificateDescriptor: " + prim.getClass().getName());
-            }
+        }
+
+        if (pos != count)
+        {
+            throw new IllegalArgumentException("unexpected element at position " + pos);
         }
 
         this.intent = intent;
