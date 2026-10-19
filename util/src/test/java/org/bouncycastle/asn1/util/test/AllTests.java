@@ -10,6 +10,8 @@ import org.bouncycastle.asn1.cms.test.GCMParametersTest;
 import org.bouncycastle.asn1.cms.test.KEMRecipientInfoTest;
 import org.bouncycastle.asn1.cms.test.OctetStringTest;
 import org.bouncycastle.asn1.cms.test.ParseTest;
+import org.bouncycastle.asn1.dvcs.test.DVCSTest;
+import org.bouncycastle.asn1.misc.test.CMPUpdates16Test;
 import org.bouncycastle.asn1.misc.test.GetInstanceTest;
 import org.bouncycastle.test.PrintTestResult;
 import org.bouncycastle.util.test.SimpleTestResult;
@@ -48,6 +50,8 @@ public class AllTests
         suite.addTestSuite(OctetStringTest.class);
         suite.addTestSuite(ParseTest.class);
         suite.addTestSuite(GetInstanceTest.class);
+        suite.addTestSuite(DVCSTest.class);
+        suite.addTestSuite(CMPUpdates16Test.class);
         
         return new BCTestSetup(suite);
     }

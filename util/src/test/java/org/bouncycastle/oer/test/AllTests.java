@@ -43,6 +43,7 @@ public class AllTests
         suite.addTestSuite(OERInputStreamLimitTest.class);
         suite.addTestSuite(OERInputStreamMalformedTest.class);
         suite.addTestSuite(OERTypeGuardTest.class);
+        suite.addTestSuite(TestFromVector.class);
         suite.addTestSuite(OEREnumeratedTest.class);
         suite.addTestSuite(OERIntegerTest.class);
         suite.addTestSuite(OERDeterminantTest.class);
