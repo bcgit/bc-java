@@ -7,8 +7,10 @@ import org.bouncycastle.asn1.gnu.GNUObjectIdentifiers;
 import org.bouncycastle.bcpg.BCPGKey;
 import org.bouncycastle.bcpg.ECPublicBCPGKey;
 import org.bouncycastle.bcpg.Ed25519PublicBCPGKey;
+import org.bouncycastle.bcpg.Ed448PublicBCPGKey;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.X25519PublicBCPGKey;
+import org.bouncycastle.bcpg.X448PublicBCPGKey;
 import org.bouncycastle.openpgp.api.OpenPGPCertificate;
 
 import java.util.ArrayList;
@@ -228,6 +230,14 @@ public class SupportedAlgorithms
             else if (pubKey instanceof Ed25519PublicBCPGKey)
             {
                 return EdECObjectIdentifiers.id_Ed25519;
+            }
+            else if (pubKey instanceof X448PublicBCPGKey)
+            {
+                return EdECObjectIdentifiers.id_X448;
+            }
+            else if (pubKey instanceof Ed448PublicBCPGKey)
+            {
+                return EdECObjectIdentifiers.id_Ed448;
             }
             return null;
         }
