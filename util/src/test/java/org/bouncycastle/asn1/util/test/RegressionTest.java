@@ -46,6 +46,7 @@ import org.bouncycastle.asn1.crmf.test.CRMFSequenceFieldOrderTest;
 import org.bouncycastle.asn1.crmf.test.DhSigStaticTest;
 import org.bouncycastle.asn1.crmf.test.PKIPublicationInfoTest;
 import org.bouncycastle.asn1.esf.test.CommitmentTypeIndicationUnitTest;
+import org.bouncycastle.asn1.esf.test.ESFSequenceFieldOrderTest;
 import org.bouncycastle.asn1.esf.test.CommitmentTypeQualifierUnitTest;
 import org.bouncycastle.asn1.esf.test.SignerLocationUnitTest;
 import org.bouncycastle.asn1.ess.test.ContentHintsUnitTest;
@@ -123,6 +124,7 @@ public class RegressionTest
         new CommitmentTypeIndicationUnitTest(),
         new CommitmentTypeQualifierUnitTest(),
         new SignerLocationUnitTest(),
+        new ESFSequenceFieldOrderTest(),
         new ContentHintsUnitTest(),
         new ESSCertIDv2UnitTest(),
         new OtherCertIDUnitTest(),

@@ -1,8 +1,5 @@
 package org.bouncycastle.asn1.esf;
 
-import java.util.Enumeration;
-
-import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
@@ -36,22 +33,19 @@ public class SPUserNotice
     private SPUserNotice(
         ASN1Sequence seq)
     {
-        Enumeration e = seq.getObjects();
-        while (e.hasMoreElements())
+        // noticeRef NoticeReference OPTIONAL, then explicitText DisplayText OPTIONAL
+        int count = seq.size(), pos = 0;
+        if (pos < count && (seq.getObjectAt(pos) instanceof NoticeReference || seq.getObjectAt(pos) instanceof ASN1Sequence))
         {
-            ASN1Encodable object = (ASN1Encodable)e.nextElement();
-            if (object instanceof DisplayText || object instanceof ASN1String)
-            {
-                explicitText = DisplayText.getInstance(object);
-            }
-            else if (object instanceof NoticeReference || object instanceof ASN1Sequence)
-            {
-                noticeRef = NoticeReference.getInstance(object);
-            }
-            else
-            {
-                throw new IllegalArgumentException("Invalid element in 'SPUserNotice': " + object.getClass().getName());
-            }
+            noticeRef = NoticeReference.getInstance(seq.getObjectAt(pos++));
+        }
+        if (pos < count && (seq.getObjectAt(pos) instanceof DisplayText || seq.getObjectAt(pos) instanceof ASN1String))
+        {
+            explicitText = DisplayText.getInstance(seq.getObjectAt(pos++));
+        }
+        if (pos != count)
+        {
+            throw new IllegalArgumentException("unexpected element at position " + pos);
         }
     }
 

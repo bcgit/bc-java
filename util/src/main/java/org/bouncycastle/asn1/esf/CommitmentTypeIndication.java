@@ -16,11 +16,16 @@ public class CommitmentTypeIndication
     private CommitmentTypeIndication(
         ASN1Sequence seq)
     {
-        commitmentTypeId = (ASN1ObjectIdentifier)seq.getObjectAt(0);
+        if (seq.size() < 1 || seq.size() > 2)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
+
+        commitmentTypeId = ASN1ObjectIdentifier.getInstance(seq.getObjectAt(0));
 
         if (seq.size() > 1)
         {
-            commitmentTypeQualifier = (ASN1Sequence)seq.getObjectAt(1);
+            commitmentTypeQualifier = ASN1Sequence.getInstance(seq.getObjectAt(1));
         }
     }
 

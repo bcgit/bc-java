@@ -50,9 +50,15 @@ public class RevocationValues
                 + seq.size());
         }
         Enumeration e = seq.getObjects();
+        int lastTagNo = -1;
         while (e.hasMoreElements())
         {
             ASN1TaggedObject o = ASN1TaggedObject.getContextInstance(e.nextElement());
+            if (o.getTagNo() <= lastTagNo)
+            {
+                throw new IllegalArgumentException("tag [" + o.getTagNo() + "] repeated or out of order");
+            }
+            lastTagNo = o.getTagNo();
             switch (o.getTagNo())
             {
                 case 0:

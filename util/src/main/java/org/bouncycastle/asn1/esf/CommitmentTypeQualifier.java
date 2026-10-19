@@ -57,7 +57,12 @@ public class CommitmentTypeQualifier
     private CommitmentTypeQualifier(
         ASN1Sequence as)
     {
-        commitmentTypeIdentifier = (ASN1ObjectIdentifier)as.getObjectAt(0);
+        if (as.size() < 1 || as.size() > 2)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + as.size());
+        }
+
+        commitmentTypeIdentifier = ASN1ObjectIdentifier.getInstance(as.getObjectAt(0));
 
         if (as.size() > 1)
         {

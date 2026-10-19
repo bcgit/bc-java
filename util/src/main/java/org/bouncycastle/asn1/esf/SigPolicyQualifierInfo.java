@@ -25,6 +25,11 @@ public class SigPolicyQualifierInfo
     private SigPolicyQualifierInfo(
         ASN1Sequence seq)
     {
+        if (seq.size() != 2)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
+
         sigPolicyQualifierId = ASN1ObjectIdentifier.getInstance(seq.getObjectAt(0));
         sigQualifier = seq.getObjectAt(1);
     }
