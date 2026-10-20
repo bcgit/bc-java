@@ -273,6 +273,56 @@ public class MLDSATest
         }
     }
 
+    public void testPrivateKeyEmbeddedPublicKeyConsistency()
+        throws Exception
+    {
+        for (int i = 0; i != names.length; i++)
+        {
+            KeyPair kp = KeyPairGenerator.getInstance(names[i], "BC").generateKeyPair();
+            KeyFactory kFact = KeyFactory.getInstance(names[i], "BC");
+            MLDSAPrivateKey priv = (MLDSAPrivateKey)kp.getPrivate();
+            byte[] pub = SubjectPublicKeyInfo.getInstance(kp.getPublic().getEncoded()).getPublicKeyData().getOctets();
+
+            byte[] rhoFlip = Arrays.clone(pub);
+            rhoFlip[5] ^= 0x01;
+            byte[] t1Flip = Arrays.clone(pub);
+            t1Flip[t1Flip.length - 1] ^= 0x01;
+
+            byte[][] encodings = new byte[][]{ priv.getEncoded(), priv.getPrivateKey(true).getEncoded(),
+                priv.getPrivateKey(false).getEncoded() };
+            for (int j = 0; j != encodings.length; j++)
+            {
+                PrivateKeyInfo info = PrivateKeyInfo.getInstance(encodings[j]);
+
+                byte[] good = new PrivateKeyInfo(info.getPrivateKeyAlgorithm(), info.parsePrivateKey(), null, pub).getEncoded();
+                PrivateKey key = kFact.generatePrivate(new PKCS8EncodedKeySpec(good));
+                assertEquals(kp.getPublic(), ((MLDSAPrivateKey)key).getPublicKey());
+                assertTrue(Arrays.areEqual(good, key.getEncoded()));
+
+                String t1Msg = generateMismatched(kFact, info, t1Flip, names[i] + " t1");
+                String rhoMsg = generateMismatched(kFact, info, rhoFlip, names[i] + " rho");
+                assertEquals("java.lang.IllegalArgumentException: passed in public key does not match private values", t1Msg);
+                assertEquals(t1Msg, rhoMsg);
+            }
+        }
+    }
+
+    private String generateMismatched(KeyFactory kFact, PrivateKeyInfo info, byte[] publicKey, String label)
+        throws Exception
+    {
+        byte[] enc = new PrivateKeyInfo(info.getPrivateKeyAlgorithm(), info.parsePrivateKey(), null, publicKey).getEncoded();
+        try
+        {
+            kFact.generatePrivate(new PKCS8EncodedKeySpec(enc));
+            fail("no exception for mismatched " + label);
+            return null;
+        }
+        catch (InvalidKeySpecException e)
+        {
+            return e.getMessage();
+        }
+    }
+
     public void testPrivateKeyRecovery()
         throws Exception
     {

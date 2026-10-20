@@ -120,7 +120,7 @@ public class MLDSAPrivateKeyParameters
 
         if (pubKey != null)
         {
-            if (!Arrays.constantTimeAreEqual(this.t1, pubKey.getT1()))
+            if (!Arrays.constantTimeAreEqual(this.t1, pubKey.getT1()) || !Arrays.constantTimeAreEqual(this.rho, pubKey.getRho()))
             {
                 throw new IllegalArgumentException("passed in public key does not match private values");
             }
