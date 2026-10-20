@@ -2005,6 +2005,12 @@ public class Group
     private boolean validateKeyPackage(KeyPackage keyPackage)
         throws IOException
     {
+        return validateKeyPackage(keyPackage, new HashSet<LeafIndex>());
+    }
+
+    private boolean validateKeyPackage(KeyPackage keyPackage, Set<LeafIndex> removedClients)
+        throws IOException
+    {
         // Verify that the ciphersuite and protocol version of the KeyPackage match
         // those in the GroupContext.
         boolean correct_ciphersuite = (keyPackage.getSuite().getSuiteID() == suite.getSuiteID());
@@ -2015,7 +2021,7 @@ public class Group
 
         // Verify that the leaf_node of the KeyPackage is valid for a KeyPackage
         // according to Section 7.3.
-        boolean leaf_node_valid = validateLeafNode(keyPackage.getLeafNode(), LeafNodeSource.KEY_PACKAGE, null);
+        boolean leaf_node_valid = validateLeafNode(keyPackage.getLeafNode(), LeafNodeSource.KEY_PACKAGE, null, removedClients);
 
         // Verify that the value of leaf_node.encryption_key is different from the
         // value of the init_key field.
@@ -2037,6 +2043,13 @@ public class Group
     }
 
     private boolean validateLeafNode(LeafNode leafNode, LeafNodeSource requiredSource, LeafIndex index)
+        throws IOException
+    {
+        return validateLeafNode(leafNode, requiredSource, index, new HashSet<LeafIndex>());
+    }
+
+    private boolean validateLeafNode(LeafNode leafNode, LeafNodeSource requiredSource, LeafIndex index,
+        Set<LeafIndex> removedClients)
         throws IOException
     {
         //TODO: Check all verifications are covered in (https://www.ietf.org/archive/id/draft-ietf-mls-protocol-20.html#section-7.3)
@@ -2097,7 +2110,13 @@ public class Group
                 continue;
             }
 
-            isUniqueSigKey &= (index != null && ((i == index.value())) || (!Arrays.areEqual(sigKey, leaf.getSignatureKey())));
+            // RFC 9420 12.2: an Add may repeat the signature key of a client that the same
+            // proposal list removes. The encryption key must still be new.
+            boolean replacesSameClient = requiredSource == LeafNodeSource.KEY_PACKAGE
+                && removedClients.contains(new LeafIndex(i))
+                && Arrays.areEqual(sigKey, leaf.getSignatureKey())
+                && Arrays.areEqual(MLSOutputStream.encode(leafNode.getCredential()), MLSOutputStream.encode(leaf.getCredential()));
+            isUniqueSigKey &= (index != null && ((i == index.value())) || replacesSameClient || (!Arrays.areEqual(sigKey, leaf.getSignatureKey())));
             isUniqueEncKey &= !Arrays.areEqual(encKey, leaf.getEncryptionKey());
             //TODO:
 //            mutualCredentialSupport &= leaf.capabilities.credentialSupported(leafNode.credential)
@@ -2193,9 +2212,23 @@ public class Group
         // It contains a Remove proposal that removes the committer.
         boolean has_self_remove = false;
 
+        Set<LeafIndex> removedClients = new HashSet<LeafIndex>();
         for (CachedProposal cached : proposals)
         {
-            has_invalid_proposal = has_invalid_proposal || !validateProposal(cached.sender, cached.proposal);
+            if (cached.proposal.getProposalType() == ProposalType.REMOVE
+                && !cached.proposal.getRemove().removed.equals(commitSender)
+                && validateRemove(cached.proposal.getRemove()))
+            {
+                removedClients.add(cached.proposal.getRemove().removed);
+            }
+        }
+
+        for (CachedProposal cached : proposals)
+        {
+            boolean valid = cached.proposal.getProposalType() == ProposalType.ADD
+                ? validateKeyPackage(cached.proposal.getAdd().keyPackage, removedClients)
+                : validateProposal(cached.sender, cached.proposal);
+            has_invalid_proposal = has_invalid_proposal || !valid;
             has_self_update = has_self_update || ((cached.proposal.getProposalType() == ProposalType.UPDATE) && cached.sender.equals(commitSender));
             has_self_remove = has_self_remove || ((cached.proposal.getProposalType() == ProposalType.REMOVE) && (cached.proposal.getRemove().removed.equals(commitSender)));
         }
@@ -2259,11 +2292,6 @@ public class Group
 
             signatureKeys.add(signatureKey);
         }
-
-        //TODO
-        // It contains an Add proposal with a KeyPackage that represents a client
-        // already in the group according to the application, unless there is a Remove
-        // proposal in the list removing the matching client from the group.
 
         // It contains multiple PreSharedKey proposals that reference the same
         // PreSharedKeyID.
