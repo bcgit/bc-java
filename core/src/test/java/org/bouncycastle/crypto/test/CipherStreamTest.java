@@ -54,6 +54,7 @@ import org.bouncycastle.crypto.paddings.PaddedBufferedBlockCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.io.Streams;
 import org.bouncycastle.util.test.SimpleTest;
 
 public class CipherStreamTest
@@ -542,6 +543,105 @@ public class CipherStreamTest
         }
     }
 
+    private void testMarkReset()
+        throws Exception
+    {
+        testMarkReset(new ChaChaEngine(), new ParametersWithIV(new KeyParameter(new byte[16]), new byte[8]));
+        testMarkReset(SICBlockCipher.newInstance(AESEngine.newInstance()), new ParametersWithIV(new KeyParameter(new byte[16]), new byte[16]));
+    }
+
+    private void testMarkReset(StreamCipher cipher, CipherParameters params)
+        throws Exception
+    {
+        byte[] data = new byte[100];
+        for (int i = 0; i != data.length; i++)
+        {
+            data[i] = (byte)i;
+        }
+
+        init(cipher, true, params);
+
+        byte[] cipherText = new byte[data.length];
+        cipher.processBytes(data, 0, data.length, cipherText, 0);
+
+        String name = cipher.getAlgorithmName();
+
+        // mark after the first read, reset before the end of the buffered data
+        init(cipher, false, params);
+        CipherInputStream cIn = new CipherInputStream(new ByteArrayInputStream(cipherText), cipher);
+        checkRead(name + " control", cIn, data, 0, 5);
+        cIn.mark(data.length);
+        checkRead(name + " control", cIn, data, 5, 30);
+        cIn.reset();
+        checkReadAll(name + " control", cIn, data, 5);
+
+        // mark before the first read
+        init(cipher, false, params);
+        cIn = new CipherInputStream(new ByteArrayInputStream(cipherText), cipher);
+        cIn.mark(data.length);
+        checkRead(name + " mark before first read", cIn, data, 0, 30);
+        cIn.reset();
+        checkReadAll(name + " mark before first read", cIn, data, 0);
+
+        // read to the end of the stream, then reset to a mark in an earlier chunk
+        init(cipher, false, params);
+        cIn = new CipherInputStream(new ByteArrayInputStream(cipherText), cipher, 16);
+        checkRead(name + " reset after end of stream", cIn, data, 0, 5);
+        cIn.mark(data.length);
+        checkReadAll(name + " reset after end of stream", cIn, data, 5);
+        cIn.reset();
+        checkReadAll(name + " reset after end of stream", cIn, data, 5);
+
+        // two resets to the same mark with a buffer smaller than the data
+        init(cipher, false, params);
+        cIn = new CipherInputStream(new ByteArrayInputStream(cipherText), cipher, 16);
+        checkRead(name + " second reset", cIn, data, 0, 5);
+        cIn.mark(data.length);
+        checkRead(name + " second reset", cIn, data, 5, 30);
+        cIn.reset();
+        checkRead(name + " second reset", cIn, data, 5, 30);
+        cIn.reset();
+        checkReadAll(name + " second reset", cIn, data, 5);
+
+        // mark in the second buffered chunk, reset from the shorter final chunk
+        init(cipher, false, params);
+        cIn = new CipherInputStream(new ByteArrayInputStream(cipherText), cipher, 16);
+        checkRead(name + " mark across chunks", cIn, data, 0, 17);
+        cIn.mark(data.length);
+        checkRead(name + " mark across chunks", cIn, data, 17, 80);
+        cIn.reset();
+        checkReadAll(name + " mark across chunks", cIn, data, 17);
+
+        cIn.close();
+
+        // a reset() after close() must not reopen the stream
+        cIn.reset();
+        if (cIn.read() != -1)
+        {
+            fail(name + ": reset after close returned data");
+        }
+    }
+
+    private void checkRead(String label, InputStream in, byte[] data, int off, int len)
+        throws Exception
+    {
+        byte[] block = new byte[len];
+
+        if (Streams.readFully(in, block) != len || !Arrays.areEqual(Arrays.copyOfRange(data, off, off + len), block))
+        {
+            fail(label + ": wrong data read at offset " + off);
+        }
+    }
+
+    private void checkReadAll(String label, InputStream in, byte[] data, int off)
+        throws Exception
+    {
+        if (!Arrays.areEqual(Arrays.copyOfRange(data, off, data.length), Streams.readAll(in)))
+        {
+            fail(label + ": wrong data read from offset " + off + " to the end of the stream");
+        }
+    }
+
     public void performTest()
         throws Exception
     {
@@ -553,6 +653,7 @@ public class CipherStreamTest
         }
 
         testDoubleClose();
+        testMarkReset();
     }
 
     private void performTests()
