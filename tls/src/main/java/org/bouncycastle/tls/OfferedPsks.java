@@ -144,8 +144,12 @@ public class OfferedPsks
         }
     }
 
+    /**
+     * @param isDTLS whether the binders are for a DTLS 1.3 ClientHello, which selects the "dtls13" HKDF label prefix
+     *               (RFC 9147 5.9) rather than TLS 1.3's "tls13 ".
+     */
     static void encodeBinders(OutputStream output, TlsCrypto crypto, TlsHandshakeHash handshakeHash,
-        BindersConfig bindersConfig) throws IOException
+        BindersConfig bindersConfig, boolean isDTLS) throws IOException
     {
         TlsPSK[] psks = bindersConfig.psks;
         TlsSecret[] earlySecrets = bindersConfig.earlySecrets;
@@ -170,7 +174,7 @@ public class OfferedPsks
             byte[] transcriptHash = hash.calculateHash();
 
             byte[] binder = TlsUtils.calculatePSKBinder(crypto, isExternalPSK, pskCryptoHashAlgorithm, earlySecret,
-                transcriptHash);
+                transcriptHash, isDTLS);
 
             lengthOfBindersList += 1 + binder.length;
             TlsUtils.writeOpaque8(binder, output);

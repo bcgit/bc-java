@@ -289,8 +289,9 @@ abstract class AbstractTlsContext
             TlsHash exporterHash = getCrypto().createHash(cryptoHashAlgorithm);
             byte[] emptyTranscriptHash = exporterHash.calculateHash();
 
-            TlsSecret exporterSecret = TlsUtils.deriveSecret(getSecurityParametersConnection(), secret, asciiLabel,
-                emptyTranscriptHash);
+            SecurityParameters sp = getSecurityParametersConnection();
+
+            TlsSecret exporterSecret = TlsUtils.deriveSecret(sp, secret, asciiLabel, emptyTranscriptHash);
 
             byte[] exporterContext = emptyTranscriptHash;
             if (context.length > 0)
@@ -299,8 +300,12 @@ abstract class AbstractTlsContext
                 exporterContext = exporterHash.calculateHash();
             }
 
+            // RFC 9147 5.9. DTLS 1.3 derives with the "dtls13" label prefix rather than TLS 1.3's "tls13 ".
+            boolean isDTLS = sp.getNegotiatedVersion().isDTLS();
+
             return TlsCryptoUtils
-                .hkdfExpandLabel(exporterSecret, cryptoHashAlgorithm, "exporter", exporterContext, length).extract();
+                .hkdfExpandLabel(exporterSecret, cryptoHashAlgorithm, "exporter", exporterContext, length, isDTLS)
+                .extract();
         }
         catch (IOException e)
         {

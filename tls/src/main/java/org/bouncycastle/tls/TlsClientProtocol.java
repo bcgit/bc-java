@@ -2009,7 +2009,8 @@ public class TlsClientProtocol
 
         if (null != clientBinders)
         {
-            OfferedPsks.encodeBinders(message, tlsClientContext.getCrypto(), handshakeHash, clientBinders);
+            // TLS over TCP, so the binders use the TLS 1.3 label prefix
+            OfferedPsks.encodeBinders(message, tlsClientContext.getCrypto(), handshakeHash, clientBinders, false);
         }
 
         message.sendClientHello(this, handshakeHash, clientHello.getBindersSize());

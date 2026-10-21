@@ -1,13 +1,23 @@
 package org.bouncycastle.tls.test;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.Hashtable;
 import java.util.Random;
+import java.util.Vector;
 
+import org.bouncycastle.tls.ClientHello;
+import org.bouncycastle.tls.ContentType;
 import org.bouncycastle.tls.DTLSClientProtocol;
 import org.bouncycastle.tls.DTLSRequest;
 import org.bouncycastle.tls.DTLSServerProtocol;
 import org.bouncycastle.tls.DTLSTransport;
 import org.bouncycastle.tls.DTLSVerifier;
 import org.bouncycastle.tls.DatagramTransport;
+import org.bouncycastle.tls.HandshakeType;
+import org.bouncycastle.tls.ProtocolVersion;
+import org.bouncycastle.tls.TlsExtensionsUtils;
 import org.bouncycastle.tls.TlsServer;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.util.Arrays;
@@ -96,6 +106,168 @@ public class DTLSProtocolTest
         dtlsClient.close();
 
         serverThread.shutdown();
+    }
+
+    /**
+     * A client offering DTLS 1.3 must still negotiate DTLS 1.2 with a 1.2-only server, and its
+     * ClientHello must be RFC 9147 5.3 shaped: legacy_version 0xfefd, an empty legacy_cookie, and
+     * the offered versions in "supported_versions" with 0xfefc first.
+     */
+    public void testClientOffersDTLSv13NegotiatesDTLSv12() throws Exception
+    {
+        final ProtocolVersion[] clientVersions = ProtocolVersion.DTLSv13.downTo(ProtocolVersion.DTLSv10);
+        final ProtocolVersion[] clientNegotiated = new ProtocolVersion[1];
+        final ProtocolVersion[] serverNegotiated = new ProtocolVersion[1];
+
+        MockDTLSClient client = new MockDTLSClient(null)
+        {
+            protected ProtocolVersion[] getSupportedVersions()
+            {
+                return clientVersions;
+            }
+
+            public void notifyServerVersion(ProtocolVersion serverVersion) throws IOException
+            {
+                super.notifyServerVersion(serverVersion);
+
+                clientNegotiated[0] = serverVersion;
+            }
+        };
+
+        MockDTLSServer server = new MockDTLSServer()
+        {
+            public ProtocolVersion getServerVersion() throws IOException
+            {
+                ProtocolVersion serverVersion = super.getServerVersion();
+
+                serverNegotiated[0] = serverVersion;
+
+                return serverVersion;
+            }
+        };
+
+        DTLSClientProtocol clientProtocol = new DTLSClientProtocol();
+        DTLSServerProtocol serverProtocol = new DTLSServerProtocol();
+
+        MockDatagramAssociation network = new MockDatagramAssociation(1500);
+
+        ServerThread serverThread = new ServerThread(serverProtocol, server, network.getServer());
+        serverThread.start();
+
+        DatagramTransport clientTransport = network.getClient();
+
+        clientTransport = new UnreliableDatagramTransport(clientTransport, new Random(), 0, 0);
+
+        CapturingDatagramTransport capture = new CapturingDatagramTransport(clientTransport);
+
+        DTLSTransport dtlsClient = clientProtocol.connect(client, capture);
+
+        dtlsClient.close();
+
+        serverThread.shutdown();
+
+        assertEquals("client negotiated version", ProtocolVersion.DTLSv12, clientNegotiated[0]);
+        assertEquals("server negotiated version", ProtocolVersion.DTLSv12, serverNegotiated[0]);
+
+        ClientHello clientHello = parseFirstClientHello(capture.getSent());
+        assertNotNull("no ClientHello captured", clientHello);
+
+        assertEquals("legacy_version", ProtocolVersion.DTLSv12, clientHello.getVersion());
+
+        byte[] legacyCookie = clientHello.getCookie();
+        assertNotNull("legacy_cookie", legacyCookie);
+        assertEquals("legacy_cookie length", 0, legacyCookie.length);
+
+        Hashtable clientExtensions = clientHello.getExtensions();
+        assertNotNull("no extensions in ClientHello", clientExtensions);
+
+        ProtocolVersion[] supportedVersions = TlsExtensionsUtils.getSupportedVersionsExtensionClient(
+            clientExtensions);
+        assertNotNull("missing supported_versions extension", supportedVersions);
+        assertTrue("supported_versions empty", supportedVersions.length > 0);
+        assertEquals("supported_versions[0]", ProtocolVersion.DTLSv13, supportedVersions[0]);
+        assertTrue("supported_versions missing DTLSv12",
+            ProtocolVersion.contains(supportedVersions, ProtocolVersion.DTLSv12));
+
+        Vector clientShares = TlsExtensionsUtils.getKeyShareClientHello(clientExtensions);
+        assertNotNull("missing key_share extension", clientShares);
+        assertFalse("key_share offered no shares", clientShares.isEmpty());
+    }
+
+    private static ClientHello parseFirstClientHello(Vector datagrams) throws IOException
+    {
+        for (int i = 0; i < datagrams.size(); ++i)
+        {
+            byte[] datagram = (byte[])datagrams.elementAt(i);
+
+            // DTLS 1.2 plaintext record header, then the DTLS handshake message header
+            if (datagram.length < 25 || (datagram[0] & 0xFF) != ContentType.handshake
+                || (datagram[13] & 0xFF) != HandshakeType.client_hello)
+            {
+                continue;
+            }
+
+            int fragmentLength = ((datagram[22] & 0xFF) << 16) | ((datagram[23] & 0xFF) << 8)
+                | (datagram[24] & 0xFF);
+
+            ByteArrayInputStream body = new ByteArrayInputStream(datagram, 25, fragmentLength);
+
+            return ClientHello.parse(body, new ByteArrayOutputStream());
+        }
+
+        return null;
+    }
+
+    static class CapturingDatagramTransport
+        implements DatagramTransport
+    {
+        private final DatagramTransport transport;
+        private final Vector sent = new Vector();
+
+        CapturingDatagramTransport(DatagramTransport transport)
+        {
+            this.transport = transport;
+        }
+
+        Vector getSent()
+        {
+            synchronized (sent)
+            {
+                return new Vector(sent);
+            }
+        }
+
+        public int getReceiveLimit() throws IOException
+        {
+            return transport.getReceiveLimit();
+        }
+
+        public int getSendLimit() throws IOException
+        {
+            return transport.getSendLimit();
+        }
+
+        public int receive(byte[] buf, int off, int len, int waitMillis) throws IOException
+        {
+            return transport.receive(buf, off, len, waitMillis);
+        }
+
+        public void send(byte[] buf, int off, int len) throws IOException
+        {
+            byte[] datagram = new byte[len];
+            System.arraycopy(buf, off, datagram, 0, len);
+            synchronized (sent)
+            {
+                sent.addElement(datagram);
+            }
+
+            transport.send(buf, off, len);
+        }
+
+        public void close() throws IOException
+        {
+            transport.close();
+        }
     }
 
     static class ServerThread
