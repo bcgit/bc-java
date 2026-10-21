@@ -630,7 +630,8 @@ public class BcTlsCrypto
     protected TlsCipher createChaCha20Poly1305(TlsCryptoParameters cryptoParams) throws IOException
     {
         return new TlsAEADCipher(cryptoParams, new BcChaCha20Poly1305(true), new BcChaCha20Poly1305(false), 32, 16,
-            TlsAEADCipher.AEAD_CHACHA20_POLY1305, null);
+            TlsAEADCipher.AEAD_CHACHA20_POLY1305, null, new BcTlsChaCha20RecordNumberMask(),
+            new BcTlsChaCha20RecordNumberMask());
     }
 
     protected TlsAEADCipher createCipher_AES_CCM(TlsCryptoParameters cryptoParams, int cipherKeySize, int macSize)
@@ -640,7 +641,7 @@ public class BcTlsCrypto
         BcTlsAEADCipherImpl decrypt = new BcTlsAEADCipherImpl(createAEADBlockCipher_AES_CCM(), false);
 
         return new TlsAEADCipher(cryptoParams, encrypt, decrypt, cipherKeySize, macSize, TlsAEADCipher.AEAD_CCM,
-            null);
+            null, new BcTlsAESRecordNumberMask(createAESEngine()), new BcTlsAESRecordNumberMask(createAESEngine()));
     }
 
     protected TlsAEADCipher createCipher_AES_GCM(TlsCryptoParameters cryptoParams, int cipherKeySize, int macSize)
@@ -649,7 +650,8 @@ public class BcTlsCrypto
         BcTlsAEADCipherImpl encrypt = new BcTlsAEADCipherImpl(createAEADBlockCipher_AES_GCM(), true);
         BcTlsAEADCipherImpl decrypt = new BcTlsAEADCipherImpl(createAEADBlockCipher_AES_GCM(), false);
 
-        return new TlsAEADCipher(cryptoParams, encrypt, decrypt, cipherKeySize, macSize, TlsAEADCipher.AEAD_GCM, null);
+        return new TlsAEADCipher(cryptoParams, encrypt, decrypt, cipherKeySize, macSize, TlsAEADCipher.AEAD_GCM,
+            null, new BcTlsAESRecordNumberMask(createAESEngine()), new BcTlsAESRecordNumberMask(createAESEngine()));
     }
 
     protected TlsAEADCipher createCipher_ARIA_GCM(TlsCryptoParameters cryptoParams, int cipherKeySize, int macSize)
@@ -682,6 +684,8 @@ public class BcTlsCrypto
         return new TlsBlockCipher(cryptoParams, encrypt, decrypt, clientMAC, serverMAC, cipherKeySize);
     }
 
+    // TODO[dtls13] RFC 9147 defines no record number mask for SM4, so these suites must be excluded
+    // from DTLS 1.3 suite selection.
     protected TlsAEADCipher createCipher_SM4_CCM(TlsCryptoParameters cryptoParams)
         throws IOException
     {
@@ -691,6 +695,8 @@ public class BcTlsCrypto
         return new TlsAEADCipher(cryptoParams, encrypt, decrypt, 16, 16, TlsAEADCipher.AEAD_CCM, null);
     }
 
+    // TODO[dtls13] RFC 9147 defines no record number mask for SM4, so these suites must be excluded
+    // from DTLS 1.3 suite selection.
     protected TlsAEADCipher createCipher_SM4_GCM(TlsCryptoParameters cryptoParams)
         throws IOException
     {

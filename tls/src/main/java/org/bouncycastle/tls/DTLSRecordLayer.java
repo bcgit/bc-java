@@ -7,6 +7,7 @@ import java.io.InterruptedIOException;
 import java.net.SocketTimeoutException;
 
 import org.bouncycastle.tls.crypto.TlsCipher;
+import org.bouncycastle.tls.crypto.TlsDTLS13Cipher;
 import org.bouncycastle.tls.crypto.TlsDecodeResult;
 import org.bouncycastle.tls.crypto.TlsEncodeResult;
 import org.bouncycastle.tls.crypto.TlsNullNullCipher;
@@ -16,6 +17,12 @@ class DTLSRecordLayer
     implements DatagramTransport
 {
     static final int RECORD_HEADER_LENGTH = 13;
+
+    /**
+     * RFC 9147 4. Returned by {@link #getDTLS13RecordLength(byte[], int, int)} for a record without the L bit:
+     * the record runs to the end of the datagram, whose true length only the caller knows.
+     */
+    private static final int RECORD_LENGTH_REST_OF_DATAGRAM = -2;
 
     private static final int MAX_FRAGMENT_LENGTH = 1 << 14;
     private static final long TCP_MSL = 1000L * 60 * 2;
@@ -117,6 +124,9 @@ class DTLSRecordLayer
     private DTLSEpoch readEpoch, writeEpoch;
     private int lastReceivedEpoch = -1;
 
+    // Set once a DTLS 1.3 version has been negotiated (at initPendingEpoch); selects the RFC 9147 record format
+    private volatile boolean dtls13 = false;
+
     private DTLSHandshakeRetransmit retransmit = null;
     private DTLSEpoch retransmitEpoch = null;
     private Timeout retransmitTimeout = null;
@@ -186,6 +196,12 @@ class DTLSRecordLayer
         return lastReceivedEpoch;
     }
 
+    /** The pending epoch number, or -1 when there is no pending epoch. */
+    int getPendingEpoch()
+    {
+        return null == pendingEpoch ? -1 : pendingEpoch.getEpoch();
+    }
+
     ProtocolVersion getReadVersion()
     {
         return readVersion;
@@ -217,23 +233,90 @@ class DTLSRecordLayer
         SecurityParameters securityParameters = context.getSecurityParameters();
         byte[] connectionIDLocal = securityParameters.getConnectionIDLocal();
         byte[] connectionIDPeer = securityParameters.getConnectionIDPeer();
-        int recordHeaderLengthRead = RECORD_HEADER_LENGTH + (connectionIDPeer != null ? connectionIDPeer.length : 0);
-        int recordHeaderLengthWrite = RECORD_HEADER_LENGTH + (connectionIDLocal != null ? connectionIDLocal.length : 0);
+        int connectionIDLocalLength = connectionIDLocal != null ? connectionIDLocal.length : 0;
+        int connectionIDPeerLength = connectionIDPeer != null ? connectionIDPeer.length : 0;
 
-        // TODO Check for overflow
-        this.pendingEpoch = new DTLSEpoch(writeEpoch.getEpoch() + 1, pendingCipher, recordHeaderLengthRead,
-            recordHeaderLengthWrite);
+        ProtocolVersion negotiatedVersion = securityParameters.getNegotiatedVersion();
+        boolean nextDtls13 = null != negotiatedVersion && TlsUtils.isTLSv13(negotiatedVersion);
+
+        int nextEpoch;
+        int recordHeaderLengthRead, recordHeaderLengthWrite;
+        if (nextDtls13)
+        {
+            /*
+             * RFC 9147 6.1. Epoch 1 is reserved for early data (not supported), so the first protected epoch
+             * (handshake traffic keys) is 2 and application traffic keys begin at 3.
+             */
+            if (!(pendingCipher instanceof TlsDTLS13Cipher))
+            {
+                throw new IllegalStateException("DTLS 1.3 requires a TlsDTLS13Cipher");
+            }
+
+            nextEpoch = writeEpoch.getEpoch() == 0 ? 2 : writeEpoch.getEpoch() + 1;
+            // NOTE: A peer may send the compact header form, so the read side must budget for its minimum
+            recordHeaderLengthRead = DTLS13UnifiedHeader.getMinReadHeaderLength(connectionIDPeerLength);
+            recordHeaderLengthWrite = DTLS13UnifiedHeader.getWriteHeaderLength(connectionIDLocalLength);
+        }
+        else
+        {
+            // TODO Check for overflow
+            nextEpoch = writeEpoch.getEpoch() + 1;
+            recordHeaderLengthRead = RECORD_HEADER_LENGTH + connectionIDPeerLength;
+            recordHeaderLengthWrite = RECORD_HEADER_LENGTH + connectionIDLocalLength;
+        }
+
+        this.dtls13 = nextDtls13;
+        this.pendingEpoch = new DTLSEpoch(nextEpoch, pendingCipher, recordHeaderLengthRead, recordHeaderLengthWrite);
+    }
+
+    /**
+     * DTLS 1.3: switch the read direction to the pending epoch. Once both directions use the pending epoch it
+     * becomes the current epoch and the pending slot is cleared.
+     */
+    void enablePendingEpochRead()
+    {
+        if (null == pendingEpoch)
+        {
+            throw new IllegalStateException();
+        }
+
+        this.readEpoch = pendingEpoch;
+        commitPendingEpochIfCurrent();
+    }
+
+    /**
+     * DTLS 1.3: switch the write direction to the pending epoch (see {@link #enablePendingEpochRead()}).
+     */
+    void enablePendingEpochWrite()
+    {
+        if (null == pendingEpoch)
+        {
+            throw new IllegalStateException();
+        }
+
+        this.writeEpoch = pendingEpoch;
+        commitPendingEpochIfCurrent();
+    }
+
+    private void commitPendingEpochIfCurrent()
+    {
+        if (readEpoch == pendingEpoch && writeEpoch == pendingEpoch)
+        {
+            this.currentEpoch = pendingEpoch;
+            this.pendingEpoch = null;
+        }
     }
 
     void handshakeSuccessful(DTLSHandshakeRetransmit retransmit)
     {
-        if (readEpoch == currentEpoch || writeEpoch == currentEpoch)
+        if (!dtls13 && (readEpoch == currentEpoch || writeEpoch == currentEpoch))
         {
             // TODO
             throw new IllegalStateException();
         }
 
-        if (null != retransmit)
+        // DTLS 1.3 retransmission is ACK-driven (RFC 9147 7) and handled by the reliable handshake
+        if (null != retransmit && !dtls13)
         {
             this.retransmit = retransmit;
             this.retransmitEpoch = currentEpoch;
@@ -241,8 +324,11 @@ class DTLSRecordLayer
         }
 
         this.inHandshake = false;
-        this.currentEpoch = pendingEpoch;
-        this.pendingEpoch = null;
+        if (null != pendingEpoch)
+        {
+            this.currentEpoch = pendingEpoch;
+            this.pendingEpoch = null;
+        }
     }
 
     void initHeartbeat(TlsHeartbeat heartbeat, boolean heartbeatResponder)
@@ -407,7 +493,7 @@ class DTLSRecordLayer
             contentType = ContentType.handshake;
 
             short handshakeType = TlsUtils.readUint8(buf, off);
-            if (handshakeType == HandshakeType.finished)
+            if (handshakeType == HandshakeType.finished && !dtls13)
             {
                 DTLSEpoch nextEpoch = null;
                 if (this.inHandshake)
@@ -561,12 +647,21 @@ class DTLSRecordLayer
         throws IOException
     {
         // NOTE: received < 0 (timeout) is covered by this first case
+        if (received < 1)
+        {
+            return -1;
+        }
+
+        if (dtls13 && DTLS13UnifiedHeader.isCiphertextRecord(record[0] & 0xFF))
+        {
+            return processDTLS13Record(received, record, buf, off, len, recordCallback);
+        }
+
         if (received < RECORD_HEADER_LENGTH)
         {
             return -1;
         }
 
-        // TODO[dtls13] Deal with opaque record type for 1.3 AEAD ciphers
         short recordType = TlsUtils.readUint8(record, 0);
 
         switch (recordType)
@@ -768,6 +863,12 @@ class DTLSRecordLayer
             recordCallback.recordAccepted(flags);
         }
 
+        return processDecodedRecord(decoded, epoch, buf, off, len);
+    }
+
+    private int processDecodedRecord(TlsDecodeResult decoded, int epoch, byte[] buf, int off, int len)
+        throws IOException
+    {
         switch (decoded.contentType)
         {
         case ContentType.alert:
@@ -816,7 +917,8 @@ class DTLSRecordLayer
                     continue;
                 }
 
-                if (pendingEpoch != null)
+                // RFC 9147 5. DTLS 1.3 does not use the TLS 1.3 compatibility-mode change_cipher_spec
+                if (!dtls13 && pendingEpoch != null)
                 {
                     readEpoch = pendingEpoch;
                 }
@@ -884,7 +986,7 @@ class DTLSRecordLayer
 
             return -1;
         }
-        case ContentType.tls12_cid:        
+        case ContentType.tls12_cid:
         default:
             return -1;
         }
@@ -900,7 +1002,7 @@ class DTLSRecordLayer
             this.retransmitTimeout = null;
         }
 
-        this.lastReceivedEpoch = recordEpoch.getEpoch();
+        this.lastReceivedEpoch = epoch;
 
         // NOTE: Internal error implies getReceiveLimit() was not used to allocate result space
         if (decoded.len > len)
@@ -912,13 +1014,175 @@ class DTLSRecordLayer
         return decoded.len;
     }
 
+    /**
+     * RFC 9147 4. Process a DTLSCiphertext record (unified header). Invalid records are silently discarded
+     * (RFC 9147 4.5.2), with the same internal_error exception as the legacy path.
+     */
+    private int processDTLS13Record(int received, byte[] record, byte[] buf, int off, int len,
+        DTLSRecordCallback recordCallback) throws IOException
+    {
+        int firstByte = record[0] & 0xFF;
+
+        byte[] connectionID = context.getSecurityParameters().getConnectionIDPeer();
+        int connectionIDLength = null == connectionID ? 0 : connectionID.length;
+
+        // NOTE: Establish that the whole header is present before reading any of it
+        int headerLength = DTLS13UnifiedHeader.getHeaderLength(firstByte, connectionIDLength);
+        if (received < headerLength + DTLS13UnifiedHeader.MIN_CIPHERTEXT_LENGTH)
+        {
+            return -1;
+        }
+
+        if (DTLS13UnifiedHeader.hasConnectionID(firstByte))
+        {
+            if (connectionIDLength == 0
+                || !Arrays.constantTimeAreEqual(connectionIDLength, connectionID, 0, record, 1))
+            {
+                return -1;
+            }
+        }
+        else if (connectionIDLength != 0)
+        {
+            return -1;
+        }
+
+        int ciphertextLength;
+        if (DTLS13UnifiedHeader.hasLength(firstByte))
+        {
+            ciphertextLength = TlsUtils.readUint16(record, headerLength - 2);
+            if (received != headerLength + ciphertextLength)
+            {
+                return -1;
+            }
+        }
+        else
+        {
+            ciphertextLength = received - headerLength;
+        }
+        if (ciphertextLength < DTLS13UnifiedHeader.MIN_CIPHERTEXT_LENGTH)
+        {
+            return -1;
+        }
+
+        /*
+         * TODO[dtls13] With only the low 2 epoch bits on the wire, a retransmitted record from an earlier epoch
+         * is dropped once the read epoch advances; the reliable handshake (RFC 9147 7) will need to retain
+         * recent epochs.
+         */
+        DTLSEpoch recordEpoch = null;
+        if (DTLS13UnifiedHeader.matchesEpoch(firstByte, readEpoch.getEpoch()))
+        {
+            recordEpoch = readEpoch;
+        }
+        else if (null != retransmitEpoch && DTLS13UnifiedHeader.matchesEpoch(firstByte, retransmitEpoch.getEpoch()))
+        {
+            recordEpoch = retransmitEpoch;
+        }
+        if (null == recordEpoch)
+        {
+            return -1;
+        }
+
+        TlsCipher recordCipher = recordEpoch.getCipher();
+        if (!(recordCipher instanceof TlsDTLS13Cipher))
+        {
+            // A DTLSCiphertext record can only belong to a protected epoch; epoch 0 uses the null cipher.
+            return -1;
+        }
+        TlsDTLS13Cipher cipher = (TlsDTLS13Cipher)recordCipher;
+        DTLSReplayWindow replayWindow = recordEpoch.getReplayWindow();
+
+        TlsDecodeResult decoded;
+        long seq;
+        try
+        {
+            cipher.decryptDTLS13RecordNumber(record, 0, received);
+
+            int seqNumOff = 1 + connectionIDLength;
+            int seqBitCount = DTLS13UnifiedHeader.hasSeq16(firstByte) ? 16 : 8;
+            int seqBits = seqBitCount == 16 ? TlsUtils.readUint16(record, seqNumOff)
+                : TlsUtils.readUint8(record, seqNumOff);
+
+            long expected = replayWindow.getLatestConfirmedSeq() + 1;
+            seq = DTLS13UnifiedHeader.reconstructSequenceNumber(expected, seqBits, seqBitCount);
+            if (replayWindow.shouldDiscard(seq))
+            {
+                return -1;
+            }
+
+            decoded = cipher.decodeDTLS13Ciphertext(seq, record, 0, headerLength, ciphertextLength);
+        }
+        catch (TlsFatalAlert fatalAlert)
+        {
+            // See processRecord: only an internal_error is propagated
+            if (AlertDescription.internal_error == fatalAlert.getAlertDescription())
+            {
+                throw fatalAlert;
+            }
+
+            return -1;
+        }
+
+        if (decoded.len > this.plaintextLimit)
+        {
+            return -1;
+        }
+        if (decoded.len < 1 && decoded.contentType != ContentType.application_data)
+        {
+            return -1;
+        }
+
+        boolean isLatestConfirmed = replayWindow.reportAuthenticated(seq);
+
+        if (recordCallback != null)
+        {
+            int flags = DTLSRecordFlags.NONE;
+
+            if (recordEpoch == readEpoch && isLatestConfirmed)
+            {
+                flags |= DTLSRecordFlags.IS_NEWEST;
+            }
+
+            if (DTLS13UnifiedHeader.hasConnectionID(firstByte))
+            {
+                flags |= DTLSRecordFlags.USES_CONNECTION_ID;
+            }
+
+            recordCallback.recordAccepted(flags);
+        }
+
+        return processDecodedRecord(decoded, recordEpoch.getEpoch(), buf, off, len);
+    }
+
     private int receivePendingRecord(byte[] buf, int off, int len)
         throws IOException
     {
 //        assert recordQueue.available() > 0;
 
         int recordLength = RECORD_HEADER_LENGTH;
-        if (recordQueue.available() >= recordLength)
+
+        byte[] firstByteBuf = new byte[1];
+        recordQueue.read(firstByteBuf, 0, 1, 0);
+        int firstByte = firstByteBuf[0] & 0xFF;
+
+        if (dtls13 && DTLS13UnifiedHeader.isCiphertextRecord(firstByte))
+        {
+            int available = recordQueue.available();
+            byte[] head = new byte[Math.min(available, 16)];
+            recordQueue.read(head, 0, head.length, 0);
+
+            recordLength = getDTLS13RecordLength(head, 0, head.length);
+            if (RECORD_LENGTH_REST_OF_DATAGRAM == recordLength)
+            {
+                recordLength = available;
+            }
+            else if (recordLength < 0)
+            {
+                recordQueue.removeData(available);
+                return -1;
+            }
+        }
+        else if (recordQueue.available() >= recordLength)
         {
             int epoch = recordQueue.readUint16(3);
 
@@ -955,6 +1219,31 @@ class DTLSRecordLayer
         return received;
     }
 
+    /**
+     * RFC 9147 4. Length of the DTLS 1.3 ciphertext record at the start of buf[off..off + available), or -1 if
+     * it cannot be determined. A record without the L bit consumes the rest of the datagram, which is reported
+     * as {@link #RECORD_LENGTH_REST_OF_DATAGRAM} because 'available' may be only a peek window rather than the
+     * true remaining length; the caller substitutes the length it knows.
+     */
+    private int getDTLS13RecordLength(byte[] buf, int off, int available)
+    {
+        int firstByte = buf[off] & 0xFF;
+
+        byte[] connectionID = context.getSecurityParameters().getConnectionIDPeer();
+        int connectionIDLength = null == connectionID ? 0 : connectionID.length;
+
+        int headerLength = DTLS13UnifiedHeader.getHeaderLength(firstByte, connectionIDLength);
+        if (available < headerLength)
+        {
+            return -1;
+        }
+        if (!DTLS13UnifiedHeader.hasLength(firstByte))
+        {
+            return RECORD_LENGTH_REST_OF_DATAGRAM;
+        }
+        return headerLength + TlsUtils.readUint16(buf, off + headerLength - 2);
+    }
+
     private int receiveRecord(byte[] buf, int off, int len, int waitMillis)
         throws IOException
     {
@@ -964,6 +1253,28 @@ class DTLSRecordLayer
         }
 
         int received = receiveDatagram(buf, off, len, waitMillis);
+
+        if (dtls13 && received >= 1 && DTLS13UnifiedHeader.isCiphertextRecord(buf[off] & 0xFF))
+        {
+            this.inConnection = true;
+
+            int recordLength = getDTLS13RecordLength(buf, off, received);
+            if (RECORD_LENGTH_REST_OF_DATAGRAM == recordLength)
+            {
+                recordLength = received;
+            }
+            else if (recordLength < 0)
+            {
+                return -1;
+            }
+            if (received > recordLength)
+            {
+                recordQueue.addData(buf, off + recordLength, received - recordLength);
+                received = recordLength;
+            }
+            return received;
+        }
+
         if (received >= RECORD_HEADER_LENGTH)
         {
             this.inConnection = true;
@@ -1053,6 +1364,12 @@ class DTLSRecordLayer
 
         synchronized (writeLock)
         {
+            if (dtls13 && writeEpoch.getEpoch() > 0)
+            {
+                sendDTLS13Record(contentType, buf, off, len);
+                return;
+            }
+
             int recordEpoch = writeEpoch.getEpoch();
             long recordSequenceNumber = writeEpoch.allocateSequenceNumber();
             long macSequenceNumber = getMacSequenceNumber(recordEpoch, recordSequenceNumber);
@@ -1081,6 +1398,27 @@ class DTLSRecordLayer
 
             sendDatagram(transport, encoded.buf, encoded.off, encoded.len);
         }
+    }
+
+    private void sendDTLS13Record(short contentType, byte[] buf, int off, int len) throws IOException
+    {
+        int recordEpoch = writeEpoch.getEpoch();
+        long recordSequenceNumber = writeEpoch.allocateSequenceNumber();
+
+        byte[] connectionID = context.getSecurityParameters().getConnectionIDLocal();
+        int connectionIDLength = null == connectionID ? 0 : connectionID.length;
+
+        byte[] header = new byte[DTLS13UnifiedHeader.getWriteHeaderLength(connectionIDLength)];
+        int headerLength = DTLS13UnifiedHeader.writeHeader(recordEpoch, recordSequenceNumber, connectionID, header,
+            0);
+
+        // NOTE: initPendingEpoch checked this for every DTLS 1.3 epoch
+        TlsDTLS13Cipher cipher = (TlsDTLS13Cipher)writeEpoch.getCipher();
+
+        TlsEncodeResult encoded = cipher.encodeDTLS13Plaintext(recordSequenceNumber, contentType, header, 0,
+            headerLength, buf, off, len);
+
+        sendDatagram(transport, encoded.buf, encoded.off, encoded.len);
     }
 
     private static long getMacSequenceNumber(int epoch, long sequence_number)
