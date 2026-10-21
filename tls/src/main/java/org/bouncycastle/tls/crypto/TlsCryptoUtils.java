@@ -21,6 +21,9 @@ public abstract class TlsCryptoUtils
     // "tls13 "
     private static final byte[] TLS13_PREFIX = new byte[]{ 0x74, 0x6c, 0x73, 0x31, 0x33, 0x20 };
 
+    // "dtls13" (RFC 9147 5.9: no trailing space, so that the expanded label stays within one hash block)
+    private static final byte[] DTLS13_PREFIX = new byte[]{ 0x64, 0x74, 0x6c, 0x73, 0x31, 0x33 };
+
     public static int getHash(short hashAlgorithm)
     {
         switch (hashAlgorithm)
@@ -192,8 +195,25 @@ public abstract class TlsCryptoUtils
         }
     }
 
+    /**
+     * HKDF-Expand-Label as defined in RFC 8446 7.1, with the "tls13 " label prefix. This is the TLS 1.3 form; for
+     * DTLS 1.3 use {@link #hkdfExpandLabel(TlsSecret, int, String, byte[], int, boolean)}, since RFC 9147 5.9
+     * requires the "dtls13" prefix there.
+     */
     public static TlsSecret hkdfExpandLabel(TlsSecret secret, int cryptoHashAlgorithm, String label, byte[] context,
         int length) throws IOException
+    {
+        return hkdfExpandLabel(secret, cryptoHashAlgorithm, label, context, length, false);
+    }
+
+    /**
+     * HKDF-Expand-Label as defined in RFC 8446 7.1, with the label prefix selected by the protocol: "tls13 " for
+     * TLS 1.3, or "dtls13" for DTLS 1.3 (RFC 9147 5.9, which requires this for key separation between the two).
+     *
+     * @param isDTLS true to use the DTLS 1.3 label prefix, false for the TLS 1.3 one.
+     */
+    public static TlsSecret hkdfExpandLabel(TlsSecret secret, int cryptoHashAlgorithm, String label, byte[] context,
+        int length, boolean isDTLS) throws IOException
     {
         int labelLength = label.length();
         if (labelLength < 1)
@@ -201,8 +221,10 @@ public abstract class TlsCryptoUtils
             throw new TlsFatalAlert(AlertDescription.internal_error);
         }
 
+        byte[] prefix = isDTLS ? DTLS13_PREFIX : TLS13_PREFIX;
+
         int contextLength = context.length;
-        int expandedLabelLength = TLS13_PREFIX.length + labelLength;
+        int expandedLabelLength = prefix.length + labelLength;
 
         byte[] hkdfLabel = new byte[2 + (1 + expandedLabelLength) + (1 + contextLength)];
 
@@ -217,9 +239,9 @@ public abstract class TlsCryptoUtils
             TlsUtils.checkUint8(expandedLabelLength);
             TlsUtils.writeUint8(expandedLabelLength, hkdfLabel, 2);
 
-            System.arraycopy(TLS13_PREFIX, 0, hkdfLabel, 2 + 1, TLS13_PREFIX.length);
+            System.arraycopy(prefix, 0, hkdfLabel, 2 + 1, prefix.length);
 
-            int labelPos = 2 + (1 + TLS13_PREFIX.length);
+            int labelPos = 2 + (1 + prefix.length);
             for (int i = 0; i < labelLength; ++i)
             {
                 char c = label.charAt(i);
