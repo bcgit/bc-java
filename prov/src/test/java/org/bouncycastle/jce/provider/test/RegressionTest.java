@@ -69,6 +69,7 @@ public class RegressionTest
         new Argon2KeyFactoryTest(),
         new KeyStoreTest(),
         new KeyStoreLoadTest(),
+        new LDAPUtilsTest(),
         new MacTest(),
         new MalformedKeyInfoTest(),
         new MessageDigestUtilsTest(),
