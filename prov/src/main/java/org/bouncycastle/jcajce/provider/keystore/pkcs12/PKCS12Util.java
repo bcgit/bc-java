@@ -22,8 +22,10 @@ import org.bouncycastle.asn1.pkcs.PBMAC1Params;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.internal.asn1.kisa.KISAObjectIdentifiers;
+import org.bouncycastle.internal.asn1.misc.MiscObjectIdentifiers;
 import org.bouncycastle.internal.asn1.nsri.NSRIObjectIdentifiers;
 import org.bouncycastle.internal.asn1.ntt.NTTObjectIdentifiers;
+import org.bouncycastle.internal.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Properties;
@@ -242,15 +244,30 @@ class PKCS12Util
      */
     static String resolveSecretKeyAlgName(ASN1ObjectIdentifier oid)
     {
-        if (NISTObjectIdentifiers.id_aes128_CBC.equals(oid)
+        // the bare-arc and OIW forms below are what the JDK's PKCS12 keystore writes for its secret keys
+        if (NISTObjectIdentifiers.aes.equals(oid)
+            || NISTObjectIdentifiers.id_aes128_CBC.equals(oid)
             || NISTObjectIdentifiers.id_aes192_CBC.equals(oid)
             || NISTObjectIdentifiers.id_aes256_CBC.equals(oid))
         {
             return "AES";
         }
-        if (PKCSObjectIdentifiers.des_EDE3_CBC.equals(oid))
+        if (PKCSObjectIdentifiers.des_EDE3_CBC.equals(oid)
+            || OIWObjectIdentifiers.desEDE.equals(oid))
         {
             return "DESede";
+        }
+        if (OIWObjectIdentifiers.desCBC.equals(oid))
+        {
+            return "DES";
+        }
+        if (PKCSObjectIdentifiers.RC2_CBC.equals(oid))
+        {
+            return "RC2";
+        }
+        if (MiscObjectIdentifiers.cryptlib_algorithm_blowfish_CBC.equals(oid))
+        {
+            return "Blowfish";
         }
         if (KISAObjectIdentifiers.id_seedCBC.equals(oid))
         {
@@ -287,6 +304,14 @@ class PKCS12Util
         if (PKCSObjectIdentifiers.id_hmacWithSHA512.equals(oid))
         {
             return "HmacSHA512";
+        }
+        if (PKCSObjectIdentifiers.id_hmacWithSHA512_224.equals(oid))
+        {
+            return "HmacSHA512/224";
+        }
+        if (PKCSObjectIdentifiers.id_hmacWithSHA512_256.equals(oid))
+        {
+            return "HmacSHA512/256";
         }
         if (NISTObjectIdentifiers.id_hmacWithSHA3_224.equals(oid))
         {

@@ -42,8 +42,10 @@ import org.bouncycastle.crypto.macs.HMac;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.jcajce.PKCS12Key;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Properties;
+import org.bouncycastle.util.io.Streams;
 import org.bouncycastle.util.test.SimpleTest;
 
 /**
@@ -82,6 +84,8 @@ public class PKCS12SecretKeyStoreTest
         roundTripPbmac1();
         sunStyleSecretBag_propertyOff();
         sunStyleSecretBag_propertyOn();
+        jdkWrittenSecretKeys();
+        standardSecretBagNoMacRejectsPassword();
     }
 
     /**
@@ -359,6 +363,154 @@ public class PKCS12SecretKeyStoreTest
         finally
         {
             Properties.removeThreadOverride(Properties.PKCS12_ALLOW_SUN_SECRET_KEYS);
+        }
+    }
+
+    // alias, algorithm name and key length of each entry in the bc-test-data jdk-secret-keys stores
+    private static final Object[][] JDK_SECRET_KEYS = {
+        {"aes", "AES", 16},
+        {"desede", "DESede", 24},
+        {"des", "DES", 8},
+        {"rc2", "RC2", 16},
+        {"blowfish", "Blowfish", 16},
+        {"hmacsha1", "HmacSHA1", 20},
+        {"hmacsha224", "HmacSHA224", 28},
+        {"hmacsha256", "HmacSHA256", 32},
+        {"hmacsha384", "HmacSHA384", 48},
+        {"hmacsha512", "HmacSHA512", 64},
+        {"hmacsha512-224", "HmacSHA512/224", 28},
+        {"hmacsha512-256", "HmacSHA512/256", 32},
+        {"hmacsha3-224", "HmacSHA3-224", 28},
+        {"hmacsha3-256", "HmacSHA3-256", 32},
+        {"hmacsha3-384", "HmacSHA3-384", 48},
+        {"hmacsha3-512", "HmacSHA3-512", 64},
+    };
+
+    private static final char[] JDK_PASSWD = "jdk-secret-keys".toCharArray();
+
+    /**
+     * Stores written by the JDK's own PKCS12 keystore, which puts its SunJCE-style secret bags in a
+     * plain data ContentInfo, with a MAC and, as store(out, null) or macAlgorithm=NONE give, without
+     * one. Each key must come back under the algorithm name the JDK stored it with.
+     */
+    private void jdkWrittenSecretKeys()
+        throws Exception
+    {
+        String[] files = {"jdk-secret-keys-mac.p12", "jdk-secret-keys-nostorepw.p12", "jdk-secret-keys-macnone.p12"};
+        String[] types = {"PKCS12", "PKCS12-PBMAC1"};
+
+        byte[] withMac = Streams.readAll(TestResourceFinder.findTestResource("pkix/pkcs12/jdk-secret-keys", files[0]));
+        for (int t = 0; t != types.length; t++)
+        {
+            Properties.removeThreadOverride(Properties.PKCS12_ALLOW_SUN_SECRET_KEYS);
+            try
+            {
+                KeyStore.getInstance(types[t], "BC").load(new ByteArrayInputStream(withMac), JDK_PASSWD);
+                fail(types[t] + ": JDK secret bags accepted without opt-in");
+            }
+            catch (java.io.IOException e)
+            {
+                isTrue(types[t] + ": unexpected message: " + e.getMessage(),
+                    e.getMessage() != null && e.getMessage().indexOf("unrecognised PKCS12 secretBag algorithm") >= 0);
+            }
+        }
+
+        Properties.setThreadOverride(Properties.PKCS12_ALLOW_SUN_SECRET_KEYS, true);
+        try
+        {
+            for (int f = 0; f != files.length; f++)
+            {
+                byte[] encoding = Streams.readAll(TestResourceFinder.findTestResource("pkix/pkcs12/jdk-secret-keys", files[f]));
+                for (int t = 0; t != types.length; t++)
+                {
+                    String label = files[f] + " " + types[t];
+                    KeyStore reader = KeyStore.getInstance(types[t], "BC");
+                    reader.load(new ByteArrayInputStream(encoding), JDK_PASSWD);
+
+                    isEquals(label + ": entry count", JDK_SECRET_KEYS.length, reader.size());
+                    for (int i = 0; i != JDK_SECRET_KEYS.length; i++)
+                    {
+                        String alias = (String)JDK_SECRET_KEYS[i][0];
+                        String alg = (String)JDK_SECRET_KEYS[i][1];
+                        byte[] expected = new byte[((Integer)JDK_SECRET_KEYS[i][2]).intValue()];
+                        for (int j = 0; j != expected.length; j++)
+                        {
+                            expected[j] = (byte)(i * 16 + j);
+                        }
+
+                        Key key = reader.getKey(alias, JDK_PASSWD);
+                        isTrue(label + " " + alias + ": not a SecretKey", key instanceof SecretKey);
+                        isEquals(label + " " + alias + ": algorithm " + key.getAlgorithm(), alg, key.getAlgorithm());
+                        isTrue(label + " " + alias + ": key bytes differ", Arrays.areEqual(expected, key.getEncoded()));
+                    }
+                }
+            }
+        }
+        finally
+        {
+            Properties.removeThreadOverride(Properties.PKCS12_ALLOW_SUN_SECRET_KEYS);
+        }
+    }
+
+    /**
+     * A standard RFC 7292 secretBag holds its key in the clear, so a file with no MAC whose only
+     * content is one in a plain data ContentInfo is unprotected and a supplied password is refused,
+     * Sun-style secret keys allowed or not.
+     */
+    private void standardSecretBagNoMacRejectsPassword()
+        throws Exception
+    {
+        byte[] keyBytes = new byte[16];
+        for (int i = 0; i < keyBytes.length; i++)
+        {
+            keyBytes[i] = (byte)(0x24 + i);
+        }
+
+        SecretBag secretBag = new SecretBag(org.bouncycastle.asn1.nist.NISTObjectIdentifiers.id_aes128_CBC,
+            new DEROctetString(keyBytes));
+        DERSet attrs = new DERSet(new DERSequence(new org.bouncycastle.asn1.ASN1Encodable[]{
+            PKCSObjectIdentifiers.pkcs_9_at_friendlyName, new DERSet(new DERBMPString("plain-aes"))}));
+        SafeBag bag = new SafeBag(PKCSObjectIdentifiers.secretBag, secretBag, attrs);
+        ContentInfo data = new ContentInfo(PKCSObjectIdentifiers.data,
+            new DEROctetString(new DERSequence(bag).getEncoded(ASN1Encoding.DER)));
+        AuthenticatedSafe authSafe = new AuthenticatedSafe(new ContentInfo[]{data});
+        Pfx pfx = new Pfx(new ContentInfo(PKCSObjectIdentifiers.data,
+            new DEROctetString(authSafe.getEncoded(ASN1Encoding.DER))), null);
+        byte[] pfxBytes = pfx.getEncoded(ASN1Encoding.DER);
+
+        String[] types = {"PKCS12", "PKCS12-PBMAC1"};
+        for (int p = 0; p != 2; p++)
+        {
+            if (p == 1)
+            {
+                Properties.setThreadOverride(Properties.PKCS12_ALLOW_SUN_SECRET_KEYS, true);
+            }
+            try
+            {
+                for (int t = 0; t != types.length; t++)
+                {
+                    String label = types[t] + (p == 1 ? " (sun keys allowed)" : "");
+                    try
+                    {
+                        KeyStore.getInstance(types[t], "BC").load(new ByteArrayInputStream(pfxBytes), PASSWD);
+                        fail(label + ": password accepted for unprotected store");
+                    }
+                    catch (java.io.IOException e)
+                    {
+                        isEquals(label + ": unexpected message",
+                            "password supplied for keystore that does not require one", e.getMessage());
+                    }
+
+                    KeyStore reader = KeyStore.getInstance(types[t], "BC");
+                    reader.load(new ByteArrayInputStream(pfxBytes), null);
+                    Key key = reader.getKey("plain-aes", null);
+                    isTrue(label + ": key bytes differ", key != null && Arrays.areEqual(keyBytes, key.getEncoded()));
+                }
+            }
+            finally
+            {
+                Properties.removeThreadOverride(Properties.PKCS12_ALLOW_SUN_SECRET_KEYS);
+            }
         }
     }
 
