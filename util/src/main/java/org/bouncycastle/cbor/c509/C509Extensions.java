@@ -9,10 +9,10 @@ import org.bouncycastle.cbor.CBORDecoder;
 import org.bouncycastle.cbor.CBOREncoder;
 import org.bouncycastle.cbor.CBORType;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.Integers;
+import org.bouncycastle.util.Longs;
 
 /**
- * The C509 extensions field (Section 3.1.10 of draft-ietf-cose-cbor-encoded-cert-20):
+ * The C509 extensions field (Section 3.1.10 of draft-ietf-cose-cbor-encoded-cert-21):
  * <pre>
  * Extensions = [ * Extension ] / int
  * </pre>
@@ -50,7 +50,7 @@ public class C509Extensions
             Extension ext = x509Extensions.getExtension(oids[i]);
             byte[] extnValue = ext.getExtnValue().getOctets();
             boolean critical = ext.isCritical();
-            Integer registryValue = C509ExtensionType.getValue(oids[i]);
+            Long registryValue = C509ExtensionType.getValue(oids[i]);
             byte[] cborValue = null;
             if (registryValue != null)
             {
@@ -102,6 +102,10 @@ public class C509Extensions
             long value = in.readInteger();
             boolean critical = value < 0;
             long keyUsage = critical ? -value : value;
+            if (keyUsage < 0)
+            {
+                throw new IOException("C509 keyUsage value out of range: " + value);
+            }
             ByteArrayOutputStream bOut = new ByteArrayOutputStream();
             new CBOREncoder(bOut).writeUnsignedInteger(keyUsage);
             byte[] cborValue = bOut.toByteArray();
@@ -120,7 +124,7 @@ public class C509Extensions
             extensions[i] = parseExtension(in);
         }
         if (extensions.length == 1 && extensions[0].getRegistryValue() != null
-            && extensions[0].getRegistryValue().intValue() == C509ExtensionType.KEY_USAGE)
+            && extensions[0].getRegistryValue().longValue() == C509ExtensionType.KEY_USAGE)
         {
             // re-encoding applies the int compaction of Section 3.1.10, so an
             // uncompacted single keyUsage would not round-trip; the only shape the
@@ -140,12 +144,17 @@ public class C509Extensions
         int major = in.peekMajorType();
         if (major == CBORType.UNSIGNED_INTEGER || major == CBORType.NEGATIVE_INTEGER)
         {
-            int idValue = in.readInt();
+            long idValue = in.readInteger();
             boolean critical = idValue < 0;
-            int registryValue = critical ? -idValue : idValue;
+            long registryValue = critical ? -idValue : idValue;
             if (registryValue == 0)
             {
                 throw new IOException("C509 extensionID cannot be 0");
+            }
+            if (registryValue < 0)
+            {
+                // only -2^63 survives negation, and the registry range is 1 to 2^63 - 1 (Section 8.8)
+                throw new IOException("C509 extensionID out of range: " + idValue);
             }
             byte[] cborValue = in.readEncodedItem();
             return buildRegistered(registryValue, critical, cborValue);
@@ -176,7 +185,7 @@ public class C509Extensions
         throw new IOException("C509 extensionID expected, found major type " + major);
     }
 
-    private static C509Extension buildRegistered(int registryValue, boolean critical, byte[] cborValue)
+    private static C509Extension buildRegistered(long registryValue, boolean critical, byte[] cborValue)
         throws IOException
     {
         ASN1ObjectIdentifier oid = C509ExtensionType.getOID(registryValue);
@@ -185,9 +194,10 @@ public class C509Extensions
             throw new IOException("unknown C509 extension value: " + registryValue);
         }
         CBORDecoder valueIn = new CBORDecoder(cborValue);
-        byte[] extnValue = C509ExtensionValueCodec.decodeValue(registryValue, valueIn);
+        // registered values are all small, so the narrowing is exact
+        byte[] extnValue = C509ExtensionValueCodec.decodeValue((int)registryValue, valueIn);
         valueIn.expectEnd();
-        return new C509Extension(Integers.valueOf(registryValue), oid, critical, cborValue, extnValue);
+        return new C509Extension(Longs.valueOf(registryValue), oid, critical, cborValue, extnValue);
     }
 
     void encodeTo(CBOREncoder out)
@@ -196,7 +206,7 @@ public class C509Extensions
         // single int-coded keyUsage collapses to one int (unless the value is 0 and
         // the extension critical, where the sign cannot be carried)
         if (extensions.length == 1 && extensions[0].getRegistryValue() != null
-            && extensions[0].getRegistryValue().intValue() == C509ExtensionType.KEY_USAGE)
+            && extensions[0].getRegistryValue().longValue() == C509ExtensionType.KEY_USAGE)
         {
             long keyUsage = new CBORDecoder(extensions[0].getCborValue()).readUnsignedInteger();
             if (keyUsage != 0 || !extensions[0].isCritical())
@@ -212,7 +222,7 @@ public class C509Extensions
             C509Extension ext = extensions[i];
             if (ext.getRegistryValue() != null)
             {
-                int id = ext.getRegistryValue().intValue();
+                long id = ext.getRegistryValue().longValue();
                 out.writeInteger(ext.isCritical() ? -id : id);
                 out.writeEncoded(ext.getCborValue());
             }

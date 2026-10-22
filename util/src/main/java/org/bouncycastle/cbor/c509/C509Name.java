@@ -25,7 +25,7 @@ import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
 /**
- * A C509 Name (Section 3.1.4 of draft-ietf-cose-cbor-encoded-cert-20):
+ * A C509 Name (Section 3.1.4 of draft-ietf-cose-cbor-encoded-cert-21):
  * <pre>
  * Name = [ * RDNAttribute ] / SpecialText
  * RDNAttribute = ( ( attributeType: int, attributeValue: SpecialText ) //
@@ -157,8 +157,8 @@ public class C509Name
         if (rdns.length == 1 && !rdns[0].isMultiValued())
         {
             AttributeTypeAndValue atv = rdns[0].getFirst();
-            Integer code = C509AttributeType.getValue(atv.getType());
-            if (code != null && code.intValue() == C509AttributeType.COMMON_NAME
+            Long code = C509AttributeType.getValue(atv.getType());
+            if (code != null && code.longValue() == C509AttributeType.COMMON_NAME
                 && atv.getValue() instanceof ASN1UTF8String)
             {
                 writeSpecialText(out, ((ASN1UTF8String)atv.getValue()).getString());
@@ -188,12 +188,12 @@ public class C509Name
     private static void writeAttribute(CBOREncoder out, AttributeTypeAndValue atv)
         throws IOException
     {
-        Integer code = C509AttributeType.getValue(atv.getType());
+        Long code = C509AttributeType.getValue(atv.getType());
         ASN1Encodable value = atv.getValue();
 
         if (code != null)
         {
-            int c = code.intValue();
+            long c = code.longValue();
             if (C509AttributeType.isAlwaysIA5String(c))
             {
                 if (value instanceof ASN1IA5String)
@@ -347,8 +347,8 @@ public class C509Name
         int major = in.peekMajorType();
         if (major == CBORType.UNSIGNED_INTEGER || major == CBORType.NEGATIVE_INTEGER)
         {
-            int typeValue = in.readInt();
-            int code = typeValue < 0 ? -typeValue : typeValue;
+            long typeValue = in.readInteger();
+            long code = typeValue < 0 ? -typeValue : typeValue;
             ASN1ObjectIdentifier oid = C509AttributeType.getOID(code);
             if (oid == null)
             {

@@ -19,7 +19,7 @@ import org.bouncycastle.operator.ContentVerifierProvider;
 import org.bouncycastle.util.Encodable;
 
 /**
- * Holding class for a C509 certificate (draft-ietf-cose-cbor-encoded-cert-20),
+ * Holding class for a C509 certificate (draft-ietf-cose-cbor-encoded-cert-21),
  * mirroring {@link X509CertificateHolder}.
  * <p>
  * For a natively signed certificate (type 2) the signature covers the

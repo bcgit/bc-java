@@ -10,7 +10,7 @@ import org.bouncycastle.cbor.CBORDecoder;
 import org.bouncycastle.cbor.CBOREncoder;
 
 /**
- * A C509PEM structure (Section 3.6 of draft-ietf-cose-cbor-encoded-cert-20):
+ * A C509PEM structure (Section 3.6 of draft-ietf-cose-cbor-encoded-cert-21):
  * <pre>
  * C509PEM = [ C509PrivateKey, COSE_C509 / null ]
  * </pre>

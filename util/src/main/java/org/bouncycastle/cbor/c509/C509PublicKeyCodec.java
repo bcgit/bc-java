@@ -23,7 +23,7 @@ import org.bouncycastle.util.Exceptions;
 
 /**
  * The C509 encoding of the subjectPublicKey field (Sections 3.1.7 and 3.2.1 of
- * draft-ietf-cose-cbor-encoded-cert-20).
+ * draft-ietf-cose-cbor-encoded-cert-21).
  * <p>
  * For rsaEncryption the two INTEGER value fields are carried as unwrapped unsigned
  * bignums, with the array and exponent omitted when the exponent is 65537. For

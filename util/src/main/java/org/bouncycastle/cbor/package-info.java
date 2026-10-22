@@ -1,7 +1,7 @@
 /**
  * A reader and writer for Deterministically Encoded CBOR (RFC 8949, Sections 4.2.1 and 4.2.2),
  * scoped to the profile required by CBOR-based PKI formats such as C509 certificates
- * (draft-ietf-cose-cbor-encoded-cert-20). Indefinite-length items, non-shortest-form integers
+ * (draft-ietf-cose-cbor-encoded-cert-21). Indefinite-length items, non-shortest-form integers
  * and floating-point values are deliberately not supported.
  * <p>
  * This package is a self-contained CBOR layer: it depends only on the JDK and the basic

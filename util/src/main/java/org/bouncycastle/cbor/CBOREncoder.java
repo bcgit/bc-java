@@ -14,7 +14,7 @@ import org.bouncycastle.util.Strings;
  * <p>
  * The encoder does not enforce map key ordering itself - callers writing maps are
  * responsible for presenting keys in bytewise lexicographic order of their encodings.
- * The structures defined for C509 (draft-ietf-cose-cbor-encoded-cert-20) use no maps.
+ * The structures defined for C509 (draft-ietf-cose-cbor-encoded-cert-21) use no maps.
  */
 public class CBOREncoder
 {

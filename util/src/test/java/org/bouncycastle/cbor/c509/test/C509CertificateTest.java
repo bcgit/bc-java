@@ -32,7 +32,7 @@ import org.bouncycastle.util.io.Streams;
 
 /**
  * Tests driven by the worked examples in Appendix A of
- * draft-ietf-cose-cbor-encoded-cert-20. The A.1 and A.2 C509 encodings are given in
+ * draft-ietf-cose-cbor-encoded-cert-21. The A.1 and A.2 C509 encodings are given in
  * the draft itself; the A.3, A.4 and A.5 expected encodings were generated from the
  * appendix's CBOR diagnostic notation and match the certificate sizes the draft
  * documents (836 and 1296 bytes for A.3 and A.4).
@@ -84,7 +84,7 @@ public class C509CertificateTest
         assertEquals(Integer.valueOf(C509PublicKeyAlgorithm.EC_SECP256R1),
             cert.getSubjectPublicKeyAlgorithm().getRegistryValue());
         assertEquals(1, cert.getExtensions().size());
-        assertEquals(Integer.valueOf(C509ExtensionType.KEY_USAGE),
+        assertEquals(Long.valueOf(C509ExtensionType.KEY_USAGE),
             cert.getExtensions().getExtension(0).getRegistryValue());
         assertFalse(cert.getExtensions().getExtension(0).isCritical());
 
@@ -144,7 +144,7 @@ public class C509CertificateTest
         assertEquals(C509Certificate.NO_EXPIRATION_DATE, cert.getNotAfter());
         assertEquals(5, cert.getExtensions().size());
         // hardwareModuleName otherName in the subject alternative name survives
-        assertEquals(Integer.valueOf(C509ExtensionType.SUBJECT_ALT_NAME),
+        assertEquals(Long.valueOf(C509ExtensionType.SUBJECT_ALT_NAME),
             cert.getExtensions().getExtension(4).getRegistryValue());
     }
 
@@ -180,16 +180,16 @@ public class C509CertificateTest
         assertTrue(cert.isSelfIssued());
         assertEquals(cert.getSubject(), cert.getIssuer());
         assertEquals(3, cert.getExtensions().size());
-        assertEquals(Integer.valueOf(C509ExtensionType.IP_ADDR_BLOCKS),
+        assertEquals(Long.valueOf(C509ExtensionType.IP_ADDR_BLOCKS),
             cert.getExtensions().getExtension(1).getRegistryValue());
-        assertEquals(Integer.valueOf(C509ExtensionType.IP_ADDR_BLOCKS_V2),
+        assertEquals(Long.valueOf(C509ExtensionType.IP_ADDR_BLOCKS_V2),
             cert.getExtensions().getExtension(2).getRegistryValue());
     }
 
     public void testRegistryLookups()
         throws Exception
     {
-        assertEquals(Integer.valueOf(C509AttributeType.COMMON_NAME),
+        assertEquals(Long.valueOf(C509AttributeType.COMMON_NAME),
             C509AttributeType.getValue(C509AttributeType.getOID(C509AttributeType.COMMON_NAME)));
         assertEquals("2.5.4.3", C509AttributeType.getOID(C509AttributeType.COMMON_NAME).getId());
         assertEquals("2.5.29.15", C509ExtensionType.getOID(C509ExtensionType.KEY_USAGE).getId());

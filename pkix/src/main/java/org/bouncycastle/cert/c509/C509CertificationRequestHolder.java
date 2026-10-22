@@ -15,7 +15,7 @@ import org.bouncycastle.util.Encodable;
 
 /**
  * Holding class for a C509 certification request (Section 4 of
- * draft-ietf-cose-cbor-encoded-cert-20), mirroring the PKCS#10 holding class.
+ * draft-ietf-cose-cbor-encoded-cert-21), mirroring the PKCS#10 holding class.
  * <p>
  * For a natively signed request (type 2) the signature covers the
  * TBSCertificationRequest CBOR sequence; for a re-encoded RFC 2986 request (type 3)

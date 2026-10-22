@@ -862,7 +862,7 @@ public class ESTService
 
     /**
      * Request the C509 certification request template for this client (Section 4.4 of
-     * draft-ietf-cose-cbor-encoded-cert-20): a GET of /csrattrs asking for the
+     * draft-ietf-cose-cbor-encoded-cert-21): a GET of /csrattrs asking for the
      * application/cose-c509-crtemplate+cbor media type. A server with a template for
      * this client returns it with that content type; as with the RFC 7030 form, a 204
      * or 404 means no template is available. A 200 carrying any other content type

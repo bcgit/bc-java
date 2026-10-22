@@ -8,7 +8,7 @@ import org.bouncycastle.cbor.CBOREncoder;
 import org.bouncycastle.cbor.CBORType;
 
 /**
- * The COSE_C509 structure (Section 3.4 of draft-ietf-cose-cbor-encoded-cert-20):
+ * The COSE_C509 structure (Section 3.4 of draft-ietf-cose-cbor-encoded-cert-21):
  * <pre>
  * COSE_C509 = C509CertData / [ 2* C509CertData ]
  * C509CertData = bytes .cbor C509Certificate

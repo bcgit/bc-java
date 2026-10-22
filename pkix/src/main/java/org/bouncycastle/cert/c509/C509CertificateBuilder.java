@@ -17,7 +17,7 @@ import org.bouncycastle.operator.ContentSigner;
 
 /**
  * Builder for natively signed C509 certificates (type 2,
- * draft-ietf-cose-cbor-encoded-cert-20), mirroring the X.509 v3 certificate builder.
+ * draft-ietf-cose-cbor-encoded-cert-21), mirroring the X.509 v3 certificate builder.
  * The signature is computed directly over the TBSCertificate CBOR sequence, so no
  * ASN.1 processing is needed to verify the result.
  * <p>

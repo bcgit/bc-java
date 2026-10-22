@@ -10,7 +10,7 @@ import org.bouncycastle.util.Strings;
 /**
  * A decoder for Deterministically Encoded CBOR (RFC 8949, Sections 4.2.1 and 4.2.2),
  * restricted to the profile needed by CBOR-based PKI formats such as C509
- * (draft-ietf-cose-cbor-encoded-cert-20).
+ * (draft-ietf-cose-cbor-encoded-cert-21).
  * <p>
  * The decoder is deliberately strict: indefinite-length items, non-shortest-form
  * arguments, floating-point values, simple values other than false, true, null and

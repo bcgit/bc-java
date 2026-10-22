@@ -17,7 +17,7 @@ import org.bouncycastle.util.Integers;
 
 /**
  * The C509 Public Key Algorithms Registry, Section 8.15 of
- * draft-ietf-cose-cbor-encoded-cert-20. Each registered CBOR int value stands for a
+ * draft-ietf-cose-cbor-encoded-cert-21. Each registered CBOR int value stands for a
  * complete X.509 AlgorithmIdentifier, including its parameters (for the elliptic
  * curve entries the named curve is part of the parameters), so conversion in either
  * direction is an exact table lookup.

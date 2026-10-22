@@ -7,10 +7,11 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ocsp.OCSPObjectIdentifiers;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.X509ObjectIdentifiers;
-import org.bouncycastle.util.Integers;
+import org.bouncycastle.util.Longs;
 
 /**
- * The C509 Extensions Registry, Section 8.8 of draft-ietf-cose-cbor-encoded-cert-20.
+ * The C509 Extensions Registry, Section 8.8 of draft-ietf-cose-cbor-encoded-cert-21.
+ * Registered values are integers in the range 1 to 2^63 - 1.
  * <p>
  * In an int-coded extension the absolute value of the int is the registered extension
  * value and the sign carries criticality: negative for critical, positive for
@@ -36,8 +37,6 @@ public final class C509ExtensionType
     public static final int EXTENDED_KEY_USAGE = 8;
     /** Authority Information Access (1.3.6.1.5.5.7.1.1). */
     public static final int AUTHORITY_INFO_ACCESS = 9;
-    /** Subject Directory Attributes (2.5.29.9). */
-    public static final int SUBJECT_DIRECTORY_ATTRIBUTES = 24;
     /** Issuer Alternative Name (2.5.29.18). */
     public static final int ISSUER_ALT_NAME = 25;
     /** Name Constraints (2.5.29.30). */
@@ -65,12 +64,12 @@ public final class C509ExtensionType
     /** TLS Features (1.3.6.1.5.5.7.1.24), RFC 7633. */
     public static final int TLS_FEATURES = 38;
 
-    private static final Map<Integer, ASN1ObjectIdentifier> codeToOid = new HashMap<Integer, ASN1ObjectIdentifier>();
-    private static final Map<ASN1ObjectIdentifier, Integer> oidToCode = new HashMap<ASN1ObjectIdentifier, Integer>();
+    private static final Map<Long, ASN1ObjectIdentifier> codeToOid = new HashMap<Long, ASN1ObjectIdentifier>();
+    private static final Map<ASN1ObjectIdentifier, Long> oidToCode = new HashMap<ASN1ObjectIdentifier, Long>();
 
-    private static void register(int code, ASN1ObjectIdentifier oid)
+    private static void register(long code, ASN1ObjectIdentifier oid)
     {
-        Integer boxed = Integers.valueOf(code);
+        Long boxed = Longs.valueOf(code);
         if (codeToOid.put(boxed, oid) != null || oidToCode.put(oid, boxed) != null)
         {
             throw new IllegalStateException("duplicate registry entry: " + code);
@@ -88,7 +87,6 @@ public final class C509ExtensionType
         register(AUTHORITY_KEY_IDENTIFIER, Extension.authorityKeyIdentifier);
         register(EXTENDED_KEY_USAGE, Extension.extendedKeyUsage);
         register(AUTHORITY_INFO_ACCESS, Extension.authorityInfoAccess);
-        register(SUBJECT_DIRECTORY_ATTRIBUTES, Extension.subjectDirectoryAttributes);
         register(ISSUER_ALT_NAME, Extension.issuerAlternativeName);
         register(NAME_CONSTRAINTS, Extension.nameConstraints);
         register(POLICY_MAPPINGS, Extension.policyMappings);
@@ -108,16 +106,16 @@ public final class C509ExtensionType
      * Return the extension object identifier a registered value stands for, or null if
      * the value is not registered.
      */
-    public static ASN1ObjectIdentifier getOID(int value)
+    public static ASN1ObjectIdentifier getOID(long value)
     {
-        return codeToOid.get(Integers.valueOf(value));
+        return codeToOid.get(Longs.valueOf(value));
     }
 
     /**
      * Return the registered value for an extension object identifier, or null if it is
      * not registered.
      */
-    public static Integer getValue(ASN1ObjectIdentifier oid)
+    public static Long getValue(ASN1ObjectIdentifier oid)
     {
         return oidToCode.get(oid);
     }

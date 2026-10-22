@@ -4,7 +4,7 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.util.Arrays;
 
 /**
- * A single C509 extension (Section 3.1.10 of draft-ietf-cose-cbor-encoded-cert-20):
+ * A single C509 extension (Section 3.1.10 of draft-ietf-cose-cbor-encoded-cert-21):
  * <pre>
  * Extension = ( ( extensionID: int, extensionValue: Defined ) //
  *               ( extensionID: ~oid, extensionValue: bytes / [ bytes ] ) )
@@ -21,13 +21,13 @@ import org.bouncycastle.util.Arrays;
  */
 public class C509Extension
 {
-    private final Integer registryValue;
+    private final Long registryValue;
     private final ASN1ObjectIdentifier oid;
     private final boolean critical;
     private final byte[] cborValue;
     private final byte[] extnValue;
 
-    C509Extension(Integer registryValue, ASN1ObjectIdentifier oid, boolean critical, byte[] cborValue,
+    C509Extension(Long registryValue, ASN1ObjectIdentifier oid, boolean critical, byte[] cborValue,
         byte[] extnValue)
     {
         this.registryValue = registryValue;
@@ -41,7 +41,7 @@ public class C509Extension
      * Return the C509 Extensions Registry value when this extension is carried in the
      * int-coded form, or null when it uses the generic ~oid form.
      */
-    public Integer getRegistryValue()
+    public Long getRegistryValue()
     {
         return registryValue;
     }

@@ -16,7 +16,7 @@ import org.bouncycastle.util.Integers;
 /**
  * A C509 AlgorithmIdentifier, either a registered CBOR int or an unwrapped CBOR OID
  * (RFC 9090) optionally followed by the DER-encoded parameters as a CBOR byte string
- * (Sections 3.1.3 and 3.1.7 of draft-ietf-cose-cbor-encoded-cert-20):
+ * (Sections 3.1.3 and 3.1.7 of draft-ietf-cose-cbor-encoded-cert-21):
  * <pre>
  * AlgorithmIdentifier = int / ~oid / [ algorithm: ~oid, parameters: bytes ]
  * </pre>

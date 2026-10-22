@@ -337,7 +337,7 @@ public class C509CertTest
 
         // extension request survives the keyUsage int compaction in the attribute value
         C509CertificationRequestHolder parsed = new C509CertificationRequestHolder(encoding);
-        assertEquals(Integer.valueOf(0), parsed.getAttributes()[0].getRegistryValue());
+        assertEquals(Long.valueOf(0), parsed.getAttributes()[0].getRegistryValue());
     }
 
     public void testPKCS10RoundTripThroughType3()

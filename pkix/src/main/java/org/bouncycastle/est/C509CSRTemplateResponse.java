@@ -5,7 +5,7 @@ import org.bouncycastle.cbor.c509.C509CertificationRequestTemplate;
 /**
  * Holder class for the response to a GET /csrattrs request made with the C509
  * certification request template media type (Section 4.4 of
- * draft-ietf-cose-cbor-encoded-cert-20). Mirrors {@link CSRRequestResponse}: a server
+ * draft-ietf-cose-cbor-encoded-cert-21). Mirrors {@link CSRRequestResponse}: a server
  * that has no template for the client answers 204 or 404, in which case
  * {@link #hasTemplate()} is false.
  */

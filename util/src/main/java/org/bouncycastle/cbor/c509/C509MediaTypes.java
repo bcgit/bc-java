@@ -2,7 +2,7 @@ package org.bouncycastle.cbor.c509;
 
 /**
  * The media types registered for C509 structures, Section 8.18 of
- * draft-ietf-cose-cbor-encoded-cert-20.
+ * draft-ietf-cose-cbor-encoded-cert-21.
  */
 public final class C509MediaTypes
 {

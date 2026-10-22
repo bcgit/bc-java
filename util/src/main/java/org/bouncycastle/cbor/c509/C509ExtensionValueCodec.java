@@ -14,8 +14,6 @@ import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1IA5String;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Null;
-import org.bouncycastle.asn1.ASN1PrintableString;
-import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
@@ -23,12 +21,9 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1UTF8String;
 import org.bouncycastle.asn1.DERBitString;
-import org.bouncycastle.asn1.DERIA5String;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
-import org.bouncycastle.asn1.DERPrintableString;
 import org.bouncycastle.asn1.DERSequence;
-import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.x500.X500Name;
@@ -54,12 +49,11 @@ import org.bouncycastle.cbor.CBORDecoder;
 import org.bouncycastle.cbor.CBOREncoder;
 import org.bouncycastle.cbor.CBORType;
 import org.bouncycastle.util.BigIntegers;
-import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Longs;
 
 /**
  * The CBOR encodings of the registered extension values, Section 3.3 of
- * draft-ietf-cose-cbor-encoded-cert-20.
+ * draft-ietf-cose-cbor-encoded-cert-21.
  * <p>
  * The two directions have deliberately different failure behaviour. Encoding
  * (DER to CBOR) returns null whenever the specific encoding cannot faithfully
@@ -94,28 +88,28 @@ class C509ExtensionValueCodec
      * Registry, Section 8.9; C509 Policies Qualifiers Registry, Section 8.10; C509
      * Information Access Registry, Section 8.11.
      */
-    private static final Map<Integer, ASN1ObjectIdentifier> ekuCodeToOid = new HashMap<Integer, ASN1ObjectIdentifier>();
-    private static final Map<ASN1ObjectIdentifier, Integer> ekuOidToCode = new HashMap<ASN1ObjectIdentifier, Integer>();
-    private static final Map<Integer, ASN1ObjectIdentifier> policyCodeToOid = new HashMap<Integer, ASN1ObjectIdentifier>();
-    private static final Map<ASN1ObjectIdentifier, Integer> policyOidToCode = new HashMap<ASN1ObjectIdentifier, Integer>();
-    private static final Map<Integer, ASN1ObjectIdentifier> accessCodeToOid = new HashMap<Integer, ASN1ObjectIdentifier>();
-    private static final Map<ASN1ObjectIdentifier, Integer> accessOidToCode = new HashMap<ASN1ObjectIdentifier, Integer>();
+    private static final Map<Long, ASN1ObjectIdentifier> ekuCodeToOid = new HashMap<Long, ASN1ObjectIdentifier>();
+    private static final Map<ASN1ObjectIdentifier, Long> ekuOidToCode = new HashMap<ASN1ObjectIdentifier, Long>();
+    private static final Map<Long, ASN1ObjectIdentifier> policyCodeToOid = new HashMap<Long, ASN1ObjectIdentifier>();
+    private static final Map<ASN1ObjectIdentifier, Long> policyOidToCode = new HashMap<ASN1ObjectIdentifier, Long>();
+    private static final Map<Long, ASN1ObjectIdentifier> accessCodeToOid = new HashMap<Long, ASN1ObjectIdentifier>();
+    private static final Map<ASN1ObjectIdentifier, Long> accessOidToCode = new HashMap<ASN1ObjectIdentifier, Long>();
 
     private static final ASN1ObjectIdentifier id_qt_cps = PolicyQualifierId.id_qt_cps;
     private static final ASN1ObjectIdentifier id_qt_unotice = PolicyQualifierId.id_qt_unotice;
 
-    private static void registerTable(Map<Integer, ASN1ObjectIdentifier> byCode,
-        Map<ASN1ObjectIdentifier, Integer> byOid, int code, ASN1ObjectIdentifier oid)
+    private static void registerTable(Map<Long, ASN1ObjectIdentifier> byCode,
+        Map<ASN1ObjectIdentifier, Long> byOid, long code, ASN1ObjectIdentifier oid)
     {
-        Integer boxed = Integers.valueOf(code);
+        Long boxed = Longs.valueOf(code);
         if (byCode.put(boxed, oid) != null || byOid.put(oid, boxed) != null)
         {
             throw new IllegalStateException("duplicate registry entry: " + code);
         }
     }
 
-    private static void registerTable(Map<Integer, ASN1ObjectIdentifier> byCode,
-        Map<ASN1ObjectIdentifier, Integer> byOid, int code, String oid)
+    private static void registerTable(Map<Long, ASN1ObjectIdentifier> byCode,
+        Map<ASN1ObjectIdentifier, Long> byOid, long code, String oid)
     {
         registerTable(byCode, byOid, code, new ASN1ObjectIdentifier(oid));
     }
@@ -321,10 +315,10 @@ class C509ExtensionValueCodec
             for (int i = 0; i != count; i++)
             {
                 ASN1ObjectIdentifier purpose = ASN1ObjectIdentifier.getInstance(seq.getObjectAt(i));
-                Integer code = ekuOidToCode.get(purpose);
+                Long code = ekuOidToCode.get(purpose);
                 if (code != null)
                 {
-                    out.writeInteger(code.intValue());
+                    out.writeInteger(code.longValue());
                 }
                 else
                 {
@@ -356,10 +350,10 @@ class C509ExtensionValueCodec
                 {
                     return false;
                 }
-                Integer code = accessOidToCode.get(method);
+                Long code = accessOidToCode.get(method);
                 if (code != null)
                 {
-                    out.writeInteger(code.intValue());
+                    out.writeInteger(code.longValue());
                 }
                 else
                 {
@@ -369,8 +363,6 @@ class C509ExtensionValueCodec
             }
             return true;
         }
-        case C509ExtensionType.SUBJECT_DIRECTORY_ATTRIBUTES:
-            return encodeSubjectDirectoryAttributes(out, extnValue);
         case C509ExtensionType.NAME_CONSTRAINTS:
             return encodeNameConstraints(out, extnValue);
         case C509ExtensionType.POLICY_MAPPINGS:
@@ -564,7 +556,7 @@ class C509ExtensionValueCodec
                 else
                 {
                     int code = in.readInt();
-                    method = accessCodeToOid.get(Integers.valueOf(code));
+                    method = accessCodeToOid.get(Longs.valueOf(code));
                     if (method == null)
                     {
                         throw new IOException("unknown C509 information access value: " + code);
@@ -575,8 +567,6 @@ class C509ExtensionValueCodec
             }
             return derEncode(new DERSequence(descriptions));
         }
-        case C509ExtensionType.SUBJECT_DIRECTORY_ATTRIBUTES:
-            return decodeSubjectDirectoryAttributes(in);
         case C509ExtensionType.NAME_CONSTRAINTS:
             return decodeNameConstraints(in);
         case C509ExtensionType.POLICY_MAPPINGS:
@@ -1149,10 +1139,10 @@ class C509ExtensionValueCodec
     private static void writePolicyId(CBOREncoder out, ASN1ObjectIdentifier policy)
         throws IOException
     {
-        Integer code = policyOidToCode.get(policy);
+        Long code = policyOidToCode.get(policy);
         if (code != null)
         {
-            out.writeInteger(code.intValue());
+            out.writeInteger(code.longValue());
         }
         else
         {
@@ -1167,8 +1157,8 @@ class C509ExtensionValueCodec
         {
             return C509Oids.fromContents(in.readByteString());
         }
-        int code = in.readInt();
-        ASN1ObjectIdentifier policy = policyCodeToOid.get(Integers.valueOf(code));
+        long code = in.readInteger();
+        ASN1ObjectIdentifier policy = policyCodeToOid.get(Longs.valueOf(code));
         if (policy == null)
         {
             throw new IOException("unknown C509 certificate policy value: " + code);
@@ -1279,202 +1269,6 @@ class C509ExtensionValueCodec
             policies.add(new PolicyInformation(policyId, new DERSequence(qualifiers)));
         }
         return derEncode(new DERSequence(policies));
-    }
-
-    /*
-     * Subject Directory Attributes.
-     */
-    private static boolean encodeSubjectDirectoryAttributes(CBOREncoder out, byte[] extnValue)
-        throws IOException
-    {
-        ASN1Sequence seq = ASN1Sequence.getInstance(ASN1Primitive.fromByteArray(extnValue));
-        int count = seq.size();
-        if (count == 0)
-        {
-            return false;
-        }
-        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-        CBOREncoder tmp = new CBOREncoder(bOut);
-        for (int i = 0; i != count; i++)
-        {
-            ASN1Sequence attribute = ASN1Sequence.getInstance(seq.getObjectAt(i));
-            if (attribute.size() != 2)
-            {
-                return false;
-            }
-            ASN1ObjectIdentifier type = ASN1ObjectIdentifier.getInstance(attribute.getObjectAt(0));
-            ASN1Set values = ASN1Set.getInstance(attribute.getObjectAt(1));
-            if (values.size() == 0)
-            {
-                return false;
-            }
-            Integer code = C509AttributeType.getValue(type);
-            int stringKind = -1; // 0 utf8, 1 printable, 2 ia5
-            if (code != null)
-            {
-                stringKind = commonStringKind(values);
-                int c = code.intValue();
-                if (C509AttributeType.isAlwaysIA5String(c))
-                {
-                    if (stringKind != 2)
-                    {
-                        stringKind = -1;
-                    }
-                }
-                else if (stringKind == 2 || (stringKind == 1 && c == 0))
-                {
-                    stringKind = -1;
-                }
-            }
-            if (code != null && stringKind >= 0)
-            {
-                tmp.writeInteger(stringKind == 1 ? -code.intValue() : code.intValue());
-                tmp.writeArrayHeader(values.size());
-                for (int j = 0; j != values.size(); j++)
-                {
-                    C509Name.writeSpecialText(tmp, getString(values.getObjectAt(j)));
-                }
-            }
-            else
-            {
-                tmp.writeByteString(C509Oids.toContents(type));
-                tmp.writeArrayHeader(values.size());
-                for (int j = 0; j != values.size(); j++)
-                {
-                    tmp.writeByteString(values.getObjectAt(j).toASN1Primitive().getEncoded(ASN1Encoding.DER));
-                }
-            }
-        }
-        out.writeArrayHeader(2 * count);
-        out.writeEncoded(bOut.toByteArray());
-        return true;
-    }
-
-    /**
-     * Return 0 when all values are utf8Strings, 1 when all are printableStrings, 2
-     * when all are IA5Strings, and -1 for anything else.
-     */
-    private static int commonStringKind(ASN1Set values)
-    {
-        int kind = -1;
-        for (int i = 0; i != values.size(); i++)
-        {
-            ASN1Encodable value = values.getObjectAt(i);
-            int thisKind;
-            if (value instanceof ASN1UTF8String)
-            {
-                thisKind = 0;
-            }
-            else if (value instanceof ASN1PrintableString)
-            {
-                thisKind = 1;
-            }
-            else if (value instanceof ASN1IA5String)
-            {
-                thisKind = 2;
-            }
-            else
-            {
-                return -1;
-            }
-            if (kind == -1)
-            {
-                kind = thisKind;
-            }
-            else if (kind != thisKind)
-            {
-                return -1;
-            }
-        }
-        return kind;
-    }
-
-    private static String getString(ASN1Encodable value)
-    {
-        if (value instanceof ASN1UTF8String)
-        {
-            return ((ASN1UTF8String)value).getString();
-        }
-        if (value instanceof ASN1PrintableString)
-        {
-            return ((ASN1PrintableString)value).getString();
-        }
-        return ((ASN1IA5String)value).getString();
-    }
-
-    private static byte[] decodeSubjectDirectoryAttributes(CBORDecoder in)
-        throws IOException
-    {
-        int count = in.readArrayHeader();
-        if (count == 0 || (count & 1) != 0)
-        {
-            throw new IOException("malformed C509 SubjectDirectoryAttributes value");
-        }
-        ASN1EncodableVector attributes = new ASN1EncodableVector();
-        for (int i = 0; i != count; i += 2)
-        {
-            if (in.peekMajorType() == CBORType.BYTE_STRING)
-            {
-                ASN1ObjectIdentifier type = C509Oids.fromContents(in.readByteString());
-                int valueCount = in.readArrayHeader();
-                if (valueCount == 0)
-                {
-                    throw new IOException("C509 attribute values cannot be empty");
-                }
-                ASN1EncodableVector values = new ASN1EncodableVector();
-                for (int j = 0; j != valueCount; j++)
-                {
-                    byte[] valueEncoding = in.readByteString();
-                    try
-                    {
-                        values.add(ASN1Primitive.fromByteArray(valueEncoding));
-                    }
-                    catch (RuntimeException e)
-                    {
-                        throw new IOException("malformed C509 attribute value");
-                    }
-                }
-                attributes.add(new DERSequence(new ASN1Encodable[]{ type, new DERSet(values) }));
-            }
-            else
-            {
-                int typeValue = in.readInt();
-                int code = typeValue < 0 ? -typeValue : typeValue;
-                ASN1ObjectIdentifier type = C509AttributeType.getOID(code);
-                if (type == null)
-                {
-                    throw new IOException("unknown C509 RDN attribute value: " + code);
-                }
-                if (typeValue < 0 && C509AttributeType.isAlwaysIA5String(code))
-                {
-                    throw new IOException("C509 RDN attribute " + code + " is always IA5String and must be non-negative");
-                }
-                int valueCount = in.readArrayHeader();
-                if (valueCount == 0)
-                {
-                    throw new IOException("C509 attribute values cannot be empty");
-                }
-                ASN1EncodableVector values = new ASN1EncodableVector();
-                for (int j = 0; j != valueCount; j++)
-                {
-                    String text = C509Name.readSpecialText(in);
-                    if (C509AttributeType.isAlwaysIA5String(code))
-                    {
-                        values.add(new DERIA5String(text));
-                    }
-                    else if (typeValue < 0)
-                    {
-                        values.add(new DERPrintableString(text));
-                    }
-                    else
-                    {
-                        values.add(new DERUTF8String(text));
-                    }
-                }
-                attributes.add(new DERSequence(new ASN1Encodable[]{ type, new DERSet(values) }));
-            }
-        }
-        return derEncode(new DERSequence(attributes));
     }
 
     /*
@@ -1994,8 +1788,8 @@ class C509ExtensionValueCodec
         {
             return C509Oids.fromContents(in.readByteString());
         }
-        int code = in.readInt();
-        ASN1ObjectIdentifier purpose = ekuCodeToOid.get(Integers.valueOf(code));
+        long code = in.readInteger();
+        ASN1ObjectIdentifier purpose = ekuCodeToOid.get(Longs.valueOf(code));
         if (purpose == null)
         {
             throw new IOException("unknown C509 extended key usage value: " + code);

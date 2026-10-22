@@ -16,7 +16,7 @@ import org.bouncycastle.util.Exceptions;
 
 /**
  * The C509 encoding of signature values (Sections 3.1.12 and 3.2.2 of
- * draft-ietf-cose-cbor-encoded-cert-20). ECDSA style signatures (the ECDSA and SM2
+ * draft-ietf-cose-cbor-encoded-cert-21). ECDSA style signatures (the ECDSA and SM2
  * registry entries) are converted from the DER SEQUENCE of two INTEGERs to the fixed
  * width r || s byte string of Section 2.1 of RFC 9053; all other signature values
  * carry the BIT STRING value field as a byte string.

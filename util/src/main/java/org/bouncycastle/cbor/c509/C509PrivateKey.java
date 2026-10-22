@@ -18,7 +18,7 @@ import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Exceptions;
 
 /**
- * A C509 private key structure (Section 3.6 of draft-ietf-cose-cbor-encoded-cert-20):
+ * A C509 private key structure (Section 3.6 of draft-ietf-cose-cbor-encoded-cert-21):
  * <pre>
  * C509PrivateKey = [
  *    C509PrivateKeyType: int,

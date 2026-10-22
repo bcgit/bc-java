@@ -8,11 +8,11 @@ import org.bouncycastle.cbor.CBORDecoder;
 import org.bouncycastle.cbor.CBOREncoder;
 import org.bouncycastle.cbor.CBORType;
 import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.Integers;
+import org.bouncycastle.util.Longs;
 
 /**
  * A C509 certification request template (Section 4.4 of
- * draft-ietf-cose-cbor-encoded-cert-20), returned by an EST server in response to a
+ * draft-ietf-cose-cbor-encoded-cert-21), returned by an EST server in response to a
  * GET /csrattrs request to tell the client what its certification request should
  * contain:
  * <pre>
@@ -41,15 +41,15 @@ public class C509CertificationRequestTemplate
      */
     public static class RDNAttributeTemplate
     {
-        private final Integer registryValue;
+        private final Long registryValue;
         private final ASN1ObjectIdentifier oid;
         private final long minOccurs;
         private final long maxOccurs;
         private final byte[] valueEncoding;
 
-        public RDNAttributeTemplate(int registryValue, long minOccurs, long maxOccurs, byte[] valueEncoding)
+        public RDNAttributeTemplate(long registryValue, long minOccurs, long maxOccurs, byte[] valueEncoding)
         {
-            this(Integers.valueOf(registryValue), null, minOccurs, maxOccurs, valueEncoding);
+            this(checkRegistryValue(registryValue, 0), null, minOccurs, maxOccurs, valueEncoding);
         }
 
         public RDNAttributeTemplate(ASN1ObjectIdentifier oid, long minOccurs, long maxOccurs, byte[] valueEncoding)
@@ -57,7 +57,7 @@ public class C509CertificationRequestTemplate
             this(null, oid, minOccurs, maxOccurs, valueEncoding);
         }
 
-        private RDNAttributeTemplate(Integer registryValue, ASN1ObjectIdentifier oid, long minOccurs,
+        private RDNAttributeTemplate(Long registryValue, ASN1ObjectIdentifier oid, long minOccurs,
             long maxOccurs, byte[] valueEncoding)
         {
             if (maxOccurs < minOccurs || maxOccurs < 1)
@@ -73,7 +73,7 @@ public class C509CertificationRequestTemplate
         }
 
         /** Return the registered attribute value, or null for the ~oid form. */
-        public Integer getRegistryValue()
+        public Long getRegistryValue()
         {
             return registryValue;
         }
@@ -111,14 +111,14 @@ public class C509CertificationRequestTemplate
      */
     public static class ExtensionTemplate
     {
-        private final Integer registryValue;
+        private final Long registryValue;
         private final ASN1ObjectIdentifier oid;
         private final boolean optional;
         private final byte[] valueEncoding;
 
-        public ExtensionTemplate(int registryValue, boolean optional, byte[] valueEncoding)
+        public ExtensionTemplate(long registryValue, boolean optional, byte[] valueEncoding)
         {
-            this.registryValue = Integers.valueOf(registryValue);
+            this.registryValue = checkRegistryValue(registryValue, 1);
             this.oid = null;
             this.optional = optional;
             this.valueEncoding = valueEncoding;
@@ -133,7 +133,7 @@ public class C509CertificationRequestTemplate
         }
 
         /** Return the registered extension value, or null for the ~oid form. */
-        public Integer getRegistryValue()
+        public Long getRegistryValue()
         {
             return registryValue;
         }
@@ -262,6 +262,16 @@ public class C509CertificationRequestTemplate
         return false;
     }
 
+    // template registry values are never negative: the sign carries no meaning there (Section 4.4)
+    private static Long checkRegistryValue(long registryValue, long minimum)
+    {
+        if (registryValue < minimum)
+        {
+            throw new IllegalArgumentException("registryValue must be at least " + minimum);
+        }
+        return Longs.valueOf(registryValue);
+    }
+
     private static C509AlgorithmIdentifier[] readAlgorithms(CBORDecoder in, boolean signatureRegistry)
         throws IOException
     {
@@ -291,7 +301,7 @@ public class C509CertificationRequestTemplate
         RDNAttributeTemplate[] attributes = new RDNAttributeTemplate[count / 4];
         for (int i = 0; i != attributes.length; i++)
         {
-            Integer registryValue = null;
+            Long registryValue = null;
             ASN1ObjectIdentifier oid = null;
             if (in.peekMajorType() == CBORType.BYTE_STRING)
             {
@@ -301,11 +311,11 @@ public class C509CertificationRequestTemplate
             {
                 // negative attributeType is not allowed in a template (Section 4.4)
                 long value = in.readUnsignedInteger();
-                if (value > Integer.MAX_VALUE || C509AttributeType.getOID((int)value) == null)
+                if (C509AttributeType.getOID(value) == null)
                 {
                     throw new IOException("unknown C509 RDN attribute value: " + value);
                 }
-                registryValue = Integers.valueOf((int)value);
+                registryValue = Longs.valueOf(value);
             }
             long minOccurs = in.readUnsignedInteger();
             long maxOccurs = in.readUnsignedInteger();
@@ -334,7 +344,7 @@ public class C509CertificationRequestTemplate
         ExtensionTemplate[] extensions = new ExtensionTemplate[count / 3];
         for (int i = 0; i != extensions.length; i++)
         {
-            Integer registryValue = null;
+            Long registryValue = null;
             ASN1ObjectIdentifier oid = null;
             if (in.peekMajorType() == CBORType.BYTE_STRING)
             {
@@ -344,11 +354,11 @@ public class C509CertificationRequestTemplate
             {
                 // negative extensionID is not allowed in a template (Section 4.4)
                 long value = in.readUnsignedInteger();
-                if (value > Integer.MAX_VALUE || C509ExtensionType.getOID((int)value) == null)
+                if (C509ExtensionType.getOID(value) == null)
                 {
                     throw new IOException("unknown C509 extension value: " + value);
                 }
-                registryValue = Integers.valueOf((int)value);
+                registryValue = Longs.valueOf(value);
             }
             boolean optional = in.readBoolean();
             byte[] valueEncoding = null;
@@ -358,7 +368,7 @@ public class C509CertificationRequestTemplate
             }
             if (registryValue != null)
             {
-                extensions[i] = new ExtensionTemplate(registryValue.intValue(), optional, valueEncoding);
+                extensions[i] = new ExtensionTemplate(registryValue.longValue(), optional, valueEncoding);
             }
             else
             {
@@ -403,7 +413,7 @@ public class C509CertificationRequestTemplate
                 RDNAttributeTemplate attribute = subjectTemplate[i];
                 if (attribute.registryValue != null)
                 {
-                    out.writeInteger(attribute.registryValue.intValue());
+                    out.writeInteger(attribute.registryValue.longValue());
                 }
                 else
                 {
@@ -435,7 +445,7 @@ public class C509CertificationRequestTemplate
                 ExtensionTemplate extension = extensionsTemplate[i];
                 if (extension.registryValue != null)
                 {
-                    out.writeInteger(extension.registryValue.intValue());
+                    out.writeInteger(extension.registryValue.longValue());
                 }
                 else
                 {

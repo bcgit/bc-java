@@ -19,7 +19,7 @@ import org.bouncycastle.util.Integers;
 
 /**
  * The C509 Signature Algorithms Registry, Section 8.14 of
- * draft-ietf-cose-cbor-encoded-cert-20. Each registered CBOR int value stands for a
+ * draft-ietf-cose-cbor-encoded-cert-21. Each registered CBOR int value stands for a
  * complete X.509 AlgorithmIdentifier, including its parameters, so conversion in
  * either direction is an exact table lookup.
  * <p>

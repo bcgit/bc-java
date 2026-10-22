@@ -26,7 +26,7 @@ import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.util.encoders.Hex;
 
 /**
- * An example of working with C509 certificates (draft-ietf-cose-cbor-encoded-cert-20),
+ * An example of working with C509 certificates (draft-ietf-cose-cbor-encoded-cert-21),
  * the CBOR encoding of X.509 for constrained environments.
  * <p>
  * Two things are shown: issuing a natively signed C509 certificate (type 2), where the

@@ -13,7 +13,7 @@ import org.bouncycastle.operator.ContentSigner;
 
 /**
  * Builder for natively signed C509 certification requests (type 2, Section 4 of
- * draft-ietf-cose-cbor-encoded-cert-20). The proof-of-possession signature is
+ * draft-ietf-cose-cbor-encoded-cert-21). The proof-of-possession signature is
  * computed directly over the TBSCertificationRequest CBOR sequence.
  */
 public class C509CertificationRequestBuilder

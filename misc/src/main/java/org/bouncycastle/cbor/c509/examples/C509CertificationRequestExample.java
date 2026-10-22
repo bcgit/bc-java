@@ -41,7 +41,7 @@ import org.bouncycastle.util.encoders.Hex;
 
 /**
  * An example of working with C509 certification requests (Section 4 of
- * draft-ietf-cose-cbor-encoded-cert-20), the CBOR counterpart of PKCS#10.
+ * draft-ietf-cose-cbor-encoded-cert-21), the CBOR counterpart of PKCS#10.
  * <p>
  * Three things are shown: issuing a natively signed request (type 2), where the
  * proof-of-possession signature is computed directly over the CBOR so verification

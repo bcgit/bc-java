@@ -5,10 +5,11 @@ import java.util.Map;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.x500.style.BCStyle;
-import org.bouncycastle.util.Integers;
+import org.bouncycastle.util.Longs;
 
 /**
- * The C509 RDN Attributes Registry, Section 8.6 of draft-ietf-cose-cbor-encoded-cert-20.
+ * The C509 RDN Attributes Registry, Section 8.6 of draft-ietf-cose-cbor-encoded-cert-21.
+ * Registered values are integers in the range 0 to 2^63 - 1.
  * <p>
  * In an int-coded RDN attribute the absolute value of the int is the registered
  * attribute value and the sign carries the DER string type: positive for utf8String,
@@ -77,12 +78,12 @@ public final class C509AttributeType
     /** Unstructured Address (1.2.840.113549.1.9.8). */
     public static final int UNSTRUCTURED_ADDRESS = 30;
 
-    private static final Map<Integer, ASN1ObjectIdentifier> codeToOid = new HashMap<Integer, ASN1ObjectIdentifier>();
-    private static final Map<ASN1ObjectIdentifier, Integer> oidToCode = new HashMap<ASN1ObjectIdentifier, Integer>();
+    private static final Map<Long, ASN1ObjectIdentifier> codeToOid = new HashMap<Long, ASN1ObjectIdentifier>();
+    private static final Map<ASN1ObjectIdentifier, Long> oidToCode = new HashMap<ASN1ObjectIdentifier, Long>();
 
-    private static void register(int code, ASN1ObjectIdentifier oid)
+    private static void register(long code, ASN1ObjectIdentifier oid)
     {
-        Integer boxed = Integers.valueOf(code);
+        Long boxed = Longs.valueOf(code);
         if (codeToOid.put(boxed, oid) != null || oidToCode.put(oid, boxed) != null)
         {
             throw new IllegalStateException("duplicate registry entry: " + code);
@@ -126,16 +127,16 @@ public final class C509AttributeType
      * Return the attribute type object identifier a registered value stands for, or
      * null if the value is not registered.
      */
-    public static ASN1ObjectIdentifier getOID(int value)
+    public static ASN1ObjectIdentifier getOID(long value)
     {
-        return codeToOid.get(Integers.valueOf(value));
+        return codeToOid.get(Longs.valueOf(value));
     }
 
     /**
      * Return the registered value for an attribute type object identifier, or null if
      * it is not registered.
      */
-    public static Integer getValue(ASN1ObjectIdentifier oid)
+    public static Long getValue(ASN1ObjectIdentifier oid)
     {
         return oidToCode.get(oid);
     }
@@ -145,7 +146,7 @@ public final class C509AttributeType
      * IA5String (emailAddress, domainComponent), unambiguously represented using a
      * non-negative int per Section 3.1.4.
      */
-    public static boolean isAlwaysIA5String(int value)
+    public static boolean isAlwaysIA5String(long value)
     {
         return value == EMAIL_ADDRESS || value == DOMAIN_COMPONENT;
     }
