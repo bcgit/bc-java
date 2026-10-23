@@ -1393,6 +1393,23 @@ public class PGPGeneralTest
         publicKey = secretKeys.getPublicKey(529331584582509686L);
         isTrue("", publicKey != null);
 
+        // the extra public keys are read-only, and a ring derived from this one shares them
+        PGPSecretKeyRing derived = PGPSecretKeyRing.insertSecretKey(secretKeys, secretKeys.getSecretKey());
+        Iterator extraIt = derived.getExtraPublicKeys();
+        isTrue("extra public key missing", extraIt.hasNext());
+        extraIt.next();
+        try
+        {
+            extraIt.remove();
+            fail("extra public key removed through iterator");
+        }
+        catch (UnsupportedOperationException e)
+        {
+            // expected
+        }
+        isTrue("extra public key lost from derived ring", derived.getPublicKey(529331584582509686L) != null);
+        isTrue("extra public key lost from original ring", secretKeys.getPublicKey(529331584582509686L) != null);
+
         secretKeys = PGPSecretKeyRing.insertOrReplacePublicKey(secretKeys, publicKey);
         publicKey = secretKeys.getPublicKey(fingerprint);
         isTrue("", publicKey.getKeyID() == 529331584582509686L);

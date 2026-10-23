@@ -479,7 +479,7 @@ public class PGPSecretKeyRing
      */
     public Iterator<PGPPublicKey> getExtraPublicKeys()
     {
-        return extraPubKeys.iterator();
+        return Collections.unmodifiableList(extraPubKeys).iterator();
     }
 
     /**
