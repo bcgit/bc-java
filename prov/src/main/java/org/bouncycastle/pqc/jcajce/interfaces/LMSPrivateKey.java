@@ -9,6 +9,15 @@ import java.security.PrivateKey;
  */
 @Deprecated
 public interface LMSPrivateKey
-    extends org.bouncycastle.jcajce.interfaces.LMSPrivateKey
+    extends LMSKey, org.bouncycastle.jcajce.interfaces.LMSPrivateKey
 {
+    /**
+     * Return a key representing a shard of the key space that can be used usageCount times.
+     * <p>
+     * Note: this will use the range [index...index + usageCount) for the current key.
+     * </p>
+     * @param usageCount the number of usages the key should have.
+     * @return a key based on the current key that can be used usageCount times.
+     */
+    LMSPrivateKey extractKeyShard(int usageCount);
 }
