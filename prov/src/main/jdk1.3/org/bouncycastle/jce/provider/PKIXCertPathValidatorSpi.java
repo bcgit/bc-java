@@ -185,6 +185,7 @@ public class PKIXCertPathValidatorSpi
         // (b) and (c)
         //
         PKIXNameConstraintValidator nameConstraintValidator = new PKIXNameConstraintValidator();
+        RFC3280CertPathUtilities.prepareNameConstraintsFromTrustAnchor(certPath, trust, nameConstraintValidator);
 
         // (d)
         //

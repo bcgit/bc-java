@@ -491,6 +491,7 @@
                 <exclude name="**/pkcs/test/PBETest.java"/>
                 <exclude name="**/pkix/test/PKIXCertPathReviewerCrlReasonTest.java"/>
                 <exclude name="**/pkix/test/PKIXCertPathReviewerCrlDistPointTest.java"/>
+                <exclude name="**/pkix/test/TrustAnchorNameConstraintsTest.java"/>
                 <!-- test files using X500Principal / getIssuerX500Principal / getCause() / Java
                      1.4+ CertPath APIs (java.security.cert.TrustAnchor, CollectionCertStoreParameters) -->
                 <exclude name="**/cert/test/PQCCertTest.java"/>

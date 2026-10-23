@@ -23,6 +23,7 @@ import org.bouncycastle.jce.cert.CertPathBuilderException;
 import org.bouncycastle.jce.cert.CertPathBuilderSpi;
 import org.bouncycastle.jce.cert.CertPathValidatorException;
 import org.bouncycastle.jce.cert.PKIXCertPathChecker;
+import org.bouncycastle.jce.cert.TrustAnchor;
 import org.bouncycastle.jce.cert.X509CertSelector;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -1433,6 +1434,65 @@ class RFC3280CertPathUtilities
             }
         }
         return policyMapping;
+    }
+
+    /**
+     * RFC 5280 sec. 6.1.2 (b) and (c): seed the permitted and excluded subtrees from the name
+     * constraints carried by the trust anchor, if it has any.
+     */
+    protected static void prepareNameConstraintsFromTrustAnchor(
+        CertPath certPath,
+        TrustAnchor trust,
+        PKIXNameConstraintValidator nameConstraintValidator)
+        throws CertPathValidatorException
+    {
+        byte[] ncBytes = trust.getNameConstraints();
+        if (ncBytes == null)
+        {
+            return;
+        }
+
+        NameConstraints nc;
+        try
+        {
+            nc = NameConstraints.getInstance(ASN1Primitive.fromByteArray(ncBytes));
+        }
+        catch (Exception e)
+        {
+            throw new CertPathValidatorException("Trust anchor name constraints could not be decoded.", e, certPath,
+                -1);
+        }
+
+        GeneralSubtree[] permitted = nc.getPermittedSubtrees();
+        if (permitted != null)
+        {
+            try
+            {
+                nameConstraintValidator.intersectPermittedSubtree(permitted);
+            }
+            catch (Exception ex)
+            {
+                throw new CertPathValidatorException(
+                    "Permitted subtrees could not be built from trust anchor name constraints.", ex, certPath, -1);
+            }
+        }
+
+        GeneralSubtree[] excluded = nc.getExcludedSubtrees();
+        if (excluded != null)
+        {
+            try
+            {
+                for (int i = 0; i != excluded.length; i++)
+                {
+                    nameConstraintValidator.addExcludedSubtree(excluded[i]);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new CertPathValidatorException(
+                    "Excluded subtrees could not be built from trust anchor name constraints.", ex, certPath, -1);
+            }
+        }
     }
 
     protected static void prepareNextCertG(

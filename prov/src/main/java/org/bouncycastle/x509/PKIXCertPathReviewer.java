@@ -448,6 +448,37 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
         // (b)  and (c)
         PKIXNameConstraintValidator nameConstraintValidator = new PKIXNameConstraintValidator();
 
+        // RFC 5280 sec. 6.1.2 (b) and (c): start from the trust anchor's name constraints, if it carries any
+        if (trustAnchor != null && trustAnchor.getNameConstraints() != null)
+        {
+            try
+            {
+                NameConstraints anchorNc = NameConstraints.getInstance(
+                    ASN1Primitive.fromByteArray(trustAnchor.getNameConstraints()));
+
+                GeneralSubtree[] permitted = anchorNc.getPermittedSubtrees();
+                if (permitted != null)
+                {
+                    nameConstraintValidator.intersectPermittedSubtree(permitted);
+                }
+
+                GeneralSubtree[] excluded = anchorNc.getExcludedSubtrees();
+                if (excluded != null)
+                {
+                    for (int c = 0; c != excluded.length; c++)
+                    {
+                        nameConstraintValidator.addExcludedSubtree(excluded[c]);
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                ErrorBundle msg = new ErrorBundle(RESOURCE_NAME,"CertPathReviewer.ncTrustAnchorError");
+                addError(msg);
+                return;
+            }
+        }
+
         // RFC 5280 sec. 4.2.1.10: the name constraints extension MUST be used
         // only in a CA certificate. The path validation algorithm never
         // processes the extension on a non-CA certificate, so its presence

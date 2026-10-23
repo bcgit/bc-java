@@ -30,6 +30,7 @@ public class AllTests
         suite.addTestSuite(PKIXCertPathReviewerCrlReasonTest.class);
         suite.addTestSuite(PKIXCertPathReviewerCrlScopeTest.class);
         suite.addTestSuite(PKIXCertPathReviewerCrlDistPointTest.class);
+        suite.addTestSuite(TrustAnchorNameConstraintsTest.class);
 
         return new BCTestSetup(suite);
     }

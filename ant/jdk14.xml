@@ -261,6 +261,7 @@
                 <exclude name="**/pkix/test/PKIXCertPathReviewerCrlReasonTest.java"/>
                 <exclude name="**/pkix/test/PKIXCertPathReviewerCrlScopeTest.java"/>
                 <exclude name="**/pkix/test/PKIXCertPathReviewerCrlDistPointTest.java"/>
+                <exclude name="**/pkix/test/TrustAnchorNameConstraintsTest.java"/>
                 <!-- uses X509RevocationChecker from the excluded pkix/jcajce package; the jdk1.4 pkix AllTests overlay does not reference it -->
                 <exclude name="**/pkix/test/CrlReasonCodeTest.java"/>
                 <!-- tests JndiDANEFetcherFactory.toDomainName, which the jdk1.4 overlay has no need of: JDK 1.4's NameClassPair
