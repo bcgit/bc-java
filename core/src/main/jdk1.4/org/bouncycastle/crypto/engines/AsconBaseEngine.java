@@ -283,6 +283,13 @@ abstract class AsconBaseEngine
         {
             throw new DataLengthException("input buffer too short");
         }
+        // the output can include bytes buffered by an earlier call, so allow for those when checking for overlap
+        if (inBytes == outBytes && Arrays.segmentsOverlap(inOff, len, outOff, len + m_bufPos))
+        {
+            inBytes = new byte[len];
+            System.arraycopy(outBytes, inOff, inBytes, 0, len);
+            inOff = 0;
+        }
         boolean forEncryption = checkData();
         int resultLength = 0;
 
