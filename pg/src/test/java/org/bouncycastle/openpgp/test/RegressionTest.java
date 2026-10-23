@@ -38,6 +38,7 @@ public class RegressionTest
         new PGPUtilTest(),
         new BcPGPEd25519JcaKeyPairConversionTest(),
         new RewindStreamWhenDecryptingMultiSKESKMessageTest(),
+        new PGPSecretKeyRingTest(),
         new PGPFeaturesTest(),
         new ArmoredInputStreamTest(),
         new ArmoredInputStreamBackslashTRVFTest(),

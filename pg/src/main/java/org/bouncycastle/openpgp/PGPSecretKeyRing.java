@@ -569,7 +569,16 @@ public class PGPSecretKeyRing
             newList.add(PGPSecretKey.replacePublicKey(sk, pk));
         }
 
-        return new PGPSecretKeyRing(newList);
+        List<PGPPublicKey> extras = new ArrayList<PGPPublicKey>(secretRing.extraPubKeys.size());
+        for (Iterator<PGPPublicKey> it = secretRing.extraPubKeys.iterator(); it.hasNext(); )
+        {
+            PGPPublicKey extra = (PGPPublicKey)it.next();
+            PGPPublicKey pk = publicRing.getPublicKey(extra.getKeyID());
+
+            extras.add(pk != null ? pk : extra);
+        }
+
+        return new PGPSecretKeyRing(newList, extras);
     }
 
     /**
@@ -594,11 +603,11 @@ public class PGPSecretKeyRing
                 if (sk.getKeyID() == publicKey.getKeyID())
                 {
                     sk = PGPSecretKey.replacePublicKey(secretKey, publicKey);
-                    newList.add(sk);
                 }
+                newList.add(sk);
             }
 
-            return new PGPSecretKeyRing(newList);
+            return new PGPSecretKeyRing(newList, new ArrayList<PGPPublicKey>(secretRing.extraPubKeys));
         }
         else
         {
