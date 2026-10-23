@@ -844,6 +844,76 @@ public class MLDSATest
         }
     }
 
+    public void testPrivateKeyEmbeddedPublicKeyConsistency()
+        throws Exception
+    {
+        // an ML-DSA OneAsymmetricKey may carry the public key (RFC 9881 sec. 6), and both its rho and its t1 must match the private key
+        int[] formats = new int[]{ MLDSAPrivateKeyParameters.BOTH, MLDSAPrivateKeyParameters.SEED_ONLY,
+            MLDSAPrivateKeyParameters.EXPANDED_KEY };
+
+        for (int i = 0; i != PARAMETER_SETS.length; i++)
+        {
+            MLDSAParameters parameters = PARAMETER_SETS[i];
+            MLDSAKeyPairGenerator kpGen = new MLDSAKeyPairGenerator();
+            kpGen.init(new MLDSAKeyGenerationParameters(new SecureRandom(), parameters));
+            AsymmetricCipherKeyPair kp = kpGen.generateKeyPair();
+            MLDSAPrivateKeyParameters priv = (MLDSAPrivateKeyParameters)kp.getPrivate();
+            byte[] pub = ((MLDSAPublicKeyParameters)kp.getPublic()).getEncoded();
+
+            byte[] rhoFlip = Arrays.clone(pub);
+            rhoFlip[5] ^= 0x01;
+            byte[] t1Flip = Arrays.clone(pub);
+            t1Flip[t1Flip.length - 1] ^= 0x01;
+
+            for (int j = 0; j != formats.length; j++)
+            {
+                PrivateKeyInfo info = PrivateKeyInfoFactory.createPrivateKeyInfo(priv.getParametersWithFormat(formats[j]));
+
+                MLDSAPrivateKeyParameters key = (MLDSAPrivateKeyParameters)PrivateKeyFactory.createKey(withPublicKey(info, pub));
+                assertTrue(Arrays.areEqual(pub, key.getPublicKey()));
+
+                checkPublicKeyMismatch(withPublicKey(info, t1Flip), parameters.getName() + " t1");
+                checkPublicKeyMismatch(withPublicKey(info, rhoFlip), parameters.getName() + " rho");
+            }
+
+            // the constructor directly, given the expanded key and given the seed
+            byte[][] encodings = new byte[][]{ priv.getEncoded(), priv.getSeed() };
+            for (int j = 0; j != encodings.length; j++)
+            {
+                new MLDSAPrivateKeyParameters(parameters, encodings[j], new MLDSAPublicKeyParameters(parameters, pub));
+                try
+                {
+                    new MLDSAPrivateKeyParameters(parameters, encodings[j], new MLDSAPublicKeyParameters(parameters, rhoFlip));
+                    fail("no exception for " + parameters.getName() + " public key with a different rho");
+                }
+                catch (IllegalArgumentException e)
+                {
+                    assertEquals("passed in public key does not match private values", e.getMessage());
+                }
+            }
+        }
+    }
+
+    private static PrivateKeyInfo withPublicKey(PrivateKeyInfo info, byte[] publicKey)
+        throws IOException
+    {
+        return new PrivateKeyInfo(info.getPrivateKeyAlgorithm(), info.parsePrivateKey(), null, publicKey);
+    }
+
+    private static void checkPublicKeyMismatch(PrivateKeyInfo info, String label)
+        throws IOException
+    {
+        try
+        {
+            PrivateKeyFactory.createKey(info);
+            fail("no exception for mismatched " + label);
+        }
+        catch (IllegalArgumentException e)
+        {
+            assertEquals("passed in public key does not match private values", e.getMessage());
+        }
+    }
+
     private interface RejectionOperation
     {
         byte[] processSign(MLDSAPrivateKeyParameters privParams, byte[] msg)
