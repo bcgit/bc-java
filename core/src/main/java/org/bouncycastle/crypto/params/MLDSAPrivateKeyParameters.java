@@ -116,6 +116,12 @@ public class MLDSAPrivateKeyParameters
             index += delta;
             this.t1 = eng.deriveT1(rho, k, tr, s1, s2, t0);
             this.seed = null;
+
+            // FIPS 204 Algorithm 6: tr is H(pk), so an expanded key whose tr does not match its rho and t1 cannot sign
+            if (!Arrays.constantTimeAreEqual(this.tr, eng.deriveTr(this.rho, this.t1)))
+            {
+                throw new IllegalArgumentException("'encoding' has inconsistent tr");
+            }
         }
 
         if (pubKey != null)

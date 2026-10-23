@@ -743,9 +743,10 @@ public class MLDSATest
         {
             int expandedKeyLength = expandedKeyLengths[i];
 
-            // valid lengths still construct: 32 byte seed and exact expanded key
-            new MLDSAPrivateKeyParameters(paramSets[i], new byte[32]);
-            new MLDSAPrivateKeyParameters(paramSets[i], new byte[expandedKeyLength]);
+            // valid lengths still construct: 32 byte seed and exact expanded key (a real one, as tr must match rho and t1)
+            MLDSAPrivateKeyParameters seedKey = new MLDSAPrivateKeyParameters(paramSets[i], new byte[32]);
+            assertEquals(expandedKeyLength, seedKey.getEncoded().length);
+            new MLDSAPrivateKeyParameters(paramSets[i], seedKey.getEncoded());
 
             int[] badLengths = new int[]{
                 0, 31, 33, expandedKeyLength - 1, expandedKeyLength + 1, 32 + expandedKeyLength };
@@ -892,6 +893,71 @@ public class MLDSATest
                 }
             }
         }
+    }
+
+    public void testExpandedPrivateKeyTrConsistency()
+        throws Exception
+    {
+        // tr is H(pk) (FIPS 204 Algorithm 6), so an expanded key whose tr does not match its rho and t1 must be refused
+        for (int i = 0; i != PARAMETER_SETS.length; i++)
+        {
+            MLDSAParameters parameters = PARAMETER_SETS[i];
+            MLDSAKeyPairGenerator kpGen = new MLDSAKeyPairGenerator();
+            kpGen.init(new MLDSAKeyGenerationParameters(new SecureRandom(), parameters));
+            AsymmetricCipherKeyPair kp = kpGen.generateKeyPair();
+            MLDSAPrivateKeyParameters priv = (MLDSAPrivateKeyParameters)kp.getPrivate();
+            byte[] expanded = priv.getEncoded();
+
+            MLDSAPrivateKeyParameters key = new MLDSAPrivateKeyParameters(parameters, expanded, null);
+            assertTrue(Arrays.areEqual(priv.getTr(), key.getTr()));
+            assertTrue(Arrays.areEqual(((MLDSAPublicKeyParameters)kp.getPublic()).getEncoded(), key.getPublicKey()));
+
+            // rho (32) || K (32) || tr (64) || ...
+            int[] trOffsets = new int[]{ 64, 64 + 63 };
+            for (int j = 0; j != trOffsets.length; j++)
+            {
+                byte[] trFlip = Arrays.clone(expanded);
+                trFlip[trOffsets[j]] ^= 0x01;
+
+                try
+                {
+                    new MLDSAPrivateKeyParameters(parameters, trFlip, null);
+                    fail("no exception for " + parameters.getName() + " expanded key with a different tr");
+                }
+                catch (IllegalArgumentException e)
+                {
+                    assertEquals("'encoding' has inconsistent tr", e.getMessage());
+                }
+
+                PrivateKeyInfo info = PrivateKeyInfoFactory.createPrivateKeyInfo(
+                    new MLDSAPrivateKeyParameters(parameters, expanded, null).getParametersWithFormat(MLDSAPrivateKeyParameters.EXPANDED_KEY));
+                byte[] infoEnc = info.getEncoded();
+                int pos = indexOf(infoEnc, expanded);
+                assertTrue(pos > 0);
+                infoEnc[pos + trOffsets[j]] ^= 0x01;
+                try
+                {
+                    PrivateKeyFactory.createKey(PrivateKeyInfo.getInstance(infoEnc));
+                    fail("no exception for " + parameters.getName() + " PKCS#8 expanded key with a different tr");
+                }
+                catch (IllegalArgumentException e)
+                {
+                    assertEquals("'encoding' has inconsistent tr", e.getMessage());
+                }
+            }
+        }
+    }
+
+    private static int indexOf(byte[] data, byte[] target)
+    {
+        for (int i = 0; i <= data.length - target.length; i++)
+        {
+            if (Arrays.areEqual(data, i, i + target.length, target, 0, target.length))
+            {
+                return i;
+            }
+        }
+        return -1;
     }
 
     private static PrivateKeyInfo withPublicKey(PrivateKeyInfo info, byte[] publicKey)

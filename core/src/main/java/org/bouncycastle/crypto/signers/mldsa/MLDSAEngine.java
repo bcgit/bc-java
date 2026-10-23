@@ -342,6 +342,17 @@ public class MLDSAEngine
         return encT1;
     }
 
+    public byte[] deriveTr(byte[] rho, byte[] encT1)
+    {
+        byte[] tr = new byte[TrBytes];
+
+        shake256Digest.update(rho, 0, rho.length);
+        shake256Digest.update(encT1, 0, encT1.length);
+        shake256Digest.doFinal(tr, 0, TrBytes);
+
+        return tr;
+    }
+
     public SHAKEDigest getShake256Digest()
     {
         return new SHAKEDigest(shake256Digest);
