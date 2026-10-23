@@ -1,5 +1,6 @@
 package org.bouncycastle.crypto.test;
 
+import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -611,6 +612,14 @@ public class CipherStreamTest
         checkRead(name + " mark across chunks", cIn, data, 17, 80);
         cIn.reset();
         checkReadAll(name + " mark across chunks", cIn, data, 17);
+
+        // the underlying stream must keep its mark for the data this stream reads ahead (a CertificateFactory style peek)
+        init(cipher, false, params);
+        CipherInputStream peekIn = new CipherInputStream(new BufferedInputStream(new ByteArrayInputStream(cipherText), 16), cipher, 32);
+        peekIn.mark(1);
+        checkRead(name + " peek over BufferedInputStream", peekIn, data, 0, 1);
+        peekIn.reset();
+        checkReadAll(name + " peek over BufferedInputStream", peekIn, data, 0);
 
         cIn.close();
 

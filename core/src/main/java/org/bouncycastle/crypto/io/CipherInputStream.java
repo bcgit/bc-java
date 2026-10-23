@@ -423,7 +423,8 @@ public class CipherInputStream
      */
     public void mark(int readlimit)
     {
-        in.mark(readlimit);
+        // this stream reads up to a buffer ahead of its caller, so the underlying stream has to allow for that too
+        in.mark((readlimit > Integer.MAX_VALUE - inBuf.length) ? Integer.MAX_VALUE : readlimit + inBuf.length);
         if (skippingCipher != null)
         {
             markPosition = skippingCipher.getPosition();
