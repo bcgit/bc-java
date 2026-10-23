@@ -14,22 +14,28 @@ import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.SignaturePacket;
 import org.bouncycastle.bcpg.SignatureSubpacket;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
+import org.bouncycastle.bcpg.sig.KeyFlags;
 import org.bouncycastle.bcpg.sig.RevocationReasonTags;
 import org.bouncycastle.bcpg.sig.SignatureCreationTime;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.PGPException;
+import org.bouncycastle.openpgp.PGPKeyPair;
+import org.bouncycastle.openpgp.PGPKeyRingGenerator;
 import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPPublicKeyRing;
+import org.bouncycastle.openpgp.PGPSecretKeyRing;
 import org.bouncycastle.openpgp.PGPSignature;
 import org.bouncycastle.openpgp.PGPSignatureGenerator;
 import org.bouncycastle.openpgp.PGPSignatureList;
 import org.bouncycastle.openpgp.PGPSignatureSubpacketGenerator;
-import org.bouncycastle.openpgp.api.OpenPGPApi;
-import org.bouncycastle.openpgp.api.OpenPGPCertificate;
-import org.bouncycastle.openpgp.api.OpenPGPKey;
-import org.bouncycastle.openpgp.api.bc.BcOpenPGPApi;
 import org.bouncycastle.openpgp.bc.BcPGPObjectFactory;
+import org.bouncycastle.openpgp.operator.PGPKeyPairGenerator;
+import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
+import org.bouncycastle.openpgp.operator.bc.BcPGPContentSignerBuilder;
+import org.bouncycastle.openpgp.operator.bc.BcPGPContentVerifierBuilderProvider;
+import org.bouncycastle.openpgp.operator.bc.BcPGPDigestCalculatorProvider;
+import org.bouncycastle.openpgp.operator.bc.BcPGPKeyPairGeneratorProvider;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -55,8 +61,6 @@ public class PGPSignatureMergeTest
     private static final int KEY = 0;
     private static final int SUBKEY = 1;
     private static final int USER_ID_TARGET = 2;
-
-    private final OpenPGPApi api = new BcOpenPGPApi();
 
     public String getName()
     {
@@ -84,10 +88,8 @@ public class PGPSignatureMergeTest
     {
         String label = "v" + version + " " + new String[]{"key", "subkey", "user ID"}[target] + " revocation";
 
-        OpenPGPKey key = api.generateKey(version, new Date(System.currentTimeMillis() - 86400000L))
-            .classicKey(USER_ID)
-            .build();
-        PGPPublicKeyRing trusted = key.toCertificate().getPGPPublicKeyRing();
+        PGPSecretKeyRing key = generateKey(version);
+        PGPPublicKeyRing trusted = key.toCertificate();
         byte[] trustedEncoding = trusted.getEncoded();
 
         PGPSignature genuine = revocation(key, target);
@@ -119,13 +121,6 @@ public class PGPSignatureMergeTest
         isTrue("genuine " + label + " must take effect behind a relabelled copy in the same update",
             isRevoked(oneUpdate, target));
 
-        // the same through the high-level API
-        OpenPGPCertificate cert = OpenPGPCertificate.join(
-            OpenPGPCertificate.join(parse(trusted), parse(with(trusted, target, relabelled))),
-            parse(with(trusted, target, genuine)));
-        isEquals("genuine " + label + " must be stored by OpenPGPCertificate.join after a relabelled copy",
-            1, count(cert.getPGPPublicKeyRing(), target, genuine));
-
         isTrue("merging must leave the " + label + " test's original ring unchanged",
             Arrays.areEqual(trustedEncoding, trusted.getEncoded()));
     }
@@ -133,10 +128,8 @@ public class PGPSignatureMergeTest
     private void sameSignatureIsStillMerged(int version)
         throws Exception
     {
-        OpenPGPKey key = api.generateKey(version, new Date(System.currentTimeMillis() - 86400000L))
-            .classicKey(USER_ID)
-            .build();
-        PGPPublicKeyRing trusted = key.toCertificate().getPGPPublicKeyRing();
+        PGPSecretKeyRing key = generateKey(version);
+        PGPPublicKeyRing trusted = key.toCertificate();
 
         PGPSignature genuine = revocation(key, KEY);
         PGPPublicKeyRing withRevocation = with(trusted, KEY, genuine);
@@ -148,19 +141,43 @@ public class PGPSignatureMergeTest
             signatureCount(withRevocation.getPublicKey()), signatureCount(merged.getPublicKey()));
     }
 
-    private PGPSignature revocation(OpenPGPKey key, int target)
+    /**
+     * Generate an Ed25519 primary key carrying the user ID, with an X25519 encryption subkey, created a day ago.
+     */
+    private PGPSecretKeyRing generateKey(int version)
         throws PGPException
     {
-        PGPPublicKey primary = key.getPrimaryKey().getPGPPublicKey();
-        PGPPrivateKey privateKey = key.getPrimarySecretKey().unlock().getKeyPair().getPrivateKey();
+        Date creationTime = new Date(System.currentTimeMillis() - 86400000L);
+        PGPKeyPairGenerator kpGen = new BcPGPKeyPairGeneratorProvider().get(version, creationTime);
+        PGPKeyPair primary = kpGen.generatePrimaryKey();
 
-        int type = target == KEY ? PGPSignature.KEY_REVOCATION
-            : target == SUBKEY ? PGPSignature.SUBKEY_REVOCATION : PGPSignature.CERTIFICATION_REVOCATION;
+        PGPSignatureSubpacketGenerator hashed = new PGPSignatureSubpacketGenerator();
+        hashed.setSignatureCreationTime(true, creationTime);
+        hashed.setIssuerFingerprint(true, primary.getPublicKey());
+        hashed.setKeyFlags(true, KeyFlags.CERTIFY_OTHER | KeyFlags.SIGN_DATA);
+
+        PGPKeyRingGenerator gen = new PGPKeyRingGenerator(PGPSignature.POSITIVE_CERTIFICATION, primary, USER_ID,
+            new BcPGPDigestCalculatorProvider().get(HashAlgorithmTags.SHA1), hashed.generate(), null,
+            new BcPGPContentSignerBuilder(primary.getPublicKey().getAlgorithm(), HashAlgorithmTags.SHA512), null);
+
+        hashed = new PGPSignatureSubpacketGenerator();
+        hashed.setSignatureCreationTime(true, creationTime);
+        hashed.setIssuerFingerprint(true, primary.getPublicKey());
+        hashed.setKeyFlags(true, KeyFlags.ENCRYPT_COMMS | KeyFlags.ENCRYPT_STORAGE);
+        gen.addSubKey(kpGen.generateEncryptionSubkey(), hashed.generate(), null);
+
+        return gen.generateSecretKeyRing();
+    }
+
+    private PGPSignature revocation(PGPSecretKeyRing key, int target)
+        throws PGPException
+    {
+        PGPPublicKey primary = key.getPublicKey();
+        PGPPrivateKey privateKey = key.getSecretKey().extractPrivateKey(null);
 
         PGPSignatureGenerator gen = new PGPSignatureGenerator(
-            api.getImplementation().pgpContentSignerBuilder(primary.getAlgorithm(), HashAlgorithmTags.SHA512),
-            primary);
-        gen.init(type, privateKey);
+            new BcPGPContentSignerBuilder(primary.getAlgorithm(), HashAlgorithmTags.SHA512), primary);
+        gen.init(revocationType(target), privateKey);
 
         PGPSignatureSubpacketGenerator subpackets = new PGPSignatureSubpacketGenerator();
         subpackets.setSignatureCreationTime(true, new Date());
@@ -176,9 +193,15 @@ public class PGPSignatureMergeTest
         }
         if (target == SUBKEY)
         {
-            return gen.generateCertification(primary, subkey(key.toCertificate().getPGPPublicKeyRing()));
+            return gen.generateCertification(primary, subkey(key.toCertificate()));
         }
         return gen.generateCertification(USER_ID, primary);
+    }
+
+    private static int revocationType(int target)
+    {
+        return target == KEY ? PGPSignature.KEY_REVOCATION
+            : target == SUBKEY ? PGPSignature.SUBKEY_REVOCATION : PGPSignature.CERTIFICATION_REVOCATION;
     }
 
     /**
@@ -235,7 +258,7 @@ public class PGPSignatureMergeTest
         throws PGPException
     {
         PGPPublicKey primary = ring.getPublicKey();
-        signature.init(api.getImplementation().pgpContentVerifierBuilderProvider(), primary);
+        signature.init(new BcPGPContentVerifierBuilderProvider(), primary);
         if (target == KEY)
         {
             return signature.verifyCertification(primary);
@@ -268,19 +291,22 @@ public class PGPSignatureMergeTest
         return PGPPublicKeyRing.insertPublicKey(ring, key);
     }
 
+    private Iterator<PGPSignature> signatures(PGPPublicKeyRing ring, int target)
+    {
+        PGPPublicKey key = target == SUBKEY ? subkey(ring) : ring.getPublicKey();
+        return target == USER_ID_TARGET ? key.getSignaturesForID(USER_ID) : key.getSignatures();
+    }
+
     private int count(PGPPublicKeyRing ring, int target, PGPSignature signature)
         throws IOException
     {
-        PGPPublicKey key = target == SUBKEY ? subkey(ring) : ring.getPublicKey();
-        Iterator<PGPSignature> it = target == USER_ID_TARGET
-            ? key.getSignaturesForID(USER_ID)
-            : key.getSignatures();
+        Iterator<PGPSignature> it = signatures(ring, target);
 
         byte[] encoding = signature.getEncoded();
         int count = 0;
         while (it.hasNext())
         {
-            if (Arrays.areEqual(encoding, it.next().getEncoded()))
+            if (Arrays.areEqual(encoding, ((PGPSignature)it.next()).getEncoded()))
             {
                 count++;
             }
@@ -298,34 +324,31 @@ public class PGPSignatureMergeTest
         return count;
     }
 
+    /**
+     * Return true if the target carries a revocation that verifies.
+     */
     private boolean isRevoked(PGPPublicKeyRing ring, int target)
-        throws IOException
-    {
-        OpenPGPCertificate cert = parse(ring);
-        Date now = new Date();
-        if (target == KEY)
-        {
-            return !cert.getPrimaryKey().isBoundAt(now);
-        }
-        if (target == SUBKEY)
-        {
-            return cert.getEncryptionKeys(now).isEmpty();
-        }
-        return cert.getValidUserIds(now).isEmpty();
-    }
-
-    private OpenPGPCertificate parse(PGPPublicKeyRing ring)
-        throws IOException
+        throws IOException, PGPException
     {
         // re-parse from the wire, as a relying party would
-        return api.readKeyOrCertificate().parseCertificate(ring.getEncoded());
+        PGPPublicKeyRing parsed = new PGPPublicKeyRing(ring.getEncoded(), new BcKeyFingerprintCalculator());
+        int type = revocationType(target);
+        for (Iterator<PGPSignature> it = signatures(parsed, target); it.hasNext(); )
+        {
+            PGPSignature signature = (PGPSignature)it.next();
+            if (signature.getSignatureType() == type && verifies(parsed, signature, target))
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     private PGPPublicKey subkey(PGPPublicKeyRing ring)
     {
         for (Iterator<PGPPublicKey> it = ring.getPublicKeys(); it.hasNext(); )
         {
-            PGPPublicKey key = it.next();
+            PGPPublicKey key = (PGPPublicKey)it.next();
             if (!key.isMasterKey() && key.isEncryptionKey())
             {
                 return key;

@@ -32,6 +32,7 @@ public class RegressionTest
         new PGPParsingTest(),
         new PGPEdDSATest(),
         new PGPPublicKeyMergeTest(),
+        new PGPSignatureMergeTest(),
         new SExprTest(),
         new PGPUtilTest(),
         new BcPGPEd25519JcaKeyPairConversionTest(),
