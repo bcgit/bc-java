@@ -219,8 +219,70 @@ public class CCMTest
 
         invalidTagLengthTest();
         validTagLengthTest();
+        payloadLengthLimitTest();
 
         noUnverifiedPlaintextOnFailure();
+    }
+
+    private void payloadLengthLimitTest()
+        throws Exception
+    {
+        // A 13 octet nonce gives q = 2, so the payload is limited to 2^16 - 1 octets (SP 800-38C
+        // A.1). The boundary loop above only uses a 128 bit tag; the limit must not depend on the
+        // tag length.
+        int limit = 1 << 16;
+        KeyParameter key = new KeyParameter(K1);
+        byte[] nonce = new byte[13];
+
+        // the largest payload encrypts and decrypts with a 64 bit tag
+        byte[] max = new byte[limit - 1];
+
+        CCMBlockCipher enc = new CCMBlockCipher(AESEngine.newInstance());
+        enc.init(true, new AEADParameters(key, 64, nonce));
+        byte[] ct = enc.processPacket(max, 0, max.length);
+        isTrue("maximum payload ciphertext length", ct.length == max.length + 8);
+
+        CCMBlockCipher dec = new CCMBlockCipher(AESEngine.newInstance());
+        dec.init(false, new AEADParameters(key, 64, nonce));
+        isTrue("maximum payload round trip", Arrays.areEqual(max, dec.processPacket(ct, 0, ct.length)));
+
+        // one octet more is refused on encryption
+        enc = new CCMBlockCipher(AESEngine.newInstance());
+        enc.init(true, new AEADParameters(key, 64, nonce));
+        try
+        {
+            enc.processPacket(new byte[limit], 0, limit);
+            fail("over-limit payload encrypted");
+        }
+        catch (IllegalStateException e)
+        {
+            isTrue("wrong over-limit encryption message: " + e.getMessage(),
+                "CCM packet too large for choice of q".equals(e.getMessage()));
+        }
+
+        // and a ciphertext carrying 2^16 octets of payload, one more than the maximum, is refused
+        // on decryption before the tag is checked, for every tag length
+        for (int macSizeBits = 32; macSizeBits <= 128; macSizeBits += 16)
+        {
+            byte[] over = new byte[limit + macSizeBits / 8];
+
+            dec = new CCMBlockCipher(AESEngine.newInstance());
+            dec.init(false, new AEADParameters(key, macSizeBits, nonce));
+            try
+            {
+                dec.processPacket(over, 0, over.length);
+                fail("over-limit ciphertext decrypted, tag length " + macSizeBits);
+            }
+            catch (InvalidCipherTextException e)
+            {
+                fail("over-limit ciphertext reached the tag check, tag length " + macSizeBits);
+            }
+            catch (IllegalStateException e)
+            {
+                isTrue("wrong over-limit decryption message: " + e.getMessage(),
+                    "CCM packet too large for choice of q".equals(e.getMessage()));
+            }
+        }
     }
 
     private void noUnverifiedPlaintextOnFailure()

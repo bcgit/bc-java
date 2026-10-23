@@ -296,8 +296,8 @@ public class CCMBlockCipher
 
             if (!forEncryption)
             {
-                // input includes 16 additional bytes: CCM flags and n+q values.
-                inputAdjustment = 1 /* flags */ + 15 /* n + q */;
+                // input includes the tag: the limit applies to the payload only.
+                inputAdjustment = macSize;
             }
 
             if ((inLen-inputAdjustment) >= limitLen)
@@ -430,13 +430,17 @@ public class CCMBlockCipher
 
         System.arraycopy(nonce, 0, b0, 1, nonce.length);
 
-        int q = dataLen;
-        int count = 1;
-        while (q > 0)
+        // the length field is exactly q octets, it must never run into the nonce
+        int q = 15 - nonce.length;
+        int len = dataLen;
+        for (int count = 1; count <= q; count++)
         {
-            b0[b0.length - count] = (byte)(q & 0xff);
-            q >>>= 8;
-            count++;
+            b0[b0.length - count] = (byte)(len & 0xff);
+            len >>>= 8;
+        }
+        if (len != 0)
+        {
+            throw new IllegalStateException("CCM packet too large for choice of q");
         }
 
         cMac.update(b0, 0, b0.length);
