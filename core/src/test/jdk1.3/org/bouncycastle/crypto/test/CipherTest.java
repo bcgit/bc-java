@@ -1023,4 +1023,69 @@ public abstract class CipherTest
         test.isTrue("fail on testing split overlapping of " + label,
             len == expected.length && Arrays.areEqual(expected, 0, expected.length, buf, outOff, outOff + len));
     }
+
+    private static final byte CANARY = (byte)0xCC;
+
+    /**
+     * An AEAD cipher must write only the bytes it reports writing: everything before outOff, and
+     * everything past outOff plus the total the processBytes / doFinal calls returned, still belongs
+     * to the caller. Straying there corrupts whatever the caller had in the buffer, and when the
+     * stray bytes are key stream it also hands out material derived from the key. The partial final
+     * block is where this goes wrong, so sweep every message length either side of a block boundary
+     * in both directions, with the output buffer deliberately larger than needed and pre-filled with
+     * a byte the cipher has no reason to leave behind.
+     */
+    static void checkAEADCipherNoOutputSpill(SimpleTest test, int keySize, int ivSize, int blockSize, AEADCipher cipher)
+        throws Exception
+    {
+        SecureRandom random = new SecureRandom();
+        byte[] key = new byte[keySize];
+        byte[] iv = new byte[ivSize];
+        random.nextBytes(key);
+        random.nextBytes(iv);
+        CipherParameters parameters = new ParametersWithIV(new KeyParameter(key), iv);
+
+        byte[] plain = new byte[blockSize * 2 + 1];
+        random.nextBytes(plain);
+
+        int slack = blockSize * 2;
+        for (int msgLen = 0; msgLen <= plain.length; msgLen++)
+        {
+            for (int outOff = 0; outOff <= 1; outOff++)
+            {
+                cipher.init(true, parameters);
+                byte[] enc = new byte[outOff + cipher.getOutputSize(msgLen) + slack];
+                Arrays.fill(enc, CANARY);
+                int encLen = cipher.processBytes(plain, 0, msgLen, enc, outOff);
+                encLen += cipher.doFinal(enc, outOff + encLen);
+                checkNoOutputSpill(test, cipher, "encryption", msgLen, enc, outOff, encLen);
+
+                cipher.init(false, parameters);
+                byte[] dec = new byte[outOff + cipher.getOutputSize(encLen) + slack];
+                Arrays.fill(dec, CANARY);
+                int decLen = cipher.processBytes(enc, outOff, encLen, dec, outOff);
+                decLen += cipher.doFinal(dec, outOff + decLen);
+                checkNoOutputSpill(test, cipher, "decryption", msgLen, dec, outOff, decLen);
+
+                test.isTrue("fail on round trip of " + msgLen + " bytes for " + cipher.getAlgorithmName(),
+                    decLen == msgLen && Arrays.areEqual(plain, 0, msgLen, dec, outOff, outOff + decLen));
+            }
+        }
+    }
+
+    private static void checkNoOutputSpill(SimpleTest test, AEADCipher cipher, String direction, int msgLen,
+                                           byte[] output, int outOff, int len)
+    {
+        for (int i = 0; i < output.length; i++)
+        {
+            if (i < outOff || i >= outOff + len)
+            {
+                if (output[i] != CANARY)
+                {
+                    test.fail(cipher.getAlgorithmName() + " wrote outside the " + len + " bytes it reported on "
+                        + direction + " of " + msgLen + " bytes at offset " + outOff + ": stray byte at " + i);
+                }
+            }
+        }
+    }
 }

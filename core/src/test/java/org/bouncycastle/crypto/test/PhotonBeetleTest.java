@@ -52,6 +52,8 @@ public class PhotonBeetleTest
         CipherTest.checkAEADParemeter(this, 16, 16, 16, 16, new PhotonBeetleEngine(PhotonBeetleEngine.PhotonBeetleParameters.pb32));
         CipherTest.testOverlapping(this, 16, 16, 16, 16, new PhotonBeetleEngine(PhotonBeetleEngine.PhotonBeetleParameters.pb128));
         CipherTest.testOverlapping(this, 16, 16, 16, 16, new PhotonBeetleEngine(PhotonBeetleEngine.PhotonBeetleParameters.pb32));
+        CipherTest.checkAEADCipherNoOutputSpill(this, 16, 16, 16, new PhotonBeetleEngine(PhotonBeetleEngine.PhotonBeetleParameters.pb128));
+        CipherTest.checkAEADCipherNoOutputSpill(this, 16, 16, 16, new PhotonBeetleEngine(PhotonBeetleEngine.PhotonBeetleParameters.pb32));
         CipherTest.checkAEADCipherOutputSize(this, 16, 16, 16, 16, new PhotonBeetleEngine(PhotonBeetleEngine.PhotonBeetleParameters.pb128));
         CipherTest.checkAEADCipherOutputSize(this, 16, 16, 4, 16, new PhotonBeetleEngine(PhotonBeetleEngine.PhotonBeetleParameters.pb32));
     }

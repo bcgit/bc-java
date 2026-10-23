@@ -174,8 +174,8 @@ public class ISAPEngine
         public void processEncFinalBlock(byte[] output, int outOff)
         {
             /* Encrypt final m block */
-            byte[] xo = Pack.longToLittleEndian(p.x0);
-            Bytes.xor(m_bufPos, xo, BlockSize - m_bufPos, m_buf, 0, output, outOff);
+            byte[] xo = Pack.longToBigEndian(p.x0);
+            Bytes.xor(m_bufPos, xo, m_buf, output, outOff);
         }
 
         public void reset()

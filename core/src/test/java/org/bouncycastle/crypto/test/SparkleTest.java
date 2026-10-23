@@ -74,6 +74,10 @@ public class SparkleTest
         CipherTest.testOverlapping(this, 24, 24, 24, 24, new SparkleEngine(SparkleEngine.SparkleParameters.SCHWAEMM192_192));
         CipherTest.testOverlapping(this, 16, 32, 16, 16, new SparkleEngine(SparkleEngine.SparkleParameters.SCHWAEMM256_128));
         CipherTest.testOverlapping(this, 32, 32, 32, 32, new SparkleEngine(SparkleEngine.SparkleParameters.SCHWAEMM256_256));
+        CipherTest.checkAEADCipherNoOutputSpill(this, 16, 16, 16, new SparkleEngine(SparkleEngine.SparkleParameters.SCHWAEMM128_128));
+        CipherTest.checkAEADCipherNoOutputSpill(this, 24, 24, 24, new SparkleEngine(SparkleEngine.SparkleParameters.SCHWAEMM192_192));
+        CipherTest.checkAEADCipherNoOutputSpill(this, 16, 32, 16, new SparkleEngine(SparkleEngine.SparkleParameters.SCHWAEMM256_128));
+        CipherTest.checkAEADCipherNoOutputSpill(this, 32, 32, 32, new SparkleEngine(SparkleEngine.SparkleParameters.SCHWAEMM256_256));
 
         CipherTest.checkAEADCipherMultipleBlocks(this, 1025, 33, 16, 128, 16, new SparkleEngine(SparkleEngine.SparkleParameters.SCHWAEMM128_128));
         CipherTest.checkAEADCipherMultipleBlocks(this, 1025, 33, 24, 192, 24, new SparkleEngine(SparkleEngine.SparkleParameters.SCHWAEMM192_192));

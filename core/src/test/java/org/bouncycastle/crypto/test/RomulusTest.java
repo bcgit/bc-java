@@ -188,6 +188,9 @@ public class RomulusTest
         CipherTest.testOverlapping(this, 16, 16, 16, 16, new RomulusEngine(RomulusEngine.RomulusParameters.RomulusM));
         CipherTest.testOverlapping(this, 16, 16, 16, 16, new RomulusEngine(RomulusEngine.RomulusParameters.RomulusT));
         CipherTest.testOverlapping(this, 16, 16, 16, 16, new RomulusEngine(RomulusEngine.RomulusParameters.RomulusN));
+        CipherTest.checkAEADCipherNoOutputSpill(this, 16, 16, 16, new RomulusEngine(RomulusEngine.RomulusParameters.RomulusM));
+        CipherTest.checkAEADCipherNoOutputSpill(this, 16, 16, 16, new RomulusEngine(RomulusEngine.RomulusParameters.RomulusT));
+        CipherTest.checkAEADCipherNoOutputSpill(this, 16, 16, 16, new RomulusEngine(RomulusEngine.RomulusParameters.RomulusN));
         CipherTest.checkAEADCipherMultipleBlocks(this, 1025, 33, 16, 128, 16, new RomulusEngine(RomulusEngine.RomulusParameters.RomulusM));
         CipherTest.checkAEADCipherMultipleBlocks(this, 1025, 33, 16, 128, 16, new RomulusEngine(RomulusEngine.RomulusParameters.RomulusT));
         CipherTest.checkAEADCipherMultipleBlocks(this, 1025, 33, 16, 128, 16, new RomulusEngine(RomulusEngine.RomulusParameters.RomulusN));

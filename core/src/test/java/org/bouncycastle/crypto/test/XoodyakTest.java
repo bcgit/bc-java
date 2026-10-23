@@ -54,6 +54,7 @@ public class XoodyakTest
         CipherTest.checkAEADCipherOutputSize(this, 16, 16, 24, 16, new XoodyakEngine());
         CipherTest.checkAEADParemeter(this, 16, 16, 16, 24, new XoodyakEngine());
         CipherTest.testOverlapping(this, 16, 16, 16, 24, new XoodyakEngine());
+        CipherTest.checkAEADCipherNoOutputSpill(this, 16, 16, 24, new XoodyakEngine());
     }
 
     private void testVectors()
