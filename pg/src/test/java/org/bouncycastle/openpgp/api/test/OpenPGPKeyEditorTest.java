@@ -1,18 +1,27 @@
 package org.bouncycastle.openpgp.api.test;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.Date;
+import java.util.Iterator;
 
+import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.SecretKeyPacket;
 import org.bouncycastle.bcpg.sig.RevocationReasonTags;
 import org.bouncycastle.openpgp.OpenPGPTestKeys;
 import org.bouncycastle.openpgp.PGPException;
+import org.bouncycastle.openpgp.PGPObjectFactory;
+import org.bouncycastle.openpgp.PGPPublicKey;
+import org.bouncycastle.openpgp.PGPSecretKeyRing;
+import org.bouncycastle.openpgp.PGPSignatureList;
 import org.bouncycastle.openpgp.PGPSignatureSubpacketGenerator;
 import org.bouncycastle.openpgp.api.OpenPGPApi;
 import org.bouncycastle.openpgp.api.OpenPGPCertificate;
 import org.bouncycastle.openpgp.api.OpenPGPKey;
 import org.bouncycastle.openpgp.api.SignatureParameters;
 import org.bouncycastle.openpgp.api.SignatureSubpacketsFunction;
+import org.bouncycastle.openpgp.bc.BcPGPObjectFactory;
+import org.bouncycastle.util.encoders.Hex;
 
 public class OpenPGPKeyEditorTest
     extends APITest
@@ -44,6 +53,8 @@ public class OpenPGPKeyEditorTest
 
         changePassphraseUnprotectedToCFBTest(api);
         changePassphraseUnprotectedToAEADTest(api);
+
+        ignoreInvalidRevocationSignatureTest(api);
     }
 
     private void doNothingTest(OpenPGPApi api)
@@ -272,6 +283,42 @@ public class OpenPGPKeyEditorTest
             key.getPrimarySecretKey().isPassphraseCorrect("sw0rdf1sh".toCharArray()));
         isEquals("Expect use of AEAD for key protection",
             SecretKeyPacket.USAGE_AEAD, key.getPrimarySecretKey().getPGPSecretKey().getS2KUsage());
+    }
+
+    private void ignoreInvalidRevocationSignatureTest(OpenPGPApi api)
+        throws IOException
+    {
+        OpenPGPKey key = api.readKeyOrCertificate().parseKey(OpenPGPTestKeys.ALICE_KEY);
+        isNull("Test key MUST NOT be revoked", key.getRevocation());
+
+        // is usable
+        for (Iterator<OpenPGPCertificate.OpenPGPCertificateComponent> it = key.getComponents().iterator(); it.hasNext(); )
+        {
+            OpenPGPCertificate.OpenPGPCertificateComponent c = it.next();
+            isTrue("All components MUST be validly bound BEFORE injecting broken revocation", c.isBound());
+        }
+
+        // eddsa_sig_s = 01010101... This is a cryptographically invalid revocation signature
+        String forgedRevocation = "8878042016080020162104eb85bb5fa33a75e15e944e63f231550c4f47e38e05025da5a43b021d00000a0910f231550c4f47e38e80650100c0f6e91914a445182a2855c5680d59b14da1cb51794883d4cf8767fbcf323d2a00ff0101010101010101010101010101010101010101010101010101010101010101";
+        ByteArrayInputStream bIn = new ByteArrayInputStream(Hex.decode(forgedRevocation));
+        BCPGInputStream pIn = new BCPGInputStream(bIn);
+        PGPObjectFactory objFac = new BcPGPObjectFactory(pIn);
+        PGPSignatureList sigList = (PGPSignatureList) objFac.nextObject();
+
+        PGPSecretKeyRing sKeyRing = key.getPGPSecretKeyRing();
+        PGPPublicKey primaryKey = sKeyRing.getPublicKey();
+        primaryKey = PGPPublicKey.addCertification(primaryKey, sigList.get(0));
+        sKeyRing = PGPSecretKeyRing.insertOrReplacePublicKey(sKeyRing, primaryKey);
+        OpenPGPKey improperlyRevokedKey = new OpenPGPKey(sKeyRing);
+
+        isNull("Improperly revoked key still MUST NOT be revoked", improperlyRevokedKey.getRevocation());
+
+        // is still usable
+        for (Iterator<OpenPGPCertificate.OpenPGPCertificateComponent> it = improperlyRevokedKey.getComponents().iterator(); it.hasNext(); )
+        {
+            OpenPGPCertificate.OpenPGPCertificateComponent c = it.next();
+            isTrue("All components MUST be validly bound AFTER injecting broken revocation", c.isBound());
+        }
     }
 
     public static void main(String[] args)
