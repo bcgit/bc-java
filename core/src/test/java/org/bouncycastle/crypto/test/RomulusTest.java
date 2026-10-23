@@ -191,6 +191,7 @@ public class RomulusTest
         CipherTest.checkAEADCipherMultipleBlocks(this, 1025, 33, 16, 128, 16, new RomulusEngine(RomulusEngine.RomulusParameters.RomulusM));
         CipherTest.checkAEADCipherMultipleBlocks(this, 1025, 33, 16, 128, 16, new RomulusEngine(RomulusEngine.RomulusParameters.RomulusT));
         CipherTest.checkAEADCipherMultipleBlocks(this, 1025, 33, 16, 128, 16, new RomulusEngine(RomulusEngine.RomulusParameters.RomulusN));
+        testNoUnverifiedPlaintext();
 
         CipherTest.checkCipher(16, 16, 40, 128, new CipherTest.Instance()
         {
@@ -226,6 +227,64 @@ public class RomulusTest
 //        testVectors(RomulusEngine.RomulusParameters.RomulusT, "t");
 //        testVectors(RomulusEngine.RomulusParameters.RomulusM, "m");
 //        testVectors(RomulusEngine.RomulusParameters.RomulusN, "n");
+    }
+
+    /**
+     * Romulus-M holds the whole message until doFinal, so on a tag failure it must not have written
+     * any of the unverified plaintext to the caller's output buffer.
+     */
+    private void testNoUnverifiedPlaintext()
+        throws Exception
+    {
+        SecureRandom random = new SecureRandom();
+        byte[] key = new byte[16];
+        byte[] iv = new byte[16];
+        byte[] aad = new byte[5];
+        random.nextBytes(key);
+        random.nextBytes(iv);
+        random.nextBytes(aad);
+        CipherParameters parameters = new ParametersWithIV(new KeyParameter(key), iv);
+        RomulusEngine cipher = new RomulusEngine(RomulusEngine.RomulusParameters.RomulusM);
+
+        int[] lengths = { 0, 1, 15, 16, 17, 33, 64 };
+        for (int i = 0; i < lengths.length; i++)
+        {
+            byte[] plain = new byte[lengths[i]];
+            random.nextBytes(plain);
+
+            cipher.init(true, parameters);
+            cipher.processAADBytes(aad, 0, aad.length);
+            byte[] enc = new byte[cipher.getOutputSize(plain.length)];
+            int encLen = cipher.processBytes(plain, 0, plain.length, enc, 0);
+            cipher.doFinal(enc, encLen);
+
+            // flip a bit in the first ciphertext byte (when there is one) and in the last tag byte
+            for (int pos = (plain.length == 0) ? enc.length - 1 : 0; pos < enc.length; pos += enc.length - 1)
+            {
+                byte[] bad = Arrays.clone(enc);
+                bad[pos] ^= 0x01;
+
+                cipher.init(false, parameters);
+                cipher.processAADBytes(aad, 0, aad.length);
+                byte[] dec = new byte[cipher.getOutputSize(bad.length) + 16];
+                Arrays.fill(dec, (byte)0xCC);
+                try
+                {
+                    int decLen = cipher.processBytes(bad, 0, bad.length, dec, 0);
+                    cipher.doFinal(dec, decLen);
+                    fail("tampered " + plain.length + " byte message accepted at " + pos);
+                }
+                catch (InvalidCipherTextException e)
+                {
+                    isTrue("wrong message: " + e.getMessage(), (cipher.getAlgorithmName() + " mac does not match").equals(e.getMessage()));
+                }
+                for (int j = 0; j < dec.length; j++)
+                {
+                    isTrue("unverified plaintext released for " + plain.length + " byte message tampered at " + pos,
+                        dec[j] == (byte)0xCC);
+                }
+            }
+        }
     }
 
     private void implTestParametersEngine(RomulusEngine cipher, int keySize, int ivSize,
