@@ -336,7 +336,8 @@ public class PKCS12Example
         //
         // store the key and the certificate chain
         //
-        KeyStore store = KeyStore.getInstance("PKCS12", "BC");
+        // PBES2/AES protection, readable by OpenSSL 3.x without -legacy (plain "PKCS12" uses RC2-40 for certificates)
+        KeyStore store = KeyStore.getInstance("PKCS12-AES256-AES128", "BC");
 
         store.load(null, null);
 
