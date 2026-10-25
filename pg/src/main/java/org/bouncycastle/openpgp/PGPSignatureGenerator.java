@@ -9,6 +9,7 @@ import org.bouncycastle.bcpg.HashUtils;
 import org.bouncycastle.bcpg.MPInteger;
 import org.bouncycastle.bcpg.OnePassSignaturePacket;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
+import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.SignaturePacket;
 import org.bouncycastle.bcpg.SignatureSubpacket;
 import org.bouncycastle.bcpg.SignatureSubpacketTags;
@@ -84,7 +85,9 @@ public class PGPSignatureGenerator
     {
         this(contentSignerBuilder, signatureVersion);
         this.signingPubKey = signingKey;
-        if (signingKey.getVersion() == 6 && signatureVersion != 6)
+        if (signingKey != null &&
+            signingKey.getVersion() == PublicKeyPacket.VERSION_6 &&
+            signatureVersion != SignaturePacket.VERSION_6)
         {
             throw new IllegalArgumentException("Version 6 keys MUST only generate version 6 signatures.");
         }
@@ -147,6 +150,10 @@ public class PGPSignatureGenerator
             {
                 throw new PGPException("Cannot update signature with salt.");
             }
+        }
+        else
+        {
+            salt = null;
         }
     }
 
