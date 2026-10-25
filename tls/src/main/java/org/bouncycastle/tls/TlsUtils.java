@@ -4271,8 +4271,41 @@ public class TlsUtils
         return isValidSignatureAlgorithmForServerKeyExchange(signatureAlgorithm, keyExchangeAlgorithm);
     }
 
+    /**
+     * RFC 9147 5.3: "only suites with DTLS-OK=Y may be used". The TLS 1.3 suites divide on whether their
+     * cipher has a record number encryption defined: RFC 9147 4.2.3 gives the mask for AES (AES-ECB) and for
+     * ChaCha20, and "Future cipher suites, which are not based on AES or ChaCha20, MUST define their own
+     * record sequence number encryption in order to be used with DTLS". The SM4 suites of RFC 8998 define
+     * none and are registered DTLS-OK=N, so they cannot be used in DTLS 1.3 at all, whatever a cipher
+     * implementation might improvise. Eligibility is decided here, in suite selection, rather than left to
+     * fail once the keys exist.
+     *
+     * TODO[dtls13] The RFC 9150 integrity-only suites (NULL_HMAC_SHA256/SHA384) are DTLS-OK=Y - RFC 9150 9
+     * specifies "no protection" for the record number - but Tls13NullCipher does not yet implement
+     * TlsDTLS13Cipher, so they are excluded until it does.
+     */
+    static boolean isValidCipherSuiteForDTLSv13(int cipherSuite)
+    {
+        switch (cipherSuite)
+        {
+        case CipherSuite.TLS_AES_128_CCM_SHA256:
+        case CipherSuite.TLS_AES_128_CCM_8_SHA256:
+        case CipherSuite.TLS_AES_128_GCM_SHA256:
+        case CipherSuite.TLS_AES_256_GCM_SHA384:
+        case CipherSuite.TLS_CHACHA20_POLY1305_SHA256:
+            return true;
+        default:
+            return false;
+        }
+    }
+
     public static boolean isValidVersionForCipherSuite(int cipherSuite, ProtocolVersion version)
     {
+        if (ProtocolVersion.DTLSv13.isEqualOrEarlierVersionOf(version) && !isValidCipherSuiteForDTLSv13(cipherSuite))
+        {
+            return false;
+        }
+
         version = version.getEquivalentTLSVersion();
 
         ProtocolVersion minimumVersion = getMinimumVersion(cipherSuite);

@@ -480,6 +480,29 @@ public class DTLS13ProtocolTest
     }
 
     /**
+     * RFC 9147 4.2.3 defines the record number mask only for the AES and ChaCha20 ciphers, so the RFC 8998 SM4
+     * suites, valid TLS 1.3 suites though they are, cannot be used in DTLS 1.3. Both sides prefer an SM4
+     * suite here; the server must pass it over for the AES suite behind it rather than select it and fail
+     * once the handshake keys exist.
+     */
+    public void testCipherSuiteWithoutARecordNumberMaskIsNotSelected() throws Exception
+    {
+        Harness harness = new Harness();
+        harness.clientCipherSuites = new int[]{ CipherSuite.TLS_SM4_GCM_SM3, CipherSuite.TLS_AES_128_GCM_SHA256 };
+        harness.serverCipherSuites = harness.clientCipherSuites;
+
+        harness.run(16);
+
+        assertEquals("client negotiated version", ProtocolVersion.DTLSv13, harness.clientVersion);
+        assertEquals("the server selected a cipher suite with no DTLS 1.3 record number mask",
+            CipherSuite.TLS_AES_128_GCM_SHA256, harness.selectedCipherSuite);
+
+        assertNotNull("no application data echoed back", harness.echo);
+        assertTrue("echoed application data differs", Arrays.areEqual(harness.request, harness.echo));
+        assertNull("server aborted: " + harness.serverAbort, harness.serverAbort);
+    }
+
+    /**
      * RFC 9147 4.5.2 and RFC 9846 4.7.3. A KeyUpdate received before the Finished is a fatal
      * unexpected_message, but that only holds for a record decrypted under the handshake keys (epoch 2), which
      * certainly came from the peer. A record at epoch 0 is unencrypted plaintext that anyone able to put a
@@ -2191,6 +2214,13 @@ public class DTLS13ProtocolTest
         ProtocolVersion[] clientVersions = ProtocolVersion.DTLSv13.only();
         ProtocolVersion[] serverVersions = ProtocolVersion.DTLSv13.only();
 
+        // Cipher suites to offer / accept in place of the mocks' defaults, in preference order; null keeps the defaults
+        int[] clientCipherSuites = null;
+        int[] serverCipherSuites = null;
+
+        // The cipher suite the server selected, as the client was told it
+        int selectedCipherSuite = -1;
+
         /*
          * Client authentication, configured as TlsTestConfig / DTLSTestSuite configure it for DTLS 1.2: what
          * the server asks for, and what the client answers with. The defaults are what MockDTLSServer and
@@ -2343,6 +2373,18 @@ public class DTLS13ProtocolTest
                 protected ProtocolVersion[] getSupportedVersions()
                 {
                     return clientVersions;
+                }
+
+                protected int[] getSupportedCipherSuites()
+                {
+                    return null != clientCipherSuites ? clientCipherSuites : super.getSupportedCipherSuites();
+                }
+
+                public void notifySelectedCipherSuite(int cipherSuite)
+                {
+                    super.notifySelectedCipherSuite(cipherSuite);
+
+                    selectedCipherSuite = cipherSuite;
                 }
 
                 public void notifyServerVersion(ProtocolVersion version) throws IOException
@@ -2542,6 +2584,11 @@ public class DTLS13ProtocolTest
                 protected ProtocolVersion[] getSupportedVersions()
                 {
                     return serverVersions;
+                }
+
+                protected int[] getSupportedCipherSuites()
+                {
+                    return null != serverCipherSuites ? serverCipherSuites : super.getSupportedCipherSuites();
                 }
 
                 public int getHandshakeTimeoutMillis()
