@@ -7,7 +7,13 @@ import java.math.BigInteger;
 import java.util.Date;
 
 import junit.framework.TestCase;
+import org.bouncycastle.asn1.ASN1Encoding;
+import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.Certificate;
+import org.bouncycastle.asn1.x509.Extension;
+import org.bouncycastle.asn1.x509.Extensions;
+import org.bouncycastle.asn1.x509.PolicyConstraints;
 import org.bouncycastle.asn1.x509.TBSCertificate;
 import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.cbor.CBORDecoder;
@@ -16,6 +22,7 @@ import org.bouncycastle.cbor.c509.C509AttributeType;
 import org.bouncycastle.cbor.c509.C509Certificate;
 import org.bouncycastle.cbor.c509.C509ConversionOptions;
 import org.bouncycastle.cbor.c509.C509ExtensionType;
+import org.bouncycastle.cbor.c509.C509Extensions;
 import org.bouncycastle.cbor.c509.C509PublicKeyAlgorithm;
 import org.bouncycastle.cbor.c509.C509SignatureAlgorithm;
 import org.bouncycastle.crypto.digests.SHA256Digest;
@@ -203,6 +210,69 @@ public class C509CertificateTest
                 .getAlgorithm().getId());
         assertTrue(C509PublicKeyAlgorithm.isWeierstrassPoint(C509PublicKeyAlgorithm.EC_BRAINPOOLP384R1));
         assertFalse(C509PublicKeyAlgorithm.isWeierstrassPoint(C509PublicKeyAlgorithm.ED25519));
+    }
+
+    /*
+     * Section 3.3: PolicyConstraints = [ requireExplicitPolicy: uint / null, inhibitPolicyMapping: uint / null ].
+     * The encoder wrote the two items without the enclosing array, so the value never
+     * decoded back and every policy constraints extension fell through to the generic
+     * ~oid form.
+     */
+    public void testPolicyConstraintsIntCoded()
+        throws Exception
+    {
+        checkPolicyConstraints(BigInteger.valueOf(0), BigInteger.valueOf(3));
+        checkPolicyConstraints(BigInteger.valueOf(5), null);
+        checkPolicyConstraints(null, BigInteger.valueOf(0));
+    }
+
+    private void checkPolicyConstraints(BigInteger require, BigInteger inhibit)
+        throws Exception
+    {
+        // RFC 5280 sec. 4.2.1.11: the extension MUST be critical
+        Extensions x509Extensions = new Extensions(new Extension(Extension.policyConstraints, true,
+            new PolicyConstraints(require, inhibit).getEncoded(ASN1Encoding.DER)));
+
+        C509Extensions extensions = C509Extensions.fromX509Extensions(x509Extensions);
+        assertEquals(Long.valueOf(C509ExtensionType.POLICY_CONSTRAINTS), extensions.getExtension(0).getRegistryValue());
+        assertEquals(x509Extensions, extensions.toX509Extensions());
+
+        // the A.1 certificate's fields under Ed25519, whose signature is a plain 64-byte string
+        TBSCertificate tbs = Certificate.getInstance(vector("a1_x509")).getTBSCertificate();
+        byte[] tbsEncoding = C509Certificate.createTBSCertificate(C509Certificate.TYPE_NATIVE,
+            tbs.getSerialNumber().getValue(), new AlgorithmIdentifier(EdECObjectIdentifiers.id_Ed25519),
+            tbs.getIssuer(), tbs.getStartDate().getDate(),
+            tbs.getEndDate().getDate(), tbs.getSubject(), tbs.getSubjectPublicKeyInfo(), x509Extensions,
+            C509ConversionOptions.DEFAULT);
+
+        // the extensions field is the last of the ten TBS items: [ -28, [ uint / null, uint / null ] ]
+        CBORDecoder in = new CBORDecoder(tbsEncoding);
+        for (int i = 0; i != 9; i++)
+        {
+            in.readEncodedItem();
+        }
+        assertEquals(2, in.readArrayHeader());
+        assertEquals(-C509ExtensionType.POLICY_CONSTRAINTS, in.readInteger());
+        assertEquals(2, in.readArrayHeader());
+        checkUintOrNull(in, require);
+        checkUintOrNull(in, inhibit);
+        in.expectEnd();
+
+        C509Certificate cert = C509Certificate.create(tbsEncoding, new byte[64]);
+        assertEquals(x509Extensions, C509Certificate.getInstance(cert.getEncoded()).getExtensions().toX509Extensions());
+    }
+
+    private void checkUintOrNull(CBORDecoder in, BigInteger value)
+        throws IOException
+    {
+        if (value == null)
+        {
+            in.readNull();
+        }
+        else
+        {
+            assertEquals(value.longValue(), in.readUnsignedInteger());
+        }
     }
 
     public void testMalformedCertificatesRejected()

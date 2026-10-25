@@ -22,11 +22,6 @@ import org.bouncycastle.util.Integers;
  * draft-ietf-cose-cbor-encoded-cert-21. Each registered CBOR int value stands for a
  * complete X.509 AlgorithmIdentifier, including its parameters, so conversion in
  * either direction is an exact table lookup.
- * <p>
- * Note the draft's Figure 18 prints the DER for values 23-25 with an inconsistent
- * SEQUENCE length octet (0x0B against 13 content octets); the entries here are built
- * from the OID object model and encode with the correct 0x0D, matching real
- * certificates and the value -256 row.
  */
 public final class C509SignatureAlgorithm
 {

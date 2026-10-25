@@ -407,6 +407,7 @@ class C509ExtensionValueCodec
                     return false;
                 }
             }
+            out.writeArrayHeader(2);
             writeUintOrNull(out, require);
             writeUintOrNull(out, inhibit);
             return true;
