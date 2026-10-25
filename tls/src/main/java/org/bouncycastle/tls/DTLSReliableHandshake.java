@@ -770,18 +770,6 @@ class DTLSReliableHandshake
             if (recordLayer.isDTLS13())
             {
                 /*
-                 * RFC 8446 4.6.3. "Implementations that receive a KeyUpdate message prior to receiving a
-                 * Finished message MUST terminate the connection with an "unexpected_message" alert." The
-                 * epoch test below would drop it quietly, which is not the same thing: a KeyUpdate before the
-                 * keys it updates exist is an error, and a peer that sent one must be told so rather than
-                 * left retransmitting it.
-                 */
-                if (HandshakeType.key_update == msg_type)
-                {
-                    throw new TlsFatalAlert(AlertDescription.unexpected_message);
-                }
-
-                /*
                  * RFC 9147 6.1. Epoch 0 carries the unencrypted ClientHello, ServerHello and
                  * HelloRetryRequest; every other message of the main handshake is protected under the
                  * handshake traffic keys at epoch 2. Post-handshake messages arrive at epoch 3 and above
@@ -799,6 +787,24 @@ class DTLSReliableHandshake
             {
                 dropped = true;
                 break;
+            }
+
+            if (recordLayer.isDTLS13() && HandshakeType.key_update == msg_type)
+            {
+                /*
+                 * RFC 9846 4.7.3. "Implementations that receive a KeyUpdate message prior to receiving a
+                 * Finished message MUST terminate the connection with an "unexpected_message" alert." Dropping
+                 * it quietly as a message at the wrong epoch would not be the same thing: a KeyUpdate before
+                 * the keys it updates exist is an error, and a peer that sent one must be told so rather than
+                 * left retransmitting it.
+                 *
+                 * This check must stay after the epoch check, so that it only ever sees a record that was
+                 * decrypted under the handshake keys (epoch 2) and so certainly came from the peer. A record at
+                 * epoch 0 is unencrypted plaintext that anyone on the path could have sent, and the client
+                 * keeps reading epoch 0 after the handshake (RFC 9147 5.8.1), so a KeyUpdate arriving there
+                 * is just an invalid record, to be discarded silently (RFC 9147 4.5.2), not a peer error.
+                 */
+                throw new TlsFatalAlert(AlertDescription.unexpected_message);
             }
 
             int message_seq = TlsUtils.readUint16(buf, off + 4);

@@ -430,6 +430,41 @@ public class DTLS13ProtocolTest
     }
 
     /**
+     * RFC 9147 4.5.2 and RFC 9846 4.7.3. A KeyUpdate received before the Finished is a fatal
+     * unexpected_message, but that only holds for a record decrypted under the handshake keys (epoch 2), which
+     * certainly came from the peer. A record at epoch 0 is unencrypted plaintext that anyone able to put a
+     * datagram on the path could have sent, and the client keeps reading epoch 0 after the handshake for the
+     * RFC 9147 5.8.1 retransmit window, so a handshake record there with msg_type key_update is just an
+     * invalid record: it must be discarded silently, drawing neither an alert nor an ACK, and the connection
+     * must go on unaffected.
+     * <p>
+     * The server retains no epoch 0 at all, which is why the injection in
+     * {@link #testServerAcksReorderedFinalFlight()} could never reach this check from that side.
+     * </p>
+     */
+    public void testClientDiscardsAForgedPlaintextKeyUpdate() throws Exception
+    {
+        Harness harness = new Harness();
+        harness.injectPlaintextKeyUpdateAtClient = true;
+
+        harness.run(16);
+
+        assertEquals("client negotiated version", ProtocolVersion.DTLSv13, harness.clientVersion);
+        assertEquals("server negotiated version", ProtocolVersion.DTLSv13, harness.serverVersion);
+
+        assertNull("a forged plaintext KeyUpdate aborted the client: " + harness.clientAbortAfterInjection,
+            harness.clientAbortAfterInjection);
+
+        assertEquals("the forged plaintext KeyUpdate drew an answer from the client",
+            harness.clientEpoch3BeforeInjection, harness.clientEpoch3AfterInjection);
+
+        assertNotNull("no application data echoed back after the injection", harness.echo);
+        assertTrue("echoed application data differs", Arrays.areEqual(harness.request, harness.echo));
+
+        assertNull("server aborted: " + harness.serverAbort, harness.serverAbort);
+    }
+
+    /**
      * The ACK-driven retransmission of RFC 9147 7 over a lossy path, in both directions.
      */
     public void testClientServerWithPacketLoss() throws Exception
@@ -2040,6 +2075,7 @@ public class DTLS13ProtocolTest
         boolean dropFirstClientEpoch2Datagram = false;
         boolean holdFirstClientEpoch2Datagram = false;
         boolean probeServerAckPath = false;
+        boolean injectPlaintextKeyUpdateAtClient = false;
         boolean forceHelloRetryRequest = false;
         boolean replaySecondHelloRetryRequest = false;
         int mangleSecondClientHello = MANGLE_NONE;
@@ -2186,6 +2222,15 @@ public class DTLS13ProtocolTest
         // Counts of the server's protected (epoch 3) records, taken while no application data is in flight
         int serverEpoch3AfterHandshake = -1;
         int serverEpoch3AfterInjection = -1;
+
+        /*
+         * Counts of the client's protected (epoch 3) records either side of a forged plaintext KeyUpdate
+         * being injected at the client, taken while no application data is in flight, and whatever the
+         * injection made the client's receive path throw.
+         */
+        int clientEpoch3BeforeInjection = -1;
+        int clientEpoch3AfterInjection = -1;
+        IOException clientAbortAfterInjection = null;
 
         private RecordingDatagramTransport recording = null;
         private DatagramTransport rawClientTransport = null;
@@ -2577,6 +2622,17 @@ public class DTLS13ProtocolTest
                     probeServerAckPath(dtlsClient);
                 }
 
+                if (injectPlaintextKeyUpdateAtClient)
+                {
+                    injectPlaintextKeyUpdateAtClient(dtlsClient);
+
+                    if (null != clientAbortAfterInjection)
+                    {
+                        // The client is gone; nothing below could succeed, and the test asserts on the abort.
+                        return;
+                    }
+                }
+
                 this.request = new byte[dataLength];
                 Arrays.fill(request, (byte)0x5A);
 
@@ -2891,6 +2947,62 @@ public class DTLS13ProtocolTest
 
             rawClientTransport.send(record, 0, record.length);
         }
+
+        /**
+         * Hands the client a plaintext epoch-0 record with a handshake content type whose one message has
+         * msg_type key_update, as if it had arrived from the server, and pumps the client's receive path
+         * through it. Epoch 0 is unencrypted and the client keeps reading it after the handshake (RFC 9147
+         * 5.8.1), so this is what an off-path attacker who can guess the 5-tuple can deliver without any key.
+         * The client's protected records are counted
+         * before and after, while no application data is in flight, so a difference could only be an answer
+         * to the forgery; and whatever the receive path throws is kept for the test to assert on.
+         */
+        private void injectPlaintextKeyUpdateAtClient(DTLSTransport dtlsClient) throws IOException
+        {
+            int bodyLength = 1;
+            byte[] record = new byte[PLAINTEXT_HEADER_LENGTH + MESSAGE_HEADER_LENGTH + bodyLength];
+
+            record[0] = (byte)ContentType.handshake;
+            record[1] = (byte)0xFE;
+            record[2] = (byte)0xFD;
+            // epoch 0, a sequence_number the server has not used
+            record[9] = (byte)0x7F;
+            record[10] = (byte)0xFF;
+            record[11] = (byte)((MESSAGE_HEADER_LENGTH + bodyLength) >>> 8);
+            record[12] = (byte)(MESSAGE_HEADER_LENGTH + bodyLength);
+
+            int off = PLAINTEXT_HEADER_LENGTH;
+            record[off] = (byte)HandshakeType.key_update;
+            record[off + 3] = (byte)bodyLength;
+            // message_seq: the one after the server's six-message flight, as a real KeyUpdate would carry
+            record[off + 5] = (byte)6;
+            record[off + 11] = (byte)bodyLength;
+            // KeyUpdateRequest.update_not_requested
+            record[off + MESSAGE_HEADER_LENGTH] = (byte)0;
+
+            this.clientEpoch3BeforeInjection = countRecordsAtEpoch(clientRecords(), 3);
+
+            recording.inject(record);
+
+            byte[] buf = new byte[dtlsClient.getReceiveLimit()];
+
+            try
+            {
+                // The injected datagram is the next thing receive() returns; the settle period is for any answer
+                long settleDeadline = System.currentTimeMillis() + POST_HANDSHAKE_SETTLE_MILLIS;
+                do
+                {
+                    dtlsClient.receive(buf, 0, buf.length, 200);
+                }
+                while (System.currentTimeMillis() < settleDeadline);
+            }
+            catch (IOException e)
+            {
+                this.clientAbortAfterInjection = e;
+            }
+
+            this.clientEpoch3AfterInjection = countRecordsAtEpoch(clientRecords(), 3);
+        }
     }
 
     /**
@@ -3186,6 +3298,15 @@ public class DTLS13ProtocolTest
         int getMangled()
         {
             return mangled;
+        }
+
+        /**
+         * Makes the given bytes the next datagram the client receives, ahead of anything the network holds,
+         * as if a third party had put it on the path.
+         */
+        void inject(byte[] datagram)
+        {
+            this.injected = Arrays.clone(datagram);
         }
 
         public int getReceiveLimit() throws IOException
