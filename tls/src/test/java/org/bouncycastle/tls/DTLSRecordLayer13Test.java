@@ -156,6 +156,141 @@ public class DTLSRecordLayer13Test
         assertTrue(Arrays.areEqual(b, receive(server, 1000)));
     }
 
+    /**
+     * RFC 9147 4 and RFC 9146. The unified header grows by the length of the peer's connection ID, which may
+     * be anything up to 255 bytes, and the receiver has to find the length field of every record after the
+     * first in a datagram past that connection ID. A peek sized for a short connection ID made every such
+     * record look truncated once the connection ID exceeded 11 bytes, and the datagram's remaining records
+     * were discarded with it.
+     */
+    public void testMultipleRecordsInOneDatagramWithConnectionIDs() throws Exception
+    {
+        int[] connectionIDLengths = new int[]{ 1, 8, 11, 12, 20, 255 };
+
+        for (int i = 0; i < connectionIDLengths.length; ++i)
+        {
+            int connectionIDLength = connectionIDLengths[i];
+
+            byte[] clientConnectionID = new byte[connectionIDLength];
+            byte[] serverConnectionID = new byte[connectionIDLength];
+            RANDOM.nextBytes(clientConnectionID);
+            RANDOM.nextBytes(serverConnectionID);
+
+            support = new DTLSRecordLayer13TestSupport();
+            support.setUpPairWithConnectionIDs(CipherSuite.TLS_AES_128_GCM_SHA256, CryptoHashAlgorithm.sha256,
+                clientConnectionID, serverConnectionID);
+            clientToServer = support.clientToServer;
+            serverToClient = support.serverToClient;
+            client = support.client;
+            server = support.server;
+
+            byte[] a = new byte[]{ 1, 2, 3 };
+            byte[] b = new byte[]{ 4, 5, 6, 7 };
+            byte[] c = new byte[]{ 8 };
+            client.recordLayer.send(a, 0, a.length);
+            client.recordLayer.send(b, 0, b.length);
+            client.recordLayer.send(c, 0, c.length);
+
+            byte[] d1 = clientToServer.take(100);
+            byte[] d2 = clientToServer.take(100);
+            byte[] d3 = clientToServer.take(100);
+
+            assertTrue("record carries no connection ID (length " + connectionIDLength + ")",
+                DTLS13UnifiedHeader.hasConnectionID(d1[0] & 0xFF));
+            assertTrue("record does not carry the client's connection ID (length " + connectionIDLength + ")",
+                Arrays.areEqual(clientConnectionID, Arrays.copyOfRange(d1, 1, 1 + connectionIDLength)));
+
+            clientToServer.put(Arrays.concatenate(d1, d2, d3));
+
+            assertTrue("first record lost (connection ID length " + connectionIDLength + ")",
+                Arrays.areEqual(a, receive(server, 1000)));
+            assertTrue("second record lost (connection ID length " + connectionIDLength + ")",
+                Arrays.areEqual(b, receive(server, 1000)));
+            assertTrue("third record lost (connection ID length " + connectionIDLength + ")",
+                Arrays.areEqual(c, receive(server, 1000)));
+
+            // and the other direction, whose connection ID is independently sized
+            server.recordLayer.send(b, 0, b.length);
+            server.recordLayer.send(a, 0, a.length);
+
+            byte[] e1 = serverToClient.take(100);
+            byte[] e2 = serverToClient.take(100);
+            serverToClient.put(Arrays.concatenate(e1, e2));
+
+            assertTrue("first record lost (server to client, connection ID length " + connectionIDLength + ")",
+                Arrays.areEqual(b, receive(client, 1000)));
+            assertTrue("second record lost (server to client, connection ID length " + connectionIDLength + ")",
+                Arrays.areEqual(a, receive(client, 1000)));
+        }
+    }
+
+    /**
+     * RFC 9147 4 and RFC 9146. A record whose C bit is clear although a connection ID was negotiated is
+     * invalid, but it is still delimited by its own header: the length field sits where a header without a
+     * connection ID puts it. Reading it from where the negotiated header would have put it instead split the
+     * datagram at a garbage offset, so the valid record that followed was lost along with the invalid one.
+     */
+    public void testRecordWithoutTheNegotiatedConnectionIDDoesNotLoseTheRecordAfterIt() throws Exception
+    {
+        byte[] clientConnectionID = new byte[8];
+        byte[] serverConnectionID = new byte[8];
+        RANDOM.nextBytes(clientConnectionID);
+        RANDOM.nextBytes(serverConnectionID);
+
+        support = new DTLSRecordLayer13TestSupport();
+        support.setUpPairWithConnectionIDs(CipherSuite.TLS_AES_128_GCM_SHA256, CryptoHashAlgorithm.sha256,
+            clientConnectionID, serverConnectionID);
+        clientToServer = support.clientToServer;
+        server = support.server;
+        client = support.client;
+
+        byte[] a = new byte[]{ 1, 2, 3 };
+        byte[] b = new byte[]{ 4, 5, 6, 7 };
+        client.recordLayer.send(a, 0, a.length);
+        client.recordLayer.send(b, 0, b.length);
+
+        byte[] d1 = clientToServer.take(100);
+        byte[] d2 = clientToServer.take(100);
+        assertTrue(DTLS13UnifiedHeader.hasConnectionID(d1[0] & 0xFF));
+
+        // Strip the connection ID from the first record and clear its C bit; its length field is untouched
+        byte[] noCID = Arrays.concatenate(new byte[]{ (byte)(d1[0] & ~DTLS13UnifiedHeader.FLAG_CID) },
+            Arrays.copyOfRange(d1, 1 + clientConnectionID.length, d1.length));
+
+        clientToServer.put(Arrays.concatenate(noCID, d2));
+
+        // The invalid record is dropped; the valid one after it is not
+        assertTrue(Arrays.areEqual(b, receive(server, 1000)));
+        assertNull(receive(server, 200));
+    }
+
+    /**
+     * The other disagreement: a record claims a connection ID when none was negotiated. Its length is
+     * unknowable, so the record cannot be delimited and the whole datagram is discarded, silently (RFC 9147
+     * 4.5.2), leaving the connection usable.
+     */
+    public void testRecordClaimingAConnectionIDWhenNoneWasNegotiatedIsDiscarded() throws Exception
+    {
+        setUpPair(CipherSuite.TLS_AES_128_GCM_SHA256, CryptoHashAlgorithm.sha256);
+
+        byte[] a = new byte[]{ 1, 2, 3 };
+        byte[] b = new byte[]{ 4, 5, 6, 7 };
+        client.recordLayer.send(a, 0, a.length);
+        client.recordLayer.send(b, 0, b.length);
+
+        byte[] d1 = clientToServer.take(100);
+        byte[] d2 = clientToServer.take(100);
+        d1[0] |= DTLS13UnifiedHeader.FLAG_CID;
+
+        clientToServer.put(Arrays.concatenate(d1, d2));
+        assertNull(receive(server, 200));
+
+        // the connection is still usable
+        byte[] c = new byte[]{ 8 };
+        client.recordLayer.send(c, 0, c.length);
+        assertTrue(Arrays.areEqual(c, receive(server, 1000)));
+    }
+
     public void testApplicationDataAfterHandshakeWithRetransmitState() throws Exception
     {
         // A real handshake hands the record layer a retransmit handler, which retains the handshake epoch

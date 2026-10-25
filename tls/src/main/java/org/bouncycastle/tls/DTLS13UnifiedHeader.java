@@ -55,9 +55,18 @@ class DTLS13UnifiedHeader
         return hasSeq16(firstByte) ? 2 : 1;
     }
 
+    /**
+     * The length of the header the first byte announces (RFC 9147 4): the connection ID is counted only when
+     * the C bit is set, whatever was negotiated, so that a record whose C bit disagrees with the negotiated
+     * connection ID is still delimited where its own length field says, and the records after it in the
+     * datagram are not lost with it. Whether the C bit agrees is checked separately, once the record is parsed.
+     *
+     * @param connectionIDLength the length of the peer's negotiated connection ID (0 if none).
+     */
     static int getHeaderLength(int firstByte, int connectionIDLength)
     {
-        return 1 + connectionIDLength + getSequenceNumberLength(firstByte) + (hasLength(firstByte) ? 2 : 0);
+        return 1 + (hasConnectionID(firstByte) ? connectionIDLength : 0) + getSequenceNumberLength(firstByte)
+            + (hasLength(firstByte) ? 2 : 0);
     }
 
     static int getWriteHeaderLength(int connectionIDLength)

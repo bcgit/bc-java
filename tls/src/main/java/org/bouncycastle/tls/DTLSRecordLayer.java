@@ -1986,14 +1986,19 @@ class DTLSRecordLayer
 
         int recordLength = RECORD_HEADER_LENGTH;
 
-        byte[] firstByteBuf = new byte[1];
-        recordQueue.read(firstByteBuf, 0, 1, 0);
-        int firstByte = firstByteBuf[0] & 0xFF;
+        int firstByte = recordQueue.readUint8(0);
 
         if (dtls13 && DTLS13UnifiedHeader.isCiphertextRecord(firstByte))
         {
+            /*
+             * Peek exactly the header the first byte announces (RFC 9147 4), so that a peer connection ID of
+             * any length (RFC 9146 permits up to 255 bytes) still leaves the length field within the peek; a
+             * fixed-size peek shorter than the header made every record after the first in a datagram look
+             * truncated, and the whole queue was discarded with it.
+             */
             int available = recordQueue.available();
-            byte[] head = new byte[Math.min(available, 16)];
+            int headerLength = DTLS13UnifiedHeader.getHeaderLength(firstByte, getConnectionIDPeerLength());
+            byte[] head = new byte[Math.min(available, headerLength)];
             recordQueue.read(head, 0, head.length, 0);
 
             recordLength = getDTLS13RecordLength(head, 0, head.length);
@@ -2058,8 +2063,15 @@ class DTLSRecordLayer
     {
         int firstByte = buf[off] & 0xFF;
 
-        byte[] connectionID = context.getSecurityParameters().getConnectionIDPeer();
-        int connectionIDLength = null == connectionID ? 0 : connectionID.length;
+        int connectionIDLength = getConnectionIDPeerLength();
+        if (connectionIDLength == 0 && DTLS13UnifiedHeader.hasConnectionID(firstByte))
+        {
+            /*
+             * No connection ID was negotiated, so the length of the one this record claims to carry is
+             * unknown and the record cannot be delimited; nothing after it in the datagram can be either.
+             */
+            return -1;
+        }
 
         int headerLength = DTLS13UnifiedHeader.getHeaderLength(firstByte, connectionIDLength);
         if (available < headerLength)
@@ -2071,6 +2083,13 @@ class DTLSRecordLayer
             return RECORD_LENGTH_REST_OF_DATAGRAM;
         }
         return headerLength + TlsUtils.readUint16(buf, off + headerLength - 2);
+    }
+
+    /** The length of the connection ID the peer puts on its records (RFC 9146), or 0 if none was negotiated. */
+    private int getConnectionIDPeerLength()
+    {
+        byte[] connectionID = context.getSecurityParameters().getConnectionIDPeer();
+        return null == connectionID ? 0 : connectionID.length;
     }
 
     private int receiveRecord(byte[] buf, int off, int len, int waitMillis)

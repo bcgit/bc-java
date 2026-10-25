@@ -134,6 +134,24 @@ class DTLSRecordLayer13TestSupport
     void setUpPair(int cipherSuite, int hash, DTLSHandshakeRetransmit clientRetransmit,
         DTLSHandshakeRetransmit serverRetransmit) throws IOException
     {
+        setUpPair(cipherSuite, hash, clientRetransmit, serverRetransmit, null, null);
+    }
+
+    /**
+     * As {@link #setUpPair(int, int)}, but with RFC 9146 connection IDs negotiated: the client writes
+     * 'clientConnectionID' on its records and expects 'serverConnectionID' on the server's, and vice versa.
+     * Pass null for a direction that carries no connection ID.
+     */
+    void setUpPairWithConnectionIDs(int cipherSuite, int hash, byte[] clientConnectionID,
+        byte[] serverConnectionID) throws IOException
+    {
+        setUpPair(cipherSuite, hash, null, null, clientConnectionID, serverConnectionID);
+    }
+
+    void setUpPair(int cipherSuite, int hash, DTLSHandshakeRetransmit clientRetransmit,
+        DTLSHandshakeRetransmit serverRetransmit, byte[] clientConnectionID, byte[] serverConnectionID)
+        throws IOException
+    {
         TlsCrypto crypto = new BcTlsCrypto();
         byte[] clientSecret = new byte[48];
         byte[] serverSecret = new byte[48];
@@ -144,17 +162,25 @@ class DTLSRecordLayer13TestSupport
         serverToClient = new Queue();
 
         client = createSide(crypto, false, cipherSuite, hash, clientSecret, serverSecret,
-            new QueueTransport(serverToClient, clientToServer), clientRetransmit);
+            new QueueTransport(serverToClient, clientToServer), clientRetransmit, clientConnectionID,
+            serverConnectionID);
         server = createSide(crypto, true, cipherSuite, hash, clientSecret, serverSecret,
-            new QueueTransport(clientToServer, serverToClient), serverRetransmit);
+            new QueueTransport(clientToServer, serverToClient), serverRetransmit, serverConnectionID,
+            clientConnectionID);
     }
 
     private static Side createSide(TlsCrypto crypto, boolean isServer, int cipherSuite, int hash,
         byte[] clientSecret, byte[] serverSecret, DatagramTransport transport,
-        DTLSHandshakeRetransmit retransmit) throws IOException
+        DTLSHandshakeRetransmit retransmit, byte[] connectionIDLocal, byte[] connectionIDPeer)
+        throws IOException
     {
         AbstractTlsContext context = TlsAEADCipherDTLS13Test.createContext(crypto, isServer, cipherSuite, hash,
             clientSecret, serverSecret);
+
+        // Production sets these from the "connection_id" extension before any cipher is built
+        SecurityParameters securityParameters = context.getSecurityParametersHandshake();
+        securityParameters.connectionIDLocal = Arrays.clone(connectionIDLocal);
+        securityParameters.connectionIDPeer = Arrays.clone(connectionIDPeer);
 
         TlsPeer peer = new DefaultTlsClient(crypto)
         {

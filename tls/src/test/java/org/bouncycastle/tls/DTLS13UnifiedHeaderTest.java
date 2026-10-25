@@ -25,6 +25,9 @@ public class DTLS13UnifiedHeaderTest
         assertEquals(4, DTLS13UnifiedHeader.getHeaderLength(0x24, 0));   // 8-bit seq + length
         assertEquals(5, DTLS13UnifiedHeader.getHeaderLength(0x2C, 0));   // full
         assertEquals(9, DTLS13UnifiedHeader.getHeaderLength(0x3C, 4));   // full + 4-byte CID
+        // the negotiated CID is counted only when the record's C bit says one is present
+        assertEquals(5, DTLS13UnifiedHeader.getHeaderLength(0x2C, 4));
+        assertEquals(2, DTLS13UnifiedHeader.getHeaderLength(0x20, 255));
         assertEquals(5, DTLS13UnifiedHeader.getWriteHeaderLength(0));
         assertEquals(9, DTLS13UnifiedHeader.getWriteHeaderLength(4));
         // the receive limit must budget for the smallest header a peer may send, not for our write form
