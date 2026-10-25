@@ -25,10 +25,12 @@ import org.bouncycastle.util.Exceptions;
  *     } SignedCertificateTimestampList;
  * </pre>
  *
- * The list bytes — i.e. what this class consumes — are the unwrapped
- * contents of the extension's OCTET STRING value (the bytes returned by
- * {@code Extension.getExtnValue().getOctets()}), not the OCTET STRING
- * header itself.
+ * The list bytes - i.e. what {@link #getInstance(byte[])} consumes and
+ * {@link #getEncoded()} produces - are the bare TLS encoding. In a certificate
+ * or OCSP extension RFC 6962 sec. 3.3 encodes the list as an ASN.1 OCTET STRING,
+ * which is then carried in the extension's {@code extnValue}, so the list bytes
+ * are the contents of an OCTET STRING nested inside {@code extnValue};
+ * {@link #fromExtensions(Extensions)} removes that inner OCTET STRING.
  *
  * <p>For RFC 9162 (CT v2), the analogous list type is
  * {@link TransItemList}; the two formats are not interchangeable.</p>
@@ -64,8 +66,7 @@ public class SignedCertificateTimestampList
     }
 
     /**
-     * Decode a list from its TLS wire form (the bytes of the extension
-     * value's OCTET STRING contents).
+     * Decode a list from its TLS wire form.
      */
     public static SignedCertificateTimestampList getInstance(byte[] encoded)
     {
@@ -107,8 +108,8 @@ public class SignedCertificateTimestampList
             return null;
         }
 
-        ASN1OctetString extnValue = ext.getExtnValue();
-        return getInstance(extnValue.getOctets());
+        // RFC 6962 sec. 3.3: the list is encoded as an OCTET STRING, which is then put in extnValue
+        return getInstance(ASN1OctetString.getInstance(ext.getParsedValue()).getOctets());
     }
 
     /** The decoded SCTs, in wire order. */
@@ -123,9 +124,9 @@ public class SignedCertificateTimestampList
     }
 
     /**
-     * Serialize the list to its TLS wire form (the bytes that would be
-     * carried as the OCTET STRING contents of the embedded-SCT or OCSP-SCT
-     * extension's extnValue).
+     * Serialize the list to its TLS wire form. To carry it in the embedded-SCT or
+     * OCSP-SCT extension, wrap it in an OCTET STRING and use that as the
+     * extension value (RFC 6962 sec. 3.3).
      */
     public byte[] getEncoded()
     {

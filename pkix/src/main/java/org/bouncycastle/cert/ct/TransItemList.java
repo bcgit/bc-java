@@ -25,9 +25,13 @@ import org.bouncycastle.util.Exceptions;
  *     } TransItemList;
  * </pre>
  *
- * The list bytes — i.e. what this class consumes — are the unwrapped
- * contents of the extension's OCTET STRING value, not the OCTET STRING
- * header itself.
+ * The list bytes - i.e. what {@link #getInstance(byte[])} consumes and
+ * {@link #getEncoded()} produces - are the bare TLS encoding. RFC 9162 sec. 7.1
+ * requires the list to be wrapped in an additional OCTET STRING
+ * ({@code TransparencyInformationSyntax}) which is then put in the extension's
+ * {@code extnValue}, so the list bytes are the contents of an OCTET STRING
+ * nested inside {@code extnValue}; {@link #fromExtensions(Extensions)} removes
+ * that inner OCTET STRING.
  *
  * <p>For RFC 6962 (CT v1), the analogous list type is
  * {@link SignedCertificateTimestampList}; the two formats are not
@@ -100,8 +104,8 @@ public class TransItemList
             return null;
         }
 
-        ASN1OctetString extnValue = ext.getExtnValue();
-        return getInstance(extnValue.getOctets());
+        // RFC 9162 sec. 7.1: the list is wrapped in an additional OCTET STRING, which is then put in extnValue
+        return getInstance(ASN1OctetString.getInstance(ext.getParsedValue()).getOctets());
     }
 
     /** The decoded TransItems, in wire order. */
