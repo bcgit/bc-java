@@ -76,6 +76,7 @@ public class OpenPGPMissingCrossCertificationTest
             signatureAccepted(KeyFlags.SIGN_DATA, true, KeyFlags.CERTIFY_OTHER | KeyFlags.SIGN_DATA));
 
         testSigningSubkeyTakeover();
+        testSecretSubkeyDoesNotInheritKeyFlags();
     }
 
     /**
@@ -174,6 +175,39 @@ public class OpenPGPMissingCrossCertificationTest
             signatures.size() == 1 && !signatures.get(0).getIssuer().isPrimaryKey());
         isTrue("signature by a grafted subkey with no cross-certification must not be reported valid",
             !signatures.get(0).isValid());
+    }
+
+    /**
+     * The secret key view of a subkey must answer capability questions exactly as its public key does: an
+     * OpenPGPSecretKey is not an OpenPGPSubkey, so the subkey must be recognised through its public component.
+     */
+    private void testSecretSubkeyDoesNotInheritKeyFlags()
+        throws Exception
+    {
+        Date creationTime = new Date((System.currentTimeMillis() / 1000L) * 1000L);
+
+        PGPKeyRingGenerator gen = keyRingGenerator("Victim <victim@example.com>",
+            KeyFlags.CERTIFY_OTHER | KeyFlags.SIGN_DATA, creationTime);
+        gen.addSubKey(keyPair(PGPPublicKey.RSA_SIGN, creationTime), new PGPSignatureSubpacketGenerator().generate(), null, null);
+        OpenPGPKey key = new OpenPGPKey(gen.generateSecretKeyRing());
+
+        int subkeys = 0;
+        for (Iterator<OpenPGPCertificate.OpenPGPComponentKey> it = key.getKeys().iterator(); it.hasNext(); )
+        {
+            OpenPGPCertificate.OpenPGPComponentKey pubKey = it.next();
+            if (pubKey.isPrimaryKey())
+            {
+                continue;
+            }
+            subkeys++;
+            OpenPGPKey.OpenPGPSecretKey secKey = key.getSecretKey(pubKey);
+
+            isTrue("public subkey with no key flags on its binding must have no key flags", pubKey.getKeyFlags() == null);
+            isTrue("secret subkey with no key flags on its binding must not inherit the primary's key flags",
+                secKey.getKeyFlags() == null);
+            isTrue("secret subkey with no key flags on its binding must not be a signing key", !secKey.isSigningKey());
+        }
+        isTrue("test setup: expected one subkey", subkeys == 1);
     }
 
     private PGPKeyRingGenerator keyRingGenerator(String userId, int primaryFlags, Date creationTime)

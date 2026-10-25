@@ -1844,13 +1844,13 @@ public class OpenPGPCertificate
             PGPSignatureSubpacketVector hashedSubpackets = keySignature.getSignature().getHashedSubPackets();
             if (hashedSubpackets == null || !hashedSubpackets.hasSubpacket(subpacketType))
             {
-                if (subpacketType == SignatureSubpacketTags.KEY_FLAGS && this instanceof OpenPGPSubkey)
+                if (subpacketType == SignatureSubpacketTags.KEY_FLAGS && getPublicComponent() instanceof OpenPGPSubkey)
                 {
                     // Key Flags apply to the key their signature refers to (RFC9580, section 5.2.3.29) - not inherited
                     return null;
                 }
 
-                if (subpacketType == SignatureSubpacketTags.KEY_EXPIRE_TIME && this instanceof OpenPGPSubkey)
+                if (subpacketType == SignatureSubpacketTags.KEY_EXPIRE_TIME && getPublicComponent() instanceof OpenPGPSubkey)
                 {
                     // Key Expiration Time is counted from the creation time of the key it is on (RFC9580, section 5.2.3.13) - not inherited
                     return null;
