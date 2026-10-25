@@ -85,7 +85,8 @@ public class Properties
     public static final String X509_CRL_CACHE_TTL = "org.bouncycastle.x509.crl_cache_ttl";
 
     /**
-     * If set to "true", the BC CertPath validator and X509RevocationChecker will attempt to
+     * If set to "true", the BC CertPath validator, X509RevocationChecker and both PKIXCertPathReviewer
+     * classes (and so SignedMailValidator, which uses the pkix one by default) will attempt to
      * download CRLs over the network using URIs from each certificate's CRL Distribution Points
      * extension when no PKIXCRLStore on the supplied PKIXParameters can satisfy the lookup.
      * Default (unset / "false") preserves the legacy behaviour of relying entirely on caller-supplied

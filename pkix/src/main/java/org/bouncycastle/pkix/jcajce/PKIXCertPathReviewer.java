@@ -2,6 +2,7 @@ package org.bouncycastle.pkix.jcajce;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigInteger;
 import java.net.HttpURLConnection;
 import java.net.InetAddress;
@@ -1062,7 +1063,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                 
                 // TODO also support Netscapes revocation-url and/or OCSP instead of CRLs for revocation checking
                 // check CRLs
-                issuerChainVerified = chainVerified;
+                issuerChainVerified = chainVerified && noErrorsAbove(index);
                 try 
                 {
                     checkRevocation(pkixParams, cert, validDate, sign, workingPublicKey, crlDistPointUrls, ocspUrls, index);
@@ -1159,6 +1160,32 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
 
         trustAnchor = trust;
         subjectPublicKey = workingPublicKey;
+    }
+
+    /**
+     * True when no error has been recorded against the trust anchor or against any certificate
+     * above the one at index, so that a CRL distribution point fetch for it stands on an issuer
+     * chain that passed every check made so far - the CA, key usage, issuer name, validity and
+     * revocation checks as well as the signatures the chainVerified flag in checkSignatures
+     * tracks. An end entity certificate from a trusted CA, or a revoked or expired intermediate,
+     * otherwise serves as the issuer of a certificate whose distribution points are fetched.
+     */
+    private boolean noErrorsAbove(int index)
+    {
+        if (!errors[0].isEmpty())
+        {
+            return false;
+        }
+
+        for (int i = index + 2; i < errors.length; i++)
+        {
+            if (!errors[i].isEmpty())
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private void checkPolicy()
@@ -2297,6 +2324,15 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                             continue;
                         }
 
+                        // the same RFC 5280 sec. 6.3.3 scope rules as the local store path: a CRL from the right issuer that does not cover this certificate's distribution point, or only some of the reasons, says nothing about it.
+                        if (!isScopedToCertificate(onlineCRL, distPoints, cert))
+                        {
+                            ErrorBundle msg = createErrorBundle( "CertPathReviewer.onlineCRLOutOfScope",
+                                new Object[]{ new UntrustedUrlInput(location) });
+                            addNotification(msg,index);
+                            continue;
+                        }
+
                         Date thisUpdate = onlineCRL.getThisUpdate();
                         Date nextUpdate = onlineCRL.getNextUpdate();
                         Object[] arguments = new Object[]{ new TrustedInput(thisUpdate), new TrustedInput(nextUpdate),
@@ -2675,8 +2711,9 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
             DistributionPoint[] distPoints = crlDistPoints.getDistributionPoints();
             for (int i = 0; i < distPoints.length; i++)
             {
+                // RFC 5280 sec. 4.2.1.13 allows a distribution point carrying only cRLIssuer
                 DistributionPointName dp_name = distPoints[i].getDistributionPoint();
-                if (dp_name.getType() == DistributionPointName.FULL_NAME)
+                if (dp_name != null && dp_name.getType() == DistributionPointName.FULL_NAME)
                 {
                     GeneralName[] generalNames = GeneralNames.getInstance(dp_name.getName()).getNames();
                     for (int j = 0; j < generalNames.length; j++)
@@ -2756,17 +2793,36 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                 conn.setDoInput(true);
                 conn.connect();
 
-                if (conn instanceof HttpURLConnection)
+                try
                 {
-                    HttpURLConnection httpConn = (HttpURLConnection)conn;
-                    if (httpConn.getResponseCode() != HttpURLConnection.HTTP_OK)
+                    if (conn instanceof HttpURLConnection)
                     {
-                        throw new Exception(httpConn.getResponseMessage());
+                        HttpURLConnection httpConn = (HttpURLConnection)conn;
+                        if (httpConn.getResponseCode() != HttpURLConnection.HTTP_OK)
+                        {
+                            throw new Exception(httpConn.getResponseMessage());
+                        }
+                    }
+
+                    CertificateFactory cf = CertificateFactory.getInstance("X.509","BC");
+                    InputStream crlIn = conn.getInputStream();
+                    try
+                    {
+                        result = (X509CRL) cf.generateCRL(crlIn);
+                    }
+                    finally
+                    {
+                        crlIn.close();
                     }
                 }
-
-                CertificateFactory cf = CertificateFactory.getInstance("X.509","BC");
-                result = (X509CRL) cf.generateCRL(conn.getInputStream());
+                finally
+                {
+                    // the socket is held until the connection is disconnected, whichever way the fetch ended
+                    if (conn instanceof HttpURLConnection)
+                    {
+                        ((HttpURLConnection)conn).disconnect();
+                    }
+                }
             }
         }
         catch (Exception e)
