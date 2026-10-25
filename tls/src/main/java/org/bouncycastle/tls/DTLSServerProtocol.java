@@ -671,6 +671,24 @@ public class DTLSServerProtocol
 
         ClientHello clientHello = state.clientHello;
 
+        /*
+         * RFC 9147 5.3. "A DTLS 1.3-only client MUST set the legacy_cookie field to zero length. If a DTLS 1.3
+         * ClientHello is received with any other value in this field, the server MUST abort the handshake
+         * with an "illegal_parameter" alert." Checked on every ClientHello this is reached with, so the one
+         * answering a HelloRetryRequest is held to it too.
+         */
+        byte[] legacy_cookie = clientHello.getCookie();
+        if (null == legacy_cookie)
+        {
+            // ClientHello.parse reads the field on the DTLS path; a null means a TLS-parsed ClientHello got here
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+        if (legacy_cookie.length > 0)
+        {
+            throw new TlsFatalAlert(AlertDescription.illegal_parameter,
+                "DTLS 1.3 ClientHello with a non-empty legacy_cookie");
+        }
+
         byte[] legacy_session_id = clientHello.getSessionID();
 
         Hashtable clientHelloExtensions = clientHello.getExtensions();
@@ -1002,8 +1020,8 @@ public class DTLSServerProtocol
      * </p>
      * <p>
      * RFC 9147 5.3. The ClientHello's 'legacy_cookie' field exists for backwards compatibility with the DTLS
-     * 1.2 HelloVerifyRequest exchange and MUST be ignored by a DTLS 1.3 server, so it is not looked at here
-     * or anywhere on the 1.3 path.
+     * 1.2 HelloVerifyRequest exchange; a DTLS 1.3 ClientHello must carry it empty, which
+     * generate13ServerHello enforces for this ClientHello as for the first.
      * </p>
      */
     protected void processClientHelloRetry(ServerHandshakeState state, byte[] body)

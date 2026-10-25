@@ -1077,6 +1077,32 @@ public class DTLS13ProtocolTest
     }
 
     /**
+     * RFC 9147 5.3. "A DTLS 1.3-only client MUST set the legacy_cookie field to zero length. If a DTLS 1.3
+     * ClientHello is received with any other value in this field, the server MUST abort the handshake with
+     * an "illegal_parameter" alert." The client is well-behaved; a cookie is spliced into every ClientHello
+     * it sends on the path, retransmissions included, so only the server's check can catch it.
+     */
+    public void testClientHelloWithANonEmptyLegacyCookieRejected() throws Exception
+    {
+        Harness harness = new Harness();
+        harness.clientHelloLegacyCookie = new byte[]{ 0x5C, 0x00, 0x0C, 0x1E };
+
+        try
+        {
+            harness.run(16);
+
+            fail("expected the server to abort on a non-empty legacy_cookie");
+        }
+        catch (TlsFatalAlertReceived fatalAlert)
+        {
+            assertEquals("alert for a DTLS 1.3 ClientHello with a non-empty legacy_cookie",
+                AlertDescription.illegal_parameter, fatalAlert.getAlertDescription());
+        }
+
+        assertTrue("no ClientHello was given a legacy_cookie", harness.mangled > 0);
+    }
+
+    /**
      * RFC 8446 4.1.2. "the client MUST send the same ClientHello without modification, except as follows"
      * - and 'random' is not on that list. One byte of it is flipped on the path, which must be refused rather
      * than quietly accepted as the answer to the HelloRetryRequest.
@@ -2137,6 +2163,9 @@ public class DTLS13ProtocolTest
 
         boolean probeServerAckPath = false;
         boolean injectPlaintextKeyUpdateAtClient = false;
+
+        // RFC 9147 5.3. If set, spliced into the legacy_cookie field of every ClientHello the client sends
+        byte[] clientHelloLegacyCookie = null;
         boolean forceHelloRetryRequest = false;
         boolean replaySecondHelloRetryRequest = false;
         int mangleSecondClientHello = MANGLE_NONE;
@@ -2671,6 +2700,7 @@ public class DTLS13ProtocolTest
             recording.delayEpoch2Datagram = delayServerEpoch2Datagram;
             recording.delayMillis = delayServerEpoch2DatagramMillis;
             recording.dropFirstEpoch2DatagramAfterRelease = dropFirstClientEpoch2DatagramAfterRelease;
+            recording.clientHelloLegacyCookie = clientHelloLegacyCookie;
             recording.replaySecondHelloRetryRequest = replaySecondHelloRetryRequest;
             recording.mangleSecondClientHello = mangleSecondClientHello;
 
@@ -3310,6 +3340,9 @@ public class DTLS13ProtocolTest
         int delayMillis = 0;
         boolean dropFirstEpoch2DatagramAfterRelease = false;
 
+        // RFC 9147 5.3. If set, spliced into the legacy_cookie field of every ClientHello sent
+        byte[] clientHelloLegacyCookie = null;
+
         private byte[] delayedDatagram = null;
         private long releaseAtMillis = 0;
         private int epoch2DatagramsReceived = 0;
@@ -3502,6 +3535,23 @@ public class DTLS13ProtocolTest
                 return;
             }
 
+            if (null != clientHelloLegacyCookie)
+            {
+                int clientHelloBodyOffset = findClientHelloBodyOffset(buf, off, len);
+                if (clientHelloBodyOffset >= 0)
+                {
+                    byte[] datagram = withLegacyCookie(buf, off, len, clientHelloBodyOffset - off,
+                        clientHelloLegacyCookie);
+                    ++mangled;
+
+                    System.out.println("DTLS 1.3 test: spliced a " + clientHelloLegacyCookie.length
+                        + " byte legacy_cookie into the ClientHello");
+
+                    transport.send(datagram, 0, datagram.length);
+                    return;
+                }
+            }
+
             if (replaySecondHelloRetryRequest || MANGLE_NONE != mangleSecondClientHello)
             {
                 int clientHelloBodyOffset = findClientHelloBodyOffset(buf, off, len);
@@ -3630,6 +3680,42 @@ public class DTLS13ProtocolTest
                 }
             }
             return null;
+        }
+
+        /**
+         * RFC 9147 5.3. The datagram with 'cookie' spliced into the legacy_cookie field of the ClientHello
+         * whose body begins at 'bodyOffset' (relative to 'off'), and the record, handshake message and
+         * fragment lengths grown to match. The field follows the 2-byte legacy_version, the 32-byte random and
+         * the session ID, and is empty on the way in.
+         */
+        private static byte[] withLegacyCookie(byte[] buf, int off, int len, int bodyOffset, byte[] cookie)
+        {
+            int recordOffset = bodyOffset - MESSAGE_HEADER_LENGTH - PLAINTEXT_HEADER_LENGTH;
+            int messageOffset = bodyOffset - MESSAGE_HEADER_LENGTH;
+            int sessionIDLength = buf[off + bodyOffset + 2 + 32] & 0xFF;
+            int cookieLengthOffset = bodyOffset + 2 + 32 + 1 + sessionIDLength;
+
+            if (0 != buf[off + cookieLengthOffset])
+            {
+                throw new IllegalStateException("the client sent a non-empty legacy_cookie of its own");
+            }
+
+            byte[] datagram = new byte[len + cookie.length];
+            System.arraycopy(buf, off, datagram, 0, cookieLengthOffset);
+            datagram[cookieLengthOffset] = (byte)cookie.length;
+            System.arraycopy(cookie, 0, datagram, cookieLengthOffset + 1, cookie.length);
+            System.arraycopy(buf, off + cookieLengthOffset + 1, datagram, cookieLengthOffset + 1 + cookie.length,
+                len - cookieLengthOffset - 1);
+
+            // the record length, the handshake message length and the fragment_length all grow by the cookie
+            TlsUtils.writeUint16(readUint16(datagram, recordOffset + 11) + cookie.length, datagram,
+                recordOffset + 11);
+            TlsUtils.writeUint24(readUint24(datagram, messageOffset + 1) + cookie.length, datagram,
+                messageOffset + 1);
+            TlsUtils.writeUint24(readUint24(datagram, messageOffset + 9) + cookie.length, datagram,
+                messageOffset + 9);
+
+            return datagram;
         }
 
         private static boolean containsEpoch(Vector records, int epoch)
