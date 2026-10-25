@@ -743,9 +743,8 @@ public class DTLS13KeyUpdateTest
      * receive whose wait is longer than it has to be cut short by it - otherwise a receive-only peer sleeps
      * through its own retransmission and the length of its stall is whatever its caller happened to pass.
      * <p>
-     * Mutation this test is built to catch: drop the {@code constrainWaitMillis} call for
-     * {@code postHandshake.getResendTimeout()} in {@code receive} and nothing is retransmitted within the
-     * wait.
+     * Mutation this test is built to catch: drop the {@code postHandshake.constrainWaitMillis} call in
+     * {@code receive} and nothing is retransmitted within the wait.
      * </p>
      */
     public void testAReceiveBlocksNoLongerThanTheKeyUpdateResendTimeout() throws Exception

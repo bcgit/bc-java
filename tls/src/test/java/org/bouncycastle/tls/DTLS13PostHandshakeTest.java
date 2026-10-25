@@ -276,7 +276,7 @@ public class DTLS13PostHandshakeTest
 
         DTLSRecordNumber outstanding = new DTLSRecordNumber(3, 41);
         postHandshake.getFlightTracker().register(outstanding, 7, 0, 1);
-        assertFalse(postHandshake.getFlightTracker().isComplete());
+        assertTrue(postHandshake.getFlightTracker().hasOutstanding());
 
         Vector recordNumbers = new Vector();
         recordNumbers.addElement(outstanding);
@@ -284,8 +284,8 @@ public class DTLS13PostHandshakeTest
 
         serverReceives();
 
-        assertTrue("the ACK reached the post-handshake owner",
-            postHandshake.getFlightTracker().isComplete());
+        assertFalse("the ACK reached the post-handshake owner",
+            postHandshake.getFlightTracker().hasOutstanding());
     }
 
     /**

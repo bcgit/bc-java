@@ -1,7 +1,6 @@
 package org.bouncycastle.tls;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Enumeration;
 import java.util.Hashtable;
@@ -404,74 +403,6 @@ class DTLSReliableHandshake
         endOutboundFlight();
 
         DTLSHandshakeRetransmit retransmit = null;
-        if (null != resendTimeout)
-        {
-            checkInboundFlight();
-
-            if (recordLayer.isDTLS13() && !ackRecordNumbers.isEmpty())
-            {
-                /*
-                 * RFC 9147 7.1. We have just received the peer's final flight. No flight of ours follows it,
-                 * so nothing acknowledges it implicitly and it must be acknowledged explicitly.
-                 */
-                final Vector finalFlightAck = ackRecordNumbers;
-                final Hashtable finalFlight = summarizeFlight(currentInboundFlight);
-
-                /*
-                 * RFC 9147 5.8.1. The epoch that flight was protected under, taken from the record layer -
-                 * which is about to retain exactly that epoch for reading - rather than assumed to be the
-                 * handshake epoch's current number.
-                 */
-                final int finalFlightEpoch = recordLayer.getRetiredEpoch();
-
-                sendPendingAck();
-
-                /*
-                 * RFC 9147 5.8.1. If that ACK is lost the peer retransmits its final flight, and the answer
-                 * is another ACK of the same records - not a retransmitted flight, since no flight of ours
-                 * follows. The record layer retains the handshake epoch so the retransmission can still be
-                 * read, and the ACK goes out at the current (application) write epoch, which the peer has by
-                 * now installed for reading.
-                 *
-                 * Only a record that plausibly carries that flight is answered. Anything else arriving with a
-                 * handshake content type - at worst an unauthenticated record, since the record layer also
-                 * retains epoch 0 on the side that needs to read it - would otherwise draw an ACK out of us.
-                 */
-                retransmit = new DTLSHandshakeRetransmit()
-                {
-                    public void receivedHandshakeRecord(int epoch, byte[] buf, int off, int len)
-                        throws IOException
-                    {
-                        if (matchesFlight(finalFlight, finalFlightEpoch, epoch, buf, off, len))
-                        {
-                            sendAck(finalFlightAck);
-                        }
-                    }
-                };
-            }
-        }
-        else
-        {
-            prepareInboundFlight(null);
-
-            if (previousInboundFlight != null)
-            {
-                /*
-                 * RFC 6347 4.2.4. In addition, for at least twice the default MSL defined for [TCP],
-                 * when in the FINISHED state, the node that transmits the last flight (the server in an
-                 * ordinary handshake or the client in a resumed handshake) MUST respond to a retransmit
-                 * of the peer's last flight with a retransmit of the last flight.
-                 */
-                retransmit = new DTLSHandshakeRetransmit()
-                {
-                    public void receivedHandshakeRecord(int epoch, byte[] buf, int off, int len)
-                        throws IOException
-                    {
-                        processRecord(0, epoch, buf, off, len);
-                    }
-                };
-            }
-        }
 
         if (recordLayer.isDTLS13())
         {
@@ -483,9 +414,127 @@ class DTLSReliableHandshake
              * perfectly with another peer built from this code.
              */
             recordLayer.initPostHandshake(next_send_seq, next_receive_seq, maxHandshakeMessageSize);
+
+            if (null != resendTimeout)
+            {
+                // The peer sent the final flight (the server's position)
+                checkInboundFlight();
+
+                if (!ackRecordNumbers.isEmpty())
+                {
+                    /*
+                     * RFC 9147 7.1. We have just received the peer's final flight. No flight of ours follows
+                     * it, so nothing acknowledges it implicitly and it must be acknowledged explicitly.
+                     */
+                    final Vector finalFlightAck = ackRecordNumbers;
+                    final Hashtable finalFlight = summarizeFlight(currentInboundFlight);
+
+                    /*
+                     * RFC 9147 5.8.1. The epoch that flight was protected under, taken from the record layer
+                     * - which is about to retain exactly that epoch for reading - rather than assumed to be
+                     * the handshake epoch's current number.
+                     */
+                    final int finalFlightEpoch = recordLayer.getRetiredEpoch();
+
+                    sendPendingAck();
+
+                    /*
+                     * RFC 9147 5.8.1. If that ACK is lost the peer retransmits its final flight, and the
+                     * answer is another ACK of the same records - not a retransmitted flight, since no flight
+                     * of ours follows. The record layer retains the handshake epoch so the retransmission can
+                     * still be read, and the ACK goes out at the current (application) write epoch, which the
+                     * peer has by now installed for reading.
+                     *
+                     * Only a record that plausibly carries that flight is answered. Anything else arriving
+                     * with a handshake content type - at worst an unauthenticated record, since the record
+                     * layer also retains epoch 0 on the side that needs to read it - would otherwise draw an
+                     * ACK out of us.
+                     */
+                    retransmit = new DTLSHandshakeRetransmit()
+                    {
+                        public void receivedHandshakeRecord(int epoch, byte[] buf, int off, int len)
+                            throws IOException
+                        {
+                            if (matchesFlight(finalFlight, finalFlightEpoch, epoch, buf, off, len))
+                            {
+                                sendAck(finalFlightAck);
+                            }
+                        }
+                    };
+                }
+            }
+            else
+            {
+                /*
+                 * RFC 9147 5.8.1. We sent the final flight (the client's position), and nothing answers it but
+                 * an ACK (RFC 9147 5.7 and 7.1), so this side stays in WAITING with its retransmit timer
+                 * running until that ACK arrives. The flight, its tracker and a summary of the peer's flight
+                 * go to a DTLS13FinalFlight, which the post-handshake owner drives from the record layer's
+                 * receive loop; the hook below is that state machine's third exit, the peer's flight read
+                 * again at the handshake epoch.
+                 *
+                 * The DTLS 1.2 rule - resend only once the peer's whole flight has been re-received - cannot
+                 * serve here: once the peer has been acknowledged for part of its flight it retransmits only
+                 * the rest (RFC 9147 7.2), and the whole flight would never be seen again.
+                 *
+                 * The summary is taken before prepareInboundFlight resets the reassemblers, which is where
+                 * the bodies it needs would otherwise go. The timer starts from the configured value: nothing
+                 * was measured during the handshake that RFC 9147 5.8.2 would have it adjusted to.
+                 */
+                final DTLS13FinalFlight finalFlight = new DTLS13FinalFlight(recordLayer, outboundFlight,
+                    flightTracker, summarizeFlight(currentInboundFlight), recordLayer.getRetiredEpoch(),
+                    initialResendMillis);
+
+                prepareInboundFlight(null);
+
+                retransmit = new DTLSHandshakeRetransmit()
+                {
+                    public void receivedHandshakeRecord(int epoch, byte[] buf, int off, int len)
+                        throws IOException
+                    {
+                        finalFlight.receivedHandshakeRecord(epoch, buf, off, len);
+                    }
+                };
+
+                // The ACK that ends it arrives at the post-handshake owner, which also runs its timer
+                recordLayer.getPostHandshake().setFinalFlight(finalFlight);
+            }
         }
         else
         {
+            if (null != resendTimeout)
+            {
+                checkInboundFlight();
+            }
+            else
+            {
+                prepareInboundFlight(null);
+
+                if (previousInboundFlight != null)
+                {
+                    /*
+                     * RFC 6347 4.2.4. In addition, for at least twice the default MSL defined for [TCP],
+                     * when in the FINISHED state, the node that transmits the last flight (the server in an
+                     * ordinary handshake or the client in a resumed handshake) MUST respond to a retransmit
+                     * of the peer's last flight with a retransmit of the last flight.
+                     */
+                    retransmit = new DTLSHandshakeRetransmit()
+                    {
+                        public void receivedHandshakeRecord(int epoch, byte[] buf, int off, int len)
+                            throws IOException
+                        {
+                            processRecord(0, epoch, buf, off, len);
+                        }
+                    };
+                }
+            }
+
+            /*
+             * The listener was installed in the constructor, before the version was known, because a DTLS
+             * 1.3 ACK can arrive before the ServerHello decides it (RFC 9147 7.1, a partial ClientHello).
+             * DTLS 1.2 has no ACK, so it was never called and is dropped here rather than keep this object
+             * reachable from the record layer for the life of the connection.
+             */
             recordLayer.setAckListener(null);
         }
 
@@ -1132,17 +1181,11 @@ class DTLSReliableHandshake
     private void implWriteHandshakeFragment(Message message, int fragment_offset, int fragment_length, int epoch)
         throws IOException
     {
-        RecordLayerBuffer fragment = new RecordLayerBuffer(MESSAGE_HEADER_LENGTH + fragment_length);
-        TlsUtils.writeUint8(message.getType(), fragment);
-        TlsUtils.writeUint24(message.getBody().length, fragment);
-        TlsUtils.writeUint16(message.getSeq(), fragment);
-        TlsUtils.writeUint24(fragment_offset, fragment);
-        TlsUtils.writeUint24(fragment_length, fragment);
-        fragment.write(message.getBody(), fragment_offset, fragment_length);
+        byte[] fragment = encodeFragment(message, fragment_offset, fragment_length);
 
         DTLSRecordNumber recordNumber = epoch < 0
-            ? fragment.sendToRecordLayer(recordLayer)
-            : fragment.sendToRecordLayerAtEpoch(recordLayer, epoch);
+            ? recordLayer.sendReturningRecordNumber(fragment, 0, fragment.length)
+            : recordLayer.sendHandshakeRecordAtEpoch(epoch, fragment, 0, fragment.length);
 
         if (null != recordNumber)
         {
@@ -1158,6 +1201,25 @@ class DTLSReliableHandshake
              */
             flightTracker.register(recordNumber, message.getSeq(), fragment_offset, fragment_length);
         }
+    }
+
+    /**
+     * RFC 9147 5.2. One fragment of a handshake message as it goes on the wire: the 12-byte DTLS handshake
+     * header followed by that slice of the body. Shared with {@link DTLS13FinalFlight}, which retransmits
+     * fragments of the final flight after this class has finished with them.
+     */
+    static byte[] encodeFragment(Message message, int fragment_offset, int fragment_length)
+    {
+        byte[] body = message.getBody();
+
+        byte[] fragment = new byte[MESSAGE_HEADER_LENGTH + fragment_length];
+        TlsUtils.writeUint8(message.getType(), fragment, 0);
+        TlsUtils.writeUint24(body.length, fragment, 1);
+        TlsUtils.writeUint16(message.getSeq(), fragment, 4);
+        TlsUtils.writeUint24(fragment_offset, fragment, 6);
+        TlsUtils.writeUint24(fragment_length, fragment, 9);
+        System.arraycopy(body, fragment_offset, fragment, MESSAGE_HEADER_LENGTH, fragment_length);
+        return fragment;
     }
 
     private static boolean checkAll(Hashtable inboundFlight)
@@ -1211,25 +1273,4 @@ class DTLSReliableHandshake
         }
     }
 
-    static class RecordLayerBuffer extends ByteArrayOutputStream
-    {
-        RecordLayerBuffer(int size)
-        {
-            super(size);
-        }
-
-        DTLSRecordNumber sendToRecordLayer(DTLSRecordLayer recordLayer) throws IOException
-        {
-            DTLSRecordNumber recordNumber = recordLayer.sendReturningRecordNumber(buf, 0, count);
-            buf = null;
-            return recordNumber;
-        }
-
-        DTLSRecordNumber sendToRecordLayerAtEpoch(DTLSRecordLayer recordLayer, int epoch) throws IOException
-        {
-            DTLSRecordNumber recordNumber = recordLayer.sendHandshakeRecordAtEpoch(epoch, buf, 0, count);
-            buf = null;
-            return recordNumber;
-        }
-    }
 }

@@ -28,7 +28,7 @@ public class DTLS13FlightTrackerTest
     public void testEmptyTracker()
     {
         assertTrue(tracker.isEmpty());
-        assertFalse("nothing registered is not a complete flight", tracker.isComplete());
+        assertFalse("nothing registered means nothing outstanding", tracker.hasOutstanding());
         assertEquals(0, tracker.getOutstanding().size());
     }
 
@@ -39,14 +39,14 @@ public class DTLS13FlightTrackerTest
         tracker.register(new DTLSRecordNumber(2, 2), 2, 0, 10);
 
         assertFalse(tracker.isEmpty());
-        assertFalse(tracker.isComplete());
+        assertTrue(tracker.hasOutstanding());
         assertEquals(3, tracker.getOutstanding().size());
 
         tracker.acknowledge(ackOf(new DTLSRecordNumber(2, 1)));
 
         Vector outstanding = tracker.getOutstanding();
         assertEquals(2, outstanding.size());
-        assertFalse(tracker.isComplete());
+        assertTrue(tracker.hasOutstanding());
 
         DTLS13FlightTracker.Fragment first = (DTLS13FlightTracker.Fragment)outstanding.elementAt(0);
         assertEquals(1, first.getMessageSeq());
@@ -69,7 +69,7 @@ public class DTLS13FlightTrackerTest
         ack.addElement(new DTLSRecordNumber(2, 1));
         tracker.acknowledge(ack);
 
-        assertTrue(tracker.isComplete());
+        assertFalse(tracker.hasOutstanding());
         assertEquals(0, tracker.getOutstanding().size());
     }
 
@@ -82,7 +82,7 @@ public class DTLS13FlightTrackerTest
 
         tracker.acknowledge(ackOf(new DTLSRecordNumber(2, 5)));
 
-        assertTrue(tracker.isComplete());
+        assertFalse(tracker.hasOutstanding());
         assertEquals(0, tracker.getOutstanding().size());
     }
 
@@ -92,11 +92,11 @@ public class DTLS13FlightTrackerTest
 
         tracker.acknowledge(ackOf(new DTLSRecordNumber(9, 9)));
         assertEquals(1, tracker.getOutstanding().size());
-        assertFalse(tracker.isComplete());
+        assertTrue(tracker.hasOutstanding());
 
         tracker.acknowledge(ackOf(new DTLSRecordNumber(2, 0)));
         tracker.acknowledge(ackOf(new DTLSRecordNumber(2, 0)));
-        assertTrue(tracker.isComplete());
+        assertFalse(tracker.hasOutstanding());
         assertEquals(0, tracker.getOutstanding().size());
     }
 
@@ -105,7 +105,7 @@ public class DTLS13FlightTrackerTest
         tracker.register(new DTLSRecordNumber(2, 0), 1, 0, 10);
         tracker.acknowledge(new Vector());
         assertEquals(1, tracker.getOutstanding().size());
-        assertFalse(tracker.isComplete());
+        assertTrue(tracker.hasOutstanding());
     }
 
     public void testResetClearsTheFlight()
@@ -114,12 +114,12 @@ public class DTLS13FlightTrackerTest
         tracker.reset();
 
         assertTrue(tracker.isEmpty());
-        assertFalse(tracker.isComplete());
+        assertFalse(tracker.hasOutstanding());
         assertEquals(0, tracker.getOutstanding().size());
 
         // a stale ACK for the previous flight must not resurrect state
         tracker.acknowledge(ackOf(new DTLSRecordNumber(2, 0)));
         assertTrue(tracker.isEmpty());
-        assertFalse(tracker.isComplete());
+        assertFalse(tracker.hasOutstanding());
     }
 }

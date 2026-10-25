@@ -35,10 +35,10 @@ public class DTLS13RetransmissionTest
         assertEquals(3, only.getMessageSeq());
         assertEquals(200, only.getFragmentOffset());
         assertEquals(200, only.getFragmentLength());
-        assertFalse(tracker.isComplete());
+        assertTrue(tracker.hasOutstanding());
 
         tracker.acknowledge(DTLS13RetransmissionTest.ackOf(new DTLSRecordNumber(2, 11)));
-        assertTrue(tracker.isComplete());
+        assertFalse(tracker.hasOutstanding());
         assertEquals(0, tracker.getOutstanding().size());
     }
 

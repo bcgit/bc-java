@@ -120,24 +120,20 @@ class DTLS13FlightTracker
     }
 
     /**
-     * @return true if fragments were registered and every one of them has been acknowledged.
+     * @return true if any registered fragment has not been acknowledged; false when every one has been, and
+     *         so also when nothing was registered.
      */
-    boolean isComplete()
+    boolean hasOutstanding()
     {
-        if (order.isEmpty())
-        {
-            return false;
-        }
-
         Enumeration e = order.elements();
         while (e.hasMoreElements())
         {
             if (!((Fragment)e.nextElement()).acknowledged)
             {
-                return false;
+                return true;
             }
         }
-        return true;
+        return false;
     }
 
     /**

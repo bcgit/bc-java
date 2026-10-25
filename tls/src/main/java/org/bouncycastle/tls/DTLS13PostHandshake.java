@@ -110,6 +110,14 @@ class DTLS13PostHandshake
     private int keyUpdateResendMillis = -1;
     private Timeout keyUpdateResendTimeout = null;
 
+    /**
+     * RFC 9147 5.8.1. The final flight of the handshake, on the side that sent it, until the peer's ACK has
+     * covered all of it; null on the other side, and once that has happened. The reliable handshake hands it
+     * over because the ACK that ends it arrives after the handshake has completed, at this owner, and because
+     * its retransmit timer has to be driven from the receive loop like the KeyUpdate's.
+     */
+    private DTLS13FinalFlight finalFlight = null;
+
     DTLS13PostHandshake(DTLSRecordLayer recordLayer, int next_send_seq, int next_receive_seq,
         int maxHandshakeMessageSize)
     {
@@ -125,6 +133,17 @@ class DTLS13PostHandshake
      */
     public synchronized void receivedAck(Vector recordNumbers)
     {
+        if (null != finalFlight)
+        {
+            // RFC 9147 5.8.1 and 7.1. The ACK of the final flight, which is the only thing that answers it
+            finalFlight.receivedAck(recordNumbers);
+
+            if (!finalFlight.isOutstanding())
+            {
+                this.finalFlight = null;
+            }
+        }
+
         flightTracker.acknowledge(recordNumbers);
 
         /*
@@ -138,7 +157,7 @@ class DTLS13PostHandshake
          * until a record has decrypted at the new epoch. An ACK proves the peer parsed a record; it says
          * nothing about what the peer has begun sending.
          */
-        if (null != keyUpdateMessage && flightTracker.isComplete())
+        if (null != keyUpdateMessage && !flightTracker.hasOutstanding())
         {
             recordLayer.installPendingWriteEpoch();
 
@@ -257,11 +276,9 @@ class DTLS13PostHandshake
 
         /*
          * The flight tracker is reset and registered BEFORE 'keyUpdateMessage', which is the latch: while the
-         * latch is set, receivedAck acts on a complete tracker by installing the new write epoch, so the
-         * tracker must already describe this KeyUpdate's fragment by the time the latch says one is
-         * outstanding. Ordering it this way makes that true by construction rather than by the (true, but
-         * two-step and easily invalidated) argument that isComplete() returns false on an empty tracker and
-         * the tracker happens to be empty here.
+         * latch is set, receivedAck acts on a tracker with nothing outstanding by installing the new write
+         * epoch, and an empty tracker has nothing outstanding, so the tracker must already describe this
+         * KeyUpdate's fragment by the time the latch says one is outstanding.
          */
         flightTracker.reset();
         flightTracker.register(recordNumber, message_seq, 0, 1);
@@ -287,6 +304,17 @@ class DTLS13PostHandshake
      */
     synchronized void checkTimeouts(long currentTimeMillis) throws IOException
     {
+        if (null != finalFlight)
+        {
+            // RFC 9147 5.8.1. The final flight's own retransmit timer, run until the peer's ACK ends it
+            finalFlight.checkTimeouts(currentTimeMillis);
+
+            if (!finalFlight.isOutstanding())
+            {
+                this.finalFlight = null;
+            }
+        }
+
         if (null == keyUpdateMessage || !Timeout.hasExpired(keyUpdateResendTimeout, currentTimeMillis))
         {
             return;
@@ -308,13 +336,32 @@ class DTLS13PostHandshake
     }
 
     /**
-     * The retransmit timeout of the outstanding KeyUpdate, or null when none is outstanding. Read by the
-     * record layer's receive loop, which must not block past it - a peer waiting for an ACK it will never get
-     * because we never woke up to resend is the failure this exists to prevent.
+     * Bound a wait by the retransmit timers running here: the outstanding KeyUpdate's, and the final flight's
+     * while it is still awaiting acknowledgement. Called from the record layer's receive loop, which must not
+     * block past either - a peer waiting for an ACK it will never get because we never woke up to resend is
+     * the failure this exists to prevent.
+     *
+     * @see Timeout#constrainWaitMillis(int, Timeout, long)
      */
-    synchronized Timeout getResendTimeout()
+    synchronized int constrainWaitMillis(int waitMillis, long currentTimeMillis)
     {
-        return keyUpdateResendTimeout;
+        waitMillis = Timeout.constrainWaitMillis(waitMillis, keyUpdateResendTimeout, currentTimeMillis);
+
+        if (null != finalFlight)
+        {
+            waitMillis = finalFlight.constrainWaitMillis(waitMillis, currentTimeMillis);
+        }
+
+        return waitMillis;
+    }
+
+    /**
+     * RFC 9147 5.8.1. Install the final flight of the handshake, on the side that sent it, to be retransmitted
+     * from here until the peer's ACK covers all of it. Called from {@link DTLSReliableHandshake#finish()}.
+     */
+    synchronized void setFinalFlight(DTLS13FinalFlight finalFlight)
+    {
+        this.finalFlight = finalFlight;
     }
 
     /** @return true while a KeyUpdate of ours is awaiting acknowledgement. */

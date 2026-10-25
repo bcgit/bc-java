@@ -386,6 +386,56 @@ public class DTLS13ProtocolTest
     }
 
     /**
+     * RFC 9147 5.8.1 and 7.2, in the case the DTLS 1.2 rule cannot handle. The server's flight spans several
+     * datagrams at this MTU; one of them is delayed, so the client acknowledges the records it has (RFC 9147
+     * 7.1), and when the flight then completes the client's Finished is lost. Having been acknowledged for
+     * part of its flight, the server retransmits only the rest (7.2), so the client never sees the whole
+     * flight again and a client that resent its Finished only on re-receiving the whole flight would never
+     * resend it: the server would retransmit into silence until its handshake timed out, while the client,
+     * which believes itself connected, sends application data that is never answered.
+     * <p>
+     * The client has to run the RFC 9147 5.8.1 state machine for its final flight instead: keep a retransmit
+     * timer until the server's ACK arrives, and take any authenticated retransmission of the server's flight
+     * as the cue to resend at once. Either path recovers the handshake here; the assertions are on the
+     * outcome and on the scenario having actually arisen, not on which path recovered it.
+     * </p>
+     */
+    public void testClientFinishedLostAfterPartialAckOfServerFlight() throws Exception
+    {
+        Harness harness = new Harness();
+        harness.networkMtu = FRAGMENTING_MTU;
+        harness.delayServerEpoch2Datagram = 2;
+        harness.delayServerEpoch2DatagramMillis = 700;
+        harness.dropFirstClientEpoch2DatagramAfterRelease = true;
+
+        harness.run(16);
+
+        assertEquals("client negotiated version", ProtocolVersion.DTLSv13, harness.clientVersion);
+        assertEquals("server negotiated version", ProtocolVersion.DTLSv13, harness.serverVersion);
+
+        assertEquals("the server's datagram was not delayed", 1, harness.delayed);
+        assertTrue("the client's final flight was not dropped", harness.dropped > 0);
+
+        String clientEpochs = epochSequence(harness.clientRecords());
+
+        /*
+         * The partial ACK: while the rest of the server's flight was delayed the client acknowledged what it
+         * had, at the handshake epoch, so there are at least two epoch-2 records before the client's first
+         * epoch-3 one (the ACK and the Finished) where an undisturbed handshake has only the Finished.
+         */
+        assertTrue("the client did not acknowledge part of the server's flight before its Finished (epochs: "
+            + clientEpochs + ")", countEpoch2BeforeFirstEpoch3(clientEpochs) >= 2);
+
+        assertNotNull("no application data echoed back: the handshake stalled after the lost Finished",
+            harness.echo);
+        assertTrue("echoed application data differs", Arrays.areEqual(harness.request, harness.echo));
+        assertNull("server aborted: " + harness.serverAbort, harness.serverAbort);
+
+        assertTrue("the client did not retransmit its Finished after reaching the application epoch (epochs: "
+            + clientEpochs + ")", countEpoch2AfterFirstEpoch3(clientEpochs) >= 1);
+    }
+
+    /**
      * RFC 9147 5.8.1. The server's answer to a retransmission of the client's final flight is another ACK, and
      * a reordering reaches it where a duplicate cannot: the client's first Finished datagram is held until it
      * has sent a second, so the server completes on the second copy and then reads the first at a lower,
@@ -2074,6 +2124,17 @@ public class DTLS13ProtocolTest
     {
         boolean dropFirstClientEpoch2Datagram = false;
         boolean holdFirstClientEpoch2Datagram = false;
+
+        /*
+         * RFC 9147 5.8.1 and 7.2. Delays the Nth datagram from the server that carries a handshake-epoch
+         * record by the given time, so that the client acknowledges a partial flight, and then drops the
+         * first handshake-epoch datagram the client sends after the delayed one has been released - its
+         * Finished, sent once the flight completed.
+         */
+        int delayServerEpoch2Datagram = 0;
+        int delayServerEpoch2DatagramMillis = 0;
+        boolean dropFirstClientEpoch2DatagramAfterRelease = false;
+
         boolean probeServerAckPath = false;
         boolean injectPlaintextKeyUpdateAtClient = false;
         boolean forceHelloRetryRequest = false;
@@ -2163,6 +2224,7 @@ public class DTLS13ProtocolTest
         int clientKeyUpdateCopies = -1;
 
         int dropped = 0;
+        int delayed = 0;
         int reordered = 0;
         int replayed = 0;
         int mangled = 0;
@@ -2606,6 +2668,9 @@ public class DTLS13ProtocolTest
             this.recording = new RecordingDatagramTransport(clientTransport);
             recording.dropFirstEpoch2Datagram = dropFirstClientEpoch2Datagram;
             recording.holdFirstEpoch2Datagram = holdFirstClientEpoch2Datagram;
+            recording.delayEpoch2Datagram = delayServerEpoch2Datagram;
+            recording.delayMillis = delayServerEpoch2DatagramMillis;
+            recording.dropFirstEpoch2DatagramAfterRelease = dropFirstClientEpoch2DatagramAfterRelease;
             recording.replaySecondHelloRetryRequest = replaySecondHelloRetryRequest;
             recording.mangleSecondClientHello = mangleSecondClientHello;
 
@@ -2664,6 +2729,7 @@ public class DTLS13ProtocolTest
             finally
             {
                 this.dropped = recording.getDropped();
+                this.delayed = recording.getDelayed();
                 this.keyUpdateDatagramsDropped = recording.getKeyUpdateDropped();
                 this.reordered = recording.getReordered();
                 this.replayed = recording.getReplayed();
@@ -3234,6 +3300,21 @@ public class DTLS13ProtocolTest
         boolean dropFirstEpoch2Datagram = false;
         boolean holdFirstEpoch2Datagram = false;
 
+        /*
+         * Delays the Nth received datagram carrying a handshake-epoch record by delayMillis, delivering it from
+         * receive() once that time has passed, and optionally arms dropFirstEpoch2Datagram at the moment of
+         * release so that the client's next handshake-epoch datagram - the flight it sends once the delayed
+         * one completed the peer's - is the one dropped.
+         */
+        int delayEpoch2Datagram = 0;
+        int delayMillis = 0;
+        boolean dropFirstEpoch2DatagramAfterRelease = false;
+
+        private byte[] delayedDatagram = null;
+        private long releaseAtMillis = 0;
+        private int epoch2DatagramsReceived = 0;
+        private int delayed = 0;
+
         /**
          * Drops the very next datagram the client sends, whatever it carries. Used post-handshake, where the
          * record layer packs nothing (a flight is no longer open), so the next datagram is exactly the next
@@ -3280,6 +3361,11 @@ public class DTLS13ProtocolTest
             return dropped;
         }
 
+        int getDelayed()
+        {
+            return delayed;
+        }
+
         int getKeyUpdateDropped()
         {
             return keyUpdateDropped;
@@ -3324,6 +3410,7 @@ public class DTLS13ProtocolTest
             int length;
 
             byte[] replay = injected;
+            byte[] release = delayedDatagram;
             if (null != replay && replay.length <= len)
             {
                 this.injected = null;
@@ -3331,9 +3418,45 @@ public class DTLS13ProtocolTest
                 System.arraycopy(replay, 0, buf, off, replay.length);
                 length = replay.length;
             }
+            else if (null != release && System.currentTimeMillis() >= releaseAtMillis && release.length <= len)
+            {
+                this.delayedDatagram = null;
+                ++delayed;
+
+                System.arraycopy(release, 0, buf, off, release.length);
+                length = release.length;
+
+                if (dropFirstEpoch2DatagramAfterRelease)
+                {
+                    this.dropFirstEpoch2DatagramAfterRelease = false;
+                    this.dropFirstEpoch2Datagram = true;
+                }
+
+                System.out.println("DTLS 1.3 test: released the server's delayed " + length + " byte datagram");
+            }
             else
             {
-                length = transport.receive(buf, off, len, waitMillis);
+                int wait = waitMillis;
+                if (null != release)
+                {
+                    // Wake up in time to release the delayed datagram, whatever else arrives
+                    long remaining = Math.max(1L, releaseAtMillis - System.currentTimeMillis());
+                    wait = waitMillis <= 0 ? (int)remaining : (int)Math.min(waitMillis, remaining);
+                }
+
+                length = transport.receive(buf, off, len, wait);
+
+                if (length > 0 && delayEpoch2Datagram > 0 && containsEpoch(parseRecords(buf, off, length), 2)
+                    && ++epoch2DatagramsReceived == delayEpoch2Datagram)
+                {
+                    this.delayedDatagram = Arrays.copyOfRange(buf, off, off + length);
+                    this.releaseAtMillis = System.currentTimeMillis() + delayMillis;
+                    this.delayEpoch2Datagram = 0;
+
+                    System.out.println("DTLS 1.3 test: delayed the server's " + length + " byte datagram by "
+                        + delayMillis + " ms");
+                    return -1;
+                }
             }
 
             if (length > 0)

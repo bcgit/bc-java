@@ -171,17 +171,14 @@ class DTLSRecordLayer
      * retaining it for reading would otherwise be a way to draw an answer out of a completed client. It is
      * harmless because of three separate gates, all of which have to hold for it to stay harmless:
      *
-     * 1. DTLSReliableHandshake.processRecord's DTLS 1.3 'expectedEpoch' check (RFC 9147 6.1). At epoch 0
-     *    only a client_hello or server_hello msg_type is accepted, so a forgery cannot stand in for anything
-     *    later in the flight; on the client, which is the only side that retains epoch 0, that leaves
-     *    server_hello fragments.
-     * 2. DTLSReliableHandshake.processRecord only answers a retransmission once
-     *    checkAll(previousInboundFlight) finds that flight complete, and the rest of that flight is
-     *    protected at the handshake epoch, which cannot be forged. A plaintext-only forgery therefore never
-     *    completes a flight and never draws a retransmission.
-     * 3. Post-handshake, processRecord is called with a 'windowSize' of 0 (see the retransmit callback in
-     *    DTLSReliableHandshake.finish), so every message_seq is 'too far ahead' and no DTLSReassembler is
-     *    ever allocated: the forgery cannot make us buffer anything either.
+     * 1. The hook a retained epoch feeds (DTLSReliableHandshake.finish) answers nothing at epoch 0. On the
+     *    client, the only side that retains it, the hook is DTLS13FinalFlight.receivedHandshakeRecord, which
+     *    retransmits the final flight only for a record that matchesFlight attributes to the peer's flight at
+     *    the handshake epoch (RFC 9147 5.8.1 exit 3); a record at epoch 0 fails that test outright.
+     * 2. Nothing is buffered from it either: the hook compares the record against a summary of the peer's
+     *    flight and allocates no DTLSReassembler, so a forgery cannot make us hold anything.
+     * 3. The ACK of the final flight, which is what ends the retention early, is a protected record at the
+     *    application epoch (RFC 9147 7), so a plaintext record cannot stand in for it.
      */
     private DTLSEpoch retransmitEpochPlaintext = null;
     private Timeout retransmitTimeout = null;
@@ -1088,8 +1085,7 @@ class DTLSRecordLayer
 
             if (null != postHandshake)
             {
-                waitMillis = Timeout.constrainWaitMillis(waitMillis, postHandshake.getResendTimeout(),
-                    currentTimeMillis);
+                waitMillis = postHandshake.constrainWaitMillis(waitMillis, currentTimeMillis);
             }
 
             // NOTE: Guard against bad logic giving a negative value 
@@ -1764,8 +1760,15 @@ class DTLSRecordLayer
         /*
          * NOTE: If we receive any non-handshake data in the new epoch implies the peer has
          * received our final flight.
+         *
+         * DTLS 1.2 only. In DTLS 1.3 it implies no such thing: a server may send application data before it
+         * has received the client's Finished (RFC 9147 5.8.1, "one side ... sending application data even
+         * though the other side has not received the first side's Finished message"), a client sends
+         * application data without waiting for the ACK of its Finished, and for twice the MSL the server MUST
+         * answer a retransmitted Finished with its ACK. So the retention ends with the retransmit timeout, or
+         * - on the side that sent the final flight - when the ACK arrives (see DTLS13FinalFlight).
          */
-        if (!inHandshake && null != retransmit)
+        if (!inHandshake && null != retransmit && !dtls13)
         {
             this.retransmit = null;
             this.retransmitEpoch = null;
@@ -2309,6 +2312,17 @@ class DTLSRecordLayer
         }
 
         return recordNumber;
+    }
+
+    /**
+     * RFC 9147 5.8.1. Whether {@link #sendHandshakeRecordAtEpoch(int, byte[], int, int)} could still write at
+     * the given epoch, i.e. whether the record layer still holds it. The final-flight state machine asks
+     * before each retransmission, because the handshake epoch is dropped after twice the MSL and a write at a
+     * dropped epoch is an error, whereas a flight the peer has not acknowledged by then is simply abandoned.
+     */
+    boolean isEpochHeldForRetransmit(int epoch)
+    {
+        return dtls13 && null != getEpochForRetransmit(epoch);
     }
 
     private DTLSEpoch getEpochForRetransmit(int epoch)
