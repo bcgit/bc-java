@@ -8,6 +8,7 @@ import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.cbor.c509.C509CertificationRequest;
 import org.bouncycastle.cbor.c509.C509ConversionOptions;
+import org.bouncycastle.cbor.c509.C509PrivateKeyPossessionStatement;
 import org.bouncycastle.cert.CertIOException;
 import org.bouncycastle.operator.ContentSigner;
 
@@ -23,6 +24,7 @@ public class C509CertificationRequestBuilder
 
     private Extensions extensionRequest;
     private String challengePassword;
+    private C509PrivateKeyPossessionStatement possessionStatement;
     private C509ConversionOptions options = C509ConversionOptions.DEFAULT;
 
     /**
@@ -59,6 +61,19 @@ public class C509CertificationRequestBuilder
     }
 
     /**
+     * Set a private key possession statement (the RFC 9883
+     * privateKeyPossessionStatement attribute, Section 4.3.3): the signature
+     * certificate whose holder vouches for possession of the key-establishment
+     * private key the request is for.
+     */
+    public C509CertificationRequestBuilder setPrivateKeyPossessionStatement(
+        C509PrivateKeyPossessionStatement possessionStatement)
+    {
+        this.possessionStatement = possessionStatement;
+        return this;
+    }
+
+    /**
      * Set the conversion options - point compression in particular.
      */
     public C509CertificationRequestBuilder setConversionOptions(C509ConversionOptions options)
@@ -78,7 +93,7 @@ public class C509CertificationRequestBuilder
         {
             byte[] tbsRequest = C509CertificationRequest.createTBSCertificationRequest(
                 C509CertificationRequest.TYPE_NATIVE, signer.getAlgorithmIdentifier(), subject,
-                subjectPublicKeyInfo, extensionRequest, challengePassword, options);
+                subjectPublicKeyInfo, extensionRequest, challengePassword, possessionStatement, options);
 
             OutputStream sOut = signer.getOutputStream();
             sOut.write(tbsRequest);

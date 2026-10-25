@@ -190,12 +190,7 @@ public class C509Certificate
             throw new IOException("unsupported c509CertificateType: " + fields.certificateType);
         }
 
-        byte[] serialMagnitude = in.readByteString();
-        if (serialMagnitude.length > 0 && serialMagnitude[0] == 0)
-        {
-            throw new IOException("C509 certificateSerialNumber with leading zero octet");
-        }
-        fields.serialNumber = serialMagnitude;
+        fields.serialNumber = readSerialNumber(in);
 
         fields.issuerSignatureAlgorithm = C509AlgorithmIdentifier.parseSignatureAlgorithm(in);
 
@@ -301,10 +296,7 @@ public class C509Certificate
         {
             throw new IOException("unsupported c509CertificateType: " + certificateType);
         }
-        if (serialNumber.signum() < 0)
-        {
-            throw new IOException("certificateSerialNumber must not be negative");
-        }
+        checkSerialNumber(serialNumber);
 
         C509AlgorithmIdentifier sigAlg = C509AlgorithmIdentifier.forSignatureAlgorithm(issuerSignatureAlgorithm);
         C509AlgorithmIdentifier pkAlg = C509AlgorithmIdentifier.forPublicKeyAlgorithm(
@@ -331,7 +323,7 @@ public class C509Certificate
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         CBOREncoder out = new CBOREncoder(bOut);
         out.writeInteger(certificateType);
-        out.writeByteString(BigIntegers.asUnsignedByteArray(serialNumber));
+        writeSerialNumber(out, serialNumber);
         sigAlg.encodeTo(out);
         if (issuerName == null)
         {
@@ -497,6 +489,40 @@ public class C509Certificate
                 "X.509 certificate cannot be losslessly re-encoded as C509 - it is not DER or uses a construct outside the C509 profile");
         }
         return c509;
+    }
+
+    /**
+     * Read a CertificateSerialNumber (Section 3.1.2 - the unsigned magnitude as a byte
+     * string), returning the magnitude.
+     */
+    static byte[] readSerialNumber(CBORDecoder in)
+        throws IOException
+    {
+        byte[] serialMagnitude = in.readByteString();
+        if (serialMagnitude.length > 0 && serialMagnitude[0] == 0)
+        {
+            throw new IOException("C509 certificateSerialNumber with leading zero octet");
+        }
+        return serialMagnitude;
+    }
+
+    static void checkSerialNumber(BigInteger serialNumber)
+        throws IOException
+    {
+        if (serialNumber.signum() < 0)
+        {
+            throw new IOException("certificateSerialNumber must not be negative");
+        }
+    }
+
+    /**
+     * Write a CertificateSerialNumber, which must already have been checked with
+     * {@link #checkSerialNumber}.
+     */
+    static void writeSerialNumber(CBOREncoder out, BigInteger serialNumber)
+        throws IOException
+    {
+        out.writeByteString(BigIntegers.asUnsignedByteArray(serialNumber));
     }
 
     private static Certificate parseX509(byte[] derEncoding)
@@ -697,8 +723,9 @@ public class C509Certificate
 
     /**
      * Return the signature value in its X.509 form: for an ECDSA style algorithm the
-     * DER SEQUENCE of the two INTEGERs, otherwise the BIT STRING value field
-     * unchanged. This is the form a ContentVerifier checks.
+     * DER SEQUENCE of the two INTEGERs, for an RFC 6955 proof-of-possession algorithm
+     * the DER DhSigStatic, otherwise the BIT STRING value field unchanged. This is the
+     * form a ContentVerifier checks.
      */
     public byte[] getSignature()
     {

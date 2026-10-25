@@ -9,17 +9,33 @@ import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.cms.IssuerAndSerialNumber;
+import org.bouncycastle.asn1.crmf.DhSigStatic;
+import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.cbor.CBORDecoder;
 import org.bouncycastle.cbor.CBOREncoder;
+import org.bouncycastle.cbor.CBORType;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.Exceptions;
 
 /**
- * The C509 encoding of signature values (Sections 3.1.12 and 3.2.2 of
+ * The C509 encoding of signature values (Sections 3.1.12, 3.2.2 and 4.2 of
  * draft-ietf-cose-cbor-encoded-cert-21). ECDSA style signatures (the ECDSA and SM2
  * registry entries) are converted from the DER SEQUENCE of two INTEGERs to the fixed
- * width r || s byte string of Section 2.1 of RFC 9053; all other signature values
- * carry the BIT STRING value field as a byte string.
+ * width r || s byte string of Section 2.1 of RFC 9053. The RFC 6955 proof-of-possession
+ * algorithms (registry values 14 to 16) carry a DhSigStatic rather than a signature:
+ * <pre>
+ * DhSigStatic = MessageDigest / DhSigStaticType
+ * MessageDigest = bytes
+ * DhSigStaticType = [
+ *   issuer: Name,
+ *   certificateSerialNumber: CertificateSerialNumber,
+ *   hashValue: MessageDigest,
+ * ]
+ * </pre>
+ * the bare byte string standing for a DER DhSigStatic without the optional
+ * issuerAndSerial and the array for one with it. All other signature values carry the
+ * BIT STRING value field as a byte string.
  */
 class C509SignatureValueCodec
 {
@@ -81,6 +97,41 @@ class C509SignatureValueCodec
             return bOut.toByteArray();
         }
 
+        if (isDhSigStaticFormat(signatureAlgorithm))
+        {
+            DhSigStatic dhSig;
+            try
+            {
+                dhSig = DhSigStatic.getInstance(ASN1Primitive.fromByteArray(signatureBytes));
+            }
+            catch (RuntimeException e)
+            {
+                throw Exceptions.ioException("malformed DhSigStatic signature value", e);
+            }
+            IssuerAndSerialNumber issuerAndSerial = dhSig.getIssuerAndSerial();
+            if (issuerAndSerial == null)
+            {
+                out.writeByteString(dhSig.getHashValue());
+                return bOut.toByteArray();
+            }
+            C509Name issuer;
+            try
+            {
+                issuer = C509Name.fromX500Name(issuerAndSerial.getName());
+            }
+            catch (IllegalArgumentException e)
+            {
+                throw Exceptions.ioException("DhSigStatic issuer " + e.getMessage(), e);
+            }
+            BigInteger serialNumber = issuerAndSerial.getSerialNumber().getValue();
+            C509Certificate.checkSerialNumber(serialNumber);
+            out.writeArrayHeader(3);
+            issuer.encodeTo(out);
+            C509Certificate.writeSerialNumber(out, serialNumber);
+            out.writeByteString(dhSig.getHashValue());
+            return bOut.toByteArray();
+        }
+
         out.writeByteString(signatureBytes);
         return bOut.toByteArray();
     }
@@ -116,6 +167,23 @@ class C509SignatureValueCodec
     static byte[] decodeSignatureValue(C509AlgorithmIdentifier signatureAlgorithm, CBORDecoder in)
         throws IOException
     {
+        if (isDhSigStaticFormat(signatureAlgorithm))
+        {
+            if (in.peekMajorType() == CBORType.BYTE_STRING)
+            {
+                return C509ExtensionValueCodec.derEncode(new DhSigStatic(in.readByteString()));
+            }
+            if (in.readArrayHeader() != 3)
+            {
+                throw new IOException("C509 DhSigStatic array must have 3 elements");
+            }
+            X500Name issuer = C509Name.parse(in).toX500Name();
+            BigInteger serialNumber = new BigInteger(1, C509Certificate.readSerialNumber(in));
+            byte[] hashValue = in.readByteString();
+            return C509ExtensionValueCodec.derEncode(
+                new DhSigStatic(new IssuerAndSerialNumber(issuer, serialNumber), hashValue));
+        }
+
         byte[] value = in.readByteString();
         if (!isEcdsaFormat(signatureAlgorithm))
         {
@@ -141,6 +209,12 @@ class C509SignatureValueCodec
     {
         Integer registryValue = signatureAlgorithm.getRegistryValue();
         return registryValue != null && C509SignatureAlgorithm.isEcdsaFormat(registryValue.intValue());
+    }
+
+    private static boolean isDhSigStaticFormat(C509AlgorithmIdentifier signatureAlgorithm)
+    {
+        Integer registryValue = signatureAlgorithm.getRegistryValue();
+        return registryValue != null && C509SignatureAlgorithm.isDhSigStaticFormat(registryValue.intValue());
     }
 
     private C509SignatureValueCodec()

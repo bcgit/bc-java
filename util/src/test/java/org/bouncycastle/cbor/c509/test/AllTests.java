@@ -20,6 +20,7 @@ public class AllTests
 
         suite.addTestSuite(C509CertificateTest.class);
         suite.addTestSuite(C509Draft21Test.class);
+        suite.addTestSuite(C509TestVectorsTest.class);
 
         return new BCTestSetup(suite);
     }

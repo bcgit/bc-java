@@ -2,6 +2,7 @@ package org.bouncycastle.cert.c509.test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -25,6 +26,7 @@ import org.bouncycastle.cbor.CBOREncoder;
 import org.bouncycastle.cbor.c509.C509Certificate;
 import org.bouncycastle.cbor.c509.C509CertificationRequest;
 import org.bouncycastle.cbor.c509.C509PrivateKey;
+import org.bouncycastle.cbor.c509.C509PrivateKeyPossessionStatement;
 import org.bouncycastle.cbor.c509.C509SignatureAlgorithm;
 import org.bouncycastle.cbor.c509.COSEC509;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
@@ -41,7 +43,11 @@ import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
+import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
+import org.bouncycastle.util.encoders.Hex;
+import org.bouncycastle.util.io.Streams;
 
 /**
  * End to end tests for the C509 holder, builder and verifier provider classes: a
@@ -266,6 +272,85 @@ public class C509CertTest
         {
             assertEquals("validityNotAfter is after 99991231235959Z: " + displaced, e.getMessage());
         }
+    }
+
+    private static byte[] vector(String name)
+        throws IOException
+    {
+        InputStream in = TestResourceFinder.findTestResource("c509/test-vectors", name + ".hex");
+        return Hex.decode(Strings.fromByteArray(Streams.readAll(in)).trim());
+    }
+
+    public void testDraftVectorSignatures()
+        throws Exception
+    {
+        // every signed certificate of draft-ietf-cose-c509-test-vectors-02 verifies in
+        // both its forms: the type 3 signature over the reconstructed DER and the type 2
+        // signature over the CBOR TBSCertificate. Section 2's CA is unsigned and signs
+        // the X25519 and X448 certificates of Sections 3.12 and 3.13; Section 7 uses a
+        // private curve the provider cannot verify with.
+        String[] tags = { "3_1", "3_2", "3_3", "3_4", "3_5", "3_6", "3_7", "3_8", "3_9", "3_11", "3_12", "3_13",
+            "3_14", "3_15", "4_1", "4_17", "4_18", "4_19", "4_20", "4_21", "4_22" };
+        SubjectPublicKeyInfo caKey = new C509CertificateHolder(vector("2_t2")).getSubjectPublicKeyInfo();
+        String[] forms = { "_t3", "_t2" };
+        for (int i = 0; i != tags.length; i++)
+        {
+            for (int j = 0; j != forms.length; j++)
+            {
+                String name = tags[i] + forms[j];
+                C509CertificateHolder holder = new C509CertificateHolder(vector(name));
+                SubjectPublicKeyInfo key = holder.getIssuer().equals(holder.getSubject())
+                    ? holder.getSubjectPublicKeyInfo() : caKey;
+                assertTrue(name + " does not verify", holder.isSignatureValid(
+                    new JcaC509ContentVerifierProviderBuilder().setProvider("BC").build(key)));
+            }
+        }
+
+        // the ECDSA certification requests of Sections 8.1 and 8.2 verify with their subject key
+        String[] requests = { "8_1_t3", "8_1_t2", "8_2_t3" };
+        for (int i = 0; i != requests.length; i++)
+        {
+            C509CertificationRequestHolder holder = new C509CertificationRequestHolder(vector(requests[i]));
+            assertTrue(requests[i] + " does not verify", holder.isSignatureValid(
+                new JcaC509ContentVerifierProviderBuilder().setProvider("BC").build(holder.getSubjectPublicKeyInfo())));
+        }
+    }
+
+    public void testNativeRequestWithPossessionStatement()
+        throws Exception
+    {
+        KeyPair signatureKp = generateECKeyPair();
+        KeyPair agreementKp = generateECKeyPair();
+
+        Date notBefore = new Date((System.currentTimeMillis() / 1000) * 1000);
+        Date notAfter = new Date(notBefore.getTime() + 365L * 24 * 60 * 60 * 1000);
+        ContentSigner signer = new JcaContentSignerBuilder("SHA256withECDSA").setProvider("BC")
+            .build(signatureKp.getPrivate());
+
+        // the signature certificate the holder of the key agreement key vouches with
+        C509CertificateHolder signatureCert = new C509CertificateBuilder(new X500Name("CN=C509 test CA"),
+            BigInteger.valueOf(0x2A), notBefore, notAfter, new X500Name("CN=C509 signer"),
+            SubjectPublicKeyInfo.getInstance(signatureKp.getPublic().getEncoded()))
+            .build(signer);
+
+        C509CertificationRequestHolder request = new C509CertificationRequestBuilder(
+            new X500Name("CN=C509 agreement key"),
+            SubjectPublicKeyInfo.getInstance(agreementKp.getPublic().getEncoded()))
+            .setPrivateKeyPossessionStatement(new C509PrivateKeyPossessionStatement(signatureCert.getC509Certificate()))
+            .build(signer);
+
+        assertTrue(request.isSignatureValid(new JcaC509ContentVerifierProviderBuilder().setProvider("BC")
+            .build(SubjectPublicKeyInfo.getInstance(signatureKp.getPublic().getEncoded()))));
+
+        C509CertificationRequestHolder parsed = new C509CertificationRequestHolder(request.getEncoded());
+        assertEquals(1, parsed.getAttributes().length);
+        assertEquals(Long.valueOf(org.bouncycastle.cbor.c509.C509Attribute.PRIVATE_KEY_POSSESSION_STATEMENT),
+            parsed.getAttributes()[0].getRegistryValue());
+        C509PrivateKeyPossessionStatement statement = C509PrivateKeyPossessionStatement.getInstance(
+            parsed.getAttributes()[0].getValueEncoding());
+        assertEquals(new X500Name("CN=C509 test CA"), statement.getIssuer());
+        assertEquals(BigInteger.valueOf(0x2A), statement.getSerialNumber());
+        assertTrue(Arrays.areEqual(signatureCert.getEncoded(), statement.getCertificate().getEncoded()));
     }
 
     /**

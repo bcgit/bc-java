@@ -167,6 +167,24 @@ public final class C509SignatureAlgorithm
         }
     }
 
+    /**
+     * Return true if the registry value is one of the RFC 6955 proof-of-possession
+     * algorithms (values 14 to 16), whose signature value has the DhSigStatic syntax
+     * of Section 4.2 rather than being a signature.
+     */
+    public static boolean isDhSigStaticFormat(int value)
+    {
+        switch (value)
+        {
+        case ECDH_POP_SHA256_HMAC_SHA256:
+        case ECDH_POP_SHA384_HMAC_SHA384:
+        case ECDH_POP_SHA512_HMAC_SHA512:
+            return true;
+        default:
+            return false;
+        }
+    }
+
     private C509SignatureAlgorithm()
     {
     }

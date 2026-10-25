@@ -22,6 +22,7 @@ import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.Extensions;
+import org.bouncycastle.asn1.x509.PrivateKeyPossessionStatement;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x509.X509AttributeIdentifiers;
 import org.bouncycastle.cbor.CBORDecoder;
@@ -210,9 +211,11 @@ public class C509CertificationRequest
             else if (registryValue == C509Attribute.PRIVATE_KEY_POSSESSION_STATEMENT)
             {
                 oid = id_aa_privateKeyPossessionStatement;
-                // carried structurally validated but uninterpreted; it embeds a
-                // C509CertData and has no direct DER reconstruction
+                // the value has type PrivateKeyPossessionStatement (Section 4.3.3)
                 value = in.readEncodedItem();
+                CBORDecoder valueIn = new CBORDecoder(value);
+                C509PrivateKeyPossessionStatement.parse(valueIn);
+                valueIn.expectEnd();
             }
             else
             {
@@ -290,6 +293,33 @@ public class C509CertificationRequest
         C509ConversionOptions options)
         throws IOException
     {
+        return createTBSCertificationRequest(requestType, subjectSignatureAlgorithm, subject,
+            subjectPublicKeyInfo, extensionRequest, challengePassword, null, options);
+    }
+
+    /**
+     * Encode the TBSCertificationRequest group for a request about to be signed,
+     * optionally carrying an RFC 9883 private key possession statement. For a
+     * natively signed request the returned encoding is exactly the byte string the
+     * signature is computed over.
+     *
+     * @param requestType {@link #TYPE_NATIVE} or {@link #TYPE_REENCODED_PKCS10}.
+     * @param subjectSignatureAlgorithm the X.509 signature (or RFC 6955
+     *        proof-of-possession) algorithm.
+     * @param subject the subject name.
+     * @param subjectPublicKeyInfo the subject public key.
+     * @param extensionRequest extensions requested of the CA (RFC 2985
+     *        extensionRequest), or null for none.
+     * @param challengePassword a challenge password (RFC 2985), or null for none.
+     * @param possessionStatement a private key possession statement (RFC 9883,
+     *        Section 4.3.3), or null for none.
+     */
+    public static byte[] createTBSCertificationRequest(int requestType,
+        AlgorithmIdentifier subjectSignatureAlgorithm, X500Name subject,
+        SubjectPublicKeyInfo subjectPublicKeyInfo, Extensions extensionRequest, String challengePassword,
+        C509PrivateKeyPossessionStatement possessionStatement, C509ConversionOptions options)
+        throws IOException
+    {
         if (requestType != TYPE_NATIVE && requestType != TYPE_REENCODED_PKCS10)
         {
             throw new IOException("unsupported c509CertificationRequestType: " + requestType);
@@ -320,7 +350,8 @@ public class C509CertificationRequest
         pkAlg.encodeTo(out);
         out.writeEncoded(subjectPublicKeyItem);
 
-        int attributeCount = (extensionRequest != null ? 1 : 0) + (challengePassword != null ? 1 : 0);
+        int attributeCount = (extensionRequest != null ? 1 : 0) + (challengePassword != null ? 1 : 0)
+            + (possessionStatement != null ? 1 : 0);
         out.writeArrayHeader(2 * attributeCount);
         if (extensionRequest != null)
         {
@@ -344,6 +375,11 @@ public class C509CertificationRequest
         {
             out.writeInteger(C509Attribute.CHALLENGE_PASSWORD);
             out.writeTextString(challengePassword);
+        }
+        if (possessionStatement != null)
+        {
+            out.writeInteger(C509Attribute.PRIVATE_KEY_POSSESSION_STATEMENT);
+            possessionStatement.encodeTo(out);
         }
         return bOut.toByteArray();
     }
@@ -415,6 +451,7 @@ public class C509CertificationRequest
             Attribute attribute = Attribute.getInstance(attributeSet.getObjectAt(i));
             ASN1Set values = attribute.getAttrValues();
             C509Extensions extensionRequestValue = null;
+            C509PrivateKeyPossessionStatement possessionStatement = null;
             if (pkcs_9_at_extensionRequest.equals(attribute.getAttrType()) && values.size() == 1)
             {
                 try
@@ -427,10 +464,31 @@ public class C509CertificationRequest
                     // not a well-formed Extensions value; carry it in the generic form
                 }
             }
+            if (id_aa_privateKeyPossessionStatement.equals(attribute.getAttrType()) && values.size() == 1)
+            {
+                try
+                {
+                    possessionStatement = C509PrivateKeyPossessionStatement.fromPrivateKeyPossessionStatement(
+                        PrivateKeyPossessionStatement.getInstance(values.getObjectAt(0)), options);
+                }
+                catch (IOException e)
+                {
+                    // the name or the certificate cannot be represented in C509; carry it in the generic form
+                }
+                catch (RuntimeException e)
+                {
+                    // not a well-formed PrivateKeyPossessionStatement; carry it in the generic form
+                }
+            }
             if (extensionRequestValue != null)
             {
                 attrEnc.writeInteger(C509Attribute.EXTENSION_REQUEST);
                 extensionRequestValue.encodeTo(attrEnc);
+            }
+            else if (possessionStatement != null)
+            {
+                attrEnc.writeInteger(C509Attribute.PRIVATE_KEY_POSSESSION_STATEMENT);
+                possessionStatement.encodeTo(attrEnc);
             }
             else if (pkcs_9_at_challengePassword.equals(attribute.getAttrType()) && values.size() == 1
                 && (values.getObjectAt(0) instanceof ASN1UTF8String
@@ -501,8 +559,8 @@ public class C509CertificationRequest
      * certification request stands for.
      *
      * @throws IllegalStateException if this is a natively signed request.
-     * @throws IOException if an attribute (such as a privateKeyPossessionStatement,
-     *         which embeds C509 structures) has no DER reconstruction.
+     * @throws IOException if an attribute has no DER reconstruction - a
+     *         privateKeyPossessionStatement carrying a natively signed certificate.
      */
     public CertificationRequest toCertificationRequest()
         throws IOException
@@ -554,6 +612,12 @@ public class C509CertificationRequest
             valueIn.expectEnd();
             return new Attribute(attribute.getAttrType(), new DERSet(
                 printable ? (ASN1Encodable)new DERPrintableString(password) : new DERUTF8String(password)));
+        }
+        case C509Attribute.PRIVATE_KEY_POSSESSION_STATEMENT:
+        {
+            C509PrivateKeyPossessionStatement statement = C509PrivateKeyPossessionStatement.parse(valueIn);
+            valueIn.expectEnd();
+            return new Attribute(attribute.getAttrType(), new DERSet(statement.toPrivateKeyPossessionStatement()));
         }
         default:
             throw new IOException("C509 CR attribute " + registryValue
@@ -663,8 +727,8 @@ public class C509CertificationRequest
 
     /**
      * Return the signature value in its X.509 form: for an ECDSA style algorithm the
-     * DER SEQUENCE of the two INTEGERs, otherwise the BIT STRING value field
-     * unchanged.
+     * DER SEQUENCE of the two INTEGERs, for an RFC 6955 proof-of-possession algorithm
+     * the DER DhSigStatic, otherwise the BIT STRING value field unchanged.
      */
     public byte[] getSignature()
     {

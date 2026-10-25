@@ -65,6 +65,19 @@ public class PrivateKeyPossessionStatement
         this.cert = cert;
     }
 
+    /**
+     * Construct a statement naming the signer explicitly, with or without the
+     * signature certificate itself.
+     *
+     * @param signer the issuer name and serial number of the signature certificate.
+     * @param cert the signature certificate, or null to omit it.
+     */
+    public PrivateKeyPossessionStatement(IssuerAndSerialNumber signer, Certificate cert)
+    {
+        this.signer = signer;
+        this.cert = cert;
+    }
+
     public IssuerAndSerialNumber getSigner()
     {
         return signer;
