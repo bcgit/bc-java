@@ -1109,6 +1109,13 @@ public class DTLSClientProtocol
         throws IOException
     {
         ClientHello clientHello = state.clientHello;
+
+        /*
+         * This is state.clientExtensions itself (ClientHello keeps the table it was given, not a copy), as in
+         * TlsClientProtocol.send13ClientHelloRetry. The edits below are therefore what the later checks of
+         * the server's extensions against the ones offered (e.g. receive13EncryptedExtensions) see, which is
+         * what RFC 9846 4.2 wants: the second ClientHello is the offer the server answered.
+         */
         Hashtable clientHelloExtensions = clientHello.getExtensions();
 
         clientHelloExtensions.remove(TlsExtensionsUtils.EXT_cookie);

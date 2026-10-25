@@ -42,12 +42,6 @@ class DTLSAck
     }
 
     /**
-     * Decode an ACK body.
-     *
-     * @return the record numbers in wire order, or null if the body is malformed. A malformed ACK is
-     *         discarded rather than failing the connection (RFC 9147 4.5.2).
-     */
-    /**
      * RFC 9147 7. The record numbers of an ACK are listed "in numerically increasing order", epoch first and
      * then sequence number, and each at most once. The accumulated list is in arrival order, which a
      * reordered flight leaves unsorted, so the list is put in order here before it is encoded.
@@ -109,6 +103,12 @@ class DTLSAck
         return 0;
     }
 
+    /**
+     * Decode an ACK body.
+     *
+     * @return the record numbers in wire order, or null if the body is malformed. A malformed ACK is
+     *         discarded rather than failing the connection (RFC 9147 4.5.2).
+     */
     static Vector decode(byte[] buf, int off, int len) throws IOException
     {
         if (len < 2)

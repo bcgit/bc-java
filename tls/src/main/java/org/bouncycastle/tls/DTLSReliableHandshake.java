@@ -717,6 +717,10 @@ class DTLSReliableHandshake
             }
 
             int received = recordLayer.receive(buf, 0, receiveLimit, waitMillis);
+
+            // Taken after the wait, so the ACK timer below is armed from the record's arrival
+            currentTimeMillis = System.currentTimeMillis();
+
             if (received < 0)
             {
                 resendOutboundFlight();
@@ -743,12 +747,10 @@ class DTLSReliableHandshake
                          * RFC 9147 7.1. Part of a flight has arrived: ACK it if the rest does not follow
                          * within a quarter of the current retransmit timer.
                          */
-                        ackTimeout = new Timeout(Math.max(1, resendMillis / 4), System.currentTimeMillis());
+                        ackTimeout = new Timeout(Math.max(1, resendMillis / 4), currentTimeMillis);
                     }
                 }
             }
-
-            currentTimeMillis = System.currentTimeMillis();
         }
     }
 
@@ -993,16 +995,13 @@ class DTLSReliableHandshake
      * limit is the plaintext body it can carry, so the ACK's own uint16 length prefix comes off it and what
      * is left divides by the 16 bytes of one RecordNumber. It is computed per ACK rather than cached,
      * because the send limit moves with the write epoch's cipher overhead and with the path MTU. The floor
-     * of one keeps an ACK possible whatever the limit says.
+     * is zero, not one: on an implausibly small send limit an empty ACK is still legal (RFC 9147 7.1) and
+     * still shortcuts the peer's retransmit timer, whereas one record number would not fit and the record
+     * would exceed the limit.
      * </p>
      */
     private int maxAckRecordNumbers() throws IOException
     {
-        /*
-         * A floor of zero rather than one: on an implausibly small send limit an empty ACK is still legal
-         * (RFC 9147 7.1) and still shortcuts the peer's retransmit timer, whereas one record number would
-         * not fit and the record would exceed the limit.
-         */
         return Math.max(0, (recordLayer.getSendLimit() - 2) / DTLSAck.RECORD_NUMBER_LENGTH);
     }
 
