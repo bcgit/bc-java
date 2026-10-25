@@ -111,6 +111,16 @@ class DTLS13PostHandshake
     private Timeout keyUpdateResendTimeout = null;
 
     /**
+     * The fewest retransmissions a KeyUpdate gets before it can be given up, i.e. three sends in all; see
+     * {@link #checkTimeouts(long)}. Only an initial resend interval of half the ceiling or more is cut short
+     * enough for this to matter.
+     */
+    private static final int MIN_KEY_UPDATE_RESENDS = 2;
+
+    /** How many times the outstanding KeyUpdate has been retransmitted; see {@link #checkTimeouts(long)}. */
+    private int keyUpdateResendCount = 0;
+
+    /**
      * RFC 9147 5.8.1. The final flight of the handshake, on the side that sent it, until the peer's ACK has
      * covered all of it; null on the other side, and once that has happened. The reliable handshake hands it
      * over because the ACK that ends it arrives after the handshake has completed, at this owner, and because
@@ -166,6 +176,7 @@ class DTLS13PostHandshake
             this.keyUpdateMessageSeq = -1;
             this.keyUpdateResendMillis = -1;
             this.keyUpdateResendTimeout = null;
+            this.keyUpdateResendCount = 0;
 
             flightTracker.reset();
         }
@@ -287,6 +298,7 @@ class DTLS13PostHandshake
         this.keyUpdateMessageSeq = message_seq;
         this.keyUpdateResendMillis = recordLayer.getHandshakeResendTimeMillis();
         this.keyUpdateResendTimeout = new Timeout(keyUpdateResendMillis);
+        this.keyUpdateResendCount = 0;
 
         // Last: the latch. Nothing above it leaves the state machine running if it throws.
         this.keyUpdateMessage = message;
@@ -320,8 +332,33 @@ class DTLS13PostHandshake
             return;
         }
 
+        /*
+         * RFC 9147 7.3 has the sender retransmit "until its maximum retransmission count is reached" but names
+         * no count, and section 8 says nothing about a KeyUpdate that is never acknowledged. The bound here is
+         * the retransmit timer itself: once the backoff of RFC 9147 5.8.2 has reached its ceiling and a wait of
+         * that full length has passed, with at least MIN_KEY_UPDATE_RESENDS retransmissions behind it, the
+         * update is given up - with the default 1 s initial value, six retransmissions over about two
+         * minutes. Anchoring on the ceiling rather than on a count keeps the wall-clock bound between two
+         * and three minutes whatever the initial value; the minimum count only bites for an initial value
+         * of half the ceiling or more, where it still guarantees three sends. wolfSSL applies the same
+         * ceiling rule, and it is well inside the twelve-timeout caps of OpenSSL and BoringSSL, all of which
+         * likewise bound a KeyUpdate with their ordinary DTLS retransmit timer.
+         *
+         * Giving up means failing the connection, as for a heartbeat that goes unanswered: there is no way
+         * back from a sent KeyUpdate (the superseded secret is already destroyed and the new keys may not be
+         * used until acknowledged), and writing at the old epoch indefinitely keeps keys the RFC wants deleted
+         * while making any further update impossible. The exception leaves this loop through receive, where
+         * DTLSTransport fails the record layer.
+         */
+        if (keyUpdateResendCount >= MIN_KEY_UPDATE_RESENDS
+            && keyUpdateResendMillis >= DTLSReliableHandshake.MAX_RESEND_MILLIS)
+        {
+            throw new TlsTimeoutException("KeyUpdate timed out");
+        }
+
         this.keyUpdateResendMillis = DTLSReliableHandshake.backOff(keyUpdateResendMillis);
         this.keyUpdateResendTimeout = new Timeout(keyUpdateResendMillis, currentTimeMillis);
+        this.keyUpdateResendCount += 1;
 
         /*
          * At the epoch it was first sent under, not the current write epoch - which is the same epoch for as

@@ -120,6 +120,9 @@ class DTLSRecordLayer13TestSupport
     Queue clientToServer, serverToClient;
     Side client, server;
 
+    /** What both peers answer to getHandshakeResendTimeMillis; set before setUpPair to change it. */
+    int handshakeResendTimeMillis = 1000;
+
     void setUpPair(int cipherSuite, int hash) throws IOException
     {
         setUpPair(cipherSuite, hash, null, null);
@@ -163,16 +166,16 @@ class DTLSRecordLayer13TestSupport
 
         client = createSide(crypto, false, cipherSuite, hash, clientSecret, serverSecret,
             new QueueTransport(serverToClient, clientToServer), clientRetransmit, clientConnectionID,
-            serverConnectionID);
+            serverConnectionID, handshakeResendTimeMillis);
         server = createSide(crypto, true, cipherSuite, hash, clientSecret, serverSecret,
             new QueueTransport(clientToServer, serverToClient), serverRetransmit, serverConnectionID,
-            clientConnectionID);
+            clientConnectionID, handshakeResendTimeMillis);
     }
 
     private static Side createSide(TlsCrypto crypto, boolean isServer, int cipherSuite, int hash,
         byte[] clientSecret, byte[] serverSecret, DatagramTransport transport,
-        DTLSHandshakeRetransmit retransmit, byte[] connectionIDLocal, byte[] connectionIDPeer)
-        throws IOException
+        DTLSHandshakeRetransmit retransmit, byte[] connectionIDLocal, byte[] connectionIDPeer,
+        int handshakeResendTimeMillis) throws IOException
     {
         AbstractTlsContext context = TlsAEADCipherDTLS13Test.createContext(crypto, isServer, cipherSuite, hash,
             clientSecret, serverSecret);
@@ -182,11 +185,18 @@ class DTLSRecordLayer13TestSupport
         securityParameters.connectionIDLocal = Arrays.clone(connectionIDLocal);
         securityParameters.connectionIDPeer = Arrays.clone(connectionIDPeer);
 
+        final int resendMillis = handshakeResendTimeMillis;
+
         TlsPeer peer = new DefaultTlsClient(crypto)
         {
             public TlsAuthentication getAuthentication()
             {
                 return null;
+            }
+
+            public int getHandshakeResendTimeMillis()
+            {
+                return resendMillis;
             }
         };
 

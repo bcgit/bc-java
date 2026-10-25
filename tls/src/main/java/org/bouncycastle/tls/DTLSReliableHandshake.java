@@ -16,7 +16,8 @@ class DTLSReliableHandshake
     static final int TLS_MESSAGE_HEADER_LENGTH = 4;
 
     private static final int MAX_RECEIVE_AHEAD = 16;
-    private static final int MAX_RESEND_MILLIS = 60000;
+    /** RFC 9147 5.8.2: the retransmit timer doubles "up to no less than 60 seconds". */
+    static final int MAX_RESEND_MILLIS = 60000;
 
     static ByteArrayInputStream receiveClientHelloMessage(byte[] msg, int msgOff, int msgLen) throws IOException
     {

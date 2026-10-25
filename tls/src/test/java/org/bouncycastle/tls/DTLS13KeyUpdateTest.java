@@ -43,7 +43,13 @@ public class DTLS13KeyUpdateTest
 
     private void setUpPair() throws IOException
     {
+        setUpPair(DEFAULT_RESEND_MILLIS);
+    }
+
+    private void setUpPair(int handshakeResendTimeMillis) throws IOException
+    {
         support = new DTLSRecordLayer13TestSupport();
+        support.handshakeResendTimeMillis = handshakeResendTimeMillis;
         support.setUpPair(CipherSuite.TLS_AES_128_GCM_SHA256, CryptoHashAlgorithm.sha256);
         client = support.client;
         server = support.server;
@@ -735,6 +741,96 @@ public class DTLS13KeyUpdateTest
         assertFalse(clientPostHandshake.isKeyUpdateOutstanding());
         assertEquals("a peer that never sent anything still reaches the new epoch", 4,
             client.recordLayer.getWriteEpoch());
+    }
+
+    /**
+     * RFC 9147 7.3 has the sender retransmit "until its maximum retransmission count is reached" but names no
+     * count. The bound is the retransmit timer: once the RFC 9147 5.8.2 backoff has reached its 60 s ceiling
+     * and a wait of that length has passed unacknowledged, the KeyUpdate is given up and the connection
+     * fails, as it does for an unanswered heartbeat. With the default 1 s initial value that is six
+     * retransmissions (1, 2, 4, 8, 16 and 32 s of backoff) and then the 60 s wait. Each timeout is brought
+     * forward here rather than waited out; the receive goes through DTLSTransport, which is what turns the
+     * timeout into a failed record layer.
+     */
+    public void testKeyUpdateRetransmissionGivesUpOnceTheBackoffReachesItsCeiling() throws Exception
+    {
+        setUpPair();
+
+        DTLS13PostHandshake clientPostHandshake = client.recordLayer.getPostHandshake();
+        DTLSTransport clientTransport = new DTLSTransport(client.recordLayer);
+
+        clientPostHandshake.sendKeyUpdate(KeyUpdateRequest.update_not_requested);
+
+        // The original and every retransmission are lost, and the peer never acknowledges anything
+        takeClientDatagram();
+
+        byte[] buf = new byte[client.recordLayer.getReceiveLimit()];
+        int resends = 0;
+        try
+        {
+            for (int i = 0; i < 20; ++i)
+            {
+                clientPostHandshake.expireKeyUpdateResendTimeoutForTest();
+                assertEquals(-1, clientTransport.receive(buf, 0, buf.length, 50));
+
+                byte[] resent = takeClientDatagram();
+                assertSentAtEpoch("retransmission " + (i + 1), APPLICATION_EPOCH, 4, resent);
+                ++resends;
+            }
+            fail("expected the key update to be given up");
+        }
+        catch (TlsTimeoutException e)
+        {
+            assertEquals("KeyUpdate timed out", e.getMessage());
+        }
+
+        assertEquals("six retransmissions before the ceiling wait expires", 6, resends);
+        assertTrue("the record layer is failed", client.recordLayer.isClosed());
+        assertEquals("the write epoch never moved", APPLICATION_EPOCH, client.recordLayer.getWriteEpoch());
+
+        try
+        {
+            clientTransport.receive(buf, 0, buf.length, 50);
+            fail("expected the failed connection to refuse further use");
+        }
+        catch (IOException e)
+        {
+            // expected
+        }
+    }
+
+    /**
+     * The ceiling rule alone would give up on the first expiry when the configured initial interval is
+     * already at the ceiling, with nothing ever retransmitted. A KeyUpdate always gets at least two
+     * retransmissions, three sends in all, before it is given up.
+     */
+    public void testKeyUpdateGetsAtLeastTwoRetransmissionsWithALongInitialTimer() throws Exception
+    {
+        setUpPair(DTLSReliableHandshake.MAX_RESEND_MILLIS);
+
+        DTLS13PostHandshake clientPostHandshake = client.recordLayer.getPostHandshake();
+        clientPostHandshake.sendKeyUpdate(KeyUpdateRequest.update_not_requested);
+        takeClientDatagram();
+
+        int resends = 0;
+        try
+        {
+            for (int i = 0; i < 20; ++i)
+            {
+                clientPostHandshake.expireKeyUpdateResendTimeoutForTest();
+                assertNull(DTLSRecordLayer13TestSupport.receive(client, 50));
+
+                assertSentAtEpoch("retransmission " + (i + 1), APPLICATION_EPOCH, 4, takeClientDatagram());
+                ++resends;
+            }
+            fail("expected the key update to be given up");
+        }
+        catch (TlsTimeoutException e)
+        {
+            assertEquals("KeyUpdate timed out", e.getMessage());
+        }
+
+        assertEquals("two retransmissions even though every wait was at the ceiling", 2, resends);
     }
 
     /**
