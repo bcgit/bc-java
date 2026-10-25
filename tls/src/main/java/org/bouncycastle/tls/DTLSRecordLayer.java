@@ -1385,6 +1385,25 @@ class DTLSRecordLayer
         case ContentType.heartbeat:
         case ContentType.tls12_cid:
             break;
+        case ContentType.ack:
+        {
+            /*
+             * RFC 9147 7. An ACK in the legacy record format is a plaintext epoch-0 ACK, which DTLS 1.3 permits
+             * for records that were themselves sent at epoch 0, such as a client's acknowledgement of the
+             * ServerHello alone. It is admitted once DTLS 1.3 has been negotiated; DTLS 1.2 has no ACK and
+             * keeps rejecting the type. What an unauthenticated ACK can do is bounded by
+             * filterAckRecordNumbers, which lets it retire only records sent at or below its own epoch.
+             *
+             * A server's ACK of a fragmented ClientHello would arrive before the ServerHello has decided the
+             * version, and is not admitted: the first flight is retransmitted whole until the version is known
+             * (resendOutboundFlight), so nothing could act on it.
+             */
+            if (dtls13)
+            {
+                break;
+            }
+            return -1;
+        }
         default:
             return -1;
         }
@@ -2244,11 +2263,22 @@ class DTLSRecordLayer
 
             if (writeEpoch.getEpoch() < maxEpoch)
             {
+                /*
+                 * Nothing is sent, but nothing is lost either: the caller keeps its list for the next ACK.
+                 * Both directions move to the handshake epoch together, and a record cannot be accepted
+                 * before it can be decrypted, so the write epoch is in practice never below any record
+                 * number here and this is unreachable with the current epoch model.
+                 *
+                 * TODO[dtls13] After the epoch rework, acknowledge the records at or below the write epoch
+                 * rather than none: an ACK of the epoch-0 ServerHello alone is legal from epoch 0, and the
+                 * RFC's own example has the client wait only for the records it cannot yet acknowledge.
+                 */
                 return null;
             }
         }
 
-        byte[] body = DTLSAck.encode(recordNumbers);
+        // RFC 9147 7. "in numerically increasing order"
+        byte[] body = DTLSAck.encode(DTLSAck.sort(recordNumbers));
         return sendRecord(ContentType.ack, body, 0, body.length);
     }
 

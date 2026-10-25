@@ -117,6 +117,40 @@ public class DTLS13RetransmissionTest
             support.countRecordsSent());
     }
 
+    /**
+     * RFC 9147 7. An ACK may be sent at epoch 0 for records that were themselves sent at epoch 0, so once
+     * DTLS 1.3 is negotiated a plaintext ACK in the legacy record format must reach the handshake like any
+     * other. Here the whole flight was sent at epoch 0 and the peer acknowledges all of it from epoch 0;
+     * a receiver that discarded the record for its content type would retransmit the flight regardless.
+     */
+    public void testPlaintextAckIsAdmittedOnceDTLS13IsNegotiated() throws Exception
+    {
+        DTLS13HandshakeTestSupport support = new DTLS13HandshakeTestSupport();
+        support.beginPlaintextDTLS13(300);
+
+        support.writeFlight(new int[]{ 50, 50 });
+        Vector sent = support.getSentRecordNumbers();
+        assertEquals(2, sent.size());
+        assertEquals("the flight was sent at epoch 0", 0L, ((DTLSRecordNumber)sent.elementAt(0)).getEpoch());
+
+        support.transport.datagrams.removeAllElements();
+
+        support.deliverPlaintextAck(0L, sent);
+
+        try
+        {
+            support.receiveUntilHandshakeTimeout();
+            fail("expected the handshake to time out waiting for the peer");
+        }
+        catch (TlsTimeoutException e)
+        {
+            // expected
+        }
+
+        assertEquals("a flight acknowledged in full by a plaintext ACK must not be retransmitted", 0,
+            support.countRecordsSent());
+    }
+
     public void testUnacknowledgedFlightIsRetransmittedByTheReceiveLoop() throws Exception
     {
         // the counterpart of the test above: same loop, same silence from the peer, but nothing acknowledged

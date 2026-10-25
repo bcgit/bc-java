@@ -55,6 +55,16 @@ class DTLS13HandshakeTestSupport
      * The same handshake over a DTLS 1.2 record layer: epoch 0, null cipher, legacy record format. Used to
      * show that none of the RFC 9147 ACK behaviour runs in DTLS 1.2.
      */
+    /**
+     * DTLS 1.3 negotiated but nothing protected yet: the record layer is in the RFC 9147 format with the
+     * handshake epoch pending, and both directions are still at epoch 0, which is where a server stands
+     * between selecting DTLS 1.3 and installing the handshake keys.
+     */
+    void beginPlaintextDTLS13(int handshakeTimeoutMillis) throws IOException
+    {
+        implBegin(handshakeTimeoutMillis, true, false);
+    }
+
     void beginDTLS12(int handshakeTimeoutMillis) throws IOException
     {
         implBegin(handshakeTimeoutMillis, false, false);
@@ -174,6 +184,26 @@ class DTLS13HandshakeTestSupport
     }
 
     /**
+     * Deliver an ACK on the wire as a plaintext epoch-0 record in the legacy record format (RFC 9147 7 allows
+     * an ACK at epoch 0 for records that were sent at epoch 0), so that it goes through the record layer's
+     * own admission and ACK receive path.
+     */
+    void deliverPlaintextAck(long recordSeq, Vector recordNumbers) throws IOException
+    {
+        byte[] body = DTLSAck.encode(recordNumbers);
+
+        byte[] record = new byte[LEGACY_RECORD_HEADER_LENGTH + body.length];
+        TlsUtils.writeUint8(ContentType.ack, record, 0);
+        TlsUtils.writeVersion(ProtocolVersion.DTLSv12, record, 1);
+        TlsUtils.writeUint16(0, record, 3);
+        TlsUtils.writeUint48(recordSeq, record, 5);
+        TlsUtils.writeUint16(body.length, record, 11);
+        System.arraycopy(body, 0, record, LEGACY_RECORD_HEADER_LENGTH, body.length);
+
+        transport.inbound.addElement(record);
+    }
+
+    /**
      * Run the real receive loop against a transport that never delivers anything, until the handshake
      * timeout fires. Every retransmission decision the loop makes is a real one.
      */
@@ -231,6 +261,25 @@ class DTLS13HandshakeTestSupport
         int fragmentLength) throws IOException
     {
         deliverRecord(recordSeq, handshakeFragment(msgType, messageSeq, length, fragmentOffset, fragmentLength));
+    }
+
+    /**
+     * Queue one handshake record carrying the fragment followed by 'trailingBytes' bytes that are too few to
+     * be a fragment header: a malformed record (RFC 9147 4.5.2) whose leading fragment is nonetheless intact.
+     */
+    void deliverHandshakeRecordWithTrailingBytes(long recordSeq, short msgType, int messageSeq, int length,
+        int fragmentOffset, int fragmentLength, int trailingBytes) throws IOException
+    {
+        if (trailingBytes < 1 || trailingBytes >= DTLSReliableHandshake.MESSAGE_HEADER_LENGTH)
+        {
+            throw new IllegalArgumentException("trailing bytes must be fewer than a fragment header");
+        }
+
+        byte[] fragment = handshakeFragment(msgType, messageSeq, length, fragmentOffset, fragmentLength);
+        byte[] junk = new byte[trailingBytes];
+        Arrays.fill(junk, (byte)0x5A);
+
+        deliverRecord(recordSeq, Arrays.concatenate(fragment, junk));
     }
 
     /**

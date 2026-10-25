@@ -46,6 +46,37 @@ public class DTLSAckTest
         assertEquals(0x0000FFFFFFFFFFFFL, last.getSequenceNumber());
     }
 
+    /**
+     * RFC 9147 7. "record_numbers: A list of the records ... in numerically increasing order." The list is
+     * accumulated in arrival order, so the sort is what puts a reordered flight's ACK into the required order,
+     * epoch first and then sequence number, and a record that was counted twice is listed once.
+     */
+    public void testSortOrdersByEpochThenSequenceNumberAndDropsDuplicates() throws Exception
+    {
+        Vector in = new Vector();
+        in.addElement(new DTLSRecordNumber(2, 5));
+        in.addElement(new DTLSRecordNumber(3, 0));
+        in.addElement(new DTLSRecordNumber(2, 1));
+        in.addElement(new DTLSRecordNumber(0, 7));
+        in.addElement(new DTLSRecordNumber(2, 5));
+        in.addElement(new DTLSRecordNumber(2, 0x0000FFFFFFFFFFFFL));
+        in.addElement(new DTLSRecordNumber(0, 7));
+
+        Vector sorted = DTLSAck.sort(in);
+
+        assertEquals("duplicates dropped", 5, sorted.size());
+        assertEquals(new DTLSRecordNumber(0, 7), sorted.elementAt(0));
+        assertEquals(new DTLSRecordNumber(2, 1), sorted.elementAt(1));
+        assertEquals(new DTLSRecordNumber(2, 5), sorted.elementAt(2));
+        assertEquals(new DTLSRecordNumber(2, 0x0000FFFFFFFFFFFFL), sorted.elementAt(3));
+        assertEquals(new DTLSRecordNumber(3, 0), sorted.elementAt(4));
+
+        assertEquals("the input is left as it was", 7, in.size());
+        assertEquals(new DTLSRecordNumber(2, 5), in.elementAt(0));
+
+        assertEquals("an empty list sorts to an empty list", 0, DTLSAck.sort(new Vector()).size());
+    }
+
     public void testDecodeAtOffset() throws Exception
     {
         Vector in = new Vector();

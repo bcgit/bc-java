@@ -767,11 +767,17 @@ class DTLSReliableHandshake
     }
 
     /**
-     * @return true only if every message carried by the record was processed or buffered, which is the
-     *         RFC 9147 7.1 condition for including the record's number in an ACK. A message discarded
-     *         because a previous copy had been received still counts as processed, and RFC 9147 7.1 says so
-     *         explicitly; a message that was rejected does not, and acknowledging its record would tell the
-     *         peer not to retransmit something we dropped.
+     * @return true only if the record carried at least one handshake fragment and every fragment it carried
+     *         was processed or buffered, which is the RFC 9147 7.1 condition for including the record's
+     *         number in an ACK. A record too short to hold a fragment header carried nothing and is not
+     *         acknowledged (the record layer has already dropped an empty one), and a record with a fragment
+     *         cut short, or with trailing bytes too few to be a fragment header, is malformed (RFC 9147 4.5.2)
+     *         and is not acknowledged either, though what it did carry intact stays. A fragment discarded because
+     *         a previous copy had been received still counts as processed, and RFC 9147 7.1 says so
+     *         explicitly; a fragment that was rejected does not, and acknowledging its record would tell the
+     *         peer not to retransmit something we dropped. Nor does a fragment of the previous flight: ACKs
+     *         cover only the current flight (RFC 9147 7), and a retransmitted previous flight is answered by
+     *         retransmitting our own.
      */
     private boolean processRecord(int windowSize, int epoch, byte[] buf, int off, int len) throws IOException
     {
@@ -779,8 +785,20 @@ class DTLSReliableHandshake
         boolean dropped = false;
         boolean checkPreviousFlight = false;
 
-        while (len >= MESSAGE_HEADER_LENGTH)
+        while (len > 0)
         {
+            if (len < MESSAGE_HEADER_LENGTH)
+            {
+                /*
+                 * NOTE: Truncated fragment header - ignore it, as a truncated fragment is ignored below
+                 *
+                 * TODO[dtls13] Review, outside this series, whether a malformed handshake record should
+                 * instead be discarded whole, below the handshake state machine, as RFC 9147 4.5.2 describes.
+                 */
+                dropped = true;
+                break;
+            }
+
             int fragment_length = TlsUtils.readUint24(buf, off + 9);
             int message_length = fragment_length + MESSAGE_HEADER_LENGTH;
             if (len < message_length)
@@ -923,7 +941,13 @@ class DTLSReliableHandshake
                             fragment_offset, fragment_length)
                         || reassembler.acceptsFragment(msg_type, length, fragment_offset, fragment_length))
                     {
-                        accepted = true;
+                        /*
+                         * Deliberately NOT 'accepted = true', unlike the current-flight case above. RFC 9147
+                         * 7: "During the handshake, ACKs only cover the current outstanding flight", and the
+                         * answer to a retransmission of the previous flight is a retransmission of our own
+                         * (RFC 9147 5.8.1), not an ACK. Counting the record as accepted would put its number
+                         * in the ACK list and arm the ACK timer.
+                         */
                     }
                     else
                     {

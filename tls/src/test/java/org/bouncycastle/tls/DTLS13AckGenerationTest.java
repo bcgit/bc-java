@@ -83,6 +83,74 @@ public class DTLS13AckGenerationTest
         assertRecordNumbers(new long[]{ 1L }, (Vector)acks.elementAt(0));
     }
 
+    /**
+     * RFC 9147 7. "During the handshake, ACKs only cover the current outstanding flight." A retransmission of
+     * the flight before it is answered by retransmitting our own flight (RFC 9147 5.8.1), not by an ACK: its
+     * record must neither enter the ACK list nor arm the ACK timer.
+     */
+    public void testRetransmittedPreviousFlightIsNotAcknowledged() throws IOException
+    {
+        support.begin(1200);
+
+        support.deliverHandshakeRecord(0L, INBOUND_TYPE, 0, BODY_LENGTH, 0, BODY_LENGTH);
+        assertNotNull(support.receiveMessage());
+
+        // our own flight ends the inbound flight the record above belonged to
+        support.sendMessage();
+        int sentBefore = support.countRecordsSent();
+
+        // the peer did not get our flight and retransmits its own, which we have already processed
+        support.deliverHandshakeRecord(1L, INBOUND_TYPE, 0, BODY_LENGTH, 0, BODY_LENGTH);
+
+        support.receiveUntilTimeout();
+
+        assertTrue("the retransmitted previous flight must draw a retransmission of our own flight",
+            support.countRecordsSent() > sentBefore);
+        assertTrue("the retransmitted previous flight must not be acknowledged", support.getAcksSent().isEmpty());
+    }
+
+    /**
+     * RFC 9147 7. The record numbers of an ACK are listed "in numerically increasing order", which arrival
+     * order is not when records are reordered on the path: the second half of a message arrives first, in a
+     * record with the higher sequence number.
+     */
+    public void testAckListsRecordNumbersInIncreasingOrder() throws IOException
+    {
+        support.begin(900);
+
+        int half = BODY_LENGTH / 2;
+
+        // the first half of the message is in record 1, the second in record 0, and record 1 arrives first
+        support.deliverHandshakeRecord(1L, INBOUND_TYPE, 0, BODY_LENGTH, 0, half);
+        support.deliverHandshakeRecord(0L, INBOUND_TYPE, 0, BODY_LENGTH, half, half);
+        assertNotNull(support.receiveMessage());
+
+        // the flight is still open, so the quarter timer acknowledges both records in one ACK
+        support.receiveUntilTimeout();
+
+        Vector acks = support.getAcksSent();
+        assertEquals("exactly one ACK", 1, acks.size());
+        assertRecordNumbers(new long[]{ 0L, 1L }, (Vector)acks.elementAt(0));
+    }
+
+    /**
+     * RFC 9147 4.5.2 and 7. A record that ends in bytes too few to be a fragment header is malformed, in the
+     * same way as one whose last fragment is cut short. What it carried intact is still processed, but the
+     * record is not acknowledged: an ACK would tell the peer that everything in it had been.
+     */
+    public void testRecordWithTrailingBytesIsProcessedButNotAcknowledged() throws IOException
+    {
+        support.begin(900);
+
+        support.deliverHandshakeRecordWithTrailingBytes(0L, INBOUND_TYPE, 0, BODY_LENGTH, 0, BODY_LENGTH, 5);
+
+        assertNotNull("the intact fragment is still delivered", support.receiveMessage());
+
+        support.receiveUntilTimeout();
+
+        assertTrue("a malformed record must not be acknowledged", support.getAcksSent().isEmpty());
+    }
+
     public void testNoAckIsSentInDTLS12() throws IOException
     {
         support.beginDTLS12(500);

@@ -47,6 +47,68 @@ class DTLSAck
      * @return the record numbers in wire order, or null if the body is malformed. A malformed ACK is
      *         discarded rather than failing the connection (RFC 9147 4.5.2).
      */
+    /**
+     * RFC 9147 7. The record numbers of an ACK are listed "in numerically increasing order", epoch first and
+     * then sequence number, and each at most once. The accumulated list is in arrival order, which a
+     * reordered flight leaves unsorted, so the list is put in order here before it is encoded.
+     *
+     * @return a new Vector of the same record numbers, sorted and without duplicates.
+     */
+    static Vector sort(Vector recordNumbers)
+    {
+        int count = recordNumbers.size();
+        Vector sorted = new Vector(count);
+
+        /*
+         * Insertion sort. The list is bounded by what one ACK record carries (see
+         * DTLSReliableHandshake.maxAckRecordNumbers: about a thousand entries at the largest plaintext limit,
+         * far fewer at a typical MTU) and arrives in order except where the path reordered records, so this
+         * is close to linear in practice and its quadratic worst case is still cheap. Duplicates are not
+         * expected - each accepted record contributes its number once and the replay window refuses a repeat
+         * - and are dropped defensively.
+         */
+        for (int i = 0; i < count; ++i)
+        {
+            DTLSRecordNumber recordNumber = (DTLSRecordNumber)recordNumbers.elementAt(i);
+
+            int pos = sorted.size();
+            while (pos > 0)
+            {
+                int cmp = compare(recordNumber, (DTLSRecordNumber)sorted.elementAt(pos - 1));
+                if (cmp == 0)
+                {
+                    pos = -1;
+                    break;
+                }
+                if (cmp > 0)
+                {
+                    break;
+                }
+                --pos;
+            }
+
+            if (pos >= 0)
+            {
+                sorted.insertElementAt(recordNumber, pos);
+            }
+        }
+
+        return sorted;
+    }
+
+    private static int compare(DTLSRecordNumber a, DTLSRecordNumber b)
+    {
+        if (a.getEpoch() != b.getEpoch())
+        {
+            return a.getEpoch() < b.getEpoch() ? -1 : 1;
+        }
+        if (a.getSequenceNumber() != b.getSequenceNumber())
+        {
+            return a.getSequenceNumber() < b.getSequenceNumber() ? -1 : 1;
+        }
+        return 0;
+    }
+
     static Vector decode(byte[] buf, int off, int len) throws IOException
     {
         if (len < 2)
