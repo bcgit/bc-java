@@ -1,5 +1,7 @@
 package org.bouncycastle.ldap;
 
+import java.io.ByteArrayOutputStream;
+
 import org.bouncycastle.util.Strings;
 
 /**
@@ -34,7 +36,8 @@ public class LDAPUtils
      * of the DN or after an unescaped ',' or '+' separator, never inside another attribute's value. The
      * value runs to the next unescaped separator outside a quoted string, without the spaces around it
      * or the quotes around a quoted value, so both the RFC 2253 and the RFC 1779 string forms are read.
-     * An absent attribute, or one with an empty value, results in an empty string.
+     * The escapes of the string form are decoded, so the value is searched for as the directory stores
+     * it. An absent attribute, or one with an empty value, results in an empty string.
      * </p>
      *
      * @param subject string form of an X.500 DN.
@@ -54,7 +57,7 @@ public class LDAPUtils
             if (eq >= 0 && eq < valueEnd
                 && Strings.toLowerCase(subject.substring(pos, eq).trim()).equals(name))
             {
-                return filterEncode(trimValue(subject.substring(eq + 1, valueEnd)));
+                return filterEncode(decodeValue(subject, eq + 1, valueEnd));
             }
             pos = valueEnd + 1;
         }
@@ -93,34 +96,101 @@ public class LDAPUtils
     }
 
     /**
-     * Strip the spaces around an attribute value, as RFC 1779 puts them around a '+' separator, and the
-     * quotes around a quoted value. A trailing space escaped with a '\' is part of the value and stays.
+     * Decode the attribute value in dn between start and end. The spaces around it, as RFC 1779 puts them
+     * around a '+' separator, and the quotes around a quoted value are dropped, while a space that is
+     * escaped or quoted stays. A '\' followed by two hex digits is an escaped UTF-8 byte and a '\'
+     * followed by any other character is that character (RFC 2253 sec. 2.4, RFC 1779 sec. 2.3). A value
+     * in the '#' hex form is returned as it is.
      */
-    private static String trimValue(String value)
+    private static String decodeValue(String dn, int start, int end)
     {
-        int start = 0;
-        int end = value.length();
-
-        while (start < end && value.charAt(start) == ' ')
+        while (start < end && dn.charAt(start) == ' ')
         {
             start++;
         }
-        while (end > start && value.charAt(end - 1) == ' '
-            && (end - 1 == start || value.charAt(end - 2) != '\\'))
+        if (start < end && dn.charAt(start) == '#')
         {
-            end--;
+            while (dn.charAt(end - 1) == ' ')
+            {
+                end--;
+            }
+            return dn.substring(start, end);
         }
 
-        String temp = value.substring(start, end);
-        if (temp.startsWith("\""))
+        StringBuilder value = new StringBuilder(end - start);
+        ByteArrayOutputStream utf8 = new ByteArrayOutputStream();
+        boolean quoted = false;
+        int keep = 0;
+
+        for (int i = start; i < end; i++)
         {
-            temp = temp.substring(1);
+            char c = dn.charAt(i);
+
+            if (c == '\\' && i + 2 < end && isHex(dn.charAt(i + 1)) && isHex(dn.charAt(i + 2)))
+            {
+                utf8.write((Character.digit(dn.charAt(i + 1), 16) << 4) | Character.digit(dn.charAt(i + 2), 16));
+                i += 2;
+                continue;
+            }
+
+            keep = appendUTF8(utf8, value, keep);
+
+            if (c == '\\' && i + 1 < end)
+            {
+                value.append(dn.charAt(++i));
+                keep = value.length();
+            }
+            else if (c == '"')
+            {
+                quoted = !quoted;
+            }
+            else
+            {
+                value.append(c);
+                if (c != ' ' || quoted)
+                {
+                    keep = value.length();
+                }
+            }
         }
-        if (temp.endsWith("\""))
+
+        keep = appendUTF8(utf8, value, keep);
+        value.setLength(keep);
+
+        return value.toString();
+    }
+
+    /**
+     * Append any escaped bytes collected in utf8 to value as UTF-8, or byte by byte if they are not valid
+     * UTF-8, returning the length of value to keep.
+     */
+    private static int appendUTF8(ByteArrayOutputStream utf8, StringBuilder value, int keep)
+    {
+        if (utf8.size() == 0)
         {
-            temp = temp.substring(0, temp.length() - 1);
+            return keep;
         }
-        return temp;
+
+        byte[] bytes = utf8.toByteArray();
+        utf8.reset();
+        try
+        {
+            value.append(Strings.fromUTF8ByteArray(bytes));
+        }
+        catch (IllegalArgumentException e)
+        {
+            for (int i = 0; i < bytes.length; i++)
+            {
+                value.append((char)(bytes[i] & 0xff));
+            }
+        }
+
+        return value.length();
+    }
+
+    private static boolean isHex(char c)
+    {
+        return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
     }
 
     /**
