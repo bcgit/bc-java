@@ -499,15 +499,6 @@ public class MLDSAEngine
         return null;
     }
 
-    public boolean verifyInternalMu(byte[] providedMu)
-    {
-        byte[] mu = new byte[CrhBytes];
-
-        shake256Digest.doFinal(mu, 0);
-
-        return Arrays.constantTimeAreEqual(mu, providedMu);
-    }
-
     public boolean verifyInternalMuSignature(byte[] mu, byte[] sig, int siglen, SHAKEDigest shake256Digest, byte[] rho, byte[] encT1)
     {
         byte[] buf = new byte[Math.max(CrhBytes + DilithiumK * DilithiumPolyW1PackedBytes, DilithiumCTilde)];

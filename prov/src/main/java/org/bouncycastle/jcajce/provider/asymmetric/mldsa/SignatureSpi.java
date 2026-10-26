@@ -19,6 +19,7 @@ import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.jcajce.MLDSAProxyPrivateKey;
 import org.bouncycastle.jcajce.interfaces.MLDSAPublicKey;
 import org.bouncycastle.jcajce.provider.asymmetric.util.BaseDeterministicOrRandomSignature;
+import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 import org.bouncycastle.jcajce.spec.MLDSAParameterSpec;
 
 /**
@@ -273,6 +274,12 @@ public class SignatureSpi
         }
     }
 
+    /**
+     * The ML-DSA-CALCULATE-MU service. Signing returns the 64 byte mu of the key, the context and the
+     * data passed to update(), for an external signer to sign through ML-DSA-EXTERNAL-MU. Verifying takes
+     * such a mu in place of a signature and reports whether it is the mu of the data passed to update()
+     * under the key and context, which is exactly what the signing side of the service returns for them.
+     */
     public static class MLDSACalcMu
         extends SignatureSpi
     {
@@ -297,7 +304,14 @@ public class SignatureSpi
         protected boolean engineVerify(byte[] sigBytes)
             throws SignatureException
         {
-            return signer.verifyMu(sigBytes);
+            try
+            {
+                return signer.verifyMu(sigBytes);
+            }
+            catch (DataLengthException e)
+            {
+                throw SecurityExceptions.signatureException(e.getMessage(), e);
+            }
         }
     }
 }

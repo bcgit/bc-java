@@ -19,13 +19,16 @@ import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoException;
+import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.Signer;
 import org.bouncycastle.crypto.generators.MLDSAKeyPairGenerator;
 import org.bouncycastle.crypto.params.MLDSAKeyGenerationParameters;
 import org.bouncycastle.crypto.params.MLDSAParameters;
 import org.bouncycastle.crypto.params.MLDSAPrivateKeyParameters;
 import org.bouncycastle.crypto.params.MLDSAPublicKeyParameters;
+import org.bouncycastle.crypto.params.ParametersWithContext;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.signers.HashMLDSASigner;
 import org.bouncycastle.crypto.signers.MLDSASigner;
@@ -707,6 +710,60 @@ public class MLDSATest
         catch (IllegalArgumentException expected)
         {
             // expected
+        }
+    }
+
+    public void testCalculateMuVerify()
+        throws Exception
+    {
+        MLDSAKeyPairGenerator kpGen = new MLDSAKeyPairGenerator();
+        kpGen.init(new MLDSAKeyGenerationParameters(new SecureRandom(), MLDSAParameters.ml_dsa_65));
+        AsymmetricCipherKeyPair kp = kpGen.generateKeyPair();
+
+        byte[][] messages = { new byte[0], Strings.toByteArray("Hello World!") };
+        byte[][] contexts = { null, Strings.toByteArray("context") };
+
+        for (int c = 0; c != contexts.length; c++)
+        {
+            for (int m = 0; m != messages.length; m++)
+            {
+                byte[] message = messages[m];
+                CipherParameters priv = contexts[c] == null ? (CipherParameters)kp.getPrivate() : new ParametersWithContext(kp.getPrivate(), contexts[c]);
+                CipherParameters pub = contexts[c] == null ? (CipherParameters)kp.getPublic() : new ParametersWithContext(kp.getPublic(), contexts[c]);
+
+                MLDSASigner signer = new MLDSASigner();
+                signer.init(true, priv);
+                signer.update(message, 0, message.length);
+                byte[] mu = signer.generateMu();
+                signer.update(message, 0, message.length);
+                byte[] signature = signer.generateSignature();
+
+                MLDSASigner verifier = new MLDSASigner();
+                verifier.init(false, pub);
+                verifier.update(message, 0, message.length);
+                assertTrue("mu rejected, message length " + message.length, verifier.verifyMu(mu));
+
+                byte[] flipped = Arrays.clone(mu);
+                flipped[0] ^= 1;
+                verifier.update(message, 0, message.length);
+                assertFalse(verifier.verifyMu(flipped));
+
+                // checking a mu must leave the verifier able to check an ordinary signature
+                verifier.update(message, 0, message.length);
+                assertTrue(verifier.verifySignature(signature));
+
+                try
+                {
+                    verifier.verifyMu(new byte[3]);
+                    fail("short mu accepted");
+                }
+                catch (DataLengthException e)
+                {
+                    assertEquals("mu value must be 64 bytes", e.getMessage());
+                }
+                verifier.update(message, 0, message.length);
+                assertTrue(verifier.verifyMu(mu));
+            }
         }
     }
 
