@@ -9,12 +9,16 @@ import java.security.Signature;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.jcajce.spec.SM2ParameterSpec;
+import org.bouncycastle.jce.interfaces.ECPrivateKey;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECParameterSpec;
 import org.bouncycastle.math.ec.ECConstants;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.Strings;
+import org.bouncycastle.util.test.FixedSecureRandom;
 import org.bouncycastle.util.test.SimpleTest;
 import org.bouncycastle.util.test.TestRandomBigInteger;
 
@@ -94,10 +98,41 @@ public class SM2SignatureTest
             ASN1Integer.getInstance(s.getObjectAt(1)).getValue() };
     }
 
+    private void doKeyGenRangeCheck()
+        throws Exception
+    {
+        BigInteger SM2_ECC_P = new BigInteger("8542D69E4C044F18E8B92435BF6FF7DE457283915C45517D722EDB8B08F1DFC3", 16);
+        BigInteger SM2_ECC_A = new BigInteger("787968B4FA32C3FD2417842E73BBFEFF2F3C848B6831D7E0EC65228B3937E498", 16);
+        BigInteger SM2_ECC_B = new BigInteger("63E4C6D3B23B0C849CF84241484BFE48F61D59A5B16BA06E6E12D1DA27C5249A", 16);
+        BigInteger SM2_ECC_N = new BigInteger("8542D69E4C044F18E8B92435BF6FF7DD297720630485628D5AE74EE7C32E79B7", 16);
+        BigInteger SM2_ECC_H = ECConstants.ONE;
+        BigInteger SM2_ECC_GX = new BigInteger("421DEBD61B62EAB6746434EBC3CC315E32220B3BADD50BDC4C4E6C147FEDD43D", 16);
+        BigInteger SM2_ECC_GY = new BigInteger("0680512BCBB42C07D47349D2153B70C4E5D7FDFCBFA36EA1A85841B9E46E09A2", 16);
+
+        ECCurve curve = new ECCurve.Fp(SM2_ECC_P, SM2_ECC_A, SM2_ECC_B, SM2_ECC_N, SM2_ECC_H);
+
+        ECPoint g = curve.createPoint(SM2_ECC_GX, SM2_ECC_GY);
+
+        // GB/T 32918.1 sec. 6.1 draws d from [1, n - 2]: n - 1 is offered first and must be passed over
+        BigInteger inRange = new BigInteger("128B2FA8BD433C6C068C8D803DFF79792A519A55171B1B650C23661D15897263", 16);
+        byte[] candidates = Arrays.concatenate(
+            BigIntegers.asUnsignedByteArray(32, SM2_ECC_N.subtract(BigIntegers.ONE)),
+            BigIntegers.asUnsignedByteArray(32, inRange));
+
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("SM2", "BC");
+
+        kpGen.initialize(new ECParameterSpec(curve, g, SM2_ECC_N), new FixedSecureRandom(candidates));
+
+        KeyPair kp = kpGen.generateKeyPair();
+
+        isEquals("SM2 key pair generator accepted n - 1", inRange, ((ECPrivateKey)kp.getPrivate()).getD());
+    }
+
     public void performTest()
         throws Exception
     {
         doSignerTestFp();
+        doKeyGenRangeCheck();
     }
     
     public static void main(

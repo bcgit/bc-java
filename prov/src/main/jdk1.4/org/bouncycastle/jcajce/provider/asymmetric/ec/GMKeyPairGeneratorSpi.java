@@ -11,7 +11,7 @@ import java.util.Hashtable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
-import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
+import org.bouncycastle.crypto.generators.SM2KeyPairGenerator;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECKeyGenerationParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
@@ -38,7 +38,7 @@ public abstract class GMKeyPairGeneratorSpi
         extends GMKeyPairGeneratorSpi
     {
         ECKeyGenerationParameters   param;
-        ECKeyPairGenerator          engine = new ECKeyPairGenerator();
+        SM2KeyPairGenerator         engine = new SM2KeyPairGenerator();
         Object                      ecParams = null;
         int                         strength = 239;
         SecureRandom                random = CryptoServicesRegistrar.getSecureRandom();
