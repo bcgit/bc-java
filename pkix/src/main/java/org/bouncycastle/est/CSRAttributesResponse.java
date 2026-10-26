@@ -1,8 +1,12 @@
 package org.bouncycastle.est;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
@@ -17,7 +21,8 @@ public class CSRAttributesResponse
     implements Encodable
 {
     private final CsrAttrs csrAttrs;
-    private final HashMap<ASN1ObjectIdentifier, AttrOrOID> index;
+    // keyed on the OID's string form: an ordered map keeps a response whose OIDs share a hash code linear to index
+    private final Map<String, AttrOrOID> index;
 
     /**
      * Create a CSRAttributesResponse from the passed in bytes.
@@ -40,7 +45,7 @@ public class CSRAttributesResponse
         throws ESTException
     {
         this.csrAttrs = csrAttrs;
-        this.index = new HashMap<ASN1ObjectIdentifier, AttrOrOID>(csrAttrs.size());
+        this.index = new TreeMap<String, AttrOrOID>();
 
         AttrOrOID[] attrOrOIDs = csrAttrs.getAttrOrOIDs();
         for (int i = 0; i != attrOrOIDs.length; i++)
@@ -49,11 +54,11 @@ public class CSRAttributesResponse
 
             if (attrOrOID.isOid())
             {
-                index.put(attrOrOID.getOid(), attrOrOID);
+                index.put(attrOrOID.getOid().getId(), attrOrOID);
             }
             else
             {
-                index.put(attrOrOID.getAttribute().getAttrType(), attrOrOID);
+                index.put(attrOrOID.getAttribute().getAttrType().getId(), attrOrOID);
             }
         }
     }
@@ -78,14 +83,14 @@ public class CSRAttributesResponse
 
     public boolean hasRequirement(ASN1ObjectIdentifier requirementOid)
     {
-        return index.containsKey(requirementOid);
+        return index.containsKey(requirementOid.getId());
     }
 
     public boolean isAttribute(ASN1ObjectIdentifier requirementOid)
     {
-        if (index.containsKey(requirementOid))
+        if (index.containsKey(requirementOid.getId()))
         {
-            return !(((AttrOrOID)index.get(requirementOid)).isOid());
+            return !(((AttrOrOID)index.get(requirementOid.getId())).isOid());
         }
 
         return false;
@@ -98,7 +103,16 @@ public class CSRAttributesResponse
 
     public Collection<ASN1ObjectIdentifier> getRequirements()
     {
-        return index.keySet();
+        List<ASN1ObjectIdentifier> oids = new ArrayList<ASN1ObjectIdentifier>(index.size());
+
+        for (Iterator<AttrOrOID> it = index.values().iterator(); it.hasNext();)
+        {
+            AttrOrOID attrOrOID = it.next();
+
+            oids.add(attrOrOID.isOid() ? attrOrOID.getOid() : attrOrOID.getAttribute().getAttrType());
+        }
+
+        return oids;
     }
 
     public byte[] getEncoded()

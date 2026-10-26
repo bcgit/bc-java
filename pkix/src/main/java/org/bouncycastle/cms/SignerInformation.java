@@ -50,6 +50,7 @@ public class SignerInformation
     private AttributeTable signedAttributeTable;
     private AttributeTable unsignedAttributeTable;
     private byte[] resultDigest;
+    private ContentDigestCache digestCache;
 
     protected final SignerInfo info;
     protected final AlgorithmIdentifier digestAlgorithm;
@@ -62,6 +63,19 @@ public class SignerInformation
         ASN1ObjectIdentifier contentType,
         CMSProcessable content,
         byte[] resultDigest)
+    {
+        this(info, contentType, content, resultDigest, null);
+    }
+
+    /**
+     * @param digestCache the content digests shared with the other signers of the same message, or null.
+     */
+    SignerInformation(
+        SignerInfo info,
+        ASN1ObjectIdentifier contentType,
+        CMSProcessable content,
+        byte[] resultDigest,
+        ContentDigestCache digestCache)
     {
         this.info = info;
         this.contentType = contentType;
@@ -90,6 +104,7 @@ public class SignerInformation
 
         this.content = content;
         this.resultDigest = resultDigest;
+        this.digestCache = digestCache;
     }
 
     /**
@@ -125,6 +140,7 @@ public class SignerInformation
         this.signature = info.getEncryptedDigest().getOctets();
         this.content = baseInfo.content;
         this.resultDigest = baseInfo.resultDigest;
+        this.digestCache = baseInfo.digestCache;
         this.signedAttributeTable = getSignedAttributes();
         this.unsignedAttributeTable = getUnsignedAttributes();
     }
@@ -360,8 +376,19 @@ public class SignerInformation
         {
             OutputStream sigOut = contentVerifier.getOutputStream();
 
+            if (resultDigest == null && content != null && digestCache != null)
+            {
+                // another signer of the message may already have digested the content under this algorithm
+                resultDigest = digestCache.get(realDigestAlgorithm);
+            }
+
             if (resultDigest == null)
             {
+                if (content != null && digestCache != null)
+                {
+                    digestCache.checkRoom(realDigestAlgorithm);
+                }
+
                 DigestCalculator calc = verifier.getDigestCalculator(realDigestAlgorithm);
                 if (content != null)
                 {
@@ -401,6 +428,11 @@ public class SignerInformation
                 }
 
                 resultDigest = calc.getDigest();
+
+                if (content != null && digestCache != null)
+                {
+                    digestCache.put(realDigestAlgorithm, resultDigest);
+                }
             }
             else
             {

@@ -9,7 +9,6 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -42,6 +41,7 @@ import org.bouncycastle.operator.DefaultDigestAlgorithmIdentifierFinder;
 import org.bouncycastle.operator.DigestCalculator;
 import org.bouncycastle.operator.DigestCalculatorProvider;
 import org.bouncycastle.operator.OperatorCreationException;
+import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.Store;
 import org.bouncycastle.util.io.Streams;
 
@@ -181,7 +181,8 @@ public class CMSSignedDataParser
 
             boolean digestAlgsBer = digAlgs instanceof BERSetParser;
             ASN1EncodableVector digestAlgsVector = new ASN1EncodableVector();
-            Set<AlgorithmIdentifier> algSet = new HashSet<AlgorithmIdentifier>();
+            Set<AlgorithmIdentifier> algSet = CMSUtils.algorithmIdentifierSet();
+            int digestAlgorithmLimit = Properties.asInteger(Properties.CMS_MAX_DIGEST_ALGORITHMS, 0);
 
             while ((o = digAlgs.readObject()) != null)
             {
@@ -200,6 +201,8 @@ public class CMSSignedDataParser
                     if (calculator != null)
                     {
                         this.digests.put(algId.getAlgorithm(), calculator);
+
+                        ContentDigestCache.checkLimit(digestAlgorithmLimit, this.digests.size());
                     }
                 }
                 catch (OperatorCreationException e)
@@ -564,7 +567,7 @@ public class CMSSignedDataParser
         // digests
         signedData.getDigestAlgorithms().toASN1Primitive();  // skip old ones
 
-        Set<AlgorithmIdentifier> digestAlgs = new HashSet<AlgorithmIdentifier>();
+        Set<AlgorithmIdentifier> digestAlgs = CMSUtils.algorithmIdentifierSet();
         for (Iterator it = signerInformationStore.getSigners().iterator(); it.hasNext(); )
         {
             SignerInformation signer = (SignerInformation)it.next();

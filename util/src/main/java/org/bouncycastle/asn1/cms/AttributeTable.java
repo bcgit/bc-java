@@ -2,6 +2,9 @@ package org.bouncycastle.asn1.cms;
 
 import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.Vector;
 
 import org.bouncycastle.asn1.ASN1Encodable;
@@ -15,12 +18,21 @@ import org.bouncycastle.asn1.DERSet;
  */
 public class AttributeTable
 {
-    private Hashtable attributes = new Hashtable();
+    // keyed on the attribute type's string form, each value an Attribute or a Vector of them: an ordered
+    // map keeps a block of attributes whose types share a hash code linear to index
+    private Map attributes = new TreeMap();
 
     public AttributeTable(
         Hashtable  attrs)
     {
-        attributes = copyTable(attrs);
+        Enumeration e = attrs.keys();
+
+        while (e.hasMoreElements())
+        {
+            Object key = e.nextElement();
+
+            putValue(ASN1ObjectIdentifier.getInstance(key).getId(), attrs.get(key));
+        }
     }
 
     public AttributeTable(
@@ -57,15 +69,33 @@ public class AttributeTable
         this(ASN1Set.getInstance(attrs.toASN1Primitive()));
     }
 
+    private AttributeTable(
+        AttributeTable other)
+    {
+        for (Iterator it = other.attributes.keySet().iterator(); it.hasNext();)
+        {
+            Object key = it.next();
+
+            putValue((String)key, other.attributes.get(key));
+        }
+    }
+
+    private void putValue(String key, Object value)
+    {
+        // a Vector is copied so that a table derived by add() or remove() cannot grow its source
+        attributes.put(key, value instanceof Vector ? new Vector((Vector)value) : value);
+    }
+
     private void addAttribute(
         ASN1ObjectIdentifier oid,
         Attribute           a)
     {
-        Object value = attributes.get(oid);
+        String key = oid.getId();
+        Object value = attributes.get(key);
 
         if (value == null)
         {
-            attributes.put(oid, a);
+            attributes.put(key, a);
         }
         else
         {
@@ -85,7 +115,7 @@ public class AttributeTable
                 v.addElement(a);
             }
 
-            attributes.put(oid, v);
+            attributes.put(key, v);
         }
     }
 
@@ -98,7 +128,7 @@ public class AttributeTable
     public Attribute get(
         ASN1ObjectIdentifier oid)
     {
-        Object value = attributes.get(oid);
+        Object value = attributes.get(oid.getId());
 
         if (value instanceof Vector)
         {
@@ -120,7 +150,7 @@ public class AttributeTable
     {
         ASN1EncodableVector v = new ASN1EncodableVector();
 
-        Object value = attributes.get(oid);
+        Object value = attributes.get(oid.getId());
 
         if (value instanceof Vector)
         {
@@ -141,16 +171,16 @@ public class AttributeTable
 
     public boolean hasAny(ASN1ObjectIdentifier oid)
     {
-        return attributes.containsKey(oid);
+        return attributes.containsKey(oid.getId());
     }
 
     public int size()
     {
         int size = 0;
 
-        for (Enumeration en = attributes.elements(); en.hasMoreElements();)
+        for (Iterator it = attributes.values().iterator(); it.hasNext();)
         {
-            Object o = en.nextElement();
+            Object o = it.next();
 
             if (o instanceof Vector)
             {
@@ -165,19 +195,34 @@ public class AttributeTable
         return size;
     }
 
+    /**
+     * Return the table's contents as a Hashtable keyed on attribute type, each value an Attribute
+     * or, for a type present more than once, a Vector of them.
+     *
+     * @return a copy of the table's contents.
+     */
     public Hashtable toHashtable()
     {
-        return copyTable(attributes);
+        Hashtable out = new Hashtable();
+
+        for (Iterator it = attributes.values().iterator(); it.hasNext();)
+        {
+            Object value = it.next();
+            Attribute first = (value instanceof Vector) ? (Attribute)((Vector)value).elementAt(0) : (Attribute)value;
+
+            out.put(first.getAttrType(), value instanceof Vector ? new Vector((Vector)value) : value);
+        }
+
+        return out;
     }
 
     public ASN1EncodableVector toASN1EncodableVector()
     {
         ASN1EncodableVector  v = new ASN1EncodableVector();
-        Enumeration          e = attributes.elements();
 
-        while (e.hasMoreElements())
+        for (Iterator it = attributes.values().iterator(); it.hasNext();)
         {
-            Object value = e.nextElement();
+            Object value = it.next();
 
             if (value instanceof Vector)
             {
@@ -202,22 +247,6 @@ public class AttributeTable
         return new Attributes(this.toASN1EncodableVector());
     }
 
-    private Hashtable copyTable(
-        Hashtable in)
-    {
-        Hashtable   out = new Hashtable();
-        Enumeration e = in.keys();
-
-        while (e.hasMoreElements())
-        {
-            Object key = e.nextElement();
-
-            out.put(key, in.get(key));
-        }
-
-        return out;
-    }
-
     /**
      * Return a new table with the passed in attribute added.
      *
@@ -227,7 +256,7 @@ public class AttributeTable
      */
     public AttributeTable add(ASN1ObjectIdentifier attrType, ASN1Encodable attrValue)
     {
-        AttributeTable newTable = new AttributeTable(attributes);
+        AttributeTable newTable = new AttributeTable(this);
 
         newTable.addAttribute(attrType, new Attribute(attrType, new DERSet(attrValue)));
 
@@ -236,9 +265,9 @@ public class AttributeTable
 
     public AttributeTable remove(ASN1ObjectIdentifier attrType)
     {
-        AttributeTable newTable = new AttributeTable(attributes);
+        AttributeTable newTable = new AttributeTable(this);
 
-        newTable.attributes.remove(attrType);
+        newTable.attributes.remove(attrType.getId());
 
         return newTable;
     }

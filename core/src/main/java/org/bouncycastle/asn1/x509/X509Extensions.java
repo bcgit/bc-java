@@ -2,6 +2,9 @@ package org.bouncycastle.asn1.x509;
 
 import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.Vector;
 
 import org.bouncycastle.asn1.ASN1Boolean;
@@ -206,7 +209,8 @@ public class X509Extensions
      */
     public static final ASN1ObjectIdentifier TargetInformation = new ASN1ObjectIdentifier("2.5.29.55");
     
-    private Hashtable               extensions = new Hashtable();
+    // keyed on the OID's string form: an ordered map keeps a block of extensions whose OIDs share a hash code linear to index
+    private Map                     extensions = new TreeMap();
     private Vector                  ordering = new Vector();
 
     public static X509Extensions getInstance(
@@ -257,21 +261,22 @@ public class X509Extensions
         while (e.hasMoreElements())
         {
             ASN1Sequence            s = ASN1Sequence.getInstance(e.nextElement());
+            ASN1ObjectIdentifier    oid = ASN1ObjectIdentifier.getInstance(s.getObjectAt(0));
 
             if (s.size() == 3)
             {
-                extensions.put(s.getObjectAt(0), new X509Extension(ASN1Boolean.getInstance(s.getObjectAt(1)), ASN1OctetString.getInstance(s.getObjectAt(2))));
+                extensions.put(oid.getId(), new X509Extension(ASN1Boolean.getInstance(s.getObjectAt(1)), ASN1OctetString.getInstance(s.getObjectAt(2))));
             }
             else if (s.size() == 2)
             {
-                extensions.put(s.getObjectAt(0), new X509Extension(false, ASN1OctetString.getInstance(s.getObjectAt(1))));
+                extensions.put(oid.getId(), new X509Extension(false, ASN1OctetString.getInstance(s.getObjectAt(1))));
             }
             else
             {
                 throw new IllegalArgumentException("Bad sequence size: " + s.size());
             }
 
-            ordering.addElement(s.getObjectAt(0));
+            ordering.addElement(oid);
         }
     }
 
@@ -319,7 +324,7 @@ public class X509Extensions
             ASN1ObjectIdentifier     oid = ASN1ObjectIdentifier.getInstance(e.nextElement());
             X509Extension           ext = (X509Extension)extensions.get(oid);
 
-            this.extensions.put(oid, ext);
+            this.extensions.put(oid.getId(), ext);
         }
     }
 
@@ -350,7 +355,7 @@ public class X509Extensions
             ASN1ObjectIdentifier     oid = (ASN1ObjectIdentifier)e.nextElement();
             X509Extension           ext = (X509Extension)values.elementAt(count);
 
-            this.extensions.put(oid, ext);
+            this.extensions.put(oid.getId(), ext);
             count++;
         }
     }
@@ -372,7 +377,7 @@ public class X509Extensions
     public X509Extension getExtension(
         ASN1ObjectIdentifier oid)
     {
-        return (X509Extension)extensions.get(oid);
+        return (X509Extension)extensions.get(oid.getId());
     }
 
     /**
@@ -395,7 +400,7 @@ public class X509Extensions
             ASN1EncodableVector v = new ASN1EncodableVector(3);
 
             ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)e.nextElement();
-            X509Extension ext = (X509Extension)extensions.get(oid);
+            X509Extension ext = (X509Extension)extensions.get(oid.getId());
 
             v.add(oid);
 
@@ -420,11 +425,11 @@ public class X509Extensions
             return false;
         }
 
-        Enumeration     e1 = extensions.keys();
+        Iterator        e1 = extensions.keySet().iterator();
 
-        while (e1.hasMoreElements())
+        while (e1.hasNext())
         {
-            Object  key = e1.nextElement();
+            Object  key = e1.next();
 
             if (!extensions.get(key).equals(other.extensions.get(key)))
             {
@@ -456,9 +461,9 @@ public class X509Extensions
 
         for (int i = 0; i != ordering.size(); i++)
         {
-            Object oid = ordering.elementAt(i);
+            ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)ordering.elementAt(i);
 
-            if (((X509Extension)extensions.get(oid)).isCritical() == isCritical)
+            if (((X509Extension)extensions.get(oid.getId())).isCritical() == isCritical)
             {
                 oidVec.addElement(oid);
             }

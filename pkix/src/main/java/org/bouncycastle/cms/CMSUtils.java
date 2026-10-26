@@ -6,11 +6,13 @@ import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
@@ -60,6 +62,7 @@ import org.bouncycastle.operator.GenericKey;
 import org.bouncycastle.operator.OidCatalogue;
 import org.bouncycastle.operator.OutputAEADEncryptor;
 import org.bouncycastle.operator.OutputEncryptor;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Store;
 import org.bouncycastle.util.io.Streams;
 import org.bouncycastle.util.io.TeeInputStream;
@@ -67,6 +70,40 @@ import org.bouncycastle.util.io.TeeOutputStream;
 
 class CMSUtils
 {
+    /**
+     * Orders AlgorithmIdentifiers by their DER encodings, which coincide exactly when
+     * {@link AlgorithmIdentifier#equals(Object)} holds.
+     */
+    static final Comparator ALGORITHM_IDENTIFIER_ORDER = new Comparator()
+    {
+        public int compare(Object a, Object b)
+        {
+            return Arrays.compareUnsigned(derEncoding(a), derEncoding(b));
+        }
+    };
+
+    private static byte[] derEncoding(Object algId)
+    {
+        try
+        {
+            return ((AlgorithmIdentifier)algId).getEncoded(ASN1Encoding.DER);
+        }
+        catch (IOException e)
+        {
+            throw new IllegalStateException("unable to encode AlgorithmIdentifier: " + e.getMessage());
+        }
+    }
+
+    /**
+     * A set of AlgorithmIdentifiers ordered on their encodings rather than hashed, for identifiers read
+     * from a message: the hash code of an ASN.1 object is cheap to collide, so a hash set of them can be
+     * driven quadratic by the sender.
+     */
+    static Set<AlgorithmIdentifier> algorithmIdentifierSet()
+    {
+        return new TreeSet<AlgorithmIdentifier>(ALGORITHM_IDENTIFIER_ORDER);
+    }
+
     private static final Set desAlgs = new HashSet();
     private static final Set mqvAlgs = new HashSet();
     private static final Set ecAlgs = new HashSet();

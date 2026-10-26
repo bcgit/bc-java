@@ -2,8 +2,10 @@ package org.bouncycastle.asn1.x509;
 
 import java.util.ArrayList;
 import java.util.Enumeration;
-import java.util.Hashtable;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.Vector;
 
 import org.bouncycastle.asn1.ASN1Encodable;
@@ -30,7 +32,8 @@ import org.bouncycastle.util.Properties;
 public class Extensions
     extends ASN1Object
 {
-    private Hashtable extensions = new Hashtable();
+    // keyed on the OID's string form: an ordered map keeps a block of extensions whose OIDs share a hash code linear to index
+    private Map extensions = new TreeMap();
     private Vector ordering = new Vector();
 
     public static Extension getExtension(Extensions extensions, ASN1ObjectIdentifier oid)
@@ -126,7 +129,7 @@ public class Extensions
         {
             Extension ext = Extension.getInstance(e.nextElement());
 
-            if (extensions.containsKey(ext.getExtnId()))
+            if (extensions.containsKey(ext.getExtnId().getId()))
             {
                 if (!Properties.isOverrideSet("org.bouncycastle.x509.ignore_repeated_extensions"))
                 {
@@ -136,7 +139,7 @@ public class Extensions
                 }
             }
 
-            extensions.put(ext.getExtnId(), ext);
+            extensions.put(ext.getExtnId().getId(), ext);
             ordering.addElement(ext.getExtnId());
         }
     }
@@ -160,7 +163,7 @@ public class Extensions
         Extension extension)
     {
         this.ordering.addElement(extension.getExtnId());
-        this.extensions.put(extension.getExtnId(), extension);
+        this.extensions.put(extension.getExtnId().getId(), extension);
     }
 
     /**
@@ -181,7 +184,7 @@ public class Extensions
             Extension ext = extensions[i];
 
             this.ordering.addElement(ext.getExtnId());
-            this.extensions.put(ext.getExtnId(), ext);
+            this.extensions.put(ext.getExtnId().getId(), ext);
         }
     }
 
@@ -201,7 +204,7 @@ public class Extensions
      */
     public Extension getExtension(ASN1ObjectIdentifier oid)
     {
-        return (Extension)extensions.get(oid);
+        return (Extension)extensions.get(oid.getId());
     }
 
     /**
@@ -245,7 +248,7 @@ public class Extensions
         while (e.hasMoreElements())
         {
             ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)e.nextElement();
-            Extension ext = (Extension)extensions.get(oid);
+            Extension ext = (Extension)extensions.get(oid.getId());
 
             vec.add(ext);
         }
@@ -261,11 +264,11 @@ public class Extensions
             return false;
         }
 
-        Enumeration e1 = extensions.keys();
+        Iterator e1 = extensions.keySet().iterator();
 
-        while (e1.hasMoreElements())
+        while (e1.hasNext())
         {
-            Object key = e1.nextElement();
+            Object key = e1.next();
 
             if (!extensions.get(key).equals(other.extensions.get(key)))
             {
@@ -295,9 +298,9 @@ public class Extensions
     {
         for (int i = 0; i != ordering.size(); i++)
         {
-            Object oid = ordering.elementAt(i);
+            ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)ordering.elementAt(i);
 
-            if (((Extension)extensions.get(oid)).isCritical())
+            if (((Extension)extensions.get(oid.getId())).isCritical())
             {
                 return true;
             }
@@ -312,9 +315,9 @@ public class Extensions
 
         for (int i = 0; i != ordering.size(); i++)
         {
-            Object oid = ordering.elementAt(i);
+            ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)ordering.elementAt(i);
 
-            if (((Extension)extensions.get(oid)).isCritical() == isCritical)
+            if (((Extension)extensions.get(oid.getId())).isCritical() == isCritical)
             {
                 oidVec.addElement(oid);
             }

@@ -51,6 +51,7 @@ import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.DLSequence;
+import org.bouncycastle.asn1.DLSet;
 import org.bouncycastle.asn1.bsi.BSIObjectIdentifiers;
 import org.bouncycastle.asn1.cms.Attribute;
 import org.bouncycastle.asn1.cms.AttributeTable;
@@ -108,6 +109,7 @@ import org.bouncycastle.cms.SignerInformationVerifierProvider;
 import org.bouncycastle.cms.bc.BcRSASignerInfoVerifierBuilder;
 import org.bouncycastle.cms.jcajce.JcaSignerId;
 import org.bouncycastle.cms.jcajce.JcaSignerInfoGeneratorBuilder;
+import org.bouncycastle.cms.jcajce.JcaSignerInfoVerifierBuilder;
 import org.bouncycastle.cms.jcajce.JcaSimpleSignerInfoGeneratorBuilder;
 import org.bouncycastle.cms.jcajce.JcaSimpleSignerInfoVerifierBuilder;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
@@ -127,6 +129,7 @@ import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
 import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.CollectionStore;
 import org.bouncycastle.util.Properties;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Store;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
@@ -912,6 +915,166 @@ public class NewSignedDataTest
         assertEquals(1, signers.getSigners(new SignerId(issuer, CMSTestUtil.collidingSerial(k))).size());
         assertEquals(0, signers.getSigners(new SignerId(issuer, BigInteger.ONE)).size());
         assertTrue("getSignerInfos took " + elapsed + "ms", elapsed < 3000L);
+    }
+
+    public void testCollidingDigestAlgorithmsStayLinear()
+        throws Exception
+    {
+        ASN1ObjectIdentifier[] oids = CMSTestUtil.collidingOIDs(15);
+        int n = oids.length;
+        ASN1EncodableVector algs = new ASN1EncodableVector(n);
+        for (int i = 0; i != n; i++)
+        {
+            // the OID contents hash alike, so as OCTET STRING parameters they make the identifiers hash alike
+            byte[] enc = oids[i].getEncoded();
+            algs.add(new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256, new DEROctetString(Arrays.copyOfRange(enc, 2, enc.length))));
+        }
+        for (int i = 1; i != n; i++)
+        {
+            assertEquals(algs.get(0).hashCode(), algs.get(i).hashCode());
+        }
+        SignedData sd = new SignedData(new DLSet(algs), new ContentInfo(CMSObjectIdentifiers.data, new DEROctetString(new byte[]{ 'h', 'i' })), null, null, new DERSet());
+        byte[] msg = new ContentInfo(CMSObjectIdentifiers.signedData, sd).getEncoded();
+        AlgorithmIdentifier last = AlgorithmIdentifier.getInstance(algs.get(n - 1));
+
+        long start = System.currentTimeMillis();
+        CMSSignedDataParser parser = new CMSSignedDataParser(new BcDigestCalculatorProvider(), msg);
+        parser.getSignedContent().drain();
+        Set<AlgorithmIdentifier> parsed = parser.getDigestAlgorithmIDs();
+        Set<AlgorithmIdentifier> loaded = new CMSSignedData(msg).getDigestAlgorithmIDs();
+        long elapsed = System.currentTimeMillis() - start;
+
+        assertEquals(n, parsed.size());
+        assertEquals(n, loaded.size());
+        assertTrue(parsed.contains(last));
+        assertTrue(loaded.contains(last));
+        assertFalse(loaded.contains(new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256)));
+        assertTrue("digest algorithm sets took " + elapsed + "ms", elapsed < 3000L);
+    }
+
+    public void testCollidingUnsignedAttributesStayLinear()
+        throws Exception
+    {
+        ASN1ObjectIdentifier[] oids = CMSTestUtil.collidingOIDs(15);
+        int n = oids.length;
+        ASN1EncodableVector attrs = new ASN1EncodableVector(n);
+        for (int i = 0; i != n; i++)
+        {
+            attrs.add(new Attribute(oids[i], new DERSet(DERNull.INSTANCE)));
+        }
+        // unsigned attributes are outside the signature, so a sender can add them to any message
+        SignerInfo si = new SignerInfo(new SignerIdentifier(new IssuerAndSerialNumber(new X500Name("CN=x"), BigInteger.ONE)),
+            new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256), (ASN1Set)null,
+            new AlgorithmIdentifier(PKCSObjectIdentifiers.rsaEncryption), new DEROctetString(new byte[64]), new DLSet(attrs));
+        byte[] msg = unverifiedSignedData(null, new DERSet(si));
+
+        long start = System.currentTimeMillis();
+        SignerInformation signer = (SignerInformation)new CMSSignedData(msg).getSignerInfos().getSigners().iterator().next();
+        AttributeTable table = signer.getUnsignedAttributes();
+        long elapsed = System.currentTimeMillis() - start;
+
+        assertEquals(n, table.size());
+        assertNotNull(table.get(oids[n - 1]));
+        assertNull(table.get(CMSAttributes.signingTime));
+        assertTrue("unsigned attribute table took " + elapsed + "ms", elapsed < 3000L);
+    }
+
+    private static DigestCalculatorProvider countingProvider(final DigestCalculatorProvider base, final int[] count)
+    {
+        return new DigestCalculatorProvider()
+        {
+            public DigestCalculator get(AlgorithmIdentifier digestAlgorithmIdentifier)
+                throws OperatorCreationException
+            {
+                count[0]++;
+                return base.get(digestAlgorithmIdentifier);
+            }
+        };
+    }
+
+    private byte[] multiSignerMessage(String[] signatureAlgorithms)
+        throws Exception
+    {
+        CMSSignedDataGenerator gen = new CMSSignedDataGenerator();
+        DigestCalculatorProvider digCalcProv = new JcaDigestCalculatorProviderBuilder().setProvider(BC).build();
+
+        for (int i = 0; i != signatureAlgorithms.length; i++)
+        {
+            ContentSigner contentSigner = new JcaContentSignerBuilder(signatureAlgorithms[i]).setProvider(BC).build(_signKP.getPrivate());
+
+            gen.addSignerInfoGenerator(new JcaSignerInfoGeneratorBuilder(digCalcProv).build(contentSigner, _signCert));
+        }
+
+        return gen.generate(new CMSProcessableByteArray("Hello World!".getBytes()), true).getEncoded();
+    }
+
+    public void testSignersShareContentDigest()
+        throws Exception
+    {
+        CMSSignedData s = new CMSSignedData(multiSignerMessage(new String[]{ "SHA256withRSA", "SHA256withRSA", "SHA256withRSA" }));
+
+        int[] count = new int[1];
+        DigestCalculatorProvider digCalcProv = new JcaDigestCalculatorProviderBuilder().setProvider(BC).build();
+        SignerInformationVerifier verifier = new JcaSignerInfoVerifierBuilder(countingProvider(digCalcProv, count)).setProvider(BC).build(_signCert);
+        count[0] = 0;
+
+        Collection signers = s.getSignerInfos().getSigners();
+        assertEquals(3, signers.size());
+        for (Iterator it = signers.iterator(); it.hasNext();)
+        {
+            assertTrue(((SignerInformation)it.next()).verify(verifier));
+        }
+
+        // the content is digested once for the algorithm, not once per signer
+        assertEquals(1, count[0]);
+    }
+
+    public void testDigestAlgorithmLimit()
+        throws Exception
+    {
+        byte[] encoded = multiSignerMessage(new String[]{ "SHA256withRSA", "SHA384withRSA" });
+        DigestCalculatorProvider digCalcProv = new JcaDigestCalculatorProviderBuilder().setProvider(BC).build();
+        SignerInformationVerifier verifier = new JcaSignerInfoVerifierBuilder(digCalcProv).setProvider(BC).build(_signCert);
+
+        System.setProperty(Properties.CMS_MAX_DIGEST_ALGORITHMS, "1");
+        try
+        {
+            Iterator it = new CMSSignedData(encoded).getSignerInfos().getSigners().iterator();
+
+            assertTrue(((SignerInformation)it.next()).verify(verifier));
+            try
+            {
+                ((SignerInformation)it.next()).verify(verifier);
+                fail("second digest algorithm accepted under a limit of one");
+            }
+            catch (CMSException e)
+            {
+                assertEquals("number of digest algorithms exceeds the limit of 1", e.getMessage());
+            }
+
+            try
+            {
+                new CMSSignedDataParser(digCalcProv, encoded);
+                fail("parser accepted two digest algorithms under a limit of one");
+            }
+            catch (CMSException e)
+            {
+                assertEquals("number of digest algorithms exceeds the limit of 1", e.getMessage());
+            }
+        }
+        finally
+        {
+            System.getProperties().remove(Properties.CMS_MAX_DIGEST_ALGORITHMS);
+        }
+
+        // unlimited by default
+        Collection signers = new CMSSignedData(encoded).getSignerInfos().getSigners();
+        assertEquals(2, signers.size());
+        for (Iterator it = signers.iterator(); it.hasNext();)
+        {
+            assertTrue(((SignerInformation)it.next()).verify(verifier));
+        }
+        new CMSSignedDataParser(digCalcProv, encoded).getSignedContent().drain();
     }
 
     public static Test suite()

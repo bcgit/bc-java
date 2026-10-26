@@ -1,7 +1,8 @@
 package org.bouncycastle.asn1.x509;
 
 import java.util.Enumeration;
-import java.util.Hashtable;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.Vector;
 
 import org.bouncycastle.asn1.ASN1Encodable;
@@ -22,7 +23,8 @@ import org.bouncycastle.asn1.DERSequence;
 public class ExtendedKeyUsage
     extends ASN1Object
 {
-    Hashtable     usageTable = new Hashtable();
+    // the OIDs' string forms: an ordered set keeps a list of purposes whose OIDs share a hash code linear to build
+    Set           usageTable = new TreeSet();
     ASN1Sequence  seq;
 
     /**
@@ -81,7 +83,7 @@ public class ExtendedKeyUsage
     {
         this.seq = new DERSequence(usage);
 
-        this.usageTable.put(usage, usage);
+        this.usageTable.add(usage.getId());
     }
     
     private ExtendedKeyUsage(
@@ -103,7 +105,7 @@ public class ExtendedKeyUsage
             {
                 throw new IllegalArgumentException("Only ASN1ObjectIdentifiers allowed in ExtendedKeyUsage.");
             }
-            this.usageTable.put(o, o);
+            this.usageTable.add(((ASN1ObjectIdentifier)o.toASN1Primitive()).getId());
         }
     }
 
@@ -120,7 +122,7 @@ public class ExtendedKeyUsage
         for (int i = 0; i != usages.length; i++)
         {
             v.add(usages[i]);
-            this.usageTable.put(usages[i], usages[i]);
+            this.usageTable.add(usages[i].getId());
         }
 
         this.seq = new DERSequence(v);
@@ -140,7 +142,7 @@ public class ExtendedKeyUsage
             KeyPurposeId o = KeyPurposeId.getInstance(e.nextElement());
 
             v.add(o);
-            this.usageTable.put(o, o);
+            this.usageTable.add(o.getId());
         }
 
         this.seq = new DERSequence(v);
@@ -155,7 +157,7 @@ public class ExtendedKeyUsage
     public boolean hasKeyPurposeId(
         KeyPurposeId keyPurposeId)
     {
-        return (usageTable.get(keyPurposeId) != null);
+        return usageTable.contains(keyPurposeId.getId());
     }
     
     /**

@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -77,6 +76,7 @@ public class CMSSignedData
 
     // Lazily constructed
     private SignerInformationStore signerInfoStore;
+    private final ContentDigestCache digestCache = new ContentDigestCache();
 
     private CMSSignedData(ASN1ObjectIdentifier contentType, SignedData signedData, CMSTypedData signedContent,
         SignerInformationStore signerInfoStore)
@@ -342,7 +342,7 @@ public class CMSSignedData
 
                 if (hashes == null)
                 {
-                    signerInfos.add(new SignerInformation(info, contentType, signedContent, null));
+                    signerInfos.add(new SignerInformation(info, contentType, signedContent, null, digestCache));
                 }
                 else
                 {
@@ -428,7 +428,7 @@ public class CMSSignedData
      */
     public Set<AlgorithmIdentifier> getDigestAlgorithmIDs()
     {
-        Set<AlgorithmIdentifier> digests = new HashSet<AlgorithmIdentifier>();
+        Set<AlgorithmIdentifier> digests = CMSUtils.algorithmIdentifierSet();
 
         for (Enumeration en = signedData.getDigestAlgorithms().getObjects(); en.hasMoreElements(); )
         {
@@ -627,7 +627,7 @@ public class CMSSignedData
         //
         // build up the new set
         //
-        Set<AlgorithmIdentifier> digestAlgs = new HashSet<AlgorithmIdentifier>();
+        Set<AlgorithmIdentifier> digestAlgs = CMSUtils.algorithmIdentifierSet();
 
         Iterator it = digestAlgorithms.iterator();
         while (it.hasNext())
@@ -681,7 +681,7 @@ public class CMSSignedData
         //
         // replace the signers in the SignedData object
         //
-        Set<AlgorithmIdentifier> digestAlgs = new HashSet<AlgorithmIdentifier>();
+        Set<AlgorithmIdentifier> digestAlgs = CMSUtils.algorithmIdentifierSet();
 
         Collection<SignerInformation> signers = signerInformationStore.getSigners();
         ASN1EncodableVector vec = new ASN1EncodableVector(signers.size());
