@@ -121,9 +121,9 @@ public class Argon2Parameters
          */
         public Builder withParallelism(int parallelism)
         {
-            if (lanes < 1)
+            if (parallelism < 1 || parallelism >= (1 << 24))
             {
-                throw new IllegalArgumentException("lanes out of range");
+                throw new IllegalArgumentException("parallelism out of range");
             }
             this.lanes = parallelism;
             return this;
@@ -173,6 +173,12 @@ public class Argon2Parameters
          */
         public Builder withIterations(int iterations)
         {
+            // RFC 9106 allows up to 2^32 - 1 passes, but they are held as a signed 32-bit count, so Integer.MAX_VALUE
+            // is the ceiling regardless.
+            if (iterations < 1)
+            {
+                throw new IllegalArgumentException("iterations out of range");
+            }
             this.iterations = iterations;
             return this;
         }
