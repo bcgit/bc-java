@@ -25,7 +25,14 @@ import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.RSAESOAEPparams;
+import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.DERPrintableString;
+import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.DERSet;
+import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.x500.X500Name;
+import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.AuthorityKeyIdentifier;
 import org.bouncycastle.asn1.x509.BasicConstraints;
@@ -289,6 +296,31 @@ public class CMSTestUtil
         throws Exception
     {
         return  new X509AttributeCertificateHolder(CMSTestUtil.attrCert);
+    }
+
+    /**
+     * A name of n single-valued CN RDNs with distinct short values. The reordered form lists the
+     * same RDNs in reverse and as UTF8String rather than PrintableString, so it is equal to the
+     * plain form but encodes differently - the shape a sender uses to force a full comparison.
+     */
+    public static X500Name makeLargeName(int n, boolean reordered)
+    {
+        ASN1EncodableVector rdns = new ASN1EncodableVector();
+        for (int k = 0; k < n; k++)
+        {
+            String s = Integer.toString(reordered ? n - 1 - k : k, 36);
+            ASN1Encodable v = reordered ? (ASN1Encodable)new DERUTF8String(s) : new DERPrintableString(s);
+            rdns.add(new DERSet(new DERSequence(new ASN1Encodable[]{ BCStyle.CN, v })));
+        }
+        return X500Name.getInstance(new DERSequence(rdns));
+    }
+
+    /**
+     * The i-th of a family of serial numbers that all share one BigInteger.hashCode().
+     */
+    public static BigInteger collidingSerial(int i)
+    {
+        return BigInteger.valueOf(((long)i << 32) | ((12345 - 31 * i) & 0xffffffffL));
     }
 
     public static KeyPair makeKeyPair()

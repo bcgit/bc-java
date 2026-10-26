@@ -14,6 +14,7 @@ import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.ASN1String;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.ASN1UTF8String;
+import org.bouncycastle.asn1.DERPrintableString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.DERTaggedObject;
@@ -147,6 +148,65 @@ public class X500NameTest
         }
     }
 
+    private static X500Name largeName(int n, boolean reordered)
+    {
+        ASN1EncodableVector rdns = new ASN1EncodableVector();
+        for (int k = 0; k < n; k++)
+        {
+            String s = Integer.toString(reordered ? n - 1 - k : k, 36);
+            ASN1Encodable v = reordered ? (ASN1Encodable)new DERUTF8String(s) : new DERPrintableString(s);
+            rdns.add(new DERSet(new DERSequence(new ASN1Encodable[]{ BCStyle.CN, v })));
+        }
+        return X500Name.getInstance(new DERSequence(rdns));
+    }
+
+    private static X500Name nameOf(String[] values)
+    {
+        ASN1EncodableVector rdns = new ASN1EncodableVector();
+        for (int k = 0; k < values.length; k++)
+        {
+            rdns.add(new DERSet(new DERSequence(new ASN1Encodable[]{ BCStyle.CN, new DERPrintableString(values[k]) })));
+        }
+        return X500Name.getInstance(new DERSequence(rdns));
+    }
+
+    private void reorderedLargeNameTest()
+    {
+        int n = 20000;
+        X500Name plain = largeName(n, false);
+        X500Name reordered = largeName(n, true);
+
+        // the same RDNs, reversed and in another string type: equal, but not by encoding or position
+        long start = System.currentTimeMillis();
+        boolean equal = plain.equals(reordered) && reordered.equals(plain);
+        long elapsed = System.currentTimeMillis() - start;
+
+        isTrue("reordered large names not equal", equal);
+        isTrue("hashCode differs for equal names", plain.hashCode() == reordered.hashCode());
+        isTrue("equals took " + elapsed + "ms", elapsed < 3000L);
+
+        // one value changed in the middle: same size, same first RDN, not equal
+        ASN1EncodableVector rdns = new ASN1EncodableVector();
+        for (int k = 0; k < n; k++)
+        {
+            String s = Integer.toString(k == n / 2 ? n : n - 1 - k, 36);
+            rdns.add(new DERSet(new DERSequence(new ASN1Encodable[]{ BCStyle.CN, new DERUTF8String(s) })));
+        }
+        isTrue("altered large name equal", !plain.equals(X500Name.getInstance(new DERSequence(rdns))));
+    }
+
+    private void multisetEqualityTest()
+    {
+        // equality is on the multiset of RDNs: a repeated RDN has to be repeated on both sides
+        isTrue(nameOf(new String[]{ "a", "a", "b" }).equals(nameOf(new String[]{ "b", "a", "a" })));
+        isTrue(nameOf(new String[]{ "a", "b", "a" }).equals(nameOf(new String[]{ "a", "a", "b" })));
+        isTrue(!nameOf(new String[]{ "a", "a", "b" }).equals(nameOf(new String[]{ "a", "b", "b" })));
+        isTrue(!nameOf(new String[]{ "a", "b", "c" }).equals(nameOf(new String[]{ "a", "b", "d" })));
+        // the comparison is case and space insensitive in either order
+        isTrue(nameOf(new String[]{ "A", "b c" }).equals(nameOf(new String[]{ "b  C", "a" })));
+        isTrue(!nameOf(new String[]{ "ab", "c" }).equals(nameOf(new String[]{ "c", "a b" })));
+    }
+
     public void performTest()
         throws Exception
     {
@@ -157,6 +217,8 @@ public class X500NameTest
         hexEscapedUTF8ParseTest();
         escapeRoundTripTest();
         turkishLocaleCanonicalizeTest();
+        reorderedLargeNameTest();
+        multisetEqualityTest();
 
         testEncodingPrintableString(BCStyle.C, "AU");
         testEncodingPrintableString(BCStyle.SERIALNUMBER, "123456");

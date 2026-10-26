@@ -2,10 +2,8 @@ package org.bouncycastle.cms;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.util.Iterable;
@@ -14,7 +12,6 @@ public class RecipientInformationStore
     implements Iterable<RecipientInformation>
 {
     private final List all; //ArrayList[RecipientInformation]
-    private final Map table = new HashMap(); // HashMap[RecipientID, ArrayList[RecipientInformation]]
 
     /**
      * Create a store containing a single RecipientInformation object.
@@ -26,32 +23,11 @@ public class RecipientInformationStore
     {
         this.all = new ArrayList(1);
         this.all.add(recipientInformation);
-
-        RecipientId sid = recipientInformation.getRID();
-
-        table.put(sid, all);
     }
 
     public RecipientInformationStore(
         Collection<RecipientInformation> recipientInfos)
     {
-        Iterator it = recipientInfos.iterator();
-
-        while (it.hasNext())
-        {
-            RecipientInformation recipientInformation = (RecipientInformation)it.next();
-            RecipientId rid = recipientInformation.getRID();
-
-            List list = (ArrayList)table.get(rid);
-            if (list == null)
-            {
-                list = new ArrayList(1);
-                table.put(rid, list);
-            }
-
-            list.add(recipientInformation);
-        }
-
         this.all = new ArrayList(recipientInfos);
     }
 
@@ -110,25 +86,33 @@ public class RecipientInformationStore
             {
                 List<RecipientInformation> results = new ArrayList();
 
-                List<RecipientInformation> match1 = (ArrayList<RecipientInformation>)table.get(new PKIXRecipientId(pkixId.getType(), issuer, pkixId.getSerialNumber(), null));
-                if (match1 != null)
-                {
-                    results.addAll(match1);
-                }
-
-                Collection<RecipientInformation> match2 = (ArrayList<RecipientInformation>)table.get(new PKIXRecipientId(pkixId.getType(), null, null, subjectKeyId));
-                if (match2 != null)
-                {
-                    results.addAll(match2);
-                }
+                results.addAll(findRecipients(new PKIXRecipientId(pkixId.getType(), issuer, pkixId.getSerialNumber(), null)));
+                results.addAll(findRecipients(new PKIXRecipientId(pkixId.getType(), null, null, subjectKeyId)));
 
                 return results;
             }
         }
 
-        List list = (ArrayList)table.get(selector);
+        return findRecipients(selector);
+    }
 
-        return list == null ? new ArrayList() : new ArrayList(list);
+    private List findRecipients(RecipientId selector)
+    {
+        // a message carries a handful of recipients: a scan costs no more than a hash lookup
+        // and, unlike a map keyed on the recipient ids, cannot be flooded by ids chosen to collide
+        List results = new ArrayList();
+
+        for (Iterator it = all.iterator(); it.hasNext();)
+        {
+            RecipientInformation recipient = (RecipientInformation)it.next();
+
+            if (selector.equals(recipient.getRID()))
+            {
+                results.add(recipient);
+            }
+        }
+
+        return results;
     }
 
 

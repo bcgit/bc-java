@@ -120,8 +120,9 @@ public class X509CertificateHolderSelector
             {
                 IssuerAndSerialNumber iAndS = new IssuerAndSerialNumber(certHldr.toASN1Structure());
 
-                return iAndS.getName().equals(this.issuer)
-                    && iAndS.getSerialNumber().hasValue(this.serialNumber);
+                // the serial first: it is a cheap reject, the name comparison is not
+                return iAndS.getSerialNumber().hasValue(this.serialNumber)
+                    && iAndS.getName().equals(this.issuer);
             }
             else if (subjectKeyId != null)
             {

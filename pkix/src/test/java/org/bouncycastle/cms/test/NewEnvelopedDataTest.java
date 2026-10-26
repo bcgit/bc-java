@@ -54,6 +54,7 @@ import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.BERSequence;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERSet;
+import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
@@ -70,7 +71,9 @@ import org.bouncycastle.asn1.cms.KeyAgreeRecipientInfo;
 import org.bouncycastle.asn1.cms.OtherRecipientInfo;
 import org.bouncycastle.asn1.cms.RecipientEncryptedKey;
 import org.bouncycastle.asn1.cms.KeyTransRecipientInfo;
+import org.bouncycastle.asn1.cms.IssuerAndSerialNumber;
 import org.bouncycastle.asn1.cms.RecipientInfo;
+import org.bouncycastle.asn1.cms.RecipientIdentifier;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.gm.GMObjectIdentifiers;
 import org.bouncycastle.asn1.kisa.KISAObjectIdentifiers;
@@ -682,6 +685,65 @@ public class NewEnvelopedDataTest
         throws Exception
     {
         junit.textui.TestRunner.run(NewEnvelopedDataTest.suite());
+    }
+
+    private static RecipientInfo unverifiedKeyTransRecipient(X500Name issuer, BigInteger serial)
+    {
+        return new RecipientInfo(new KeyTransRecipientInfo(new RecipientIdentifier(new IssuerAndSerialNumber(issuer, serial)),
+            new AlgorithmIdentifier(PKCSObjectIdentifiers.rsaEncryption, DERNull.INSTANCE), new DEROctetString(new byte[0])));
+    }
+
+    private static byte[] unverifiedEnvelopedData(ASN1EncodableVector recipientInfos)
+        throws IOException
+    {
+        EncryptedContentInfo eci = new EncryptedContentInfo(CMSObjectIdentifiers.data,
+            new AlgorithmIdentifier(NISTObjectIdentifiers.id_aes128_CBC, new DEROctetString(new byte[16])), new DEROctetString(new byte[16]));
+        return new ContentInfo(CMSObjectIdentifiers.envelopedData, new EnvelopedData(null, new DERSet(recipientInfos), eci, (ASN1Set)null))
+            .getEncoded(ASN1Encoding.DER);
+    }
+
+    public void testReorderedRecipientIssuersStayLinear()
+        throws Exception
+    {
+        int n = 20000;
+        X500Name plain = CMSTestUtil.makeLargeName(n, false);
+        ASN1EncodableVector ris = new ASN1EncodableVector();
+        ris.add(unverifiedKeyTransRecipient(plain, BigInteger.ONE));
+        ris.add(unverifiedKeyTransRecipient(CMSTestUtil.makeLargeName(n, true), BigInteger.ONE));
+        byte[] msg = unverifiedEnvelopedData(ris);
+
+        // the recipient store is built by the constructor, before any key is looked for
+        long start = System.currentTimeMillis();
+        CMSEnvelopedData env = new CMSEnvelopedData(msg);
+        RecipientInformationStore recipients = env.getRecipientInfos();
+        long elapsed = System.currentTimeMillis() - start;
+
+        assertEquals(2, recipients.size());
+        assertEquals(2, recipients.getRecipients(new KeyTransRecipientId(plain, BigInteger.ONE)).size());
+        assertTrue("CMSEnvelopedData took " + elapsed + "ms", elapsed < 3000L);
+    }
+
+    public void testCollidingRecipientIdsStayLinear()
+        throws Exception
+    {
+        int k = 16000;
+        X500Name issuer = new X500Name("CN=x");
+        ASN1EncodableVector ris = new ASN1EncodableVector();
+        for (int i = 1; i <= k; i++)
+        {
+            ris.add(unverifiedKeyTransRecipient(issuer, CMSTestUtil.collidingSerial(i)));
+        }
+        byte[] msg = unverifiedEnvelopedData(ris);
+
+        long start = System.currentTimeMillis();
+        CMSEnvelopedData env = new CMSEnvelopedData(msg);
+        RecipientInformationStore recipients = env.getRecipientInfos();
+        long elapsed = System.currentTimeMillis() - start;
+
+        assertEquals(k, recipients.size());
+        assertEquals(1, recipients.getRecipients(new KeyTransRecipientId(issuer, CMSTestUtil.collidingSerial(k))).size());
+        assertEquals(0, recipients.getRecipients(new KeyTransRecipientId(issuer, BigInteger.ONE)).size());
+        assertTrue("CMSEnvelopedData took " + elapsed + "ms", elapsed < 3000L);
     }
 
     public static Test suite()

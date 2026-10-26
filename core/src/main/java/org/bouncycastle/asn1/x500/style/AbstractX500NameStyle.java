@@ -1,6 +1,7 @@
 package org.bouncycastle.asn1.x500.style;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.Hashtable;
 
@@ -136,6 +137,16 @@ public abstract class AbstractX500NameStyle
         return new DERUTF8String(value);
     }
 
+    /**
+     * Two names are equal when they carry the same multiset of RDNs, each RDN compared by
+     * {@link #rdnAreEqual(RDN, RDN)}. The RDNs are first compared position by position, in the
+     * order they appear or, when the first attribute types differ, in reverse (the usual two
+     * encodings of one name); only when that fails are the two multisets compared, by sorting
+     * the canonical form of every RDN once, so a name reached from untrusted data costs
+     * n log n in its number of RDNs rather than the n squared of a pairwise search. A subclass
+     * that overrides rdnAreEqual is consulted on the positional pass; the multiset pass compares
+     * the canonical forms of {@link IETFUtils#canonicalString(ASN1Encodable)}.
+     */
     public boolean areEqual(X500Name name1, X500Name name2)
     {
         if (name1.size() != name2.size())
@@ -145,6 +156,12 @@ public abstract class AbstractX500NameStyle
 
         RDN[] rdns1 = name1.getRDNs();
         RDN[] rdns2 = name2.getRDNs();
+        int count = rdns1.length;
+
+        if (count == 0)
+        {
+            return true;
+        }
 
         boolean reverse = false;
 
@@ -156,9 +173,27 @@ public abstract class AbstractX500NameStyle
             reverse = !first1.getType().equals(first2.getType());  // guess forward
         }
 
-        for (int i = 0; i != rdns1.length; i++)
+        boolean positional = true;
+        for (int i = 0; i != count && positional; i++)
         {
-            if (!foundMatch(reverse, rdns1[i], rdns2))
+            positional = rdnAreEqual(rdns1[i], rdns2[reverse ? count - 1 - i : i]);
+        }
+
+        if (positional)
+        {
+            return true;
+        }
+
+        // the same RDNs in some other order: sort each side's canonical forms and compare in step
+        RDNKey[] keys1 = canonicalKeys(rdns1);
+        RDNKey[] keys2 = canonicalKeys(rdns2);
+
+        Arrays.sort(keys1);
+        Arrays.sort(keys2);
+
+        for (int i = 0; i != count; i++)
+        {
+            if (keys1[i].compareTo(keys2[i]) != 0)
             {
                 return false;
             }
@@ -167,32 +202,69 @@ public abstract class AbstractX500NameStyle
         return true;
     }
 
-    private boolean foundMatch(boolean reverse, RDN rdn, RDN[] possRDNs)
+    private static RDNKey[] canonicalKeys(RDN[] rdns)
     {
-        if (reverse)
+        RDNKey[] keys = new RDNKey[rdns.length];
+
+        for (int i = 0; i != rdns.length; i++)
         {
-            for (int i = possRDNs.length - 1; i >= 0; i--)
-            {
-                if (possRDNs[i] != null && rdnAreEqual(rdn, possRDNs[i]))
-                {
-                    possRDNs[i] = null;
-                    return true;
-                }
-            }
+            keys[i] = new RDNKey(rdns[i]);
         }
-        else
+
+        return keys;
+    }
+
+    /**
+     * The canonical form of one RDN: its attribute types and canonical values in order, the
+     * relation IETFUtils.rDNAreEqual applies, held as separate strings so no delimiter can be
+     * confused with value content.
+     */
+    private static final class RDNKey
+        implements Comparable
+    {
+        private final String[] types;
+        private final String[] values;
+
+        RDNKey(RDN rdn)
         {
-            for (int i = 0; i != possRDNs.length; i++)
+            AttributeTypeAndValue[] atvs = rdn.getTypesAndValues();
+
+            types = new String[atvs.length];
+            values = new String[atvs.length];
+
+            for (int i = 0; i != atvs.length; i++)
             {
-                if (possRDNs[i] != null && rdnAreEqual(rdn, possRDNs[i]))
-                {
-                    possRDNs[i] = null;
-                    return true;
-                }
+                types[i] = atvs[i].getType().getId();
+                values[i] = IETFUtils.canonicalString(atvs[i].getValue());
             }
         }
 
-        return false;
+        public int compareTo(Object o)
+        {
+            RDNKey other = (RDNKey)o;
+
+            if (types.length != other.types.length)
+            {
+                return types.length < other.types.length ? -1 : 1;
+            }
+
+            for (int i = 0; i != types.length; i++)
+            {
+                int cmp = types[i].compareTo(other.types[i]);
+                if (cmp != 0)
+                {
+                    return cmp;
+                }
+
+                cmp = values[i].compareTo(other.values[i]);
+                if (cmp != 0)
+                {
+                    return cmp;
+                }
+            }
+
+            return 0;
+        }
     }
 
     protected boolean rdnAreEqual(RDN rdn1, RDN rdn2)

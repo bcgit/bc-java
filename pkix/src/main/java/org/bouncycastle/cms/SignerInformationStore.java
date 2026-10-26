@@ -2,10 +2,8 @@ package org.bouncycastle.cms;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 import org.bouncycastle.util.Iterable;
 
@@ -13,7 +11,6 @@ public class SignerInformationStore
     implements Iterable<SignerInformation>
 {
     private List all = new ArrayList();
-    private Map table = new HashMap();
 
     /**
      * Create a store containing a single SignerInformation object.
@@ -25,10 +22,6 @@ public class SignerInformationStore
     {
         this.all = new ArrayList(1);
         this.all.add(signerInfo);
-
-        SignerId sid = signerInfo.getSID();
-
-        table.put(sid, all);
     }
 
     /**
@@ -39,23 +32,6 @@ public class SignerInformationStore
     public SignerInformationStore(
         Collection<SignerInformation>  signerInfos)
     {
-        Iterator    it = signerInfos.iterator();
-
-        while (it.hasNext())
-        {
-            SignerInformation   signer = (SignerInformation)it.next();
-            SignerId            sid = signer.getSID();
-
-            List list = (ArrayList)table.get(sid);
-            if (list == null)
-            {
-                list = new ArrayList(1);
-                table.put(sid, list);
-            }
-
-            list.add(signer);
-        }
-
         this.all = new ArrayList(signerInfos);
     }
 
@@ -125,9 +101,21 @@ public class SignerInformationStore
         }
         else
         {
-            List list = (ArrayList)table.get(selector);
+            // a message carries a handful of signers: a scan costs no more than a hash lookup
+            // and, unlike a map keyed on the signer ids, cannot be flooded by ids chosen to collide
+            List results = new ArrayList();
 
-            return list == null ? new ArrayList() : new ArrayList(list);
+            for (Iterator it = all.iterator(); it.hasNext();)
+            {
+                SignerInformation signer = (SignerInformation)it.next();
+
+                if (selector.equals(signer.getSID()))
+                {
+                    results.add(signer);
+                }
+            }
+
+            return results;
         }
     }
 
