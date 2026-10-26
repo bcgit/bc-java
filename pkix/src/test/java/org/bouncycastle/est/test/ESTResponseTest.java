@@ -13,6 +13,7 @@ import javax.net.ssl.SSLSession;
 
 import junit.framework.TestCase;
 import org.bouncycastle.est.ESTResponse;
+import org.bouncycastle.est.LimitedSource;
 import org.bouncycastle.est.Source;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
@@ -104,6 +105,97 @@ public class ESTResponseTest
         catch (IOException e)
         {
             fail("Error reading input stream data: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Every header line was added to the header table by copying that header's value array, so a
+     * response repeating one header many times was quadratic to parse: about 7 seconds per
+     * megabyte of header lines, before any read limit applied. The values are collected once now.
+     */
+    public void testManyHeaderLinesStayLinear()
+        throws IOException
+    {
+        int lines = 200000;
+        StringBuilder sb = new StringBuilder("HTTP/1.1 200 OK\r\n");
+        for (int i = 0; i < lines; i++)
+        {
+            sb.append("x: a\r\n");
+        }
+        sb.append("Content-Length: 0\r\n\r\n");
+
+        long start = System.currentTimeMillis();
+
+        ESTResponse response = new ESTResponse(null,
+            getMockSource(new ByteArrayInputStream(Strings.toByteArray(sb.toString()))));
+
+        long elapsed = System.currentTimeMillis() - start;
+
+        assertTrue("parsing took " + elapsed + "ms", elapsed < 2000L);
+        assertEquals(lines, ((String[])((Map)response.getHeaders()).get("x")).length);
+        assertEquals("0", response.getHeader("Content-Length"));
+    }
+
+    /** The absolute read limit of a LimitedSource covers the header block, not only the body. */
+    public void testHeaderBlockCountsAgainstReadLimit()
+        throws IOException
+    {
+        StringBuilder sb = new StringBuilder("HTTP/1.1 200 OK\r\n");
+        for (int i = 0; i < 2000; i++)
+        {
+            sb.append("x: a\r\n");
+        }
+        sb.append("Content-Length: 0\r\n\r\n");
+        final byte[] data = Strings.toByteArray(sb.toString());
+
+        // within the limit
+        new ESTResponse(null, new LimitedMockSource(data, data.length + 1));
+
+        try
+        {
+            new ESTResponse(null, new LimitedMockSource(data, 4096));
+            fail("header block over the read limit was accepted");
+        }
+        catch (IOException e)
+        {
+            assertEquals("Absolute Read Limit exceeded by headers: 4096", e.getMessage());
+        }
+    }
+
+    private static class LimitedMockSource
+        implements Source<SSLSession>, LimitedSource
+    {
+        private final byte[] data;
+        private final long limit;
+
+        LimitedMockSource(byte[] data, long limit)
+        {
+            this.data = data;
+            this.limit = limit;
+        }
+
+        public InputStream getInputStream()
+        {
+            return new ByteArrayInputStream(data);
+        }
+
+        public OutputStream getOutputStream()
+        {
+            return null;
+        }
+
+        public SSLSession getSession()
+        {
+            return null;
+        }
+
+        public void close()
+        {
+        }
+
+        public Long getAbsoluteReadLimit()
+        {
+            return Long.valueOf(limit);
         }
     }
 

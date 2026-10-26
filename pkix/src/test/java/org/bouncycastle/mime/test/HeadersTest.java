@@ -166,7 +166,7 @@ public class HeadersTest
         long elapsed = System.currentTimeMillis() - start;
 
         // concatenating this is ~60s; appending it is milliseconds
-        assertTrue("parsing took " + elapsed + "ms", elapsed < 10000L);
+        assertTrue("parsing took " + elapsed + "ms", elapsed < 2000L);
 
         String value = h.getValues("X-Folded")[0];
         assertEquals("start".length() + lines * 8, value.length());

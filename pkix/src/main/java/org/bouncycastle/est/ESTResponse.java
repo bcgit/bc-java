@@ -3,6 +3,11 @@ package org.bouncycastle.est;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.bouncycastle.util.Properties;
@@ -23,6 +28,7 @@ public class ESTResponse
     private InputStream inputStream;
     private Long contentLength;
     private long read = 0;
+    private int lineBytesRead = 0;
     private Long absoluteReadLimit;
 
     public long getAbsoluteReadLimit()
@@ -74,17 +80,41 @@ public class ESTResponse
         //
         // Headers.
         //
+        // the values of each header are collected and stored once; adding them to the header table one at a
+        // time copied the header's array each time, which made a response with many lines of one header
+        // quadratic to parse, and the absolute read limit of the source covers the header block as well
+        Map<String, List<String>> collected = new HashMap<String, List<String>>();
+        List<String> keyOrder = new ArrayList<String>();
+        long headerBytes = 0;
         String line = readStringIncluding('\n');
         int i;
         while (line.length() > 0)
         {
+            headerBytes += lineBytesRead;
+            if (absoluteReadLimit != null && headerBytes >= absoluteReadLimit)
+            {
+                throw new IOException("Absolute Read Limit exceeded by headers: " + absoluteReadLimit);
+            }
             i = line.indexOf(':');
             if (i > -1)
             {
                 String k = Strings.toLowerCase(line.substring(0, i).trim()); // Header keys are case insensitive
-                headers.add(k, line.substring(i + 1).trim());
+                List<String> values = (List<String>)collected.get(k);
+                if (values == null)
+                {
+                    values = new ArrayList<String>();
+                    collected.put(k, values);
+                    keyOrder.add(k);
+                }
+                values.add(line.substring(i + 1).trim());
             }
             line = readStringIncluding('\n');
+        }
+        for (Iterator<String> it = keyOrder.iterator(); it.hasNext();)
+        {
+            String k = (String)it.next();
+            List<String> values = (List<String>)collected.get(k);
+            headers.put(k, (String[])values.toArray(new String[values.size()]));
         }
 
         boolean chunked = headers.getFirstValueOrEmpty("Transfer-Encoding").equalsIgnoreCase("chunked");
@@ -243,6 +273,7 @@ public class ESTResponse
             throw new EOFException();
         }
 
+        lineBytesRead = c;
         return new String(lineBuffer, 0, c).trim();
     }
 
