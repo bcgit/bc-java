@@ -5,10 +5,10 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.cryptlib.CryptlibObjectIdentifiers;
@@ -1209,10 +1209,11 @@ public class PGPPublicKey
         }
 
         // key signatures
-        joinPgpSignatureList(copy.keySigs, keySigs, false, true);
+        joinPgpSignatureList(copy.keySigs, keySigs, true);
 
-        // user-ids and id sigs - the key's indexed once rather than scanned for each of the copy's, the first occurrence keeping its index
-        Map<UserDataPacket, Integer> idIndices = new HashMap<UserDataPacket, Integer>();
+        // user-ids and id sigs - the key's indexed once rather than scanned for each of the copy's, the first
+        // occurrence keeping its index; an ordered index, as the copy chooses the IDs and so their hash codes
+        Map<UserDataPacket, Integer> idIndices = new TreeMap<UserDataPacket, Integer>(MergeOrder.USER_DATA);
         for (int i = 0; i < ids.size(); i++)
         {
             UserDataPacket existingId = (UserDataPacket)ids.get(i);
@@ -1252,7 +1253,7 @@ public class PGPPublicKey
             }
 
             List<PGPSignature> existingIdSigs = (List<PGPSignature>)idSigs.get(existingIdIndex);
-            joinPgpSignatureList(copyIdSigs, existingIdSigs, false, true);
+            joinPgpSignatureList(copyIdSigs, existingIdSigs, true);
         }
 
         // subSigs
@@ -1264,7 +1265,7 @@ public class PGPPublicKey
             }
             else
             {
-                joinPgpSignatureList(copy.subSigs, subSigs, false, subSigs != null);
+                joinPgpSignatureList(copy.subSigs, subSigs, subSigs != null);
             }
         }
 
@@ -1276,7 +1277,6 @@ public class PGPPublicKey
 
     private static void joinPgpSignatureList(List<PGPSignature> source,
                                              List<PGPSignature> rlt,
-                                             boolean needBreak,
                                              boolean isNotNull)
         throws PGPException
     {
@@ -1285,8 +1285,9 @@ public class PGPPublicKey
             return;
         }
 
-        // rlt is indexed once rather than scanned for each signature of source, which was quadratic - see PGPSignature.Identity
-        Map<PGPSignature.Identity, Integer> indices = new HashMap<PGPSignature.Identity, Integer>();
+        // rlt is indexed once rather than scanned for each signature of source, which was quadratic, and the
+        // index is ordered rather than hashed, as the copy chooses the signature values - see PGPSignature.Identity
+        Map<PGPSignature.Identity, Integer> indices = new TreeMap<PGPSignature.Identity, Integer>();
         for (int i = 0; i < rlt.size(); i++)
         {
             PGPSignature.Identity identity = new PGPSignature.Identity((PGPSignature)rlt.get(i));
@@ -1306,10 +1307,6 @@ public class PGPPublicKey
                 int i = existingIndex.intValue();
                 // join existing sig with copy to apply modifications in unhashed subpackets
                 rlt.set(i, PGPSignature.join((PGPSignature)rlt.get(i), copySubSig));
-                if (needBreak)
-                {
-                    break;
-                }
             }
             else
             {

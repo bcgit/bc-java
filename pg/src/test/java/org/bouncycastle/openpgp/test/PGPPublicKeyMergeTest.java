@@ -15,6 +15,9 @@ import org.bouncycastle.bcpg.MPInteger;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.SignaturePacket;
 import org.bouncycastle.bcpg.SignatureSubpacket;
+import org.bouncycastle.bcpg.UserAttributePacket;
+import org.bouncycastle.bcpg.UserAttributeSubpacket;
+import org.bouncycastle.bcpg.UserIDPacket;
 import org.bouncycastle.bcpg.sig.IssuerKeyID;
 import org.bouncycastle.bcpg.sig.SignatureCreationTime;
 import org.bouncycastle.bcpg.sig.TrustSignature;
@@ -23,7 +26,10 @@ import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPPublicKeyRing;
 import org.bouncycastle.openpgp.PGPSignature;
+import org.bouncycastle.openpgp.PGPUserAttributeSubpacketVector;
 import org.bouncycastle.openpgp.operator.bc.BcKeyFingerprintCalculator;
+import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -901,6 +907,10 @@ public class PGPPublicKeyMergeTest
         // flooded certificates
         mergeManyCertificationsStaysLinear();
         joinSignaturesWithLargeUnhashedAreasStaysLinear();
+        mergeIdenticalSignatureValuesStaysLinear();
+        mergeCollidingUserIdsStaysLinear();
+        mergeCancellingUserAttributesStaysLinear();
+        joinSignaturesWithCollidingUnhashedSubpacketsStaysLinear();
 
         mergeDoesNotModifyItsInputs();
     }
@@ -1290,6 +1300,147 @@ public class PGPPublicKeyMergeTest
             PGPSignature.join(first, overlapping).getUnhashedSubPackets().toArray().length);
     }
 
+    /**
+     * The index a merge keeps was a hash table, and a copy chooses every byte its keys are hashed
+     * from: a merge never verifies a certification, so a flooded copy can give every one of them the
+     * same signature value and vary only the creation time, which put every key in one bucket and
+     * the merge back to quadratic - 20,000 + 20,000 took about 50 seconds. The index is ordered now.
+     */
+    public void mergeIdenticalSignatureValuesStaysLinear()
+        throws IOException, PGPException
+    {
+        int count = 20000;
+        PGPPublicKeyRing base = readCert(CERT_1_BASE);
+        String userId = lastUserId(base.getPublicKey());
+        int selfSigs = count((Iterator)base.getPublicKey().getSignaturesForID(userId));
+
+        PGPPublicKeyRing key = withCertifications(base, 0, count, false, true);
+        PGPPublicKeyRing copy = withCertifications(base, count / 2, count, true, true);
+
+        long start = System.currentTimeMillis();
+
+        PGPPublicKeyRing joined = PGPPublicKeyRing.join(key, copy);
+
+        long elapsed = System.currentTimeMillis() - start;
+
+        isTrue("join took " + elapsed + "ms", elapsed < 20000L);
+
+        Iterator sigs = joined.getPublicKey().getSignaturesForID(userId);
+        for (int i = 0; i < selfSigs; i++)
+        {
+            sigs.next();
+        }
+        for (int v = 0; v < count + count / 2; v++)
+        {
+            PGPSignature sig = (PGPSignature)sigs.next();
+            isEquals("certification " + v, CERTIFICATION_TIME + v * 1000L, sig.getCreationTime().getTime());
+        }
+        isTrue("more signatures than expected", !sigs.hasNext());
+    }
+
+    /**
+     * User IDs were indexed by Arrays.hashCode of their bytes, which is a chain of hc * 257 ^ b steps
+     * and so admits a multicollision: pick, for each two-byte block, two blocks that take the running
+     * value to the same place, and every choice among them hashes alike. 20,000 + 20,000 such IDs
+     * took about 18 seconds to merge through the hash table.
+     */
+    public void mergeCollidingUserIdsStaysLinear()
+        throws IOException, PGPException
+    {
+        int count = 20000;
+        byte[][][] family = collidingFamily(17);
+        PGPPublicKeyRing base = readCert(CERT_1_BASE);
+        int baseIds = count((Iterator)base.getPublicKey().getRawUserIDs());
+
+        PGPPublicKeyRing key = withUserIds(base, family, 0, count);
+        PGPPublicKeyRing copy = withUserIds(base, family, count / 2, count);
+
+        long start = System.currentTimeMillis();
+
+        PGPPublicKeyRing joined = PGPPublicKeyRing.join(key, copy);
+
+        long elapsed = System.currentTimeMillis() - start;
+
+        isTrue("join took " + elapsed + "ms", elapsed < 20000L);
+
+        // the key's IDs in order, then those only the copy had, in the copy's order
+        Iterator ids = joined.getPublicKey().getRawUserIDs();
+        for (int i = 0; i < baseIds; i++)
+        {
+            ids.next();
+        }
+        for (int v = 0; v < count + count / 2; v++)
+        {
+            isTrue("user ID " + v, Arrays.areEqual(collidingValue(family, v), (byte[])ids.next()));
+        }
+        isTrue("more user IDs than expected", !ids.hasNext());
+    }
+
+    /**
+     * A user attribute vector's hash code is the XOR of its subpackets' hash codes, so any attribute
+     * made of two identical subpackets hashes to zero, whatever they hold: 20,000 + 20,000 took
+     * about 26 seconds to merge through the hash table.
+     */
+    public void mergeCancellingUserAttributesStaysLinear()
+        throws IOException, PGPException
+    {
+        int count = 20000;
+        PGPPublicKeyRing base = readCert(CERT_1_BASE);
+
+        PGPPublicKeyRing key = withUserAttributes(base, 0, count);
+        PGPPublicKeyRing copy = withUserAttributes(base, count / 2, count);
+
+        long start = System.currentTimeMillis();
+
+        PGPPublicKeyRing joined = PGPPublicKeyRing.join(key, copy);
+
+        long elapsed = System.currentTimeMillis() - start;
+
+        isTrue("join took " + elapsed + "ms", elapsed < 20000L);
+
+        Iterator attrs = joined.getPublicKey().getUserAttributes();
+        for (int v = 0; v < count + count / 2; v++)
+        {
+            PGPUserAttributeSubpacketVector attr = (PGPUserAttributeSubpacketVector)attrs.next();
+            isTrue("user attribute " + v, Arrays.areEqual(attributeData(v), attr.getSubpacket(100).getData()));
+        }
+        isTrue("more user attributes than expected", !attrs.hasNext());
+    }
+
+    /**
+     * The unhashed area of a version 6 signature can run to 2 MB, room for tens of thousands of
+     * subpackets whose data collide under Arrays.hashCode as the user IDs above do; joining two such
+     * signatures through the hash set took over a minute. The set is ordered now.
+     */
+    public void joinSignaturesWithCollidingUnhashedSubpacketsStaysLinear()
+        throws IOException, PGPException
+    {
+        int count = 16000;
+        byte[][][] family = collidingFamily(15);     // 32,768 distinct 30-byte values
+        PGPSignature first = withCollidingUnhashedSubpackets(family, 0, count);
+        PGPSignature second = withCollidingUnhashedSubpackets(family, count, count);
+
+        long start = System.currentTimeMillis();
+
+        PGPSignature joined = PGPSignature.join(first, second);
+
+        long elapsed = System.currentTimeMillis() - start;
+
+        isTrue("join took " + elapsed + "ms", elapsed < 10000L);
+
+        SignatureSubpacket[] unhashed = joined.getUnhashedSubPackets().toArray();
+        isEquals("merged unhashed subpackets", 2 * count, unhashed.length);
+        for (int i = 0; i < unhashed.length; i++)
+        {
+            isTrue("unhashed subpacket " + i, Arrays.areEqual(collidingValue(family, i), unhashed[i].getData()));
+        }
+
+        // a subpacket both carry is not repeated
+        PGPSignature overlapping = withCollidingUnhashedSubpackets(family, count / 2, count);
+        isEquals("merged overlapping subpackets", count + count / 2,
+            PGPSignature.join(first, overlapping).getUnhashedSubPackets().toArray().length);
+    }
+
     private static final long CERTIFICATION_TIME = 1500000000000L;
     private static final long CERTIFIER_KEY_ID = 0x0123456789ABCDEFL;
 
@@ -1298,6 +1449,17 @@ public class PGPPublicKeyMergeTest
      * ID, each told apart by its signature value and creation time.
      */
     private PGPPublicKeyRing withCertifications(PGPPublicKeyRing base, int first, int count, boolean extraUnhashed)
+        throws IOException
+    {
+        return withCertifications(base, first, count, extraUnhashed, false);
+    }
+
+    /**
+     * As above, but with sameValue every certification carries the same signature value and only the
+     * creation time tells them apart - as a flood need not bother with values nobody verifies.
+     */
+    private PGPPublicKeyRing withCertifications(PGPPublicKeyRing base, int first, int count, boolean extraUnhashed,
+        boolean sameValue)
         throws IOException
     {
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
@@ -1310,11 +1472,166 @@ public class PGPPublicKeyMergeTest
             SignaturePacket sig = new SignaturePacket(PGPSignature.DEFAULT_CERTIFICATION, CERTIFIER_KEY_ID,
                 PublicKeyAlgorithmTags.RSA_GENERAL, HashAlgorithmTags.SHA256,
                 new SignatureSubpacket[]{ new SignatureCreationTime(false, new Date(CERTIFICATION_TIME + v * 1000L)) },
-                unhashed, new byte[2], new MPInteger[]{ new MPInteger(BigInteger.ONE.shiftLeft(255).add(BigInteger.valueOf(v))) });
+                unhashed, new byte[2], new MPInteger[]{ new MPInteger(BigInteger.ONE.shiftLeft(255).add(BigInteger.valueOf(sameValue ? 0 : v))) });
             bOut.write(sig.getEncoded());
         }
 
         return new PGPPublicKeyRing(bOut.toByteArray(), new BcKeyFingerprintCalculator());
+    }
+
+    /**
+     * A family of 2^m distinct 2m-byte values sharing one org.bouncycastle.util.Arrays.hashCode: that
+     * hash consumes the bytes from the end, two per block here, folding each into the running value
+     * by hc * 257 ^ b, so for each block two byte pairs taking the running value to the same next
+     * value are found by trying them, and any choice among the pairs hashes the same. The result is
+     * indexed [block][choice] and read out by collidingValue.
+     */
+    private static byte[][][] collidingFamily(int m)
+    {
+        int len = 2 * m;
+        byte[][][] blocks = new byte[m][][];
+        int state = len + 1;
+        for (int j = 0; j < m; j++)
+        {
+            java.util.Map seen = new java.util.HashMap();
+            byte[][] pair = null;
+            int next = 0;
+            for (int xy = 0; xy < 65536 && pair == null; xy++)
+            {
+                byte x = (byte)(xy >>> 8);
+                byte y = (byte)xy;
+                int out = ((state * 257) ^ x) * 257 ^ y;
+                Object prev = seen.put(Integers.valueOf(out), Integers.valueOf(xy));
+                if (prev != null)
+                {
+                    int q = ((Integer)prev).intValue();
+                    pair = new byte[][]{ { (byte)(q >>> 8), (byte)q }, { x, y } };
+                    next = out;
+                }
+            }
+            if (pair == null)
+            {
+                throw new IllegalStateException("no colliding byte pair at block " + j);
+            }
+            blocks[j] = pair;
+            state = next;
+        }
+        // the family must collide, and hold distinct values
+        byte[] zero = collidingValue(blocks, 0);
+        for (int v = 1; v < 64; v++)
+        {
+            byte[] value = collidingValue(blocks, v);
+            if (Arrays.hashCode(value) != Arrays.hashCode(zero) || Arrays.areEqual(value, zero))
+            {
+                throw new IllegalStateException("not a multicollision at " + v);
+            }
+        }
+        return blocks;
+    }
+
+    /** Member v of the family: bit j of v picks block j's byte pair. */
+    private static byte[] collidingValue(byte[][][] family, int v)
+    {
+        int len = 2 * family.length;
+        byte[] d = new byte[len];
+        for (int j = 0; j < family.length; j++)
+        {
+            byte[] b = family[j][(v >>> j) & 1];
+            d[len - 2 * j - 1] = b[0];
+            d[len - 2 * j - 2] = b[1];
+        }
+        return d;
+    }
+
+    /**
+     * base's primary key with user IDs first .. first + count - 1 of the colliding family appended,
+     * each carrying one certification.
+     */
+    private PGPPublicKeyRing withUserIds(PGPPublicKeyRing base, byte[][][] family, int first, int count)
+        throws IOException
+    {
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        bOut.write(base.getPublicKey().getEncoded());
+        for (int v = first; v < first + count; v++)
+        {
+            bOut.write(new UserIDPacket(collidingValue(family, v)).getEncoded());
+            bOut.write(certification(v).getEncoded());
+        }
+
+        return new PGPPublicKeyRing(bOut.toByteArray(), new BcKeyFingerprintCalculator());
+    }
+
+    private static byte[] attributeData(int v)
+    {
+        return new byte[]{ (byte)(v >>> 16), (byte)(v >>> 8), (byte)v };
+    }
+
+    /**
+     * base's primary key with user attributes first .. first + count - 1 appended, each two copies
+     * of one private subpacket holding the value, so that the vector's hash code is zero.
+     */
+    private PGPPublicKeyRing withUserAttributes(PGPPublicKeyRing base, int first, int count)
+        throws IOException
+    {
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        bOut.write(base.getPublicKey().getEncoded());
+        for (int v = first; v < first + count; v++)
+        {
+            byte[] data = attributeData(v);
+            bOut.write(new UserAttributePacket(new UserAttributeSubpacket[]{
+                new PrivateAttribute(data), new PrivateAttribute(data) }).getEncoded());
+            bOut.write(certification(v).getEncoded());
+        }
+
+        return new PGPPublicKeyRing(bOut.toByteArray(), new BcKeyFingerprintCalculator());
+    }
+
+    private static SignaturePacket certification(int v)
+    {
+        return new SignaturePacket(PGPSignature.DEFAULT_CERTIFICATION, CERTIFIER_KEY_ID,
+            PublicKeyAlgorithmTags.RSA_GENERAL, HashAlgorithmTags.SHA256,
+            new SignatureSubpacket[]{ new SignatureCreationTime(false, new Date(CERTIFICATION_TIME + v * 1000L)) },
+            new SignatureSubpacket[0], new byte[2],
+            new MPInteger[]{ new MPInteger(BigInteger.ONE.shiftLeft(255).add(BigInteger.valueOf(v))) });
+    }
+
+    /**
+     * A version 6 certification whose unhashed area holds count private subpackets carrying members
+     * first .. first + count - 1 of the colliding family - the area's 4-octet length is what makes
+     * room for them.
+     */
+    private PGPSignature withCollidingUnhashedSubpackets(byte[][][] family, int first, int count)
+        throws IOException, PGPException
+    {
+        SignatureSubpacket[] unhashed = new SignatureSubpacket[count];
+        for (int i = 0; i < count; i++)
+        {
+            unhashed[i] = new PrivateSubpacket(collidingValue(family, first + i));
+        }
+        SignaturePacket sig = new SignaturePacket(SignaturePacket.VERSION_6, PGPSignature.DEFAULT_CERTIFICATION,
+            CERTIFIER_KEY_ID, PublicKeyAlgorithmTags.Ed25519, HashAlgorithmTags.SHA256,
+            new SignatureSubpacket[]{ new SignatureCreationTime(false, new Date(CERTIFICATION_TIME)) },
+            unhashed, new byte[32], new byte[64], new byte[16]);
+
+        return new PGPSignature(new BCPGInputStream(new ByteArrayInputStream(sig.getEncoded())));
+    }
+
+    private static class PrivateSubpacket
+        extends SignatureSubpacket
+    {
+        PrivateSubpacket(byte[] data)
+        {
+            super(101, false, false, data);
+        }
+    }
+
+    private static class PrivateAttribute
+        extends UserAttributeSubpacket
+    {
+        PrivateAttribute(byte[] data)
+        {
+            super(100, data);
+        }
     }
 
     /**
