@@ -1453,6 +1453,12 @@ class DTLSRecordLayer
             return -1;
         }
 
+        /*
+         * RFC 6347 4.1.2.6: a record within the window and new, or to its right, "proceeds to MAC
+         * verification", so the duplicate check comes first here. The sequence number is in the clear in DTLS
+         * 1.2, so the early discard gives an observer nothing; DTLS 1.3 encrypts it and orders the two the
+         * other way round (processDTLS13Record).
+         */
         long seq = TlsUtils.readUint48(record, 5);
         if (recordEpoch.getReplayWindow().shouldDiscard(seq))
         {
@@ -1891,10 +1897,6 @@ class DTLSRecordLayer
 
             long expected = replayWindow.getLatestConfirmedSeq() + 1;
             seq = DTLS13UnifiedHeader.reconstructSequenceNumber(expected, seqBits, seqBitCount);
-            if (replayWindow.shouldDiscard(seq))
-            {
-                return -1;
-            }
 
             decoded = cipher.decodeDTLS13Ciphertext(seq, record, 0, headerLength, ciphertextLength);
         }
@@ -1906,6 +1908,19 @@ class DTLSRecordLayer
                 throw fatalAlert;
             }
 
+            return -1;
+        }
+
+        /*
+         * RFC 9147 4.5.1. "This check SHOULD happen after deprotecting the record; otherwise, the record
+         * discard might itself serve as a timing channel for the record number." The sequence number is
+         * encrypted in DTLS 1.3 (4.2.3), and a duplicate turned away before the AEAD would answer faster than
+         * a record that reaches it, which tells an observer where the window stands. So the duplicate is
+         * dropped here, having cost the same as any record that fails to deprotect, and before anything else
+         * happens on its account. DTLS 1.2 (processRecord) checks first, as RFC 6347 4.1.2.6 has it.
+         */
+        if (replayWindow.shouldDiscard(seq))
+        {
             return -1;
         }
 

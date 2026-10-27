@@ -4,8 +4,10 @@ import java.io.IOException;
 import java.security.SecureRandom;
 
 import org.bouncycastle.tls.crypto.CryptoHashAlgorithm;
+import org.bouncycastle.tls.crypto.TlsCipher;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.TlsDTLS13Cipher;
+import org.bouncycastle.tls.crypto.TlsDecodeResult;
 import org.bouncycastle.tls.crypto.TlsEncodeResult;
 import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
 import org.bouncycastle.util.Arrays;
@@ -103,6 +105,128 @@ public class DTLSRecordLayer13Test
 
         clientToServer.put(datagram);
         assertNull(receive(server, 200));
+    }
+
+    /**
+     * RFC 9147 4.5.1: the duplicate check "SHOULD happen after deprotecting the record; otherwise, the record
+     * discard might itself serve as a timing channel for the record number". So a replayed record must reach
+     * the AEAD and fail there like any other invalid record, rather than being turned away cheaply on its
+     * reconstructed sequence number. The wrapped cipher counts what reaches it.
+     */
+    public void testReplayIsCheckedAfterDeprotection() throws Exception
+    {
+        final int[] decodes = new int[1];
+
+        support = new DTLSRecordLayer13TestSupport();
+        support.cipherDecorator = new DTLSRecordLayer13TestSupport.CipherDecorator()
+        {
+            public TlsCipher decorate(TlsCipher cipher, boolean isServer)
+            {
+                return isServer ? new CountingCipher(cipher, decodes) : cipher;
+            }
+        };
+        support.setUpPair(CipherSuite.TLS_AES_128_GCM_SHA256, CryptoHashAlgorithm.sha256);
+        clientToServer = support.clientToServer;
+        client = support.client;
+        server = support.server;
+
+        byte[] data = new byte[10];
+        client.recordLayer.send(data, 0, data.length);
+        byte[] datagram = (byte[])clientToServer.peekLast().clone();
+        assertNotNull(receive(server, 1000));
+        assertEquals(1, decodes[0]);
+
+        clientToServer.put(datagram);
+        assertNull(receive(server, 200));
+        assertEquals("replay was discarded before deprotection", 2, decodes[0]);
+    }
+
+    /** Delegates everything, counting DTLS 1.3 ciphertext decodes. */
+    private static class CountingCipher
+        implements TlsCipher, TlsDTLS13Cipher
+    {
+        private final TlsCipher cipher;
+        private final TlsDTLS13Cipher cipher13;
+        private final int[] decodes;
+
+        CountingCipher(TlsCipher cipher, int[] decodes)
+        {
+            this.cipher = cipher;
+            this.cipher13 = (TlsDTLS13Cipher)cipher;
+            this.decodes = decodes;
+        }
+
+        public TlsDecodeResult decodeDTLS13Ciphertext(long seqNo, byte[] record, int recordOff, int headerLen,
+            int ciphertextLen) throws IOException
+        {
+            ++decodes[0];
+            return cipher13.decodeDTLS13Ciphertext(seqNo, record, recordOff, headerLen, ciphertextLen);
+        }
+
+        public TlsEncodeResult encodeDTLS13Plaintext(long seqNo, short contentType, byte[] header, int headerOff,
+            int headerLen, byte[] plaintext, int offset, int len) throws IOException
+        {
+            return cipher13.encodeDTLS13Plaintext(seqNo, contentType, header, headerOff, headerLen, plaintext,
+                offset, len);
+        }
+
+        public void decryptDTLS13RecordNumber(byte[] record, int recordOff, int recordLen) throws IOException
+        {
+            cipher13.decryptDTLS13RecordNumber(record, recordOff, recordLen);
+        }
+
+        public int getCiphertextDecodeLimit(int plaintextLimit)
+        {
+            return cipher.getCiphertextDecodeLimit(plaintextLimit);
+        }
+
+        public int getCiphertextEncodeLimit(int plaintextLimit)
+        {
+            return cipher.getCiphertextEncodeLimit(plaintextLimit);
+        }
+
+        public int getPlaintextDecodeLimit(int ciphertextLimit)
+        {
+            return cipher.getPlaintextDecodeLimit(ciphertextLimit);
+        }
+
+        public int getPlaintextEncodeLimit(int ciphertextLimit)
+        {
+            return cipher.getPlaintextEncodeLimit(ciphertextLimit);
+        }
+
+        public TlsEncodeResult encodePlaintext(long seqNo, short contentType, ProtocolVersion recordVersion,
+            int headerAllocation, byte[] plaintext, int offset, int len) throws IOException
+        {
+            return cipher.encodePlaintext(seqNo, contentType, recordVersion, headerAllocation, plaintext, offset,
+                len);
+        }
+
+        public TlsDecodeResult decodeCiphertext(long seqNo, short recordType, ProtocolVersion recordVersion,
+            byte[] ciphertext, int offset, int len) throws IOException
+        {
+            return cipher.decodeCiphertext(seqNo, recordType, recordVersion, ciphertext, offset, len);
+        }
+
+        public void rekeyDecoder() throws IOException
+        {
+            cipher.rekeyDecoder();
+        }
+
+        public void rekeyEncoder() throws IOException
+        {
+            cipher.rekeyEncoder();
+        }
+
+        public boolean usesOpaqueRecordTypeDecode()
+        {
+            return cipher.usesOpaqueRecordTypeDecode();
+        }
+
+        public boolean usesOpaqueRecordTypeEncode()
+        {
+            return cipher.usesOpaqueRecordTypeEncode();
+        }
     }
 
     public void testShortAndCorruptRecordsAreDroppedSilently() throws Exception

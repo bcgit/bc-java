@@ -5,6 +5,7 @@ import java.security.SecureRandom;
 import java.util.Vector;
 
 import org.bouncycastle.tls.crypto.CryptoHashAlgorithm;
+import org.bouncycastle.tls.crypto.TlsCipher;
 import org.bouncycastle.tls.crypto.TlsCrypto;
 import org.bouncycastle.tls.crypto.impl.bc.BcTlsCrypto;
 import org.bouncycastle.util.Arrays;
@@ -17,6 +18,15 @@ class DTLSRecordLayer13TestSupport
 {
     private static final SecureRandom RANDOM = new SecureRandom();
     static final int MTU = 1500;
+
+    /** Lets a test wrap the ciphers a side's epochs are built with, e.g. to count what reaches the AEAD. */
+    interface CipherDecorator
+    {
+        TlsCipher decorate(TlsCipher cipher, boolean isServer);
+    }
+
+    /** Applied to every cipher built by {@link #setUpPair}; null leaves them as they are. */
+    CipherDecorator cipherDecorator = null;
 
     /** One direction of a loopback: datagrams appended by the sender, popped by the receiver. */
     static class Queue
@@ -172,7 +182,13 @@ class DTLSRecordLayer13TestSupport
             clientConnectionID, handshakeResendTimeMillis);
     }
 
-    private static Side createSide(TlsCrypto crypto, boolean isServer, int cipherSuite, int hash,
+    private TlsCipher createCipher(AbstractTlsContext context, boolean isServer) throws IOException
+    {
+        TlsCipher cipher = TlsUtils.initCipher(context);
+        return null == cipherDecorator ? cipher : cipherDecorator.decorate(cipher, isServer);
+    }
+
+    private Side createSide(TlsCrypto crypto, boolean isServer, int cipherSuite, int hash,
         byte[] clientSecret, byte[] serverSecret, DatagramTransport transport,
         DTLSHandshakeRetransmit retransmit, byte[] connectionIDLocal, byte[] connectionIDPeer,
         int handshakeResendTimeMillis) throws IOException
@@ -205,13 +221,13 @@ class DTLSRecordLayer13TestSupport
         recordLayer.setReadVersion(ProtocolVersion.DTLSv12);
 
         // epoch 2: handshake keys
-        recordLayer.initPendingEpoch(TlsUtils.initCipher(context));
+        recordLayer.initPendingEpoch(createCipher(context, isServer));
         checkEquals(2, recordLayer.getPendingEpoch());
         recordLayer.enablePendingEpochRead();
         recordLayer.enablePendingEpochWrite();
 
         // epoch 3: application keys (same secrets are fine for a record layer test)
-        recordLayer.initPendingEpoch(TlsUtils.initCipher(context));
+        recordLayer.initPendingEpoch(createCipher(context, isServer));
         checkEquals(3, recordLayer.getPendingEpoch());
         recordLayer.enablePendingEpochWrite();
         recordLayer.enablePendingEpochRead();
