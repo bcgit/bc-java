@@ -221,6 +221,12 @@ public abstract class OpenPGPSmartCard
         return getKeyByKeyRef(OpenPGPHardwareKey.KEY_REF_AUTHENTICATION);
     }
 
+    public abstract boolean checkUserPIN(CardPinProvider userPinProvider)
+            throws CardException;
+
+    public abstract boolean checkAdminPIN(CardPinProvider adminPinProvider)
+            throws CardException;
+
     /**
      * Change the user PIN (PW1,PW2) of the card.
      *

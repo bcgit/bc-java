@@ -192,6 +192,52 @@ public class YubikeyOpenPGPSmartCard
     }
 
     @Override
+    public boolean checkUserPIN(CardPinProvider userPinProvider)
+            throws CardException
+    {
+        try (OpenPgpSession session = openSession())
+        {
+            if (session.getPinStatus().getAttemptsUser() == 0)
+            {
+                throw new CardException("No user PIN attempts left.");
+            }
+            session.verifyUserPin(userPinProvider.providePIN(this), false);
+            return true;
+        }
+        catch (ApduException | IOException e)
+        {
+            throw new CardException("Cannot check user PIN", e);
+        }
+        catch (InvalidPinException e)
+        {
+            return false;
+        }
+    }
+
+    @Override
+    public boolean checkAdminPIN(CardPinProvider adminPinProvider)
+            throws CardException
+    {
+        try (OpenPgpSession session = openSession())
+        {
+            if (session.getPinStatus().getAttemptsAdmin() == 0)
+            {
+                throw new CardException("No admin PIN attempts left.");
+            }
+            session.verifyAdminPin(adminPinProvider.providePIN(this));
+            return true;
+        }
+        catch (ApduException | IOException e)
+        {
+            throw new CardException("Cannot check admin PIN", e);
+        }
+        catch (InvalidPinException e)
+        {
+            return false;
+        }
+    }
+
+    @Override
     public OpenPGPSmartCard changeUserPIN(CardPinProvider oldPinProvider, CardPinProvider newPinProvider)
             throws CardException
     {

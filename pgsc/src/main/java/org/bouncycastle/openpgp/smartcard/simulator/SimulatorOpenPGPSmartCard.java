@@ -227,6 +227,20 @@ public class SimulatorOpenPGPSmartCard
     }
 
     @Override
+    public boolean checkUserPIN(CardPinProvider userPinProvider)
+            throws CardException
+    {
+        return Arrays.areEqual(userPIN, userPinProvider.providePIN(this));
+    }
+
+    @Override
+    public boolean checkAdminPIN(CardPinProvider adminPinProvider)
+            throws CardException
+    {
+        return Arrays.areEqual(adminPIN, adminPinProvider.providePIN(this));
+    }
+
+    @Override
     public OpenPGPSmartCard changeUserPIN(CardPinProvider oldPinProvider, CardPinProvider newPinProvider)
             throws CardException
     {
