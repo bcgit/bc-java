@@ -1,11 +1,9 @@
 package org.bouncycastle.openpgp.smartcard.simulator;
 
 import junit.framework.TestCase;
-import org.bouncycastle.openpgp.smartcard.operator.PublicKeyConverterTest;
 import org.bouncycastle.openpgp.smartcard.OpenPGPSmartCardManager;
 import org.bouncycastle.openpgp.smartcard.test.AbstractOpenPGPSmartCardTest;
 import org.bouncycastle.openpgp.smartcard.test.AnonymousRecipientSmartCardDecryptionTest;
-import org.bouncycastle.openpgp.smartcard.test.MultiBackendTest;
 import org.bouncycastle.openpgp.smartcard.test.OpenPGPSmartCardBackendTest;
 import org.bouncycastle.openpgp.smartcard.test.SmartCardChangePINTest;
 import org.bouncycastle.openpgp.smartcard.test.SmartCardKeyGenerationTest;
