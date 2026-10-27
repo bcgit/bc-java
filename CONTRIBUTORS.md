@@ -477,7 +477,7 @@ We also wish to acknowledge financial and collaborative support from [CISCO](htt
 - Steffen Heil \<https://github.com/steffen-heil\> - correction to error handling in Arrays.getLength().
 - Thomas D. \<https://github.com/thomdev\> - expansion of HPKE APIs, addition of user controlled ephemeral key to HPKE API.
 - Franz Fangmeyer \<https://github.com/ff-wl\> - exception handling for improper use of '=' in an X.500 RDN.
-- Jonathan Lennox \<https://github.com/JonathanLennox\> - fix DTLS retransmission bug with aggregated ChangeCipherSpec.
+- Jonathan Lennox \<https://github.com/JonathanLennox\> - fix DTLS retransmission bug with aggregated ChangeCipherSpec. Use of the "dtls13" HKDF-Expand-Label prefix for the DTLS 1.3 key schedule (RFC 9147 sec. 5.9), making its traffic, record number, Finished and exporter keys interoperable (PR #2439).
 - Thomas Devanneaux \<tdevanneaux&#064;apple.com\> - extensions to the HPKE API to support encryption/decryption from byte ranges, allow sender selected ephemeral key.
 - Norman Maurer \<norman_maurer&#064;apple.com\> - extensions to the HPKE API to support encryption/decryption from byte ranges, allow sender selected ephemeral key.
 - Bing Shi \<roadicing&#064;gmail.com\> - addition of F2m bounds checking for imported EC F2m curves.
@@ -558,3 +558,4 @@ We also wish to acknowledge financial and collaborative support from [CISCO](htt
 - Kaya Emre Arikan \<https://github.com/kemrec\> - analysis of rfc822Name name constraint processing in PKIXCertPathReviewer, which found the subject DN e-mail address check missing and improved the accuracy of the certification path reviewer.
 - Tom Tervoort (Bureau Veritas Cybersecurity) \<tom.tervoort&#064;bureauveritas.com\> - analysis of RFC 3161 signature time-stamps, which led to the SigningCertificateVerifier and the CAdESSignatureTimestampUtil overload binding the signing certificate into time-stamp validation.
 - cipheraenys \<https://github.com/cipheraenys\> - initial implementation of same-Commit member replacement in MLS, letting an Add proposal keep the signature key and credential of a member a Remove in the same proposal list takes out of the tree, with the regression test behind it (PR #2505).
+- Paul Gregoire \<https://github.com/mondain\> - initial implementation of DTLS 1.3 (RFC 9147) in the low-level TLS API: the record layer with record number encryption, the ACK-driven reliable handshake with datagram packing, the client and server handshakes with HelloRetryRequest and client authentication, and the post-handshake KeyUpdate and acknowledgement machinery (PRs #2439, #2440, #2441, #2442).
