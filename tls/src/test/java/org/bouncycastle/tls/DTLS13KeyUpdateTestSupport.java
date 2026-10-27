@@ -17,7 +17,7 @@ import java.io.IOException;
  * retransmit timer - is the production path.
  * </p>
  */
-public class DTLS13TestKeyUpdate
+public class DTLS13KeyUpdateTestSupport
 {
     /**
      * @param requestUpdate whether to ask the peer for a key update in return (RFC 8446 4.6.3).

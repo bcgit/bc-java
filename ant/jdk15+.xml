@@ -89,6 +89,9 @@
                 <exclude name="**/tls/test/TlsClientRawKeysTest.java"/>
                 <exclude name="**/tls/test/TlsServerRawKeysTest.java"/>
             </fileset>
+            <!-- The **/tls/*.java exclude above drops the package-level test helpers; this one is needed by
+                 tls/test/DTLS13ProtocolTest (bc+-build.xml's build-test includes it in bctest). -->
+            <fileset dir="tls/src/test/java" includes="org/bouncycastle/tls/DTLS13KeyUpdateTestSupport.java" />
 
             <fileset dir="pkix/src/main/java" includes="**/*.java" />
             <fileset dir="pkix/src/main/javadoc" includes="**/*.html" />

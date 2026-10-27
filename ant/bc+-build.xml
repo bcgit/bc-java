@@ -773,6 +773,10 @@
              <fileset dir="${src.dir}">
                  <exclude name="**/*Test.java" />
                  <exclude name="**/*Tests.java" />
+                 <!-- test helpers that live in the org.bouncycastle.tls package to reach package-private
+                      members (the DTLS 1.3 *TestSupport classes); they reference excluded *Test classes
+                      and must not be swept into the provider jar -->
+                 <exclude name="**/*TestSupport.java" />
                  <exclude name="**/test/*.java" />
                  <exclude name="**/test/**" />
                  <include name="org/bouncycastle/tls/**/*.java" />
@@ -1017,6 +1021,9 @@
              <fileset dir="${src.dir}" includes="**/crypto/*/*Test.java" />
              <fileset dir="${src.dir}" includes="**/crypto/agreement/owl/*Test.java" />
              <fileset dir="${src.dir}" includes="org/bouncycastle/tls/SpreadCertificateStatusTest.java" />
+             <!-- package-level helper the tls.test DTLS 1.3 tests need (reaches package-private members);
+                  the bctls copy excludes every *TestSupport.java, so it has to come from here -->
+             <fileset dir="${src.dir}" includes="org/bouncycastle/tls/DTLS13KeyUpdateTestSupport.java" />
              <fileset dir="${src.dir}" includes="org/bouncycastle/cert/dane/fetcher/JndiDANEFetcherFactoryTest.java" />
              <!-- main-namespace test fixture the bcpg copy now excludes; the openpgp.api tests resolve it from here -->
              <fileset dir="${src.dir}" includes="org/bouncycastle/openpgp/OpenPGPTestKeys.java" />

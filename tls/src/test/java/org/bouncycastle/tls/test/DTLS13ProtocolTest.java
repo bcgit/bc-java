@@ -11,7 +11,7 @@ import org.bouncycastle.tls.Certificate;
 import org.bouncycastle.tls.CertificateRequest;
 import org.bouncycastle.tls.CipherSuite;
 import org.bouncycastle.tls.ContentType;
-import org.bouncycastle.tls.DTLS13TestKeyUpdate;
+import org.bouncycastle.tls.DTLS13KeyUpdateTestSupport;
 import org.bouncycastle.tls.DTLSClientProtocol;
 import org.bouncycastle.tls.DTLSRequest;
 import org.bouncycastle.tls.DTLSServerProtocol;
@@ -2843,7 +2843,7 @@ public class DTLS13ProtocolTest
                 recording.dropNextDatagram = true;
             }
 
-            DTLS13TestKeyUpdate.sendKeyUpdate(dtlsClient, sendDuringUpdate);
+            DTLS13KeyUpdateTestSupport.sendKeyUpdate(dtlsClient, sendDuringUpdate);
 
             if (sendDuringUpdate)
             {
