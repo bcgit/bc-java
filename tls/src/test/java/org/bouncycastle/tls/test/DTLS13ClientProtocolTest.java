@@ -1,17 +1,23 @@
 package org.bouncycastle.tls.test;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.Vector;
 
 import org.bouncycastle.tls.AlertDescription;
 import org.bouncycastle.tls.CipherSuite;
+import org.bouncycastle.tls.ClientHello;
 import org.bouncycastle.tls.ContentType;
 import org.bouncycastle.tls.DTLSClientProtocol;
 import org.bouncycastle.tls.DatagramTransport;
 import org.bouncycastle.tls.ExtensionType;
 import org.bouncycastle.tls.HandshakeType;
+import org.bouncycastle.tls.KeyShareEntry;
 import org.bouncycastle.tls.ProtocolVersion;
+import org.bouncycastle.tls.TlsExtensionsUtils;
 import org.bouncycastle.tls.TlsFatalAlert;
+import org.bouncycastle.util.Arrays;
 
 import junit.framework.TestCase;
 
@@ -108,6 +114,78 @@ public class DTLS13ClientProtocolTest
             transport.clientHelloSeq(1));
     }
 
+    /**
+     * RFC 9147 5.1: a DTLS 1.3 server's cookie exchange is a HelloRetryRequest carrying a cookie and, when the
+     * client's key share is already acceptable, nothing else (RFC 9846 4.2.4 asks for the minimal set of
+     * extensions). The client must answer with a second ClientHello that echoes the cookie and keeps its
+     * original "key_share" (RFC 9846 4.2.2: the shares are replaced only if the HelloRetryRequest supplied
+     * a "key_share"). OpenSSL 4.1's s_server sends exactly this on every DTLS 1.3 connection, and the client
+     * used to refuse it with missing_extension(key_share). The server here is scripted: BC's own server never
+     * sends a cookie without a group change. It answers the second ClientHello with a second
+     * HelloRetryRequest, which the client must refuse with unexpected_message (RFC 9846 4.2.4) - reaching
+     * that proves the first one was accepted and answered.
+     */
+    public void testClientAcceptsACookieOnlyHelloRetryRequest() throws Exception
+    {
+        byte[] cookie = new byte[64];
+        for (int i = 0; i < cookie.length; ++i)
+        {
+            cookie[i] = (byte)(0xC0 + i);
+        }
+
+        byte[][] script = new byte[][]{
+            createHelloRetryRequestRecord(cookie, 0, 0),
+            createHelloRetryRequestRecord(cookie, 1, 1)
+        };
+
+        ScriptedServerHelloTransport transport = new ScriptedServerHelloTransport(script);
+
+        TlsFatalAlert fatalAlert = connectAndExpectFatalAlert(transport, ProtocolVersion.DTLSv13.only());
+
+        assertEquals("the second HelloRetryRequest must be refused, not the first",
+            AlertDescription.unexpected_message, fatalAlert.getAlertDescription());
+
+        assertEquals("the client must have answered the HelloRetryRequest", 2, transport.clientHellosSeen());
+        assertEquals("the second ClientHello must be a new message", 1, transport.clientHelloSeq(1));
+
+        ClientHello first = parseClientHello(transport.clientHello(0));
+        ClientHello second = parseClientHello(transport.clientHello(1));
+
+        assertNull("the first ClientHello carries no cookie",
+            TlsExtensionsUtils.getCookieExtension(first.getExtensions()));
+        assertTrue("the second ClientHello must echo the HelloRetryRequest cookie",
+            Arrays.areEqual(cookie, TlsExtensionsUtils.getCookieExtension(second.getExtensions())));
+
+        Vector firstShares = TlsExtensionsUtils.getKeyShareClientHello(first.getExtensions());
+        Vector secondShares = TlsExtensionsUtils.getKeyShareClientHello(second.getExtensions());
+        assertNotNull(firstShares);
+        assertNotNull("the second ClientHello must keep a key_share", secondShares);
+        assertEquals("the original shares must be kept as they were", firstShares.size(), secondShares.size());
+        for (int i = 0; i < firstShares.size(); ++i)
+        {
+            KeyShareEntry a = (KeyShareEntry)firstShares.elementAt(i);
+            KeyShareEntry b = (KeyShareEntry)secondShares.elementAt(i);
+            assertEquals("key_share group", a.getNamedGroup(), b.getNamedGroup());
+            assertTrue("key_share key_exchange", Arrays.areEqual(a.getKeyExchange(), b.getKeyExchange()));
+        }
+    }
+
+    /**
+     * RFC 9846 4.2.4: "Clients MUST abort the handshake with an "illegal_parameter" alert if the
+     * HelloRetryRequest would not result in any change in the ClientHello." No key_share and no cookie is that
+     * case.
+     */
+    public void testClientRefusesAHelloRetryRequestThatChangesNothing() throws Exception
+    {
+        ScriptedServerHelloTransport transport = new ScriptedServerHelloTransport(
+            new byte[][]{ createHelloRetryRequestRecord(null, 0, 0) });
+
+        TlsFatalAlert fatalAlert = connectAndExpectFatalAlert(transport, ProtocolVersion.DTLSv13.only());
+
+        assertEquals(AlertDescription.illegal_parameter, fatalAlert.getAlertDescription());
+        assertEquals(1, transport.clientHellosSeen());
+    }
+
     private short connectAndExpectFatalAlert(byte[] selectedVersion) throws Exception
     {
         ScriptedServerHelloTransport transport = new ScriptedServerHelloTransport(
@@ -166,6 +244,60 @@ public class DTLS13ClientProtocolTest
         body.write(cookie, 0, cookie.length);
 
         return createPlaintextRecord(HandshakeType.hello_verify_request, 0, recordSeq, body.toByteArray());
+    }
+
+    /** RFC 9846 4.2.4: the 'random' value that marks a ServerHello as a HelloRetryRequest. */
+    private static final byte[] HELLO_RETRY_REQUEST_RANDOM = new byte[]{
+        (byte)0xCF, (byte)0x21, (byte)0xAD, (byte)0x74, (byte)0xE5, (byte)0x9A, (byte)0x61, (byte)0x11,
+        (byte)0xBE, (byte)0x1D, (byte)0x8C, (byte)0x02, (byte)0x1E, (byte)0x65, (byte)0xB8, (byte)0x91,
+        (byte)0xC2, (byte)0xA2, (byte)0x11, (byte)0x16, (byte)0x7A, (byte)0xBB, (byte)0x8C, (byte)0x5E,
+        (byte)0x07, (byte)0x9E, (byte)0x09, (byte)0xE2, (byte)0xC8, (byte)0xA8, (byte)0x33, (byte)0x9C };
+
+    /**
+     * A DTLS plaintext record carrying a DTLS 1.3 HelloRetryRequest (RFC 9846 4.2.4: a ServerHello with the
+     * special 'random') whose only extensions are "supported_versions" and, unless null, a "cookie" - the
+     * shape of the RFC 9147 5.1 cookie exchange.
+     */
+    private static byte[] createHelloRetryRequestRecord(byte[] cookie, int messageSeq, long recordSeq)
+        throws IOException
+    {
+        ByteArrayOutputStream extensions = new ByteArrayOutputStream();
+        writeUint16(extensions, ExtensionType.supported_versions);
+        writeUint16(extensions, 2);
+        extensions.write(0xFE);
+        extensions.write(0xFC);
+        if (null != cookie)
+        {
+            writeUint16(extensions, ExtensionType.cookie);
+            writeUint16(extensions, 2 + cookie.length);
+            writeUint16(extensions, cookie.length);
+            extensions.write(cookie, 0, cookie.length);
+        }
+
+        byte[] extensionsData = extensions.toByteArray();
+
+        ByteArrayOutputStream body = new ByteArrayOutputStream();
+        // legacy_version
+        body.write(0xFE);
+        body.write(0xFD);
+        body.write(HELLO_RETRY_REQUEST_RANDOM, 0, HELLO_RETRY_REQUEST_RANDOM.length);
+        // legacy_session_id_echo: the client offered none
+        body.write(0);
+        writeUint16(body, CipherSuite.TLS_AES_128_GCM_SHA256);
+        // legacy_compression_method
+        body.write(0);
+        writeUint16(body, extensionsData.length);
+        body.write(extensionsData, 0, extensionsData.length);
+
+        return createPlaintextRecord(HandshakeType.server_hello, messageSeq, recordSeq, body.toByteArray());
+    }
+
+    /** Parses the ClientHello out of a single-record epoch-0 datagram the scripted transport captured. */
+    private static ClientHello parseClientHello(byte[] datagram) throws IOException
+    {
+        int fragmentLength = ((datagram[22] & 0xFF) << 16) | ((datagram[23] & 0xFF) << 8) | (datagram[24] & 0xFF);
+
+        return ClientHello.parse(new ByteArrayInputStream(datagram, 25, fragmentLength), new ByteArrayOutputStream());
     }
 
     /**
@@ -260,6 +392,7 @@ public class DTLS13ClientProtocolTest
         private final byte[][] script;
 
         private final int[] clientHelloSeqs = new int[8];
+        private final byte[][] clientHellos = new byte[8][];
 
         private int clientHellosSeen = 0;
         private byte[] pending = null;
@@ -277,6 +410,12 @@ public class DTLS13ClientProtocolTest
         int clientHellosSeen()
         {
             return clientHellosSeen;
+        }
+
+        /** The datagram carrying the ClientHello at the given index. */
+        byte[] clientHello(int index)
+        {
+            return clientHellos[index];
         }
 
         /**
@@ -310,6 +449,7 @@ public class DTLS13ClientProtocolTest
                 {
                     clientHelloSeqs[clientHellosSeen] = ((buf[off + 17] & 0xFF) << 8)
                         | (buf[off + 18] & 0xFF);
+                    clientHellos[clientHellosSeen] = Arrays.copyOfRange(buf, off, off + len);
                 }
 
                 this.pending = script[clientHellosSeen++];

@@ -1048,34 +1048,46 @@ public class DTLSClientProtocol
             }
         }
 
+        byte[] cookie = TlsExtensionsUtils.getCookieExtension(extensions);
+
         int selectedGroup = TlsExtensionsUtils.getKeyShareHelloRetryRequest(extensions);
 
         /*
-         * TODO[dtls13:psk_ke] RFC 8446 4.2.8. Servers [..] MUST NOT send a KeyShareEntry when using the
-         * "psk_ke" PskKeyExchangeMode - and RFC 8446 4.1.4 permits a HelloRetryRequest that carries only a
-         * cookie, which this does not yet accept.
+         * RFC 9846 4.2.4. A HelloRetryRequest "SHOULD contain the minimal set of extensions necessary for the
+         * client to generate a correct ClientHello pair", and the client "MUST abort the handshake with an
+         * "illegal_parameter" alert if the HelloRetryRequest would not result in any change in the
+         * ClientHello". So "key_share" is optional: a HelloRetryRequest carrying only a cookie is the RFC 9147
+         * 5.1 cookie exchange, which a DTLS 1.3 server SHOULD perform on every handshake and which "Clients
+         * MUST be prepared to do", and the original shares then stand (RFC 9846 4.2.2: they are replaced only
+         * "If a "key_share" extension was supplied in the HelloRetryRequest").
+         *
+         * TODO[dtls13:psk_ke] RFC 9846 4.3.8. Servers [..] MUST NOT send a KeyShareEntry when using the
+         * "psk_ke" PskKeyExchangeMode; no PSK is offered yet.
          */
         if (selectedGroup < 0)
         {
-            throw new TlsFatalAlert(AlertDescription.missing_extension,
-                "missing extension response: " + ExtensionType.getText(ExtensionType.key_share));
+            if (null == cookie)
+            {
+                throw new TlsFatalAlert(AlertDescription.illegal_parameter,
+                    "HelloRetryRequest would not change the ClientHello");
+            }
         }
-
-        /*
-         * RFC 8446 4.2.8. Upon receipt of this [Key Share] extension in a HelloRetryRequest, the client MUST
-         * verify that (1) the selected_group field corresponds to a group which was provided in the
-         * "supported_groups" extension in the original ClientHello and (2) the selected_group field does not
-         * correspond to a group which was provided in the "key_share" extension in the original ClientHello.
-         * If either of these checks fails, then the client MUST abort the handshake with an
-         * "illegal_parameter" alert.
-         */
-        if (!TlsUtils.isValidKeyShareSelection(server_version, securityParameters.getClientSupportedGroups(),
-            state.clientAgreements, selectedGroup))
+        else
         {
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter, "invalid key_share selected");
+            /*
+             * RFC 9846 4.3.8. Upon receipt of this [Key Share] extension in a HelloRetryRequest, the client
+             * MUST verify that (1) the selected_group field corresponds to a group which was provided in the
+             * "supported_groups" extension in the original ClientHello and (2) the selected_group field does
+             * not correspond to a group which was provided in the "key_share" extension in the original
+             * ClientHello. If either of these checks fails, then the client MUST abort the handshake with an
+             * "illegal_parameter" alert.
+             */
+            if (!TlsUtils.isValidKeyShareSelection(server_version, securityParameters.getClientSupportedGroups(),
+                state.clientAgreements, selectedGroup))
+            {
+                throw new TlsFatalAlert(AlertDescription.illegal_parameter, "invalid key_share selected");
+            }
         }
-
-        byte[] cookie = TlsExtensionsUtils.getCookieExtension(extensions);
 
         // NOTE: Also checks that this is a version the client offered, and notifies the TlsClient
         reportServerVersion(state, server_version);
@@ -1087,9 +1099,15 @@ public class DTLSClientProtocol
         TlsUtils.negotiatedCipherSuite(securityParameters, cipherSuite);
         client.notifySelectedCipherSuite(cipherSuite);
 
-        securityParameters.negotiatedGroup = selectedGroup;
+        if (selectedGroup >= 0)
+        {
+            securityParameters.negotiatedGroup = selectedGroup;
 
-        state.clientAgreements = null;
+            // The original shares are dropped: the second ClientHello carries one for the selected group
+            state.clientAgreements = null;
+        }
+        // else the original shares and their agreements stand, and the ServerHello chooses among them
+
         state.retryCookie = cookie;
         state.retryGroup = selectedGroup;
     }
@@ -1120,11 +1138,10 @@ public class DTLSClientProtocol
 
         clientHelloExtensions.remove(TlsExtensionsUtils.EXT_cookie);
         clientHelloExtensions.remove(TlsExtensionsUtils.EXT_early_data);
-        clientHelloExtensions.remove(TlsExtensionsUtils.EXT_key_share);
         clientHelloExtensions.remove(TlsExtensionsUtils.EXT_pre_shared_key);
 
         /*
-         * RFC 8446 4.2.2. When sending the new ClientHello, the client MUST copy the contents of the
+         * RFC 9846 4.3.2. When sending the new ClientHello, the client MUST copy the contents of the
          * extension received in the HelloRetryRequest into a "cookie" extension in the new ClientHello.
          */
         if (null != state.retryCookie)
@@ -1140,17 +1157,18 @@ public class DTLSClientProtocol
          */
 
         /*
-         * RFC 8446 4.2.8. [..] when sending the new ClientHello, the client MUST replace the original
+         * RFC 9846 4.3.8. [..] when sending the new ClientHello, the client MUST replace the original
          * "key_share" extension with one containing only a new KeyShareEntry for the group indicated in the
-         * selected_group field of the triggering HelloRetryRequest.
+         * selected_group field of the triggering HelloRetryRequest. A HelloRetryRequest without "key_share"
+         * (the cookie exchange) leaves the original shares, and their agreements, as they are (RFC 9846 4.2.2).
          */
-        if (state.retryGroup < 0)
+        if (state.retryGroup >= 0)
         {
-            throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
+            clientHelloExtensions.remove(TlsExtensionsUtils.EXT_key_share);
 
-        state.clientAgreements = TlsUtils.addKeyShareToClientHelloRetry(state.clientContext,
-            clientHelloExtensions, state.retryGroup);
+            state.clientAgreements = TlsUtils.addKeyShareToClientHelloRetry(state.clientContext,
+                clientHelloExtensions, state.retryGroup);
+        }
 
         /*
          * TODO[dtls13] Optionally adding, removing, or changing the length of the "padding" extension
@@ -1310,7 +1328,11 @@ public class DTLSClientProtocol
                 agreement.receivePeerValue(serverShare.getKeyExchange());
                 sharedSecret = agreement.calculateSecret();
 
-                if (!afterHelloRetryRequest)
+                /*
+                 * A HelloRetryRequest that selected a group fixed it there; after one that carried only a
+                 * cookie the original shares stood, and the server chooses among them here.
+                 */
+                if (!afterHelloRetryRequest || securityParameters.getNegotiatedGroup() < 0)
                 {
                     securityParameters.negotiatedGroup = namedGroup;
                 }

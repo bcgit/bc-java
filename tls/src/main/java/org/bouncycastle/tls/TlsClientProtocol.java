@@ -915,36 +915,45 @@ public class TlsClientProtocol
             }
         }
 
+        final byte[] cookie = TlsExtensionsUtils.getCookieExtension(extensions);
+
         final int selectedGroup = TlsExtensionsUtils.getKeyShareHelloRetryRequest(extensions);
 
         /*
-         * TODO[tls:psk_ke]
+         * RFC 9846 4.2.4. A HelloRetryRequest "SHOULD contain the minimal set of extensions necessary for the
+         * client to generate a correct ClientHello pair", and the client "MUST abort the handshake with an
+         * "illegal_parameter" alert if the HelloRetryRequest would not result in any change in the
+         * ClientHello". So "key_share" is optional: a HelloRetryRequest carrying only a cookie is a stateless
+         * server's cookie exchange (4.3.2), and the original shares then stand (4.2.2: they are replaced only
+         * "If a "key_share" extension was supplied in the HelloRetryRequest").
          *
-         * RFC 8446 4.2.8. Servers [..] MUST NOT send a KeyShareEntry when using the "psk_ke"
+         * TODO[tls:psk_ke] RFC 9846 4.3.8. Servers [..] MUST NOT send a KeyShareEntry when using the "psk_ke"
          * PskKeyExchangeMode.
          */
         if (selectedGroup < 0)
         {
-            throw new TlsFatalAlert(AlertDescription.missing_extension,
-                "missing extension response: " + ExtensionType.getText(ExtensionType.key_share));
+            if (null == cookie)
+            {
+                throw new TlsFatalAlert(AlertDescription.illegal_parameter,
+                    "HelloRetryRequest would not change the ClientHello");
+            }
         }
-
-        /*
-         * RFC 8446 4.2.8. Upon receipt of this [Key Share] extension in a HelloRetryRequest, the
-         * client MUST verify that (1) the selected_group field corresponds to a group which was
-         * provided in the "supported_groups" extension in the original ClientHello and (2) the
-         * selected_group field does not correspond to a group which was provided in the "key_share"
-         * extension in the original ClientHello. If either of these checks fails, then the client
-         * MUST abort the handshake with an "illegal_parameter" alert.
-         */
-        if (!TlsUtils.isValidKeyShareSelection(server_version, securityParameters.getClientSupportedGroups(),
-            clientAgreements, selectedGroup))
+        else
         {
-            throw new TlsFatalAlert(AlertDescription.illegal_parameter, "invalid key_share selected");
+            /*
+             * RFC 9846 4.3.8. Upon receipt of this [Key Share] extension in a HelloRetryRequest, the
+             * client MUST verify that (1) the selected_group field corresponds to a group which was
+             * provided in the "supported_groups" extension in the original ClientHello and (2) the
+             * selected_group field does not correspond to a group which was provided in the "key_share"
+             * extension in the original ClientHello. If either of these checks fails, then the client
+             * MUST abort the handshake with an "illegal_parameter" alert.
+             */
+            if (!TlsUtils.isValidKeyShareSelection(server_version, securityParameters.getClientSupportedGroups(),
+                clientAgreements, selectedGroup))
+            {
+                throw new TlsFatalAlert(AlertDescription.illegal_parameter, "invalid key_share selected");
+            }
         }
-
-        final byte[] cookie = TlsExtensionsUtils.getCookieExtension(extensions);
-
 
 
         securityParameters.negotiatedVersion = server_version;
@@ -957,9 +966,15 @@ public class TlsClientProtocol
         TlsUtils.negotiatedCipherSuite(securityParameters, cipherSuite);
         tlsClient.notifySelectedCipherSuite(cipherSuite);
 
-        securityParameters.negotiatedGroup = selectedGroup;
+        if (selectedGroup >= 0)
+        {
+            securityParameters.negotiatedGroup = selectedGroup;
 
-        this.clientAgreements = null;
+            // The original shares are dropped: the second ClientHello carries one for the selected group
+            this.clientAgreements = null;
+        }
+        // else the original shares and their agreements stand, and the ServerHello chooses among them
+
         this.retryCookie = cookie;
         this.retryGroup = selectedGroup;
     }
@@ -1099,9 +1114,13 @@ public class TlsClientProtocol
                 agreement.receivePeerValue(serverShare.getKeyExchange());
                 sharedSecret = agreement.calculateSecret();
 
-                if (!afterHelloRetryRequest)
+                /*
+                 * A HelloRetryRequest that selected a group fixed it there; after one that carried only a
+                 * cookie the original shares stood, and the server chooses among them here.
+                 */
+                if (!afterHelloRetryRequest || securityParameters.getNegotiatedGroup() < 0)
                 {
-                    securityParameters.negotiatedGroup = namedGroup;                    
+                    securityParameters.negotiatedGroup = namedGroup;
                 }
             }
         }
@@ -1712,11 +1731,10 @@ public class TlsClientProtocol
 
         clientHelloExtensions.remove(TlsExtensionsUtils.EXT_cookie);
         clientHelloExtensions.remove(TlsExtensionsUtils.EXT_early_data);
-        clientHelloExtensions.remove(TlsExtensionsUtils.EXT_key_share);
         clientHelloExtensions.remove(TlsExtensionsUtils.EXT_pre_shared_key);
 
         /*
-         * RFC 4.2.2. When sending the new ClientHello, the client MUST copy the contents of the
+         * RFC 9846 4.3.2. When sending the new ClientHello, the client MUST copy the contents of the
          * extension received in the HelloRetryRequest into a "cookie" extension in the new
          * ClientHello.
          */
@@ -1745,21 +1763,22 @@ public class TlsClientProtocol
         }
 
         /*
-         * RFC 8446 4.2.8. [..] when sending the new ClientHello, the client MUST replace the
+         * RFC 9846 4.3.8. [..] when sending the new ClientHello, the client MUST replace the
          * original "key_share" extension with one containing only a new KeyShareEntry for the group
          * indicated in the selected_group field of the triggering HelloRetryRequest.
+         *
+         * RFC 9846 4.2.2. "If a "key_share" extension was supplied in the HelloRetryRequest, replacing the
+         * list of shares with a list containing a single KeyShareEntry from the indicated group" - so after
+         * a HelloRetryRequest without one (the cookie exchange) the original shares, and their agreements,
+         * are kept as they are.
          */
-        if (retryGroup < 0)
+        if (retryGroup >= 0)
         {
-            throw new TlsFatalAlert(AlertDescription.internal_error);
-        }
+            clientHelloExtensions.remove(TlsExtensionsUtils.EXT_key_share);
 
-        /*
-         * - If a "key_share" extension was supplied in the HelloRetryRequest, replacing the list of shares
-         * with a list containing a single KeyShareEntry from the indicated group
-         */
-        this.clientAgreements = TlsUtils.addKeyShareToClientHelloRetry(tlsClientContext, clientHelloExtensions,
-            retryGroup);
+            this.clientAgreements = TlsUtils.addKeyShareToClientHelloRetry(tlsClientContext,
+                clientHelloExtensions, retryGroup);
+        }
 
         /*
          * TODO[tls13] Optionally adding, removing, or changing the length of the "padding"
