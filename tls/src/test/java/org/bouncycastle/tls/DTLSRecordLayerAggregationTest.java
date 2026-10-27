@@ -84,6 +84,11 @@ public class DTLSRecordLayerAggregationTest
 
     private void setUpPlaintextLayer() throws IOException
     {
+        setUpPlaintextLayer(true);
+    }
+
+    private void setUpPlaintextLayer(final boolean packHandshakeFlights) throws IOException
+    {
         // epoch 0, null cipher: records go out in the legacy plaintext format, which is all this test needs
         TlsCrypto crypto = new BcTlsCrypto();
         AbstractTlsContext context = TlsAEADCipherDTLS13Test.createContext(crypto, false,
@@ -94,6 +99,11 @@ public class DTLSRecordLayerAggregationTest
             public TlsAuthentication getAuthentication()
             {
                 return null;
+            }
+
+            public boolean allowRecordPacking()
+            {
+                return packHandshakeFlights;
             }
         };
 
@@ -160,6 +170,33 @@ public class DTLSRecordLayerAggregationTest
             pos += DTLSRecordLayer.RECORD_HEADER_LENGTH + len;
         }
         assertEquals(datagram.length, pos);
+    }
+
+    /**
+     * {@link TlsPeer#allowRecordPacking()} false: the flight never opens, so each record goes out in
+     * its own datagram, as every DTLS version did before packing was added.
+     */
+    public void testPeerCanOptOutOfPacking() throws Exception
+    {
+        setUpPlaintextLayer(false);
+
+        byte[] fragment = handshakeFragment(20);
+        int len = fragment.length;
+
+        recordLayer.beginFlight();
+        for (int i = 0; i < 5; ++i)
+        {
+            recordLayer.send(fragment, 0, len);
+        }
+        assertEquals("records must not be buffered when packing is off", 5, transport.datagrams.size());
+        recordLayer.endFlight();
+        assertEquals(5, transport.datagrams.size());
+
+        for (int i = 0; i < 5; ++i)
+        {
+            byte[] datagram = (byte[])transport.datagrams.elementAt(i);
+            assertEquals("one record per datagram", DTLSRecordLayer.RECORD_HEADER_LENGTH + len, datagram.length);
+        }
     }
 
     public void testFlightFlushesWhenTheDatagramFills() throws Exception

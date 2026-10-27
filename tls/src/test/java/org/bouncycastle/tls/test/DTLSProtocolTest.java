@@ -194,6 +194,83 @@ public class DTLSProtocolTest
         assertFalse("key_share offered no shares", clientShares.isEmpty());
     }
 
+    /**
+     * TlsPeer.allowRecordPacking (github #1487). By default a flight's handshake records share
+     * datagrams; a peer that returns false gets the pre-packing shape back, one record per datagram, which a
+     * DatagramTransport that buffers a single record at a time depends on. Checked on both sides of a DTLS 1.2
+     * handshake with client authentication, so that each side has a flight of several records.
+     */
+    public void testPeerCanOptOutOfFlightPacking() throws Exception
+    {
+        Vector[] packed = runHandshakeCapturingDatagrams(true);
+        assertTrue("client never packed a datagram", maxRecordsInADatagram(packed[0]) > 1);
+        assertTrue("server never packed a datagram", maxRecordsInADatagram(packed[1]) > 1);
+
+        Vector[] unpacked = runHandshakeCapturingDatagrams(false);
+        assertEquals("client packed a datagram with packing off", 1, maxRecordsInADatagram(unpacked[0]));
+        assertEquals("server packed a datagram with packing off", 1, maxRecordsInADatagram(unpacked[1]));
+    }
+
+    /** @return the datagrams sent by the client (index 0) and by the server (index 1). */
+    private static Vector[] runHandshakeCapturingDatagrams(final boolean packHandshakeFlights) throws Exception
+    {
+        MockDTLSClient client = new MockDTLSClient(null)
+        {
+            public boolean allowRecordPacking()
+            {
+                return packHandshakeFlights;
+            }
+        };
+
+        MockDTLSServer server = new MockDTLSServer()
+        {
+            public boolean allowRecordPacking()
+            {
+                return packHandshakeFlights;
+            }
+        };
+
+        DTLSClientProtocol clientProtocol = new DTLSClientProtocol();
+        DTLSServerProtocol serverProtocol = new DTLSServerProtocol();
+
+        MockDatagramAssociation network = new MockDatagramAssociation(1500);
+
+        CapturingDatagramTransport serverCapture = new CapturingDatagramTransport(network.getServer());
+
+        ServerThread serverThread = new ServerThread(serverProtocol, server, serverCapture);
+        serverThread.start();
+
+        CapturingDatagramTransport clientCapture = new CapturingDatagramTransport(network.getClient());
+
+        DTLSTransport dtlsClient = clientProtocol.connect(client, clientCapture);
+
+        dtlsClient.close();
+
+        serverThread.shutdown();
+
+        return new Vector[]{ clientCapture.getSent(), serverCapture.getSent() };
+    }
+
+    /** Counts DTLS 1.2 records (13-byte header, length at offset 11) per datagram and returns the largest. */
+    private static int maxRecordsInADatagram(Vector datagrams)
+    {
+        int max = 0;
+        for (int i = 0; i < datagrams.size(); ++i)
+        {
+            byte[] datagram = (byte[])datagrams.elementAt(i);
+            int count = 0, pos = 0;
+            while (pos + 13 <= datagram.length)
+            {
+                int length = ((datagram[pos + 11] & 0xFF) << 8) | (datagram[pos + 12] & 0xFF);
+                pos += 13 + length;
+                ++count;
+            }
+            assertEquals("datagram is not a whole number of records", datagram.length, pos);
+            max = Math.max(max, count);
+        }
+        return max;
+    }
+
     private static ClientHello parseFirstClientHello(Vector datagrams) throws IOException
     {
         for (int i = 0; i < datagrams.size(); ++i)

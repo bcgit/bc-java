@@ -2527,13 +2527,14 @@ class DTLSRecordLayer
     /**
      * github #1487. Begin coalescing handshake records into datagrams. Records written until
      * {@link #endFlight()} are packed into as few datagrams as the send limit allows, rather than one
-     * datagram each.
+     * datagram each. A peer that opts out ({@link TlsPeer#allowRecordPacking()}) leaves the flight closed, so
+     * every record goes out on its own as before.
      */
     void beginFlight() throws IOException
     {
         synchronized (writeLock)
         {
-            if (inFlight)
+            if (inFlight || !peer.allowRecordPacking())
             {
                 return;
             }

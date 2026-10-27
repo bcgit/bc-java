@@ -59,6 +59,23 @@ public interface TlsPeer
      */
     int getHandshakeResendTimeMillis();
 
+    /**
+     * <p>
+     * NOTE: Currently only respected by DTLS protocols.
+     * </p>
+     * <p>
+     * Whether more than one record may be placed in a datagram (RFC 9147 4.3). Allowed by default, which
+     * currently packs each handshake flight's records into as few datagrams as the transport's send limit
+     * allows. Returning <code>false</code> turns off whatever packing is done, so that every record is sent in
+     * a datagram of its own, as a {@link DatagramTransport} whose receiver handles a single record at a time
+     * may need.
+     * </p>
+     *
+     * @return <code>true</code> if records may share a datagram, or <code>false</code> to send each record in
+     *         a datagram of its own.
+     */
+    boolean allowRecordPacking();
+
     boolean allowLegacyResumption();
 
     int getMaxCertificateChainLength();
