@@ -15,6 +15,16 @@ import org.bouncycastle.util.Arrays;
  * <p/>
  * RFC 4347 4.2.1 additionally recommends changing the secret frequently. This class does not handle that
  * internally, so the instance should be replaced instead.
+ * <p>
+ * DTLS 1.2 and earlier only. DTLS 1.3 removed the HelloVerifyRequest and carries its cookie in a
+ * HelloRetryRequest instead (RFC 9147 5.1), which is part of the handshake transcript and so needs the first
+ * ClientHello's hash and the selected parameters stored in the cookie. This class does not implement that
+ * exchange yet, so a server reached through it cannot negotiate DTLS 1.3: {@link DTLSServerProtocol} fails
+ * such a handshake with an internal_error alert at the ServerHello rather than let the client abort it. A
+ * server offering {@link ProtocolVersion#DTLSv13} therefore has to accept connections without this front end,
+ * and without any stateless denial-of-service countermeasure, until a HelloRetryRequest cookie exchange is
+ * added here.
+ * </p>
  */
 public class DTLSVerifier
 {
