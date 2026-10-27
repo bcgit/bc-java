@@ -13,6 +13,17 @@ public class DTLSTransport
         this.recordLayer = recordLayer;
     }
 
+    /**
+     * Package-private access to the record layer behind this transport. There is no application-facing
+     * contract here, and none is implied: this widens no published API, and nothing outside this package can
+     * reach it. It exists because the package-private DTLS 1.3 machinery - a post-handshake key update, for
+     * one - has no application-facing entry point, any more than {@link TlsProtocol} has one for TLS.
+     */
+    DTLSRecordLayer getRecordLayer()
+    {
+        return recordLayer;
+    }
+
     public int getReceiveLimit()
         throws IOException
     {

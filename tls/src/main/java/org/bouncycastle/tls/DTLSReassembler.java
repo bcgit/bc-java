@@ -39,14 +39,43 @@ class DTLSReassembler
         return missing.isEmpty() ? body : null;
     }
 
-    void contributeFragment(short msg_type, int length, byte[] buf, int off, int fragment_offset,
+    /**
+     * @return the offset of the first byte of this message that has not been received yet, or -1 once the
+     *         message is complete. Supports the RFC 9147 7.1 out-of-order ACK trigger: a fragment that does
+     *         not begin here is not the next piece of this message.
+     */
+    int getNextExpectedOffset()
+    {
+        return missing.isEmpty() ? -1 : ((Range)missing.firstElement()).start;
+    }
+
+    /**
+     * Whether a fragment with these parameters is one this reassembler could hold, which is the difference
+     * between a fragment that is rejected outright and one that is merely already held. RFC 9147 7.1
+     * acknowledges a record whose message was discarded because a previous copy had been received, but not
+     * one whose message was rejected, and only the reassembler knows which of the two happened.
+     *
+     * @return true if the fragment belongs to this message.
+     */
+    boolean acceptsFragment(short msg_type, int length, int fragment_offset, int fragment_length)
+    {
+        return this.msg_type == msg_type && this.body.length == length
+            && fragment_offset + fragment_length <= length;
+    }
+
+    /**
+     * @return true if the fragment contributed at least one byte (or completed an empty message), false if
+     *         it was ignored, whether because it was rejected or because every byte of it was already held.
+     *         {@link #acceptsFragment(short, int, int, int)} separates those two cases.
+     */
+    boolean contributeFragment(short msg_type, int length, byte[] buf, int off, int fragment_offset,
         int fragment_length)
     {
         int fragment_end = fragment_offset + fragment_length;
 
-        if (this.msg_type != msg_type || this.body.length != length || fragment_end > length)
+        if (!acceptsFragment(msg_type, length, fragment_offset, fragment_length))
         {
-            return;
+            return false;
         }
 
         // NOTE: Empty messages still require an empty fragment to complete it
@@ -55,9 +84,12 @@ class DTLSReassembler
             if (fragment_offset == 0 && !missing.isEmpty() && ((Range)missing.firstElement()).end == 0)
             {
                 missing.removeElementAt(0);
+                return true;
             }
-            return;
+            return false;
         }
+
+        boolean contributed = false;
 
         for (int i = findStartIndex(fragment_offset); i < missing.size(); ++i)
         {
@@ -103,7 +135,10 @@ class DTLSReassembler
             }
 
             System.arraycopy(buf, off + copyStart - fragment_offset, body, copyStart, copyLength);
+            contributed = true;
         }
+
+        return contributed;
     }
 
     /**

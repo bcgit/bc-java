@@ -146,4 +146,66 @@ public class DTLSReassemblerTest
         r.reset();
         assertNull(r.getBodyIfComplete());
     }
+
+    /**
+     * getNextExpectedOffset reports the start of the first gap, which is what the reliable handshake uses to
+     * recognise a fragment that is not the next piece of the message (RFC 9147 7.1).
+     */
+    public void testNextExpectedOffsetTracksTheFirstGap()
+    {
+        int length = 100;
+        byte[] data = new byte[length];
+
+        DTLSReassembler r = new DTLSReassembler(MSG_TYPE, length);
+        assertEquals("nothing received yet", 0, r.getNextExpectedOffset());
+
+        r.contributeFragment(MSG_TYPE, length, data, 0, 0, 25);
+        assertEquals(25, r.getNextExpectedOffset());
+
+        // a fragment past the gap leaves the first missing range where it was
+        r.contributeFragment(MSG_TYPE, length, data, 50, 50, 50);
+        assertEquals(25, r.getNextExpectedOffset());
+
+        r.contributeFragment(MSG_TYPE, length, data, 25, 25, 25);
+        assertEquals("complete", -1, r.getNextExpectedOffset());
+        assertNotNull(r.getBodyIfComplete());
+
+        r.reset();
+        assertEquals(0, r.getNextExpectedOffset());
+    }
+
+    public void testNextExpectedOffsetOfAnEmptyMessage()
+    {
+        DTLSReassembler empty = new DTLSReassembler(MSG_TYPE, 0);
+        assertEquals(0, empty.getNextExpectedOffset());
+
+        empty.contributeFragment(MSG_TYPE, 0, new byte[0], 0, 0, 0);
+        assertEquals(-1, empty.getNextExpectedOffset());
+    }
+
+    /**
+     * contributeFragment reports whether it actually contributed, which is what lets the reliable handshake
+     * withhold an ACK for a record it dropped (RFC 9147 7.1).
+     */
+    public void testContributeFragmentReportsWhetherItContributed()
+    {
+        int length = 10;
+        byte[] data = new byte[length];
+
+        DTLSReassembler r = new DTLSReassembler(MSG_TYPE, length);
+
+        assertTrue("first arrival", r.contributeFragment(MSG_TYPE, length, data, 0, 0, 5));
+        assertFalse("already have those bytes", r.contributeFragment(MSG_TYPE, length, data, 0, 0, 5));
+
+        assertFalse("wrong message type", r.contributeFragment(HandshakeType.finished, length, data, 0, 5, 5));
+        assertFalse("wrong message length", r.contributeFragment(MSG_TYPE, length + 1, data, 0, 5, 5));
+        assertFalse("runs past the message", r.contributeFragment(MSG_TYPE, length, data, 0, 8, 5));
+
+        assertTrue("the rest of the message", r.contributeFragment(MSG_TYPE, length, data, 0, 5, 5));
+        assertNotNull(r.getBodyIfComplete());
+
+        DTLSReassembler empty = new DTLSReassembler(MSG_TYPE, 0);
+        assertTrue("empty message completed", empty.contributeFragment(MSG_TYPE, 0, new byte[0], 0, 0, 0));
+        assertFalse("already complete", empty.contributeFragment(MSG_TYPE, 0, new byte[0], 0, 0, 0));
+    }
 }
