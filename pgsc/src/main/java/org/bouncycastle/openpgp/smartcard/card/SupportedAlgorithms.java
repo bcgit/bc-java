@@ -12,6 +12,7 @@ import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.X25519PublicBCPGKey;
 import org.bouncycastle.bcpg.X448PublicBCPGKey;
 import org.bouncycastle.openpgp.api.OpenPGPCertificate;
+import org.bouncycastle.openpgp.smartcard.OpenPGPHardwareKey;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,6 +41,21 @@ public class SupportedAlgorithms
             }
         }
         return new SupportedAlgorithms(filtered);
+    }
+
+    public SupportedAlgorithms signingKey()
+    {
+        return filter(OpenPGPHardwareKey.KEY_REF_SIGNATURE);
+    }
+
+    public SupportedAlgorithms decryptionKey()
+    {
+        return filter(OpenPGPHardwareKey.KEY_REF_DECRYPTION);
+    }
+
+    public SupportedAlgorithms authenticationKey()
+    {
+        return filter(OpenPGPHardwareKey.KEY_REF_AUTHENTICATION);
     }
 
     public List<Algorithm> getAlgorithms()
