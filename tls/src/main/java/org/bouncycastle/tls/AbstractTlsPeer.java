@@ -67,6 +67,11 @@ public abstract class AbstractTlsPeer
         return 1000;
     }
 
+    public boolean allowRecordPacking()
+    {
+        return true;
+    }
+
     public boolean allowLegacyResumption()
     {
         return false;

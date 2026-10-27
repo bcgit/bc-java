@@ -1365,7 +1365,8 @@ public class JcaTlsCrypto
         throws IOException, GeneralSecurityException
     {
         return new TlsAEADCipher(cryptoParams, new JceChaCha20Poly1305(this, helper, true),
-            new JceChaCha20Poly1305(this, helper, false), 32, 16, TlsAEADCipher.AEAD_CHACHA20_POLY1305, null);
+            new JceChaCha20Poly1305(this, helper, false), 32, 16, TlsAEADCipher.AEAD_CHACHA20_POLY1305, null,
+            new JceChaCha20RecordNumberMask(), new JceChaCha20RecordNumberMask());
     }
 
     private TlsAEADCipher createCipher_AES_CCM(TlsCryptoParameters cryptoParams, int cipherKeySize, int macSize)
@@ -1373,7 +1374,7 @@ public class JcaTlsCrypto
     {
         return new TlsAEADCipher(cryptoParams, createAEADCipher("AES/CCM/NoPadding", "AES", cipherKeySize, true),
             createAEADCipher("AES/CCM/NoPadding", "AES", cipherKeySize, false), cipherKeySize, macSize,
-            TlsAEADCipher.AEAD_CCM, null);
+            TlsAEADCipher.AEAD_CCM, null, new JceAESRecordNumberMask(helper), new JceAESRecordNumberMask(helper));
     }
 
     private TlsAEADCipher createCipher_AES_GCM(TlsCryptoParameters cryptoParams, int cipherKeySize, int macSize)
@@ -1381,7 +1382,8 @@ public class JcaTlsCrypto
     {
         return new TlsAEADCipher(cryptoParams, createAEADCipher("AES/GCM/NoPadding", "AES", cipherKeySize, true),
             createAEADCipher("AES/GCM/NoPadding", "AES", cipherKeySize, false), cipherKeySize, macSize,
-            TlsAEADCipher.AEAD_GCM, getFipsGCMNonceGeneratorFactory());
+            TlsAEADCipher.AEAD_GCM, getFipsGCMNonceGeneratorFactory(), new JceAESRecordNumberMask(helper),
+            new JceAESRecordNumberMask(helper));
     }
 
     private TlsAEADCipher createCipher_ARIA_GCM(TlsCryptoParameters cryptoParams, int cipherKeySize, int macSize)

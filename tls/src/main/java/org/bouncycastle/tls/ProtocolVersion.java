@@ -13,16 +13,20 @@ public final class ProtocolVersion
     public static final ProtocolVersion TLSv13 = new ProtocolVersion(0x0304, "TLS 1.3");
     public static final ProtocolVersion DTLSv10 = new ProtocolVersion(0xFEFF, "DTLS 1.0");
     public static final ProtocolVersion DTLSv12 = new ProtocolVersion(0xFEFD, "DTLS 1.2");
+    /**
+     * DTLS 1.3 (RFC 9147). Offered or accepted only when a DTLS client's or server's supported versions include
+     * it; nothing lists it by default. See {@link DTLSVerifier} for the one front end it cannot be used behind.
+     */
     public static final ProtocolVersion DTLSv13 = new ProtocolVersion(0xFEFC, "DTLS 1.3");
 
     static final ProtocolVersion CLIENT_EARLIEST_SUPPORTED_DTLS = DTLSv10;
     static final ProtocolVersion CLIENT_EARLIEST_SUPPORTED_TLS = SSLv3;
-    static final ProtocolVersion CLIENT_LATEST_SUPPORTED_DTLS = DTLSv12;
+    static final ProtocolVersion CLIENT_LATEST_SUPPORTED_DTLS = DTLSv13;
     static final ProtocolVersion CLIENT_LATEST_SUPPORTED_TLS = TLSv13;
 
     static final ProtocolVersion SERVER_EARLIEST_SUPPORTED_DTLS = DTLSv10;
     static final ProtocolVersion SERVER_EARLIEST_SUPPORTED_TLS = SSLv3;
-    static final ProtocolVersion SERVER_LATEST_SUPPORTED_DTLS = DTLSv12;
+    static final ProtocolVersion SERVER_LATEST_SUPPORTED_DTLS = DTLSv13;
     static final ProtocolVersion SERVER_LATEST_SUPPORTED_TLS = TLSv13;
 
     public static boolean contains(ProtocolVersion[] versions, ProtocolVersion version)

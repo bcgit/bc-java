@@ -25,6 +25,8 @@ public class AllTests
         suite.addTestSuite(BcTlsProtocolHybridTest.class);
         suite.addTestSuite(BcTlsProtocolKemTest.class);
         suite.addTestSuite(ByteQueueInputStreamTest.class);
+        suite.addTestSuite(DTLS13ClientProtocolTest.class);
+        suite.addTestSuite(DTLS13ProtocolTest.class);
         suite.addTestSuite(DTLSAggregatedHandshakeRetransmissionTest.class);
         suite.addTestSuite(DTLSHandshakeRetransmissionTest.class);
         suite.addTestSuite(DTLSInvalidRecordTest.class);
@@ -41,6 +43,7 @@ public class AllTests
         suite.addTestSuite(PRFTest.class);
         suite.addTestSuite(Tls13CertificateStatusTest.class);
         suite.addTestSuite(Tls13ClientCertificateTest.class);
+        suite.addTestSuite(Tls13HelloRetryRequestTest.class);
         suite.addTestSuite(Tls13PSKProtocolTest.class);
         suite.addTestSuite(TlsHandshakeTimeoutTest.class);
         suite.addTestSuite(TlsProtocolNonBlockingTest.class);
