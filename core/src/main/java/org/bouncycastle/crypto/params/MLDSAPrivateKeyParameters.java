@@ -150,7 +150,13 @@ public class MLDSAPrivateKeyParameters
         this.prefFormat = preferredFormat;
     }
 
+    /** @deprecated Use {@link #withPreferredFormat(int)} instead. */
     public MLDSAPrivateKeyParameters getParametersWithFormat(int format)
+    {
+        return withPreferredFormat(format);
+    }
+
+    public MLDSAPrivateKeyParameters withPreferredFormat(int format)
     {
         if (this.prefFormat == format)
         {
@@ -256,7 +262,7 @@ public class MLDSAPrivateKeyParameters
      * Zeroize the secret key material held by this object.
      * <p>
      * Note: the internal arrays may be shared with other parameter objects derived from this one
-     * (for example via {@link #getParametersWithFormat(int)}); destroying them here invalidates
+     * (for example via {@link #withPreferredFormat(int)}); destroying them here invalidates
      * those objects too.
      */
     public synchronized void destroy()

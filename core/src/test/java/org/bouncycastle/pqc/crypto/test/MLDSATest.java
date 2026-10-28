@@ -925,7 +925,7 @@ public class MLDSATest
 
             for (int j = 0; j != formats.length; j++)
             {
-                PrivateKeyInfo info = PrivateKeyInfoFactory.createPrivateKeyInfo(priv.getParametersWithFormat(formats[j]));
+                PrivateKeyInfo info = PrivateKeyInfoFactory.createPrivateKeyInfo(priv.withPreferredFormat(formats[j]));
 
                 MLDSAPrivateKeyParameters key = (MLDSAPrivateKeyParameters)PrivateKeyFactory.createKey(withPublicKey(info, pub));
                 assertTrue(Arrays.areEqual(pub, key.getPublicKey()));
@@ -987,7 +987,7 @@ public class MLDSATest
                 }
 
                 PrivateKeyInfo info = PrivateKeyInfoFactory.createPrivateKeyInfo(
-                    new MLDSAPrivateKeyParameters(parameters, expanded, null).getParametersWithFormat(MLDSAPrivateKeyParameters.EXPANDED_KEY));
+                    new MLDSAPrivateKeyParameters(parameters, expanded, null).withPreferredFormat(MLDSAPrivateKeyParameters.EXPANDED_KEY));
                 byte[] infoEnc = info.getEncoded();
                 int pos = indexOf(infoEnc, expanded);
                 assertTrue(pos > 0);

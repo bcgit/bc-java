@@ -114,6 +114,10 @@ public class AllTests
     {
         String[] names = new String[]{
             "ML-KEM-512", "ML-KEM-768", "ML-KEM-1024",
+            "MLKEM768-RSA2048-SHA3-256", "MLKEM768-RSA3072-SHA3-256", "MLKEM768-RSA4096-SHA3-256",
+            "MLKEM768-X25519-SHA3-256", "MLKEM768-ECDH-P256-SHA3-256", "MLKEM768-ECDH-P384-SHA3-256",
+            "MLKEM768-ECDH-brainpoolP256r1-SHA3-256", "MLKEM1024-RSA3072-SHA3-256", "MLKEM1024-ECDH-P384-SHA3-256",
+            "MLKEM1024-ECDH-brainpoolP384r1-SHA3-256", "MLKEM1024-X448-SHA3-256", "MLKEM1024-ECDH-P521-SHA3-256",
             "frodokem976shake", "frodokem1344shake", "efrodokem976shake", "efrodokem1344shake",
             "frodokem976aes", "frodokem1344aes", "efrodokem976aes", "efrodokem1344aes",
             "mceliece460896", "mceliece460896f", "mceliece460896pc", "mceliece460896pcf",

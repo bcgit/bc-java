@@ -4,6 +4,9 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.math.BigInteger;
 import java.security.KeyPair;
+import java.security.KeyPairGenerator;
+import java.security.cert.X509Certificate;
+import java.util.Iterator;
 import java.security.Security;
 import java.util.Date;
 import java.util.Random;
@@ -11,6 +14,7 @@ import java.util.Set;
 import java.util.Vector;
 
 import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Exception;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.DEROctetString;
@@ -35,6 +39,7 @@ import org.bouncycastle.cert.ocsp.Req;
 import org.bouncycastle.cert.ocsp.RespID;
 import org.bouncycastle.cert.ocsp.SingleResp;
 import org.bouncycastle.cert.ocsp.jcajce.JcaBasicOCSPRespBuilder;
+import org.bouncycastle.jcajce.provider.asymmetric.compositesignatures.CompositeIndex;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.DigestCalculator;
 import org.bouncycastle.operator.OperatorCreationException;
@@ -512,6 +517,110 @@ public class OCSPTest
         BasicOCSPResp resp = respGen.build(new JcaContentSignerBuilder("SHA1withECDSA").setProvider(BC).build(signKP.getPrivate()), chain, new Date());
     }
 
+    /**
+     * RFC 6960 request and response signing with the post-quantum signature algorithms: ML-DSA-65
+     * (RFC 9881), SLH-DSA-SHA2-128f (RFC 9814) and each of the composite ML-DSA sets the provider
+     * supports. The response's signature algorithm must be the certificate's, and the signed
+     * structures must still verify after being encoded and parsed back.
+     */
+    private void testPQC()
+        throws Exception
+    {
+        doTestPQC("ML-DSA-65");
+        doTestPQC("SLH-DSA-SHA2-128F");
+
+        for (Iterator it = CompositeIndex.getSupportedIdentifiers().iterator(); it.hasNext(); )
+        {
+            doTestPQC(CompositeIndex.getAlgorithmName((ASN1ObjectIdentifier)it.next()));
+        }
+    }
+
+    private void doTestPQC(String algorithm)
+        throws Exception
+    {
+        String signDN = "O=Bouncy Castle, C=AU";
+        KeyPair signKP = KeyPairGenerator.getInstance(algorithm, BC).generateKeyPair();
+        X509Certificate signCert = OCSPTestUtil.makeCertificate(signKP, signDN, signKP, signDN, algorithm, true);
+        X509CertificateHolder testCert = new JcaX509CertificateHolder(signCert);
+        ASN1ObjectIdentifier sigAlgOid = testCert.getSignatureAlgorithm().getAlgorithm();
+        DigestCalculatorProvider digCalcProv = new JcaDigestCalculatorProviderBuilder().setProvider(BC).build();
+
+        CertificateID id = new CertificateID(digCalcProv.get(CertificateID.HASH_SHA1), testCert, BigInteger.valueOf(1));
+
+        //
+        // signed request
+        //
+        OCSPReqBuilder gen = new OCSPReqBuilder();
+
+        gen.addRequest(id);
+        gen.setRequestorName(new GeneralName(new X500Name(signDN)));
+
+        X509CertificateHolder[] chain = new X509CertificateHolder[]{ testCert };
+
+        OCSPReq req = gen.build(new JcaContentSignerBuilder(algorithm).setProvider(BC).build(signKP.getPrivate()), chain);
+
+        req = new OCSPReq(req.getEncoded());
+
+        if (!req.isSigned())
+        {
+            fail(algorithm + ": request not signed");
+        }
+
+        if (!sigAlgOid.equals(req.getSignatureAlgOID()))
+        {
+            fail(algorithm + ": request signature algorithm " + req.getSignatureAlgOID() + " != " + sigAlgOid);
+        }
+
+        if (!req.isSignatureValid(new JcaContentVerifierProviderBuilder().setProvider(BC).build(signCert)))
+        {
+            fail(algorithm + ": request signature invalid");
+        }
+
+        //
+        // signed response
+        //
+        BasicOCSPRespBuilder respGen = new JcaBasicOCSPRespBuilder(signKP.getPublic(), digCalcProv.get(RespID.HASH_SHA1));
+
+        respGen.addResponse(id, CertificateStatus.GOOD);
+
+        BasicOCSPResp basicResp = respGen.build(new JcaContentSignerBuilder(algorithm).setProvider(BC).build(signKP.getPrivate()), chain, new Date());
+
+        OCSPResp resp = new OCSPRespBuilder().build(OCSPRespBuilder.SUCCESSFUL, basicResp);
+
+        resp = new OCSPResp(resp.getEncoded());
+
+        basicResp = (BasicOCSPResp)resp.getResponseObject();
+
+        if (!sigAlgOid.equals(basicResp.getSignatureAlgOID()))
+        {
+            fail(algorithm + ": response signature algorithm " + basicResp.getSignatureAlgOID() + " != " + sigAlgOid);
+        }
+
+        if (!basicResp.isSignatureValid(new JcaContentVerifierProviderBuilder().setProvider(BC).build(basicResp.getCerts()[0])))
+        {
+            fail(algorithm + ": response signature invalid");
+        }
+
+        SingleResp[] singleResps = basicResp.getResponses();
+
+        if (singleResps.length != 1 || singleResps[0].getCertStatus() != null || !singleResps[0].getCertID().equals(id))
+        {
+            fail(algorithm + ": response content wrong");
+        }
+
+        //
+        // a response signed by another key of the same algorithm must not verify against this certificate
+        //
+        KeyPair otherKP = KeyPairGenerator.getInstance(algorithm, BC).generateKeyPair();
+
+        BasicOCSPResp otherResp = respGen.build(new JcaContentSignerBuilder(algorithm).setProvider(BC).build(otherKP.getPrivate()), chain, new Date());
+
+        if (otherResp.isSignatureValid(new JcaContentVerifierProviderBuilder().setProvider(BC).build(signCert)))
+        {
+            fail(algorithm + ": response signed by another key verified");
+        }
+    }
+
     private void testRSA()
         throws Exception
     {
@@ -810,6 +919,8 @@ public class OCSPTest
         throws Exception
     {
         matchesIssuerAcrossDigestParameterEncodings();
+
+        testPQC();
 
         String signDN = "O=Bouncy Castle, C=AU";
         KeyPair signKP = OCSPTestUtil.makeKeyPair();

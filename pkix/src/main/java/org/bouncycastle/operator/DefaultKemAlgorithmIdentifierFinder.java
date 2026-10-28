@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.iana.IANAObjectIdentifiers;
 import org.bouncycastle.asn1.iso.ISOIECObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -24,7 +25,11 @@ import org.bouncycastle.util.Strings;
  * Names are matched without regard to case and are the canonical ones the
  * matching lightweight parameter class uses - {@code MLKEMParameters.getName()},
  * {@code FrodoKEMParameters.getName()}, {@code CMCEParameters.getName()} - which
- * are also the names the BouncyCastle provider registers the algorithms under.
+ * are also the names the BouncyCastle provider registers the algorithms under. The
+ * composite ML-KEM sets of draft-ietf-lamps-pq-composite-kem are named as the
+ * provider's composite KEM services name them (for example
+ * "MLKEM768-X25519-SHA3-256"), with the "BP256"/"BP384" spellings of the two
+ * brainpool sets accepted as aliases.
  * Coverage is restricted to the standardised assignments: BouncyCastle's own
  * pre-standard arcs for FrodoKEM and Classic McEliece are deliberately absent,
  * as those parameters are to be phased out.
@@ -41,6 +46,22 @@ public class DefaultKemAlgorithmIdentifierFinder
         addAlgorithm("ML-KEM-512", NISTObjectIdentifiers.id_alg_ml_kem_512);
         addAlgorithm("ML-KEM-768", NISTObjectIdentifiers.id_alg_ml_kem_768);
         addAlgorithm("ML-KEM-1024", NISTObjectIdentifiers.id_alg_ml_kem_1024);
+
+        // Composite ML-KEM (draft-ietf-lamps-pq-composite-kem), IANA assignments
+        addAlgorithm("MLKEM768-RSA2048-SHA3-256", IANAObjectIdentifiers.id_MLKEM768_RSA2048_SHA3_256);
+        addAlgorithm("MLKEM768-RSA3072-SHA3-256", IANAObjectIdentifiers.id_MLKEM768_RSA3072_SHA3_256);
+        addAlgorithm("MLKEM768-RSA4096-SHA3-256", IANAObjectIdentifiers.id_MLKEM768_RSA4096_SHA3_256);
+        addAlgorithm("MLKEM768-X25519-SHA3-256", IANAObjectIdentifiers.id_MLKEM768_X25519_SHA3_256);
+        addAlgorithm("MLKEM768-ECDH-P256-SHA3-256", IANAObjectIdentifiers.id_MLKEM768_ECDH_P256_SHA3_256);
+        addAlgorithm("MLKEM768-ECDH-P384-SHA3-256", IANAObjectIdentifiers.id_MLKEM768_ECDH_P384_SHA3_256);
+        addAlgorithm("MLKEM768-ECDH-brainpoolP256r1-SHA3-256", IANAObjectIdentifiers.id_MLKEM768_ECDH_brainpoolP256r1_SHA3_256);
+        addAlgorithm("MLKEM768-ECDH-BP256-SHA3-256", IANAObjectIdentifiers.id_MLKEM768_ECDH_brainpoolP256r1_SHA3_256);
+        addAlgorithm("MLKEM1024-RSA3072-SHA3-256", IANAObjectIdentifiers.id_MLKEM1024_RSA3072_SHA3_256);
+        addAlgorithm("MLKEM1024-ECDH-P384-SHA3-256", IANAObjectIdentifiers.id_MLKEM1024_ECDH_P384_SHA3_256);
+        addAlgorithm("MLKEM1024-ECDH-brainpoolP384r1-SHA3-256", IANAObjectIdentifiers.id_MLKEM1024_ECDH_brainpoolP384r1_SHA3_256);
+        addAlgorithm("MLKEM1024-ECDH-BP384-SHA3-256", IANAObjectIdentifiers.id_MLKEM1024_ECDH_brainpoolP384r1_SHA3_256);
+        addAlgorithm("MLKEM1024-X448-SHA3-256", IANAObjectIdentifiers.id_MLKEM1024_X448_SHA3_256);
+        addAlgorithm("MLKEM1024-ECDH-P521-SHA3-256", IANAObjectIdentifiers.id_MLKEM1024_ECDH_P521_SHA3_256);
 
         // FrodoKEM, ISO/IEC 18033-2 arc
         addAlgorithm("frodokem976shake", ISOIECObjectIdentifiers.frodokem976_shake);

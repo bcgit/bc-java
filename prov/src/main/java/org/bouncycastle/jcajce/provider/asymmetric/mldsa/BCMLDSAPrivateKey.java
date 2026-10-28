@@ -116,11 +116,11 @@ public class BCMLDSAPrivateKey
             byte[] seed = params.getSeed();
             if (seed != null)
             {
-                return new BCMLDSAPrivateKey(this.params.getParametersWithFormat(MLDSAPrivateKeyParameters.SEED_ONLY));
+                return new BCMLDSAPrivateKey(this.params.withPreferredFormat(MLDSAPrivateKeyParameters.SEED_ONLY));
             }
         }
 
-        return new BCMLDSAPrivateKey(this.params.getParametersWithFormat(MLDSAPrivateKeyParameters.EXPANDED_KEY));
+        return new BCMLDSAPrivateKey(this.params.withPreferredFormat(MLDSAPrivateKeyParameters.EXPANDED_KEY));
     }
 
     public byte[] getEncoded()
