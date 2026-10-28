@@ -5,6 +5,7 @@ import java.util.Map;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
+import org.bouncycastle.crypto.CryptoServicePurpose;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
@@ -49,23 +50,23 @@ class DigestUtil
     {
         if (NISTObjectIdentifiers.id_sha256.equals(oid))
         {
-            return new SHA256Digest();
+            return new SHA256Digest(CryptoServicePurpose.INTERNAL);
         }
         if (NISTObjectIdentifiers.id_sha512.equals(oid))
         {
-            return new SHA512Digest();
+            return new SHA512Digest(CryptoServicePurpose.INTERNAL);
         }
         if (NISTObjectIdentifiers.id_shake128.equals(oid))
         {
-            return new SHAKEDigest(128);
+            return new SHAKEDigest(128, CryptoServicePurpose.INTERNAL);
         }
         if (NISTObjectIdentifiers.id_shake256.equals(oid))
         {
-            return new SHAKEDigest(256);
+            return new SHAKEDigest(256, CryptoServicePurpose.INTERNAL);
         }
         if (NISTObjectIdentifiers.id_shake256_len.equals(oid))
         {
-            return new SHAKEDigest(256);
+            return new SHAKEDigest(256, CryptoServicePurpose.INTERNAL);
         }
 
         throw new IllegalArgumentException("unrecognized digest OID: " + oid);

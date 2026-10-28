@@ -458,7 +458,7 @@ public class KeyAgreementSpi
     {
         public DHwithSHA1KDF()
         {
-            super("DHwithSHA1CKDF", new KDF2BytesGenerator(DigestFactory.createSHA1()));
+            super("DHwithSHA1KDF", new KDF2BytesGenerator(DigestFactory.createSHA1()));
         }
     }
 
@@ -467,7 +467,7 @@ public class KeyAgreementSpi
     {
         public DHwithSHA224KDF()
         {
-            super("DHwithSHA224CKDF", new KDF2BytesGenerator(DigestFactory.createSHA224()));
+            super("DHwithSHA224KDF", new KDF2BytesGenerator(DigestFactory.createSHA224()));
         }
     }
 
@@ -476,7 +476,7 @@ public class KeyAgreementSpi
     {
         public DHwithSHA256KDF()
         {
-            super("DHwithSHA256CKDF", new KDF2BytesGenerator(DigestFactory.createSHA256()));
+            super("DHwithSHA256KDF", new KDF2BytesGenerator(DigestFactory.createSHA256()));
         }
     }
 

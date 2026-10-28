@@ -413,21 +413,49 @@ public abstract class AbstractTlsClient
          * "supported_groups" extension and MUST appear in the same order. However, the values MAY
          * be a non-contiguous subset of the "supported_groups" extension and MAY omit the most
          * preferred groups.
+         *
+         * A key share is sent for X25519MLKEM768 whenever it is offered, so that a server
+         * supporting the hybrid can settle on it without a HelloRetryRequest, together with one
+         * classical share (x25519, else secp256r1) as a fallback for a server that does not; this
+         * is the combination the major browsers send. The shares follow supported_groups order.
          */
 
         if (null == supportedGroups || supportedGroups.isEmpty())
         {
             return null;
         }
-        if (supportedGroups.contains(Integers.valueOf(NamedGroup.x25519)))
+
+        Integer hybrid = Integers.valueOf(NamedGroup.X25519MLKEM768);
+        if (!supportedGroups.contains(hybrid))
         {
-            return TlsUtils.vectorOfOne(Integers.valueOf(NamedGroup.x25519));
+            hybrid = null;
         }
-        if (supportedGroups.contains(Integers.valueOf(NamedGroup.secp256r1)))
+
+        Integer classical = Integers.valueOf(NamedGroup.x25519);
+        if (!supportedGroups.contains(classical))
         {
-            return TlsUtils.vectorOfOne(Integers.valueOf(NamedGroup.secp256r1));
+            classical = Integers.valueOf(NamedGroup.secp256r1);
+            if (!supportedGroups.contains(classical))
+            {
+                classical = null;
+            }
         }
-        return TlsUtils.vectorOfOne(supportedGroups.elementAt(0));
+
+        if (null == hybrid && null == classical)
+        {
+            return TlsUtils.vectorOfOne(supportedGroups.elementAt(0));
+        }
+
+        Vector keyShareGroups = new Vector(2);
+        for (int i = 0; i < supportedGroups.size(); ++i)
+        {
+            Integer supportedGroup = (Integer)supportedGroups.elementAt(i);
+            if (supportedGroup.equals(hybrid) || supportedGroup.equals(classical))
+            {
+                keyShareGroups.addElement(supportedGroup);
+            }
+        }
+        return keyShareGroups;
     }
 
     public boolean shouldUseCompatibilityMode()

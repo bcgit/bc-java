@@ -358,6 +358,55 @@ ext.sweepLightweightApi = { File jarFile, URLClassLoader loader, TreeMap assets,
     }
 }
 
+/*
+ * Security category and classical strength of every post-quantum parameter set, as the library
+ * itself reports them through org.bouncycastle.crypto.params.PQCParameters: every public static
+ * field of parameter-set type on the listed classes is read, and its name - or, for the
+ * families whose JCA service names carry a prefix, each of the given prefixes plus its name -
+ * is keyed in normalised form (upper case, separators removed) so it matches the CBOM asset
+ * name of the JCA service or lightweight class. Returns a map
+ * normalisedName -> [name: parameterSetIdentifier, category: int, classical: int].
+ */
+def collectPqcSecurity(ClassLoader loader)
+{
+    def result = [:]
+    def norm = { String n -> n.toUpperCase().replaceAll(/[-_\/. ]/, '') }
+    // [class name, [prefixes the JCA names carry]]
+    def sources = [
+        ['org.bouncycastle.crypto.params.MLKEMParameters', ['']],
+        ['org.bouncycastle.crypto.params.MLDSAParameters', ['']],
+        ['org.bouncycastle.crypto.params.SLHDSAParameters', ['SLH-DSA-']],
+        ['org.bouncycastle.pqc.crypto.falcon.FalconParameters', ['']],
+        ['org.bouncycastle.pqc.crypto.hqc.HQCParameters', ['']],
+    ]
+    sources.each { src ->
+        def cls
+        try
+        {
+            cls = Class.forName(src[0], true, loader)
+        }
+        catch (Throwable t)
+        {
+            return
+        }
+        cls.getFields().each { f ->
+            if (!java.lang.reflect.Modifier.isStatic(f.getModifiers()) || !cls.isAssignableFrom(f.getType()))
+            {
+                return
+            }
+            def p = f.get(null)
+            def name = cls.getMethod('getName').invoke(p)
+            def category = cls.getMethod('getSecurityCategory').invoke(p)
+            def classical = cls.getMethod('getClassicalSecurityStrength').invoke(p)
+            src[1].each { prefix ->
+                def full = prefix + name
+                result[norm(full)] = [name: full.toUpperCase(), category: category, classical: classical]
+            }
+        }
+    }
+    return result
+}
+
 tasks.register('generateCbom') {
     group = 'reporting'
     description = 'Generates a CycloneDX 1.6 CBOM for the BC provider algorithms and lightweight API'
@@ -379,6 +428,8 @@ tasks.register('generateCbom') {
         // every friendly-name Alg.Alias target, for deduplicating the lightweight sweep
         // against JCA algorithms whose canonical name differs (e.g. RC4Engine vs "ARC4")
         def jcaAliasNames = new HashSet<String>()
+        // normalised parameter-set name -> [name:, category:, classical:]
+        def pqcSecurity = [:]
 
         try
         {
@@ -432,6 +483,8 @@ tasks.register('generateCbom') {
             }
 
             sweepLightweightApi(jarFile, loader, assets, jcaAliasNames)
+
+            pqcSecurity = collectPqcSecurity(loader)
         }
         finally
         {
@@ -518,6 +571,7 @@ tasks.register('generateCbom') {
         }
 
         def libRef = "pkg:maven/org.bouncycastle/${jarFile.name.replaceAll(/-\d.*/, '')}@${project(':prov').version}"
+        def normName = { String n -> n.toUpperCase().replaceAll(/[-_\/. ]/, '') }
         def components = assets.values().collect { a ->
             // bc:api records how the asset is reachable: through the JCA providers, or only
             // through the public lightweight API (org.bouncycastle.crypto.**) in the same jar
@@ -548,6 +602,15 @@ tasks.register('generateCbom') {
                     cryptoFunctions: a.functions as List
                 ]
             ]
+            // CycloneDX 1.6 parameterSetIdentifier / classicalSecurityLevel / nistQuantumSecurityLevel,
+            // read off the library's own PQCParameters implementations (NIST IR 8547 Tables 3 and 5)
+            def pqc = pqcSecurity[normName(a.name)]
+            if (pqc != null)
+            {
+                cryptoProps.algorithmProperties.parameterSetIdentifier = pqc.name
+                cryptoProps.algorithmProperties.classicalSecurityLevel = pqc.classical
+                cryptoProps.algorithmProperties.nistQuantumSecurityLevel = pqc.category
+            }
             if (!a.oids.isEmpty())
             {
                 cryptoProps.oid = a.oids.first()

@@ -9,6 +9,11 @@ import org.bouncycastle.util.Pack;
 
 /**
  * SHA-224 as described in RFC 3874
+ * <p>
+ * Note: SHA-224 provides 112 bits of security (NIST IR 8547, Table 8) and is disallowed under
+ * SP 800-131A after 2030. A {@link org.bouncycastle.crypto.constraints.BitsOfSecurityConstraint}
+ * of 128 refuses it.
+ * </p>
  * <pre>
  *         block  word  digest
  * SHA-1   512    32    160

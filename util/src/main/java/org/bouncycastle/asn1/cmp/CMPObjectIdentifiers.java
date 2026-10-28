@@ -163,11 +163,10 @@ public interface CMPObjectIdentifiers
 
     ASN1ObjectIdentifier id_it_crls =  id_it.branch("23");
 
-    // TODO Update once OID allocated.
-    /*
-     * id-it-KemCiphertextInfo OBJECT IDENTIFIER ::= { id-it TBD1 }
+    /**
+     * RFC 9810 5.1.1.5: id-it-KemCiphertextInfo OBJECT IDENTIFIER ::= { id-it 24 }
      */
-//    ASN1ObjectIdentifier id_it_KemCiphertextInfo = id_it.branch("TBD1");
+    ASN1ObjectIdentifier id_it_KemCiphertextInfo = id_it.branch("24");
 
     // RFC 4211
 

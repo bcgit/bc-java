@@ -2,9 +2,11 @@ package org.bouncycastle.pqc.crypto.hqc;
 
 import java.security.SecureRandom;
 
+import org.bouncycastle.crypto.CryptoServicePurpose;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.EncapsulatedSecretGenerator;
 import org.bouncycastle.crypto.SecretWithEncapsulation;
+import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.pqc.crypto.util.SecretWithEncapsulationImpl;
 import org.bouncycastle.util.Arrays;
@@ -22,6 +24,10 @@ public class HQCKEMGenerator
     public SecretWithEncapsulation generateEncapsulated(AsymmetricKeyParameter recipientKey)
     {
         HQCPublicKeyParameters key = (HQCPublicKeyParameters)recipientKey;
+
+        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties("HQC",
+            key.getParameters().getClassicalSecurityStrength(), key, CryptoServicePurpose.ENCRYPTION));
+
         HQCEngine engine = key.getParameters().getEngine();
 
         byte[] K = new byte[key.getParameters().getSHA512_BYTES()];

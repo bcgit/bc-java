@@ -8,6 +8,12 @@ import org.bouncycastle.util.Memoable;
  * implementation of SHA-3 based on following KeccakNISTInterface.c from https://keccak.noekeon.org/
  * <p>
  * Following the naming conventions used in the C source code to enable easy review of the implementation.
+ * </p>
+ * <p>
+ * Note: the 224-bit variant provides 112 bits of security (NIST IR 8547, Table 8) and is
+ * disallowed under SP 800-131A after 2030. A
+ * {@link org.bouncycastle.crypto.constraints.BitsOfSecurityConstraint} of 128 refuses it.
+ * </p>
  */
 public class SHA3Digest
     extends KeccakDigest

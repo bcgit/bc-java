@@ -14,6 +14,10 @@ import org.bouncycastle.util.BigIntegers;
 
 /**
  * A SP800-90A Dual EC DRBG.
+ *
+ * @deprecated Dual_EC_DRBG was withdrawn from SP 800-90A in Revision 1 (2015) and is not an
+ * approved DRBG; use {@link HashSP800DRBG}, {@link HMacSP800DRBG} or {@link CTRSP800DRBG}. It will
+ * be removed in a future release.
  */
 public class DualECSP800DRBG
     implements SP80090DRBG

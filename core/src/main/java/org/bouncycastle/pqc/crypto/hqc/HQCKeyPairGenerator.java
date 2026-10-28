@@ -4,7 +4,10 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
+import org.bouncycastle.crypto.CryptoServicePurpose;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.KeyGenerationParameters;
+import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 import org.bouncycastle.util.Arrays;
 
 public class HQCKeyPairGenerator
@@ -18,6 +21,9 @@ public class HQCKeyPairGenerator
     {
         this.random = params.getRandom();
         this.parameters = ((HQCKeyGenerationParameters)params).getParameters();
+
+        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties("HQCKeyGen",
+            parameters.getClassicalSecurityStrength(), parameters, CryptoServicePurpose.KEYGEN));
     }
 
     @Override

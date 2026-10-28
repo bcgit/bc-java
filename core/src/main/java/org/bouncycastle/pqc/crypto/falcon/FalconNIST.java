@@ -2,6 +2,7 @@ package org.bouncycastle.pqc.crypto.falcon;
 
 import java.security.SecureRandom;
 
+import org.bouncycastle.crypto.CryptoServicePurpose;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.util.Arrays;
 
@@ -56,7 +57,7 @@ class FalconNIST
         short[] h = new short[N];
         byte[] seed = new byte[48];
         //SHAKE256 rng = new SHAKE256();
-        SHAKEDigest rng = new SHAKEDigest(256);
+        SHAKEDigest rng = new SHAKEDigest(256, CryptoServicePurpose.INTERNAL);
         int u, v;
 //        FalconKeyGen keygen = new FalconKeyGen();
 
@@ -144,7 +145,7 @@ class FalconNIST
             nonce = new byte[NONCELEN];
 
 
-        SHAKEDigest sc = new SHAKEDigest(256);
+        SHAKEDigest sc = new SHAKEDigest(256, CryptoServicePurpose.INTERNAL);
         int u, v, sig_len;
         FalconSign sign = new FalconSign();
         //FalconVrfy vrfy = new FalconVrfy();
@@ -277,7 +278,7 @@ class FalconNIST
             hm = new short[N];
         short[] sig = new short[N];
         //SHAKE256 sc = new SHAKE256();
-        SHAKEDigest sc = new SHAKEDigest(256);
+        SHAKEDigest sc = new SHAKEDigest(256, CryptoServicePurpose.INTERNAL);
         int sig_len, msg_len;
         //FalconVrfy vrfy = new FalconVrfy();
 //        FalconCommon common = new FalconCommon();

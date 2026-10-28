@@ -10,6 +10,12 @@ import org.bouncycastle.crypto.params.KeyParameter;
 
 /**
  * a class that provides a basic DESede (or Triple DES) engine.
+ * <p>
+ * Note: two-key Triple DES (a 16 byte key) provides 112 bits of security at most and is
+ * disallowed under SP 800-131A after 2030, and NIST IR 8547, Table 6, lists three-key TDEA as
+ * deprecated. A {@link org.bouncycastle.crypto.constraints.BitsOfSecurityConstraint} of 128
+ * refuses both.
+ * </p>
  */
 public class DESedeEngine
     extends DESBase

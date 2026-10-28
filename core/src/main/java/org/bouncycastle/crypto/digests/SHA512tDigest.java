@@ -9,6 +9,11 @@ import org.bouncycastle.util.Pack;
 
 /**
  * FIPS 180-4 implementation of SHA-512/t
+ * <p>
+ * Note: SHA-512/224 provides 112 bits of security (NIST IR 8547, Table 8) and is disallowed
+ * under SP 800-131A after 2030. A
+ * {@link org.bouncycastle.crypto.constraints.BitsOfSecurityConstraint} of 128 refuses it.
+ * </p>
  */
 public class SHA512tDigest
     extends LongDigest

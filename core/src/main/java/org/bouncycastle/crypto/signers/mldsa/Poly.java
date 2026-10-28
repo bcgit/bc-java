@@ -1,5 +1,6 @@
 package org.bouncycastle.crypto.signers.mldsa;
 
+import org.bouncycastle.crypto.CryptoServicePurpose;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 
 class Poly
@@ -575,7 +576,7 @@ class Poly
         long signs;
         byte[] buf = new byte[symmetric.stream256BlockBytes];
 
-        SHAKEDigest shake256Digest = new SHAKEDigest(256);
+        SHAKEDigest shake256Digest = new SHAKEDigest(256, CryptoServicePurpose.INTERNAL);
         shake256Digest.update(seed, seedOff, seedLen);
         shake256Digest.doOutput(buf, 0, symmetric.stream256BlockBytes);
 

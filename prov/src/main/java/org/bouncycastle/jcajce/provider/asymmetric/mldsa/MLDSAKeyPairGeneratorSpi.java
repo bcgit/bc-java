@@ -20,6 +20,17 @@ import org.bouncycastle.jcajce.util.SpecUtil;
 import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Strings;
 
+/**
+ * ML-DSA (FIPS 204) key pair generation. A generator obtained as "ML-DSA" and not initialised
+ * produces ML-DSA-65 keys, the category 3 set matching NIST's recommended ML-KEM-768 (NIST IR
+ * 8547); "HASH-ML-DSA" likewise defaults to ML-DSA-65-WITH-SHA512. An initialisation that gives
+ * no SecureRandom, including this default, draws the key from the provider's DEFAULT DRBG.
+ * <p>
+ * Note: ML-DSA-44 is a category 2 parameter set only when the random bit generator used has at
+ * least 192 bits of security (NIST IR 8547, Table 3, note 2); with a weaker one it is category 1.
+ * The DEFAULT DRBG is a 256 bit SP 800-90A DRBG and meets the condition.
+ * </p>
+ */
 public class MLDSAKeyPairGeneratorSpi
     extends java.security.KeyPairGenerator
 {
@@ -106,17 +117,21 @@ public class MLDSAKeyPairGeneratorSpi
     {
         if (!initialised)
         {
-            if (this.getAlgorithm().startsWith("HASH"))
+            try
             {
-                param = new MLDSAKeyGenerationParameters(random, MLDSAParameters.ml_dsa_87_with_sha512);
+                if (this.getAlgorithm().startsWith("HASH"))
+                {
+                    initialize(MLDSAParameterSpec.ml_dsa_65_with_sha512);
+                }
+                else
+                {
+                    initialize(MLDSAParameterSpec.ml_dsa_65);
+                }
             }
-            else
+            catch (InvalidAlgorithmParameterException e)
             {
-                param = new MLDSAKeyGenerationParameters(random, MLDSAParameters.ml_dsa_87);
+                throw Exceptions.illegalStateException("unable to apply the default parameter set", e);
             }
-
-            engine.init(param);
-            initialised = true;
         }
 
         AsymmetricCipherKeyPair pair = engine.generateKeyPair();

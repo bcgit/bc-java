@@ -4,7 +4,10 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
+import org.bouncycastle.crypto.CryptoServicePurpose;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.KeyGenerationParameters;
+import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 import org.bouncycastle.crypto.params.MLDSAKeyGenerationParameters;
 import org.bouncycastle.crypto.params.MLDSAParameters;
 import org.bouncycastle.crypto.params.MLDSAPrivateKeyParameters;
@@ -21,6 +24,9 @@ public class MLDSAKeyPairGenerator
     {
         this.parameters = ((MLDSAKeyGenerationParameters)param).getParameters();
         this.random = param.getRandom();
+
+        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties("ML-DSAKeyGen",
+            parameters.getClassicalSecurityStrength(), parameters, CryptoServicePurpose.KEYGEN));
     }
 
     public AsymmetricCipherKeyPair generateKeyPair()

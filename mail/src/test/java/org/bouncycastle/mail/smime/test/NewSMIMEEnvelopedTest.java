@@ -5,6 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
@@ -24,9 +25,15 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.cms.CMSAlgorithm;
 import org.bouncycastle.cms.CMSEnvelopedDataGenerator;
+import org.bouncycastle.cms.KEMRecipientInformation;
+import org.bouncycastle.cms.bc.BcKEMEnvelopedRecipient;
+import org.bouncycastle.cms.jcajce.JceKEMEnvelopedRecipient;
+import org.bouncycastle.cms.jcajce.JceKEMRecipientInfoGenerator;
+import org.bouncycastle.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.cms.KeyTransRecipientId;
 import org.bouncycastle.cms.RecipientId;
 import org.bouncycastle.cms.RecipientInformation;
@@ -271,6 +278,45 @@ public class NewSMIMEEnvelopedTest
         verifyAlgorithm(algorithm, msg);
     }
     
+    /**
+     * RFC 9629 KEMRecipientInfo with an ML-KEM-768 recipient, recovered with the JCA recipient and with the
+     * light-weight one.
+     */
+    public void testMLKEM768Encrypted()
+        throws Exception
+    {
+        MimeBodyPart msg = SMIMETestUtil.makeMimeBodyPart("WallaWallaWashington");
+
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("ML-KEM-768", BC);
+        KeyPair kemKP = kpg.generateKeyPair();
+        X509Certificate kemCert = CMSTestUtil.makeCertificate(kemKP, _reciDN, _signKP, _signDN);
+
+        SMIMEEnvelopedGenerator gen = new SMIMEEnvelopedGenerator();
+
+        gen.addRecipientInfoGenerator(new JceKEMRecipientInfoGenerator(kemCert, CMSAlgorithm.AES256_WRAP).setProvider(BC));
+
+        MimeBodyPart mp = gen.generate(msg, new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES256_CBC).setProvider(BC).build());
+        SMIMEEnveloped m = new SMIMEEnveloped(mp);
+
+        assertTrue(new SMIMEToolkit(new JcaDigestCalculatorProviderBuilder().build()).isEncrypted(mp));
+
+        RecipientInformationStore recipients = m.getRecipientInfos();
+
+        assertEquals(1, recipients.size());
+
+        KEMRecipientInformation recipient = (KEMRecipientInformation)recipients.getRecipients().iterator().next();
+
+        assertEquals(NISTObjectIdentifiers.id_alg_ml_kem_768.getId(), recipient.getKeyEncryptionAlgOID());
+
+        MimeBodyPart res = SMIMEUtil.toMimeBodyPart(recipient.getContent(new JceKEMEnvelopedRecipient(kemKP.getPrivate()).setProvider(BC)));
+
+        SMIMETestUtil.verifyMessageBytes(msg, res);
+
+        res = SMIMEUtil.toMimeBodyPart(recipient.getContent(new BcKEMEnvelopedRecipient(PrivateKeyFactory.createKey(kemKP.getPrivate().getEncoded()))));
+
+        SMIMETestUtil.verifyMessageBytes(msg, res);
+    }
+
     public void testSubKeyId()
         throws Exception
     {

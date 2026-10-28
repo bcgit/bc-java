@@ -12,6 +12,11 @@ import org.bouncycastle.util.Strings;
 public class MLDSAParameterSpec
     implements AlgorithmParameterSpec
 {
+    /**
+     * ML-DSA-44. NIST security category 2 provided the random bit generator used for key
+     * generation and signing has at least 192 bits of security, category 1 otherwise (NIST IR
+     * 8547, Table 3, note 2).
+     */
     public static final MLDSAParameterSpec ml_dsa_44 = new MLDSAParameterSpec("ML-DSA-44");
     public static final MLDSAParameterSpec ml_dsa_65 = new MLDSAParameterSpec("ML-DSA-65");
     public static final MLDSAParameterSpec ml_dsa_87 = new MLDSAParameterSpec("ML-DSA-87");

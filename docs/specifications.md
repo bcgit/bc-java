@@ -56,6 +56,20 @@ The Bouncy Castle provider can make use of the following two system properties:
 - JCE compatible framework for a Bouncy Castle provider "BC".
 - JCE compatible framework for a Bouncy Castle post-quantum provider "BCPQC".
 
+### 4.1 Post-quantum transition
+
+NIST IR 8547, *Transition to Post-Quantum Cryptography Standards* (October 2026, <https://doi.org/10.6028/NIST.IR.8547>), sets out how NIST expects the move to quantum-resistant algorithms to go, and SP 800-131A will carry the resulting approval status of each algorithm. The points that matter for a user of this library are:
+
+- **The standardised algorithms** are ML-KEM (FIPS 203) for key establishment, ML-DSA (FIPS 204) and SLH-DSA (FIPS 205) for signatures, and the stateful hash-based LMS/HSS and XMSS/XMSS^MT (SP 800-208). All are in the **BC** provider and under **org.bouncycastle.crypto**. HQC has been selected as a second KEM (NIST IR 8545) and FN-DSA (FIPS 206) is in development; both are provided in pre-standard form under **org.bouncycastle.pqc.crypto** and the **BCPQC** provider, and their encodings and identifiers will change when the standards are published. The other post-quantum algorithms in **BCPQC** are competition candidates and are not NIST-approved.
+- **Which parameter set.** NIST recommends ML-KEM-768 as the default parameter set, and the **BC** ML-KEM and ML-DSA key pair generators use ML-KEM-768 and ML-DSA-65 when not told otherwise. Each parameter set's NIST security category (1 to 5) and classical security strength can be read from its parameters through **org.bouncycastle.crypto.params.PQCParameters**; ML-KEM-768, ML-DSA-65 and the 192-bit SLH-DSA sets are category 3. Note that ML-DSA-44 is category 2 only when the random bit generator used has at least 192 bits of security.
+- **Signing randomness.** FIPS 204 (Section 3.4) and FIPS 205 (Section 9.2) make the "hedged" form of ML-DSA and SLH-DSA signing the default and recommend it wherever side-channel or fault attacks are a concern; the deterministic form is permitted for platforms without a random bit generator. In the **BC** provider `Signature.initSign(key)` signs deterministically and `Signature.initSign(key, secureRandom)` signs in the hedged form, so pass a SecureRandom to meet the NIST preference; in the light-weight API wrap the private key in a **ParametersWithRandom** when initialising **MLDSASigner** or **SLHDSASigner**.
+- **Pre-hash variants.** The digest used with HASH-ML-DSA or HASH-SLH-DSA must provide at least the classical security strength of the parameter set; the pre-hash variants in this library are fixed to SHA-512 (ML-DSA) and to SHA-256, SHA-512, SHAKE128 or SHAKE256 to match the set (SLH-DSA), so a weaker digest cannot be selected.
+- **Hybrids.** NIST allows a classical scheme to be combined with a post-quantum one, with the result secure while either component is, and expects such hybrids to be a transitional measure. In TLS 1.3 and DTLS 1.3 the **BCJSSE** provider offers X25519MLKEM768 first by default and sends a key share for it, so a peer that supports it negotiates a hybrid key exchange without a round trip; the pure ML-KEM groups are available but not offered unless configured (see 5.5 for the TLS settings). Post-quantum authentication in TLS is a later step: the ML-DSA and SLH-DSA signature schemes are implemented but not enabled by default in **BCJSSE**, as the IETF code points for the stand-alone schemes are still drafts and no composite scheme has been assigned yet. For a key agreement the SP 800-56C Rev. 2 hybrid shared secret Z' = Z || T is available through **HybridValueParameterSpec** (see the Key Agreement section of 6.2). For signatures the composite ML-DSA algorithms (draft-ietf-lamps-pq-composite-sigs) are in the **BC** provider, CMS and X.509 support.
+- **Other protocols.** CMS (and so S/MIME) carries ML-KEM in the RFC 9629 KEMRecipientInfo and ML-DSA, SLH-DSA and the composites as signers; X.509, CRLs, OCSP, time-stamps and CMP sign with the same algorithms. SSH key exchange (mlkem768x25519-sha256), IKEv2 and OpenPGP (draft-ietf-openpgp-pqc) are also on NIST's list of protocols to move; this library provides only key-format support for SSH and no IKE, and its OpenPGP implementation does not yet include the post-quantum algorithms.
+- **Stateful hash-based signatures** (LMS/HSS, XMSS/XMSS^MT) are approved for uses such as software and firmware signing where the one-time keys can be managed, not for general use; the private key must never sign twice with the same index, and the library's key types record and check their position.
+- **Dates.** NIST deprecates the quantum-vulnerable public-key algorithms (RSA, DSA, DH, ECDSA, ECDH, EdDSA and the KEMs and key agreements built on them) after 2030 and disallows them after 2035, except for "legacy use" - verifying signatures and decrypting data protected earlier. US federal systems are also required to support TLS 1.3 by 2 January 2030 (OMB M-26-15). **org.bouncycastle.crypto.constraints.QuantumVulnerableConstraint** applies this timetable in the light-weight API, and a **BitsOfSecurityConstraint** of 192 or 256 refuses the weaker parameter sets of the post-quantum algorithms along with the weaker classical ones.
+- **Symmetric algorithms** are not affected by the transition. AES, the SHA-2 and SHA-3 families and Ascon (SP 800-232) remain approved; SHA-224, SHA-512/224, SHA3-224 and two-key Triple DES provide 112 bits of security and are disallowed under SP 800-131A after 2030, and SHA-1 is already deprecated.
+
 ## 5.0 Light-weight API
 
 This API has been specifically developed for those circumstances where the rich API and integration requirements of the JCE are not required.
@@ -152,7 +166,8 @@ The following cipher engines are implemented that can be used with the above mod
 | **AESEngine**           | 0 .. 256           | 128 bit                                     |                                               |
 | **AESWrapEngine**       | 0 .. 256           | 128 bit                                     | Implements FIPS AES key wrapping              |
 | **AESWrapPadEngine**    | 0 .. 256           | 128 bit                                     | Implements RFC 5649 key wrapping with padding |
-| **AsconEngine**         | 128                | 128 bit                                     | AEAD Cipher                                   |
+| **AsconAEAD128**        | 128                | 128 bit                                     | AEAD cipher, SP 800-232                       |
+| **AsconEngine**         | 128                | 128 bit                                     | AEAD cipher, pre-standard Ascon v1.2 (deprecated) |
 | **ARIAEngine**          | 128, 192, 256      | 128 bit                                     |                                               |
 | **ARIAWrapEngine**      | 128, 192, 256      | 128 bit                                     | RFC 3394 style key wrapping                   |
 | **BlowfishEngine**      | 0 .. 448           | 64 bit                                      |                                               |
@@ -253,8 +268,11 @@ The base interface is **Digest** and has the following implementations
 
 | Name                        | Output (in bits)                       | Notes                                                                                     |
 |-----------------------------|----------------------------------------|-------------------------------------------------------------------------------------------|
-| **AsconDigest**             | 256                                    |                                                                                           |
-| **AsconXof**                | XOF                                    |                                                                                           |
+| **AsconHash256**            | 256                                    | SP 800-232                                                                                |
+| **AsconXof128**             | XOF                                    | SP 800-232                                                                                |
+| **AsconCXof128**            | XOF                                    | SP 800-232, with a customization string                                                   |
+| **AsconDigest**             | 256                                    | pre-standard Ascon v1.2 (deprecated)                                                      |
+| **AsconXof**                | XOF                                    | pre-standard Ascon v1.2 (deprecated)                                                      |
 | **Blake2bDigest**           | 224, 256, 384, 512                     |                                                                                           |
 | **Blake2bpDigest**          | 512                                    |                                                                                           |
 | **Blake2sDigest**           | 128, 160, 224, 256                     |                                                                                           |
@@ -380,22 +398,22 @@ The second, post-quantum set also use **EncapsulatedSecretGenerator** and **Enca
 |                      |                             |                                                                                                                    |                                                                 |
 |----------------------|-----------------------------|--------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------|
 | Name                 | Security Strength (in bits) | Implementations                                                                                                    | Notes                                                           |
-| **BIKE**             | 128-256.                    | **BIKEKEMGenerator**, **BIKEKEMExtractor**                                                                         | Round 4                                                         |
-| **Classic McEliece** | 128-256.                    | **CMCEKEMGenerator**, **CMCEKEMExtractor**                                                                         | Round 4                                                         |
+| **BIKE**             | 128-256.                    | **BIKEKEMGenerator**, **BIKEKEMExtractor**                                                                         | NIST Round 4 candidate, not selected                            |
+| **Classic McEliece** | 128-256.                    | **CMCEKEMGenerator**, **CMCEKEMExtractor**                                                                         | NIST Round 4 candidate, not selected by NIST; standardised in ISO/IEC 18033-2|
 | **FrodoKEM**         | 128-256.                    | **FrodoKEMGenerator**, **FrodoKEMExtractor**                                                                       |                                                                 |
-| **HQC**              | 128-256.                    | **HQCKEMGenerator**, **HQCKEMExtractor**                                                                           | Round 4                                                         |
-| **ML-KEM**           | 128-256.                    | **MLKEMGenerator**, **MLKEMExtractor**                                                                             | Finalist                                                        |
+| **HQC**              | 128-256.                    | **HQCKEMGenerator**, **HQCKEMExtractor**                                                                           | Selected for standardisation (NIST IR 8545); the HQC FIPS is in development|
+| **ML-KEM**           | 128-256.                    | **MLKEMGenerator**, **MLKEMExtractor**                                                                             | FIPS 203 (final standard); NIST recommends ML-KEM-768 as the default parameter set|
 | **NTRU**             | 128-256.                    | **NTRUKEMGenerator**, **NTRUKEMExtractor**                                                                         |                                                                 |
 | **NTRU+**            | 128-256.                    | **NTRUPlusKEMGenerator**, **NTRUPlusKEMExtractor**                                                                 | KpqC competition                                                |
 | **NTRU Prime**       | 128-256.                    | **NTRULPRimeKEMGenerator**, **NTRULPRimeKEMExtractor**<br>**SNTRUPrimeKEMGenerator**, **SNTRUPrimeKEMExtractor** |                                                                 |
 | **SABER**            | 128-256.                    | **SABERKEMGenerator**, **SABERKEMExtractor**                                                                       |                                                                 |
-| **X-Wing**           | 128\.                       | **XWingKEMGenerator**, **XWingKEMExtractor**                                                                       | Hybrid of X25519 and ML-KEM-768 (draft-connolly-cfrg-xwing-kem) |
+| **X-Wing**           | 128\.                       | **XWingKEMGenerator**, **XWingKEMExtractor**                                                                       | Hybrid of X25519 and ML-KEM-768 (draft-connolly-cfrg-xwing-kem-11) |
 
 The standardised versions of Classic McEliece, FrodoKEM, and ML-KEM are implemented under **org.bouncycastle.crypto.kems**; the Classic McEliece implementation there covers the parameter sets standardised in ISO/IEC 18033-2:2006/Amd 2 (including the pc/pcf plaintext-confirmation variants).
 
 #### Signers
 
-DSA, ECDSA, Ed25519 and Ed448 (RFC 8032), BIP-340 Schnorr, SM2, ISO-9796-2, GOST-3410-94, GOST-3410-2001, GOST-3410-2012, DSTU-4145-2002, RSA-PSS, and BLS12-381 signatures (draft-irtf-cfrg-bls-signature, with the scheme classes in **org.bouncycastle.crypto.bls**) are supported by the **org.bouncycastle.crypto.signers** package. Note: as these are light weight classes, if you need to use SHA1 or GOST-3411 (as defined in the relevant standards) you'll also need to make use of the appropriate digest class in conjunction with these. Classes for generating DSA and ECDSA parameters can be found in the **org.bouncycastle.crypto.params** and **org.bouncycastle.crypto.generators** packages. Post-quantum signature algorithms (ML-DSA, SLH-DSA, LMS/HSS, XMSS/XMSS^MT, Falcon, Mayo, Snova, and the NIST additional-signatures round candidates) are provided under **org.bouncycastle.pqc.crypto**.
+DSA, ECDSA, Ed25519 and Ed448 (RFC 8032), BIP-340 Schnorr, SM2, ISO-9796-2, GOST-3410-94, GOST-3410-2001, GOST-3410-2012, DSTU-4145-2002, RSA-PSS, and BLS12-381 signatures (draft-irtf-cfrg-bls-signature, with the scheme classes in **org.bouncycastle.crypto.bls**) are supported by the **org.bouncycastle.crypto.signers** package. Note: as these are light weight classes, if you need to use SHA1 or GOST-3411 (as defined in the relevant standards) you'll also need to make use of the appropriate digest class in conjunction with these. Classes for generating DSA and ECDSA parameters can be found in the **org.bouncycastle.crypto.params** and **org.bouncycastle.crypto.generators** packages. The standardised post-quantum signature algorithms - ML-DSA (FIPS 204), SLH-DSA (FIPS 205) and the stateful hash-based LMS/HSS and XMSS/XMSS^MT (SP 800-208) - are provided under **org.bouncycastle.crypto.signers** with their parameters under **org.bouncycastle.crypto.params**; the candidates still in NIST's processes (Falcon, Mayo, Snova and the additional-signatures round candidates) are provided under **org.bouncycastle.pqc.crypto**. See the post-quantum transition section (4.1) for which of these NIST recommends and for what.
 
 ### 5.4 Elliptic Curve Transforms.
 
@@ -403,7 +421,13 @@ The org.bouncycastle.crypto.ec package contains implementations for a variety of
 
 ### 5.5 TLS/DTLS
 
-The org.bouncycastle.crypto.tls package contains implementations for TLS 1.1, 1.2 and DTLS 1.0, 1.2.
+The org.bouncycastle.tls package (the bctls jar) contains implementations of TLS 1.0 to 1.3 and DTLS 1.0, 1.2 and 1.3, with the **BCJSSE** provider in org.bouncycastle.jsse offering them through the JSSE API. The ML-KEM hybrid groups of RFC 10024 (X25519MLKEM768, SecP256r1MLKEM768, SecP384r1MLKEM1024) and the pure ML-KEM groups of draft-ietf-tls-mlkem (MLKEM512/768/1024) are supported for TLS 1.3 and DTLS 1.3 key exchange, and the ML-DSA and SLH-DSA signature schemes of draft-ietf-tls-mldsa and draft-ietf-tls-slhdsa for authentication.
+
+Post-quantum key exchange in TLS:
+
+- In the low-level API the client's `getSupportedGroups()` and the server's `getSupportedGroups()` return the groups offered; **DefaultTlsClient** and **DefaultTlsServer** list the classical groups only, so an application overrides them to add the ML-KEM groups. The client's `getEarlyKeyShareGroups()` names the groups a key share is sent for in the first ClientHello; by default it is X25519MLKEM768, if offered, plus one classical group.
+- In **BCJSSE** the default group list is X25519MLKEM768, x25519, x448, secp256r1, secp384r1, secp521r1, ...; the client sends key shares for X25519MLKEM768 and x25519. The list is set with the `jdk.tls.namedGroups` system property or `BCSSLParameters.setNamedGroups()`, the key shares with the `org.bouncycastle.jsse.client.earlyKeyShares` property or `BCSSLParameters.setEarlyKeyShares()`, and a server selects from the client's list in the server's own order of preference when `BCSSLParameters.setUseNamedGroupsOrder(true)` or the `org.bouncycastle.jsse.useNamedGroupsOrder` property is set. The pure ML-KEM groups are not offered unless named in the list. A peer that does not support the hybrid group falls back to the classical key share without a HelloRetryRequest.
+- The ML-DSA and SLH-DSA signature schemes are off by default in **BCJSSE** and enabled with the `jdk.tls.client.SignatureSchemes` / `jdk.tls.server.SignatureSchemes` properties or `BCSSLParameters.setSignatureSchemes()`.
 
 ### 5.6 Deterministic Random Bit Generators (DRBG) and SecureRandom wrappers
 
@@ -576,6 +600,7 @@ Note: default key sizes are in bold.
 | HC256        | \(256\)                   |                                               |
 | ChaCha       | **128**/256               | 64 bit IV                                     |
 | ChaCha7539   | 256                       | 96 bit IV, the RFC 7539/8439 form of ChaCha20 |
+| ASCON-AEAD128 | 128                      | SP 800-232 AEAD, 128 bit nonce, 128 bit tag   |
 | Salsa20      | **128**/256               | 64 bit IV                                     |
 | XSalsa20     | 256                       | 192 bit IV                                    |
 | XChaCha20    | 256                       | 192 bit IV                                    |
@@ -629,6 +654,17 @@ Support is provided for the standard SEC algorithm set for EC. Names appear in t
 
 Note: with basic "DH" only the basic algorithm fits in with the JCE API, if you're using long-term public keys you may want to look at the light-weight API, there are also additional JCE support classes for UserKeyingMaterial and MQVParameters in the **org.bouncycastle.jcajce.spec** package.
 
+**Hybrid (post-quantum) key agreement.** NIST IR 8547, the post-quantum transition guidance, deprecates DH and ECDH after 2030 and recommends combining them with ML-KEM in the meantime through the generic composite of SP 800-56C Rev. 2, Section 2: the shared secret handed to the KDF becomes Z' = Z || T, where Z is the key agreement's own secret and T is established by another scheme, for example the shared secret of an ML-KEM encapsulation. The **org.bouncycastle.jcajce.spec.HybridValueParameterSpec** class does this for every DH, ECDH and XDH key agreement with a KDF: pass it to `KeyAgreement.init()` with T and the spec the KDF would otherwise have been given, and `generateSecret()` derives the keying material from Z'. The spec can also be asked to use T || Z, which NIST IR 8547 states will also be permitted; the two orders give different keys, so the order is part of the protocol and must be fixed by both parties in advance. The derived keys remain secure as long as either component is, so a hybrid is the recommended way to add ML-KEM to an existing key agreement without yet depending on it alone.
+
+```java
+KeyAgreement agreement = KeyAgreement.getInstance("X25519withSHA256HKDF", "BC");
+
+agreement.init(ourX25519Key, new HybridValueParameterSpec(mlkemSharedSecret, new UserKeyingMaterialSpec(ukm)));
+agreement.doPhase(theirX25519Key, true);
+
+SecretKey key = agreement.generateSecret("AES[256]");
+```
+
 #### Key Encapsulation Mechanisms
 
 | Name                        | ParameterSpec Class                               | Notes                                                                                                                                |
@@ -637,8 +673,8 @@ Note: with basic "DH" only the basic algorithm fits in with the JCE API, if you'
 | **Frodo**                   | FrodoParameterSpec                                | FrodoKEM (NIST Alternate Candidate)                                                                                                  |
 | **SABER**                   | SABERParameterSpec                                | SABER (NIST Finalist, BCPQC)                                                                                                         |
 | **ML-KEM**                  | MLKEMParameterSpec                                | FIPS 203 Module-Lattice KEM (BC provider)                                                                                            |
-| **BIKE**                    | BIKEParameterSpec                                 | NIST Round 4 candidate (BCPQC)                                                                                                       |
-| **HQC**                     | HQCParameterSpec                                  | NIST Round 4 candidate (BCPQC)                                                                                                       |
+| **BIKE**                    | BIKEParameterSpec                                 | NIST Round 4 candidate, not selected (BCPQC)                                                                                         |
+| **HQC**                     | HQCParameterSpec                                  | Selected for standardisation (NIST IR 8545), FIPS in development (BCPQC)                                                             |
 | **NTRU**                    | NTRUParameterSpec                                 | (BCPQC)                                                                                                                              |
 | **NTRULPRime / SNTRUPrime** | NTRULPRimeParameterSpec / SNTRUPrimeParameterSpec | NTRU Prime (BCPQC)                                                                                                                   |
 | **NTRU+**                   | NTRUPlusParameterSpec                             | KpqC competition (BCPQC)                                                                                                             |
@@ -665,6 +701,9 @@ An implementation of ECIES (stream mode) as described in IEEE P 1363a. This now 
 | Blake2s-224       | 224                          |                               |
 | Blake2s-256       | 256                          |                               |
 | Blake3-256        | 256                          |                               |
+| ASCON-HASH256     | 256                          | SP 800-232                    |
+| ASCON-XOF128      | 256                          | SP 800-232 XOF, 256 bit output |
+| ASCON-CXOF128     | 256                          | SP 800-232, empty customization string |
 | DSTU7564-256      | 256                          |                               |
 | DSTU7564-384      | 384                          |                               |
 | DSTU7564-512      | 512                          |                               |

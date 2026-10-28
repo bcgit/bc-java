@@ -4,7 +4,10 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
+import org.bouncycastle.crypto.CryptoServicePurpose;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.KeyGenerationParameters;
+import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 
 public class FalconKeyPairGenerator
     implements AsymmetricCipherKeyPairGenerator
@@ -20,6 +23,11 @@ public class FalconKeyPairGenerator
     {
         this.params = (FalconKeyGenerationParameters)param;
         SecureRandom random = param.getRandom();
+
+        FalconParameters falconParams = this.params.getParameters();
+        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties("FalconKeyGen",
+            falconParams.getClassicalSecurityStrength(), falconParams, CryptoServicePurpose.KEYGEN));
+
         int logn = ((FalconKeyGenerationParameters)param).getParameters().getLogN();
         int noncelen = ((FalconKeyGenerationParameters)param).getParameters().getNonceLength();
         this.nist = new FalconNIST(logn, noncelen, random);

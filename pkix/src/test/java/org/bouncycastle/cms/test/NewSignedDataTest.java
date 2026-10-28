@@ -2,6 +2,7 @@ package org.bouncycastle.cms.test;
 
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -21,6 +22,7 @@ import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -96,6 +98,7 @@ import org.bouncycastle.cms.CMSProcessableByteArray;
 import org.bouncycastle.cms.CMSSignedData;
 import org.bouncycastle.cms.CMSSignedDataGenerator;
 import org.bouncycastle.cms.CMSSignedDataParser;
+import org.bouncycastle.cms.CMSSignedDataStreamGenerator;
 import org.bouncycastle.cms.CMSTypedData;
 import org.bouncycastle.cms.DefaultCMSSignatureAlgorithmNameGenerator;
 import org.bouncycastle.cms.DefaultSignedAttributeTableGenerator;
@@ -2947,6 +2950,160 @@ public class NewSignedDataTest
 
             assertEquals(true, signer.verify(new JcaSimpleSignerInfoVerifierBuilder().setProvider("BC").build(cert)));
         }
+    }
+
+    /**
+     * The "pure" signature algorithms restrict which digest algorithm a SignerInfo may name:
+     * RFC 9882 sec. 3.3 and Table 1 (ML-DSA), RFC 9814 sec. 4 (SLH-DSA, at least twice the tree
+     * hash when signed attributes are present) and RFC 8419 sec. 3 (Ed25519). A message naming a
+     * digest outside the permitted set is refused on verification.
+     */
+    public void testPureSignatureDigestAlgorithmRestriction()
+        throws Exception
+    {
+        // ML-DSA with signed attributes: RFC 9882 Table 1
+        checkDigestRestriction("ML-DSA", _signMLDsa44KP, _signMLDsa44Cert, NISTObjectIdentifiers.id_sha256, false, true);
+        checkDigestRestriction("ML-DSA", _signMLDsa65KP, _signMLDsa65Cert, NISTObjectIdentifiers.id_sha256, false, false);
+        checkDigestRestriction("ML-DSA", _signMLDsa65KP, _signMLDsa65Cert, NISTObjectIdentifiers.id_sha384, false, true);
+        checkDigestRestriction("ML-DSA", _signMLDsa87KP, _signMLDsa87Cert, NISTObjectIdentifiers.id_sha384, false, false);
+        checkDigestRestriction("ML-DSA", _signMLDsa87KP, _signMLDsa87Cert, NISTObjectIdentifiers.id_sha3_512, false, true);
+        checkDigestRestriction("ML-DSA", _signMLDsa87KP, _signMLDsa87Cert, NISTObjectIdentifiers.id_sha512, false, true);
+
+        // ML-DSA without signed attributes: SHA-512 only (RFC 9882 3.3)
+        checkDigestRestriction("ML-DSA", _signMLDsa44KP, _signMLDsa44Cert, NISTObjectIdentifiers.id_sha256, true, false);
+        checkDigestRestriction("ML-DSA", _signMLDsa44KP, _signMLDsa44Cert, NISTObjectIdentifiers.id_sha512, true, true);
+
+        // SLH-DSA with signed attributes: the digest must be at least 2n bits (RFC 9814 4)
+        checkDigestRestriction("SLH-DSA", _signSlhDsa_Sha2_192f_KP, _signSlhDsa_Sha2_192f_Cert, NISTObjectIdentifiers.id_sha256, false, false);
+        checkDigestRestriction("SLH-DSA", _signSlhDsa_Sha2_192f_KP, _signSlhDsa_Sha2_192f_Cert, NISTObjectIdentifiers.id_sha512, false, true);
+        checkDigestRestriction("SLH-DSA", _signSlhDsa_Sha2_128f_KP, _signSlhDsa_Sha2_128f_Cert, NISTObjectIdentifiers.id_sha256, false, true);
+        // without signed attributes the digest has no significance and is only a SHOULD
+        checkDigestRestriction("SLH-DSA", _signSlhDsa_Sha2_192f_KP, _signSlhDsa_Sha2_192f_Cert, NISTObjectIdentifiers.id_sha256, true, true);
+
+        // Ed25519: SHA-512 (RFC 8419 3)
+        checkDigestRestriction("Ed25519", _signEd25519KP, _signEd25519Cert, NISTObjectIdentifiers.id_sha256, false, false);
+        checkDigestRestriction("Ed25519", _signEd25519KP, _signEd25519Cert, NISTObjectIdentifiers.id_sha512, false, true);
+    }
+
+    private void checkDigestRestriction(String sigAlg, KeyPair kp, X509Certificate cert, ASN1ObjectIdentifier digestOid,
+        boolean direct, boolean permitted)
+        throws Exception
+    {
+        CMSSignedDataGenerator gen = new CMSSignedDataGenerator();
+        ContentSigner signer = new JcaContentSignerBuilder(sigAlg).setProvider(BC).build(kp.getPrivate());
+        JcaSignerInfoGeneratorBuilder builder = new JcaSignerInfoGeneratorBuilder(
+            new JcaDigestCalculatorProviderBuilder().setProvider(BC).build());
+
+        builder.setContentDigest(new AlgorithmIdentifier(digestOid));
+        builder.setDirectSignature(direct);
+
+        gen.addSignerInfoGenerator(builder.build(signer, cert));
+
+        CMSSignedData s = new CMSSignedData(gen.generate(new CMSProcessableByteArray("Hello world!".getBytes()), true).getEncoded());
+        SignerInformation si = (SignerInformation)s.getSignerInfos().getSigners().iterator().next();
+
+        assertEquals(digestOid, si.getDigestAlgorithmID().getAlgorithm());
+        assertEquals(direct, si.getSignedAttributes() == null);
+
+        SignerInformationVerifier verifier = new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(cert);
+        if (permitted)
+        {
+            assertTrue(sigAlg + " with " + digestOid + " did not verify", si.verify(verifier));
+        }
+        else
+        {
+            try
+            {
+                si.verify(verifier);
+                fail(sigAlg + " with " + digestOid + " was not refused");
+            }
+            catch (CMSException e)
+            {
+                assertTrue(e.getMessage(), e.getMessage().indexOf("RFC") >= 0);
+            }
+        }
+    }
+
+    /**
+     * RFC 5652 5.3: signedAttrs MUST be present when the content type being signed is not
+     * id-data. Both generators refuse a direct (no signed attributes) signer for such content,
+     * whether the signer is a generator or a precalculated SignerInformation, and accept one
+     * carrying signed attributes.
+     */
+    public void testSignedAttributesRequiredForNonDataContent()
+        throws Exception
+    {
+        ASN1ObjectIdentifier contentType = PKCSObjectIdentifiers.id_ct_TSTInfo;
+        byte[] data = "Hello world!".getBytes();
+        CMSTypedData msg = new CMSProcessableByteArray(contentType, data);
+        String expectedMessage = "signed attributes must be present for all signers when the content type is not id-data (RFC 5652 5.3)";
+
+        ContentSigner signer = new JcaContentSignerBuilder("SHA256withRSA").setProvider(BC).build(_origKP.getPrivate());
+        SignerInfoGenerator direct = new JcaSignerInfoGeneratorBuilder(
+            new JcaDigestCalculatorProviderBuilder().setProvider(BC).build()).setDirectSignature(true).build(signer, _origCert);
+        SignerInfoGenerator withAttributes = new JcaSignerInfoGeneratorBuilder(
+            new JcaDigestCalculatorProviderBuilder().setProvider(BC).build()).build(signer, _origCert);
+        Store certs = new JcaCertStore(Collections.singletonList(_origCert));
+
+        CMSSignedDataGenerator gen = new CMSSignedDataGenerator();
+        gen.addSignerInfoGenerator(direct);
+        gen.addCertificates(certs);
+        try
+        {
+            gen.generate(msg, true);
+            fail("direct signature over non-data content not refused");
+        }
+        catch (IllegalArgumentException e)
+        {
+            assertEquals(expectedMessage, e.getMessage());
+        }
+
+        // the same signer is fine over id-data
+        CMSSignedData directOverData = gen.generate(new CMSProcessableByteArray(data), true);
+        assertTrue(verifyAllSigners(directOverData));
+
+        // ... and a precalculated direct signature is refused for non-data content
+        gen = new CMSSignedDataGenerator();
+        gen.addSigners(directOverData.getSignerInfos());
+        gen.addCertificates(certs);
+        try
+        {
+            gen.generate(msg, true);
+            fail("precalculated direct signature over non-data content not refused");
+        }
+        catch (IllegalArgumentException e)
+        {
+            assertEquals(expectedMessage, e.getMessage());
+        }
+
+        gen = new CMSSignedDataGenerator();
+        gen.addSignerInfoGenerator(withAttributes);
+        gen.addCertificates(certs);
+        CMSSignedData s = gen.generate(msg, true);
+        assertEquals(contentType, s.getSignedContentTypeOID() == null ? null : new ASN1ObjectIdentifier(s.getSignedContentTypeOID()));
+        assertTrue(verifyAllSigners(new CMSSignedData(s.getEncoded())));
+
+        CMSSignedDataStreamGenerator streamGen = new CMSSignedDataStreamGenerator();
+        streamGen.addSignerInfoGenerator(direct);
+        streamGen.addCertificates(certs);
+        try
+        {
+            streamGen.open(contentType, new ByteArrayOutputStream(), true);
+            fail("direct signature over non-data content not refused by the stream generator");
+        }
+        catch (IllegalArgumentException e)
+        {
+            assertEquals(expectedMessage, e.getMessage());
+        }
+
+        streamGen = new CMSSignedDataStreamGenerator();
+        streamGen.addSignerInfoGenerator(withAttributes);
+        streamGen.addCertificates(certs);
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        OutputStream sigOut = streamGen.open(contentType, bOut, true);
+        sigOut.write(data);
+        sigOut.close();
+        assertTrue(verifyAllSigners(new CMSSignedData(bOut.toByteArray())));
     }
 
     /**

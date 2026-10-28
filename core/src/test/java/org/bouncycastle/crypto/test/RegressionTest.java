@@ -195,6 +195,8 @@ public class RegressionTest
             new CryptoServiceConstraintsTest(),
             new SymmetricConstraintsTest(),
             new DigestConstraintsTest(),
+            new PQCParametersTest(),
+            new PQCConstraintsTest(),
             new RadixConverterTest(),
             new Grain128AEADTest(),
             new ElephantTest(),

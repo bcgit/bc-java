@@ -106,10 +106,15 @@ public class MLKEMKeyPairGeneratorSpi
     {
         if (!initialised)
         {
-            param = new MLKEMKeyGenerationParameters(random, MLKEMParameters.ml_kem_768);
-
-            engine.init(param);
-            initialised = true;
+            // NIST's recommended default set (NIST IR 8547), drawn from the DEFAULT DRBG as initialize() does
+            try
+            {
+                initialize(MLKEMParameterSpec.ml_kem_768);
+            }
+            catch (InvalidAlgorithmParameterException e)
+            {
+                throw Exceptions.illegalStateException("unable to apply the default parameter set", e);
+            }
         }
 
         AsymmetricCipherKeyPair pair = engine.generateKeyPair();

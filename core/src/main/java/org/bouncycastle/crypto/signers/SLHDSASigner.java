@@ -3,6 +3,7 @@ package org.bouncycastle.crypto.signers;
 import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.params.ParametersWithContext;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.params.SLHDSAParameters;
@@ -109,6 +110,9 @@ public class SLHDSASigner
         {
             throw new IllegalArgumentException("\"pure\" slh-dsa must use non pre-hash parameters");
         }
+
+        CryptoServicesRegistrar.checkConstraints(Utils.getDefaultProperties("SLH-DSA",
+            parameters.getClassicalSecurityStrength(), forSigning ? (CipherParameters)privKey : (CipherParameters)pubKey, forSigning));
     }
 
     public byte[] generateSignature(byte[] message)

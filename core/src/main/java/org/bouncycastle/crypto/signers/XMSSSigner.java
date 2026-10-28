@@ -3,10 +3,12 @@ package org.bouncycastle.crypto.signers;
 import java.io.ByteArrayOutputStream;
 
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.ExhaustedPrivateKeyException;
 import org.bouncycastle.crypto.Signer;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
+import org.bouncycastle.crypto.params.XMSSParameters;
 import org.bouncycastle.crypto.params.XMSSPrivateKeyParameters;
 import org.bouncycastle.crypto.params.XMSSPublicKeyParameters;
 import org.bouncycastle.crypto.signers.xmss.XMSSEngine;
@@ -74,6 +76,10 @@ public class XMSSSigner
                 initSign = false;
                 publicKey = (XMSSPublicKeyParameters)param;
             }
+
+            XMSSParameters params = forSigning ? privateKey.getParameters() : publicKey.getParameters();
+            CryptoServicesRegistrar.checkConstraints(Utils.getDefaultProperties("XMSS",
+                params.getClassicalSecurityStrength(), param, forSigning));
 
             // a message absorbed before this call belongs to the operation that has just ended:
             // carrying it into the new one would sign or verify bytes the caller never presented

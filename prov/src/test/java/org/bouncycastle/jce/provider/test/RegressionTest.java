@@ -15,6 +15,7 @@ public class RegressionTest
         new AESTest(),
         new AlgorithmParametersTest(),
         new ARIATest(),
+        new AsconTest(),
         new BCFKSStoreTest(),
         new BlockCipherTest(),
         new CamelliaTest(),

@@ -1,5 +1,6 @@
 package org.bouncycastle.pqc.crypto.hqc;
 
+import org.bouncycastle.crypto.CryptoServicePurpose;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 
 /**
@@ -11,7 +12,7 @@ import org.bouncycastle.crypto.digests.SHAKEDigest;
  */
 class Shake256RandomGenerator
 {
-    private final SHAKEDigest digest = new SHAKEDigest(256);
+    private final SHAKEDigest digest = new SHAKEDigest(256, CryptoServicePurpose.INTERNAL);
 
     /**
      * XOF.Init(seed).

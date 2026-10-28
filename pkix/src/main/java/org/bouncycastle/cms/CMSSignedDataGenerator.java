@@ -124,15 +124,8 @@ public class CMSSignedDataGenerator
 //            }
 //        }
 //
-//        if (!DATA.equals(eContentType))
-//        {
-//            /* RFC 3852 5.3
-//             * [The 'signedAttrs']...
-//             * field is optional, but it MUST be present if the content type of
-//             * the EncapsulatedContentInfo value being signed is not id-data.
-//             */
-//            // TODO signedAttrs must be present for all signers
-//        }
+
+        checkSignedAttributesPresent(content.getContentType());
 
         Set<AlgorithmIdentifier> digestAlgs = new LinkedHashSet<AlgorithmIdentifier>();
         ASN1EncodableVector signerInfos = new ASN1EncodableVector();

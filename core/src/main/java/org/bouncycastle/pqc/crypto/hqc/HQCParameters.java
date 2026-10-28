@@ -1,5 +1,6 @@
 package org.bouncycastle.pqc.crypto.hqc;
 
+import org.bouncycastle.crypto.params.PQCParameters;
 import org.bouncycastle.pqc.crypto.KEMParameters;
 
 /**
@@ -8,20 +9,20 @@ import org.bouncycastle.pqc.crypto.KEMParameters;
  * ekKEM and the Reed-Solomon generator polynomial over GF(2^8) = GF(2)[X]/(X^8 + X^4 + X^3 + X + 1).
  */
 public class HQCParameters
-    implements KEMParameters
+    implements KEMParameters, PQCParameters
 {
     // 128 bits security
-    public static final HQCParameters hqc128 = new HQCParameters("hqc-128", 17669, 46, 384, 16,
+    public static final HQCParameters hqc128 = new HQCParameters("hqc-128", 1, 17669, 46, 384, 16,
         15, 67, 76, 4, 243079, 2241,
         new int[]{74, 81, 224, 114, 221, 115, 110, 88, 91, 151, 139, 151, 84, 184, 21, 242, 97, 199, 87, 113, 104, 184, 197, 111, 89, 81, 156, 71, 128, 217, 1});
 
     // 192 bits security
-    public static final HQCParameters hqc192 = new HQCParameters("hqc-192", 35851, 56, 640, 24,
+    public static final HQCParameters hqc192 = new HQCParameters("hqc-192", 3, 35851, 56, 640, 24,
         16, 101, 114, 5, 119800, 4514,
         new int[]{56, 180, 145, 30, 131, 105, 28, 60, 107, 33, 206, 184, 155, 249, 153, 231, 112, 11, 231, 1, 144, 201, 71, 62, 8, 150, 142, 246, 33, 214, 26, 150, 1});
 
     // 256 bits security
-    public static final HQCParameters hqc256 = new HQCParameters("hqc-256", 57637, 90, 640, 32,
+    public static final HQCParameters hqc256 = new HQCParameters("hqc-256", 5, 57637, 90, 640, 32,
         29, 132, 150, 5, 74517, 7237,
         new int[]{35, 203, 35, 52, 165, 121, 125, 73, 136, 42, 235, 82, 232, 122, 67, 98, 51, 188, 230, 82, 164, 117, 103, 184, 209, 218, 244, 181, 122, 10, 25, 138, 216, 182, 225, 145, 100, 244, 5, 142, 213, 238, 15, 150, 59, 28, 244, 222, 252, 85, 125, 59, 52, 215, 180, 34, 173, 208, 1});
 
@@ -29,6 +30,7 @@ public class HQCParameters
     static final int GF_MUL_ORDER = 255;
 
     private final String name;
+    private final int securityCategory;
     private final int n;
     private final int n1;
     private final int n2;
@@ -37,10 +39,11 @@ public class HQCParameters
 
     private final HQCEngine engine;
 
-    private HQCParameters(String name, int n, int n1, int n2, int k, int delta, int w, int wr, int fft, int nMu,
-        int pkSize, int[] generatorPoly)
+    private HQCParameters(String name, int securityCategory, int n, int n1, int n2, int k, int delta, int w, int wr,
+        int fft, int nMu, int pkSize, int[] generatorPoly)
     {
         this.name = name;
+        this.securityCategory = securityCategory;
         this.n = n;
         this.n1 = n1;
         this.n2 = n2;
@@ -86,6 +89,32 @@ public class HQCParameters
     public String getName()
     {
         return name;
+    }
+
+    /**
+     * Return the NIST security category of this parameter set: 1 for HQC-128, 3 for HQC-192 and
+     * 5 for HQC-256 (the categories of the October 2026 specification; the HQC FIPS is still in
+     * development).
+     */
+    public int getSecurityCategory()
+    {
+        return securityCategory;
+    }
+
+    /**
+     * Return the classical security strength of this parameter set: 128, 192 or 256 bits.
+     */
+    public int getClassicalSecurityStrength()
+    {
+        switch (securityCategory)
+        {
+        case 1:
+            return 128;
+        case 3:
+            return 192;
+        default:
+            return 256;
+        }
     }
 
     public int getPublicKeyBytes()

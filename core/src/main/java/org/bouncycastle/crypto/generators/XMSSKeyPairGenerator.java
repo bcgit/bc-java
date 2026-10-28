@@ -4,7 +4,10 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
+import org.bouncycastle.crypto.CryptoServicePurpose;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.KeyGenerationParameters;
+import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 import org.bouncycastle.crypto.params.XMSSKeyGenerationParameters;
 import org.bouncycastle.crypto.params.XMSSParameters;
 import org.bouncycastle.crypto.signers.xmss.XMSSEngine;
@@ -32,6 +35,9 @@ public final class XMSSKeyPairGenerator
 
         this.prng = parameters.getRandom();
         this.params = parameters.getParameters();
+
+        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties("XMSSKeyGen",
+            params.getClassicalSecurityStrength(), params, CryptoServicePurpose.KEYGEN));
     }
 
     /**

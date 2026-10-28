@@ -113,14 +113,15 @@ public class NamedGroup
     public static final int OQS_mlkem1024 = 0x0249;
 
     /*
-     * draft-connolly-tls-mlkem-key-agreement-05
+     * draft-ietf-tls-mlkem-11 (formerly draft-connolly-tls-mlkem-key-agreement); IANA has assigned these
+     * values.
      */
     public static final int MLKEM512 = 0x0200;
     public static final int MLKEM768 = 0x0201;
     public static final int MLKEM1024 = 0x0202;
 
     /*
-     * draft-ietf-tls-ecdhe-mlkem-00
+     * RFC 10024 (was draft-ietf-tls-ecdhe-mlkem)
      */
     public static final int SecP256r1MLKEM768 = 0x11EB;
     public static final int X25519MLKEM768 = 0x11EC;

@@ -2,6 +2,7 @@ package org.bouncycastle.crypto.signers.mldsa;
 
 import java.security.SecureRandom;
 
+import org.bouncycastle.crypto.CryptoServicePurpose;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.crypto.params.MLDSAParameters;
 import org.bouncycastle.util.Arrays;
@@ -42,7 +43,7 @@ import org.bouncycastle.util.Arrays;
 public class MLDSAEngine
 {
     private final SecureRandom random;
-    final SHAKEDigest shake256Digest = new SHAKEDigest(256);
+    final SHAKEDigest shake256Digest = new SHAKEDigest(256, CryptoServicePurpose.INTERNAL);
 
     public final static int DilithiumN = 256;
     public final static int DilithiumQ = 8380417;

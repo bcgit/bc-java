@@ -191,13 +191,20 @@ public final class CryptoServicesRegistrar
     }
 
     /**
-     * Check a service to make sure it meets the current constraints.
+     * Check a service to make sure it meets the current constraints. A service reporting the
+     * purpose {@link CryptoServicePurpose#INTERNAL} - a primitive that is a fixed part of another
+     * algorithm's engine - is not checked; the enclosing algorithm reports for it.
      *
      * @param cryptoService the service to be checked.
      * @throws CryptoServiceConstraintsException if the service violates the current constraints.
      */
     public static void checkConstraints(CryptoServiceProperties cryptoService)
     {
+        if (cryptoService.getPurpose() == CryptoServicePurpose.INTERNAL)
+        {
+            return;
+        }
+
         servicesConstraints.get().check(cryptoService);
     }
 

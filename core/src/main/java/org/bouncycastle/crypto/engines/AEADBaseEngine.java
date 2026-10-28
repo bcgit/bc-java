@@ -254,6 +254,9 @@ abstract class AEADBaseEngine
             dataLimitCounter.increment(npub.length);
         }
         reset(true);
+        // a zeroed tag of the right length until doFinal() computes the real one, so that
+        // getMac() reports the tag length from init onwards as the other AEAD ciphers do
+        mac = new byte[MAC_SIZE];
         if (initialAssociatedText != null)
         {
             processAADBytes(initialAssociatedText, 0, initialAssociatedText.length);

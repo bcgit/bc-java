@@ -14,6 +14,7 @@ import org.bouncycastle.util.Integers;
  * XMSS^MT Parameters.
  */
 public final class XMSSMTParameters
+    implements PQCParameters
 {
     private static final Map<Integer, XMSSMTParameters> paramsLookupTable;
 
@@ -214,6 +215,24 @@ public final class XMSSMTParameters
     public int getTreeDigestSize()
     {
         return xmssParams.getTreeDigestSize();
+    }
+
+    /**
+     * Return the NIST security category of this parameter set, as for
+     * {@link XMSSParameters#getSecurityCategory()}.
+     */
+    public int getSecurityCategory()
+    {
+        return xmssParams.getSecurityCategory();
+    }
+
+    /**
+     * Return the classical security strength of this parameter set, as for
+     * {@link XMSSParameters#getClassicalSecurityStrength()}.
+     */
+    public int getClassicalSecurityStrength()
+    {
+        return xmssParams.getClassicalSecurityStrength();
     }
 
     /**

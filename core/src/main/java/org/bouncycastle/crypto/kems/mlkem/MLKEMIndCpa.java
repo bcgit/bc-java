@@ -1,5 +1,6 @@
 package org.bouncycastle.crypto.kems.mlkem;
 
+import org.bouncycastle.crypto.CryptoServicePurpose;
 import org.bouncycastle.crypto.Xof;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.util.Arrays;
@@ -42,7 +43,7 @@ class MLKEMIndCpa
         }
         generateMatrixA(matrixA, buf, false);
 
-        SHAKEDigest xof = new SHAKEDigest(256);
+        SHAKEDigest xof = new SHAKEDigest(256, CryptoServicePurpose.INTERNAL);
 
         byte nonce = 0;
         if (engine.getEta1() == 2)
@@ -125,7 +126,7 @@ class MLKEMIndCpa
         }
         generateMatrixA(matrixATransposed, seed, true);
 
-        SHAKEDigest xof = new SHAKEDigest(256);
+        SHAKEDigest xof = new SHAKEDigest(256, CryptoServicePurpose.INTERNAL);
 
         if (engine.getEta1() == 2)
         {
@@ -244,7 +245,7 @@ class MLKEMIndCpa
     void generateMatrixA(PolyVec[] aMatrix, byte[] seed, boolean transpose)
     {
         int K = engine.getK();
-        SHAKEDigest xof = new SHAKEDigest(128);
+        SHAKEDigest xof = new SHAKEDigest(128, CryptoServicePurpose.INTERNAL);
 
         byte[] buf = new byte[NUM_MATRIX_BLOCKS * SHAKE128_RATE + 2];
         for (int i = 0; i < K; i++)

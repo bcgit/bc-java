@@ -2,6 +2,7 @@ package org.bouncycastle.crypto.kems.mlkem;
 
 import java.security.SecureRandom;
 
+import org.bouncycastle.crypto.CryptoServicePurpose;
 import org.bouncycastle.crypto.digests.SHA3Digest;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.crypto.params.MLKEMParameters;
@@ -185,12 +186,12 @@ public class MLKEMEngine
 
     static void hash_G(byte[] input, byte[] output)
     {
-        implDigest(new SHA3Digest(512), input, 0, input.length, output, 0);
+        implDigest(new SHA3Digest(512, CryptoServicePurpose.INTERNAL), input, 0, input.length, output, 0);
     }
 
     private static void hash_H(byte[] inBuf, int inOff, int inLen, byte[] outBuf, int outOff)
     {
-        implDigest(new SHA3Digest(256), inBuf, inOff, inLen, outBuf, outOff);
+        implDigest(new SHA3Digest(256, CryptoServicePurpose.INTERNAL), inBuf, inOff, inLen, outBuf, outOff);
     }
 
     private static void implDigest(SHA3Digest digest, byte[] inBuf, int inOff, int inLen, byte[] outBuf, int outOff)
@@ -248,7 +249,7 @@ public class MLKEMEngine
             byte[] implicit_rejection = new byte[SharedSecretBytes];
 
             // J(z||c)
-            SHAKEDigest xof = new SHAKEDigest(256);
+            SHAKEDigest xof = new SHAKEDigest(256, CryptoServicePurpose.INTERNAL);
             xof.update(decapKey, SecretKeyBytes - SymBytes, SymBytes);
             xof.update(cipherText, 0, CipherTextBytes);
             xof.doFinal(implicit_rejection, 0, SharedSecretBytes);

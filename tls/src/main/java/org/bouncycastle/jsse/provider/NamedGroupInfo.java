@@ -148,6 +148,14 @@ class NamedGroupInfo
     }
 
     private static final int[] CANDIDATES_DEFAULT = {
+        /*
+         * X25519MLKEM768 leads so that a TLS 1.3 peer that supports it negotiates a hybrid,
+         * quantum-resistant key exchange by default (NIST IR 8547 sec. 4.2 names the TLS 1.3
+         * hybrids as the near-term migration path, and the major browsers and OpenSSL 3.5 make
+         * the same choice). It is also the first group a TLS 1.3 client sends a key share for
+         * (see AbstractTlsClient.getEarlyKeyShareGroups), so the preference costs no round trip.
+         */
+        NamedGroup.X25519MLKEM768,
         NamedGroup.x25519,
         NamedGroup.x448,
         NamedGroup.secp256r1,
@@ -161,7 +169,6 @@ class NamedGroupInfo
         NamedGroup.ffdhe4096,
         NamedGroup.SecP256r1MLKEM768,
         NamedGroup.SecP384r1MLKEM1024,
-        NamedGroup.X25519MLKEM768,
         /*
          * NOTE: The pure ML-KEM groups (MLKEM512, MLKEM768, MLKEM1024) are deliberately not
          * offered by default, following TLS working group feedback that a key exchange should

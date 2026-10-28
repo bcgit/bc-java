@@ -61,6 +61,37 @@ public class CMSSignedGenerator
     protected List crls = new ArrayList();
     protected List _signers = new ArrayList();
     protected List signerGens = new ArrayList();
+
+    /**
+     * RFC 5652 5.3: the signedAttrs field "MUST be present if the content type of the
+     * EncapsulatedContentInfo value being signed is not id-data". Refuse a generation that would
+     * break that for any of the signers added so far.
+     *
+     * @param eContentType the content type about to be signed.
+     * @throws IllegalArgumentException if the content type is not id-data and a signer would carry no signed attributes.
+     */
+    void checkSignedAttributesPresent(ASN1ObjectIdentifier eContentType)
+    {
+        if (CMSObjectIdentifiers.data.equals(eContentType))
+        {
+            return;
+        }
+
+        for (Iterator it = signerGens.iterator(); it.hasNext();)
+        {
+            if (((SignerInfoGenerator)it.next()).getSignedAttributeTableGenerator() == null)
+            {
+                throw new IllegalArgumentException("signed attributes must be present for all signers when the content type is not id-data (RFC 5652 5.3)");
+            }
+        }
+        for (Iterator it = _signers.iterator(); it.hasNext();)
+        {
+            if (((SignerInformation)it.next()).getSignedAttributes() == null)
+            {
+                throw new IllegalArgumentException("signed attributes must be present for all signers when the content type is not id-data (RFC 5652 5.3)");
+            }
+        }
+    }
     protected Map digests = new HashMap();
 
     protected DigestAlgorithmIdentifierFinder digestAlgIdFinder;

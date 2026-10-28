@@ -199,16 +199,8 @@ public class CMSSignedDataStreamGenerator
 //            }
 //        }
 //
-//        if (!DATA.equals(eContentType))
-//        {
-//            /* RFC 3852 5.3
-//             * [The 'signedAttrs']...
-//             * field is optional, but it MUST be present if the content type of
-//             * the EncapsulatedContentInfo value being signed is not id-data.
-//             */
-//            // TODO signedAttrs must be present for all signers
-//        }
 
+        checkSignedAttributesPresent(eContentType);
 
         Set<AlgorithmIdentifier> digestAlgs = new HashSet<AlgorithmIdentifier>();
         digestAlgs.addAll(extraDigestAlgorithms);

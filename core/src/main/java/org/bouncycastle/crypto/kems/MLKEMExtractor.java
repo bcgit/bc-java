@@ -1,6 +1,9 @@
 package org.bouncycastle.crypto.kems;
 
+import org.bouncycastle.crypto.CryptoServicePurpose;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.EncapsulatedSecretExtractor;
+import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 import org.bouncycastle.crypto.kems.mlkem.MLKEMEngine;
 import org.bouncycastle.crypto.params.MLKEMPrivateKeyParameters;
 
@@ -16,6 +19,9 @@ public class MLKEMExtractor
         {
             throw new NullPointerException("'privateKey' cannot be null");
         }
+
+        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties("ML-KEM",
+            privateKey.getParameters().getClassicalSecurityStrength(), privateKey, CryptoServicePurpose.DECRYPTION));
 
         this.privateKey = privateKey;
         this.engine = MLKEMEngine.getInstance(privateKey.getParameters());

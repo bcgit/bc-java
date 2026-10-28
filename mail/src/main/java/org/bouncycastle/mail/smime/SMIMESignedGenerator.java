@@ -151,6 +151,10 @@ public class SMIMESignedGenerator
         stdMicAlgs.put(CMSAlgorithm.SHA256, "sha-256");
         stdMicAlgs.put(CMSAlgorithm.SHA384, "sha-384");
         stdMicAlgs.put(CMSAlgorithm.SHA512, "sha-512");
+        // IANA "Hash Function Textual Names" (RFC 8692); the digests of SLH-DSA-SHAKE and the
+        // ML-DSA-87 with Ed448 composite SignerInfos.
+        stdMicAlgs.put(NISTObjectIdentifiers.id_shake128, "shake128");
+        stdMicAlgs.put(NISTObjectIdentifiers.id_shake256, "shake256");
         stdMicAlgs.put(CMSAlgorithm.GOST3411, "gostr3411-94");
         stdMicAlgs.put(CMSAlgorithm.GOST3411_2012_256, "gostr3411-2012-256");
         stdMicAlgs.put(CMSAlgorithm.GOST3411_2012_512, "gostr3411-2012-512");
@@ -165,6 +169,8 @@ public class SMIMESignedGenerator
         oldMicAlgs.put(CMSAlgorithm.SHA256, "sha256");
         oldMicAlgs.put(CMSAlgorithm.SHA384, "sha384");
         oldMicAlgs.put(CMSAlgorithm.SHA512, "sha512");
+        oldMicAlgs.put(NISTObjectIdentifiers.id_shake128, "shake128");
+        oldMicAlgs.put(NISTObjectIdentifiers.id_shake256, "shake256");
         oldMicAlgs.put(CMSAlgorithm.GOST3411, "gostr3411-94");
         oldMicAlgs.put(CMSAlgorithm.GOST3411_2012_256, "gostr3411-2012-256");
         oldMicAlgs.put(CMSAlgorithm.GOST3411_2012_512, "gostr3411-2012-512");

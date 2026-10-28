@@ -19,7 +19,7 @@ public class AsconXof128
 
     public AsconXof128()
     {
-        algorithmName = "Ascon-XOF-128";
+        algorithmName = "Ascon-XOF128";
         reset();
     }
 

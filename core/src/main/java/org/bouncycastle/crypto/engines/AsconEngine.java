@@ -17,7 +17,7 @@ import org.bouncycastle.util.Pack;
  * </a>.
  * </p>
  *
- * @deprecated Now superseded. Please refer to {@code AsconAEAD128Engine} for future implementations.
+ * @deprecated Now superseded. Please refer to {@link AsconAEAD128} (the SP 800-232 version) for future implementations.
  */
 
 public class AsconEngine

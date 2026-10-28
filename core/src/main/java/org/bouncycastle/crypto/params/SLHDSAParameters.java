@@ -3,6 +3,7 @@ package org.bouncycastle.crypto.params;
 import org.bouncycastle.crypto.signers.slhdsa.SLHDSAEngine;
 
 public class SLHDSAParameters
+    implements PQCParameters
 {
     interface SLHDSAEngineProvider
     {
@@ -103,6 +104,32 @@ public class SLHDSAParameters
     public int getType()
     {
         return preHashDigest;
+    }
+
+    /**
+     * Return the NIST security category of this parameter set: 1 for the 128-bit sets, 3 for
+     * the 192-bit sets and 5 for the 256-bit sets (NIST IR 8547, Table 3).
+     */
+    public int getSecurityCategory()
+    {
+        switch (getN())
+        {
+        case 16:
+            return 1;
+        case 24:
+            return 3;
+        default:
+            return 5;
+        }
+    }
+
+    /**
+     * Return the classical security strength of this parameter set: 8 times its security
+     * parameter n, so 128, 192 or 256 bits (NIST IR 8547, Table 3).
+     */
+    public int getClassicalSecurityStrength()
+    {
+        return 8 * getN();
     }
 
     public int getN()

@@ -1,6 +1,7 @@
 package org.bouncycastle.crypto.signers.slhdsa;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.CryptoServicePurpose;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.Xof;
 import org.bouncycastle.crypto.digests.SHA256Digest;
@@ -114,7 +115,7 @@ public abstract class SLHDSAEngine
         private final Digest msgDigest;
         private final byte[] msgDigestBuf;
         private final int bl;
-        private final Digest sha256 = new SHA256Digest();
+        private final Digest sha256 = new SHA256Digest(CryptoServicePurpose.INTERNAL);
         private final byte[] sha256Buf = new byte[sha256.getDigestSize()];
 
         private Memoable msgMemo;
@@ -125,16 +126,16 @@ public abstract class SLHDSAEngine
             super(n, w, d, a, k, h);
             if (n == 16)
             {
-                this.msgDigest = new SHA256Digest();
-                this.treeHMac = new HMac(new SHA256Digest());
-                this.mgf1 = new MGF1BytesGenerator(new SHA256Digest());
+                this.msgDigest = new SHA256Digest(CryptoServicePurpose.INTERNAL);
+                this.treeHMac = new HMac(new SHA256Digest(CryptoServicePurpose.INTERNAL));
+                this.mgf1 = new MGF1BytesGenerator(new SHA256Digest(CryptoServicePurpose.INTERNAL));
                 this.bl = 64;
             }
             else
             {
-                this.msgDigest = new SHA512Digest();
-                this.treeHMac = new HMac(new SHA512Digest());
-                this.mgf1 = new MGF1BytesGenerator(new SHA512Digest());
+                this.msgDigest = new SHA512Digest(CryptoServicePurpose.INTERNAL);
+                this.treeHMac = new HMac(new SHA512Digest(CryptoServicePurpose.INTERNAL));
+                this.mgf1 = new MGF1BytesGenerator(new SHA512Digest(CryptoServicePurpose.INTERNAL));
                 this.bl = 128;
             }
 
@@ -295,7 +296,7 @@ public abstract class SLHDSAEngine
         protected byte[] bitmask256(byte[] key, byte[] m)
         {
             byte[] mask = new byte[m.length];
-            MGF1BytesGenerator mgf1 = new MGF1BytesGenerator(new SHA256Digest());
+            MGF1BytesGenerator mgf1 = new MGF1BytesGenerator(new SHA256Digest(CryptoServicePurpose.INTERNAL));
             mgf1.init(new MGFParameters(key));
             mgf1.generateBytes(mask, 0, mask.length);
             Bytes.xorTo(m.length, m, mask);
@@ -313,8 +314,8 @@ public abstract class SLHDSAEngine
         {
             super(n, w, d, a, k, h);
 
-            this.treeDigest = new SHAKEDigest(256);
-            this.maskDigest = new SHAKEDigest(256);
+            this.treeDigest = new SHAKEDigest(256, CryptoServicePurpose.INTERNAL);
+            this.maskDigest = new SHAKEDigest(256, CryptoServicePurpose.INTERNAL);
         }
 
         void init(byte[] pkSeed)

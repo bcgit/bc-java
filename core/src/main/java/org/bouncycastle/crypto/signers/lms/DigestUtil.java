@@ -2,6 +2,7 @@ package org.bouncycastle.crypto.signers.lms;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
+import org.bouncycastle.crypto.CryptoServicePurpose;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
@@ -40,11 +41,11 @@ class DigestUtil
     {
         if (oid.equals(NISTObjectIdentifiers.id_sha256))
         {
-            return new SHA256Digest();
+            return new SHA256Digest(CryptoServicePurpose.INTERNAL);
         }
         if (oid.equals(NISTObjectIdentifiers.id_shake256_len))
         {
-            return new SHAKEDigest(256);
+            return new SHAKEDigest(256, CryptoServicePurpose.INTERNAL);
         }
 
         throw new IllegalArgumentException("unrecognized digest OID: " + oid);

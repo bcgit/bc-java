@@ -207,7 +207,9 @@ public class Extension
     public static final ASN1ObjectIdentifier altSignatureValue = new ASN1ObjectIdentifier("2.5.29.74").intern();
 
     /**
-     * delta certificate extension - prototype value will change!
+     * Delta certificate descriptor extension of draft-bonnell-lamps-chameleon-certs. The value is the
+     * draft's prototype OID in the Entrust arc; it will change to an id-pe arc value if the extension is
+     * standardised.
      */
     public static final ASN1ObjectIdentifier deltaCertificateDescriptor = new ASN1ObjectIdentifier("2.16.840.1.114027.80.6.1");
 

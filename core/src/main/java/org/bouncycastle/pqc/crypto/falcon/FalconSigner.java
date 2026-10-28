@@ -1,7 +1,9 @@
 package org.bouncycastle.pqc.crypto.falcon;
 
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.CryptoServicePurpose;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
+import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.pqc.crypto.MessageSigner;
 
@@ -13,6 +15,8 @@ public class FalconSigner
 
     public void init(boolean forSigning, CipherParameters param)
     {
+        FalconParameters falconParams;
+        CipherParameters key;
         if (forSigning)
         {
             if (param instanceof ParametersWithRandom)
@@ -22,6 +26,8 @@ public class FalconSigner
                 nist = new FalconNIST(skparam.getParameters().getLogN(),
                     skparam.getParameters().getNonceLength(),
                     ((ParametersWithRandom)param).getRandom());
+                falconParams = skparam.getParameters();
+                key = skparam;
             }
             else
             {
@@ -30,6 +36,8 @@ public class FalconSigner
                 nist = new FalconNIST(skparam.getParameters().getLogN(),
                     skparam.getParameters().getNonceLength(),
                     CryptoServicesRegistrar.getSecureRandom());
+                falconParams = skparam.getParameters();
+                key = skparam;
             }
         }
         else
@@ -39,7 +47,12 @@ public class FalconSigner
             nist = new FalconNIST(pkparam.getParameters().getLogN(),
                 pkparam.getParameters().getNonceLength(),
                 CryptoServicesRegistrar.getSecureRandom());
+            falconParams = pkparam.getParameters();
+            key = pkparam;
         }
+
+        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties("Falcon",
+            falconParams.getClassicalSecurityStrength(), key, forSigning ? CryptoServicePurpose.SIGNING : CryptoServicePurpose.VERIFYING));
     }
 
     public byte[] generateSignature(byte[] message)

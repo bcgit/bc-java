@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UnsupportedEncodingException;
 import java.security.KeyPair;
+import java.security.KeyPairGenerator;
 import java.security.MessageDigest;
 import java.security.Security;
 import java.security.cert.X509Certificate;
@@ -56,6 +57,7 @@ import org.bouncycastle.cms.SignerInformation;
 import org.bouncycastle.cms.SignerInformationStore;
 import org.bouncycastle.cms.jcajce.JcaSimpleSignerInfoGeneratorBuilder;
 import org.bouncycastle.cms.jcajce.JcaSimpleSignerInfoVerifierBuilder;
+import org.bouncycastle.jcajce.spec.SLHDSAParameterSpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.mail.smime.SMIMESigned;
 import org.bouncycastle.mail.smime.SMIMESignedGenerator;
@@ -736,6 +738,51 @@ public class NewSMIMESignedTest
         verifySigners(s.getCertificates(), s.getSignerInfos());
     }
 
+    /**
+     * RFC 9882: an ML-DSA SignerInfo carries SHA-512 as its digest algorithm, which RFC 8551 names "sha-512"
+     * in the micalg parameter.
+     */
+    public void testMLDSA65()
+        throws Exception
+    {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("ML-DSA-65", BC);
+        KeyPair kp = kpg.generateKeyPair();
+        X509Certificate cert = CMSTestUtil.makeCertificate(kp, _signDN, _origKP, _origDN);
+
+        MimeMultipart smm = generateMultiPart("ML-DSA-65", kp, cert, msg, SMIMESignedGenerator.STANDARD_MICALGS);
+        SMIMESigned   s = new  SMIMESigned(smm);
+
+        assertEquals("sha-512", getMicAlg(smm));
+        assertEquals(getDigestOid(s.getSignerInfos()), NISTObjectIdentifiers.id_sha512.toString());
+
+        verifyMessageBytes(msg, s.getContent());
+
+        verifySigners(s.getCertificates(), s.getSignerInfos());
+    }
+
+    /**
+     * RFC 9814: the digest of an SLH-DSA-SHAKE-128f SignerInfo is SHAKE128, whose IANA hash function
+     * textual name (RFC 8692) is "shake128"; previously the generator wrote micalg=unknown.
+     */
+    public void testSLHDSAShake128f()
+        throws Exception
+    {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("SLH-DSA", BC);
+        kpg.initialize(SLHDSAParameterSpec.slh_dsa_shake_128f);
+        KeyPair kp = kpg.generateKeyPair();
+        X509Certificate cert = CMSTestUtil.makeCertificate(kp, _signDN, _origKP, _origDN);
+
+        MimeMultipart smm = generateMultiPart("SLH-DSA-SHAKE-128F", kp, cert, msg, SMIMESignedGenerator.STANDARD_MICALGS);
+        SMIMESigned   s = new  SMIMESigned(smm);
+
+        assertEquals("shake128", getMicAlg(smm));
+        assertEquals(getDigestOid(s.getSignerInfos()), NISTObjectIdentifiers.id_shake128.toString());
+
+        verifyMessageBytes(msg, s.getContent());
+
+        verifySigners(s.getCertificates(), s.getSignerInfos());
+    }
+
     public void testSHA512WithRSARfc3851()
         throws Exception
     {
@@ -1049,6 +1096,26 @@ public class NewSMIMESignedTest
         throws Exception
     {
         return generateMultiPartRsa(algorithm, msg, null, micalgs);
+    }
+
+    private MimeMultipart generateMultiPart(String algorithm, KeyPair signKP, X509Certificate signCert, MimeBodyPart msg, Map micalgs)
+        throws Exception
+    {
+        List certList = new ArrayList();
+
+        certList.add(signCert);
+        certList.add(_origCert);
+
+        Store certs = new JcaCertStore(certList);
+
+        ASN1EncodableVector signedAttrs = generateSignedAttributes();
+
+        SMIMESignedGenerator gen = new SMIMESignedGenerator(micalgs);
+
+        gen.addSignerInfoGenerator(new JcaSimpleSignerInfoGeneratorBuilder().setProvider(BC).setSignedAttributeGenerator(new DefaultSignedAttributeTableGenerator(new AttributeTable(signedAttrs))).build(algorithm, signKP.getPrivate(), signCert));
+        gen.addCertificates(certs);
+
+        return gen.generate(msg);
     }
     
     private MimeBodyPart generateEncapsulatedRsa(String sigAlg, MimeBodyPart msg)

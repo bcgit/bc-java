@@ -3,11 +3,13 @@ package org.bouncycastle.crypto.signers;
 import java.io.ByteArrayOutputStream;
 
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.Signer;
 import org.bouncycastle.crypto.params.HSSPrivateKeyParameters;
 import org.bouncycastle.crypto.params.HSSPublicKeyParameters;
 import org.bouncycastle.crypto.params.LMSPrivateKeyParameters;
 import org.bouncycastle.crypto.params.LMSPublicKeyParameters;
+import org.bouncycastle.crypto.params.LMSigParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.signers.lms.LMSContext;
 import org.bouncycastle.util.Arrays;
@@ -91,7 +93,27 @@ public class LMSSigner
              }
          }
 
+         CryptoServicesRegistrar.checkConstraints(Utils.getDefaultProperties("LMS",
+             getSigParameters(param).getClassicalSecurityStrength(), param, forSigning));
+
          reset();
+    }
+
+    private static LMSigParameters getSigParameters(CipherParameters key)
+    {
+        if (key instanceof HSSPrivateKeyParameters)
+        {
+            return ((HSSPrivateKeyParameters)key).getLMSParameters()[0].getLMSigParam();
+        }
+        if (key instanceof HSSPublicKeyParameters)
+        {
+            return ((HSSPublicKeyParameters)key).getLMSPublicKey().getSigParameters();
+        }
+        if (key instanceof LMSPrivateKeyParameters)
+        {
+            return ((LMSPrivateKeyParameters)key).getSigParameters();
+        }
+        return ((LMSPublicKeyParameters)key).getSigParameters();
     }
 
     /**

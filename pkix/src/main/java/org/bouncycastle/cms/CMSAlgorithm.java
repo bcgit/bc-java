@@ -130,4 +130,8 @@ public class CMSAlgorithm
     public static final AlgorithmIdentifier   SHA256_HKDF = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_alg_hkdf_with_sha256);
     public static final AlgorithmIdentifier   SHA384_HKDF = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_alg_hkdf_with_sha384);
     public static final AlgorithmIdentifier   SHA512_HKDF = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_alg_hkdf_with_sha512);
+    /** NIST id-KMAC128 (2.16.840.1.101.3.4.2.21) used as a KEM recipient KDF, with no customization string. */
+    public static final AlgorithmIdentifier   KMAC128_KDF = new AlgorithmIdentifier(NISTObjectIdentifiers.id_Kmac128);
+    /** NIST id-KMAC256 (2.16.840.1.101.3.4.2.22) used as a KEM recipient KDF, with no customization string. */
+    public static final AlgorithmIdentifier   KMAC256_KDF = new AlgorithmIdentifier(NISTObjectIdentifiers.id_Kmac256);
 }

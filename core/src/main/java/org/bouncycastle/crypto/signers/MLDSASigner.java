@@ -4,6 +4,7 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoException;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.Signer;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
@@ -109,6 +110,9 @@ public class MLDSASigner
         {
             throw new IllegalArgumentException("\"pure\" ml-dsa must use non pre-hash parameters");
         }
+
+        CryptoServicesRegistrar.checkConstraints(Utils.getDefaultProperties("ML-DSA",
+            parameters.getClassicalSecurityStrength(), forSigning ? (CipherParameters)privKey : (CipherParameters)pubKey, forSigning));
 
         reset();
     }

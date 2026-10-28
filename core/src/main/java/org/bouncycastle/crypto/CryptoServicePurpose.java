@@ -11,7 +11,14 @@ public enum CryptoServicePurpose
     AUTHENTICATION(6),  // for MACs (and digests)
     VERIFICATION(7),
     PRF(8),
-    ANY(9);
+    ANY(9),
+    /**
+     * A primitive built inside another algorithm's engine as a fixed part of that algorithm - the
+     * SHAKE an ML-DSA or ML-KEM engine expands its matrix with, the tree hash of a stateful
+     * hash-based signature. It is not a service in its own right and is not checked against the
+     * constraints: the enclosing algorithm reports for it, with the strength of its parameter set.
+     */
+    INTERNAL(10);
 
     private final int code;
 

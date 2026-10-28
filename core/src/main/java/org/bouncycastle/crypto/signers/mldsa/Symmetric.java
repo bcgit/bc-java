@@ -1,5 +1,6 @@
 package org.bouncycastle.crypto.signers.mldsa;
 
+import org.bouncycastle.crypto.CryptoServicePurpose;
 import org.bouncycastle.crypto.digests.SHAKEDigest;
 
 abstract class Symmetric
@@ -31,8 +32,8 @@ abstract class Symmetric
         ShakeSymmetric()
         {
             super(168, 136);
-            digest128 = new SHAKEDigest(128);
-            digest256 = new SHAKEDigest(256);
+            digest128 = new SHAKEDigest(128, CryptoServicePurpose.INTERNAL);
+            digest256 = new SHAKEDigest(256, CryptoServicePurpose.INTERNAL);
         }
 
         private void streamInit(SHAKEDigest digest, byte[] seed, short nonce)

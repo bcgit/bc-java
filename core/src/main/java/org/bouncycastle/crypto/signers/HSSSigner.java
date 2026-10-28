@@ -3,9 +3,11 @@ package org.bouncycastle.crypto.signers;
 import java.io.ByteArrayOutputStream;
 
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.Signer;
 import org.bouncycastle.crypto.params.HSSPrivateKeyParameters;
 import org.bouncycastle.crypto.params.HSSPublicKeyParameters;
+import org.bouncycastle.crypto.params.LMSParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.signers.lms.LMSContext;
 
@@ -40,14 +42,27 @@ public class HSSSigner
              param = ((ParametersWithRandom)param).getParameters();
          }
 
+         int bitsOfSecurity;
          if (forSigning)
          {
              this.privKey = (HSSPrivateKeyParameters)param;
+
+             // the strength of the hierarchy is that of its weakest level
+             LMSParameters[] lmsParams = privKey.getLMSParameters();
+             bitsOfSecurity = Integer.MAX_VALUE;
+             for (int i = 0; i != lmsParams.length; i++)
+             {
+                 bitsOfSecurity = Math.min(bitsOfSecurity, lmsParams[i].getLMSigParam().getClassicalSecurityStrength());
+             }
          }
          else
          {
              this.pubKey = (HSSPublicKeyParameters)param;
+
+             bitsOfSecurity = pubKey.getLMSPublicKey().getSigParameters().getClassicalSecurityStrength();
          }
+
+         CryptoServicesRegistrar.checkConstraints(Utils.getDefaultProperties("HSS", bitsOfSecurity, param, forSigning));
 
          reset();
     }

@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.Stack;
 import java.util.TreeMap;
 
+import org.bouncycastle.crypto.CryptoServicePurpose;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.params.XMSSParameters;
@@ -426,7 +427,7 @@ final class BDSStateCodec
      */
     private static void checksumTo(byte[] encoding, int length, byte[] publicSeed, byte[] out, int outOff)
     {
-        Digest digest = new SHA256Digest();
+        Digest digest = new SHA256Digest(CryptoServicePurpose.INTERNAL);
 
         if (publicSeed != null)
         {

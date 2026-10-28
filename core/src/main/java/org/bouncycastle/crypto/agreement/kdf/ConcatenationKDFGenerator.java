@@ -8,7 +8,10 @@ import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.params.KDFParameters;
 
 /**
- * Generator for Concatenation Key Derivation Function defined in NIST SP 800-56A, Sect 5.8.1
+ * Generator for the Concatenation Key Derivation Function first specified in NIST SP 800-56A
+ * Section 5.8.1 and carried forward as the hash-based one-step key derivation function of
+ * SP 800-56C Rev. 2 Section 4.1: H(counter || Z || OtherInfo) with a 32-bit big-endian counter
+ * starting at 1.
  */
 public class ConcatenationKDFGenerator
     implements DerivationFunction

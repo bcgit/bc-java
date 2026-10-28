@@ -17,6 +17,7 @@ import org.bouncycastle.crypto.params.SLHDSAParameters;
 import org.bouncycastle.crypto.params.SLHDSAPrivateKeyParameters;
 import org.bouncycastle.crypto.params.SLHDSAPublicKeyParameters;
 import org.bouncycastle.jcajce.spec.SLHDSAParameterSpec;
+import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.jcajce.util.SpecUtil;
 import org.bouncycastle.util.Strings;
 
@@ -123,17 +124,22 @@ public class SLHDSAKeyPairGeneratorSpi
     {
         if (!initialised)
         {
-            if (this.getAlgorithm().startsWith("HASH"))
+            // drawn from the DEFAULT DRBG, as initialize() without a SecureRandom does
+            try
             {
-                param = new SLHDSAKeyGenerationParameters(random, SLHDSAParameters.sha2_128f_with_sha256);
+                if (this.getAlgorithm().startsWith("HASH"))
+                {
+                    initialize(SLHDSAParameterSpec.slh_dsa_sha2_128f_with_sha256);
+                }
+                else
+                {
+                    initialize(SLHDSAParameterSpec.slh_dsa_sha2_128f);
+                }
             }
-            else
+            catch (InvalidAlgorithmParameterException e)
             {
-                param = new SLHDSAKeyGenerationParameters(random, SLHDSAParameters.sha2_128f);
+                throw Exceptions.illegalStateException("unable to apply the default parameter set", e);
             }
-
-            engine.init(param);
-            initialised = true;
         }
 
         AsymmetricCipherKeyPair pair = engine.generateKeyPair();

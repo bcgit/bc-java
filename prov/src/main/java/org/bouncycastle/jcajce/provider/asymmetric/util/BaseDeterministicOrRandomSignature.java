@@ -21,6 +21,14 @@ import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jcajce.util.SpecUtil;
 import org.bouncycastle.util.Exceptions;
 
+/**
+ * Base class for the ML-DSA and SLH-DSA signature services. An {@code initSign(PrivateKey)}
+ * with no SecureRandom signs in the deterministic form of FIPS 204 / FIPS 205; an
+ * {@code initSign(PrivateKey, SecureRandom)} signs in the "hedged" form, drawing the per-signature
+ * randomness from the SecureRandom given. FIPS 204 sec. 3.4 and FIPS 205 sec. 9.2 make the hedged
+ * form the default and note that it is the one to use where side-channel and fault attacks are a
+ * concern, so pass a SecureRandom unless a deterministic signature is specifically wanted.
+ */
 public abstract class BaseDeterministicOrRandomSignature
     extends SignatureSpi
 {

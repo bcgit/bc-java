@@ -4,7 +4,10 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
+import org.bouncycastle.crypto.CryptoServicePurpose;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.KeyGenerationParameters;
+import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 import org.bouncycastle.crypto.params.SLHDSAKeyGenerationParameters;
 import org.bouncycastle.crypto.params.SLHDSAParameters;
 import org.bouncycastle.crypto.signers.slhdsa.SLHDSAEngine;
@@ -19,6 +22,9 @@ public class SLHDSAKeyPairGenerator
     {
         random = param.getRandom();
         parameters = ((SLHDSAKeyGenerationParameters)param).getParameters();
+
+        CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties("SLH-DSAKeyGen",
+            parameters.getClassicalSecurityStrength(), parameters, CryptoServicePurpose.KEYGEN));
     }
 
     public AsymmetricCipherKeyPair internalGenerateKeyPair(byte[] skSeed, byte[] skPrf, byte[] pkSeed)

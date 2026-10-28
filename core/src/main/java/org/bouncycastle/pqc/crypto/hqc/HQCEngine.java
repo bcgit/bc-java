@@ -2,6 +2,7 @@ package org.bouncycastle.pqc.crypto.hqc;
 
 import java.security.SecureRandom;
 
+import org.bouncycastle.crypto.CryptoServicePurpose;
 import org.bouncycastle.crypto.digests.SHA3Digest;
 import org.bouncycastle.math.raw.Nat;
 import org.bouncycastle.util.Arrays;
@@ -434,7 +435,7 @@ class HQCEngine
     private static void hashGJ(byte[] output, int bitLength, byte[] hashEkKem, byte[] mOrSigma, int mOrSigmaOff,
         int mOrSigmaLen, byte[] saltOrCt, int saltOrCtOff, int saltOrCtOffLen, byte domain)
     {
-        SHA3Digest digest = new SHA3Digest(bitLength);
+        SHA3Digest digest = new SHA3Digest(bitLength, CryptoServicePurpose.INTERNAL);
         digest.update(hashEkKem, 0, hashEkKem.length);
         digest.update(mOrSigma, mOrSigmaOff, mOrSigmaLen);
         digest.update(saltOrCt, saltOrCtOff, saltOrCtOffLen);
@@ -444,7 +445,7 @@ class HQCEngine
 
     private static void hashHI(byte[] output, int bitLength, byte[] in, int inLen, byte domain)
     {
-        SHA3Digest digest = new SHA3Digest(bitLength);
+        SHA3Digest digest = new SHA3Digest(bitLength, CryptoServicePurpose.INTERNAL);
         digest.update(in, 0, inLen);
         digest.update(domain);
         digest.doFinal(output, 0);

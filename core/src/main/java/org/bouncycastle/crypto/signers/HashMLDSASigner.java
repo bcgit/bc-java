@@ -7,6 +7,7 @@ import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoException;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.Signer;
@@ -111,6 +112,9 @@ public class HashMLDSASigner
 
             engine.initVerify(rho, t1, true, ctx);
         }
+
+        CryptoServicesRegistrar.checkConstraints(Utils.getDefaultProperties("ML-DSA",
+            parameters.getClassicalSecurityStrength(), forSigning ? (CipherParameters)privKey : (CipherParameters)pubKey, forSigning));
 
         initDigest(parameters);
     }
