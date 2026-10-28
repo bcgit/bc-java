@@ -1,6 +1,7 @@
 package org.bouncycastle.crypto.util;
 
 import java.io.IOException;
+import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import java.math.BigInteger;
 
 import org.bouncycastle.asn1.ASN1Encodable;
@@ -34,6 +35,7 @@ import org.bouncycastle.crypto.params.SLHDSAPublicKeyParameters;
 import org.bouncycastle.crypto.params.X25519PublicKeyParameters;
 import org.bouncycastle.crypto.params.X448PublicKeyParameters;
 import org.bouncycastle.internal.asn1.edec.EdECObjectIdentifiers;
+import org.bouncycastle.pqc.crypto.xwing.XWingPublicKeyParameters;
 import org.bouncycastle.util.Arrays;
 
 /**
@@ -98,6 +100,12 @@ public class SubjectPublicKeyInfoFactory
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.frodoKemOidLookup(params.getParameters()));
 
             return new SubjectPublicKeyInfo(algorithmIdentifier, params.getEncoded());
+        }
+        else if (publicKey instanceof XWingPublicKeyParameters)
+        {
+            XWingPublicKeyParameters params = (XWingPublicKeyParameters)publicKey;
+
+            return new SubjectPublicKeyInfo(new AlgorithmIdentifier(BCObjectIdentifiers.xwing), params.getEncoded());
         }
         else if (publicKey instanceof SLHDSAPublicKeyParameters)
         {

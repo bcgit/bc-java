@@ -996,4 +996,12 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier smaugt_mode3 = pqc_kem_smaugt.branch("2");
     ASN1ObjectIdentifier smaugt_mode5 = pqc_kem_smaugt.branch("3");
     ASN1ObjectIdentifier smaugt_modet = pqc_kem_smaugt.branch("4");
+
+    /**
+     * X-Wing, the X25519 and ML-KEM-768 hybrid KEM of draft-connolly-cfrg-xwing-kem-11. The value is the
+     * draft's id-XWing (Section 5.8), assigned in its authors' private enterprise arc rather than in the
+     * Bouncy Castle arc: { 1 3 6 1 4 1 62253 25722 }. The subjectPublicKey is the raw 1216-byte
+     * encapsulation key and the privateKey OCTET STRING the raw 32-byte seed, both with parameters absent.
+     */
+    ASN1ObjectIdentifier xwing = new ASN1ObjectIdentifier("1.3.6.1.4.1.62253.25722").intern();
 }

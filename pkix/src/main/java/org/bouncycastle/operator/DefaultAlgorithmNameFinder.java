@@ -111,6 +111,8 @@ public class DefaultAlgorithmNameFinder
         addAlgorithm(IANAObjectIdentifiers.id_MLKEM1024_X448_SHA3_256, "MLKEM1024-X448-SHA3-256");
         addAlgorithm(IANAObjectIdentifiers.id_MLKEM1024_ECDH_P521_SHA3_256, "MLKEM1024-ECDH-P521-SHA3-256");
 
+        addAlgorithm(BCObjectIdentifiers.xwing, "X-Wing");
+
         addAlgorithm(NISTObjectIdentifiers.id_slh_dsa_sha2_128s, "SLH-DSA-SHA2-128S");
         addAlgorithm(NISTObjectIdentifiers.id_slh_dsa_sha2_128f, "SLH-DSA-SHA2-128F");
         addAlgorithm(NISTObjectIdentifiers.id_slh_dsa_sha2_192s, "SLH-DSA-SHA2-192S");

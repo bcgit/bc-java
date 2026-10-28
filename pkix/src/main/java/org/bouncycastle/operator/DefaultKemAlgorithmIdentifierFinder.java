@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.iana.IANAObjectIdentifiers;
 import org.bouncycastle.asn1.iso.ISOIECObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
@@ -46,6 +47,9 @@ public class DefaultKemAlgorithmIdentifierFinder
         addAlgorithm("ML-KEM-512", NISTObjectIdentifiers.id_alg_ml_kem_512);
         addAlgorithm("ML-KEM-768", NISTObjectIdentifiers.id_alg_ml_kem_768);
         addAlgorithm("ML-KEM-1024", NISTObjectIdentifiers.id_alg_ml_kem_1024);
+
+        // X-Wing (draft-connolly-cfrg-xwing-kem), the draft's own id-XWing
+        addAlgorithm("X-Wing", BCObjectIdentifiers.xwing);
 
         // Composite ML-KEM (draft-ietf-lamps-pq-composite-kem), IANA assignments
         addAlgorithm("MLKEM768-RSA2048-SHA3-256", IANAObjectIdentifiers.id_MLKEM768_RSA2048_SHA3_256);

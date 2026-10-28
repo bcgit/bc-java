@@ -14,6 +14,7 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.cryptopro.ECGOST3410NamedCurves;
@@ -77,6 +78,7 @@ import org.bouncycastle.internal.asn1.rosstandart.RosstandartObjectIdentifiers;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
+import org.bouncycastle.pqc.crypto.xwing.XWingPublicKeyParameters;
 import org.bouncycastle.util.Arrays;
 
 /**
@@ -131,6 +133,8 @@ public class PublicKeyFactory
         converters.put(ISOIECObjectIdentifiers.frodokem1344_aes, new FrodoKEMConverter());
         converters.put(ISOIECObjectIdentifiers.efrodokem976_aes, new FrodoKEMConverter());
         converters.put(ISOIECObjectIdentifiers.efrodokem1344_aes, new FrodoKEMConverter());
+
+        converters.put(BCObjectIdentifiers.xwing, new XWingConverter());
 
         converters.put(PKCSObjectIdentifiers.id_alg_hss_lms_hashsig, new LMSConverter());
 
@@ -761,6 +765,19 @@ public class PublicKeyFactory
 
             // we're a raw encoding
             return new FrodoKEMPublicKeyParameters(parameters, keyInfo.getPublicKeyData().getOctets());
+        }
+    }
+
+    /**
+     * draft-connolly-cfrg-xwing-kem 5.8.1: the subjectPublicKey holds the raw encapsulation key, parameters absent.
+     */
+    private static class XWingConverter
+        extends PublicKeyFactory.SubjectPublicKeyInfoConverter
+    {
+        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
+            throws IOException
+        {
+            return new XWingPublicKeyParameters(keyInfo.getPublicKeyData().getOctets());
         }
     }
 

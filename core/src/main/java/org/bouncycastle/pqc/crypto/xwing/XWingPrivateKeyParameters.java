@@ -45,6 +45,16 @@ public class XWingPrivateKeyParameters
         return Arrays.clone(seed);
     }
 
+    /**
+     * Return the encapsulation key this decapsulation key expands to.
+     *
+     * @return the matching public key parameters.
+     */
+    public XWingPublicKeyParameters getPublicKeyParameters()
+    {
+        return new XWingPublicKeyParameters(kyberPublicKey, xdhPublicKey);
+    }
+
     MLKEMPrivateKeyParameters getKyberPrivateKey()
     {
         return kyberPrivateKey;

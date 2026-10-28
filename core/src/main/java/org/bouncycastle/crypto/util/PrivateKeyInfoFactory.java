@@ -1,6 +1,7 @@
 package org.bouncycastle.crypto.util;
 
 import java.io.IOException;
+import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import java.math.BigInteger;
 
 import org.bouncycastle.asn1.ASN1Encodable;
@@ -43,6 +44,7 @@ import org.bouncycastle.crypto.params.X448PrivateKeyParameters;
 import org.bouncycastle.internal.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.math.ec.FixedPointCombMultiplier;
+import org.bouncycastle.pqc.crypto.xwing.XWingPrivateKeyParameters;
 
 /**
  * Factory to create ASN.1 private key info objects from lightweight private keys.
@@ -208,6 +210,13 @@ public class PrivateKeyInfoFactory
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.frodoKemOidLookup(params.getParameters()));
 
             return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(params.getEncoded()), attributes);
+        }
+        else if (privateKey instanceof XWingPrivateKeyParameters)
+        {
+            XWingPrivateKeyParameters params = (XWingPrivateKeyParameters)privateKey;
+
+            // draft-connolly-cfrg-xwing-kem 5.8.2: the raw seed, publicKey absent
+            return new PrivateKeyInfo(new AlgorithmIdentifier(BCObjectIdentifiers.xwing), params.getSeed(), attributes);
         }
         else if (privateKey instanceof SLHDSAPrivateKeyParameters)
         {

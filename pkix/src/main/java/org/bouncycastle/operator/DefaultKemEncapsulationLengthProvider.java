@@ -64,6 +64,8 @@ public class DefaultKemEncapsulationLengthProvider
         kemEncapsulationLengths.put(ISOIECObjectIdentifiers.efrodokem976_aes, Integers.valueOf(15744));
         kemEncapsulationLengths.put(ISOIECObjectIdentifiers.efrodokem1344_shake, Integers.valueOf(21632));
         kemEncapsulationLengths.put(ISOIECObjectIdentifiers.efrodokem1344_aes, Integers.valueOf(21632));
+        // X-Wing (draft-connolly-cfrg-xwing-kem): ML-KEM-768 ciphertext || X25519 ephemeral key
+        kemEncapsulationLengths.put(BCObjectIdentifiers.xwing, Integers.valueOf(1120));
 
         // Composite ML-KEM (draft-ietf-lamps-pq-composite-kem); ciphertext = ML-KEM ct || traditional ct
         kemEncapsulationLengths.put(IANAObjectIdentifiers.id_MLKEM768_RSA2048_SHA3_256, Integers.valueOf(1344));

@@ -11,6 +11,7 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.cryptopro.ECGOST3410NamedCurves;
 import org.bouncycastle.asn1.cryptopro.GOST3410PublicKeyAlgParameters;
@@ -63,6 +64,7 @@ import org.bouncycastle.internal.asn1.oiw.ElGamalParameter;
 import org.bouncycastle.internal.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.internal.asn1.rosstandart.RosstandartObjectIdentifiers;
 import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
+import org.bouncycastle.pqc.crypto.xwing.XWingPrivateKeyParameters;
 import org.bouncycastle.util.Arrays;
 
 /**
@@ -298,6 +300,17 @@ public class PrivateKeyFactory
             FrodoKEMParameters fParams = Utils.frodoKemParamsLookup(algOID);
 
             return new FrodoKEMPrivateKeyParameters(fParams, keyEnc);
+        }
+        else if (algOID.equals(BCObjectIdentifiers.xwing))
+        {
+            // draft-connolly-cfrg-xwing-kem 5.8.2: the privateKey OCTET STRING holds the raw 32-byte seed
+            byte[] seed = keyInfo.getPrivateKey().getOctets();
+            if (seed.length != 32)
+            {
+                throw new IOException("X-Wing private key must be a 32 byte seed");
+            }
+
+            return new XWingPrivateKeyParameters(seed);
         }
         else if (algOID.equals(NISTObjectIdentifiers.id_alg_ml_kem_512) ||
             algOID.equals(NISTObjectIdentifiers.id_alg_ml_kem_768) ||

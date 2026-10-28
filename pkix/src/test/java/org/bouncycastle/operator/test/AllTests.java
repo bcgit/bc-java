@@ -113,7 +113,7 @@ public class AllTests
         throws Exception
     {
         String[] names = new String[]{
-            "ML-KEM-512", "ML-KEM-768", "ML-KEM-1024",
+            "ML-KEM-512", "ML-KEM-768", "ML-KEM-1024", "X-Wing",
             "MLKEM768-RSA2048-SHA3-256", "MLKEM768-RSA3072-SHA3-256", "MLKEM768-RSA4096-SHA3-256",
             "MLKEM768-X25519-SHA3-256", "MLKEM768-ECDH-P256-SHA3-256", "MLKEM768-ECDH-P384-SHA3-256",
             "MLKEM768-ECDH-brainpoolP256r1-SHA3-256", "MLKEM1024-RSA3072-SHA3-256", "MLKEM1024-ECDH-P384-SHA3-256",
@@ -408,6 +408,7 @@ public class AllTests
             new Object[]{IANAObjectIdentifiers.id_MLKEM1024_ECDH_brainpoolP384r1_SHA3_256, "MLKEM1024-ECDH-brainpoolP384r1-SHA3-256"},
             new Object[]{IANAObjectIdentifiers.id_MLKEM1024_X448_SHA3_256, "MLKEM1024-X448-SHA3-256"},
             new Object[]{IANAObjectIdentifiers.id_MLKEM1024_ECDH_P521_SHA3_256, "MLKEM1024-ECDH-P521-SHA3-256"},
+            new Object[]{BCObjectIdentifiers.xwing, "X-Wing"},
             new Object[]{NISTObjectIdentifiers.id_slh_dsa_sha2_128s, "SLH-DSA-SHA2-128S"},
             new Object[]{NISTObjectIdentifiers.id_slh_dsa_sha2_128f, "SLH-DSA-SHA2-128F"},
             new Object[]{NISTObjectIdentifiers.id_slh_dsa_sha2_192s, "SLH-DSA-SHA2-192S"},
