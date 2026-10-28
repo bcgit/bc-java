@@ -43,28 +43,29 @@ public class ExternalSecretKeyPacketTest
             "-----END PGP PRIVATE KEY BLOCK-----\n";
     /**
      * The same TSK as {@link #V4_TSK}, but with external secret keys for both the primary and subkey.
+     * The keys are marked with "best-effort".
      *
      * @see <a href="https://www.ietf.org/archive/id/draft-dkg-openpgp-external-secrets-03.html#name-as-an-external-secret-key">
      *     External Key Test Vector</a>
      */
-    private static final String V4_TSK_AS_EXTERNAL_KEY = "-----BEGIN PGP PRIVATE KEY BLOCK-----\n" +
+    private static final String V4_TSK_AS_EXTERNAL_KEY_BEST_EFFORT = "-----BEGIN PGP PRIVATE KEY BLOCK-----\n" +
             "\n" +
-            "xTQEZgWtcxYJKwYBBAHaRw8BAQdAlLK6UPQsVHR2ETk1SwVIG3tBmpiEtikYYlCy\n" +
-            "1TIiqzb8zR08aGFyZHdhcmUtc2VjcmV0QGV4YW1wbGUub3JnPsKNBBAWCAA1AhkB\n" +
-            "BQJmBa1zAhsDCAsJCAcKDQwLBRUKCQgLAhYCFiEEXlP8Tur0WZR+f0I33/i9Uh4O\n" +
-            "HEkACgkQ3/i9Uh4OHEnryAD8CzH2ajJvASp46ApfI4pLPY57rjBX++d/2FQPRyqG\n" +
-            "HJUA/RLsNNgxiFYmK5cjtQe2/DgzWQ7R6PxPC6oa3XM7xPcCxzkEZgWtcxIKKwYB\n" +
-            "BAGXVQEFAQEHQE1YXOKeaklwG01Yab4xopP9wbu1E+pCrP1xQpiFZW5KAwEIB/zC\n" +
-            "eAQYFggAIAUCZgWtcwIbDBYhBF5T/E7q9FmUfn9CN9/4vVIeDhxJAAoJEN/4vVIe\n" +
-            "DhxJVTgA/1WaFrKdP3AgL0Ffdooc5XXbjQsj0uHo6FZSHRI4pchMAQCyJnKQ3RvW\n" +
-            "/0gm41JCqImyg2fxWG4hY0N5Q7Rc6PyzDQ==\n" +
-            "=3w/O\n" +
+            "xTUEZgWtcxYJKwYBBAHaRw8BAQdAlLK6UPQsVHR2ETk1SwVIG3tBmpiEtikYYlCy\n" +
+            "1TIiqzb8AM0dPGhhcmR3YXJlLXNlY3JldEBleGFtcGxlLm9yZz7CjQQQFggANQIZ\n" +
+            "AQUCZgWtcwIbAwgLCQgHCg0MCwUVCgkICwIWAhYhBF5T/E7q9FmUfn9CN9/4vVIe\n" +
+            "DhxJAAoJEN/4vVIeDhxJ68gA/Asx9moybwEqeOgKXyOKSz2Oe64wV/vnf9hUD0cq\n" +
+            "hhyVAP0S7DTYMYhWJiuXI7UHtvw4M1kO0ej8TwuqGt1zO8T3Asc6BGYFrXMSCisG\n" +
+            "AQQBl1UBBQEBB0BNWFzinmpJcBtNWGm+MaKT/cG7tRPqQqz9cUKYhWVuSgMBCAf8\n" +
+            "AMJ4BBgWCAAgBQJmBa1zAhsMFiEEXlP8Tur0WZR+f0I33/i9Uh4OHEkACgkQ3/i9\n" +
+            "Uh4OHElVOAD/VZoWsp0/cCAvQV92ihzldduNCyPS4ejoVlIdEjilyEwBALImcpDd\n" +
+            "G9b/SCbjUkKoibKDZ/FYbiFjQ3lDtFzo/LMN\n" +
+            "=Qy7n\n" +
             "-----END PGP PRIVATE KEY BLOCK-----\n";
 
     /**
      * Example version 6 transferable secret key test vector, the v6 companion of {@link #V4_TSK}. It
      * includes unencrypted private key material for both its primary and subkey, and is the key
-     * {@link #V6_TSK_AS_EXTERNAL_KEY} is derived from.
+     * {@link #V6_TSK_AS_EXTERNAL_KEY_BEST_EFFORT} is derived from.
      * <p>
      * Added to the draft in revision 03 alongside the v6 external key.
      *
@@ -84,7 +85,7 @@ public class ExternalSecretKeyPacketTest
             "2azJAAAAAAQBIKbpGG2dWTX8j+VjFM21J0hqWlEg+bdiojWnKfA5AQpWUWtnNwDE\n" +
             "M0g12vYxoWM8Y81W+bHBw805I8kWVkXU6vFOi+HWvv/ira7ofJu16NnoUkhclkUr\n" +
             "k0mXubZvyl4GBg==\n" +
-            "-----END PGP PRIVATE KEY BLOCK-----";
+            "-----END PGP PRIVATE KEY BLOCK-----\n";
 
     /**
      * RFC 9580's locked (S2K + AEAD protected) sample version 6 secret key. Unrelated to the draft's
@@ -119,19 +120,52 @@ public class ExternalSecretKeyPacketTest
      * @see <a href="https://www.ietf.org/archive/id/draft-dkg-openpgp-external-secrets-03.html#name-as-an-external-secret-key">
      *     External Key Test Vector</a>
      */
-    private static final String V6_TSK_AS_EXTERNAL_KEY = "-----BEGIN PGP PRIVATE KEY BLOCK-----\n" +
+    private static final String V6_TSK_AS_EXTERNAL_KEY_BEST_EFFORT = "-----BEGIN PGP PRIVATE KEY BLOCK-----\n" +
+            "\n" +
+            "xS0GY4d/4xsAAAAg+U2nu0jWCmHlZ3BqZYfQMxmZu52JGggkLq2EVD34laP8AQDC\n" +
+            "sQYfGwoAAABCBYJjh3/jAwsJBwUVCg4IDAIWAAKbAwIeCSIhBssYbE8GCaaX5NUt\n" +
+            "+mxyKwwfHifBilZwj2Ul7Ce62azJBScJAgcCAAAAAK0oIBA+LX0ifsDm185Ecds2\n" +
+            "v8lwgyU2kCcUmKfvBXbAf6rhRYWzuQOwEn7E/aLwIwRaLsdry0+VcallHhSu4RN6\n" +
+            "HWaEQsiPlR4zxP/TP7mhfVEe7XWPxtnMUMtf15OyA51YBMctBmOHf+MZAAAAIIaT\n" +
+            "JINn+eUBXbki+PSAld2nhJh/LVmFsS+60WyvXkQ1/AEAwpsGGBsKAAAALAWCY4d/\n" +
+            "4wKbDCIhBssYbE8GCaaX5NUt+mxyKwwfHifBilZwj2Ul7Ce62azJAAAAAAQBIKbp\n" +
+            "GG2dWTX8j+VjFM21J0hqWlEg+bdiojWnKfA5AQpWUWtnNwDEM0g12vYxoWM8Y81W\n" +
+            "+bHBw805I8kWVkXU6vFOi+HWvv/ira7ofJu16NnoUkhclkUrk0mXubZvyl4GBg==\n" +
+            "-----END PGP PRIVATE KEY BLOCK-----\n";
+
+    /**
+     * TSK with the primary key being marked as external and unavailable,
+     * while the subkey is marked as external and "best effort".
+     */
+    private static final String V6_TSK_AS_EXTERNAL_KEY_UNAVAILABLE = "-----BEGIN PGP PRIVATE KEY BLOCK-----\n" +
             "\n" +
             "xSwGY4d/4xsAAAAg+U2nu0jWCmHlZ3BqZYfQMxmZu52JGggkLq2EVD34laP8AMKx\n" +
             "Bh8bCgAAAEIFgmOHf+MDCwkHBRUKDggMAhYAApsDAh4JIiEGyxhsTwYJppfk1S36\n" +
             "bHIrDB8eJ8GKVnCPZSXsJ7rZrMkFJwkCBwIAAAAArSggED4tfSJ+wObXzkRx2za/\n" +
             "yXCDJTaQJxSYp+8FdsB/quFFhbO5A7ASfsT9ovAjBFoux2vLT5VxqWUeFK7hE3od\n" +
-            "ZoRCyI+VHjPE/9M/uaF9UR7tdY/G2cxQy1/Xk7IDnVgExywGY4d/4xkAAAAghpMk\n" +
-            "g2f55QFduSL49ICV3aeEmH8tWYWxL7rRbK9eRDX8AMKbBhgbCgAAACwFgmOHf+MC\n" +
-            "mwwiIQbLGGxPBgmml+TVLfpscisMHx4nwYpWcI9lJewnutmsyQAAAAAEASCm6Rht\n" +
-            "nVk1/I/lYxTNtSdIalpRIPm3YqI1pynwOQEKVlFrZzcAxDNINdr2MaFjPGPNVvmx\n" +
-            "wcPNOSPJFlZF1OrxTovh1r7/4q2u6HybtejZ6FJIXJZFK5NJl7m2b8peBgY=\n" +
-            "=1veT\n" +
-            "-----END PGP PRIVATE KEY BLOCK-----";
+            "ZoRCyI+VHjPE/9M/uaF9UR7tdY/G2cxQy1/Xk7IDnVgExy0GY4d/4xkAAAAghpMk\n" +
+            "g2f55QFduSL49ICV3aeEmH8tWYWxL7rRbK9eRDX8AQDCmwYYGwoAAAAsBYJjh3/j\n" +
+            "ApsMIiEGyxhsTwYJppfk1S36bHIrDB8eJ8GKVnCPZSXsJ7rZrMkAAAAABAEgpukY\n" +
+            "bZ1ZNfyP5WMUzbUnSGpaUSD5t2KiNacp8DkBClZRa2c3AMQzSDXa9jGhYzxjzVb5\n" +
+            "scHDzTkjyRZWRdTq8U6L4da+/+Ktruh8m7Xo2ehSSFyWRSuTSZe5tm/KXgYG\n" +
+            "-----END PGP PRIVATE KEY BLOCK-----\n";
+
+    private static final String V6_TSK_AS_EXTERNAL_KEY_EXPERIMENTAL = "-----BEGIN PGP PRIVATE KEY BLOCK-----\n" +
+            "\n" +
+            "xTUGY4d/4xsAAAAg+U2nu0jWCmHlZ3BqZYfQMxmZu52JGggkLq2EVD34laP8CWAx\n" +
+            "QVkmU1iXk8KxBh8bCgAAAEIFgmOHf+MDCwkHBRUKDggMAhYAApsDAh4JIiEGyxhs\n" +
+            "TwYJppfk1S36bHIrDB8eJ8GKVnCPZSXsJ7rZrMkFJwkCBwIAAAAArSggED4tfSJ+\n" +
+            "wObXzkRx2za/yXCDJTaQJxSYp+8FdsB/quFFhbO5A7ASfsT9ovAjBFoux2vLT5Vx\n" +
+            "qWUeFK7hE3odZoRCyI+VHjPE/9M/uaF9UR7tdY/G2cxQy1/Xk7IDnVgExy0GY4d/\n" +
+            "4xkAAAAghpMkg2f55QFduSL49ICV3aeEmH8tWYWxL7rRbK9eRDX8AQDCmwYYGwoA\n" +
+            "AAAsBYJjh3/jApsMIiEGyxhsTwYJppfk1S36bHIrDB8eJ8GKVnCPZSXsJ7rZrMkA\n" +
+            "AAAABAEgpukYbZ1ZNfyP5WMUzbUnSGpaUSD5t2KiNacp8DkBClZRa2c3AMQzSDXa\n" +
+            "9jGhYzxjzVb5scHDzTkjyRZWRdTq8U6L4da+/+Ktruh8m7Xo2ehSSFyWRSuTSZe5\n" +
+            "tm/KXgYG\n" +
+            "=bL1D\n" +
+            "-----END PGP PRIVATE KEY BLOCK-----\n";
+    byte[] bestEffort = new byte[]{0};
+    byte[] unavailable = new byte[0];
 
     @Override
     public String getName()
@@ -152,10 +186,10 @@ public class ExternalSecretKeyPacketTest
 
     /**
      * Strip the private key material from every secret key packet of the given key, replacing it with a
-     * best-effort (empty locator hint) external secret key packet, and return the resulting raw packet
-     * stream.
+     * best-effort hinted external secret key packet, and return the resulting raw packet stream.
+     * If <pre>primaryKeyBestEffort</pre> is false, the primary key is instead marked as unavailable.
      */
-    private byte[] toExternalKey(String asciiArmoredKey)
+    private byte[] toExternalKey(String asciiArmoredKey, byte[] primaryKeyHint, byte[] subkeyHint)
             throws IOException
     {
         ByteArrayInputStream bIn = new ByteArrayInputStream(Strings.toUTF8ByteArray(asciiArmoredKey));
@@ -171,12 +205,12 @@ public class ExternalSecretKeyPacketTest
             if (p instanceof SecretSubkeyPacket)
             {
                 SecretSubkeyPacket s = (SecretSubkeyPacket)p;
-                p = new SecretSubkeyPacket((PublicSubkeyPacket)s.getPublicKeyPacket(), new byte[0]);
+                p = new SecretSubkeyPacket((PublicSubkeyPacket)s.getPublicKeyPacket(), subkeyHint);
             }
             else if (p instanceof SecretKeyPacket)
             {
                 SecretKeyPacket s = (SecretKeyPacket)p;
-                p = new SecretKeyPacket(s.getPublicKeyPacket(), new byte[0]);
+                p = new SecretKeyPacket(s.getPublicKeyPacket(), primaryKeyHint);
             }
             p.encode(pOut);
         }
@@ -211,15 +245,18 @@ public class ExternalSecretKeyPacketTest
             throws IOException
     {
         isEncodingEqual("v4 TSK converted to an external secret key must match the draft test vector",
-                dearmor(V4_TSK_AS_EXTERNAL_KEY), toExternalKey(V4_TSK));
-        isEncodingEqual("v6 TSK converted to an external secret key must match the draft test vector",
-                dearmor(V6_TSK_AS_EXTERNAL_KEY), toExternalKey(V6_TSK));
+                dearmor(V4_TSK_AS_EXTERNAL_KEY_BEST_EFFORT), toExternalKey(V4_TSK, bestEffort, bestEffort));
+        isEncodingEqual("v6 TSK converted to a 'best effort' external secret key must match the draft test vector",
+                dearmor(V6_TSK_AS_EXTERNAL_KEY_BEST_EFFORT), toExternalKey(V6_TSK, bestEffort, bestEffort));
+        isEncodingEqual("v6 TSK converted to an 'unavailable' external secret key must match the draft test vector",
+                dearmor(V6_TSK_AS_EXTERNAL_KEY_UNAVAILABLE), toExternalKey(V6_TSK, unavailable, bestEffort));
+
     }
 
     private void testV4PacketProperties()
             throws IOException
     {
-        ByteArrayInputStream bIn = new ByteArrayInputStream(V4_TSK_AS_EXTERNAL_KEY.getBytes());
+        ByteArrayInputStream bIn = new ByteArrayInputStream(V4_TSK_AS_EXTERNAL_KEY_BEST_EFFORT.getBytes());
         ArmoredInputStream aIn = ArmoredInputStream.builder()
                 .build(bIn);
         BCPGInputStream pIn = new BCPGInputStream(aIn);
@@ -231,8 +268,8 @@ public class ExternalSecretKeyPacketTest
 
         isTrue(primaryKey.getS2KUsage() == SecretKeyPacket.USAGE_EXTERNAL);
         isTrue(subkey.getS2KUsage() == SecretKeyPacket.USAGE_EXTERNAL);
-        isEncodingEqual(new byte[0], primaryKey.getExternalKeyLocatorHint());
-        isEncodingEqual(new byte[0], subkey.getExternalKeyLocatorHint());
+        isEncodingEqual(bestEffort, primaryKey.getExternalKeyLocatorHint());
+        isEncodingEqual(bestEffort, subkey.getExternalKeyLocatorHint());
 
         // Test with locator hint
         byte[] hint = new byte[] {(byte) 0xca, (byte) 0xfe, (byte) 0xba, (byte) 0xbe};
@@ -252,7 +289,7 @@ public class ExternalSecretKeyPacketTest
     private void testV6PacketProperties()
             throws IOException
     {
-        ByteArrayInputStream bIn = new ByteArrayInputStream(V6_TSK_AS_EXTERNAL_KEY.getBytes());
+        ByteArrayInputStream bIn = new ByteArrayInputStream(V6_TSK_AS_EXTERNAL_KEY_BEST_EFFORT.getBytes());
         ArmoredInputStream aIn = ArmoredInputStream.builder()
                 .build(bIn);
         BCPGInputStream pIn = new BCPGInputStream(aIn);
@@ -263,8 +300,8 @@ public class ExternalSecretKeyPacketTest
 
         isTrue(primaryKey.getS2KUsage() == SecretKeyPacket.USAGE_EXTERNAL);
         isTrue(subkey.getS2KUsage() == SecretKeyPacket.USAGE_EXTERNAL);
-        isEncodingEqual(new byte[0], primaryKey.getExternalKeyLocatorHint());
-        isEncodingEqual(new byte[0], subkey.getExternalKeyLocatorHint());
+        isEncodingEqual(bestEffort, primaryKey.getExternalKeyLocatorHint());
+        isEncodingEqual(bestEffort, subkey.getExternalKeyLocatorHint());
 
         // Test with locator hint
         byte[] hint = new byte[] {(byte) 0xca, (byte) 0xfe, (byte) 0xba, (byte) 0xbe};
@@ -328,10 +365,12 @@ public class ExternalSecretKeyPacketTest
             throws IOException
     {
         assertPacketsCanBeRoundTripped(V4_TSK);
-        assertPacketsCanBeRoundTripped(V4_TSK_AS_EXTERNAL_KEY);
+        assertPacketsCanBeRoundTripped(V4_TSK_AS_EXTERNAL_KEY_BEST_EFFORT);
         assertPacketsCanBeRoundTripped(V6_TSK);
         assertPacketsCanBeRoundTripped(V6_LOCKED_TSK);
-        assertPacketsCanBeRoundTripped(V6_TSK_AS_EXTERNAL_KEY);
+        assertPacketsCanBeRoundTripped(V6_TSK_AS_EXTERNAL_KEY_BEST_EFFORT);
+        assertPacketsCanBeRoundTripped(V6_TSK_AS_EXTERNAL_KEY_UNAVAILABLE);
+        assertPacketsCanBeRoundTripped(V6_TSK_AS_EXTERNAL_KEY_EXPERIMENTAL);
     }
 
     private void assertPacketsCanBeRoundTripped(String asciiArmoredPackets)

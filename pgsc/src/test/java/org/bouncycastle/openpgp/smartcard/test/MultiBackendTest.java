@@ -8,7 +8,7 @@ import org.bouncycastle.openpgp.api.OpenPGPSignature;
 import org.bouncycastle.openpgp.api.bc.BcOpenPGPApi;
 import org.bouncycastle.openpgp.api.bc.BcOpenPGPImplementation;
 import org.bouncycastle.openpgp.smartcard.OpenPGPSmartCardManager;
-import org.bouncycastle.openpgp.smartcard.ExternalOpenPGPKeyUtils;
+import org.bouncycastle.openpgp.api.ExternalOpenPGPKeyUtils;
 import org.bouncycastle.openpgp.smartcard.simulator.SimulatorOpenPGPSmartCard;
 import org.bouncycastle.openpgp.smartcard.simulator.SimulatorOpenPGPSmartCardBackend;
 import org.bouncycastle.util.io.Streams;

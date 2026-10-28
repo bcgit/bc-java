@@ -473,6 +473,36 @@ public class PGPSecretKey
     }
 
     /**
+     * Return true if the key is marked as external and unavailable.
+     *
+     * @see <a href="https://datatracker.ietf.org/doc/draft-ietf-openpgp-external-secrets/">
+     *     OpenPGP External Secret Keys</a>
+     * @return secret key is unavailable
+     */
+    public boolean isExternalKeyUnavailable()
+    {
+        return isExternalKey() && secret.getExternalKeyLocatorHint().length == 0;
+    }
+
+    /**
+     * Return true if the key is marked as external and the locator strategy is set to "best effort".
+     * When the locator hint is set to "best effort", or when a consuming implementation does not understand a given
+     * locator hint, or when a given locator hint fails to point to a useful device, a consuming implementation SHOULD
+     * use a "best effort" strategy to identify an external subsystem that provides access ta a secret key that matches
+     * the corresponding public key material.
+     *
+     * @see <a href="https://datatracker.ietf.org/doc/draft-ietf-openpgp-external-secrets/">
+     *     OpenPGP External Secret Keys</a>
+     * @return secret key locator is "best effort"
+     */
+    public boolean isExternalKeyBestEffort()
+    {
+        return isExternalKey() &&
+                secret.getExternalKeyLocatorHint().length >= 1 &&
+                secret.getExternalKeyLocatorHint()[0] == SecretKeyPacket.EXTERNAL_KEY_BEST_EFFORT;
+    }
+
+    /**
      * If this key is externally backed ({@link #isExternalKey()}), return its locator hint, otherwise
      * return null. An empty hint means "best effort" - the caller should search whatever subsystems it
      * knows about; a non-empty hint has the hint type in its first octet.

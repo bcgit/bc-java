@@ -80,6 +80,13 @@ public class SecretKeyPacket
     public static final int USAGE_EXTERNAL = 0xfc;
 
     /**
+     * When the locator hint is set to "best effort", no additional data may be stored in the locator hint field.
+     * A consuming implementation MUST ignore any additional data in the locator hint field, and perform a
+     * "best effort" search.
+     */
+    public static final int EXTERNAL_KEY_BEST_EFFORT = 0;
+
+    /**
      * Maximum accepted length of the external key locator hint of a version 4 secret key packet, whose
      * hint is not length-prefixed and so is bounded only by the packet. Mirrors
      * {@link SignaturePacket#MAX_SUBPACKET_LEN}.
@@ -537,8 +544,11 @@ public class SecretKeyPacket
 
     /**
      * If the key has external private key material (s2k usage {@link #USAGE_EXTERNAL}), return the locator hint data.
-     * If the locator hint is empty, it is referred to as "best effort".
-     * Otherwise, the first octet indicates the type of locator hint.
+     * If the locator hint is empty, then the secret key is considered "unavailable".
+     * Marking secret key material as "external and unavailable" is appropriate in setups where the secret key
+     * material of a component key is entirely unavailable in a user's current operating environment.
+     * Otherwise, the first octet indicates the type of locator hint according to the OpenPGP External Secret Key
+     * Locator Hints registry.
      *
      * @see <a href="https://datatracker.ietf.org/doc/draft-ietf-openpgp-external-secrets#name-openpgp-external-secret-key">
      *     OpenPGP External Secret Key Locator Hint type registry</a>

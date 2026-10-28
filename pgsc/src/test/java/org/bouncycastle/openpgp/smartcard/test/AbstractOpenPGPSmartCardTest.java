@@ -10,7 +10,7 @@ import org.bouncycastle.openpgp.api.bc.BcOpenPGPApi;
 import org.bouncycastle.openpgp.api.bc.BcOpenPGPImplementation;
 import org.bouncycastle.openpgp.smartcard.OpenPGPSmartCard;
 import org.bouncycastle.openpgp.smartcard.OpenPGPSmartCardManager;
-import org.bouncycastle.openpgp.smartcard.ExternalOpenPGPKeyUtils;
+import org.bouncycastle.openpgp.api.ExternalOpenPGPKeyUtils;
 import org.bouncycastle.openpgp.smartcard.card.CardException;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.test.SimpleTest;
