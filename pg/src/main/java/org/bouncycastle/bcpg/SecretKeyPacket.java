@@ -70,11 +70,11 @@ public class SecretKeyPacket
      * S2K-usage octet indicating that the secret key material is stored externally, e.g. on a hardware device.
      * The draft specification is an alternative to GnuPGs proprietary {@link S2K#GNU_DUMMY_S2K} mechanism.
      * <p>
-     * NOTE: this code point is <em>provisional</em>. draft-dkg-openpgp-external-secrets-03 sec. 2 records
+     * NOTE: this code point is <em>provisional</em>. draft-ietf-openpgp-external-secrets-00 sec. 2 records
      * it as "TBD (252?)" and IANA has not yet assigned it, so the value here tracks the draft's suggestion
      * and is subject to change if a different octet is allocated. Do not rely on it for long-term storage.
      *
-     * @see <a href="https://datatracker.ietf.org/doc/draft-dkg-openpgp-external-secrets/">
+     * @see <a href="https://datatracker.ietf.org/doc/draft-ietf-openpgp-external-secrets/">
      *     OpenPGP External Secret Keys</a>
      */
     public static final int USAGE_EXTERNAL = 0xfc;
@@ -292,7 +292,7 @@ public class SecretKeyPacket
     /**
      * Create a SecretKeyPacket representing an external secret key ({@link #USAGE_EXTERNAL}).
      *
-     * @see <a href="https://datatracker.ietf.org/doc/draft-dkg-openpgp-external-secrets/">
+     * @see <a href="https://datatracker.ietf.org/doc/draft-ietf-openpgp-external-secrets/">
      *     OpenPGP External Secret Keys</a>
      * @param pubKeyPacket public key packet
      * @param locatorHint optional external key locator hint
@@ -308,7 +308,7 @@ public class SecretKeyPacket
     /**
      * Create a SecretKeyPacket representing an external secret key ({@link #USAGE_EXTERNAL}).
      *
-     * @see <a href="https://datatracker.ietf.org/doc/draft-dkg-openpgp-external-secrets/">
+     * @see <a href="https://datatracker.ietf.org/doc/draft-ietf-openpgp-external-secrets/">
      *     OpenPGP External Secret Keys</a>
      * @param keyTag key packet type
      * @param pubKeyPacket public key packet
@@ -540,7 +540,7 @@ public class SecretKeyPacket
      * If the locator hint is empty, it is referred to as "best effort".
      * Otherwise, the first octet indicates the type of locator hint.
      *
-     * @see <a href="https://www.ietf.org/archive/id/draft-dkg-openpgp-external-secrets-03.html#name-openpgp-external-secret-key">
+     * @see <a href="https://datatracker.ietf.org/doc/draft-ietf-openpgp-external-secrets#name-openpgp-external-secret-key">
      *     OpenPGP External Secret Key Locator Hint type registry</a>
      * @return locator hints data
      */

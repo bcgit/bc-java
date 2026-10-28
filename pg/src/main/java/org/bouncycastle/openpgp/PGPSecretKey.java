@@ -463,7 +463,7 @@ public class PGPSecretKey
      * Return true if this key's private key material is held externally - typically on a hardware token -
      * rather than in the packet, i.e. if its S2K usage is {@link SecretKeyPacket#USAGE_EXTERNAL}.
      *
-     * @see <a href="https://datatracker.ietf.org/doc/draft-dkg-openpgp-external-secrets/">
+     * @see <a href="https://datatracker.ietf.org/doc/draft-ietf-openpgp-external-secrets/">
      *     OpenPGP External Secret Keys</a>
      * @return true if the key is externally backed
      */
@@ -478,6 +478,8 @@ public class PGPSecretKey
      * knows about; a non-empty hint has the hint type in its first octet.
      *
      * @see SecretKeyPacket#getExternalKeyLocatorHint()
+     * @see <a href="https://datatracker.ietf.org/doc/draft-ietf-openpgp-external-secrets/">
+     *     OpenPGP External Secret Keys</a>
      * @return locator hint data, or null if the key is not externally backed
      */
     public byte[] getExternalKeyLocatorHint()
