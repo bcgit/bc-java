@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 
 import junit.framework.TestCase;
+import org.bouncycastle.crypto.digests.Blake2bDigest;
 import org.bouncycastle.crypto.digests.Blake2bpDigest;
 import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
@@ -183,5 +184,15 @@ public class Blake2bpDigestTest
         }
         digest.doFinal(hash, 0);
         assertTrue("BLAKE2bp mismatch on single byte update", Arrays.areEqual(expected, hash));
+    }
+
+    public void testGetByteLength()
+    {
+        // BLAKE2bp distributes the 128 byte blocks of BLAKE2b to its 4 leaves
+        // (BLAKE2 specification, section 2.11)
+        Blake2bpDigest digest = new Blake2bpDigest(null);
+
+        assertEquals(128, digest.getByteLength());
+        assertEquals(new Blake2bDigest().getByteLength(), digest.getByteLength());
     }
 }
