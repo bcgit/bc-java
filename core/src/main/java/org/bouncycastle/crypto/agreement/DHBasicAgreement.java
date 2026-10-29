@@ -48,7 +48,7 @@ public class DHBasicAgreement
 
         if (!(kParam instanceof DHPrivateKeyParameters))
         {
-            throw new IllegalArgumentException("DHEngine expects DHPrivateKeyParameters");
+            throw new IllegalArgumentException("DHBasicAgreement expects DHPrivateKeyParameters");
         }
 
         this.key = (DHPrivateKeyParameters)kParam;
