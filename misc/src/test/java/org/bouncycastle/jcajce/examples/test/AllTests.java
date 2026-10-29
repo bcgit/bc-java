@@ -6,6 +6,7 @@ import java.io.PrintStream;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import org.bouncycastle.jcajce.examples.HybridMLKEMECDHExample;
 import org.bouncycastle.jcajce.examples.SM9CipherExample;
 import org.bouncycastle.jcajce.examples.SM9EncKeyEncodingExample;
 import org.bouncycastle.jcajce.examples.SM9Example;
@@ -37,6 +38,13 @@ public class AllTests
     public void tearDown()
     {
         System.setOut(originalOut);
+    }
+
+    public void testHybridMLKEMECDHExample()
+        throws Exception
+    {
+        HybridMLKEMECDHExample.main(new String[0]);
+        assertPrinted("keys match for both orders; the orders differ from each other.");
     }
 
     public void testSM9CipherExample()
