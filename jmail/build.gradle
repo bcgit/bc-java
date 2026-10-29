@@ -1,6 +1,6 @@
 
 plugins {
-  id "biz.aQute.bnd.builder" version "7.1.0"
+  id "biz.aQute.bnd.builder" version "7.4.0"
 }
 
 jar.archiveBaseName = "bcjmail-$vmrange"
@@ -31,12 +31,12 @@ dependencies {
     implementation project(':util')
     implementation project(':pkix')
 
-    implementation group: 'jakarta.mail', name: 'jakarta.mail-api', version: '2.0.1'
-    implementation group: 'jakarta.activation', name: 'jakarta.activation-api', version: '2.0.0'
+    implementation group: 'jakarta.mail', name: 'jakarta.mail-api', version: '2.1.5'
+    implementation group: 'jakarta.activation', name: 'jakarta.activation-api', version: '2.1.4'
     // the same two as modules ("jakarta.mail", "jakarta.activation") for the module-info.java compile,
     // resolved by coordinate so the path follows a version bump rather than naming a file under libs/.
-    jakartaModulePath group: 'jakarta.mail', name: 'jakarta.mail-api', version: '2.0.1'
-    jakartaModulePath group: 'jakarta.activation', name: 'jakarta.activation-api', version: '2.0.0'
+    jakartaModulePath group: 'jakarta.mail', name: 'jakarta.mail-api', version: '2.1.5'
+    jakartaModulePath group: 'jakarta.activation', name: 'jakarta.activation-api', version: '2.1.4'
 
     java9Implementation files(sourceSets.main.output.classesDirs) {
         builtBy compileJava
