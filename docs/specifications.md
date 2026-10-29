@@ -685,6 +685,21 @@ If used for key wrapping via the Cipher class, you will also need to make use of
 
 If access to the shared secret is required, KeyGenerator implementations can also be used in conjuction with the KEMGenerateSpec and the KEMExtractSpec which return the shared secret directly.
 
+#### Key Derivation Functions (javax.crypto.KDF)
+
+On Java 25 and later the provider registers the `javax.crypto.KDF` services below. Each takes the parameter spec named, from **org.bouncycastle.jcajce.spec**, and derives either raw bytes (`deriveData`) or a `SecretKey` (`deriveKey`).
+
+| Name                                                                                   | ParameterSpec Class         | Notes                                                                                                      |
+|----------------------------------------------------------------------------------------|-----------------------------|------------------------------------------------------------------------------------------------------------|
+| HKDF-SHA256, HKDF-SHA384, HKDF-SHA512                                                  | javax.crypto.spec.HKDFParameterSpec, HKDFParameterSpec | RFC 5869; extract, expand and extract-then-expand                                              |
+| PBKDF2, PBKDF2WITHHMACSHA256, ... PBKDF2WITHHMACSHA3-512, PBKDF2WITHASCII              | javax.crypto.spec.PBEKeySpec | PKCS#5 scheme 2                                                                                           |
+| SCRYPT                                                                                 | ScryptParameterSpec         | RFC 7914                                                                                                   |
+| ONESTEP-SHA256, ONESTEP-SHA384, ONESTEP-SHA512                                         | OneStepKDFParameterSpec     | SP 800-56C Rev. 2 Section 4.1 one-step KDF, hash option (the Concatenation KDF / X9.44 KDF3)               |
+| ONESTEP-HMACSHA256, ONESTEP-HMACSHA384, ONESTEP-HMACSHA512                             | OneStepKDFParameterSpec     | SP 800-56C Rev. 2 Section 4.1 one-step KDF, HMAC option; salt optional                                     |
+| ONESTEP-KMAC128, ONESTEP-KMAC256                                                       | OneStepKDFParameterSpec     | SP 800-56C Rev. 2 Section 4.1 one-step KDF, KMAC option; salt optional                                     |
+| KBKDF-COUNTER-HMACSHA256/384/512, KBKDF-FEEDBACK-HMACSHA256/384/512, KBKDF-PIPELINE-HMACSHA256/384/512 | KBKDFParameterSpec | SP 800-108 Rev. 1 counter, feedback and double-pipeline iteration modes with an HMAC PRF         |
+| KMAC128-KDF, KMAC256-KDF (also by the id-Kmac128 / id-Kmac256 OIDs)                    | KMACKDFParameterSpec        | The KMAC KDF of RFC 9629 / RFC 9935 KEMRecipientInfo: KMAC(secret, context, L, customization)              |
+
 #### ECIES
 
 An implementation of ECIES (stream mode) as described in IEEE P 1363a. This now based more formally on Victor Shoup's paper and should be compatible with the implementation in Crypto++ (version 6 onwards).

@@ -19,6 +19,9 @@ public class AllTests25
         suite.addTestSuite(HKDFTest.class);
         suite.addTestSuite(PBKDF2Test.class);
         suite.addTestSuite(ScryptTest.class);
+        suite.addTestSuite(OneStepKDFTest.class);
+        suite.addTestSuite(KBKDFTest.class);
+        suite.addTestSuite(KMACKDFTest.class);
         return suite;
     }
 }

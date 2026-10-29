@@ -206,6 +206,7 @@ public class RegressionTest
             new SparkleTest(),
             new ISAPTest(),
             new ConcatenationKDFTest(),
+            new OneStepKDFTest(),
             new GiftCofbTest(),
             new RomulusTest(),
             new SAKKEKEMSTest(),

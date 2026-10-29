@@ -173,7 +173,7 @@ public final class BouncyCastleProvider extends Provider
     private static final String KDF_PACKAGE = "org.bouncycastle.jcajce.provider.kdf.";
     private static final String[] KDFS =
         {
-            "HKDF", "PBKDF2", "SCRYPT"
+            "HKDF", "PBKDF2", "SCRYPT", "ONESTEP", "KBKDF", "KMAC"
         };
 
 
