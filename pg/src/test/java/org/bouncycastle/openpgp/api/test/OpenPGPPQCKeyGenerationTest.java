@@ -22,7 +22,6 @@ import org.bouncycastle.openpgp.api.MessageEncryptionMechanism;
 import org.bouncycastle.openpgp.api.OpenPGPApi;
 import org.bouncycastle.openpgp.api.OpenPGPCertificate;
 import org.bouncycastle.openpgp.api.OpenPGPKey;
-import org.bouncycastle.openpgp.api.OpenPGPKeyGenerator;
 import org.bouncycastle.openpgp.api.OpenPGPMessageGenerator;
 import org.bouncycastle.openpgp.api.OpenPGPMessageInputStream;
 import org.bouncycastle.openpgp.api.OpenPGPMessageProcessor;

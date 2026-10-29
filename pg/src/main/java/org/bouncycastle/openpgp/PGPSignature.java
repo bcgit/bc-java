@@ -547,19 +547,19 @@ public class PGPSignature
             throw new PGPException("PGPSignature not initialised - call init().");
         }
 
+        if (PGPSignature.SUBKEY_BINDING != sigType
+            && PGPSignature.PRIMARYKEY_BINDING != sigType
+            && PGPSignature.SUBKEY_REVOCATION != sigType)
+        {
+            throw new PGPException("signature is not a key binding signature.");
+        }
+
         if (sigType == SUBKEY_BINDING && PublicKeyUtils.isPQCAlgorithm(pubKey.getAlgorithm())
             && isForbiddenPQCBindingHash(getHashAlgorithm()))
         {
             // RFC 9980 sec. 7.2: a subkey binding signature over a PQ(/T) key MUST NOT be made with MD5, SHA-1 or
             // RIPEMD-160 and a receiving implementation MUST treat such a signature as invalid
             return false;
-        }
-
-        if (PGPSignature.SUBKEY_BINDING != sigType
-            && PGPSignature.PRIMARYKEY_BINDING != sigType
-            && PGPSignature.SUBKEY_REVOCATION != sigType)
-        {
-            throw new PGPException("signature is not a key binding signature.");
         }
 
         return doVerifyCertification(masterKey, pubKey);

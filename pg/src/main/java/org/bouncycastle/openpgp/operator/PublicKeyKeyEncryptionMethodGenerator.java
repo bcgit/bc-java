@@ -87,6 +87,16 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
     }
 
     /**
+     * Return the public key algorithm of the recipient key this generator encrypts the session key for.
+     *
+     * @return {@link PublicKeyAlgorithmTags public key algorithm id} of the recipient key
+     */
+    public int getPublicKeyAlgorithm()
+    {
+        return pubKey.getAlgorithm();
+    }
+
+    /**
      * Controls whether to obfuscate the size of ECDH session keys using extra padding where necessary.
      * <p>
      * The default behaviour can be configured using the system property

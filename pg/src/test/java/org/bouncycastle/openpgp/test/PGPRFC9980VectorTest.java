@@ -21,6 +21,7 @@ import org.bouncycastle.openpgp.PGPCompressedData;
 import org.bouncycastle.openpgp.PGPEncryptedDataList;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPKeyPair;
+import org.bouncycastle.openpgp.PGPKeyRing;
 import org.bouncycastle.openpgp.PGPLiteralData;
 import org.bouncycastle.openpgp.PGPObjectFactory;
 import org.bouncycastle.openpgp.PGPOnePassSignature;
@@ -47,7 +48,6 @@ import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
-import org.bouncycastle.util.io.Streams;
 import org.bouncycastle.util.test.SimpleTest;
 
 /**
@@ -264,11 +264,10 @@ public class PGPRFC9980VectorTest
         }
     }
 
-    private void verifySelfSignatures(Sample sample, Object keyRing, PGPContentVerifierBuilderProvider verifierProvider)
+    private void verifySelfSignatures(Sample sample, PGPKeyRing keyRing, PGPContentVerifierBuilderProvider verifierProvider)
         throws PGPException
     {
-        Iterator<PGPPublicKey> pubKeys = keyRing instanceof PGPSecretKeyRing
-            ? ((PGPSecretKeyRing)keyRing).getPublicKeys() : ((PGPPublicKeyRing)keyRing).getPublicKeys();
+        Iterator<PGPPublicKey> pubKeys = keyRing.getPublicKeys();
         PGPPublicKey primaryKey = (PGPPublicKey)pubKeys.next();
         int sigs = 0;
 

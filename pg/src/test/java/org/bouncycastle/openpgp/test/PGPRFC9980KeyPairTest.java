@@ -112,6 +112,7 @@ public class PGPRFC9980KeyPairTest
         testV4SignaturesAreRejected(creationTime);
         testCorruptedCompositeSignature(creationTime);
         testV3PKESKRequiresAES(creationTime);
+        testSEDIsRejected(creationTime);
         testTamperedV3SymmetricAlgorithmOctet(creationTime);
         testTruncatedPKESKIsRejected(creationTime);
         testBindingSignatureHashRule(creationTime);
@@ -659,6 +660,47 @@ public class PGPRFC9980KeyPairTest
                 }
             }
         }
+    }
+
+    /**
+     * RFC 9980 sec. 4.3.1: the obsolete Symmetrically Encrypted Data packet MUST NOT be used with the composite
+     * schemes; integrity-protected (v1 SEIPD) and AEAD (v2 SEIPD) messages are the only options.
+     */
+    private void testSEDIsRejected(Date creationTime)
+        throws Exception
+    {
+        PGPKeyPair v4 = bcGenerator(PublicKeyPacket.VERSION_4, creationTime).generateMLKEM768X25519KeyPair();
+        PGPKeyPair v6 = bcGenerator(PublicKeyPacket.VERSION_6, creationTime).generateMLKEM1024X448KeyPair();
+        PGPKeyPair[] pairs = { v4, v6 };
+        for (int p = 0; p != pairs.length; p++)
+        {
+            for (int impl = 0; impl != 2; impl++)
+            {
+                boolean bc = impl == 0;
+                PGPDataEncryptorBuilder builder = bc
+                    ? (PGPDataEncryptorBuilder)new BcPGPDataEncryptorBuilder(SymmetricKeyAlgorithmTags.AES_256).setWithIntegrityPacket(false)
+                    : new JcePGPDataEncryptorBuilder(SymmetricKeyAlgorithmTags.AES_256).setProvider("BC").setWithIntegrityPacket(false);
+                PGPEncryptedDataGenerator encGen = new PGPEncryptedDataGenerator(builder);
+                encGen.addMethod(bc ? (PublicKeyKeyEncryptionMethodGenerator)new BcPublicKeyKeyEncryptionMethodGenerator(pairs[p].getPublicKey())
+                    : new JcePublicKeyKeyEncryptionMethodGenerator(pairs[p].getPublicKey()).setProvider("BC"));
+                try
+                {
+                    encGen.open(new ByteArrayOutputStream(), new byte[4096]);
+                    fail("SED with an ML-KEM composite recipient MUST be rejected");
+                }
+                catch (PGPException e)
+                {
+                    isTrue(e.getMessage(), e.getMessage().indexOf("Symmetrically Encrypted Data packet") >= 0);
+                }
+            }
+        }
+
+        // a traditional recipient is unaffected
+        PGPKeyPair x25519 = bcGenerator(PublicKeyPacket.VERSION_4, creationTime).generateX25519KeyPair();
+        PGPEncryptedDataGenerator encGen = new PGPEncryptedDataGenerator(
+            new BcPGPDataEncryptorBuilder(SymmetricKeyAlgorithmTags.AES_256).setWithIntegrityPacket(false));
+        encGen.addMethod(new BcPublicKeyKeyEncryptionMethodGenerator(x25519.getPublicKey()));
+        encGen.open(new ByteArrayOutputStream(), new byte[4096]).close();
     }
 
     /**

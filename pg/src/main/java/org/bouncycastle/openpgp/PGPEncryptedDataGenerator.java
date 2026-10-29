@@ -11,6 +11,7 @@ import org.bouncycastle.bcpg.BCPGHeaderObject;
 import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.PacketTags;
+import org.bouncycastle.bcpg.PublicKeyUtils;
 import org.bouncycastle.bcpg.SymmetricEncDataPacket;
 import org.bouncycastle.bcpg.SymmetricEncIntegrityPacket;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
@@ -20,6 +21,7 @@ import org.bouncycastle.openpgp.operator.PGPDataEncryptor;
 import org.bouncycastle.openpgp.operator.PGPDataEncryptorBuilder;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
 import org.bouncycastle.openpgp.operator.PGPKeyEncryptionMethodGenerator;
+import org.bouncycastle.openpgp.operator.PublicKeyKeyEncryptionMethodGenerator;
 import org.bouncycastle.util.io.TeeOutputStream;
 
 /**
@@ -217,6 +219,21 @@ public class PGPEncryptedDataGenerator
             : dataEncryptorBuilder.build(sessionKey);
         digestCalc = dataEncryptor.getIntegrityCalculator();
         BCPGHeaderObject encOut;
+        if (digestCalc == null && !(dataEncryptor instanceof PGPAEADDataEncryptor))
+        {
+            // RFC 9980 sec. 4.3.1: the obsolete Symmetrically Encrypted Data packet MUST NOT carry data
+            // protected with a PQ(/T) encryption algorithm
+            for (int i = 0; i < methods.size(); i++)
+            {
+                PGPKeyEncryptionMethodGenerator method = (PGPKeyEncryptionMethodGenerator)methods.get(i);
+                if (method instanceof PublicKeyKeyEncryptionMethodGenerator
+                    && PublicKeyUtils.isPQCAlgorithm(((PublicKeyKeyEncryptionMethodGenerator)method).getPublicKeyAlgorithm()))
+                {
+                    throw new PGPException("public key algorithm " + ((PublicKeyKeyEncryptionMethodGenerator)method).getPublicKeyAlgorithm()
+                        + " MUST NOT be used with the Symmetrically Encrypted Data packet (RFC 9980 sec. 4.3.1) - enable integrity protection or AEAD");
+                }
+            }
+        }
         for (int i = 0; i < methods.size(); i++)
         {
             PGPKeyEncryptionMethodGenerator method = (PGPKeyEncryptionMethodGenerator)methods.get(i);
