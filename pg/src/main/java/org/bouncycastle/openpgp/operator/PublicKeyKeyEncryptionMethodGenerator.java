@@ -7,6 +7,7 @@ import org.bouncycastle.bcpg.ContainedPacket;
 import org.bouncycastle.bcpg.MPInteger;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyEncSessionPacket;
+import org.bouncycastle.bcpg.PublicKeyUtils;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.util.Properties;
@@ -51,6 +52,15 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
         case PGPPublicKey.X25519:
         case PGPPublicKey.X448:
             break;
+        case PublicKeyAlgorithmTags.MLKEM768_X25519:
+        case PublicKeyAlgorithmTags.MLKEM1024_X448:
+            // RFC 9980 sec. 4.3.2: ML-KEM-768+X25519 with v4 or v6 keys, ML-KEM-1024+X448 with v6 keys only
+            if (!PublicKeyUtils.isAlgorithmAllowedForKeyVersion(pubKey.getAlgorithm(), pubKey.getVersion()))
+            {
+                throw new IllegalArgumentException("public key algorithm " + pubKey.getAlgorithm()
+                    + " MUST NOT be used with a version " + pubKey.getVersion() + " key (RFC 9980 sec. 4.3.2).");
+            }
+            break;
         case PGPPublicKey.RSA_SIGN:
             throw new IllegalArgumentException("Can't use an RSA_SIGN key for encryption.");
         case PGPPublicKey.DSA:
@@ -61,6 +71,13 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
         case PublicKeyAlgorithmTags.Ed25519:
         case PublicKeyAlgorithmTags.EDDSA_LEGACY:
             throw new IllegalArgumentException("Can't use EdDSA for encryption.");
+        case PublicKeyAlgorithmTags.MLDSA65_Ed25519:
+        case PublicKeyAlgorithmTags.MLDSA87_Ed448:
+            throw new IllegalArgumentException("Can't use ML-DSA + EdDSA for encryption.");
+        case PublicKeyAlgorithmTags.SLHDSA_SHAKE_128s:
+        case PublicKeyAlgorithmTags.SLHDSA_SHAKE_128f:
+        case PublicKeyAlgorithmTags.SLHDSA_SHAKE_256s:
+            throw new IllegalArgumentException("Can't use SLH-DSA for encryption.");
         default:
             throw new IllegalArgumentException("unknown asymmetric algorithm: " + pubKey.getAlgorithm());
         }
@@ -141,6 +158,8 @@ public abstract class PublicKeyKeyEncryptionMethodGenerator
         case PGPPublicKey.ECDH:
         case PGPPublicKey.X448:
         case PGPPublicKey.X25519:
+        case PublicKeyAlgorithmTags.MLKEM768_X25519:
+        case PublicKeyAlgorithmTags.MLKEM1024_X448:
             data = new byte[1][];
 
             data[0] = encryptedSessionInfo;

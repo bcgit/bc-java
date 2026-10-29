@@ -159,8 +159,11 @@ public class PGPPublicKeyEncryptedData
 
     private boolean containsChecksum(int algorithm)
     {
+        // X25519, X448 and the RFC 9980 ML-KEM composites wrap the bare session key, without checksum
         return algorithm != PublicKeyAlgorithmTags.X25519 &&
-                algorithm != PublicKeyAlgorithmTags.X448;
+                algorithm != PublicKeyAlgorithmTags.X448 &&
+                algorithm != PublicKeyAlgorithmTags.MLKEM768_X25519 &&
+                algorithm != PublicKeyAlgorithmTags.MLKEM1024_X448;
     }
 
     /**

@@ -218,6 +218,198 @@ public class OpenPGPKeyGenerator
     }
 
     /**
+     * Generate a post-quantum/traditional OpenPGP key as RFC 9980 specifies it: an ML-DSA-65 + Ed25519
+     * certify-only primary key, a dedicated ML-DSA-65 + Ed25519 sign-only subkey and a dedicated
+     * ML-KEM-768 + X25519 encryption-only subkey - the two algorithms a conformant implementation MUST support.
+     * The key will optionally carry the provided user-id. Only version 6 keys may use these algorithms.
+     *
+     * @param userId nullable user id
+     * @return OpenPGP key
+     * @throws PGPException if the key cannot be generated, in particular for a key version other than 6
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc9980.html#section-2.1">
+     *     RFC 9980 - Algorithm Specifications</a>
+     */
+    public WithPrimaryKey mlDsa65Ed25519MlKem768X25519Key(String userId)
+        throws PGPException
+    {
+        return pqcKey(userId,
+            new KeyPairGeneratorCallback()
+            {
+                public PGPKeyPair generateFrom(PGPKeyPairGenerator generator)
+                    throws PGPException
+                {
+                    return generator.generateMLDSA65Ed25519KeyPair();
+                }
+            },
+            new KeyPairGeneratorCallback()
+            {
+                public PGPKeyPair generateFrom(PGPKeyPairGenerator generator)
+                    throws PGPException
+                {
+                    return generator.generateMLKEM768X25519KeyPair();
+                }
+            });
+    }
+
+    /**
+     * Generate a post-quantum/traditional OpenPGP key at the higher RFC 9980 security level: an
+     * ML-DSA-87 + Ed448 certify-only primary key, a dedicated ML-DSA-87 + Ed448 sign-only subkey and a
+     * dedicated ML-KEM-1024 + X448 encryption-only subkey.
+     * The key will optionally carry the provided user-id. Only version 6 keys may use these algorithms.
+     *
+     * @param userId nullable user id
+     * @return OpenPGP key
+     * @throws PGPException if the key cannot be generated, in particular for a key version other than 6
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc9980.html#section-2.1">
+     *     RFC 9980 - Algorithm Specifications</a>
+     */
+    public WithPrimaryKey mlDsa87Ed448MlKem1024X448Key(String userId)
+        throws PGPException
+    {
+        return pqcKey(userId,
+            new KeyPairGeneratorCallback()
+            {
+                public PGPKeyPair generateFrom(PGPKeyPairGenerator generator)
+                    throws PGPException
+                {
+                    return generator.generateMLDSA87Ed448KeyPair();
+                }
+            },
+            new KeyPairGeneratorCallback()
+            {
+                public PGPKeyPair generateFrom(PGPKeyPairGenerator generator)
+                    throws PGPException
+                {
+                    return generator.generateMLKEM1024X448KeyPair();
+                }
+            });
+    }
+
+    /**
+     * Generate a post-quantum OpenPGP key with hash-based signatures: an SLH-DSA-SHAKE-128s certify-only
+     * primary key, a dedicated SLH-DSA-SHAKE-128s sign-only subkey and a dedicated ML-KEM-768 + X25519
+     * encryption-only subkey (the combination of RFC 9980 Appendix A.5). SLH-DSA signing is slow and its
+     * signatures are large; see RFC 9980 sec. 10.1 before choosing it.
+     * The key will optionally carry the provided user-id. Only version 6 keys may use these algorithms.
+     *
+     * @param userId nullable user id
+     * @return OpenPGP key
+     * @throws PGPException if the key cannot be generated, in particular for a key version other than 6
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc9980.html#section-10.1">
+     *     RFC 9980 - Performance Considerations for SLH-DSA</a>
+     */
+    public WithPrimaryKey slhDsaShake128sMlKem768X25519Key(String userId)
+        throws PGPException
+    {
+        return pqcKey(userId,
+            new KeyPairGeneratorCallback()
+            {
+                public PGPKeyPair generateFrom(PGPKeyPairGenerator generator)
+                    throws PGPException
+                {
+                    return generator.generateSLHDSAShake128sKeyPair();
+                }
+            },
+            new KeyPairGeneratorCallback()
+            {
+                public PGPKeyPair generateFrom(PGPKeyPairGenerator generator)
+                    throws PGPException
+                {
+                    return generator.generateMLKEM768X25519KeyPair();
+                }
+            });
+    }
+
+    /**
+     * Generate a post-quantum OpenPGP key with fast hash-based signatures: an SLH-DSA-SHAKE-128f certify-only
+     * primary key, a dedicated SLH-DSA-SHAKE-128f sign-only subkey and a dedicated ML-KEM-768 + X25519
+     * encryption-only subkey (the combination of RFC 9980 Appendix A.6). The "f" parameter set signs faster
+     * than "s" at the price of a larger signature; see RFC 9980 sec. 10.1.
+     * The key will optionally carry the provided user-id. Only version 6 keys may use these algorithms.
+     *
+     * @param userId nullable user id
+     * @return OpenPGP key
+     * @throws PGPException if the key cannot be generated, in particular for a key version other than 6
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc9980.html#section-10.1">
+     *     RFC 9980 - Performance Considerations for SLH-DSA</a>
+     */
+    public WithPrimaryKey slhDsaShake128fMlKem768X25519Key(String userId)
+        throws PGPException
+    {
+        return pqcKey(userId,
+            new KeyPairGeneratorCallback()
+            {
+                public PGPKeyPair generateFrom(PGPKeyPairGenerator generator)
+                    throws PGPException
+                {
+                    return generator.generateSLHDSAShake128fKeyPair();
+                }
+            },
+            new KeyPairGeneratorCallback()
+            {
+                public PGPKeyPair generateFrom(PGPKeyPairGenerator generator)
+                    throws PGPException
+                {
+                    return generator.generateMLKEM768X25519KeyPair();
+                }
+            });
+    }
+
+    /**
+     * Generate a post-quantum OpenPGP key with hash-based signatures at the higher security level: an
+     * SLH-DSA-SHAKE-256s certify-only primary key, a dedicated SLH-DSA-SHAKE-256s sign-only subkey and a
+     * dedicated ML-KEM-1024 + X448 encryption-only subkey (the combination of RFC 9980 Appendix A.7).
+     * The key will optionally carry the provided user-id. Only version 6 keys may use these algorithms.
+     *
+     * @param userId nullable user id
+     * @return OpenPGP key
+     * @throws PGPException if the key cannot be generated, in particular for a key version other than 6
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc9980.html#section-10.1">
+     *     RFC 9980 - Performance Considerations for SLH-DSA</a>
+     */
+    public WithPrimaryKey slhDsaShake256sMlKem1024X448Key(String userId)
+        throws PGPException
+    {
+        return pqcKey(userId,
+            new KeyPairGeneratorCallback()
+            {
+                public PGPKeyPair generateFrom(PGPKeyPairGenerator generator)
+                    throws PGPException
+                {
+                    return generator.generateSLHDSAShake256sKeyPair();
+                }
+            },
+            new KeyPairGeneratorCallback()
+            {
+                public PGPKeyPair generateFrom(PGPKeyPairGenerator generator)
+                    throws PGPException
+                {
+                    return generator.generateMLKEM1024X448KeyPair();
+                }
+            });
+    }
+
+    /**
+     * Build an RFC 9980 key: the signing algorithm for the certify-only primary key and the sign-only subkey,
+     * the KEM algorithm for the encryption-only subkey. RFC 9980 sec. 7.1 wants a certificate containing a
+     * PQ(/T) key to list AES-256 explicitly, which the default preferences of this generator already do.
+     */
+    private WithPrimaryKey pqcKey(String userId, KeyPairGeneratorCallback signingKey, KeyPairGeneratorCallback encryptionKey)
+        throws PGPException
+    {
+        WithPrimaryKey builder = withPrimaryKey(signingKey)
+            .addSigningSubkey(signingKey)
+            .addEncryptionSubkey(encryptionKey);
+
+        if (userId != null)
+        {
+            builder.addUserId(userId);
+        }
+
+        return builder;
+    }
+
+    /**
      * Generate a sign-only OpenPGP key.
      * The key consists of a single, user-id-less primary key, which is capable of signing and certifying.
      * See {@link PGPKeyPairGenerator#generatePrimaryKey()} for the key type.

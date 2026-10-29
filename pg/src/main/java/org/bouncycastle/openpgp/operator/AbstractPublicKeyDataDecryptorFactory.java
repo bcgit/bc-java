@@ -58,6 +58,11 @@ public abstract class AbstractPublicKeyDataDecryptorFactory
                     // X448 does not encrypt SK algorithm
                     return Arrays.prepend(decryptedSessionData,
                             pkesk.getEncSessionKey()[0][X448PublicBCPGKey.LENGTH + 1]);
+                case PublicKeyAlgorithmTags.MLKEM768_X25519:
+                case PublicKeyAlgorithmTags.MLKEM1024_X448:
+                    // the ML-KEM composites (RFC 9980 sec. 4.3.1) do not encrypt the SK algorithm either
+                    return Arrays.prepend(decryptedSessionData,
+                            pkesk.getEncSessionKey()[0][RFC9980Utils.getV3SymmetricAlgorithmOffset(pkesk.getAlgorithm())]);
                 default:
                     // others already prepended session key algorithm to session key
                     return decryptedSessionData;

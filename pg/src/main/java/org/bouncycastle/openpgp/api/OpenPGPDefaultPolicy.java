@@ -81,6 +81,15 @@ public class OpenPGPDefaultPolicy
         acceptPublicKeyAlgorithm(PublicKeyAlgorithmTags.X448);
         acceptPublicKeyAlgorithm(PublicKeyAlgorithmTags.Ed25519);
         acceptPublicKeyAlgorithm(PublicKeyAlgorithmTags.Ed448);
+
+        // RFC 9980 PQ(/T) algorithms
+        acceptPublicKeyAlgorithm(PublicKeyAlgorithmTags.MLDSA65_Ed25519);
+        acceptPublicKeyAlgorithm(PublicKeyAlgorithmTags.MLDSA87_Ed448);
+        acceptPublicKeyAlgorithm(PublicKeyAlgorithmTags.SLHDSA_SHAKE_128s);
+        acceptPublicKeyAlgorithm(PublicKeyAlgorithmTags.SLHDSA_SHAKE_128f);
+        acceptPublicKeyAlgorithm(PublicKeyAlgorithmTags.SLHDSA_SHAKE_256s);
+        acceptPublicKeyAlgorithm(PublicKeyAlgorithmTags.MLKEM768_X25519);
+        acceptPublicKeyAlgorithm(PublicKeyAlgorithmTags.MLKEM1024_X448);
     }
 
     public OpenPGPDefaultPolicy rejectHashAlgorithm(int hashAlgorithmId)

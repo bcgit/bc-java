@@ -89,6 +89,11 @@ import org.bouncycastle.openpgp.operator.PGPKeyConverter;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 
+/**
+ * NOTE: jdk1.4 overlay. The RFC 9980 PQ(/T) algorithms (ML-DSA + EdDSA, SLH-DSA, ML-KEM + ECDH composites)
+ * added to the base class in 1.87 are not ported here: a Java 1.4 JCA has no provider for them, so the
+ * JCA operators cannot handle those keys on this platform - the lightweight (Bc) operators can.
+ */
 public class JcaPGPKeyConverter
     extends PGPKeyConverter
 {

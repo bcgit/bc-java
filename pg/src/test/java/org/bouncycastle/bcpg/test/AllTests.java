@@ -34,6 +34,7 @@ public class AllTests
             new UserAttributeSubpacketInputStreamTest(),
             new UnknownPublicKeyPacketTest(),
             new UnknownSecretKeyPacketTest(),
+            new PQCKeyPacketTest(),
         };
 
         for (int i = 0; i != tests.length; i++)

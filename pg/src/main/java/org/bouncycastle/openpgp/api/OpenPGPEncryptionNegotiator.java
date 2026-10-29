@@ -7,6 +7,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.bouncycastle.bcpg.AEADAlgorithmTags;
+import org.bouncycastle.bcpg.PublicKeyUtils;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.bcpg.sig.Features;
 import org.bouncycastle.bcpg.sig.PreferredAEADCiphersuites;
@@ -98,20 +100,30 @@ public abstract class OpenPGPEncryptionNegotiator
                     return false;
                 }
 
-                public List<PreferredAEADCiphersuites.Combination> getAlgorithms(PreferredAEADCiphersuites prefs, OpenPGPPolicy policy)
+                public List<PreferredAEADCiphersuites.Combination> getAlgorithms(PreferredAEADCiphersuites prefs, OpenPGPPolicy policy, boolean certificateHasPQCKey)
                 {
                     // Weigh the preferences descending by index: w(p_i) = 1/(i+1)
                     // This way, combinations with a smaller index have a higher weight than combinations with larger index.
                     // Additionally, we divide this weight by the number of capable subkeys per cert in order to
                     //  prevent a certificate with many capable subkeys from outvoting other certificates
                     List<PreferredAEADCiphersuites.Combination> result = new ArrayList<PreferredAEADCiphersuites.Combination>();
+                    boolean hasAES256OCB = false;
                     for (PreferredAEADCiphersuites.Combination c : prefs.getAlgorithms())
                     {
                         if (c.getSymmetricAlgorithm() != SymmetricKeyAlgorithmTags.NULL
                             && policy.isAcceptableSymmetricKeyAlgorithm(c.getSymmetricAlgorithm()))
                         {
                             result.add(c);
+                            hasAES256OCB |= c.getSymmetricAlgorithm() == SymmetricKeyAlgorithmTags.AES_256
+                                && c.getAeadAlgorithm() == AEADAlgorithmTags.OCB;
                         }
+                    }
+                    if (certificateHasPQCKey && !hasAES256OCB
+                        && policy.isAcceptableSymmetricKeyAlgorithm(SymmetricKeyAlgorithmTags.AES_256))
+                    {
+                        // RFC 9980 sec. 7.1: AES-256 with OCB is implicitly at the end of the list of a
+                        // certificate that contains a PQ(/T) key
+                        result.add(new PreferredAEADCiphersuites.Combination(SymmetricKeyAlgorithmTags.AES_256, AEADAlgorithmTags.OCB));
                     }
                     return result;
                 }
@@ -147,7 +159,7 @@ public abstract class OpenPGPEncryptionNegotiator
                 }
 
                 @Override
-                public List<Integer> getAlgorithms(PreferredAlgorithms preferences, OpenPGPPolicy policy)
+                public List<Integer> getAlgorithms(PreferredAlgorithms preferences, OpenPGPPolicy policy, boolean certificateHasPQCKey)
                 {
                     // Weigh the preferences descending by index: w(p_i) = 1/(i+1)
                     // This way, combinations with a smaller index have a higher weight than combinations with larger index.
@@ -163,6 +175,13 @@ public abstract class OpenPGPEncryptionNegotiator
                         {
                             result.add(alg);
                         }
+                    }
+                    if (certificateHasPQCKey && !result.contains(SymmetricKeyAlgorithmTags.AES_256)
+                        && policy.isAcceptableSymmetricKeyAlgorithm(SymmetricKeyAlgorithmTags.AES_256))
+                    {
+                        // RFC 9980 sec. 7.1: AES-256 is implicitly at the end of the list of a certificate
+                        // that contains a PQ(/T) key
+                        result.add(SymmetricKeyAlgorithmTags.AES_256);
                     }
                     return result;
                 }
@@ -198,7 +217,7 @@ public abstract class OpenPGPEncryptionNegotiator
                 }
 
                 @Override
-                public List<Integer> getAlgorithms(PreferredAlgorithms preferences, OpenPGPPolicy policy)
+                public List<Integer> getAlgorithms(PreferredAlgorithms preferences, OpenPGPPolicy policy, boolean certificateHasPQCKey)
                 {
                     // Count the keys symmetric key preferences (that can be used with OED) and update the weight map
 
@@ -244,9 +263,26 @@ public abstract class OpenPGPEncryptionNegotiator
         boolean processKey(OpenPGPCertificate.OpenPGPComponentKey key, Map<OpenPGPCertificate.OpenPGPComponentKey, T> capableKeys);
 
         /**
-         * Process preferences and return algorithms to consider
+         * Process preferences and return algorithms to consider. certificateHasPQCKey is true if the
+         * certificate the preferences belong to contains an RFC 9980 PQ(/T) key, which makes AES-256 an
+         * implicit preference (RFC 9980 sec. 7.1).
          */
-        List<R> getAlgorithms(T preferences, OpenPGPPolicy policy);
+        List<R> getAlgorithms(T preferences, OpenPGPPolicy policy, boolean certificateHasPQCKey);
+    }
+
+    /**
+     * Return true if the certificate contains a key using one of the RFC 9980 PQ(/T) algorithms.
+     */
+    static boolean containsPQCKey(OpenPGPCertificate certificate)
+    {
+        for (Iterator<OpenPGPCertificate.OpenPGPComponentKey> it = certificate.getKeys().iterator(); it.hasNext(); )
+        {
+            if (PublicKeyUtils.isPQCAlgorithm(it.next().getAlgorithm()))
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static <T, R> R processCertificates(
@@ -260,11 +296,13 @@ public abstract class OpenPGPEncryptionNegotiator
         // Go through all certificate's capable subkeys
         for (Iterator<OpenPGPCertificate> it = certificates.iterator(); it.hasNext(); )
         {
-            List<OpenPGPCertificate.OpenPGPComponentKey> encryptionKeys = it.next().getEncryptionKeys();
+            OpenPGPCertificate certificate = it.next();
+            List<OpenPGPCertificate.OpenPGPComponentKey> encryptionKeys = certificate.getEncryptionKeys();
             if (encryptionKeys.isEmpty())
             {
                 continue;
             }
+            boolean certificateHasPQCKey = containsPQCKey(certificate);
 
             // Only consider encryption keys capable of SEIPDv1/OED
             Map<OpenPGPCertificate.OpenPGPComponentKey, T> capableKeys = new HashMap<OpenPGPCertificate.OpenPGPComponentKey, T>();
@@ -278,7 +316,7 @@ public abstract class OpenPGPEncryptionNegotiator
             for (Iterator<OpenPGPCertificate.OpenPGPComponentKey> ckIt = capableKeys.keySet().iterator(); ckIt.hasNext(); )
             {
                 T prefs = capableKeys.get(ckIt.next());
-                List<R> algorithms = keyProcessor.getAlgorithms(prefs, policy);
+                List<R> algorithms = keyProcessor.getAlgorithms(prefs, policy, certificateHasPQCKey);
                 for (int i = 0; i < algorithms.size(); i++)
                 {
                     R c = algorithms.get(i);

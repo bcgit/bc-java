@@ -15,6 +15,8 @@ import java.util.Date;
  *     RFC9580 - Public-Key Packet</a>
  * @see <a href="https://www.ietf.org/archive/id/draft-koch-librepgp-00.html#name-public-key-packet-tag-6">
  *     LibrePGP - Public-Key Packet</a>
+ * @see <a href="https://www.rfc-editor.org/rfc/rfc9980.html">
+ *     RFC 9980 - Post-Quantum Cryptography in OpenPGP (key material packets of sec. 4.3.2, 5.3.2 and 6.2.2)</a>
  */
 public class PublicKeyPacket
     extends ContainedPacket
@@ -190,6 +192,19 @@ public class PublicKeyPacket
             case Ed448:
                 key = new Ed448PublicBCPGKey(in);
                 break;
+            case MLDSA65_Ed25519:
+            case MLDSA87_Ed448:
+                key = new MLDSACompositePublicBCPGKey(algorithmId, in);
+                break;
+            case SLHDSA_SHAKE_128s:
+            case SLHDSA_SHAKE_128f:
+            case SLHDSA_SHAKE_256s:
+                key = new SLHDSAPublicBCPGKey(algorithmId, in);
+                break;
+            case MLKEM768_X25519:
+            case MLKEM1024_X448:
+                key = new MLKEMCompositePublicBCPGKey(algorithmId, in);
+                break;
             default:
                 if (version == VERSION_6 || version == LIBREPGP_5)
                 {
@@ -253,6 +268,13 @@ public class PublicKeyPacket
     PublicKeyPacket(int keyTag, int version, int algorithm, Date time, BCPGKey key)
     {
         super(keyTag);
+
+        if (!PublicKeyUtils.isAlgorithmAllowedForKeyVersion(algorithm, version))
+        {
+            // RFC 9980 sec. 3.5: the PQ(/T) algorithms are for v6 keys only, bar ML-KEM-768+X25519 in v4
+            throw new IllegalArgumentException("public key algorithm " + algorithm
+                + " MUST NOT be used with a version " + version + " key (RFC 9980 sec. 3.5)");
+        }
 
         this.version = version;
         this.time = time.getTime() / 1000;

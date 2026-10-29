@@ -8,7 +8,12 @@ import java.security.SecureRandom;
 import java.security.Signature;
 import java.security.SignatureException;
 
+import org.bouncycastle.bcpg.MLDSACompositePublicBCPGKey;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
+import org.bouncycastle.bcpg.PublicKeyUtils;
+import org.bouncycastle.bcpg.SLHDSAPublicBCPGKey;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
+import org.bouncycastle.jcajce.CompositePrivateKey;
 import org.bouncycastle.jcajce.io.OutputStreamFactory;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPrivateKey;
@@ -16,6 +21,7 @@ import org.bouncycastle.openpgp.PGPRuntimeOperationException;
 import org.bouncycastle.openpgp.operator.PGPContentSigner;
 import org.bouncycastle.openpgp.operator.PGPContentSignerBuilder;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.io.TeeOutputStream;
 
 public class JcaPGPContentSignerBuilder
@@ -89,6 +95,11 @@ public class JcaPGPContentSignerBuilder
     public PGPContentSigner build(final int signatureType, final long keyID, final PrivateKey privateKey)
         throws PGPException
     {
+        if (PublicKeyUtils.isPQCAlgorithm(keyAlgorithm))
+        {
+            return buildPQCSigner(signatureType, keyID, privateKey);
+        }
+
         final PGPDigestCalculator digestCalculator = digestCalculatorProviderBuilder.build().get(hashAlgorithm);
         final PGPDigestCalculator edDigestCalculator = digestCalculatorProviderBuilder.build().get(hashAlgorithm);
         final Signature signature;
@@ -161,6 +172,114 @@ public class JcaPGPContentSignerBuilder
                         signature.update(edDigestCalculator.getDigest());
                     }
                     return signature.sign();
+                }
+                catch (SignatureException e)
+                {
+                    throw new PGPRuntimeOperationException("Unable to create signature: " + e.getMessage(), e);
+                }
+            }
+
+            public byte[] getDigest()
+            {
+                return digestCalculator.getDigest();
+            }
+        };
+    }
+
+    /**
+     * RFC 9980 sec. 5.2.2 and 6.1.2: the message digest (RFC 9580 sec. 5.2.4) is signed with the component
+     * signature algorithms - PureEdDSA (RFC 8032, empty context) and the hedged pure ML-DSA (FIPS 204, empty
+     * context) for the composites, the hedged pure slh_sign (FIPS 205, empty context) for SLH-DSA - and the
+     * composite signature is the EdDSA signature followed by the ML-DSA signature. The digest MUST be at
+     * least 256 bits (sec. 5.3.1, 6.2.1).
+     */
+    private PGPContentSigner buildPQCSigner(final int signatureType, final long keyID, PrivateKey privateKey)
+        throws PGPException
+    {
+        final PGPDigestCalculator digestCalculator = digestCalculatorProviderBuilder.build().get(hashAlgorithm);
+        final PGPDigestCalculator dataDigestCalculator = digestCalculatorProviderBuilder.build().get(hashAlgorithm);
+        OperatorUtils.checkPQCSignatureDigest(keyAlgorithm, hashAlgorithm, digestCalculator);
+
+        final Signature[] signatures;
+        final int[] signatureLengths;
+        try
+        {
+            // RFC 9980 sec. 5.1.2 / 6.1.2: the hedged variants
+            SecureRandom hedge = random != null ? random : CryptoServicesRegistrar.getSecureRandom();
+            if (PublicKeyUtils.isMLDSACompositeAlgorithm(keyAlgorithm))
+            {
+                if (!(privateKey instanceof CompositePrivateKey) || ((CompositePrivateKey)privateKey).getPrivateKeys().size() != 2)
+                {
+                    throw new PGPException("public key algorithm " + keyAlgorithm + " requires a CompositePrivateKey of two component keys");
+                }
+                CompositePrivateKey comp = (CompositePrivateKey)privateKey;
+                signatures = new Signature[]{
+                    helper.createSignature(keyAlgorithm == PublicKeyAlgorithmTags.MLDSA65_Ed25519 ? "Ed25519" : "Ed448"),
+                    helper.createSignature("ML-DSA")
+                };
+                signatures[0].initSign(comp.getPrivateKeys().get(0), hedge);
+                signatures[1].initSign(comp.getPrivateKeys().get(1), hedge);
+                signatureLengths = new int[]{
+                    MLDSACompositePublicBCPGKey.getEdDSASignatureLength(keyAlgorithm),
+                    MLDSACompositePublicBCPGKey.getMLDSASignatureLength(keyAlgorithm)
+                };
+            }
+            else
+            {
+                signatures = new Signature[]{ helper.createSignature("SLH-DSA") };
+                signatures[0].initSign(privateKey, hedge);
+                signatureLengths = new int[]{ SLHDSAPublicBCPGKey.getSignatureLength(keyAlgorithm) };
+            }
+        }
+        catch (InvalidKeyException e)
+        {
+            throw new PGPException("invalid key.", e);
+        }
+
+        return new PGPContentSigner()
+        {
+            public int getType()
+            {
+                return signatureType;
+            }
+
+            public int getHashAlgorithm()
+            {
+                return hashAlgorithm;
+            }
+
+            public int getKeyAlgorithm()
+            {
+                return keyAlgorithm;
+            }
+
+            public long getKeyID()
+            {
+                return keyID;
+            }
+
+            public OutputStream getOutputStream()
+            {
+                return new TeeOutputStream(dataDigestCalculator.getOutputStream(), digestCalculator.getOutputStream());
+            }
+
+            public byte[] getSignature()
+            {
+                try
+                {
+                    byte[] dataDigest = dataDigestCalculator.getDigest();
+                    byte[] result = new byte[0];
+                    for (int i = 0; i != signatures.length; i++)
+                    {
+                        signatures[i].update(dataDigest);
+                        byte[] sig = signatures[i].sign();
+                        if (sig.length != signatureLengths[i])
+                        {
+                            throw new IllegalStateException("unexpected component signature length: " + sig.length);
+                        }
+                        result = Arrays.concatenate(result, sig);
+                    }
+                    return result;
                 }
                 catch (SignatureException e)
                 {

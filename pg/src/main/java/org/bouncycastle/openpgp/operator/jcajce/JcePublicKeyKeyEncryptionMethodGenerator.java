@@ -16,6 +16,8 @@ import java.security.spec.AlgorithmParameterSpec;
 import javax.crypto.BadPaddingException;
 import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.KeyAgreement;
+import javax.crypto.KeyGenerator;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
@@ -23,11 +25,17 @@ import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X962Parameters;
 import org.bouncycastle.bcpg.ECDHPublicBCPGKey;
+import org.bouncycastle.bcpg.HashAlgorithmTags;
+import org.bouncycastle.bcpg.MLKEMCompositePublicBCPGKey;
 import org.bouncycastle.bcpg.MPInteger;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
+import org.bouncycastle.bcpg.PublicKeyUtils;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
+import org.bouncycastle.jcajce.CompositePublicKey;
+import org.bouncycastle.jcajce.SecretKeyWithEncapsulation;
 import org.bouncycastle.jcajce.spec.HybridValueParameterSpec;
+import org.bouncycastle.jcajce.spec.KEMGenerateSpec;
 import org.bouncycastle.jcajce.spec.UserKeyingMaterialSpec;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPublicKey;
@@ -35,6 +43,7 @@ import org.bouncycastle.openpgp.PGPUtil;
 import org.bouncycastle.openpgp.operator.PGPPad;
 import org.bouncycastle.openpgp.operator.PublicKeyKeyEncryptionMethodGenerator;
 import org.bouncycastle.openpgp.operator.RFC6637Utils;
+import org.bouncycastle.openpgp.operator.RFC9980Utils;
 import org.bouncycastle.util.Arrays;
 
 public class JcePublicKeyKeyEncryptionMethodGenerator
@@ -45,6 +54,7 @@ public class JcePublicKeyKeyEncryptionMethodGenerator
     private OperatorHelper helper = OperatorUtils.createDefaultHelper();
     private SecureRandom random;
     private JcaPGPKeyConverter keyConverter = new JcaPGPKeyConverter();
+    private JcaPGPDigestCalculatorProviderBuilder digestCalculatorProviderBuilder = new JcaPGPDigestCalculatorProviderBuilder();
 
     /**
      * Create a public key encryption method generator with the method to be based on the passed in key.
@@ -61,6 +71,7 @@ public class JcePublicKeyKeyEncryptionMethodGenerator
         this.helper = OperatorUtils.createProviderHelper(provider);
 
         keyConverter.setProvider(provider);
+        digestCalculatorProviderBuilder.setProvider(provider);
 
         return this;
     }
@@ -70,6 +81,7 @@ public class JcePublicKeyKeyEncryptionMethodGenerator
         this.helper = OperatorUtils.createNamedHelper(providerName);
 
         keyConverter.setProvider(providerName);
+        digestCalculatorProviderBuilder.setProvider(providerName);
 
         return this;
     }
@@ -174,6 +186,12 @@ public class JcePublicKeyKeyEncryptionMethodGenerator
                     SymmetricKeyAlgorithmTags.AES_256, sessionKey, "X448withSHA512HKDF", 448, optSymAlgId, isV3);
             }
 
+            // ML-KEM-768 + X25519, ML-KEM-1024 + X448 (RFC 9980)
+            else if (PublicKeyUtils.isMLKEMCompositeAlgorithm(pubKey.getAlgorithm()))
+            {
+                return encryptSessionInfoWithMLKEMCompositeKey(pubKey, cryptoPublicKey, sessionKey, isV3 ? optSymAlgId : (byte)0, isV3);
+            }
+
             // RSA / ElGamal etc.
             else
             {
@@ -252,6 +270,59 @@ public class JcePublicKeyKeyEncryptionMethodGenerator
         HybridValueParameterSpec ukmSpec = JcaJcePGPUtil.getHybridValueParameterSpecWithPrepend(ephPubEncoding, pgpPublicKey.getPublicKeyPacket(), algorithmName);
         Key secret = JcaJcePGPUtil.getSecret(helper, cryptoPublicKey, keyEncryptionOID, agreementAlgorithmName, ukmSpec, ephKP.getPrivate());
         return getSessionInfo(ephPubEncoding, isV3 ? optSymAlgId : (byte)0, getWrapper(symmetricKeyAlgorithm, optSymAlgId, secret, sessionKey));
+    }
+
+    /**
+     * The encryption procedure of RFC 9980 sec. 4.2.3: X25519/X448-KEM and ML-KEM encapsulate independently,
+     * the two key shares feed the SHA3-256 key combiner (sec. 4.2.1) that yields the KEK, and the session key
+     * is wrapped with AES-256 key wrap (RFC 3394). The algorithm-specific PKESK field is
+     * ecdhCipherText || mlkemCipherText || len || [symAlgId] || C, the symmetric algorithm octet appearing in
+     * the clear in a v3 packet only (sec. 4.3.1).
+     */
+    private byte[] encryptSessionInfoWithMLKEMCompositeKey(PGPPublicKey pgpPublicKey, PublicKey cryptoPublicKey,
+                                                           byte[] sessionKey, byte optSymAlgId, boolean isV3)
+        throws GeneralSecurityException, PGPException
+    {
+        int algorithm = pgpPublicKey.getAlgorithm();
+        MLKEMCompositePublicBCPGKey compositeKey = (MLKEMCompositePublicBCPGKey)pgpPublicKey.getPublicKeyPacket().getKey();
+
+        if (isV3 && !RFC9980Utils.isAllowedV3PKESKSymmetricAlgorithm(optSymAlgId & 0xff))
+        {
+            throw new PGPException("v3 PKESK packet of an ML-KEM composite scheme MUST use AES-128, AES-192 or AES-256 (RFC 9980 sec. 4.3.1), got symmetric algorithm "
+                + (optSymAlgId & 0xff));
+        }
+        if (!(cryptoPublicKey instanceof CompositePublicKey) || ((CompositePublicKey)cryptoPublicKey).getPublicKeys().size() != 2)
+        {
+            throw new PGPException("ML-KEM composite encryption requires a CompositePublicKey of two component keys");
+        }
+        PublicKey xdhPub = ((CompositePublicKey)cryptoPublicKey).getPublicKeys().get(0);
+        PublicKey mlkemPub = ((CompositePublicKey)cryptoPublicKey).getPublicKeys().get(1);
+
+        // ECDH-KEM.Encaps (sec. 4.1.1): the ephemeral public key is the ciphertext, the shared coordinate the key share
+        String curveName = algorithm == PublicKeyAlgorithmTags.MLKEM768_X25519 ? "X25519" : "X448";
+        KeyPair ephKP = getKeyPair(curveName, algorithm == PublicKeyAlgorithmTags.MLKEM768_X25519 ? 255 : 448);
+        byte[] ecdhCipherText = SubjectPublicKeyInfo.getInstance(ephKP.getPublic().getEncoded()).getPublicKeyData().getOctets();
+        KeyAgreement agreement = helper.createKeyAgreement(curveName);
+        agreement.init(ephKP.getPrivate());
+        agreement.doPhase(xdhPub, true);
+        byte[] ecdhKeyShare = agreement.generateSecret();
+
+        // ML-KEM.Encaps (sec. 4.1.2): the raw 32 octet shared secret, no KDF
+        KeyGenerator kemGen = helper.createKeyGenerator("ML-KEM");
+        kemGen.init(new KEMGenerateSpec.Builder(mlkemPub, "AES", 256).withNoKdf().build(), random);
+        SecretKeyWithEncapsulation mlkemEnc = (SecretKeyWithEncapsulation)kemGen.generateKey();
+        byte[] mlkemCipherText = mlkemEnc.getEncapsulation();
+        byte[] mlkemKeyShare = mlkemEnc.getEncoded();
+
+        // multiKeyCombine (sec. 4.2.1)
+        byte[] kek = RFC9980Utils.deriveKEK(digestCalculatorProviderBuilder.build().get(HashAlgorithmTags.SHA3_256),
+            mlkemKeyShare, ecdhKeyShare, ecdhCipherText, compositeKey.getECDHPublicKey(), algorithm);
+
+        // C = AESKeyWrap(KEK, sessionKey) with AES-256
+        byte[] wrapped = getWrapper(RFC9980Utils.KEY_WRAP_ALGORITHM, (byte)SymmetricKeyAlgorithmTags.AES_256,
+            new SecretKeySpec(kek, "AES"), sessionKey);
+
+        return getSessionInfo(Arrays.concatenate(ecdhCipherText, mlkemCipherText), optSymAlgId, wrapped);
     }
 
     private KeyPair getKeyPair(String algorithmName, int keySize)
