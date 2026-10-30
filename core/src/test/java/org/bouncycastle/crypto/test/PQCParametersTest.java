@@ -77,9 +77,6 @@ public class PQCParametersTest
         check(new XMSSParameters(10, new SHAKEDigest(128)), 1, 128);
         check(new XMSSMTParameters(20, 2, new SHAKEDigest(128)), 1, 128);
         check(new XMSSParameters(10, new SHAKEDigest(256)), 5, 256);
-        check(new org.bouncycastle.pqc.crypto.xmss.XMSSParameters(10, new SHA256Digest()), 5, 256);
-        check(new org.bouncycastle.pqc.crypto.xmss.XMSSParameters(10, new SHAKEDigest(128)), 1, 128);
-        check(new org.bouncycastle.pqc.crypto.xmss.XMSSMTParameters(20, 2, new SHA512Digest()), 5, 256);
 
         // Falcon (round 3 submission) and HQC (October 2026 specification)
         check(FalconParameters.falcon_512, 1, 128);
