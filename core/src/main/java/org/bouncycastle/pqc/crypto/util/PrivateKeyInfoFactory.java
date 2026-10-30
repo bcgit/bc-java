@@ -3,15 +3,12 @@ package org.bouncycastle.pqc.crypto.util;
 import java.io.IOException;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
-import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
-import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
-import org.bouncycastle.asn1.iana.IANAObjectIdentifiers;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.pqc.crypto.mqom.MQOMPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.sdith.SDitHPrivateKeyParameters;
@@ -21,10 +18,6 @@ import org.bouncycastle.pqc.asn1.FalconPrivateKey;
 import org.bouncycastle.pqc.asn1.FalconPublicKey;
 import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
 import org.bouncycastle.pqc.asn1.SPHINCS256KeyParams;
-import org.bouncycastle.pqc.asn1.XMSSKeyParams;
-import org.bouncycastle.pqc.asn1.XMSSMTKeyParams;
-import org.bouncycastle.pqc.asn1.XMSSMTPrivateKey;
-import org.bouncycastle.pqc.asn1.XMSSPrivateKey;
 import org.bouncycastle.pqc.crypto.aimer.AIMerPrivateKeyParameters;
 import org.bouncycastle.pqc.legacy.bike.BIKEPrivateKeyParameters;
 import org.bouncycastle.pqc.legacy.crystals.dilithium.DilithiumPrivateKeyParameters;
@@ -48,17 +41,8 @@ import org.bouncycastle.pqc.crypto.saber.SABERPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.snova.SnovaPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.sqisign.SQIsignPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.sphincs.SPHINCSPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.xmss.BDS;
-import org.bouncycastle.pqc.crypto.xmss.BDSStateMap;
-import org.bouncycastle.pqc.crypto.xmss.XMSSMTParameters;
-import org.bouncycastle.pqc.crypto.xmss.XMSSMTPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.xmss.XMSSParameters;
-import org.bouncycastle.pqc.crypto.xmss.XMSSPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.xmss.XMSSUtil;
 import org.bouncycastle.pqc.legacy.bike.BIKEPrivateKeyParameters;
 import org.bouncycastle.pqc.legacy.sphincsplus.SPHINCSPlusPrivateKeyParameters;
-import org.bouncycastle.util.Arrays;
-import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Pack;
 
 /**
@@ -143,54 +127,6 @@ public class PrivateKeyInfoFactory
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.sphincsPlusOidLookup(params.getParameters()));
 
             return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(params.getEncoded()), attributes, params.getPublicKey());
-        }
-        else if (privateKey instanceof XMSSPrivateKeyParameters)
-        {
-            XMSSPrivateKeyParameters keyParams = (XMSSPrivateKeyParameters)privateKey;
-            XMSSParameters params = keyParams.getParameters();
-
-            if (params.getParameterSetOID() != 0)
-            {
-                // Encode any standard (RFC 8391 / SP 800-208) parameter set in the RFC 9802 form
-                // (id-alg-xmss-hashsig), matching the SubjectPublicKeyInfo the public half produces,
-                // so the private and public keys of a keypair share one algorithm OID. The 4-octet
-                // parameter-set OID is carried ahead of the raw key so PrivateKeyFactory can recover
-                // the full parameter set (including n) - the legacy XMSSKeyParams (height + tree-digest
-                // OID only) cannot represent the SP 800-208 sets. A non-standard tree height has no
-                // parameter-set OID (0) and falls through to the legacy PQCObjectIdentifiers.xmss form.
-                byte[] keyEnc = Arrays.concatenate(Pack.intToBigEndian(params.getParameterSetOID()), keyParams.getEncoded());
-                AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(IANAObjectIdentifiers.id_alg_xmss_hashsig);
-
-                return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(keyEnc), attributes);
-            }
-
-            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(PQCObjectIdentifiers.xmss,
-                new XMSSKeyParams(params.getHeight(),
-                    Utils.xmssLookupTreeAlgID(keyParams.getTreeDigest())));
-
-            return new PrivateKeyInfo(algorithmIdentifier, xmssCreateKeyStructure(keyParams), attributes);
-        }
-        else if (privateKey instanceof XMSSMTPrivateKeyParameters)
-        {
-            XMSSMTPrivateKeyParameters keyParams = (XMSSMTPrivateKeyParameters)privateKey;
-            XMSSMTParameters params = keyParams.getParameters();
-
-            if (params.getParameterSetOID() != 0)
-            {
-                // See the XMSS branch above: any standard parameter set is encoded in the RFC 9802
-                // form (id-alg-xmssmt-hashsig) with the 4-octet parameter-set OID ahead of the raw
-                // key; a non-standard tree height falls through to PQCObjectIdentifiers.xmss_mt.
-                byte[] keyEnc = Arrays.concatenate(Pack.intToBigEndian(params.getParameterSetOID()), keyParams.getEncoded());
-                AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(IANAObjectIdentifiers.id_alg_xmssmt_hashsig);
-
-                return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(keyEnc), attributes);
-            }
-
-            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(PQCObjectIdentifiers.xmss_mt,
-                new XMSSMTKeyParams(params.getHeight(), params.getLayers(),
-                    Utils.xmssLookupTreeAlgID(keyParams.getTreeDigest())));
-
-            return new PrivateKeyInfo(algorithmIdentifier, xmssmtCreateKeyStructure(keyParams), attributes);
         }
         else if (privateKey instanceof SABERPrivateKeyParameters)
         {
@@ -378,103 +314,4 @@ public class PrivateKeyInfoFactory
         }
     }
 
-    private static XMSSPrivateKey xmssCreateKeyStructure(XMSSPrivateKeyParameters keyParams)
-        throws IOException
-    {
-        byte[] keyData = keyParams.getEncoded();
-
-        int n = keyParams.getParameters().getTreeDigestSize();
-        int totalHeight = keyParams.getParameters().getHeight();
-        int indexSize = 4;
-        int secretKeySize = n;
-        int secretKeyPRFSize = n;
-        int publicSeedSize = n;
-        int rootSize = n;
-
-        int position = 0;
-        int index = (int)XMSSUtil.bytesToXBigEndian(keyData, position, indexSize);
-        if (!XMSSUtil.isIndexValid(totalHeight, index))
-        {
-            throw new IllegalArgumentException("index out of bounds");
-        }
-        position += indexSize;
-        byte[] secretKeySeed = XMSSUtil.extractBytesAtOffset(keyData, position, secretKeySize);
-        position += secretKeySize;
-        byte[] secretKeyPRF = XMSSUtil.extractBytesAtOffset(keyData, position, secretKeyPRFSize);
-        position += secretKeyPRFSize;
-        byte[] publicSeed = XMSSUtil.extractBytesAtOffset(keyData, position, publicSeedSize);
-        position += publicSeedSize;
-        byte[] root = XMSSUtil.extractBytesAtOffset(keyData, position, rootSize);
-        position += rootSize;
-               /* import BDS state */
-        byte[] bdsStateBinary = XMSSUtil.extractBytesAtOffset(keyData, position, keyData.length - position);
-        BDS bds = null;
-        try
-        {
-            bds = (BDS)XMSSUtil.deserialize(bdsStateBinary, BDS.class, publicSeed);
-        }
-        catch (ClassNotFoundException e)
-        {
-            throw Exceptions.ioException("cannot parse BDS: " + e.getMessage(), e);
-        }
-
-        if ((bds.getMaxIndex() != (1 << totalHeight) - 1))
-        {
-            return new XMSSPrivateKey(index, secretKeySeed, secretKeyPRF, publicSeed, root, bdsStateBinary, bds.getMaxIndex());
-        }
-        else
-        {
-            return new XMSSPrivateKey(index, secretKeySeed, secretKeyPRF, publicSeed, root, bdsStateBinary);
-        }
-    }
-
-    private static XMSSMTPrivateKey xmssmtCreateKeyStructure(XMSSMTPrivateKeyParameters keyParams)
-        throws IOException
-    {
-        byte[] keyData = keyParams.getEncoded();
-
-        int n = keyParams.getParameters().getTreeDigestSize();
-        int totalHeight = keyParams.getParameters().getHeight();
-        int indexSize = (totalHeight + 7) / 8;
-        int secretKeySize = n;
-        int secretKeyPRFSize = n;
-        int publicSeedSize = n;
-        int rootSize = n;
-
-        int position = 0;
-        int index = (int)XMSSUtil.bytesToXBigEndian(keyData, position, indexSize);
-        if (!XMSSUtil.isIndexValid(totalHeight, index))
-        {
-            throw new IllegalArgumentException("index out of bounds");
-        }
-        position += indexSize;
-        byte[] secretKeySeed = XMSSUtil.extractBytesAtOffset(keyData, position, secretKeySize);
-        position += secretKeySize;
-        byte[] secretKeyPRF = XMSSUtil.extractBytesAtOffset(keyData, position, secretKeyPRFSize);
-        position += secretKeyPRFSize;
-        byte[] publicSeed = XMSSUtil.extractBytesAtOffset(keyData, position, publicSeedSize);
-        position += publicSeedSize;
-        byte[] root = XMSSUtil.extractBytesAtOffset(keyData, position, rootSize);
-        position += rootSize;
-               /* import BDS state */
-        byte[] bdsStateBinary = XMSSUtil.extractBytesAtOffset(keyData, position, keyData.length - position);
-        BDSStateMap bds = null;
-        try
-        {
-            bds = (BDSStateMap)XMSSUtil.deserialize(bdsStateBinary, BDSStateMap.class, publicSeed);
-        }
-        catch (ClassNotFoundException e)
-        {
-            throw Exceptions.ioException("cannot parse BDSStateMap: " + e.getMessage(), e);
-        }
-
-        if ((bds.getMaxIndex() != (1L << totalHeight) - 1))
-        {
-            return new XMSSMTPrivateKey(index, secretKeySeed, secretKeyPRF, publicSeed, root, bdsStateBinary, bds.getMaxIndex());
-        }
-        else
-        {
-            return new XMSSMTPrivateKey(index, secretKeySeed, secretKeyPRF, publicSeed, root, bdsStateBinary);
-        }
-    }
 }

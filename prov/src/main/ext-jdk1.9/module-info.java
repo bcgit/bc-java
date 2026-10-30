@@ -185,7 +185,6 @@ module org.bouncycastle.provider
     exports org.bouncycastle.pqc.crypto.sqisign;
     exports org.bouncycastle.pqc.crypto.uov;
     exports org.bouncycastle.pqc.crypto.util;
-    exports org.bouncycastle.pqc.crypto.xmss;
     exports org.bouncycastle.pqc.crypto.xwing;
     exports org.bouncycastle.pqc.math.ntru;
     exports org.bouncycastle.pqc.math.ntru.parameters;

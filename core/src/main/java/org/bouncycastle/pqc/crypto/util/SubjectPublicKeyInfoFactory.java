@@ -12,13 +12,8 @@ import org.bouncycastle.pqc.crypto.mqom.MQOMPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.sdith.SDitHPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.smaugt.SmaugTPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.uov.UOVPublicKeyParameters;
-import org.bouncycastle.asn1.iana.IANAObjectIdentifiers;
 import org.bouncycastle.pqc.asn1.PQCObjectIdentifiers;
 import org.bouncycastle.pqc.asn1.SPHINCS256KeyParams;
-import org.bouncycastle.pqc.asn1.XMSSKeyParams;
-import org.bouncycastle.pqc.asn1.XMSSMTKeyParams;
-import org.bouncycastle.pqc.asn1.XMSSMTPublicKey;
-import org.bouncycastle.pqc.asn1.XMSSPublicKey;
 import org.bouncycastle.pqc.crypto.aimer.AIMerPublicKeyParameters;
 import org.bouncycastle.pqc.legacy.bike.BIKEPublicKeyParameters;
 import org.bouncycastle.pqc.legacy.crystals.dilithium.DilithiumPublicKeyParameters;
@@ -41,8 +36,6 @@ import org.bouncycastle.pqc.crypto.saber.SABERPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.snova.SnovaPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.sqisign.SQIsignPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.sphincs.SPHINCSPublicKeyParameters;
-import org.bouncycastle.pqc.crypto.xmss.XMSSMTPublicKeyParameters;
-import org.bouncycastle.pqc.crypto.xmss.XMSSPublicKeyParameters;
 import org.bouncycastle.pqc.legacy.sphincsplus.SPHINCSPlusPublicKeyParameters;
 
 /**
@@ -106,49 +99,6 @@ public class SubjectPublicKeyInfoFactory
 
             AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(Utils.sphincsPlusOidLookup(params.getParameters()));
             return new SubjectPublicKeyInfo(algorithmIdentifier, encoding);
-        }
-        else if (publicKey instanceof XMSSPublicKeyParameters)
-        {
-            XMSSPublicKeyParameters keyParams = (XMSSPublicKeyParameters)publicKey;
-
-            byte[] publicSeed = keyParams.getPublicSeed();
-            byte[] root = keyParams.getRoot();
-            byte[] keyEnc = keyParams.getEncoded();
-            if (keyEnc.length > publicSeed.length + root.length)
-            {
-                // RFC 9802: raw RFC 8391 public key, no parameters, no ASN.1 wrapping.
-                AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(IANAObjectIdentifiers.id_alg_xmss_hashsig);
-
-                return new SubjectPublicKeyInfo(algorithmIdentifier, keyEnc);
-            }
-            else
-            {
-                AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(PQCObjectIdentifiers.xmss,
-                    new XMSSKeyParams(keyParams.getParameters().getHeight(), Utils.xmssLookupTreeAlgID(keyParams.getTreeDigest())));
-
-                return new SubjectPublicKeyInfo(algorithmIdentifier, new XMSSPublicKey(publicSeed, root));
-            }
-        }
-        else if (publicKey instanceof XMSSMTPublicKeyParameters)
-        {
-            XMSSMTPublicKeyParameters keyParams = (XMSSMTPublicKeyParameters)publicKey;
-
-            byte[] publicSeed = keyParams.getPublicSeed();
-            byte[] root = keyParams.getRoot();
-            byte[] keyEnc = keyParams.getEncoded();
-            if (keyEnc.length > publicSeed.length + root.length)
-            {
-                // RFC 9802: raw RFC 8391 public key, no parameters, no ASN.1 wrapping.
-                AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(IANAObjectIdentifiers.id_alg_xmssmt_hashsig);
-
-                return new SubjectPublicKeyInfo(algorithmIdentifier, keyEnc);
-            }
-            else
-            {
-                AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(PQCObjectIdentifiers.xmss_mt, new XMSSMTKeyParams(keyParams.getParameters().getHeight(), keyParams.getParameters().getLayers(),
-                    Utils.xmssLookupTreeAlgID(keyParams.getTreeDigest())));
-                return new SubjectPublicKeyInfo(algorithmIdentifier, new XMSSMTPublicKey(keyParams.getPublicSeed(), keyParams.getRoot()));
-            }
         }
         else if (publicKey instanceof SABERPublicKeyParameters)
         {

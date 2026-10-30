@@ -56,14 +56,14 @@ import org.bouncycastle.pqc.crypto.sqisign.SQIsignParameters;
 import org.bouncycastle.pqc.crypto.sqisign.SQIsignPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.sqisign.SQIsignPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.sqisign.SQIsignSigner;
-import org.bouncycastle.pqc.crypto.xmss.XMSSKeyGenerationParameters;
-import org.bouncycastle.pqc.crypto.xmss.XMSSKeyPairGenerator;
-import org.bouncycastle.pqc.crypto.xmss.XMSSMTKeyGenerationParameters;
-import org.bouncycastle.pqc.crypto.xmss.XMSSMTKeyPairGenerator;
-import org.bouncycastle.pqc.crypto.xmss.XMSSMTParameters;
-import org.bouncycastle.pqc.crypto.xmss.XMSSMTSigner;
-import org.bouncycastle.pqc.crypto.xmss.XMSSParameters;
-import org.bouncycastle.pqc.crypto.xmss.XMSSSigner;
+import org.bouncycastle.crypto.params.XMSSKeyGenerationParameters;
+import org.bouncycastle.crypto.generators.XMSSKeyPairGenerator;
+import org.bouncycastle.crypto.params.XMSSMTKeyGenerationParameters;
+import org.bouncycastle.crypto.generators.XMSSMTKeyPairGenerator;
+import org.bouncycastle.crypto.params.XMSSMTParameters;
+import org.bouncycastle.crypto.signers.XMSSMTSigner;
+import org.bouncycastle.crypto.params.XMSSParameters;
+import org.bouncycastle.crypto.signers.XMSSSigner;
 import org.bouncycastle.pqc.crypto.xwing.XWingPublicKeyParameters;
 
 /**
@@ -135,8 +135,10 @@ public class PqcMalformedInputTest
         AsymmetricCipherKeyPair xmssKp = xmssGen.generateKeyPair();
         XMSSSigner xmss = new XMSSSigner();
         xmss.init(false, xmssKp.getPublic());
-        assertFalse(xmss.verifySignature(MESSAGE, new byte[0]));
-        assertFalse(xmss.verifySignature(MESSAGE, new byte[1]));
+        xmss.update(MESSAGE, 0, MESSAGE.length);
+        assertFalse(xmss.verifySignature(new byte[0]));
+        xmss.update(MESSAGE, 0, MESSAGE.length);
+        assertFalse(xmss.verifySignature(new byte[1]));
 
         // XMSS^MT (stateful).
         XMSSMTKeyPairGenerator xmssmtGen = new XMSSMTKeyPairGenerator();
@@ -144,8 +146,10 @@ public class PqcMalformedInputTest
         AsymmetricCipherKeyPair xmssmtKp = xmssmtGen.generateKeyPair();
         XMSSMTSigner xmssmt = new XMSSMTSigner();
         xmssmt.init(false, xmssmtKp.getPublic());
-        assertFalse(xmssmt.verifySignature(MESSAGE, new byte[0]));
-        assertFalse(xmssmt.verifySignature(MESSAGE, new byte[1]));
+        xmssmt.update(MESSAGE, 0, MESSAGE.length);
+        assertFalse(xmssmt.verifySignature(new byte[0]));
+        xmssmt.update(MESSAGE, 0, MESSAGE.length);
+        assertFalse(xmssmt.verifySignature(new byte[1]));
 
         // LMS (stateful, variable structure decode).
         LMSKeyPairGenerator lmsGen = new LMSKeyPairGenerator();

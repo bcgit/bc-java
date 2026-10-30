@@ -112,11 +112,43 @@ public class ESTResponseTest
      * Every header line was added to the header table by copying that header's value array, so a
      * response repeating one header many times was quadratic to parse: about 7 seconds per
      * megabyte of header lines, before any read limit applied. The values are collected once now.
+     * <p>
+     * The check is on how the parse time grows rather than on a wall-clock bound, so it holds on
+     * a slow or loaded machine: eight times the header lines should cost about eight times as
+     * much, where the quadratic version cost about sixty-four times as much.
      */
     public void testManyHeaderLinesStayLinear()
         throws IOException
     {
-        int lines = 200000;
+        int small = 50000;
+        int large = 8 * small;
+
+        ESTResponse response = new ESTResponse(null, getMockSource(new ByteArrayInputStream(headerLines(large))));
+        assertEquals(large, ((String[])((Map)response.getHeaders()).get("x")).length);
+        assertEquals("0", response.getHeader("Content-Length"));
+
+        long smallTime = minParseNanos(headerLines(small), 3);
+        long largeTime = minParseNanos(headerLines(large), 3);
+
+        assertTrue("parse time grew by " + (largeTime / Math.max(smallTime, 1L)) + "x for 8x the header lines ("
+            + smallTime / 1000000 + "ms, " + largeTime / 1000000 + "ms)", largeTime < 24 * smallTime);
+    }
+
+    private long minParseNanos(byte[] data, int runs)
+        throws IOException
+    {
+        long best = Long.MAX_VALUE;
+        for (int i = 0; i != runs; i++)
+        {
+            long start = System.nanoTime();
+            new ESTResponse(null, getMockSource(new ByteArrayInputStream(data)));
+            best = Math.min(best, System.nanoTime() - start);
+        }
+        return best;
+    }
+
+    private static byte[] headerLines(int lines)
+    {
         StringBuilder sb = new StringBuilder("HTTP/1.1 200 OK\r\n");
         for (int i = 0; i < lines; i++)
         {
@@ -124,16 +156,7 @@ public class ESTResponseTest
         }
         sb.append("Content-Length: 0\r\n\r\n");
 
-        long start = System.currentTimeMillis();
-
-        ESTResponse response = new ESTResponse(null,
-            getMockSource(new ByteArrayInputStream(Strings.toByteArray(sb.toString()))));
-
-        long elapsed = System.currentTimeMillis() - start;
-
-        assertTrue("parsing took " + elapsed + "ms", elapsed < 2000L);
-        assertEquals(lines, ((String[])((Map)response.getHeaders()).get("x")).length);
-        assertEquals("0", response.getHeader("Content-Length"));
+        return Strings.toByteArray(sb.toString());
     }
 
     /** The absolute read limit of a LimitedSource covers the header block, not only the body. */

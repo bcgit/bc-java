@@ -29,6 +29,7 @@ import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.cert.CertException;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
 import org.bouncycastle.jcajce.CompositePrivateKey;
@@ -175,18 +176,13 @@ public class CompositeKeyTest
         PrivateKeyInfo privKey = (PrivateKeyInfo)pemParser.readObject();
     }
 
-    public void testCompositeSignatureStripping()
+    public void testLegacyCompositeSignatureRefused()
         throws Exception
     {
-        // CVE-2026-5588 follow-up: the legacy id_alg_composite ContentVerifier
-        // accepted a composite signature truncated to a single verifiable
-        // component. The empty-sequence case was fixed; an under-length sequence
-        // still passed. A composite signature MUST carry every component.
-        //
-        // Legacy composite signature *creation* via JcaContentSignerBuilder has
-        // since been removed (verification is unaffected), so the genuine 2-of-2
-        // signature below is built directly from two raw java.security.Signature
-        // instances rather than through the builder.
+        // Verification of legacy generic composite (id_alg_composite) signatures has been
+        // removed from JcaContentVerifierProviderBuilder, following the earlier removal of their
+        // creation, so a genuine 2-of-2 legacy signature built directly from two raw
+        // java.security.Signature instances must now be refused, whatever the key.
         KeyPairGenerator ecKpg = KeyPairGenerator.getInstance("EC", "BC");
         ecKpg.initialize(new ECNamedCurveGenParameterSpec("P-256"));
         KeyPair ecKp = ecKpg.generateKeyPair();
@@ -248,24 +244,29 @@ public class CompositeKeyTest
             new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000),
             name, compPub).build(sigGen);
 
-        // the genuine 2-of-2 composite signature verifies
-        assertTrue("genuine composite signature should verify",
-            certHldr.isSignatureValid(new JcaContentVerifierProviderBuilder().build(compPub)));
+        PublicKey[] keys = new PublicKey[]{ compPub, ecKp.getPublic(), rsaKp.getPublic() };
+        for (int i = 0; i != keys.length; i++)
+        {
+            try
+            {
+                new JcaContentVerifierProviderBuilder().build(keys[i]).get(certHldr.getSignatureAlgorithm());
+                fail("legacy composite signature accepted");
+            }
+            catch (OperatorCreationException e)
+            {
+                assertEquals("legacy composite signature algorithm not supported", e.getMessage());
+            }
 
-        AlgorithmIdentifier sigAlgId = certHldr.getSignatureAlgorithm();
-        byte[] tbs = certHldr.toASN1Structure().getTBSCertificate().getEncoded(ASN1Encoding.DER);
-        ASN1Sequence sigSeq = ASN1Sequence.getInstance(certHldr.getSignature());
-        assertTrue("expected a two-component composite signature", sigSeq.size() == 2);
-
-        // strip the RSA component, leaving only the (genuine) ECDSA component
-        byte[] strippedSig = new DERSequence(sigSeq.getObjectAt(0)).getEncoded(ASN1Encoding.DER);
-
-        ContentVerifier cv = new JcaContentVerifierProviderBuilder().build(compPub).get(sigAlgId);
-        OutputStream sOut = cv.getOutputStream();
-        sOut.write(tbs);
-        sOut.close();
-
-        assertFalse("composite signature stripped of a component must not verify", cv.verify(strippedSig));
+            try
+            {
+                certHldr.isSignatureValid(new JcaContentVerifierProviderBuilder().build(keys[i]));
+                fail("legacy composite signature accepted");
+            }
+            catch (CertException e)
+            {
+                assertEquals("legacy composite signature algorithm not supported", e.getCause().getMessage());
+            }
+        }
     }
 
     public void testModernCompositeKeyRejectsLegacyCompositeSignature()

@@ -246,6 +246,6 @@ The corresponding RFC 9802-style public key body (`parameter set || root || publ
 - `core/src/main/java/org/bouncycastle/pqc/asn1/XMSSPrivateKey.java` — the legacy ASN.1
   structure used for non-standard tree heights.
 
-The deprecated `org.bouncycastle.pqc.crypto.xmss` and `org.bouncycastle.pqc.crypto.util`
-packages carry a second copy of all of these. It writes and reads the same bytes; the classes
-above are the ones to work from.
+The `org.bouncycastle.pqc.crypto.xmss` package that carried a second copy of all of these, and
+its branches in `org.bouncycastle.pqc.crypto.util`, were removed in 1.87; keys it wrote, including
+a Java-serialized BDS state naming its classes, are read by the classes above.

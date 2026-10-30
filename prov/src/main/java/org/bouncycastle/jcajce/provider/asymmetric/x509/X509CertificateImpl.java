@@ -45,7 +45,6 @@ import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.util.ASN1Dump;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.style.RFC4519Style;
-import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.Extensions;
@@ -606,129 +605,39 @@ abstract class X509CertificateImpl
         throws CertificateException, NoSuchAlgorithmException,
         InvalidKeyException, SignatureException, NoSuchProviderException
     {
-        if (key instanceof CompositePublicKey && X509SignatureUtil.isCompositeAlgorithm(c.getSignatureAlgorithm()))
+        if (X509SignatureUtil.isCompositeAlgorithm(c.getSignatureAlgorithm()))
         {
-            List<PublicKey> pubKeys = ((CompositePublicKey)key).getPublicKeys();
-            ASN1Sequence keySeq = ASN1Sequence.getInstance(c.getSignatureAlgorithm().getParameters());
-            ASN1Sequence sigSeq = ASN1Sequence.getInstance(c.getSignature().getOctets());
-
-            boolean success = false;
-            for (int i = 0; i != pubKeys.size(); i++)
-            {
-                if (pubKeys.get(i) == null)
-                {
-                    continue;
-                }
-                AlgorithmIdentifier sigAlg = AlgorithmIdentifier.getInstance(keySeq.getObjectAt(i));
-                String sigName = X509SignatureUtil.getSignatureName(sigAlg);
-
-                Signature signature = signatureCreator.createSignature(sigName);
-
-                SignatureException sigExc = null;
-
-                try
-                {
-                    checkSignature(
-                        (PublicKey)pubKeys.get(i), signature,
-                        sigAlg.getParameters(),
-                        ASN1BitString.getInstance(sigSeq.getObjectAt(i)).getOctets());
-                    success = true;
-                }
-                catch (SignatureException e)
-                {
-                    sigExc = e;
-                }
-
-                if (sigExc != null)
-                {
-                    throw sigExc;
-                }
-            }
-
-            if (!success)
-            {
-                throw new InvalidKeyException("no matching key found");
-            }
+            throw new NoSuchAlgorithmException("legacy composite signature algorithm not supported");
         }
-        else if (X509SignatureUtil.isCompositeAlgorithm(c.getSignatureAlgorithm()))
+
+        Signature signature = signatureCreator.createSignature(getSigAlgName());
+
+        //Use this only for legacy composite public keys (they have this identifier)
+        if (key instanceof CompositePublicKey
+            && MiscObjectIdentifiers.id_composite_key.equals(((CompositePublicKey)key).getAlgorithmIdentifier().getAlgorithm()))
         {
-            ASN1Sequence keySeq = ASN1Sequence.getInstance(c.getSignatureAlgorithm().getParameters());
-            ASN1Sequence sigSeq = ASN1Sequence.getInstance(c.getSignature().getOctets());
+            List<PublicKey> keys = ((CompositePublicKey)key).getPublicKeys();
 
-            boolean success = false;
-            for (int i = 0; i != sigSeq.size(); i++)
+            for (int i = 0; i != keys.size(); i++)
             {
-                AlgorithmIdentifier sigAlg = AlgorithmIdentifier.getInstance(keySeq.getObjectAt(i));
-                String sigName = X509SignatureUtil.getSignatureName(sigAlg);
-
-                SignatureException sigExc = null;
-
                 try
                 {
-                    Signature signature = signatureCreator.createSignature(sigName);
-
-                    checkSignature(
-                        key, signature,
-                        sigAlg.getParameters(),
-                        ASN1BitString.getInstance(sigSeq.getObjectAt(i)).getOctets());
-
-                    success = true;
+                    checkSignature((PublicKey)keys.get(i), signature,
+                        c.getSignatureAlgorithm().getParameters(), this.getSignature());
+                    return;     // found the match!
                 }
                 catch (InvalidKeyException e)
                 {
-                    // ignore
-                }
-                catch (NoSuchAlgorithmException e)
-                {
-                    // ignore
-                }
-                catch (SignatureException e)
-                {
-                    sigExc = e;
-                }
-
-                if (sigExc != null)
-                {
-                    throw sigExc;
+                    // continue;
                 }
             }
 
-            if (!success)
-            {
-                throw new InvalidKeyException("no matching key found");
-            }
+            throw new InvalidKeyException("no matching signature found");
         }
         else
         {
-            Signature signature = signatureCreator.createSignature(getSigAlgName());
-
-            //Use this only for legacy composite public keys (they have this identifier)
-            if (key instanceof CompositePublicKey
-                && MiscObjectIdentifiers.id_composite_key.equals(((CompositePublicKey)key).getAlgorithmIdentifier().getAlgorithm()))
-            {
-                List<PublicKey> keys = ((CompositePublicKey)key).getPublicKeys();
-
-                for (int i = 0; i != keys.size(); i++)
-                {
-                    try
-                    {
-                        checkSignature((PublicKey)keys.get(i), signature,
-                            c.getSignatureAlgorithm().getParameters(), this.getSignature());
-                        return;     // found the match!
-                    }
-                    catch (InvalidKeyException e)
-                    {
-                        // continue;
-                    }
-                }
-
-                throw new InvalidKeyException("no matching signature found");
-            }
-            else
-            {
-                checkSignature(key, signature,
-                    c.getSignatureAlgorithm().getParameters(), this.getSignature());
-            }
+            checkSignature(key, signature,
+                c.getSignatureAlgorithm().getParameters(), this.getSignature());
         }
     }
 
