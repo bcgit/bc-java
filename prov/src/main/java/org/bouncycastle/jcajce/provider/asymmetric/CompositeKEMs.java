@@ -8,9 +8,10 @@ import org.bouncycastle.jcajce.provider.asymmetric.compositekem.CompositeIndex;
 import org.bouncycastle.jcajce.provider.asymmetric.compositekem.KeyFactorySpi;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.util.AsymmetricAlgorithmProvider;
+import org.bouncycastle.jcajce.util.SpiUtil;
 
 /**
- * Experimental implementation of Composite ML-KEM according to
+ * Composite ML-KEM according to
  * <a href="https://lamps-wg.github.io/draft-composite-kem/draft-ietf-lamps-pq-composite-kem.html">
  *     Composite ML-KEM for use in X.509 Public Key Infrastructure</a>.
  */
@@ -52,6 +53,12 @@ public class CompositeKEMs
                 provider.addAlgorithm("Cipher." + algorithmName, PREFIX + "CompositeKEMCipherSpi$Base", compositesAttributes);
                 provider.addAlgorithm("Alg.Alias.Cipher", oid, algorithmName);
 
+                if (SpiUtil.hasKEM())
+                {
+                    provider.addAlgorithm("KEM." + algorithmName, PREFIX + "CompositeKEMSpi$" + className, compositesAttributes);
+                    provider.addAlgorithm("Alg.Alias.KEM", oid, algorithmName);
+                }
+
                 provider.addKeyInfoConverter(oid, new KeyFactorySpi());
 
                 String[] aliases = CompositeIndex.getAlgorithmAliases(oid);
@@ -61,6 +68,10 @@ public class CompositeKEMs
                     provider.addAlgorithm("Alg.Alias.KeyPairGenerator." + aliases[i], algorithmName);
                     provider.addAlgorithm("Alg.Alias.KeyGenerator." + aliases[i], algorithmName);
                     provider.addAlgorithm("Alg.Alias.Cipher." + aliases[i], algorithmName);
+                    if (SpiUtil.hasKEM())
+                    {
+                        provider.addAlgorithm("Alg.Alias.KEM." + aliases[i], algorithmName);
+                    }
                 }
             }
         }

@@ -15,6 +15,7 @@ import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.security.interfaces.ECPrivateKey;
+import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.RSAPrivateCrtKey;
 import java.security.spec.ECGenParameterSpec;
 import java.security.spec.ECParameterSpec;
@@ -116,6 +117,31 @@ class CompositeMLKEMEngine
         int mlkemCTSize = CompositeIndex.getAlgorithmName(compositeOID).contains("768") ? 1088 : 1568;
 
         return mlkemCTSize + getTraditionalCiphertextLength(privateKey.getPrivateKeys().get(1));
+    }
+
+    /**
+     * The length of a composite ciphertext (encapsulation) for this OID, derived from the recipient
+     * public key. Used by the javax.crypto.KEM encapsulator to report its encapsulation size.
+     */
+    int getEncapsulationLength(CompositePublicKey publicKey)
+    {
+        int mlkemCTSize = CompositeIndex.getAlgorithmName(compositeOID).contains("768") ? 1088 : 1568;
+
+        String tradAlg = CompositeIndex.getTraditionalAlgorithmName(compositeOID);
+        PublicKey tradPK = publicKey.getPublicKeys().get(1);
+
+        if ("RSA".equals(tradAlg))
+        {
+            return mlkemCTSize + (((java.security.interfaces.RSAKey)tradPK).getModulus().bitLength() + 7) / 8;
+        }
+        if ("ECDH".equals(tradAlg))
+        {
+            int fieldBytes = (((ECPublicKey)tradPK).getParams().getCurve().getField().getFieldSize() + 7) / 8;
+
+            return mlkemCTSize + 1 + 2 * fieldBytes;
+        }
+
+        return mlkemCTSize + getTraditionalCiphertextLength(null);
     }
 
     private int getTraditionalCiphertextLength(PrivateKey tradSK)

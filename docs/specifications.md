@@ -680,7 +680,7 @@ SecretKey key = agreement.generateSecret("AES[256]");
 | **NTRU**                    | NTRUParameterSpec                                 | (BCPQC)                                                                                                                              |
 | **NTRULPRime / SNTRUPrime** | NTRULPRimeParameterSpec / SNTRUPrimeParameterSpec | NTRU Prime (BCPQC)                                                                                                                   |
 | **NTRU+**                   | NTRUPlusParameterSpec                             | KpqC competition (BCPQC)                                                                                                             |
-| **Composite ML-KEM**        |                                                   | ML-KEM-768/1024 combined with RSA-OAEP, ECDH, X25519 or X448 per draft-ietf-lamps-pq-composite-kem (BC provider)                     |
+| **Composite ML-KEM**        |                                                   | ML-KEM-768/1024 combined with RSA-OAEP, ECDH, X25519 or X448 per draft-ietf-lamps-pq-composite-kem (BC provider; KeyPairGenerator, KeyFactory, KeyGenerator, Cipher and, on Java 21 and later, KEM services by algorithm name and OID)                     |
 
 If used for key wrapping via the Cipher class, you will also need to make use of the KEMParameterSpec class to specify a symmetric wrapping algorithm.
 
