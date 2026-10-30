@@ -1,5 +1,15 @@
 package org.bouncycastle.jcajce.provider.symmetric;
 
+import java.security.AlgorithmParameters;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
+import java.security.Key;
+import java.security.SecureRandom;
+import java.security.spec.AlgorithmParameterSpec;
+
+import javax.crypto.ShortBufferException;
+import javax.crypto.spec.IvParameterSpec;
+
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.crypto.CipherKeyGenerator;
 import org.bouncycastle.crypto.engines.ChaCha7539Engine;
@@ -9,8 +19,10 @@ import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseBlockCipher;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseKeyGenerator;
 import org.bouncycastle.jcajce.provider.symmetric.util.BaseStreamCipher;
+import org.bouncycastle.jcajce.provider.symmetric.util.ChaCha20SpecUtil;
 import org.bouncycastle.jcajce.provider.symmetric.util.IvAlgorithmParameters;
 import org.bouncycastle.jcajce.provider.util.AlgorithmProvider;
+import org.bouncycastle.jcajce.spec.BCChaCha20ParameterSpec;
 
 public final class ChaCha
 {
@@ -36,12 +48,108 @@ public final class ChaCha
         }
     }
 
+    /**
+     * ChaCha20 as defined in RFC 8439. Besides an IvParameterSpec carrying the nonce, which starts the key
+     * stream at block 0, this accepts a BCChaCha20ParameterSpec or, from Java 11, the JDK's
+     * ChaCha20ParameterSpec, which also give the initial block counter.
+     */
     public static class Base7539
         extends BaseStreamCipher
     {
+        private final ChaCha7539Engine engine;
+
+        // the key stream position given by the initial block counter, returned to after every doFinal
+        private long initialPosition;
+
         public Base7539()
         {
-            super(new ChaCha7539Engine(), 12);
+            this(new ChaCha7539Engine());
+        }
+
+        private Base7539(ChaCha7539Engine engine)
+        {
+            super(engine, 12);
+
+            this.engine = engine;
+        }
+
+        protected void engineInit(
+            int                     opmode,
+            Key                     key,
+            AlgorithmParameterSpec  params,
+            SecureRandom            random)
+            throws InvalidKeyException, InvalidAlgorithmParameterException
+        {
+            initialPosition = 0;
+
+            BCChaCha20ParameterSpec counterSpec;
+            if (params instanceof BCChaCha20ParameterSpec)
+            {
+                counterSpec = (BCChaCha20ParameterSpec)params;
+            }
+            else
+            {
+                counterSpec = ChaCha20SpecUtil.toBCChaCha20Spec(params);
+            }
+
+            if (counterSpec == null)
+            {
+                super.engineInit(opmode, key, params, random);
+                return;
+            }
+
+            super.engineInit(opmode, key, new IvParameterSpec(counterSpec.getNonce()), random);
+
+            // the counter is unsigned: a negative int addresses one of the blocks from 2^31 to 2^32 - 1
+            initialPosition = (counterSpec.getCounter() & 0xFFFFFFFFL) * 64;
+            restorePosition();
+        }
+
+        protected AlgorithmParameters engineGetParameters()
+        {
+            // AlgorithmParameters cannot carry the counter, and parameters without it would give the wrong key stream
+            if (initialPosition != 0)
+            {
+                return null;
+            }
+
+            return super.engineGetParameters();
+        }
+
+        protected byte[] engineDoFinal(
+            byte[]  input,
+            int     inputOffset,
+            int     inputLen)
+        {
+            byte[] output = super.engineDoFinal(input, inputOffset, inputLen);
+
+            restorePosition();
+
+            return output;
+        }
+
+        protected int engineDoFinal(
+            byte[]  input,
+            int     inputOffset,
+            int     inputLen,
+            byte[]  output,
+            int     outputOffset)
+            throws ShortBufferException
+        {
+            int outputLen = super.engineDoFinal(input, inputOffset, inputLen, output, outputOffset);
+
+            restorePosition();
+
+            return outputLen;
+        }
+
+        // init, and BaseStreamCipher's doFinal, leave the engine at block 0
+        private void restorePosition()
+        {
+            if (initialPosition != 0)
+            {
+                engine.skip(initialPosition);
+            }
         }
     }
 

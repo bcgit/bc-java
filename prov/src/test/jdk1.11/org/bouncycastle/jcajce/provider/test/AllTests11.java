@@ -25,6 +25,7 @@ public class AllTests11
         suite.addTestSuite(OpenSSHKeyFactoryMRTest.class);
         suite.addTestSuite(EdECKeyFactoryMalformedMRTest.class);
         suite.addTestSuite(DRBGParametersMRTest.class);
+        suite.addTestSuite(ChaCha20ParameterSpecMRTest.class);
         return suite;
     }
 
