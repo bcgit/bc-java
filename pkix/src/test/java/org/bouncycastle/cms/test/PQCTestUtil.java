@@ -111,7 +111,7 @@ public class PQCTestUtil
             sigGen = new JcaContentSignerBuilder("SHA512withSPHINCS256").setProvider("BCPQC").build(issPriv);
         }
 
-        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(new X500Name(issDN), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000), new X500Name(subDN), subKP.getPublic())
+        X509v3CertificateBuilder certGen = new JcaX509v3CertificateBuilder(new X500Name(issDN), BigInteger.valueOf(1), new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + (1000L * 60 * 60 * 24 * 100)), new X500Name(subDN), subKP.getPublic())
             .addExtension(new ASN1ObjectIdentifier("2.5.29.15"), true,
                 new X509KeyUsage(X509KeyUsage.digitalSignature))
             .addExtension(new ASN1ObjectIdentifier("2.5.29.37"), true,
