@@ -11,8 +11,6 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.util.List;
 
-import org.bouncycastle.asn1.ASN1BitString;
-import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.misc.MiscObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
@@ -26,7 +24,6 @@ import org.bouncycastle.operator.ContentVerifierProvider;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.RawContentVerifier;
 import org.bouncycastle.operator.RuntimeOperatorException;
-import org.bouncycastle.util.io.TeeOutputStream;
 
 public class JcaContentVerifierProviderBuilder
 {
@@ -103,39 +100,34 @@ public class JcaContentVerifierProviderBuilder
             public ContentVerifier get(AlgorithmIdentifier algorithm)
                 throws OperatorCreationException
             {
-                if (algorithm.getAlgorithm().equals(MiscObjectIdentifiers.id_alg_composite))
+                checkNotLegacyComposite(algorithm);
+
+                Signature sig;
+                try
                 {
-                    return createCompositeVerifier(algorithm, certificate.getPublicKey());
+                    sig = helper.createSignature(algorithm);
+
+                    sig.initVerify(certificate.getPublicKey());
+
+                    if (context != null)
+                    {
+                        sig.setParameter(context);
+                    }
+                }
+                catch (GeneralSecurityException e)
+                {
+                    throw new OperatorCreationException("exception on setup: " + e, e);
+                }
+
+                Signature rawSig = createRawSig(algorithm, certificate.getPublicKey());
+
+                if (rawSig != null)
+                {
+                    return new RawSigVerifier(algorithm, sig, rawSig);
                 }
                 else
                 {
-                    Signature sig;
-                    try
-                    {
-                        sig = helper.createSignature(algorithm);
-
-                        sig.initVerify(certificate.getPublicKey());
-
-                        if (context != null)
-                        {
-                            sig.setParameter(context);
-                        }
-                    }
-                    catch (GeneralSecurityException e)
-                    {
-                        throw new OperatorCreationException("exception on setup: " + e, e);
-                    }
-
-                    Signature rawSig = createRawSig(algorithm, certificate.getPublicKey());
-
-                    if (rawSig != null)
-                    {
-                        return new RawSigVerifier(algorithm, sig, rawSig);
-                    }
-                    else
-                    {
-                        return new SigVerifier(algorithm, sig);
-                    }
+                    return new SigVerifier(algorithm, sig);
                 }
             }
         };
@@ -159,10 +151,7 @@ public class JcaContentVerifierProviderBuilder
             public ContentVerifier get(AlgorithmIdentifier algorithm)
                 throws OperatorCreationException
             {
-                if (algorithm.getAlgorithm().equals(MiscObjectIdentifiers.id_alg_composite))
-                {
-                    return createCompositeVerifier(algorithm, publicKey);
-                }
+                checkNotLegacyComposite(algorithm);
 
                 //Use this legacy method only for composite public keys (they have that identifier)
                 if (publicKey instanceof CompositePublicKey
@@ -220,56 +209,12 @@ public class JcaContentVerifierProviderBuilder
         return this.build(helper.convertPublicKey(publicKey));
     }
 
-    private ContentVerifier createCompositeVerifier(AlgorithmIdentifier compAlgId, PublicKey publicKey)
+    private static void checkNotLegacyComposite(AlgorithmIdentifier algorithm)
         throws OperatorCreationException
     {
-        if (publicKey instanceof CompositePublicKey)
+        if (MiscObjectIdentifiers.id_alg_composite.equals(algorithm.getAlgorithm()))
         {
-            CompositePublicKey compositePublicKey = (CompositePublicKey)publicKey;
-
-            if (!MiscObjectIdentifiers.id_composite_key.equals(compositePublicKey.getAlgorithmIdentifier().getAlgorithm()))
-            {
-                throw new OperatorCreationException("attempt to use standard composite key with legacy composite signature algorithm");
-            }
-
-            List<PublicKey> pubKeys = compositePublicKey.getPublicKeys();
-            ASN1Sequence keySeq = ASN1Sequence.getInstance(compAlgId.getParameters());
-
-            Signature[] sigs = new Signature[keySeq.size()];
-            for (int i = 0; i != keySeq.size(); i++)
-            {
-                AlgorithmIdentifier sigAlg = AlgorithmIdentifier.getInstance(keySeq.getObjectAt(i));
-                if (pubKeys.get(i) != null)
-                {
-                    sigs[i] = createSignature(sigAlg, (PublicKey)pubKeys.get(i));
-                }
-                else
-                {
-                    sigs[i] = null;
-                }
-            }
-
-            return new CompositeVerifier(sigs);
-        }
-        else
-        {
-            ASN1Sequence keySeq = ASN1Sequence.getInstance(compAlgId.getParameters());
-            Signature[] sigs = new Signature[keySeq.size()];
-            for (int i = 0; i != keySeq.size(); i++)
-            {
-                AlgorithmIdentifier sigAlg = AlgorithmIdentifier.getInstance(keySeq.getObjectAt(i));
-                try
-                {
-                    sigs[i] = createSignature(sigAlg, publicKey);
-                }
-                catch (Exception e)
-                {
-                    sigs[i] = null;
-                    // continue
-                }
-            }
-
-            return new CompositeVerifier(sigs);
+            throw new OperatorCreationException("legacy composite signature algorithm not supported");
         }
     }
 
@@ -414,84 +359,6 @@ public class JcaContentVerifierProviderBuilder
                 {
                     // ignore
                 }
-            }
-        }
-    }
-
-    private static class CompositeVerifier
-        implements ContentVerifier
-    {
-        private Signature[] sigs;
-        private OutputStream stream;
-
-        public CompositeVerifier(Signature[] sigs)
-            throws OperatorCreationException
-        {
-            this.sigs = sigs;
-
-            int start = 0;
-            while (start < sigs.length && sigs[start] == null)
-            {
-                start++;
-            }
-
-            if (start == sigs.length)
-            {
-                throw new OperatorCreationException("no matching signature found in composite");
-            }
-            this.stream = OutputStreamFactory.createStream(sigs[start]);
-            for (int i = start + 1; i != sigs.length; i++)
-            {
-                if (sigs[i] != null)
-                {
-                    this.stream = new TeeOutputStream(this.stream, OutputStreamFactory.createStream(sigs[i]));
-                }
-            }
-        }
-
-        public AlgorithmIdentifier getAlgorithmIdentifier()
-        {
-            return new AlgorithmIdentifier(MiscObjectIdentifiers.id_alg_composite);
-        }
-
-        public OutputStream getOutputStream()
-        {
-            return stream;
-        }
-
-        public boolean verify(byte[] expected)
-        {
-            try
-            {
-                ASN1Sequence sigSeq = ASN1Sequence.getInstance(expected);
-
-                // A composite signature MUST carry exactly one component for every
-                // component key; reject a signature that has had components removed
-                // (e.g. stripped to a single verifiable component) or added.
-                if (sigSeq.size() != sigs.length)
-                {
-                    return false;
-                }
-
-                boolean failed = false;
-                boolean atLeastOneChecked = false;
-
-                for (int i = 0; i != sigSeq.size(); i++)
-                {
-                    if (sigs[i] != null)
-                    {
-                        atLeastOneChecked = true;
-                        if (!sigs[i].verify(ASN1BitString.getInstance(sigSeq.getObjectAt(i)).getBytes()))
-                        {
-                            failed = true;
-                        }
-                    }
-                }
-                return !failed & atLeastOneChecked;
-            }
-            catch (SignatureException e)
-            {
-                throw new RuntimeOperatorException("exception obtaining signature: " + e.getMessage(), e);
             }
         }
     }

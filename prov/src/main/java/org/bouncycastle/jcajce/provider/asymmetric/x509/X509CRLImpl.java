@@ -23,12 +23,10 @@ import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Set;
 
 import javax.security.auth.x500.X500Principal;
 
-import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1InputStream;
@@ -36,10 +34,8 @@ import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.util.ASN1Dump;
 import org.bouncycastle.asn1.x500.X500Name;
-import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.CRLDistPoint;
 import org.bouncycastle.asn1.x509.CRLNumber;
 import org.bouncycastle.asn1.x509.CertificateList;
@@ -48,7 +44,6 @@ import org.bouncycastle.asn1.x509.Extensions;
 import org.bouncycastle.asn1.x509.IssuingDistributionPoint;
 import org.bouncycastle.asn1.x509.TBSCertList;
 import org.bouncycastle.asn1.x509.Time;
-import org.bouncycastle.jcajce.CompositePublicKey;
 import org.bouncycastle.jcajce.io.OutputStreamFactory;
 import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
@@ -238,117 +233,26 @@ abstract class X509CRLImpl
             throw new CRLException("Signature algorithm on CertificateList does not match TBSCertList.");
         }
 
-        if (key instanceof CompositePublicKey && X509SignatureUtil.isCompositeAlgorithm(c.getSignatureAlgorithm()))
+        if (X509SignatureUtil.isCompositeAlgorithm(c.getSignatureAlgorithm()))
         {
-            List<PublicKey> pubKeys = ((CompositePublicKey)key).getPublicKeys();
-            ASN1Sequence keySeq = ASN1Sequence.getInstance(c.getSignatureAlgorithm().getParameters());
-            ASN1Sequence sigSeq = ASN1Sequence.getInstance(c.getSignature().getOctets());
-
-            boolean success = false;
-            for (int i = 0; i != pubKeys.size(); i++)
-            {
-                if (pubKeys.get(i) == null)
-                {
-                    continue;
-                }
-
-                AlgorithmIdentifier sigAlg = AlgorithmIdentifier.getInstance(keySeq.getObjectAt(i));
-                String sigName = X509SignatureUtil.getSignatureName(sigAlg);
-
-                Signature signature = sigCreator.createSignature(sigName);
-
-                SignatureException sigExc = null;
-
-                try
-                {
-                    checkSignature(
-                        (PublicKey)pubKeys.get(i), signature,
-                        sigAlg.getParameters(),
-                        ASN1BitString.getInstance(sigSeq.getObjectAt(i)).getOctets());
-                    success = true;
-                }
-                catch (SignatureException e)
-                {
-                    sigExc = e;
-                }
-
-                if (sigExc != null)
-                {
-                    throw sigExc;
-                }
-            }
-
-            if (!success)
-            {
-                throw new InvalidKeyException("no matching key found");
-            }
+            throw new NoSuchAlgorithmException("legacy composite signature algorithm not supported");
         }
-        else if (X509SignatureUtil.isCompositeAlgorithm(c.getSignatureAlgorithm()))
+
+        Signature sig = sigCreator.createSignature(getSigAlgName());
+
+        if (sigAlgParams == null)
         {
-            ASN1Sequence keySeq = ASN1Sequence.getInstance(c.getSignatureAlgorithm().getParameters());
-            ASN1Sequence sigSeq = ASN1Sequence.getInstance(c.getSignature().getOctets());
-
-            boolean success = false;
-            for (int i = 0; i != sigSeq.size(); i++)
-            {
-                AlgorithmIdentifier sigAlg = AlgorithmIdentifier.getInstance(keySeq.getObjectAt(i));
-                String sigName = X509SignatureUtil.getSignatureName(sigAlg);
-
-                SignatureException sigExc = null;
-
-                try
-                {
-                    Signature signature = sigCreator.createSignature(sigName);
-
-                    checkSignature(
-                        key, signature,
-                        sigAlg.getParameters(),
-                        ASN1BitString.getInstance(sigSeq.getObjectAt(i)).getOctets());
-
-                    success = true;
-                }
-                catch (InvalidKeyException e)
-                {
-                    // ignore
-                }
-                catch (NoSuchAlgorithmException e)
-                {
-                    // ignore
-                }
-                catch (SignatureException e)
-                {
-                    sigExc = e;
-                }
-
-                if (sigExc != null)
-                {
-                    throw sigExc;
-                }
-            }
-
-            if (!success)
-            {
-                throw new InvalidKeyException("no matching key found");
-            }
+            checkSignature(key, sig, null, this.getSignature());
         }
         else
         {
-            Signature sig = sigCreator.createSignature(getSigAlgName());
-
-            if (sigAlgParams == null)
+            try
             {
-                checkSignature(key, sig, null, this.getSignature());
+                checkSignature(key, sig, ASN1Primitive.fromByteArray(sigAlgParams), this.getSignature());
             }
-            else
+            catch (IOException e)
             {
-                try
-                {
-                    checkSignature(key, sig, ASN1Primitive.fromByteArray(sigAlgParams), this.getSignature());
-                }
-                catch (IOException e)
-                {
-                    throw new SignatureException("cannot decode signature parameters: " + e.getMessage());
-                }
+                throw new SignatureException("cannot decode signature parameters: " + e.getMessage());
             }
         }
     }

@@ -47,6 +47,7 @@ import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.cert.CertException;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.X509v3CertificateBuilder;
+import org.bouncycastle.cert.cmp.CMPException;
 import org.bouncycastle.cert.cmp.CertificateConfirmationContent;
 import org.bouncycastle.cert.cmp.CertificateConfirmationContentBuilder;
 import org.bouncycastle.cert.cmp.CertificateStatus;
@@ -455,12 +456,10 @@ public class AllTests
 
     // A modern fixed-algorithm composite key (MLDSA44-RSA2048-PKCS15-SHA256) protecting a
     // ProtectedPKIMessage in the ordinary way - sign, then verify against the composite public
-    // key. The legacy id_alg_composite forgery formerly paired with this setup is gone: pairing a
-    // modern composite key with the legacy composite signature algorithm now makes
-    // JcaContentVerifierProviderBuilder refuse outright ("attempt to use standard composite key
-    // with legacy composite signature algorithm"), asserted directly by
-    // openssl.test.CompositeKeyTest.testModernCompositeKeyRejectsLegacyCompositeSignature; the
-    // empty-signature forgery against a non-composite key is covered by testForgedComposite below.
+    // key. The legacy id_alg_composite forgery formerly paired with this setup is gone:
+    // JcaContentVerifierProviderBuilder now refuses the legacy composite signature algorithm
+    // outright, asserted directly by openssl.test.CompositeKeyTest; the empty-signature forgery
+    // against a non-composite key is covered by testForgedComposite below.
     public void testComposite()
         throws Exception
     {
@@ -517,10 +516,9 @@ public class AllTests
 
         // protectionAlg.algorithm  = 1.3.6.1.4.1.18227.2.1 (id_alg_composite)
         // protectionAlg.parameters = SEQUENCE { AlgId(sha256WithRSA, NULL) }
-        //   → createCompositeVerifier builds sigs[] = { one real Signature }
-        //     so the "no matching signature found" guard passes
         // protection               = BIT STRING wrapping 30 00 (empty SEQ)
-        //   → sigSeq.size()==0 → loop body never runs → verify() returns true
+        //   → the legacy composite verifier once accepted this; legacy composite
+        //     signatures are now refused outright
         //
         AlgorithmIdentifier innerAlg = new AlgorithmIdentifier(
             PKCSObjectIdentifiers.sha256WithRSAEncryption, DERNull.INSTANCE);
@@ -537,6 +535,14 @@ public class AllTests
         PKIMessage forged = new PKIMessage(fh.build(), body, emptySigSeq);
         ProtectedPKIMessage forgedPM = new ProtectedPKIMessage(new GeneralPKIMessage(forged));
 
-        assertFalse(forgedPM.verify(verifier));
+        try
+        {
+            forgedPM.verify(verifier);
+            fail("legacy composite protection accepted");
+        }
+        catch (CMPException e)
+        {
+            assertEquals("legacy composite signature algorithm not supported", e.getCause().getMessage());
+        }
     }
 }

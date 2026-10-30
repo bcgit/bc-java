@@ -4254,8 +4254,8 @@ public class CertTest
         CompositePrivateKey compPrivKey = new CompositePrivateKey(ecPriv, lmsPriv);
 
         // Legacy composite signature *creation* via JcaContentSignerBuilder has since been
-        // removed (verification is unaffected), so the genuine 2-of-2 signature here is built
-        // directly from two raw java.security.Signature instances rather than through the builder.
+        // removed, so the genuine 2-of-2 signature here is built directly from two raw
+        // java.security.Signature instances rather than through the builder.
         final DefaultSignatureAlgorithmIdentifierFinder compSigAlgFinder = new DefaultSignatureAlgorithmIdentifierFinder();
         final AlgorithmIdentifier compSigAlgId = new AlgorithmIdentifier(
             MiscObjectIdentifiers.id_alg_composite,
@@ -4308,85 +4308,82 @@ public class CertTest
 
         X509CertificateHolder certHldr = certGen.build(sigGen);
 
-        ContentVerifierProvider vProv = new JcaContentVerifierProviderBuilder()
-            .setProvider(BC)
-            .build(compPub);
-
-        isTrue("multi failed", certHldr.isSignatureValid(vProv));
-
-        vProv = new JcaContentVerifierProviderBuilder()
-            .setProvider(BC)
-            .build(new CompositePublicKey(ecPub, null));
-
-        isTrue("multi failed with null", certHldr.isSignatureValid(vProv));
-
-
-        try
+        // legacy composite signature verification has been removed from JcaContentVerifierProviderBuilder
+        PublicKey[] vKeys = new PublicKey[]{ compPub, new CompositePublicKey(ecPub, null), ecPub, lmsPub };
+        for (int i = 0; i != vKeys.length; i++)
         {
-            vProv = new JcaContentVerifierProviderBuilder()
-                .setProvider(BC)
-                .build(new CompositePublicKey(new PublicKey[]{null, null}));
-
-            certHldr.isSignatureValid(vProv);
+            try
+            {
+                certHldr.isSignatureValid(new JcaContentVerifierProviderBuilder().setProvider(BC).build(vKeys[i]));
+                fail("legacy composite signature accepted");
+            }
+            catch (CertException e)
+            {
+                isTrue(e.getCause().getMessage().equals("legacy composite signature algorithm not supported"));
+            }
         }
-        catch (CertException e)
-        {
-            isTrue(e.getCause().getMessage().equals("no matching signature found in composite"));
-        }
-
-        vProv = new JcaContentVerifierProviderBuilder().setProvider(BC).build(ecPub);
-
-        isTrue("ec failed", certHldr.isSignatureValid(vProv));
-
-        vProv = new JcaContentVerifierProviderBuilder().setProvider(BC).build(lmsPub);
-
-        isTrue("lms failed", certHldr.isSignatureValid(vProv));
 
         X509Certificate cert = new JcaX509CertificateConverter().setProvider(BC).getCertificate(certHldr);
 
         cert.checkValidity(new Date());
 
-        //
-        // check verifies in general
-        //
-        cert.verify(compPub);
+        // legacy composite signature verification has been removed from the provider as well
+        PublicKey[] certKeys = new PublicKey[]{ compPub, new CompositePublicKey(new PublicKey[]{null, null}),
+            ecPub, lmsPub, cert.getPublicKey() };
+        for (int i = 0; i != certKeys.length; i++)
+        {
+            try
+            {
+                cert.verify(certKeys[i]);
+                fail("legacy composite signature accepted");
+            }
+            catch (NoSuchAlgorithmException e)
+            {
+                isTrue(e.getMessage().equals("legacy composite signature algorithm not supported"));
+            }
+        }
 
-        // null comp test
         try
         {
-            cert.verify(new CompositePublicKey(new PublicKey[]{null, null}));
+            cert.verify(ecPub, BC);
+            fail("legacy composite signature accepted");
         }
-        catch (InvalidKeyException e)
+        catch (NoSuchAlgorithmException e)
         {
-            isTrue(e.getMessage(), e.getMessage().equals("no matching key found"));
+            isTrue(e.getMessage().equals("legacy composite signature algorithm not supported"));
         }
 
-        cert.verify(ecPub);      // ec key only
-
-        cert.verify(lmsPub);     // lms key only
-
-        cert.verify(ecPub, BC);      // ec key only
-
-        cert.verify(lmsPub, "BCPQC");     // lms key only
-
-        if (System.getProperty("java.version").indexOf("1.5.") < 0)
+        // and for a CRL, where the refusal comes before any signature check
+        X509CRLHolder legacyCrlHldr = new X509v2CRLBuilder(issuer, new Date()).build(new ContentSigner()
         {
-            // verify(PublicKey, Provider) is a JDK 8 overload; invoke it reflectively so this file
-            // still compiles under the genuine javac 1.5 legacy build (the block is guarded off on
-            // 1.5 at runtime anyway). All referenced types predate Java 5; only the method is newer.
-            // Resolve the method through the public X509Certificate type, not cert.getClass(): the BC
-            // implementation class is package-private, so a Method obtained from it fails invoke() with
-            // IllegalAccessException even though the method itself is public.
-            java.lang.reflect.Method verifyWithProvider = X509Certificate.class.getMethod(
-                "verify", java.security.PublicKey.class, java.security.Provider.class);
-            verifyWithProvider.invoke(cert, ecPub, new BouncyCastleProvider());      // ec key only
-            verifyWithProvider.invoke(cert, lmsPub, new BouncyCastlePQCProvider());  // lms key only
-        }
+            public AlgorithmIdentifier getAlgorithmIdentifier()
+            {
+                return compSigAlgId;
+            }
 
-        //
-        // check verifies with contained key
-        //
-        cert.verify(cert.getPublicKey());
+            public OutputStream getOutputStream()
+            {
+                return new ByteArrayOutputStream();
+            }
+
+            public byte[] getSignature()
+            {
+                return new byte[]{ 0x30, 0x00 };
+            }
+        });
+        X509CRL legacyCrl = new JcaX509CRLConverter().setProvider(BC).getCRL(legacyCrlHldr);
+        for (int i = 0; i != certKeys.length; i++)
+        {
+            try
+            {
+                legacyCrl.verify(certKeys[i]);
+                fail("legacy composite CRL signature accepted");
+            }
+            catch (NoSuchAlgorithmException e)
+            {
+                isTrue(e.getMessage().equals("legacy composite signature algorithm not supported"));
+            }
+        }
 
         ByteArrayInputStream bIn = new ByteArrayInputStream(cert.getEncoded());
         CertificateFactory fact = CertificateFactory.getInstance("X.509", BC);
