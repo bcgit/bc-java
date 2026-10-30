@@ -638,7 +638,7 @@ class Utils
         return (ASN1ObjectIdentifier)ntruPlusOids.get(params);
     }
 
-    private static boolean isRaw(byte[] data)
+    static boolean isRaw(byte[] data)
     {
         // check well-formed first
         ByteArrayInputStream bIn = new ByteArrayInputStream(data);

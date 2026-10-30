@@ -15,6 +15,10 @@ import java.util.regex.Pattern;
 import junit.framework.TestCase;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.DERTaggedObject;
+import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
@@ -950,6 +954,104 @@ public class MLDSATest
                 }
             }
         }
+    }
+
+    /**
+     * RFC 9881 sec. 6: the privateKey is CHOICE { seed [0] OCTET STRING (SIZE (32)), expandedKey OCTET STRING,
+     * both SEQUENCE { seed, expandedKey } } and the tag says which arm is present. Each arm must have its
+     * exact length, while the three pre-RFC forms of earlier drafts (the raw seed, the raw expanded key and the
+     * seed in an untagged OCTET STRING) are still read.
+     */
+    public void testPrivateKeyInfoChoiceArms()
+        throws Exception
+    {
+        for (int i = 0; i != PARAMETER_SETS.length; i++)
+        {
+            MLDSAParameters parameters = PARAMETER_SETS[i];
+            MLDSAKeyPairGenerator kpGen = new MLDSAKeyPairGenerator();
+            kpGen.init(new MLDSAKeyGenerationParameters(new SecureRandom(), parameters));
+            MLDSAPrivateKeyParameters priv = (MLDSAPrivateKeyParameters)kpGen.generateKeyPair().getPrivate();
+            byte[] seed = priv.getSeed();
+            byte[] expanded = priv.getEncoded();
+            AlgorithmIdentifier algId = PrivateKeyInfoFactory.createPrivateKeyInfo(priv).getPrivateKeyAlgorithm();
+            String name = parameters.getName();
+
+            // the RFC forms
+            checkChoiceAccepted(name + " seed", algId, new DERTaggedObject(false, 0, new DEROctetString(seed)), expanded);
+            checkChoiceAccepted(name + " expandedKey", algId, new DEROctetString(expanded), expanded);
+            checkChoiceAccepted(name + " both", algId, new DERSequence(new ASN1Encodable[]{ new DEROctetString(seed), new DEROctetString(expanded) }), expanded);
+
+            // the pre-RFC forms
+            checkRawAccepted(name + " raw seed", algId, seed, expanded);
+            checkRawAccepted(name + " raw expandedKey", algId, expanded, expanded);
+            checkChoiceAccepted(name + " untagged seed", algId, new DEROctetString(seed), expanded);
+
+            // the seed arm must be exactly 32 bytes
+            checkChoiceRejected(name + " tagged expandedKey", algId, new DERTaggedObject(false, 0, new DEROctetString(expanded)), "seed must be 32 bytes");
+            checkChoiceRejected(name + " short tagged seed", algId, new DERTaggedObject(false, 0, new DEROctetString(Arrays.copyOf(seed, 31))), "seed must be 32 bytes");
+            checkChoiceRejected(name + " long tagged seed", algId, new DERTaggedObject(false, 0, new DEROctetString(Arrays.copyOf(seed, 33))), "seed must be 32 bytes");
+            checkChoiceRejected(name + " tag [1]", algId, new DERTaggedObject(false, 1, new DEROctetString(seed)), "unexpected tag");
+
+            // the expandedKey arm must be exactly the expanded key length
+            checkChoiceRejected(name + " short expandedKey", algId, new DEROctetString(Arrays.copyOf(expanded, expanded.length - 1)), "invalid length");
+            checkChoiceRejected(name + " long expandedKey", algId, new DEROctetString(Arrays.copyOf(expanded, expanded.length + 1)), "invalid length");
+            checkChoiceRejected(name + " 31 byte OCTET STRING", algId, new DEROctetString(Arrays.copyOf(seed, 31)), "invalid length");
+            checkRawRejected(name + " raw 33 bytes", algId, Arrays.copyOf(seed, 33), "invalid length");
+
+            // both: exactly two elements, a 32 byte seed and an expandedKey of the right length that matches it
+            checkChoiceRejected(name + " both with expandedKey as seed", algId, new DERSequence(new ASN1Encodable[]{ new DEROctetString(expanded), new DEROctetString(expanded) }), "seed must be 32 bytes");
+            checkChoiceRejected(name + " both with seed as expandedKey", algId, new DERSequence(new ASN1Encodable[]{ new DEROctetString(seed), new DEROctetString(seed) }), "expandedKey must be " + expanded.length + " bytes");
+            checkChoiceRejected(name + " both with one element", algId, new DERSequence(new ASN1Encodable[]{ new DEROctetString(seed) }), "both must have 2 elements");
+            byte[] flipped = Arrays.clone(expanded);
+            flipped[expanded.length - 1] ^= 1;
+            checkChoiceRejected(name + " both inconsistent", algId, new DERSequence(new ASN1Encodable[]{ new DEROctetString(seed), new DEROctetString(flipped) }), "inconsistent");
+        }
+    }
+
+    private static void checkChoiceAccepted(String label, AlgorithmIdentifier algId, ASN1Encodable privateKey, byte[] expanded)
+        throws Exception
+    {
+        MLDSAPrivateKeyParameters key = (MLDSAPrivateKeyParameters)PrivateKeyFactory.createKey(new PrivateKeyInfo(algId, privateKey));
+        assertTrue(label, Arrays.areEqual(expanded, key.getEncoded()));
+    }
+
+    private static void checkRawAccepted(String label, AlgorithmIdentifier algId, byte[] content, byte[] expanded)
+        throws Exception
+    {
+        MLDSAPrivateKeyParameters key = (MLDSAPrivateKeyParameters)PrivateKeyFactory.createKey(rawPrivateKeyInfo(algId, content));
+        assertTrue(label, Arrays.areEqual(expanded, key.getEncoded()));
+    }
+
+    private static void checkChoiceRejected(String label, AlgorithmIdentifier algId, ASN1Encodable privateKey, String message)
+        throws Exception
+    {
+        checkRejected(label, new PrivateKeyInfo(algId, privateKey), message);
+    }
+
+    private static void checkRawRejected(String label, AlgorithmIdentifier algId, byte[] content, String message)
+        throws Exception
+    {
+        checkRejected(label, rawPrivateKeyInfo(algId, content), message);
+    }
+
+    private static void checkRejected(String label, PrivateKeyInfo info, String message)
+        throws Exception
+    {
+        try
+        {
+            PrivateKeyFactory.createKey(info);
+            fail(label + ": accepted");
+        }
+        catch (IllegalArgumentException e)
+        {
+            assertTrue(label + ": " + e.getMessage(), e.getMessage().indexOf(message) >= 0);
+        }
+    }
+
+    // a PrivateKeyInfo whose privateKey OCTET STRING holds the given bytes as its content, not as a DER value
+    private static PrivateKeyInfo rawPrivateKeyInfo(AlgorithmIdentifier algId, byte[] content)
+    {
+        return PrivateKeyInfo.getInstance(new DERSequence(new ASN1Encodable[]{ new ASN1Integer(0), algId, new DEROctetString(content) }));
     }
 
     public void testExpandedPrivateKeyTrConsistency()

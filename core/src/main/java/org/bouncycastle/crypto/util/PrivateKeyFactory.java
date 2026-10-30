@@ -11,6 +11,8 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.cryptopro.ECGOST3410NamedCurves;
@@ -230,8 +232,8 @@ public class PrivateKeyFactory
         }
         else if (Utils.mldsaParams.containsKey(algOID))
         {
-            ASN1Encodable mldsaKey = parsePrimitiveString(keyInfo.getPrivateKey(), 32);
             MLDSAParameters mldsaParams = Utils.mldsaParamsLookup(algOID);
+            ASN1Primitive mldsaKey = parsePrivateKeyChoice(keyInfo.getPrivateKey(), 32, mldsaParams.getName());
 
             MLDSAPublicKeyParameters pubParams = null;
             if (keyInfo.getPublicKeyData() != null)
@@ -239,20 +241,43 @@ public class PrivateKeyFactory
                 pubParams = PublicKeyFactory.MLDSAConverter.getPublicKeyParams(mldsaParams, keyInfo.getPublicKeyData());
             }
 
-            if (mldsaKey instanceof ASN1OctetString)
+            if (mldsaKey instanceof ASN1TaggedObject)
             {
-                // TODO This should be explicitly EXPANDED_KEY or SEED (tag already removed) but is length-flexible
+                // RFC 9881 sec. 6: seed [0] OCTET STRING (SIZE (32))
+                byte[] seed = ASN1OctetString.getInstance((ASN1TaggedObject)mldsaKey, false).getOctets();
+                checkChoiceLength(seed, 32, mldsaParams.getName(), "seed");
+
+                return new MLDSAPrivateKeyParameters(mldsaParams, seed, pubParams);
+            }
+            else if (mldsaKey instanceof ASN1OctetString)
+            {
+                // RFC 9881 sec. 6: expandedKey OCTET STRING (SIZE (2560 | 4032 | 4896)); the constructor rejects any
+                // other length but the 32 bytes of a seed, which parsePrivateKeyChoice only lets through for the
+                // pre-RFC forms of the seed
                 return new MLDSAPrivateKeyParameters(mldsaParams, ((ASN1OctetString)mldsaKey).getOctets(), pubParams);
             }
             else if (mldsaKey instanceof ASN1Sequence)
             {
+                // RFC 9881 sec. 6: both SEQUENCE { seed OCTET STRING (SIZE (32)), expandedKey OCTET STRING (SIZE (n)) }
                 ASN1Sequence keySeq = (ASN1Sequence)mldsaKey;
+                if (keySeq.size() != 2)
+                {
+                    throw new IllegalArgumentException("invalid " + mldsaParams.getName() + " private key: both must have 2 elements");
+                }
                 byte[] seed = ASN1OctetString.getInstance(keySeq.getObjectAt(0)).getOctets();
                 byte[] encoding = ASN1OctetString.getInstance(keySeq.getObjectAt(1)).getOctets();
+                checkChoiceLength(seed, 32, mldsaParams.getName(), "seed");
 
-                // TODO This should only allow seed but is length-flexible
                 MLDSAPrivateKeyParameters mldsaPriv = new MLDSAPrivateKeyParameters(mldsaParams, seed, pubParams);
-                if (!Arrays.constantTimeAreEqual(mldsaPriv.getEncoded(), encoding))
+
+                /*
+                 * RFC 9881 8.2. When receiving a private key that contains both the seed and the expandedKey, the
+                 * recipient SHOULD perform a seed consistency check [..] If the check is done and the seed and the
+                 * expandedKey are not consistent, the recipient MUST reject the private key as malformed.
+                 */
+                byte[] expanded = mldsaPriv.getEncoded();
+                checkChoiceLength(encoding, expanded.length, mldsaParams.getName(), "expandedKey");
+                if (!Arrays.constantTimeAreEqual(expanded, encoding))
                 {
                     throw new IllegalArgumentException("inconsistent " + mldsaParams.getName() + " private key");
                 }
@@ -316,8 +341,8 @@ public class PrivateKeyFactory
             algOID.equals(NISTObjectIdentifiers.id_alg_ml_kem_768) ||
             algOID.equals(NISTObjectIdentifiers.id_alg_ml_kem_1024))
         {
-            ASN1Primitive mlkemKey = parsePrimitiveString(keyInfo.getPrivateKey(), 64);
             MLKEMParameters mlkemParams = Utils.mlkemParamsLookup(algOID);
+            ASN1Primitive mlkemKey = parsePrivateKeyChoice(keyInfo.getPrivateKey(), 64, mlkemParams.getName());
 
             MLKEMPublicKeyParameters pubParams = null;
             if (keyInfo.getPublicKeyData() != null)
@@ -325,18 +350,33 @@ public class PrivateKeyFactory
                 pubParams = PublicKeyFactory.MLKEMConverter.getPublicKeyParams(mlkemParams, keyInfo.getPublicKeyData());
             }
 
-            if (mlkemKey instanceof ASN1OctetString)
+            if (mlkemKey instanceof ASN1TaggedObject)
             {
-                // TODO This should be explicitly EXPANDED_KEY or SEED (tag already removed) but is length-flexible
+                // RFC 9935 sec. 6: seed [0] OCTET STRING (SIZE (64))
+                byte[] seed = ASN1OctetString.getInstance((ASN1TaggedObject)mlkemKey, false).getOctets();
+                checkChoiceLength(seed, 64, mlkemParams.getName(), "seed");
+
+                return new MLKEMPrivateKeyParameters(mlkemParams, seed, pubParams);
+            }
+            else if (mlkemKey instanceof ASN1OctetString)
+            {
+                // RFC 9935 sec. 6: expandedKey OCTET STRING (SIZE (1632 | 2400 | 3168)); the constructor rejects any
+                // other length but the 64 bytes of a seed, which parsePrivateKeyChoice only lets through for the
+                // pre-RFC forms of the seed
                 return new MLKEMPrivateKeyParameters(mlkemParams, ((ASN1OctetString)mlkemKey).getOctets(), pubParams);
             }
             else if (mlkemKey instanceof ASN1Sequence)
             {
+                // RFC 9935 sec. 6: both SEQUENCE { seed OCTET STRING (SIZE (64)), expandedKey OCTET STRING (SIZE (n)) }
                 ASN1Sequence keySeq = (ASN1Sequence)mlkemKey;
+                if (keySeq.size() != 2)
+                {
+                    throw new IllegalArgumentException("invalid " + mlkemParams.getName() + " private key: both must have 2 elements");
+                }
                 byte[] seed = ASN1OctetString.getInstance(keySeq.getObjectAt(0)).getOctets();
                 byte[] encoding = ASN1OctetString.getInstance(keySeq.getObjectAt(1)).getOctets();
+                checkChoiceLength(seed, 64, mlkemParams.getName(), "seed");
 
-                // TODO This should only allow seed but is length-flexible
                 MLKEMPrivateKeyParameters mlkemPriv = new MLKEMPrivateKeyParameters(mlkemParams, seed, pubParams);
 
                 /*
@@ -345,7 +385,9 @@ public class PrivateKeyFactory
                  * the private key. [..] If the check is done and the seed and the expandedKey are not consistent,
                  * the recipient MUST reject the private key as malformed.
                  */
-                if (!Arrays.constantTimeAreEqual(mlkemPriv.getEncoded(), encoding))
+                byte[] expanded = mlkemPriv.getEncoded();
+                checkChoiceLength(encoding, expanded.length, mlkemParams.getName(), "expandedKey");
+                if (!Arrays.constantTimeAreEqual(expanded, encoding))
                 {
                     throw new IllegalArgumentException("inconsistent " + mlkemParams.getName() + " private key");
                 }
@@ -473,36 +515,64 @@ public class PrivateKeyFactory
     }
 
     /**
-     * So it seems for the new PQC algorithms, there's a couple of approaches to what goes in the OCTET STRING
-     * and in this case there may also be SEQUENCE.
+     * Parse the privateKey OCTET STRING of an ML-DSA (RFC 9881 sec. 6) or ML-KEM (RFC 9935 sec. 6) PrivateKeyInfo,
+     * whose content is the DER of
+     * <pre>
+     *   CHOICE { seed [0] OCTET STRING (SIZE (seedLength)), expandedKey OCTET STRING (SIZE (n)),
+     *            both SEQUENCE { seed OCTET STRING (SIZE (seedLength)), expandedKey OCTET STRING (SIZE (n)) } }
+     * </pre>
+     * The tag says which arm is present, so the seed arm is returned as the {@link ASN1TaggedObject} for the
+     * caller to check its length against, the expandedKey arm as an {@link ASN1OctetString} and both as an
+     * {@link ASN1Sequence}. Three pre-RFC forms, which the drafts this library followed before the RFCs were
+     * published produced, are still read and come back as an {@link ASN1OctetString} too: the raw seed as the
+     * OCTET STRING's content, the raw expanded key as its content, and the seed in an untagged inner OCTET STRING.
      */
-    private static ASN1Primitive parsePrimitiveString(ASN1OctetString octStr, int expectedLength)
-        throws IOException
+    private static ASN1Primitive parsePrivateKeyChoice(ASN1OctetString octStr, int seedLength, String algorithmName)
     {
         byte[] data = octStr.getOctets();
-        //
-        // it's the right length for a RAW encoding, just return it.
-        //
-        if (data.length == expectedLength)
+
+        // pre-RFC: the raw seed as the content of the OCTET STRING
+        if (data.length == seedLength)
         {
             return octStr;
         }
 
-        //
-        // possible internal OCTET STRING, possibly long form with or without the internal OCTET STRING
-        // or possible SEQUENCE
-        ASN1Encodable obj = Utils.parseData(data);
-
-        if (obj instanceof ASN1OctetString)
+        if (data.length == 0 || Utils.isRaw(data))
         {
-            return ASN1OctetString.getInstance(obj);
-        }
-        if (obj instanceof ASN1Sequence)
-        {
-            return ASN1Sequence.getInstance(obj);
+            // pre-RFC: the raw expanded key as the content of the OCTET STRING (its length is checked by the key constructor)
+            return octStr;
         }
 
-        return octStr;
+        // RFC form: the tag of the CHOICE arm, and nothing else, says which arm this is; any context-specific
+        // tag is examined so that one other than [0] is reported as such
+        if ((data[0] & 0xC0) == BERTags.CONTEXT_SPECIFIC)
+        {
+            ASN1TaggedObject tagged = ASN1TaggedObject.getInstance(data);
+            if (!tagged.hasContextTag(0))
+            {
+                throw new IllegalArgumentException("invalid " + algorithmName + " private key: unexpected tag");
+            }
+            return tagged;
+        }
+
+        // RFC form: expandedKey as an OCTET STRING or both as a SEQUENCE; an untagged OCTET STRING of the seed's
+        // length is the pre-RFC form of the seed, a length no expandedKey can have
+        ASN1Primitive obj = Utils.parseData(data);
+        if (obj instanceof ASN1OctetString || obj instanceof ASN1Sequence)
+        {
+            return obj;
+        }
+
+        throw new IllegalArgumentException("invalid " + algorithmName + " private key");
+    }
+
+    private static void checkChoiceLength(byte[] value, int expectedLength, String algorithmName, String field)
+    {
+        if (value.length != expectedLength)
+        {
+            throw new IllegalArgumentException("invalid " + algorithmName + " private key: " + field + " must be "
+                + expectedLength + " bytes, not " + value.length);
+        }
     }
 
     private static byte[] getRawKey(PrivateKeyInfo keyInfo)
