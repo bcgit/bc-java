@@ -26,6 +26,7 @@ import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.jcajce.PKCS12Key;
 import org.bouncycastle.jcajce.PKCS12KeyWithParameters;
+import org.bouncycastle.jcajce.spec.AEADParameterSpec;
 import org.bouncycastle.util.Exceptions;
 
 public class BaseStreamCipher
@@ -257,6 +258,11 @@ public class BaseStreamCipher
                 throw new InvalidKeyException("Algorithm requires a PBE key");
             }
             param = new KeyParameter(key.getEncoded());
+        }
+        else if (params instanceof AEADParameterSpec)
+        {
+            // an IvParameterSpec, but the MAC size and associated data would be silently ignored
+            throw new InvalidAlgorithmParameterException("AEADParameterSpec can only be used with AEAD modes.");
         }
         else if (params instanceof IvParameterSpec)
         {

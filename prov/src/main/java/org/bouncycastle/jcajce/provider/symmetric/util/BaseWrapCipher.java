@@ -38,6 +38,7 @@ import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.params.ParametersWithSBox;
 import org.bouncycastle.crypto.params.ParametersWithUKM;
 import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
+import org.bouncycastle.jcajce.spec.AEADParameterSpec;
 import org.bouncycastle.jcajce.spec.GOST28147WrapParameterSpec;
 import org.bouncycastle.jcajce.util.BCJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
@@ -212,6 +213,12 @@ public abstract class BaseWrapCipher
         else
         {
             param = new KeyParameter(key.getEncoded());
+        }
+
+        if (params instanceof AEADParameterSpec)
+        {
+            // an IvParameterSpec, but the MAC size and associated data would be silently ignored
+            throw new InvalidAlgorithmParameterException("AEADParameterSpec can only be used with AEAD modes.");
         }
 
         if (params instanceof IvParameterSpec)

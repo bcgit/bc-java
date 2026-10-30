@@ -62,6 +62,7 @@ public class AEADTest extends SimpleTest
         {
         }
         testAEADParameterSpec(K2, N2, A2, P2, C2);
+        testAEADParameterSpecWithNonAEADCiphers();
         if (aeadAvailable)
         {
             checkCipherWithAD(K2, N2, A2, P2, C2_short);
@@ -111,6 +112,53 @@ public class AEADTest extends SimpleTest
                     fail("Tampered AEAD ciphertext should fail with AEADBadTagException when available, got: "+e.getClass().getName());
                 }
             }
+        }
+    }
+
+    // AEADParameterSpec extends IvParameterSpec, so a cipher that only looks for an IvParameterSpec takes the nonce
+    // and silently drops the MAC size and associated data. Non-AEAD stream and wrap ciphers must reject it, as
+    // BaseBlockCipher already does for non-AEAD modes, while still accepting a plain IvParameterSpec and a
+    // caller's own IvParameterSpec subclass that carries nothing extra.
+    private void testAEADParameterSpecWithNonAEADCiphers()
+        throws Exception
+    {
+        checkAEADParameterSpecRejected("ChaCha20", "ChaCha20", 32, 12, Cipher.ENCRYPT_MODE);
+        checkAEADParameterSpecRejected("XChaCha20", "XChaCha20", 32, 24, Cipher.ENCRYPT_MODE);
+        checkAEADParameterSpecRejected("Salsa20", "Salsa20", 32, 8, Cipher.ENCRYPT_MODE);
+        checkAEADParameterSpecRejected("AESWrap", "AES", 16, 8, Cipher.WRAP_MODE);
+        checkAEADParameterSpecRejected("AESWrapPad", "AES", 16, 4, Cipher.WRAP_MODE);
+        checkAEADParameterSpecRejected("AES/CBC/NoPadding", "AES", 16, 16, Cipher.ENCRYPT_MODE);
+    }
+
+    private void checkAEADParameterSpecRejected(String algorithm, String keyAlgorithm, int keySize, int ivSize,
+        int opmode)
+        throws Exception
+    {
+        Cipher cipher = Cipher.getInstance(algorithm, "BC");
+        SecretKeySpec key = new SecretKeySpec(new byte[keySize], keyAlgorithm);
+        byte[] iv = new byte[ivSize];
+
+        try
+        {
+            cipher.init(opmode, key, new AEADParameterSpec(iv, 128, A2));
+            fail(algorithm + " accepted an AEADParameterSpec");
+        }
+        catch (InvalidAlgorithmParameterException e)
+        {
+            isTrue(algorithm + " wrong message: " + e.getMessage(),
+                "AEADParameterSpec can only be used with AEAD modes.".equals(e.getMessage()));
+        }
+
+        cipher.init(opmode, key, new IvParameterSpec(iv));
+        cipher.init(opmode, key, new PlainIvParameterSpec(iv));
+    }
+
+    private static class PlainIvParameterSpec
+        extends IvParameterSpec
+    {
+        PlainIvParameterSpec(byte[] iv)
+        {
+            super(iv);
         }
     }
 

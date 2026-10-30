@@ -179,6 +179,7 @@ Date: 2026, TBD
 - DefaultSignatureAlgorithmIdentifierFinder still listed the fourteen draft-13 HashMLDSA composite OIDs in its parameters-absent set after their names and services were withdrawn; they have been removed.
 - SMIMESignedGenerator wrote micalg=unknown for a SignerInfo whose digest algorithm is SHAKE128 or SHAKE256, which is what an SLH-DSA-SHAKE signer or the ML-DSA-87 with Ed448 composite produces; it now writes the IANA hash function textual names "shake128" and "shake256" (RFC 8692).
 - The comments on the ML-KEM named groups in org.bouncycastle.tls.NamedGroup cited draft-ietf-tls-ecdhe-mlkem-00 and draft-connolly-tls-mlkem-key-agreement-05; the hybrid groups are now RFC 10024 and the pure groups draft-ietf-tls-mlkem. The javadoc of ConcatenationKDFGenerator now cites SP 800-56C Rev. 2 as well as SP 800-56A, and the specifications document names the X-Wing draft revision it implements.
+- The BC provider's stream ciphers (ChaCha20, XChaCha20, Salsa20 and the rest) and key wrap ciphers (AESWrap, AESWrapPad and the other algorithms' wrap modes) accepted an AEADParameterSpec, which extends IvParameterSpec, as a plain IV, so the MAC size and associated data it carried were silently ignored. They now reject it with the InvalidAlgorithmParameterException the block ciphers already throw for non-AEAD modes. A plain IvParameterSpec, or a subclass carrying no extra data, is unaffected.
 
 ### 2.1.3 Additional Features and Functionality
 
