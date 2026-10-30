@@ -20,6 +20,7 @@ import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
 import org.bouncycastle.jcajce.CompositePublicKey;
 import org.bouncycastle.jcajce.io.OutputStreamFactory;
+import org.bouncycastle.jcajce.spec.ContextParameterSpec;
 import org.bouncycastle.operator.ContentVerifier;
 import org.bouncycastle.operator.ContentVerifierProvider;
 import org.bouncycastle.operator.OperatorCreationException;
@@ -30,9 +31,27 @@ import org.bouncycastle.util.io.TeeOutputStream;
 public class JcaContentVerifierProviderBuilder
 {
     private OperatorHelper helper = OperatorUtils.createDefaultHelper();
+    private ContextParameterSpec context;
 
     public JcaContentVerifierProviderBuilder()
     {
+    }
+
+    /**
+     * Set the context string the signatures were made with, for an ML-DSA, SLH-DSA or composite
+     * signature made through a {@link JcaContentSignerBuilder} given a {@link ContextParameterSpec}.
+     * The context is not recorded in the signature algorithm identifier, so it must be supplied
+     * here; the X.509 and CMS profiles for these algorithms require the empty context, which is
+     * what a builder with no context verifies against.
+     *
+     * @param context the context string spec, null for the empty context.
+     * @return the current builder.
+     */
+    public JcaContentVerifierProviderBuilder setContext(ContextParameterSpec context)
+    {
+        this.context = context;
+
+        return this;
     }
 
     public JcaContentVerifierProviderBuilder setProvider(Provider provider)
@@ -96,6 +115,11 @@ public class JcaContentVerifierProviderBuilder
                         sig = helper.createSignature(algorithm);
 
                         sig.initVerify(certificate.getPublicKey());
+
+                        if (context != null)
+                        {
+                            sig.setParameter(context);
+                        }
                     }
                     catch (GeneralSecurityException e)
                     {
@@ -257,6 +281,11 @@ public class JcaContentVerifierProviderBuilder
             Signature sig = helper.createSignature(algorithm);
 
             sig.initVerify(publicKey);
+
+            if (context != null)
+            {
+                sig.setParameter(context);
+            }
 
             return sig;
         }

@@ -26,6 +26,7 @@ import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.jcajce.io.OutputStreamFactory;
+import org.bouncycastle.jcajce.spec.ContextParameterSpec;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.FixedLengthContentSigner;
 import org.bouncycastle.operator.DefaultDigestAlgorithmIdentifierFinder;
@@ -133,6 +134,21 @@ public class JcaContentSignerBuilder
         this.signatureDigestAlgorithm = signatureDigestAlgorithmID;
     }
     
+    /**
+     * Constructor which includes a parameter spec for the signature algorithm.
+     * <p>
+     * A {@link PSSParameterSpec} selects RSASSA-PSS and its parameters are recorded in the signature
+     * algorithm identifier. A {@link ContextParameterSpec} supplies the context string of an ML-DSA,
+     * SLH-DSA or composite signature (FIPS 204 and FIPS 205); it is passed to the Signature object
+     * and does not appear in the algorithm identifier, so a verifier must be given the same context
+     * out of band (see {@link JcaContentVerifierProviderBuilder#setContext(ContextParameterSpec)}).
+     * The X.509 and CMS profiles for these algorithms (RFC 9881, RFC 9882, RFC 9814) require the
+     * empty context, which is what a builder with no spec produces.
+     * </p>
+     *
+     * @param signatureAlgorithm the signature algorithm we perform.
+     * @param sigParamSpec the parameter spec for the signature algorithm.
+     */
     public JcaContentSignerBuilder(String signatureAlgorithm, AlgorithmParameterSpec sigParamSpec)
     {
         this(signatureAlgorithm, sigParamSpec, null);
@@ -150,6 +166,11 @@ public class JcaContentSignerBuilder
             this.sigAlgSpec = pssSpec;
             this.sigAlgId = new AlgorithmIdentifier(
                                     PKCSObjectIdentifiers.id_RSASSA_PSS, createPSSParams(pssSpec));
+        }
+        else if (sigParamSpec instanceof ContextParameterSpec)
+        {
+            // the context is not part of the algorithm identifier - that is worked out from the key as usual.
+            this.sigAlgSpec = sigParamSpec;
         }
         else
         {
@@ -184,7 +205,7 @@ public class JcaContentSignerBuilder
     {
         try
         {
-            if (sigAlgSpec == null)
+            if (sigAlgId == null)
             {
                 this.sigAlgId = getSigAlgId(privateKey);
             }
@@ -199,6 +220,11 @@ public class JcaContentSignerBuilder
             else
             {
                 sig.initSign(privateKey);
+            }
+
+            if (sigAlgSpec instanceof ContextParameterSpec)
+            {
+                sig.setParameter(sigAlgSpec);
             }
 
             final ContentSigner contentSigner = new ContentSigner()

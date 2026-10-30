@@ -14,15 +14,20 @@ import junit.framework.TestCase;
 import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x509.KeyUsage;
+import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
+import org.bouncycastle.jcajce.spec.ContextParameterSpec;
 import org.bouncycastle.jcajce.spec.FrodoKEMParameterSpec;
 import org.bouncycastle.jcajce.spec.MLDSAParameterSpec;
 import org.bouncycastle.jcajce.spec.MLKEMParameterSpec;
+import org.bouncycastle.jcajce.spec.SLHDSAParameterSpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
+import org.bouncycastle.operator.jcajce.JcaContentVerifierProviderBuilder;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
 
 /**
  * Certificate generation tests for the post-quantum KEM public key types (ML-KEM and FrodoKEM).
@@ -88,6 +93,70 @@ public class PQCCertTest
 
             checkKemCertificate(names[i], kemKp, ca);
         }
+    }
+
+    /**
+     * A FIPS 204 / FIPS 205 context string passed to JcaContentSignerBuilder is bound into the
+     * certificate signature, and JcaContentVerifierProviderBuilder.setContext() is the only way
+     * to verify it: the empty context the X.509 profiles require, or any other context, fails.
+     */
+    public void testSignatureContext()
+        throws Exception
+    {
+        checkSignatureContext("ML-DSA-65", generateKeyPair("ML-DSA", MLDSAParameterSpec.ml_dsa_65));
+        checkSignatureContext("SLH-DSA-SHA2-128F", generateKeyPair("SLH-DSA", SLHDSAParameterSpec.slh_dsa_sha2_128f));
+    }
+
+    private void checkSignatureContext(String sigAlg, KeyPair kp)
+        throws Exception
+    {
+        ContextParameterSpec context = new ContextParameterSpec(Strings.toByteArray("BC test context"));
+        ContextParameterSpec wrongContext = new ContextParameterSpec(Strings.toByteArray("BC test contexu"));
+
+        X500Principal name = new X500Principal("CN=" + sigAlg + " context");
+
+        Date notBefore = new Date(System.currentTimeMillis() - ONE_DAY);
+        Date notAfter = new Date(System.currentTimeMillis() + 365 * ONE_DAY);
+
+        JcaX509v3CertificateBuilder builder = new JcaX509v3CertificateBuilder(
+            name, BigInteger.valueOf(serialNo++), notBefore, notAfter, name, kp.getPublic());
+
+        ContentSigner signer = new JcaContentSignerBuilder(sigAlg, context).setProvider(BC).build(kp.getPrivate());
+
+        X509CertificateHolder cert = builder.build(signer);
+
+        // the context is not part of the algorithm identifier
+        assertEquals(sigAlg + ": algorithm identifier",
+            new JcaContentSignerBuilder(sigAlg).setProvider(BC).build(kp.getPrivate()).getAlgorithmIdentifier(),
+            cert.getSignatureAlgorithm());
+
+        assertTrue(sigAlg + ": verify with context",
+            cert.isSignatureValid(new JcaContentVerifierProviderBuilder().setProvider(BC).setContext(context).build(kp.getPublic())));
+        assertTrue(sigAlg + ": verify with context, certificate verifier",
+            cert.isSignatureValid(new JcaContentVerifierProviderBuilder().setProvider(BC).setContext(context).build(cert)));
+        assertFalse(sigAlg + ": verify with empty context",
+            cert.isSignatureValid(new JcaContentVerifierProviderBuilder().setProvider(BC).build(kp.getPublic())));
+        assertFalse(sigAlg + ": verify with wrong context",
+            cert.isSignatureValid(new JcaContentVerifierProviderBuilder().setProvider(BC).setContext(wrongContext).build(kp.getPublic())));
+
+        // and the certificate's own verify, which has no way to pass a context, fails too
+        try
+        {
+            new JcaX509CertificateConverter().setProvider(BC).getCertificate(cert).verify(kp.getPublic(), BC);
+            fail(sigAlg + ": X509Certificate.verify accepted a context signature");
+        }
+        catch (java.security.SignatureException e)
+        {
+            // expected
+        }
+
+        // a builder with no context still produces what the empty-context profile expects
+        X509CertificateHolder plainCert = builder.build(new JcaContentSignerBuilder(sigAlg).setProvider(BC).build(kp.getPrivate()));
+
+        assertTrue(sigAlg + ": empty context verify",
+            plainCert.isSignatureValid(new JcaContentVerifierProviderBuilder().setProvider(BC).build(kp.getPublic())));
+        assertFalse(sigAlg + ": empty context signature against a context",
+            plainCert.isSignatureValid(new JcaContentVerifierProviderBuilder().setProvider(BC).setContext(context).build(kp.getPublic())));
     }
 
     private void checkKemCertificate(String label, KeyPair kemKp, CA ca)
