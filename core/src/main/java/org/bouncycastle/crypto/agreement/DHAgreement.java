@@ -56,7 +56,7 @@ public class DHAgreement
         
         if (!(kParam instanceof DHPrivateKeyParameters))
         {
-            throw new IllegalArgumentException("DHEngine expects DHPrivateKeyParameters");
+            throw new IllegalArgumentException("DHAgreement expects DHPrivateKeyParameters");
         }
 
         this.key = (DHPrivateKeyParameters)kParam;

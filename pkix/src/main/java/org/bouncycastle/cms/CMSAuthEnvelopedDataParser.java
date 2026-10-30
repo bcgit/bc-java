@@ -270,7 +270,7 @@ public class CMSAuthEnvelopedDataParser
     }
 
     /**
-     * return a table of the unauthenticated attributes indexed by
+     * return a table of the authenticated attributes indexed by
      * the OID of the attribute.
      */
     public AttributeTable getAuthAttrs()

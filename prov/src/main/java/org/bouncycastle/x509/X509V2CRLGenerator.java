@@ -72,7 +72,7 @@ public class X509V2CRLGenerator
 
     /**
      * Set the issuer distinguished name - the issuer is the entity whose private key is used to sign the
-     * certificate.
+     * CRL.
      */
     public void setIssuerDN(
         X500Principal   issuer)
@@ -89,7 +89,7 @@ public class X509V2CRLGenerator
 
     /**
      * Set the issuer distinguished name - the issuer is the entity whose private key is used to sign the
-     * certificate.
+     * CRL.
      */
     public void setIssuerDN(
         X509Name   issuer)
