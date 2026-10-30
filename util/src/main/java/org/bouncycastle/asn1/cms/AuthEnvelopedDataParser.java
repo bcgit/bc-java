@@ -176,9 +176,14 @@ public class AuthEnvelopedDataParser
 
         if (nextObject != null)
         {
+            if (!(nextObject instanceof ASN1TaggedObjectParser))
+            {
+                throw new IOException("AuthEnvelopedData has an unexpected element after mac");
+            }
             ASN1TaggedObjectParser o = (ASN1TaggedObjectParser)nextObject;
             nextObject = null;
-            return (ASN1SetParser)ASN1Util.parseContextBaseUniversal(o, 2, false, BERTags.SET_OF);
+            ASN1SetParser unauthAttrs = (ASN1SetParser)ASN1Util.parseContextBaseUniversal(o, 2, false, BERTags.SET_OF);
+            return new EndCheckedSetParser(unauthAttrs, seq, "AuthEnvelopedData", "unauthAttrs");
         }
 
         return null;

@@ -7,7 +7,6 @@ import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1SequenceParser;
 import org.bouncycastle.asn1.ASN1SetParser;
-import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.ASN1TaggedObjectParser;
 import org.bouncycastle.asn1.ASN1Util;
 import org.bouncycastle.asn1.BERTags;
@@ -133,9 +132,15 @@ public class AuthenticatedDataParser
 
         if (nextObject instanceof ASN1TaggedObjectParser)
         {
-            AlgorithmIdentifier obj = AlgorithmIdentifier.getInstance((ASN1TaggedObject)nextObject.toASN1Primitive(), false);
+            ASN1TaggedObjectParser o = (ASN1TaggedObjectParser)nextObject;
+            if (!o.hasContextTag(1))
+            {
+                throw new IOException("AuthenticatedData has an unexpected tag where digestAlgorithm [1] is expected: "
+                    + ASN1Util.getTagText(o));
+            }
+            ASN1SequenceParser digestAlgorithm = (ASN1SequenceParser)o.parseBaseUniversal(false, BERTags.SEQUENCE);
             nextObject = null;
-            return obj;
+            return AlgorithmIdentifier.getInstance(digestAlgorithm.getLoadedObject());
         }
 
         return null;
@@ -206,9 +211,14 @@ public class AuthenticatedDataParser
 
         if (nextObject != null)
         {
+            if (!(nextObject instanceof ASN1TaggedObjectParser))
+            {
+                throw new IOException("AuthenticatedData has an unexpected element after mac");
+            }
             ASN1TaggedObjectParser o = (ASN1TaggedObjectParser)nextObject;
             nextObject = null;
-            return (ASN1SetParser)ASN1Util.parseContextBaseUniversal(o, 3, false, BERTags.SET_OF);
+            ASN1SetParser unauthAttrs = (ASN1SetParser)ASN1Util.parseContextBaseUniversal(o, 3, false, BERTags.SET_OF);
+            return new EndCheckedSetParser(unauthAttrs, seq, "AuthenticatedData", "unauthAttrs");
         }
 
         return null;

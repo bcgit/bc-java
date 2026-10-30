@@ -162,7 +162,11 @@ public class SignedDataParser
         {
             throw new IOException("SignedData missing signerInfos");
         }
+        if (!(_nextObject instanceof ASN1SetParser))
+        {
+            throw new IOException("SignedData has an unexpected element where signerInfos is expected");
+        }
 
-        return (ASN1SetParser)_nextObject;
+        return new EndCheckedSetParser((ASN1SetParser)_nextObject, _seq, "SignedData", "signerInfos");
     }
 }

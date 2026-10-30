@@ -43,7 +43,12 @@ public class EncryptedContentInfoParser
         }
 
         _contentEncryptionAlgorithm = AlgorithmIdentifier.getInstance(alg.toASN1Primitive());
-        _encryptedContent = (ASN1TaggedObjectParser)seq.readObject();
+        ASN1Encodable next = seq.readObject();
+        if (next != null && !(next instanceof ASN1TaggedObjectParser))
+        {
+            throw new IOException("EncryptedContentInfo has an unexpected element where encryptedContent [0] is expected");
+        }
+        _encryptedContent = (ASN1TaggedObjectParser)next;
     }
 
     public ASN1ObjectIdentifier getContentType()

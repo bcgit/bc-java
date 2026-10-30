@@ -100,12 +100,21 @@ public class ProcurationSyntax
         {
             throw new IllegalArgumentException("Bad sequence size: " + seq.size());
         }
-        Enumeration e = seq.getObjects();
 
+        // country [1] and typeOfSubstitution [2], each optional, then signingFor [3], in that order
+        int lastTagNo = -1;
+        Enumeration e = seq.getObjects();
         while (e.hasMoreElements())
         {
             ASN1TaggedObject o = ASN1TaggedObject.getContextInstance(e.nextElement());
-            switch (o.getTagNo())
+            int tagNo = o.getTagNo();
+            if (tagNo <= lastTagNo)
+            {
+                throw new IllegalArgumentException("tag [" + tagNo + "] repeated or out of order");
+            }
+            lastTagNo = tagNo;
+
+            switch (tagNo)
             {
                 case 1:
                     country = ASN1PrintableString.getInstance(o, true).getString();
@@ -127,6 +136,11 @@ public class ProcurationSyntax
                 default:
                     throw new IllegalArgumentException("Bad tag number: " + o.getTagNo());
             }
+        }
+
+        if (thirdPerson == null && certRef == null)
+        {
+            throw new IllegalArgumentException("signingFor missing");
         }
     }
 

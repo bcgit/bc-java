@@ -19,13 +19,23 @@ import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.DERUTF8String;
+import org.bouncycastle.asn1.ASN1Encoding;
+import org.bouncycastle.asn1.ASN1OctetStringParser;
+import org.bouncycastle.asn1.ASN1SequenceParser;
+import org.bouncycastle.asn1.ASN1SetParser;
+import org.bouncycastle.asn1.ASN1StreamParser;
 import org.bouncycastle.asn1.cms.Attribute;
+import org.bouncycastle.asn1.cms.AuthEnvelopedDataParser;
+import org.bouncycastle.asn1.cms.AuthenticatedDataParser;
 import org.bouncycastle.asn1.cms.AuthEnvelopedData;
 import org.bouncycastle.asn1.cms.AuthenticatedData;
 import org.bouncycastle.asn1.cms.CMSAttributes;
 import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.cms.CompressedData;
 import org.bouncycastle.asn1.cms.ContentInfo;
+import org.bouncycastle.asn1.cms.ContentInfoParser;
+import org.bouncycastle.asn1.cms.EncryptedContentInfoParser;
+import org.bouncycastle.asn1.cms.EnvelopedDataParser;
 import org.bouncycastle.asn1.cms.DigestedData;
 import org.bouncycastle.asn1.cms.EncryptedContentInfo;
 import org.bouncycastle.asn1.cms.EncryptedData;
@@ -36,13 +46,17 @@ import org.bouncycastle.asn1.cms.KeyAgreeRecipientInfo;
 import org.bouncycastle.asn1.cms.KeyTransRecipientInfo;
 import org.bouncycastle.asn1.cms.MetaData;
 import org.bouncycastle.asn1.cms.OriginatorInfo;
+import org.bouncycastle.asn1.cms.OriginatorPublicKey;
 import org.bouncycastle.asn1.cms.OtherKeyAttribute;
 import org.bouncycastle.asn1.cms.PasswordRecipientInfo;
 import org.bouncycastle.asn1.cms.RecipientKeyIdentifier;
 import org.bouncycastle.asn1.cms.SignedData;
+import org.bouncycastle.asn1.cms.SignedDataParser;
 import org.bouncycastle.asn1.cms.SignerInfo;
 import org.bouncycastle.asn1.cms.TimeStampAndCRL;
 import org.bouncycastle.asn1.cms.TimeStampedData;
+import org.bouncycastle.asn1.cms.ecc.ECCCMSSharedInfo;
+import org.bouncycastle.asn1.cms.ecc.MQVuserKeyingMaterial;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -87,6 +101,11 @@ public class CMSSequenceFieldOrderTest
     private static ASN1Encodable app(int tagNo, boolean explicit, ASN1Encodable base)
     {
         return new DERTaggedObject(explicit, BERTags.APPLICATION, tagNo, base);
+    }
+
+    private static ASN1Encodable[] els(ASN1Encodable a)
+    {
+        return new ASN1Encodable[]{ a };
     }
 
     private static ASN1Encodable[] els(ASN1Encodable a, ASN1Encodable b)
@@ -160,6 +179,240 @@ public class CMSSequenceFieldOrderTest
         fixedSizeTypes();
         keyIdentifiers();
         timeStampedData();
+        eccSharedInfoAndMqv();
+        streamingParsers();
+    }
+
+    private void eccSharedInfoAndMqv()
+        throws IOException
+    {
+        Parser p = new Parser()
+        {
+            public Object parse(ASN1Sequence seq)
+            {
+                return ECCCMSSharedInfo.getInstance(seq);
+            }
+        };
+        ASN1Encodable ukm = ctx(0, true, OCTETS);
+        ASN1Encodable suppPubInfo = ctx(2, true, new DEROctetString(new byte[4]));
+
+        accepts("ECCCMSSharedInfo", p, els(AES, suppPubInfo));
+        accepts("ECCCMSSharedInfo entityUInfo", p, els(AES, ukm, suppPubInfo));
+        rejects("ECCCMSSharedInfo [5] entityUInfo", p, els(AES, ctx(5, true, OCTETS), suppPubInfo));
+        rejects("ECCCMSSharedInfo [5] suppPubInfo", p, els(AES, ctx(5, true, new DEROctetString(new byte[4]))));
+        rejects("ECCCMSSharedInfo order", p, els(AES, suppPubInfo, ukm));
+        rejects("ECCCMSSharedInfo trailing", p, els(AES, suppPubInfo, ONE));
+
+        p = new Parser()
+        {
+            public Object parse(ASN1Sequence seq)
+            {
+                return MQVuserKeyingMaterial.getInstance(seq);
+            }
+        };
+        ASN1Encodable ephemeralKey = new OriginatorPublicKey(RSA, new byte[]{ 1 });
+
+        accepts("MQVuserKeyingMaterial", p, new ASN1Encodable[]{ ephemeralKey });
+        accepts("MQVuserKeyingMaterial addedukm", p, els(ephemeralKey, ukm));
+        rejects("MQVuserKeyingMaterial [5] addedukm", p, els(ephemeralKey, ctx(5, true, OCTETS)));
+    }
+
+    private interface StreamParser
+    {
+        void parse(ASN1SequenceParser seq)
+            throws IOException;
+    }
+
+    private static ASN1SequenceParser stream(ASN1Encodable[] elements)
+        throws IOException
+    {
+        return (ASN1SequenceParser)new ASN1StreamParser(new DERSequence(elements).getEncoded(ASN1Encoding.DER)).readObject();
+    }
+
+    private static void drain(ASN1SetParser set)
+        throws IOException
+    {
+        if (set != null)
+        {
+            ASN1Encodable o;
+            while ((o = set.readObject()) != null)
+            {
+                // a streamed element has to be consumed before the next one can be read
+                o.toASN1Primitive();
+            }
+        }
+    }
+
+    private void acceptsStream(String label, StreamParser parser, ASN1Encodable[] elements)
+        throws IOException
+    {
+        try
+        {
+            parser.parse(stream(elements));
+        }
+        catch (IOException e)
+        {
+            fail(label + " rejected a valid encoding: " + e.getMessage());
+        }
+        catch (IllegalStateException e)
+        {
+            fail(label + " rejected a valid encoding: " + e.getMessage());
+        }
+    }
+
+    private void rejectsStream(String label, StreamParser parser, ASN1Encodable[] elements)
+        throws IOException
+    {
+        try
+        {
+            parser.parse(stream(elements));
+            fail(label + " accepted an invalid encoding");
+        }
+        catch (IOException e)
+        {
+            // expected
+        }
+        catch (IllegalStateException e)
+        {
+            // expected: ASN1ParsingException from the ASN.1 layer
+        }
+        catch (IllegalArgumentException e)
+        {
+            // expected: a tag check in the ASN.1 layer
+        }
+    }
+
+    private void streamingParsers()
+        throws IOException
+    {
+        final ASN1Encodable[] signerInfos = new ASN1Encodable[]{ new DERSet() };
+        StreamParser signed = new StreamParser()
+        {
+            public void parse(ASN1SequenceParser seq)
+                throws IOException
+            {
+                SignedDataParser p = SignedDataParser.getInstance(seq);
+                drain(p.getDigestAlgorithms());
+                p.getEncapContentInfo().getContent(BERTags.OCTET_STRING);
+                drain(p.getCertificates());
+                drain(p.getCrls());
+                drain(p.getSignerInfos());
+            }
+        };
+        ASN1Encodable[] signedHead = new ASN1Encodable[]{ ONE, new DERSet(), DATA };
+        acceptsStream("SignedDataParser", signed, concat(signedHead, signerInfos));
+        rejectsStream("SignedDataParser trailing", signed, concat(signedHead, els(new DERSet(), ONE)));
+        rejectsStream("SignedDataParser INTEGER signerInfos", signed, concat(signedHead, new ASN1Encodable[]{ ONE }));
+
+        // the same, loading the set rather than streaming it
+        StreamParser signedLoaded = new StreamParser()
+        {
+            public void parse(ASN1SequenceParser seq)
+                throws IOException
+            {
+                SignedDataParser p = SignedDataParser.getInstance(seq);
+                drain(p.getDigestAlgorithms());
+                p.getEncapContentInfo().getContent(BERTags.OCTET_STRING);
+                drain(p.getCertificates());
+                drain(p.getCrls());
+                p.getSignerInfos().toASN1Primitive();
+            }
+        };
+        acceptsStream("SignedDataParser loaded", signedLoaded, concat(signedHead, signerInfos));
+        rejectsStream("SignedDataParser loaded trailing", signedLoaded, concat(signedHead, els(new DERSet(), ONE)));
+
+        StreamParser enveloped = new StreamParser()
+        {
+            public void parse(ASN1SequenceParser seq)
+                throws IOException
+            {
+                EnvelopedDataParser p = new EnvelopedDataParser(seq);
+                p.getOriginatorInfo();
+                drain(p.getRecipientInfos());
+                p.getEncryptedContentInfo().getEncryptedContent(BERTags.OCTET_STRING);
+                drain(p.getUnprotectedAttrs());
+            }
+        };
+        ASN1Encodable[] envelopedHead = new ASN1Encodable[]{ ZERO, RECIPIENTS, ECI };
+        ASN1Encodable unprotectedAttrs = ctx(1, false, ATTRS);
+        acceptsStream("EnvelopedDataParser", enveloped, envelopedHead);
+        acceptsStream("EnvelopedDataParser unprotectedAttrs", enveloped, concat(envelopedHead, new ASN1Encodable[]{ unprotectedAttrs }));
+        rejectsStream("EnvelopedDataParser trailing", enveloped, concat(envelopedHead, els(unprotectedAttrs, ONE)));
+        rejectsStream("EnvelopedDataParser INTEGER after encryptedContentInfo", enveloped, concat(envelopedHead, new ASN1Encodable[]{ ONE }));
+        rejectsStream("EnvelopedDataParser [5] unprotectedAttrs", enveloped, concat(envelopedHead, new ASN1Encodable[]{ ctx(5, false, ATTRS) }));
+
+        StreamParser authEnveloped = new StreamParser()
+        {
+            public void parse(ASN1SequenceParser seq)
+                throws IOException
+            {
+                AuthEnvelopedDataParser p = new AuthEnvelopedDataParser(seq);
+                p.getOriginatorInfo();
+                drain(p.getRecipientInfos());
+                p.getAuthEncryptedContentInfo().getEncryptedContent(BERTags.OCTET_STRING);
+                drain(p.getAuthAttrs());
+                p.getMac();
+                drain(p.getUnauthAttrs());
+            }
+        };
+        ASN1Encodable[] authEnvelopedHead = new ASN1Encodable[]{ ZERO, RECIPIENTS, ECI, OCTETS };
+        ASN1Encodable unauthAttrs2 = ctx(2, false, ATTRS);
+        acceptsStream("AuthEnvelopedDataParser", authEnveloped, authEnvelopedHead);
+        acceptsStream("AuthEnvelopedDataParser unauthAttrs", authEnveloped, concat(authEnvelopedHead, new ASN1Encodable[]{ unauthAttrs2 }));
+        rejectsStream("AuthEnvelopedDataParser trailing", authEnveloped, concat(authEnvelopedHead, els(unauthAttrs2, ONE)));
+        rejectsStream("AuthEnvelopedDataParser INTEGER after mac", authEnveloped, concat(authEnvelopedHead, new ASN1Encodable[]{ ONE }));
+
+        StreamParser authenticated = new StreamParser()
+        {
+            public void parse(ASN1SequenceParser seq)
+                throws IOException
+            {
+                AuthenticatedDataParser p = new AuthenticatedDataParser(seq);
+                p.getOriginatorInfo();
+                drain(p.getRecipientInfos());
+                p.getMacAlgorithm();
+                p.getDigestAlgorithm();
+                p.getEncapsulatedContentInfo().getContent(BERTags.OCTET_STRING);
+                drain(p.getAuthAttrs());
+                p.getMac();
+                drain(p.getUnauthAttrs());
+            }
+        };
+        ASN1Encodable[] authenticatedHead = new ASN1Encodable[]{ ZERO, RECIPIENTS, RSA };
+        ASN1Encodable[] authenticatedTail = new ASN1Encodable[]{ DATA, OCTETS };
+        ASN1Encodable unauthAttrs3 = ctx(3, false, ATTRS);
+        acceptsStream("AuthenticatedDataParser", authenticated, concat(authenticatedHead, authenticatedTail));
+        acceptsStream("AuthenticatedDataParser digestAlgorithm", authenticated, concat(authenticatedHead, concat(new ASN1Encodable[]{ ctx(1, false, SHA256) }, authenticatedTail)));
+        acceptsStream("AuthenticatedDataParser unauthAttrs", authenticated, concat(authenticatedHead, concat(authenticatedTail, new ASN1Encodable[]{ unauthAttrs3 })));
+        rejectsStream("AuthenticatedDataParser [5] digestAlgorithm", authenticated, concat(authenticatedHead, concat(new ASN1Encodable[]{ ctx(5, false, SHA256) }, authenticatedTail)));
+        rejectsStream("AuthenticatedDataParser trailing", authenticated, concat(authenticatedHead, concat(authenticatedTail, els(unauthAttrs3, ONE))));
+        rejectsStream("AuthenticatedDataParser INTEGER after mac", authenticated, concat(authenticatedHead, concat(authenticatedTail, new ASN1Encodable[]{ ONE })));
+
+        StreamParser contentInfo = new StreamParser()
+        {
+            public void parse(ASN1SequenceParser seq)
+                throws IOException
+            {
+                new ContentInfoParser(seq).getContent(BERTags.OCTET_STRING);
+            }
+        };
+        acceptsStream("ContentInfoParser", contentInfo, new ASN1Encodable[]{ CMSObjectIdentifiers.data });
+        acceptsStream("ContentInfoParser content", contentInfo, els(CMSObjectIdentifiers.data, ctx(0, true, OCTETS)));
+        rejectsStream("ContentInfoParser [5] content", contentInfo, els(CMSObjectIdentifiers.data, ctx(5, true, OCTETS)));
+        rejectsStream("ContentInfoParser INTEGER content", contentInfo, els(CMSObjectIdentifiers.data, ONE));
+
+        StreamParser encryptedContentInfo = new StreamParser()
+        {
+            public void parse(ASN1SequenceParser seq)
+                throws IOException
+            {
+                new EncryptedContentInfoParser(seq).getEncryptedContent(BERTags.OCTET_STRING);
+            }
+        };
+        acceptsStream("EncryptedContentInfoParser", encryptedContentInfo, els(CMSObjectIdentifiers.data, AES));
+        acceptsStream("EncryptedContentInfoParser content", encryptedContentInfo, els(CMSObjectIdentifiers.data, AES, ctx(0, false, OCTETS)));
+        rejectsStream("EncryptedContentInfoParser [5] content", encryptedContentInfo, els(CMSObjectIdentifiers.data, AES, ctx(5, false, OCTETS)));
+        rejectsStream("EncryptedContentInfoParser INTEGER content", encryptedContentInfo, els(CMSObjectIdentifiers.data, AES, ONE));
     }
 
     private void signedData()

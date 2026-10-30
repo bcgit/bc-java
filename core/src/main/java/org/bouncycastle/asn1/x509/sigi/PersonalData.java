@@ -11,6 +11,7 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1PrintableString;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERPrintableString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
@@ -88,10 +89,18 @@ public class PersonalData
 
         nameOrPseudonym = NameOrPseudonym.getInstance(e.nextElement());
 
+        // nameDistinguisher [0] .. postalAddress [4], each optional, in that order
+        int lastTagNo = -1;
         while (e.hasMoreElements())
         {
-            ASN1TaggedObject o = ASN1TaggedObject.getInstance(e.nextElement());
+            ASN1TaggedObject o = ASN1TaggedObject.getInstance(e.nextElement(), BERTags.CONTEXT_SPECIFIC);
             int tag = o.getTagNo();
+            if (tag <= lastTagNo)
+            {
+                throw new IllegalArgumentException("tag [" + tag + "] repeated or out of order");
+            }
+            lastTagNo = tag;
+
             switch (tag)
             {
                 case 0:

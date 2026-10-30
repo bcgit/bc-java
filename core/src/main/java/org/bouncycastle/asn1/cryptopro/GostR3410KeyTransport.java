@@ -5,6 +5,7 @@ import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 
@@ -25,8 +26,14 @@ public class GostR3410KeyTransport
 
     private GostR3410KeyTransport(ASN1Sequence seq)
     {
-       this.sessionEncryptedKey = Gost2814789EncryptedKey.getInstance(seq.getObjectAt(0));
-       this.transportParameters = GostR3410TransportParameters.getInstance(ASN1TaggedObject.getInstance(seq.getObjectAt(1)), false);
+        if (seq.size() != 2)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
+
+        this.sessionEncryptedKey = Gost2814789EncryptedKey.getInstance(seq.getObjectAt(0));
+        this.transportParameters = GostR3410TransportParameters.getInstance(
+            ASN1TaggedObject.getInstance(seq.getObjectAt(1), BERTags.CONTEXT_SPECIFIC, 0), false);
     }
 
     public GostR3410KeyTransport(Gost2814789EncryptedKey sessionEncryptedKey, GostR3410TransportParameters transportParameters)

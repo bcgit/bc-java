@@ -6,6 +6,7 @@ import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
@@ -50,17 +51,32 @@ public class ECCCMSSharedInfo
     private ECCCMSSharedInfo(
         ASN1Sequence seq)
     {
+        if (seq.size() < 2 || seq.size() > 3)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
+
         this.keyInfo = AlgorithmIdentifier.getInstance(seq.getObjectAt(0));
 
-        if (seq.size() == 2)
+        // entityUInfo [0] EXPLICIT OPTIONAL, then suppPubInfo [2] EXPLICIT
+        int i = 1;
+        byte[] entityUInfo = null;
+        ASN1TaggedObject tag0 = ASN1TaggedObject.getContextOptional(seq.getObjectAt(i), 0);
+        if (tag0 != null)
         {
-            this.entityUInfo = null;
-            this.suppPubInfo = ASN1OctetString.getInstance((ASN1TaggedObject)seq.getObjectAt(1), true).getOctets();
+            entityUInfo = ASN1OctetString.getInstance(tag0, true).getOctets();
+            i++;
         }
-        else
+        if (i >= seq.size())
         {
-            this.entityUInfo = ASN1OctetString.getInstance((ASN1TaggedObject)seq.getObjectAt(1), true).getOctets();
-            this.suppPubInfo = ASN1OctetString.getInstance((ASN1TaggedObject)seq.getObjectAt(2), true).getOctets();
+            throw new IllegalArgumentException("suppPubInfo missing");
+        }
+        this.entityUInfo = entityUInfo;
+        this.suppPubInfo = ASN1OctetString.getInstance(
+            ASN1TaggedObject.getInstance(seq.getObjectAt(i++), BERTags.CONTEXT_SPECIFIC, 2), true).getOctets();
+        if (i != seq.size())
+        {
+            throw new IllegalArgumentException("unexpected element at position " + i);
         }
     }
 

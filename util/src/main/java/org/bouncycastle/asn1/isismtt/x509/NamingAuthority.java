@@ -1,8 +1,6 @@
 package org.bouncycastle.asn1.isismtt.x509;
 
-import java.util.Enumeration;
 
-import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1IA5String;
 import org.bouncycastle.asn1.ASN1Object;
@@ -84,66 +82,31 @@ public class NamingAuthority
      */
     private NamingAuthority(ASN1Sequence seq)
     {
-
-        if (seq.size() > 3)
+        int count = seq.size();
+        if (count > 3)
         {
             throw new IllegalArgumentException("Bad sequence size: "
                 + seq.size());
         }
 
-        Enumeration e = seq.getObjects();
-
-        if (e.hasMoreElements())
+        // namingAuthorityId, namingAuthorityUrl, namingAuthorityText, each optional, in that order
+        int i = 0;
+        if (i < count && seq.getObjectAt(i) instanceof ASN1ObjectIdentifier)
         {
-            ASN1Encodable o = (ASN1Encodable)e.nextElement();
-            if (o instanceof ASN1ObjectIdentifier)
-            {
-                namingAuthorityId = (ASN1ObjectIdentifier)o;
-            }
-            else if (o instanceof ASN1IA5String)
-            {
-                namingAuthorityUrl = ASN1IA5String.getInstance(o).getString();
-            }
-            else if (o instanceof ASN1String)
-            {
-                namingAuthorityText = DirectoryString.getInstance(o);
-            }
-            else
-            {
-                throw new IllegalArgumentException("Bad object encountered: "
-                    + o.getClass());
-            }
+            namingAuthorityId = ASN1ObjectIdentifier.getInstance(seq.getObjectAt(i++));
         }
-        if (e.hasMoreElements())
+        if (i < count && seq.getObjectAt(i) instanceof ASN1IA5String)
         {
-            ASN1Encodable o = (ASN1Encodable)e.nextElement();
-            if (o instanceof ASN1IA5String)
-            {
-                namingAuthorityUrl = ASN1IA5String.getInstance(o).getString();
-            }
-            else if (o instanceof ASN1String)
-            {
-                namingAuthorityText = DirectoryString.getInstance(o);
-            }
-            else
-            {
-                throw new IllegalArgumentException("Bad object encountered: "
-                    + o.getClass());
-            }
+            namingAuthorityUrl = ASN1IA5String.getInstance(seq.getObjectAt(i++)).getString();
         }
-        if (e.hasMoreElements())
+        if (i < count && seq.getObjectAt(i) instanceof ASN1String)
         {
-            ASN1Encodable o = (ASN1Encodable)e.nextElement();
-            if (o instanceof ASN1String)
-            {
-                namingAuthorityText = DirectoryString.getInstance(o);
-            }
-            else
-            {
-                throw new IllegalArgumentException("Bad object encountered: "
-                    + o.getClass());
-            }
-
+            namingAuthorityText = DirectoryString.getInstance(seq.getObjectAt(i++));
+        }
+        if (i != count)
+        {
+            throw new IllegalArgumentException("Bad object encountered: "
+                + seq.getObjectAt(i).getClass());
         }
     }
 

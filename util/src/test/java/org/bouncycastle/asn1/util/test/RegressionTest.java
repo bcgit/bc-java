@@ -62,6 +62,7 @@ import org.bouncycastle.asn1.isismtt.test.AdmissionSyntaxUnitTest;
 import org.bouncycastle.asn1.isismtt.test.AdmissionsUnitTest;
 import org.bouncycastle.asn1.isismtt.test.CertHashUnitTest;
 import org.bouncycastle.asn1.isismtt.test.DeclarationOfMajorityUnitTest;
+import org.bouncycastle.asn1.isismtt.test.ISISMTTSequenceFieldOrderTest;
 import org.bouncycastle.asn1.isismtt.test.MonetaryLimitUnitTest;
 import org.bouncycastle.asn1.isismtt.test.NamingAuthorityUnitTest;
 import org.bouncycastle.asn1.isismtt.test.ProcurationSyntaxUnitTest;
@@ -143,6 +144,7 @@ public class RegressionTest
         new MonetaryLimitUnitTest(),
         new NamingAuthorityUnitTest(),
         new ProcurationSyntaxUnitTest(),
+        new ISISMTTSequenceFieldOrderTest(),
         new RequestedCertificateUnitTest(),
         new RestrictionUnitTest(),
         new TimeStampRequestTest(),

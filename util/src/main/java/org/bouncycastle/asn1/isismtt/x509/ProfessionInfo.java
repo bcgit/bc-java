@@ -11,6 +11,7 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1PrintableString;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERPrintableString;
 import org.bouncycastle.asn1.DERSequence;
@@ -194,16 +195,17 @@ public class ProfessionInfo
      */
     private ProfessionInfo(ASN1Sequence seq)
     {
-        if (seq.size() > 5)
+        int count = seq.size();
+        if (count < 1 || count > 5)
         {
             throw new IllegalArgumentException("Bad sequence size: "
                 + seq.size());
         }
 
-        Enumeration e = seq.getObjects();
-
-        ASN1Encodable o = (ASN1Encodable)e.nextElement();
-
+        // namingAuthority [0] EXPLICIT OPTIONAL, professionItems, then professionOIDs,
+        // registrationNumber and addProfessionInfo, each optional, in that order
+        int i = 0;
+        ASN1Encodable o = seq.getObjectAt(i);
         if (o instanceof ASN1TaggedObject)
         {
             if (((ASN1TaggedObject)o).getTagNo() != 0)
@@ -211,64 +213,31 @@ public class ProfessionInfo
                 throw new IllegalArgumentException("Bad tag number: "
                     + ((ASN1TaggedObject)o).getTagNo());
             }
-            namingAuthority = NamingAuthority.getInstance((ASN1TaggedObject)o, true);
-            o = (ASN1Encodable)e.nextElement();
+            namingAuthority = NamingAuthority.getInstance(ASN1TaggedObject.getInstance(o, BERTags.CONTEXT_SPECIFIC, 0), true);
+            i++;
         }
-
-        professionItems = ASN1Sequence.getInstance(o);
-
-        if (e.hasMoreElements())
+        if (i >= count)
         {
-            o = (ASN1Encodable)e.nextElement();
-            if (o instanceof ASN1Sequence)
-            {
-                professionOIDs = ASN1Sequence.getInstance(o);
-            }
-            else if (o instanceof ASN1PrintableString)
-            {
-                registrationNumber = ASN1PrintableString.getInstance(o).getString();
-            }
-            else if (o instanceof ASN1OctetString)
-            {
-                addProfessionInfo = ASN1OctetString.getInstance(o);
-            }
-            else
-            {
-                throw new IllegalArgumentException("Bad object encountered: "
-                    + o.getClass());
-            }
+            throw new IllegalArgumentException("professionItems missing");
         }
-        if (e.hasMoreElements())
+        professionItems = ASN1Sequence.getInstance(seq.getObjectAt(i++));
+        if (i < count && seq.getObjectAt(i) instanceof ASN1Sequence)
         {
-            o = (ASN1Encodable)e.nextElement();
-            if (o instanceof ASN1PrintableString)
-            {
-                registrationNumber = ASN1PrintableString.getInstance(o).getString();
-            }
-            else if (o instanceof DEROctetString)
-            {
-                addProfessionInfo = (DEROctetString)o;
-            }
-            else
-            {
-                throw new IllegalArgumentException("Bad object encountered: "
-                    + o.getClass());
-            }
+            professionOIDs = ASN1Sequence.getInstance(seq.getObjectAt(i++));
         }
-        if (e.hasMoreElements())
+        if (i < count && seq.getObjectAt(i) instanceof ASN1PrintableString)
         {
-            o = (ASN1Encodable)e.nextElement();
-            if (o instanceof DEROctetString)
-            {
-                addProfessionInfo = (DEROctetString)o;
-            }
-            else
-            {
-                throw new IllegalArgumentException("Bad object encountered: "
-                    + o.getClass());
-            }
+            registrationNumber = ASN1PrintableString.getInstance(seq.getObjectAt(i++)).getString();
         }
-
+        if (i < count && seq.getObjectAt(i) instanceof ASN1OctetString)
+        {
+            addProfessionInfo = ASN1OctetString.getInstance(seq.getObjectAt(i++));
+        }
+        if (i != count)
+        {
+            throw new IllegalArgumentException("Bad object encountered: "
+                + seq.getObjectAt(i).getClass());
+        }
     }
 
     /**

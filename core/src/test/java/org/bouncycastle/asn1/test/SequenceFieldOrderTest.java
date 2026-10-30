@@ -15,6 +15,8 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERBitString;
+import org.bouncycastle.asn1.DERGeneralizedTime;
+import org.bouncycastle.asn1.DERPrintableString;
 import org.bouncycastle.asn1.DERIA5String;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
@@ -55,6 +57,10 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.AuthorityKeyIdentifier;
 import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.Certificate;
+import org.bouncycastle.asn1.cryptopro.GOST28147Parameters;
+import org.bouncycastle.asn1.cryptopro.Gost2814789EncryptedKey;
+import org.bouncycastle.asn1.cryptopro.GostR3410KeyTransport;
+import org.bouncycastle.asn1.cryptopro.GostR3410TransportParameters;
 import org.bouncycastle.asn1.x509.CertDiscoveryMethod;
 import org.bouncycastle.asn1.x509.CertificatePair;
 import org.bouncycastle.asn1.x509.DeltaCertificateDescriptor;
@@ -72,7 +78,11 @@ import org.bouncycastle.asn1.x509.NameConstraints;
 import org.bouncycastle.asn1.x509.ObjectDigestInfo;
 import org.bouncycastle.asn1.x509.PolicyConstraints;
 import org.bouncycastle.asn1.x509.PrivateKeyUsagePeriod;
+import org.bouncycastle.asn1.x509.IetfAttrSyntax;
 import org.bouncycastle.asn1.x509.RelatedCertificateDescriptor;
+import org.bouncycastle.asn1.x509.X509Extensions;
+import org.bouncycastle.asn1.x509.sigi.NameOrPseudonym;
+import org.bouncycastle.asn1.x509.sigi.PersonalData;
 import org.bouncycastle.asn1.x509.RoleSyntax;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x509.TBSCertList;
@@ -195,6 +205,10 @@ public class SequenceFieldOrderTest
         tbsCertList();
         deltaCertificateDescriptor();
         relatedCertificateDescriptor();
+        gostTypes();
+        ietfAttrSyntax();
+        personalData();
+        x509Extensions();
         rsaParams();
         privateKeyInfo();
         pkcs7SignerInfo();
@@ -525,6 +539,122 @@ public class SequenceFieldOrderTest
         rejects("RelatedCertificateDescriptor order", p, els(method, keyAlg, sigAlg));
         rejects("RelatedCertificateDescriptor certHash before tags", p, els(method, certHash, sigAlg));
         rejects("RelatedCertificateDescriptor unknown tag", p, els(method, ctx(3, true, RSA)));
+    }
+
+    private void gostTypes()
+        throws IOException
+    {
+        final ASN1Encodable OCT8 = new DEROctetString(new byte[8]);
+        final ASN1Encodable OCT32 = new DEROctetString(new byte[32]);
+        ASN1Encodable paramSet = new ASN1ObjectIdentifier("1.2.643.2.2.31.1");
+
+        Parser p = new Parser()
+        {
+            public Object parse(ASN1Sequence seq)
+            {
+                return GOST28147Parameters.getInstance(seq);
+            }
+        };
+        accepts("GOST28147Parameters", p, els(OCT8, paramSet));
+        rejects("GOST28147Parameters trailing", p, els(OCT8, paramSet, ONE));
+
+        p = new Parser()
+        {
+            public Object parse(ASN1Sequence seq)
+            {
+                return Gost2814789EncryptedKey.getInstance(seq);
+            }
+        };
+        accepts("Gost2814789EncryptedKey", p, els(OCT32, new DEROctetString(new byte[4])));
+        accepts("Gost2814789EncryptedKey maskKey", p, els(OCT32, ctx(0, false, OCT32), new DEROctetString(new byte[4])));
+        rejects("Gost2814789EncryptedKey [5] maskKey", p, els(OCT32, ctx(5, false, OCT32), new DEROctetString(new byte[4])));
+        rejects("Gost2814789EncryptedKey trailing", p, els(OCT32, new DEROctetString(new byte[4]), ONE));
+
+        p = new Parser()
+        {
+            public Object parse(ASN1Sequence seq)
+            {
+                return GostR3410TransportParameters.getInstance(seq);
+            }
+        };
+        accepts("GostR3410TransportParameters", p, els(paramSet, OCT8));
+        accepts("GostR3410TransportParameters ephemeral", p, els(paramSet, ctx(0, false, SPKI), OCT8));
+        rejects("GostR3410TransportParameters [5] ephemeral", p, els(paramSet, ctx(5, false, SPKI), OCT8));
+        rejects("GostR3410TransportParameters trailing", p, els(paramSet, OCT8, ONE));
+
+        final ASN1Encodable encKey = new DERSequence(els(OCT32, new DEROctetString(new byte[4])));
+        final ASN1Encodable transport = new DERSequence(els(paramSet, OCT8));
+        p = new Parser()
+        {
+            public Object parse(ASN1Sequence seq)
+            {
+                return GostR3410KeyTransport.getInstance(seq);
+            }
+        };
+        accepts("GostR3410KeyTransport", p, els(encKey, ctx(0, false, transport)));
+        rejects("GostR3410KeyTransport [5] transportParameters", p, els(encKey, ctx(5, false, transport)));
+        rejects("GostR3410KeyTransport trailing", p, els(encKey, ctx(0, false, transport), ONE));
+    }
+
+    private void ietfAttrSyntax()
+        throws IOException
+    {
+        Parser p = new Parser()
+        {
+            public Object parse(ASN1Sequence seq)
+            {
+                return IetfAttrSyntax.getInstance(seq);
+            }
+        };
+        ASN1Encodable values = new DERSequence(new DEROctetString(new byte[]{ 1 }));
+        ASN1Encodable gns = GN;
+
+        accepts("IetfAttrSyntax", p, els(values));
+        accepts("IetfAttrSyntax policyAuthority", p, els(ctx(0, false, gns), values));
+        // the VOMS form: policyAuthority without its tag
+        accepts("IetfAttrSyntax untagged policyAuthority", p, els(gns, values));
+        rejects("IetfAttrSyntax [5] policyAuthority", p, els(ctx(5, false, gns), values));
+        rejects("IetfAttrSyntax trailing", p, els(ctx(0, false, gns), values, ONE));
+    }
+
+    private void personalData()
+        throws IOException
+    {
+        Parser p = new Parser()
+        {
+            public Object parse(ASN1Sequence seq)
+            {
+                return PersonalData.getInstance(seq);
+            }
+        };
+        ASN1Encodable name = new NameOrPseudonym("Ann");
+        ASN1Encodable distinguisher = ctx(0, false, ONE);
+        ASN1Encodable dateOfBirth = ctx(1, false, new DERGeneralizedTime("20000101000000Z"));
+        ASN1Encodable gender = ctx(3, false, new DERPrintableString("F"));
+
+        accepts("PersonalData", p, els(name));
+        accepts("PersonalData", p, els(name, distinguisher, dateOfBirth, gender));
+        accepts("PersonalData", p, els(name, gender));
+        rejects("PersonalData duplicate", p, els(name, distinguisher, distinguisher));
+        rejects("PersonalData order", p, els(name, dateOfBirth, distinguisher));
+        rejects("PersonalData unknown tag", p, els(name, ctx(5, false, ONE)));
+    }
+
+    private void x509Extensions()
+        throws IOException
+    {
+        Parser p = new Parser()
+        {
+            public Object parse(ASN1Sequence seq)
+            {
+                return X509Extensions.getInstance(seq);
+            }
+        };
+        ASN1Encodable keyUsage = new DERSequence(els(new ASN1ObjectIdentifier("2.5.29.15"), ASN1Boolean.TRUE, new DEROctetString(new DERBitString(new byte[]{ (byte)0x80 }).getEncoded())));
+        ASN1Encodable basicConstraints = new DERSequence(els(new ASN1ObjectIdentifier("2.5.29.19"), new DEROctetString(new DERSequence().getEncoded())));
+
+        accepts("X509Extensions", p, els(keyUsage, basicConstraints));
+        rejects("X509Extensions repeated extension", p, els(keyUsage, keyUsage));
     }
 
     private void rsaParams()

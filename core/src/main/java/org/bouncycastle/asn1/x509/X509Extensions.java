@@ -16,6 +16,7 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.util.Properties;
 
 /**
  * @deprecated use {@link Extension} and  {@link Extensions}
@@ -262,6 +263,12 @@ public class X509Extensions
         {
             ASN1Sequence            s = ASN1Sequence.getInstance(e.nextElement());
             ASN1ObjectIdentifier    oid = ASN1ObjectIdentifier.getInstance(s.getObjectAt(0));
+
+            if (extensions.containsKey(oid.getId())
+                && !Properties.isOverrideSet("org.bouncycastle.x509.ignore_repeated_extensions"))
+            {
+                throw new IllegalArgumentException("repeated extension found: " + oid);
+            }
 
             if (s.size() == 3)
             {

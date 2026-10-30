@@ -1,6 +1,5 @@
 package org.bouncycastle.asn1.cryptopro;
 
-import java.util.Enumeration;
 
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
@@ -55,10 +54,13 @@ public class GOST28147Parameters
     private GOST28147Parameters(
         ASN1Sequence  seq)
     {
-        Enumeration     e = seq.getObjects();
+        if (seq.size() != 2)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
 
-        iv = (ASN1OctetString)e.nextElement();
-        paramSet = (ASN1ObjectIdentifier)e.nextElement();
+        iv = ASN1OctetString.getInstance(seq.getObjectAt(0));
+        paramSet = ASN1ObjectIdentifier.getInstance(seq.getObjectAt(1));
     }
 
     /**
