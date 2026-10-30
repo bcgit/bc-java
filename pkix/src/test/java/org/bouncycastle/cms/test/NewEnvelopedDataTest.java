@@ -707,20 +707,39 @@ public class NewEnvelopedDataTest
     {
         int n = 20000;
         X500Name plain = CMSTestUtil.makeLargeName(n, false);
-        ASN1EncodableVector ris = new ASN1EncodableVector();
-        ris.add(unverifiedKeyTransRecipient(plain, BigInteger.ONE));
-        ris.add(unverifiedKeyTransRecipient(CMSTestUtil.makeLargeName(n, true), BigInteger.ONE));
-        byte[] msg = unverifiedEnvelopedData(ris);
 
         // the recipient store is built by the constructor, before any key is looked for
-        long start = System.currentTimeMillis();
-        CMSEnvelopedData env = new CMSEnvelopedData(msg);
-        RecipientInformationStore recipients = env.getRecipientInfos();
-        long elapsed = System.currentTimeMillis() - start;
+        RecipientInformationStore recipients = new CMSEnvelopedData(reorderedRecipientsMessage(n)).getRecipientInfos();
 
         assertEquals(2, recipients.size());
         assertEquals(2, recipients.getRecipients(new KeyTransRecipientId(plain, BigInteger.ONE)).size());
-        assertTrue("CMSEnvelopedData took " + elapsed + "ms", elapsed < 3000L);
+
+        final byte[] small = reorderedRecipientsMessage(n / 8);
+        final byte[] large = reorderedRecipientsMessage(n);
+        CMSTestUtil.assertLinearGrowth("CMSEnvelopedData", CMSTestUtil.minNanos(new CMSTestUtil.Timed()
+        {
+            public void run()
+                throws Exception
+            {
+                new CMSEnvelopedData(small);
+            }
+        }), CMSTestUtil.minNanos(new CMSTestUtil.Timed()
+        {
+            public void run()
+                throws Exception
+            {
+                new CMSEnvelopedData(large);
+            }
+        }));
+    }
+
+    private static byte[] reorderedRecipientsMessage(int n)
+        throws IOException
+    {
+        ASN1EncodableVector ris = new ASN1EncodableVector();
+        ris.add(unverifiedKeyTransRecipient(CMSTestUtil.makeLargeName(n, false), BigInteger.ONE));
+        ris.add(unverifiedKeyTransRecipient(CMSTestUtil.makeLargeName(n, true), BigInteger.ONE));
+        return unverifiedEnvelopedData(ris);
     }
 
     public void testCollidingRecipientIdsStayLinear()
@@ -728,22 +747,40 @@ public class NewEnvelopedDataTest
     {
         int k = 16000;
         X500Name issuer = new X500Name("CN=x");
+        RecipientInformationStore recipients = new CMSEnvelopedData(collidingRecipientsMessage(issuer, k)).getRecipientInfos();
+
+        assertEquals(k, recipients.size());
+        assertEquals(1, recipients.getRecipients(new KeyTransRecipientId(issuer, CMSTestUtil.collidingSerial(k))).size());
+        assertEquals(0, recipients.getRecipients(new KeyTransRecipientId(issuer, BigInteger.ONE)).size());
+
+        final byte[] small = collidingRecipientsMessage(issuer, k / 8);
+        final byte[] large = collidingRecipientsMessage(issuer, k);
+        CMSTestUtil.assertLinearGrowth("CMSEnvelopedData", CMSTestUtil.minNanos(new CMSTestUtil.Timed()
+        {
+            public void run()
+                throws Exception
+            {
+                new CMSEnvelopedData(small);
+            }
+        }), CMSTestUtil.minNanos(new CMSTestUtil.Timed()
+        {
+            public void run()
+                throws Exception
+            {
+                new CMSEnvelopedData(large);
+            }
+        }));
+    }
+
+    private static byte[] collidingRecipientsMessage(X500Name issuer, int k)
+        throws IOException
+    {
         ASN1EncodableVector ris = new ASN1EncodableVector();
         for (int i = 1; i <= k; i++)
         {
             ris.add(unverifiedKeyTransRecipient(issuer, CMSTestUtil.collidingSerial(i)));
         }
-        byte[] msg = unverifiedEnvelopedData(ris);
-
-        long start = System.currentTimeMillis();
-        CMSEnvelopedData env = new CMSEnvelopedData(msg);
-        RecipientInformationStore recipients = env.getRecipientInfos();
-        long elapsed = System.currentTimeMillis() - start;
-
-        assertEquals(k, recipients.size());
-        assertEquals(1, recipients.getRecipients(new KeyTransRecipientId(issuer, CMSTestUtil.collidingSerial(k))).size());
-        assertEquals(0, recipients.getRecipients(new KeyTransRecipientId(issuer, BigInteger.ONE)).size());
-        assertTrue("CMSEnvelopedData took " + elapsed + "ms", elapsed < 3000L);
+        return unverifiedEnvelopedData(ris);
     }
 
     public static Test suite()

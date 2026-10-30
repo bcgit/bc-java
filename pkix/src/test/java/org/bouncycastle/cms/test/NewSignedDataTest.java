@@ -870,33 +870,68 @@ public class NewSignedDataTest
         X500Name reordered = CMSTestUtil.makeLargeName(n, true);
 
         // two signers whose issuers are the same name differently encoded: equal ids, one hash bucket
-        byte[] msg = unverifiedSignedData(null, new DERSet(new ASN1Encodable[]{
-            unverifiedSignerInfo(plain, BigInteger.ONE), unverifiedSignerInfo(reordered, BigInteger.ONE) }));
-        CMSSignedData parsed = new CMSSignedData(msg);
-
-        long start = System.currentTimeMillis();
-        SignerInformationStore signers = parsed.getSignerInfos();
-        long elapsed = System.currentTimeMillis() - start;
+        SignerInformationStore signers = new CMSSignedData(reorderedSignersMessage(n)).getSignerInfos();
 
         assertEquals(2, signers.size());
         assertEquals(2, signers.getSigners(new SignerId(plain, BigInteger.ONE)).size());
-        assertTrue("getSignerInfos took " + elapsed + "ms", elapsed < 3000L);
+
+        final byte[] smallSigners = reorderedSignersMessage(n / 8);
+        final byte[] largeSigners = reorderedSignersMessage(n);
+        CMSTestUtil.assertLinearGrowth("getSignerInfos", CMSTestUtil.minNanos(new CMSTestUtil.Timed()
+        {
+            public void run()
+                throws Exception
+            {
+                new CMSSignedData(smallSigners).getSignerInfos();
+            }
+        }), CMSTestUtil.minNanos(new CMSTestUtil.Timed()
+        {
+            public void run()
+                throws Exception
+            {
+                new CMSSignedData(largeSigners).getSignerInfos();
+            }
+        }));
 
         // one signer and one certificate whose issuer is the reordered form: the documented lookup
-        X509CertificateHolder cert = new JcaX509v3CertificateBuilder(reordered, BigInteger.ONE,
+        final CMSSignedData smallLookup = reorderedLookupMessage(n / 8);
+        final CMSSignedData largeLookup = reorderedLookupMessage(n);
+        final SignerId smallSid = ((SignerInformation)smallLookup.getSignerInfos().getSigners().iterator().next()).getSID();
+        final SignerId largeSid = ((SignerInformation)largeLookup.getSignerInfos().getSigners().iterator().next()).getSID();
+
+        assertEquals(1, largeLookup.getCertificates().getMatches(largeSid).size());
+        CMSTestUtil.assertLinearGrowth("getMatches", CMSTestUtil.minNanos(new CMSTestUtil.Timed()
+        {
+            public void run()
+            {
+                smallLookup.getCertificates().getMatches(smallSid);
+            }
+        }), CMSTestUtil.minNanos(new CMSTestUtil.Timed()
+        {
+            public void run()
+            {
+                largeLookup.getCertificates().getMatches(largeSid);
+            }
+        }));
+    }
+
+    private static byte[] reorderedSignersMessage(int n)
+        throws IOException
+    {
+        return unverifiedSignedData(null, new DERSet(new ASN1Encodable[]{
+            unverifiedSignerInfo(CMSTestUtil.makeLargeName(n, false), BigInteger.ONE),
+            unverifiedSignerInfo(CMSTestUtil.makeLargeName(n, true), BigInteger.ONE) }));
+    }
+
+    private static CMSSignedData reorderedLookupMessage(int n)
+        throws Exception
+    {
+        X509CertificateHolder cert = new JcaX509v3CertificateBuilder(CMSTestUtil.makeLargeName(n, true), BigInteger.ONE,
             new Date(System.currentTimeMillis() - 1000L), new Date(System.currentTimeMillis() + 86400000L),
             new X500Name("CN=x"), _signKP.getPublic())
             .build(new JcaContentSignerBuilder("SHA256withRSA").setProvider(BC).build(_signKP.getPrivate()));
-        msg = unverifiedSignedData(new DERSet(cert.toASN1Structure()), new DERSet(unverifiedSignerInfo(plain, BigInteger.ONE)));
-        parsed = new CMSSignedData(msg);
-        SignerInformation signer = (SignerInformation)parsed.getSignerInfos().getSigners().iterator().next();
-
-        start = System.currentTimeMillis();
-        Collection matches = parsed.getCertificates().getMatches(signer.getSID());
-        elapsed = System.currentTimeMillis() - start;
-
-        assertEquals(1, matches.size());
-        assertTrue("getMatches took " + elapsed + "ms", elapsed < 3000L);
+        return new CMSSignedData(unverifiedSignedData(new DERSet(cert.toASN1Structure()),
+            new DERSet(unverifiedSignerInfo(CMSTestUtil.makeLargeName(n, false), BigInteger.ONE))));
     }
 
     public void testCollidingSignerIdsStayLinear()
@@ -904,21 +939,40 @@ public class NewSignedDataTest
     {
         int k = 16000;
         X500Name issuer = new X500Name("CN=x");
+        SignerInformationStore signers = new CMSSignedData(collidingSignersMessage(issuer, k)).getSignerInfos();
+
+        assertEquals(k, signers.size());
+        assertEquals(1, signers.getSigners(new SignerId(issuer, CMSTestUtil.collidingSerial(k))).size());
+        assertEquals(0, signers.getSigners(new SignerId(issuer, BigInteger.ONE)).size());
+
+        final byte[] small = collidingSignersMessage(issuer, k / 8);
+        final byte[] large = collidingSignersMessage(issuer, k);
+        CMSTestUtil.assertLinearGrowth("getSignerInfos", CMSTestUtil.minNanos(new CMSTestUtil.Timed()
+        {
+            public void run()
+                throws Exception
+            {
+                new CMSSignedData(small).getSignerInfos();
+            }
+        }), CMSTestUtil.minNanos(new CMSTestUtil.Timed()
+        {
+            public void run()
+                throws Exception
+            {
+                new CMSSignedData(large).getSignerInfos();
+            }
+        }));
+    }
+
+    private static byte[] collidingSignersMessage(X500Name issuer, int k)
+        throws IOException
+    {
         ASN1EncodableVector sis = new ASN1EncodableVector();
         for (int i = 1; i <= k; i++)
         {
             sis.add(unverifiedSignerInfo(issuer, CMSTestUtil.collidingSerial(i)));
         }
-        CMSSignedData parsed = new CMSSignedData(unverifiedSignedData(null, new DERSet(sis)));
-
-        long start = System.currentTimeMillis();
-        SignerInformationStore signers = parsed.getSignerInfos();
-        long elapsed = System.currentTimeMillis() - start;
-
-        assertEquals(k, signers.size());
-        assertEquals(1, signers.getSigners(new SignerId(issuer, CMSTestUtil.collidingSerial(k))).size());
-        assertEquals(0, signers.getSigners(new SignerId(issuer, BigInteger.ONE)).size());
-        assertTrue("getSignerInfos took " + elapsed + "ms", elapsed < 3000L);
+        return unverifiedSignedData(null, new DERSet(sis));
     }
 
     public void testCollidingDigestAlgorithmsStayLinear()
@@ -985,8 +1039,37 @@ public class NewSignedDataTest
     {
         ASN1ObjectIdentifier[] oids = CMSTestUtil.collidingOIDs(15);
         int n = oids.length;
-        ASN1EncodableVector attrs = new ASN1EncodableVector(n);
-        for (int i = 0; i != n; i++)
+
+        AttributeTable table = unsignedAttributeTable(collidingAttributesMessage(oids));
+
+        assertEquals(n, table.size());
+        assertNotNull(table.get(oids[n - 1]));
+        assertNull(table.get(CMSAttributes.signingTime));
+
+        final byte[] small = collidingAttributesMessage(CMSTestUtil.collidingOIDs(12));
+        final byte[] large = collidingAttributesMessage(oids);
+        CMSTestUtil.assertLinearGrowth("unsigned attribute table", CMSTestUtil.minNanos(new CMSTestUtil.Timed()
+        {
+            public void run()
+                throws Exception
+            {
+                unsignedAttributeTable(small);
+            }
+        }), CMSTestUtil.minNanos(new CMSTestUtil.Timed()
+        {
+            public void run()
+                throws Exception
+            {
+                unsignedAttributeTable(large);
+            }
+        }));
+    }
+
+    private static byte[] collidingAttributesMessage(ASN1ObjectIdentifier[] oids)
+        throws IOException
+    {
+        ASN1EncodableVector attrs = new ASN1EncodableVector(oids.length);
+        for (int i = 0; i != oids.length; i++)
         {
             attrs.add(new Attribute(oids[i], new DERSet(DERNull.INSTANCE)));
         }
@@ -994,17 +1077,14 @@ public class NewSignedDataTest
         SignerInfo si = new SignerInfo(new SignerIdentifier(new IssuerAndSerialNumber(new X500Name("CN=x"), BigInteger.ONE)),
             new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256), (ASN1Set)null,
             new AlgorithmIdentifier(PKCSObjectIdentifiers.rsaEncryption), new DEROctetString(new byte[64]), new DLSet(attrs));
-        byte[] msg = unverifiedSignedData(null, new DERSet(si));
+        return unverifiedSignedData(null, new DERSet(si));
+    }
 
-        long start = System.currentTimeMillis();
+    private static AttributeTable unsignedAttributeTable(byte[] msg)
+        throws CMSException
+    {
         SignerInformation signer = (SignerInformation)new CMSSignedData(msg).getSignerInfos().getSigners().iterator().next();
-        AttributeTable table = signer.getUnsignedAttributes();
-        long elapsed = System.currentTimeMillis() - start;
-
-        assertEquals(n, table.size());
-        assertNotNull(table.get(oids[n - 1]));
-        assertNull(table.get(CMSAttributes.signingTime));
-        assertTrue("unsigned attribute table took " + elapsed + "ms", elapsed < 3000L);
+        return signer.getUnsignedAttributes();
     }
 
     private static DigestCalculatorProvider countingProvider(final DigestCalculatorProvider base, final int[] count)

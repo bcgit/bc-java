@@ -14,6 +14,7 @@ import java.security.cert.X509CRL;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.DSAParameterSpec;
+import junit.framework.Assert;
 import org.bouncycastle.jce.spec.ECNamedCurveGenParameterSpec;
 import java.util.Date;
 import java.util.HashMap;
@@ -859,5 +860,36 @@ public class CMSTestUtil
         }
         
         return bOut.toByteArray();
+    }
+
+    public interface Timed
+    {
+        void run()
+            throws Exception;
+    }
+
+    /** The fastest of three runs, which drops most of the noise a loaded machine adds. */
+    public static long minNanos(Timed timed)
+        throws Exception
+    {
+        long best = Long.MAX_VALUE;
+        for (int i = 0; i != 3; i++)
+        {
+            long start = System.nanoTime();
+            timed.run();
+            best = Math.min(best, System.nanoTime() - start);
+        }
+        return best;
+    }
+
+    /**
+     * The "stay linear" checks compare an input against one eight times its size rather than
+     * against a wall-clock bound, which a slow or loaded machine exceeds: linear work grows about
+     * eight times, the quadratic forms these tests guard against about sixty-four times.
+     */
+    public static void assertLinearGrowth(String what, long smallTime, long largeTime)
+    {
+        Assert.assertTrue(what + " time grew by " + (largeTime / Math.max(smallTime, 1L)) + "x for 8x the input ("
+            + smallTime / 1000000 + "ms, " + largeTime / 1000000 + "ms)", largeTime < 24 * smallTime);
     }
 }
