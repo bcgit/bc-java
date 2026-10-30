@@ -103,9 +103,7 @@ public class CorruptedStateTests
      * valid codec encoding down that reader instead.
      * </p><p>
      * What this is not is integrity protection - anyone able to rewrite the stored key recomputes
-     * it (github #2414). Note the promoted codec is a second implementation of this: the checks in
-     * <code>org.bouncycastle.pqc.crypto.xmss</code> have their own tests over there, and neither
-     * set reaches the other.
+     * it (github #2414).
      * </p>
      */
     public void testEveryCorruptionOfTheStateBodyIsRefusedByTheChecksum()

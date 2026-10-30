@@ -31,16 +31,16 @@ import org.bouncycastle.crypto.params.LMSigParameters;
 import org.bouncycastle.crypto.signers.HSSSigner;
 import org.bouncycastle.crypto.signers.LMSSigner;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.pqc.crypto.xmss.XMSSKeyGenerationParameters;
-import org.bouncycastle.pqc.crypto.xmss.XMSSKeyPairGenerator;
-import org.bouncycastle.pqc.crypto.xmss.XMSSMTKeyGenerationParameters;
-import org.bouncycastle.pqc.crypto.xmss.XMSSMTKeyPairGenerator;
-import org.bouncycastle.pqc.crypto.xmss.XMSSMTParameters;
-import org.bouncycastle.pqc.crypto.xmss.XMSSMTPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.xmss.XMSSMTSigner;
-import org.bouncycastle.pqc.crypto.xmss.XMSSParameters;
-import org.bouncycastle.pqc.crypto.xmss.XMSSPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.xmss.XMSSSigner;
+import org.bouncycastle.crypto.params.XMSSKeyGenerationParameters;
+import org.bouncycastle.crypto.generators.XMSSKeyPairGenerator;
+import org.bouncycastle.crypto.params.XMSSMTKeyGenerationParameters;
+import org.bouncycastle.crypto.generators.XMSSMTKeyPairGenerator;
+import org.bouncycastle.crypto.params.XMSSMTParameters;
+import org.bouncycastle.crypto.params.XMSSMTPrivateKeyParameters;
+import org.bouncycastle.crypto.signers.XMSSMTSigner;
+import org.bouncycastle.crypto.params.XMSSParameters;
+import org.bouncycastle.crypto.params.XMSSPrivateKeyParameters;
+import org.bouncycastle.crypto.signers.XMSSSigner;
 import org.bouncycastle.jcajce.interfaces.LMSPrivateKey;
 import org.bouncycastle.jcajce.interfaces.XMSSMTPrivateKey;
 import org.bouncycastle.jcajce.interfaces.XMSSPrivateKey;
@@ -302,7 +302,7 @@ public class HashBasedKeyDestructionTest
 
         final XMSSSigner signer = new XMSSSigner();
         signer.init(true, priv);
-        byte[] sig = signer.generateSignature(MSG);
+        byte[] sig = signStreamed(signer, MSG);
 
         XMSSPrivateKeyParameters shard = priv.extractKeyShard(2);
 
@@ -339,8 +339,9 @@ public class HashBasedKeyDestructionTest
         checkThrowsDestroyed("XMSS params: generateSignature()", new Callable()
         {
             public Object call()
+                throws Exception
             {
-                return signer.generateSignature(MSG);
+                return signStreamed(signer, MSG);
             }
         });
         assertEquals("XMSS params: a refused signature must not advance the index", index, priv.getIndex());
@@ -358,14 +359,14 @@ public class HashBasedKeyDestructionTest
         assertNotNull(priv.getParameters());
 
         signer.init(false, kp.getPublic());
-        assertTrue("XMSS params: signature made before destroy() should still verify", signer.verifySignature(MSG, sig));
+        assertTrue("XMSS params: signature made before destroy() should still verify", verifyStreamed(signer, MSG, sig));
 
         // the shard split off beforehand still signs under the same public key
         assertFalse(shard.isDestroyed());
         signer.init(true, shard);
-        byte[] shardSig = signer.generateSignature(MSG);
+        byte[] shardSig = signStreamed(signer, MSG);
         signer.init(false, kp.getPublic());
-        assertTrue("XMSS params: shard should still sign after its source is destroyed", signer.verifySignature(MSG, shardSig));
+        assertTrue("XMSS params: shard should still sign after its source is destroyed", verifyStreamed(signer, MSG, shardSig));
     }
 
     public void testDestroyErasesXMSSMTPrivateKey()
@@ -414,7 +415,7 @@ public class HashBasedKeyDestructionTest
 
         final XMSSMTSigner signer = new XMSSMTSigner();
         signer.init(true, priv);
-        byte[] sig = signer.generateSignature(MSG);
+        byte[] sig = signStreamed(signer, MSG);
 
         XMSSMTPrivateKeyParameters shard = priv.extractKeyShard(2);
 
@@ -451,8 +452,9 @@ public class HashBasedKeyDestructionTest
         checkThrowsDestroyed("XMSSMT params: generateSignature()", new Callable()
         {
             public Object call()
+                throws Exception
             {
-                return signer.generateSignature(MSG);
+                return signStreamed(signer, MSG);
             }
         });
         assertEquals("XMSSMT params: a refused signature must not advance the index", index, priv.getIndex());
@@ -469,13 +471,13 @@ public class HashBasedKeyDestructionTest
         assertNotNull(priv.getParameters());
 
         signer.init(false, kp.getPublic());
-        assertTrue("XMSSMT params: signature made before destroy() should still verify", signer.verifySignature(MSG, sig));
+        assertTrue("XMSSMT params: signature made before destroy() should still verify", verifyStreamed(signer, MSG, sig));
 
         assertFalse(shard.isDestroyed());
         signer.init(true, shard);
-        byte[] shardSig = signer.generateSignature(MSG);
+        byte[] shardSig = signStreamed(signer, MSG);
         signer.init(false, kp.getPublic());
-        assertTrue("XMSSMT params: shard should still sign after its source is destroyed", signer.verifySignature(MSG, shardSig));
+        assertTrue("XMSSMT params: shard should still sign after its source is destroyed", verifyStreamed(signer, MSG, shardSig));
     }
 
     private void sign(String algorithm, String provider, PrivateKey priv, KeyPair kp)
@@ -604,5 +606,19 @@ public class HashBasedKeyDestructionTest
     {
         Object call()
             throws Exception;
+    }
+
+    // the promoted XMSS / XMSS^MT signers are Signers, taking the message through update()
+    private static byte[] signStreamed(org.bouncycastle.crypto.Signer signer, byte[] msg)
+        throws org.bouncycastle.crypto.CryptoException
+    {
+        signer.update(msg, 0, msg.length);
+        return signer.generateSignature();
+    }
+
+    private static boolean verifyStreamed(org.bouncycastle.crypto.Signer signer, byte[] msg, byte[] sig)
+    {
+        signer.update(msg, 0, msg.length);
+        return signer.verifySignature(sig);
     }
 }

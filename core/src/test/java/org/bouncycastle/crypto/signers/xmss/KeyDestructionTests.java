@@ -24,10 +24,9 @@ import org.bouncycastle.util.Arrays;
  * <p>
  * The JCE half of this is covered by {@code HashBasedKeyDestructionTest} in prov, which drives
  * {@code BCXMSSPrivateKey} - and so these classes - through the provider. What is covered here is
- * the lightweight half, which that suite exercises against the deprecated
- * {@code org.bouncycastle.pqc.crypto.xmss} copy: these are separate implementations of destroy(),
- * and the promoted one reaches its traversal state through {@code XMSSEngine.clearSecrets} rather
- * than a package-private call, because the split moved the state classes into another package.
+ * the lightweight half, which reaches its traversal state through {@code XMSSEngine.clearSecrets}
+ * rather than a package-private call, because the key parameter classes and the state classes sit
+ * in different packages.
  * </p>
  */
 public class KeyDestructionTests

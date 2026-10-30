@@ -42,7 +42,6 @@ import org.bouncycastle.pqc.crypto.qruov.QRUOVParameters;
 import org.bouncycastle.pqc.crypto.snova.SnovaParameters;
 import org.bouncycastle.pqc.crypto.sqisign.SQIsignParameters;
 import org.bouncycastle.pqc.crypto.sphincs.SPHINCSKeyParameters;
-import org.bouncycastle.pqc.crypto.xmss.XMSSKeyParameters;
 import org.bouncycastle.pqc.legacy.bike.BIKEParameters;
 import org.bouncycastle.pqc.legacy.sphincsplus.SPHINCSPlusParameters;
 
@@ -51,10 +50,6 @@ class Utils
     static final AlgorithmIdentifier SPHINCS_SHA3_256 = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha3_256);
     static final AlgorithmIdentifier SPHINCS_SHA512_256 = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512_256);
 
-    static final AlgorithmIdentifier XMSS_SHA256 = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256);
-    static final AlgorithmIdentifier XMSS_SHA512 = new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha512);
-    static final AlgorithmIdentifier XMSS_SHAKE128 = new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake128);
-    static final AlgorithmIdentifier XMSS_SHAKE256 = new AlgorithmIdentifier(NISTObjectIdentifiers.id_shake256);
 
 
     static final Map saberOids = new HashMap();
@@ -640,30 +635,6 @@ class Utils
         else if (treeDigest.equals(SPHINCSKeyParameters.SHA512_256))
         {
             return SPHINCS_SHA512_256;
-        }
-        else
-        {
-            throw new IllegalArgumentException("unknown tree digest: " + treeDigest);
-        }
-    }
-
-    static AlgorithmIdentifier xmssLookupTreeAlgID(String treeDigest)
-    {
-        if (treeDigest.equals(XMSSKeyParameters.SHA_256))
-        {
-            return XMSS_SHA256;
-        }
-        else if (treeDigest.equals(XMSSKeyParameters.SHA_512))
-        {
-            return XMSS_SHA512;
-        }
-        else if (treeDigest.equals(XMSSKeyParameters.SHAKE128))
-        {
-            return XMSS_SHAKE128;
-        }
-        else if (treeDigest.equals(XMSSKeyParameters.SHAKE256))
-        {
-            return XMSS_SHAKE256;
         }
         else
         {

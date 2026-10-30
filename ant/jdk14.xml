@@ -159,7 +159,6 @@
                 <exclude name="**/pqc/math/**/*.java"/>
                 <exclude name="**/pqc/gemss/*.java"/>
                 <exclude name="**/pqc/crypto/faest/**/*.java"/>
-                <exclude name="**/pqc/crypto/test/AllTestsXMSS.java"/>
                 <exclude name="**/pqc/crypto/test/AllTestsCMCE.java"/>
                 <exclude name="**/pqc/crypto/test/AllTestsHawk.java"/>
                 <exclude name="**/pqc/crypto/test/AllTestsFaest.java"/>
@@ -178,7 +177,6 @@
                 <exclude name="**/pqc/crypto/test/AllTestsSQIsign.java"/>
                 <exclude name="**/pqc/crypto/test/AllTestsSQIsignLvl5.java"/>
                 <exclude name="**/pqc/crypto/test/AllTestsSLHDSASigGen.java"/>
-                <exclude name="**/pqc/crypto/test/AllTestsXMSSMT.java"/>
                 <exclude name="**/crypto/test/AllTestsSlow.java"/>
                 <exclude name="**/crypto/test/AllTestsOpenBSDBCrypt.java"/>
                 <exclude name="**/crypto/test/AllTestsArgon.java"/>
