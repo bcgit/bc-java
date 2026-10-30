@@ -206,7 +206,7 @@ public class AuthenticatedDataParser
 
         if (nextObject != null)
         {
-            ASN1TaggedObject o = (ASN1TaggedObject)nextObject;
+            ASN1TaggedObjectParser o = (ASN1TaggedObjectParser)nextObject;
             nextObject = null;
             return (ASN1SetParser)ASN1Util.parseContextBaseUniversal(o, 3, false, BERTags.SET_OF);
         }

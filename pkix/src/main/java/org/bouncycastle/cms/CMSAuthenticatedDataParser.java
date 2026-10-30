@@ -121,6 +121,7 @@ public class CMSAuthenticatedDataParser
         try
         {
             this.authAttrNotRead = true;
+            this.unauthAttrNotRead = true;
 
             ASN1SequenceParser content = (ASN1SequenceParser)_contentInfo.getContent(BERTags.SEQUENCE);
             if (content == null)

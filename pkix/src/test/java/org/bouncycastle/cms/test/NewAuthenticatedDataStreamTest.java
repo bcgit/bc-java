@@ -17,15 +17,23 @@ import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
+import org.bouncycastle.asn1.ASN1OctetStringParser;
+import org.bouncycastle.asn1.ASN1SequenceParser;
 import org.bouncycastle.asn1.ASN1Set;
+import org.bouncycastle.asn1.ASN1StreamParser;
+import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.DERTaggedObject;
+import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.DLSequence;
 import org.bouncycastle.asn1.cms.Attribute;
+import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.cms.AuthenticatedData;
+import org.bouncycastle.asn1.cms.AuthenticatedDataParser;
 import org.bouncycastle.asn1.cms.CMSAttributes;
 import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.cms.ContentInfo;
+import org.bouncycastle.asn1.cms.ContentInfoParser;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
@@ -38,6 +46,7 @@ import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.OriginatorInfoGenerator;
 import org.bouncycastle.cms.RecipientInformation;
 import org.bouncycastle.cms.RecipientInformationStore;
+import org.bouncycastle.cms.SimpleAttributeTableGenerator;
 import org.bouncycastle.cms.jcajce.JceCMSMacCalculatorBuilder;
 import org.bouncycastle.cms.jcajce.JceKeyTransAuthenticatedRecipient;
 import org.bouncycastle.cms.jcajce.JceKeyTransRecipientInfoGenerator;
@@ -45,6 +54,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.DigestCalculatorProvider;
 import org.bouncycastle.operator.MacCalculator;
 import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
+import org.bouncycastle.util.io.Streams;
 
 public class NewAuthenticatedDataStreamTest
     extends TestCase
@@ -298,6 +308,84 @@ public class NewAuthenticatedDataStreamTest
 
         assertTrue(Arrays.equals(data, recData));
         assertTrue(Arrays.equals(ad.getMac(), recipient.getMac()));
+    }
+
+    public void testUnauthAttrs()
+        throws Exception
+    {
+        // github #2532: the streaming parser returned null for unauthAttrs, and the ASN.1 parser under it cast the wrong type.
+        tryUnauthAttrs(false);
+        tryUnauthAttrs(true);
+    }
+
+    private void tryUnauthAttrs(boolean withDigest)
+        throws Exception
+    {
+        byte[] data = "Eric H. Echidna".getBytes();
+        ASN1ObjectIdentifier attrType = new ASN1ObjectIdentifier("1.2.3.4");
+        Attribute attr = new Attribute(attrType, new DERSet(new DERUTF8String("unauthenticated")));
+
+        CMSAuthenticatedDataStreamGenerator adGen = new CMSAuthenticatedDataStreamGenerator();
+        ByteArrayOutputStream               bOut = new ByteArrayOutputStream();
+        DigestCalculatorProvider            calcProvider = new JcaDigestCalculatorProviderBuilder().setProvider(BC).build();
+
+        adGen.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(_reciCert).setProvider(BC));
+        adGen.setUnauthenticatedAttributeGenerator(new SimpleAttributeTableGenerator(new AttributeTable(attr)));
+
+        MacCalculator macCalculator = new JceCMSMacCalculatorBuilder(CMSAlgorithm.DES_EDE3_CBC).setProvider(BC).build();
+        OutputStream aOut = withDigest
+            ? adGen.open(bOut, macCalculator, calcProvider.get(new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1)))
+            : adGen.open(bOut, macCalculator);
+
+        aOut.write(data);
+        aOut.close();
+
+        byte[] encoded = bOut.toByteArray();
+
+        // the non-streaming reader is the reference
+        assertEquals(1, new CMSAuthenticatedData(encoded, calcProvider).getUnauthAttrs().size());
+
+        // streaming, in the documented order: content, mac, then the unauthenticated attributes
+        CMSAuthenticatedDataParser ad = new CMSAuthenticatedDataParser(encoded, calcProvider);
+        RecipientInformation recipient = (RecipientInformation)ad.getRecipientInfos().getRecipients().iterator().next();
+        byte[] recData = recipient.getContent(new JceKeyTransAuthenticatedRecipient(_reciKP.getPrivate()).setProvider(BC));
+
+        assertTrue(Arrays.equals(data, recData));
+        assertTrue(Arrays.equals(ad.getMac(), recipient.getMac()));
+        if (withDigest)
+        {
+            assertNotNull(ad.getAuthAttrs());
+        }
+        else
+        {
+            assertNull(ad.getAuthAttrs());
+        }
+
+        AttributeTable unauthAttrs = ad.getUnauthAttrs();
+        assertNotNull(unauthAttrs);
+        assertEquals(1, unauthAttrs.size());
+        assertEquals(attr, unauthAttrs.get(attrType));
+        // a second call returns the cached table
+        assertSame(unauthAttrs, ad.getUnauthAttrs());
+
+        // and the ASN.1 level parser on its own, which the cms layer's flag defect had been hiding
+        ContentInfoParser ciParser = new ContentInfoParser((ASN1SequenceParser)new ASN1StreamParser(encoded).readObject());
+        AuthenticatedDataParser adParser = new AuthenticatedDataParser((ASN1SequenceParser)ciParser.getContent(BERTags.SEQUENCE));
+        adParser.getVersion();
+        adParser.getOriginatorInfo();
+        adParser.getRecipientInfos().toASN1Primitive();
+        adParser.getMacAlgorithm();
+        adParser.getDigestAlgorithm();
+        ASN1OctetStringParser content = (ASN1OctetStringParser)adParser.getEncapsulatedContentInfo().getContent(BERTags.OCTET_STRING);
+        Streams.drain(content.getOctetStream());
+        if (withDigest)
+        {
+            adParser.getAuthAttrs().toASN1Primitive();
+        }
+        adParser.getMac();
+        ASN1Set unauthSet = ASN1Set.getInstance(adParser.getUnauthAttrs().toASN1Primitive());
+        assertEquals(1, unauthSet.size());
+        assertEquals(attr, Attribute.getInstance(unauthSet.getObjectAt(0)));
     }
 
     public void testOriginatorInfo()
