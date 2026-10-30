@@ -14,7 +14,6 @@ import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
-import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.generators.MLDSAKeyPairGenerator;
 import org.bouncycastle.crypto.params.MLDSAKeyGenerationParameters;
 import org.bouncycastle.crypto.params.MLDSAParameters;
@@ -26,6 +25,18 @@ import org.bouncycastle.jcajce.util.SpecUtil;
 import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Strings;
 
+/**
+ * ML-DSA (FIPS 204) key pair generation. A generator obtained as "ML-DSA" and not initialised
+ * produces ML-DSA-65 keys, the category 3 set matching NIST's recommended ML-KEM-768 (NIST IR
+ * 8547); "HASH-ML-DSA" likewise defaults to ML-DSA-65-WITH-SHA512. An initialisation that gives
+ * no SecureRandom, including this default and a generator obtained under a parameter set name such
+ * as "ML-DSA-44", draws the key from the provider's DEFAULT DRBG.
+ * <p>
+ * Note: ML-DSA-44 is a category 2 parameter set only when the random bit generator used has at
+ * least 192 bits of security (NIST IR 8547, Table 3, note 2); with a weaker one it is category 1.
+ * The DEFAULT DRBG is a 256 bit SP 800-90A DRBG and meets the condition.
+ * </p>
+ */
 public class MLDSAKeyPairGeneratorSpi
     extends java.security.KeyPairGenerator
 {
@@ -33,7 +44,6 @@ public class MLDSAKeyPairGeneratorSpi
     MLDSAKeyGenerationParameters param;
     MLDSAKeyPairGenerator engine = new MLDSAKeyPairGenerator();
 
-    SecureRandom random = CryptoServicesRegistrar.getSecureRandom();
     boolean initialised = false;
 
     public MLDSAKeyPairGeneratorSpi(String name)
@@ -49,7 +59,7 @@ public class MLDSAKeyPairGeneratorSpi
 
         if (param == null)
         {
-            param = new MLDSAKeyGenerationParameters(random, mldsaParameters);
+            param = new MLDSAKeyGenerationParameters(createDefaultRandom(), mldsaParameters);
         }
 
         engine.init(param);
@@ -68,18 +78,7 @@ public class MLDSAKeyPairGeneratorSpi
         AlgorithmParameterSpec params)
         throws InvalidAlgorithmParameterException
     {
-        try
-        {
-            initialize(params, new BCJcaJceHelper().createSecureRandom("DEFAULT"));
-        }
-        catch (NoSuchAlgorithmException e)
-        {
-            throw Exceptions.illegalStateException("unable to find DEFAULT DRBG", e);
-        }
-        catch (NoSuchProviderException e)
-        {
-            throw Exceptions.illegalStateException("unable to find DEFAULT DRBG", e);
-        }
+        initialize(params, createDefaultRandom());
     }
 
     public void initialize(
@@ -116,17 +115,21 @@ public class MLDSAKeyPairGeneratorSpi
     {
         if (!initialised)
         {
-            if (this.getAlgorithm().startsWith("HASH"))
+            try
             {
-                param = new MLDSAKeyGenerationParameters(random, MLDSAParameters.ml_dsa_87_with_sha512);
+                if (this.getAlgorithm().startsWith("HASH"))
+                {
+                    initialize(MLDSAParameterSpec.ml_dsa_65_with_sha512);
+                }
+                else
+                {
+                    initialize(MLDSAParameterSpec.ml_dsa_65);
+                }
             }
-            else
+            catch (InvalidAlgorithmParameterException e)
             {
-                param = new MLDSAKeyGenerationParameters(random, MLDSAParameters.ml_dsa_87);
+                throw Exceptions.illegalStateException("unable to apply the default parameter set", e);
             }
-
-            engine.init(param);
-            initialised = true;
         }
 
         AsymmetricCipherKeyPair pair = engine.generateKeyPair();
@@ -134,6 +137,23 @@ public class MLDSAKeyPairGeneratorSpi
         MLDSAPrivateKeyParameters priv = (MLDSAPrivateKeyParameters)pair.getPrivate();
 
         return new KeyPair(new BCMLDSAPublicKey(pub), new BCMLDSAPrivateKey(priv));
+    }
+
+    // the provider's 256 bit DEFAULT DRBG, used wherever the caller supplies no SecureRandom
+    private static SecureRandom createDefaultRandom()
+    {
+        try
+        {
+            return new BCJcaJceHelper().createSecureRandom("DEFAULT");
+        }
+        catch (NoSuchAlgorithmException e)
+        {
+            throw Exceptions.illegalStateException("unable to find DEFAULT DRBG", e);
+        }
+        catch (NoSuchProviderException e)
+        {
+            throw Exceptions.illegalStateException("unable to find DEFAULT DRBG", e);
+        }
     }
 
     private static String getNameFromParams(AlgorithmParameterSpec paramSpec)
@@ -145,7 +165,10 @@ public class MLDSAKeyPairGeneratorSpi
         }
         else
         {
-            return Strings.toUpperCase(SpecUtil.getNameFrom(paramSpec));
+            String name = SpecUtil.getNameFrom(paramSpec);
+
+            // null where the spec has no getName(), which the caller reports as the exception it declares
+            return (name == null) ? null : Strings.toUpperCase(name);
         }
     }
 

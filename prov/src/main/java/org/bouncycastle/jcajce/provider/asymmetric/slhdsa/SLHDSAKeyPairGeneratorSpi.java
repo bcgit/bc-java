@@ -10,17 +10,23 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
-import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.generators.SLHDSAKeyPairGenerator;
 import org.bouncycastle.crypto.params.SLHDSAKeyGenerationParameters;
 import org.bouncycastle.crypto.params.SLHDSAParameters;
 import org.bouncycastle.crypto.params.SLHDSAPrivateKeyParameters;
 import org.bouncycastle.crypto.params.SLHDSAPublicKeyParameters;
 import org.bouncycastle.jcajce.spec.SLHDSAParameterSpec;
+import org.bouncycastle.jcajce.util.BCJcaJceHelper;
 import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.jcajce.util.SpecUtil;
 import org.bouncycastle.util.Strings;
 
+/**
+ * SLH-DSA (FIPS 205) key pair generation. A generator obtained as "SLH-DSA" and not initialised
+ * produces SLH-DSA-SHA2-128F keys ("HASH-SLH-DSA" SLH-DSA-SHA2-128F-WITH-SHA256). An initialisation
+ * that gives no SecureRandom, including this default and a generator obtained under a parameter set
+ * name, draws the key from the provider's 256 bit DEFAULT DRBG.
+ */
 public class SLHDSAKeyPairGeneratorSpi
     extends java.security.KeyPairGenerator
 {
@@ -60,7 +66,6 @@ public class SLHDSAKeyPairGeneratorSpi
     SLHDSAKeyGenerationParameters param;
     SLHDSAKeyPairGenerator engine = new SLHDSAKeyPairGenerator();
 
-    SecureRandom random = CryptoServicesRegistrar.getSecureRandom();
     boolean initialised = false;
     private SLHDSAParameters slhdsaParameters;
 
@@ -75,7 +80,7 @@ public class SLHDSAKeyPairGeneratorSpi
 
         this.slhdsaParameters = (SLHDSAParameters)parameters.get(paramSpec.getName());
 
-        param = new SLHDSAKeyGenerationParameters(random, slhdsaParameters);
+        param = new SLHDSAKeyGenerationParameters(createDefaultRandom(), slhdsaParameters);
 
         engine.init(param);
         initialised = true;
@@ -87,6 +92,13 @@ public class SLHDSAKeyPairGeneratorSpi
     {
         // what the JCA specifies here; it extends IllegalArgumentException, so catches still match
         throw new InvalidParameterException("use AlgorithmParameterSpec");
+    }
+
+    public void initialize(
+        AlgorithmParameterSpec params)
+        throws InvalidAlgorithmParameterException
+    {
+        initialize(params, createDefaultRandom());
     }
 
     public void initialize(
@@ -147,6 +159,19 @@ public class SLHDSAKeyPairGeneratorSpi
         SLHDSAPrivateKeyParameters priv = (SLHDSAPrivateKeyParameters)pair.getPrivate();
 
         return new KeyPair(new BCSLHDSAPublicKey(pub), new BCSLHDSAPrivateKey(priv));
+    }
+
+    // the provider's 256 bit DEFAULT DRBG, used wherever the caller supplies no SecureRandom
+    private static SecureRandom createDefaultRandom()
+    {
+        try
+        {
+            return new BCJcaJceHelper().createSecureRandom("DEFAULT");
+        }
+        catch (NoSuchAlgorithmException e)
+        {
+            throw Exceptions.illegalStateException("unable to find DEFAULT DRBG", e);
+        }
     }
 
     private static String getNameFromParams(AlgorithmParameterSpec paramSpec)

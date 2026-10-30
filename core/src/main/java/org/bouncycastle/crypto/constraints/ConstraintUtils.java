@@ -21,6 +21,7 @@ import org.bouncycastle.crypto.params.ElGamalKeyParameters;
 import org.bouncycastle.crypto.params.ElGamalParameters;
 import org.bouncycastle.crypto.params.GOST3410KeyParameters;
 import org.bouncycastle.crypto.params.GOST3410Parameters;
+import org.bouncycastle.crypto.params.NaccacheSternKeyParameters;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.params.X25519PrivateKeyParameters;
 import org.bouncycastle.crypto.params.X25519PublicKeyParameters;
@@ -49,6 +50,7 @@ public class ConstraintUtils
             "X25519", "X25519KeyGen", "X448", "X448KeyGen",
             "Ed25519", "Ed25519KeyGen", "Ed448", "Ed448KeyGen",
             "ElGamalKeyGen", "CramerShoup", "CramerShoupKeyGen",
+            "NaccacheStern", "NaccacheStern KeyGen",
             "DSTU4145", "BIP340"
         };
 
@@ -62,7 +64,7 @@ public class ConstraintUtils
      * Return true if the service is one of the quantum-vulnerable public-key algorithms: the
      * integer factorisation and discrete logarithm schemes NIST IR 8547 deprecates after 2030 and
      * disallows after 2035 (RSA, DSA, DH/MQV, ECDSA/ECDH and their variants, EdDSA, X25519/X448,
-     * ElGamal and the KEMs and key agreements built on them). The decision is made on the key or
+     * ElGamal, Cramer-Shoup, Naccache-Stern and the KEMs and key agreements built on them). The decision is made on the key or
      * domain parameters the service reports where it reports any, and otherwise on its name. The
      * post-quantum algorithms and symmetric services are never quantum-vulnerable.
      *
@@ -80,6 +82,7 @@ public class ConstraintUtils
             || params instanceof ElGamalKeyParameters || params instanceof ElGamalParameters
             || params instanceof GOST3410KeyParameters || params instanceof GOST3410Parameters
             || params instanceof CramerShoupKeyParameters || params instanceof CramerShoupParameters
+            || params instanceof NaccacheSternKeyParameters
             || params instanceof X25519PrivateKeyParameters || params instanceof X25519PublicKeyParameters
             || params instanceof X448PrivateKeyParameters || params instanceof X448PublicKeyParameters
             || params instanceof Ed25519PrivateKeyParameters || params instanceof Ed25519PublicKeyParameters

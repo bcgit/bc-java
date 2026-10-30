@@ -114,6 +114,16 @@ public class Properties
      */
     public static final String TSP_ALLOWED_IMPRINT_ALGORITHMS = "org.bouncycastle.tsp.allowed_imprint_algorithms";
 
+    /**
+     * The default crypto services constraint: "nist", "log", "legacy", "reject" or "none" (the default).
+     */
+    public static final String CONSTRAINTS_QUANTUM_VULNERABLE = "org.bouncycastle.constraints.quantum_vulnerable";
+
+    /**
+     * Whether a constraint installed from a property at start-up may be replaced. Default false.
+     */
+    public static final String CONSTRAINTS_ALLOW_OVERRIDE = "org.bouncycastle.constraints.allow_override";
+
     private Properties()
     {
     }

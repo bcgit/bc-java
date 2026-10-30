@@ -23,7 +23,7 @@ import org.bouncycastle.util.Pack;
  * </a>.
  * </p>
  *
- * @deprecated Now superseded. Please refer to {@code AsconAEAD128Engine} for future implementations.
+ * @deprecated Now superseded. Please refer to {@code AsconAEAD128} for future implementations.
  */
 // NOTE: jdk1.4 overlay built on the jdk1.4 AsconBaseEngine, as AsconAEAD128 is - AsconParameters is an int-ordinal
 // class in place of the enum and init() is done here; the cipher logic must be kept in step with base AsconEngine.

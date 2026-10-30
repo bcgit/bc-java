@@ -197,6 +197,7 @@ public class RegressionTest
             new DigestConstraintsTest(),
             new PQCParametersTest(),
             new PQCConstraintsTest(),
+            new QuantumVulnerableConstraintTest(),
             new RadixConverterTest(),
             new Grain128AEADTest(),
             new ElephantTest(),

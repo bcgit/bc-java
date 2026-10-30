@@ -162,20 +162,29 @@ public final class XMSSParameters
      * Return the NIST security category of this parameter set: 3 for the SHA-256/192 and
      * SHAKE256/192 sets (n = 24) and 5 for the SHA-256 and SHAKE256/256 sets (n = 32)
      * (NIST IR 8547, Table 3, for the sets approved in SP 800-208). The RFC 8391 sets outside
-     * SP 800-208 (SHA-512, SHAKE128 and SHAKE256/512) are given the figure their hash output
-     * length implies and carry no NIST categorisation.
+     * SP 800-208 carry no NIST categorisation and are given the figure their hash implies: 5 for
+     * SHA-512 and SHAKE256/512, and 1 for SHAKE128, whose security is capped at 128 bits whatever
+     * its output length.
      */
     public int getSecurityCategory()
     {
+        if (NISTObjectIdentifiers.id_shake128.equals(treeDigestOID))
+        {
+            return 1;
+        }
         return (treeDigestSize <= 24) ? 3 : 5;
     }
 
     /**
      * Return the classical security strength of this parameter set: 8 times the hash output
-     * length n, capped at 256 bits (NIST IR 8547, Table 3).
+     * length n, capped at 256 bits, or at 128 bits for SHAKE128 (NIST IR 8547, Table 3).
      */
     public int getClassicalSecurityStrength()
     {
+        if (NISTObjectIdentifiers.id_shake128.equals(treeDigestOID))
+        {
+            return Math.min(128, 8 * treeDigestSize);
+        }
         return Math.min(256, 8 * treeDigestSize);
     }
 

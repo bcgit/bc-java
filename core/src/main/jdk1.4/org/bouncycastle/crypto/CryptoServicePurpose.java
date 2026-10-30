@@ -12,6 +12,11 @@ public final class CryptoServicePurpose
     public static final CryptoServicePurpose VERIFICATION = new CryptoServicePurpose(7);
     public static final CryptoServicePurpose PRF = new CryptoServicePurpose(8);
     public static final CryptoServicePurpose ANY = new CryptoServicePurpose(9);
+    /**
+     * A primitive built inside another algorithm's engine as a fixed part of that algorithm. It is
+     * not checked against the constraints: the enclosing algorithm reports for it.
+     */
+    public static final CryptoServicePurpose INTERNAL = new CryptoServicePurpose(10);
 
     private final int ord;
 
@@ -30,7 +35,7 @@ public final class CryptoServicePurpose
         return ord;
     }
 
-    private static final CryptoServicePurpose[] vs = new CryptoServicePurpose[] { AGREEMENT, ENCRYPTION, DECRYPTION, KEYGEN, SIGNING, VERIFYING, AUTHENTICATION, VERIFICATION, PRF, ANY };
+    private static final CryptoServicePurpose[] vs = new CryptoServicePurpose[] { AGREEMENT, ENCRYPTION, DECRYPTION, KEYGEN, SIGNING, VERIFYING, AUTHENTICATION, VERIFICATION, PRF, ANY, INTERNAL };
 
     public static CryptoServicePurpose[] values()
     {
