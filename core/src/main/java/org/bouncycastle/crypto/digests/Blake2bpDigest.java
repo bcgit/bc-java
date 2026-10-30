@@ -168,7 +168,7 @@ public class Blake2bpDigest
     @Override
     public int getByteLength()
     {
-        return 0;
+        return BLAKE2B_BLOCKBYTES;
     }
 
     private void init(byte[] key)
