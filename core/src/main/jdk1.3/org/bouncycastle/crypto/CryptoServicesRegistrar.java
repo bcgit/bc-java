@@ -34,6 +34,7 @@ public final class CryptoServicesRegistrar
 
     private static final Object cacheLock = new Object();
     private static SecureRandomProvider defaultSecureRandomProvider;
+    private static volatile boolean secureRandomSpecified;
 
     private static final CryptoServicesConstraints noConstraintsImpl = new CryptoServicesConstraints()
     {
@@ -184,9 +185,11 @@ public final class CryptoServicesRegistrar
             if (secureRandom == null)
             {
                 defaultSecureRandomProvider = null;
+                secureRandomSpecified = false;
             }
             else
             {
+                secureRandomSpecified = true;
                 defaultSecureRandomProvider = new SecureRandomProvider()
                 {
                     public SecureRandom get()
@@ -208,6 +211,19 @@ public final class CryptoServicesRegistrar
         checkPermission(CanSetDefaultRandom);
 
         defaultSecureRandomProvider = secureRandomProvider;
+        secureRandomSpecified = (secureRandomProvider != null);
+    }
+
+    /**
+     * Return true if a default source of randomness has been set with {@link #setSecureRandom(SecureRandom)}
+     * or {@link #setSecureRandomProvider(SecureRandomProvider)}, false if {@link #getSecureRandom()} would
+     * return the library's own default.
+     *
+     * @return true if a default SecureRandom has been specified, false otherwise.
+     */
+    public static boolean isSecureRandomSpecified()
+    {
+        return secureRandomSpecified;
     }
 
     /**

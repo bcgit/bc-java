@@ -8,6 +8,7 @@ import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.generators.MLDSAKeyPairGenerator;
 import org.bouncycastle.crypto.params.MLDSAKeyGenerationParameters;
 import org.bouncycastle.crypto.params.MLDSAParameters;
@@ -24,11 +25,13 @@ import org.bouncycastle.util.Strings;
  * produces ML-DSA-65 keys, the category 3 set matching NIST's recommended ML-KEM-768 (NIST IR
  * 8547); "HASH-ML-DSA" likewise defaults to ML-DSA-65-WITH-SHA512. An initialisation that gives
  * no SecureRandom, including this default and a generator obtained under a parameter set name such
- * as "ML-DSA-44", draws the key from the provider's DEFAULT DRBG.
+ * as "ML-DSA-44", draws the key from the default SecureRandom set on CryptoServicesRegistrar, if one
+ * has been set, and otherwise from the provider's DEFAULT DRBG.
  * <p>
  * Note: ML-DSA-44 is a category 2 parameter set only when the random bit generator used has at
  * least 192 bits of security (NIST IR 8547, Table 3, note 2); with a weaker one it is category 1.
- * The DEFAULT DRBG is a 256 bit SP 800-90A DRBG and meets the condition.
+ * The DEFAULT DRBG is a 256 bit SP 800-90A DRBG and meets the condition; a SecureRandom set on
+ * CryptoServicesRegistrar is used as given, so meeting it is then up to whoever set it.
  * </p>
  */
 public class MLDSAKeyPairGeneratorSpi
@@ -50,14 +53,6 @@ public class MLDSAKeyPairGeneratorSpi
     {
         super(Strings.toUpperCase(paramSpec.getName()));
         this.mldsaParameters = Utils.getParameters(paramSpec.getName());
-
-        if (param == null)
-        {
-            param = new MLDSAKeyGenerationParameters(createDefaultRandom(), mldsaParameters);
-        }
-
-        engine.init(param);
-        initialised = true;
     }
 
     public void initialize(
@@ -109,20 +104,30 @@ public class MLDSAKeyPairGeneratorSpi
     {
         if (!initialised)
         {
-            try
+            if (mldsaParameters != null)
             {
-                if (this.getAlgorithm().startsWith("HASH"))
-                {
-                    initialize(MLDSAParameterSpec.ml_dsa_65_with_sha512);
-                }
-                else
-                {
-                    initialize(MLDSAParameterSpec.ml_dsa_65);
-                }
+                // locked to a parameter set: set up on first use, so a generator given its own SecureRandom never builds a DRBG
+                param = new MLDSAKeyGenerationParameters(createDefaultRandom(), mldsaParameters);
+                engine.init(param);
+                initialised = true;
             }
-            catch (InvalidAlgorithmParameterException e)
+            else
             {
-                throw Exceptions.illegalStateException("unable to apply the default parameter set", e);
+                try
+                {
+                    if (this.getAlgorithm().startsWith("HASH"))
+                    {
+                        initialize(MLDSAParameterSpec.ml_dsa_65_with_sha512);
+                    }
+                    else
+                    {
+                        initialize(MLDSAParameterSpec.ml_dsa_65);
+                    }
+                }
+                catch (InvalidAlgorithmParameterException e)
+                {
+                    throw Exceptions.illegalStateException("unable to apply the default parameter set", e);
+                }
             }
         }
 
@@ -133,9 +138,14 @@ public class MLDSAKeyPairGeneratorSpi
         return new KeyPair(new BCMLDSAPublicKey(pub), new BCMLDSAPrivateKey(priv));
     }
 
-    // the provider's 256 bit DEFAULT DRBG, used wherever the caller supplies no SecureRandom
+    // used wherever the caller supplies no SecureRandom: one set on CryptoServicesRegistrar, otherwise the provider's 256 bit DEFAULT DRBG
     private static SecureRandom createDefaultRandom()
     {
+        if (CryptoServicesRegistrar.isSecureRandomSpecified())
+        {
+            return CryptoServicesRegistrar.getSecureRandom();
+        }
+
         try
         {
             return new BCJcaJceHelper().createSecureRandom("DEFAULT");

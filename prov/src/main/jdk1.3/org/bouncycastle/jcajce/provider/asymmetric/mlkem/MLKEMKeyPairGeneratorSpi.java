@@ -14,6 +14,7 @@ import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.generators.MLKEMKeyPairGenerator;
 import org.bouncycastle.crypto.params.MLKEMKeyGenerationParameters;
 import org.bouncycastle.crypto.params.MLKEMParameters;
@@ -29,7 +30,9 @@ import org.bouncycastle.util.Strings;
  * ML-KEM (FIPS 203) key pair generation. A generator obtained as "ML-KEM" and not initialised
  * produces ML-KEM-768 keys, the parameter set NIST recommends (NIST IR 8547). An initialisation
  * that gives no SecureRandom, including this default and a generator obtained under a parameter set
- * name such as "ML-KEM-512", draws the key from the provider's 256 bit DEFAULT DRBG.
+ * name such as "ML-KEM-512", draws the key from the
+ * default SecureRandom set on CryptoServicesRegistrar, if one has been set, and otherwise from the provider's
+ * 256 bit DEFAULT DRBG.
  */
 public class MLKEMKeyPairGeneratorSpi
     extends java.security.KeyPairGenerator
@@ -49,14 +52,6 @@ public class MLKEMKeyPairGeneratorSpi
     {
         super(Strings.toUpperCase(paramSpec.getName()));
         this.mlkemParameters = Utils.getParameters(paramSpec.getName());
-
-        if (param == null)
-        {
-            param = new MLKEMKeyGenerationParameters(createDefaultRandom(), mlkemParameters);
-        }
-
-        engine.init(param);
-        initialised = true;
     }
 
     public void initialize(
@@ -109,14 +104,24 @@ public class MLKEMKeyPairGeneratorSpi
     {
         if (!initialised)
         {
-            // NIST's recommended default set (NIST IR 8547), drawn from the DEFAULT DRBG as initialize() does
-            try
+            if (mlkemParameters != null)
             {
-                initialize(MLKEMParameterSpec.ml_kem_768);
+                // locked to a parameter set: set up on first use, so a generator given its own SecureRandom never builds a DRBG
+                param = new MLKEMKeyGenerationParameters(createDefaultRandom(), mlkemParameters);
+                engine.init(param);
+                initialised = true;
             }
-            catch (InvalidAlgorithmParameterException e)
+            else
             {
-                throw Exceptions.illegalStateException("unable to apply the default parameter set", e);
+                // NIST's recommended default set (NIST IR 8547), drawn from the DEFAULT DRBG as initialize() does
+                try
+                {
+                    initialize(MLKEMParameterSpec.ml_kem_768);
+                }
+                catch (InvalidAlgorithmParameterException e)
+                {
+                    throw Exceptions.illegalStateException("unable to apply the default parameter set", e);
+                }
             }
         }
 
@@ -127,9 +132,14 @@ public class MLKEMKeyPairGeneratorSpi
         return new KeyPair(new BCMLKEMPublicKey(pub), new BCMLKEMPrivateKey(priv));
     }
 
-    // the provider's 256 bit DEFAULT DRBG, used wherever the caller supplies no SecureRandom
+    // used wherever the caller supplies no SecureRandom: one set on CryptoServicesRegistrar, otherwise the provider's 256 bit DEFAULT DRBG
     private static SecureRandom createDefaultRandom()
     {
+        if (CryptoServicesRegistrar.isSecureRandomSpecified())
+        {
+            return CryptoServicesRegistrar.getSecureRandom();
+        }
+
         try
         {
             return new BCJcaJceHelper().createSecureRandom("DEFAULT");

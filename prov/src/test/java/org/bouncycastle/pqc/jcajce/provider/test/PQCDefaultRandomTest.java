@@ -6,9 +6,12 @@ import java.security.KeyPairGenerator;
 import java.security.SecureRandom;
 import java.security.Security;
 import java.security.Signature;
+import java.security.spec.AlgorithmParameterSpec;
 
 import junit.framework.TestCase;
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.KeyGenerationParameters;
+import org.bouncycastle.crypto.SecureRandomProvider;
 import org.bouncycastle.jcajce.spec.MLDSAParameterSpec;
 import org.bouncycastle.jcajce.spec.MLKEMParameterSpec;
 import org.bouncycastle.jcajce.spec.SLHDSAParameterSpec;
@@ -50,8 +53,11 @@ public class PQCDefaultRandomTest
         {
             KeyPairGenerator kpg = KeyPairGenerator.getInstance(NAMED[i], "BC");
 
-            assertDefaultDRBG(NAMED[i], kpg);
+            // nothing is set up, and no DRBG built, until the first key pair is asked for
+            assertNull(NAMED[i], getKeyGenParams(kpg));
+
             assertEquals(NAMED[i], Strings.toUpperCase(kpg.generateKeyPair().getPrivate().getAlgorithm()));
+            assertDefaultDRBG(NAMED[i], kpg);
         }
     }
 
@@ -93,13 +99,77 @@ public class PQCDefaultRandomTest
     {
         SecureRandom random = new SecureRandom();
 
-        KeyPairGenerator kpg = KeyPairGenerator.getInstance("ML-DSA-44", "BC");
+        for (int i = 0; i != NAMED.length; i++)
+        {
+            KeyPairGenerator kpg = KeyPairGenerator.getInstance(NAMED[i], "BC");
+            kpg.initialize(specFor(NAMED[i]), random);
+            assertSame(NAMED[i], random, getKeyGenParams(kpg).getRandom());
+        }
+
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("ML-DSA", "BC");
         kpg.initialize(MLDSAParameterSpec.ml_dsa_44, random);
         assertSame(random, getKeyGenParams(kpg).getRandom());
 
         kpg = KeyPairGenerator.getInstance("SLH-DSA", "BC");
         kpg.initialize(SLHDSAParameterSpec.slh_dsa_sha2_128s, random);
         assertSame(random, getKeyGenParams(kpg).getRandom());
+    }
+
+    public void testRegistrarRandomPreferred()
+        throws Exception
+    {
+        SecureRandom random = new SecureRandom();
+
+        assertFalse(CryptoServicesRegistrar.isSecureRandomSpecified());
+        CryptoServicesRegistrar.setSecureRandom(random);
+        try
+        {
+            assertTrue(CryptoServicesRegistrar.isSecureRandomSpecified());
+
+            for (int i = 0; i != NAMED.length; i++)
+            {
+                KeyPairGenerator kpg = KeyPairGenerator.getInstance(NAMED[i], "BC");
+                kpg.generateKeyPair();
+                assertSame(NAMED[i], random, getKeyGenParams(kpg).getRandom());
+            }
+            for (int i = 0; i != FAMILIES.length; i++)
+            {
+                KeyPairGenerator kpg = KeyPairGenerator.getInstance(FAMILIES[i], "BC");
+                kpg.generateKeyPair();
+                assertSame(FAMILIES[i], random, getKeyGenParams(kpg).getRandom());
+            }
+
+            KeyPairGenerator kpg = KeyPairGenerator.getInstance("SLH-DSA", "BC");
+            kpg.initialize(SLHDSAParameterSpec.slh_dsa_sha2_128s);
+            assertSame(random, getKeyGenParams(kpg).getRandom());
+        }
+        finally
+        {
+            CryptoServicesRegistrar.setSecureRandom(null);
+        }
+
+        // setting null goes back to the library default, and so to the DEFAULT DRBG
+        assertFalse(CryptoServicesRegistrar.isSecureRandomSpecified());
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("ML-KEM-768", "BC");
+        kpg.generateKeyPair();
+        assertDefaultDRBG("ML-KEM-768", kpg);
+
+        CryptoServicesRegistrar.setSecureRandomProvider(new SecureRandomProvider()
+        {
+            public SecureRandom get()
+            {
+                return new SecureRandom();
+            }
+        });
+        try
+        {
+            assertTrue(CryptoServicesRegistrar.isSecureRandomSpecified());
+        }
+        finally
+        {
+            CryptoServicesRegistrar.setSecureRandomProvider(null);
+        }
+        assertFalse(CryptoServicesRegistrar.isSecureRandomSpecified());
     }
 
     public void testSigningDeterministicWithoutRandom()
@@ -153,6 +223,19 @@ public class PQCDefaultRandomTest
         assertNotNull(label, random);
         assertEquals(label, "DEFAULT", random.getAlgorithm());
         assertEquals(label, BouncyCastleProvider.PROVIDER_NAME, random.getProvider().getName());
+    }
+
+    private static AlgorithmParameterSpec specFor(String name)
+    {
+        if (name.startsWith("ML-DSA"))
+        {
+            return MLDSAParameterSpec.fromName(name);
+        }
+        if (name.startsWith("ML-KEM"))
+        {
+            return MLKEMParameterSpec.fromName(name);
+        }
+        return SLHDSAParameterSpec.fromName(name);
     }
 
     // the BC generator SPIs extend KeyPairGenerator, so getInstance returns the SPI itself

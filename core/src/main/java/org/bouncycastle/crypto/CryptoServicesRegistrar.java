@@ -182,6 +182,20 @@ public final class CryptoServicesRegistrar
     }
 
     /**
+     * Return true if a default source of randomness has been set with {@link #setSecureRandom(SecureRandom)}
+     * or {@link #setSecureRandomProvider(SecureRandomProvider)}, false if {@link #getSecureRandom()} would
+     * return the library's own default.
+     *
+     * @return true if a default SecureRandom has been specified, false otherwise.
+     */
+    public static boolean isSecureRandomSpecified()
+    {
+        SecureRandomProvider provider = defaultSecureRandomProvider.get();
+
+        return provider != null && provider != defaultRandomProviderImpl;
+    }
+
+    /**
      * Return the current algorithm/services constraints.
      *
      * @return the algorithm/services constraints.
