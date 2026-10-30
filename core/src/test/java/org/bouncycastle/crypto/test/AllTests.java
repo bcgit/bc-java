@@ -21,6 +21,7 @@ public class AllTests
         suite.addTestSuite(SimpleTestTest.class);
         suite.addTestSuite(GCMReorderTest.class);
         suite.addTestSuite(HPKETestVectors.class);
+        suite.addTestSuite(HPKEPQVectorsTest.class);
         suite.addTestSuite(Blake2bpDigestTest.class);
         suite.addTestSuite(Blake2spDigestTest.class);
         return new BCTestSetup(suite);

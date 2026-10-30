@@ -13,6 +13,11 @@ public interface MlsSigner
     int ecdsa_secp384r1_sha384 = 5;
     int ed25519 = 7;
     int ed448 = 8;
+    // ML-DSA (FIPS 204, pure, empty context) by the TLS SignatureScheme code points of draft-ietf-tls-mldsa,
+    // as used by the post-quantum cipher suites of draft-ietf-mls-pq-ciphersuites
+    int mldsa44 = 0x0904;
+    int mldsa65 = 0x0905;
+    int mldsa87 = 0x0906;
 
     AsymmetricCipherKeyPair generateSignatureKeyPair();
 

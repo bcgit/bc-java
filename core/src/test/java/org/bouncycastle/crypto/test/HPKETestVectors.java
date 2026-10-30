@@ -377,7 +377,7 @@ public class HPKETestVectors
         "796fda89edb77be0294136139354eb8cd37591578f9c600dd9be8ec6219fdd507adf3397ed4d68707b8d13b24ce4cd8fb22851bfe9d632407f31ed6f7cb1600d" +
         "e56f17576740ce2a32fc5145030145cfb97e63e0e41d354274a079d3e6fb2e15");
 
-    private static final short[] PQ_KEM_IDS = { HPKE.kem_ML_KEM_512, HPKE.kem_ML_KEM_768, HPKE.kem_ML_KEM_1024, HPKE.kem_X_WING };
+    private static final short[] PQ_KEM_IDS = { HPKE.kem_ML_KEM_512, HPKE.kem_ML_KEM_768, HPKE.kem_ML_KEM_1024, HPKE.kem_X_WING, HPKE.kem_MLKEM768_P256, HPKE.kem_MLKEM1024_P384 };
 
     public void testPQKemBaseOneShotPairwise()
         throws Exception
@@ -484,12 +484,13 @@ public class HPKETestVectors
             assertTrue("derived private keys differ", Arrays.areEqual(
                 hpke.serializePrivateKey(kp1.getPrivate()), hpke.serializePrivateKey(kp2.getPrivate())));
 
-            if (PQ_KEM_IDS[i] != HPKE.kem_X_WING)
-            {
-                // for ML-KEM the ikm is the (d, z) seed, which is also the private key encoding
-                assertTrue("ML-KEM private key encoding should be the ikm seed",
-                    Arrays.areEqual(ikm, hpke.serializePrivateKey(kp1.getPrivate())));
-            }
+            // draft-ietf-hpke-pq: the private key is derived from the ikm by LabeledDerive, not taken from it
+            assertFalse("private key encoding should not be the ikm",
+                Arrays.areEqual(ikm, hpke.serializePrivateKey(kp1.getPrivate())));
+
+            // the private key encoding is a seed of 64 bytes for ML-KEM and 32 for the hybrids
+            int expectedSkLen = (PQ_KEM_IDS[i] == HPKE.kem_ML_KEM_512 || PQ_KEM_IDS[i] == HPKE.kem_ML_KEM_768 || PQ_KEM_IDS[i] == HPKE.kem_ML_KEM_1024) ? 64 : 32;
+            assertEquals("private key encoding length", expectedSkLen, hpke.serializePrivateKey(kp1.getPrivate()).length);
         }
     }
 

@@ -48,12 +48,15 @@ public class HPKE
     public static final short kem_P521_SHA512 = 18;
     public static final short kem_X25519_SHA256 = 32;
     public static final short kem_X448_SHA512 = 33;
-    // draft-connolly-cfrg-hpke-mlkem
+    // draft-ietf-hpke-pq (ML-KEM, and the PQ/T hybrids of draft-irtf-cfrg-concrete-hybrid-kems)
     public static final short kem_ML_KEM_512 = 0x0040;
     public static final short kem_ML_KEM_768 = 0x0041;
     public static final short kem_ML_KEM_1024 = 0x0042;
-    // draft-connolly-cfrg-xwing-kem
+    public static final short kem_MLKEM768_P256 = 0x0050;
+    public static final short kem_MLKEM1024_P384 = 0x0051;
+    // draft-connolly-cfrg-xwing-kem; MLKEM768-X25519 in draft-ietf-hpke-pq
     public static final short kem_X_WING = 0x647a;
+    public static final short kem_MLKEM768_X25519 = kem_X_WING;
 
     // kdfs
     public static final short kdf_HKDF_SHA256 = 0x0001;
@@ -135,6 +138,9 @@ public class HPKE
             return new MLKEM(kemId);
         case kem_X_WING:
             return new XWingKEM();
+        case kem_MLKEM768_P256:
+        case kem_MLKEM1024_P384:
+            return new MLKEMECHybridKEM(kemId);
         default:
             return new DHKEM(kemId);
         }

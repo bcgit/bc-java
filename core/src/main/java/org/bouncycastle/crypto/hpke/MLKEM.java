@@ -13,18 +13,19 @@ import org.bouncycastle.crypto.params.MLKEMPrivateKeyParameters;
 import org.bouncycastle.crypto.params.MLKEMPublicKeyParameters;
 
 /**
- * ML-KEM as an HPKE KEM per draft-connolly-cfrg-hpke-mlkem.
+ * ML-KEM as an HPKE KEM per draft-ietf-hpke-pq (which replaced draft-connolly-cfrg-hpke-mlkem).
  * <p>
  * The private key wire format is the 64-byte seed {@code (d, z)} of FIPS 203;
- * {@code DeriveKeyPair} requires an ikm of exactly 64 bytes, used directly as
- * that seed. ML-KEM is not an authenticated KEM, so the auth and auth_psk
- * modes are not supported.
+ * {@code DeriveKeyPair} derives that seed as the SHAKE256 LabeledDerive of the ikm with the
+ * label "DeriveKeyPair" (draft-ietf-hpke-pq sec. 3), so any ikm length is accepted. ML-KEM is
+ * not an authenticated KEM, so the auth and auth_psk modes are not supported.
  *
- * @see <a href="https://datatracker.ietf.org/doc/draft-connolly-cfrg-hpke-mlkem/">ML-KEM for HPKE</a>
+ * @see <a href="https://datatracker.ietf.org/doc/draft-ietf-hpke-pq/">Post-Quantum and Post-Quantum/Traditional Hybrid Algorithms for HPKE</a>
  */
 class MLKEM
     extends KEM
 {
+    private final short kemId;
     private final MLKEMParameters parameters;
     private final int Nenc;
     private final int Npk;
@@ -33,6 +34,8 @@ class MLKEM
 
     MLKEM(short kemid)
     {
+        this.kemId = kemid;
+
         switch (kemid)
         {
         case HPKE.kem_ML_KEM_512:
@@ -65,19 +68,17 @@ class MLKEM
     AsymmetricCipherKeyPair DeriveKeyPair(byte[] ikm)
     {
         /*
-         * draft-connolly-cfrg-hpke-mlkem: DeriveKeyPair(ikm) takes an ikm of exactly 64 bytes
-         * and invokes ML-KEM.KeyGen_internal(ikm[0:32], ikm[32:64]).
+         * draft-ietf-hpke-pq sec. 3: dk = SHAKE256.LabeledDerive(ikm, "DeriveKeyPair", "", 64), then
+         * ML-KEM.KeyGen_internal(dk[0:32], dk[32:64]).
          */
         if (ikm == null)
         {
             throw new NullPointerException("'ikm' cannot be null");
         }
-        if (ikm.length != Nsk)
-        {
-            throw new IllegalArgumentException("'ikm' must be " + Nsk + " bytes");
-        }
 
-        MLKEMPrivateKeyParameters sk = new MLKEMPrivateKeyParameters(parameters, ikm);
+        byte[] seed = labeledDeriveSHAKE256(kemId, ikm, "DeriveKeyPair", null, Nsk);
+
+        MLKEMPrivateKeyParameters sk = new MLKEMPrivateKeyParameters(parameters, seed);
         return new AsymmetricCipherKeyPair(sk.getPublicKeyParameters(), sk);
     }
 

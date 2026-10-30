@@ -40,7 +40,7 @@ public class RemoveAddTest
 
     private static MlsCipherSuite[] allSupportedSuites()
     {
-        short[] ids = MlsCipherSuite.ALL_SUPPORTED_SUITES;
+        short[] ids = org.bouncycastle.util.Arrays.concatenate(MlsCipherSuite.ALL_SUPPORTED_SUITES, MlsCipherSuite.PQ_SUITES);
         MlsCipherSuite[] suites = new MlsCipherSuite[ids.length];
         for (int i = 0; i != ids.length; i++)
         {
@@ -50,7 +50,7 @@ public class RemoveAddTest
             }
             catch (Exception e)
             {
-                throw new IllegalStateException("unsupported suite in ALL_SUPPORTED_SUITES: " + ids[i], e);
+                throw new IllegalStateException("unsupported suite: " + ids[i], e);
             }
         }
         return suites;

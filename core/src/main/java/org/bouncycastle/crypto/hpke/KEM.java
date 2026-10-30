@@ -1,7 +1,9 @@
 package org.bouncycastle.crypto.hpke;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
+import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
+import org.bouncycastle.util.Strings;
 
 
 /**
@@ -62,5 +64,35 @@ public abstract class KEM
     abstract AsymmetricCipherKeyPair DeserializePrivateKey(byte[] skEncoded, byte[] pkEncoded);
 
     abstract int getEncryptionSize();
+
+    /**
+     * The single-stage LabeledDerive of draft-ietf-hpke-hpke sec. 4.4 with the SHAKE256 KDF of
+     * draft-ietf-hpke-pq sec. 5, as used by the DeriveKeyPair functions of the ML-KEM and hybrid KEMs:
+     * SHAKE256(ikm || "HPKE-v1" || "KEM" || kem_id || len(label) || label || L || context, L).
+     */
+    static byte[] labeledDeriveSHAKE256(short kemId, byte[] ikm, String label, byte[] context, int L)
+    {
+        byte[] labelBytes = Strings.toByteArray(label);
+
+        SHAKEDigest shake = new SHAKEDigest(256);
+        shake.update(ikm, 0, ikm.length);
+        byte[] prefix = Strings.toByteArray("HPKE-v1KEM");
+        shake.update(prefix, 0, prefix.length);
+        shake.update((byte)(kemId >>> 8));
+        shake.update((byte)kemId);
+        shake.update((byte)(labelBytes.length >>> 8));
+        shake.update((byte)labelBytes.length);
+        shake.update(labelBytes, 0, labelBytes.length);
+        shake.update((byte)(L >>> 8));
+        shake.update((byte)L);
+        if (context != null)
+        {
+            shake.update(context, 0, context.length);
+        }
+
+        byte[] out = new byte[L];
+        shake.doFinal(out, 0, L);
+        return out;
+    }
 
 }

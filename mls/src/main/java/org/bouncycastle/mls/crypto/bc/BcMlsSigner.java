@@ -15,6 +15,7 @@ import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
 import org.bouncycastle.crypto.generators.Ed25519KeyPairGenerator;
 import org.bouncycastle.crypto.generators.Ed448KeyPairGenerator;
+import org.bouncycastle.crypto.generators.MLDSAKeyPairGenerator;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.ECKeyGenerationParameters;
 import org.bouncycastle.crypto.params.ECNamedDomainParameters;
@@ -26,12 +27,16 @@ import org.bouncycastle.crypto.params.Ed25519PublicKeyParameters;
 import org.bouncycastle.crypto.params.Ed448KeyGenerationParameters;
 import org.bouncycastle.crypto.params.Ed448PrivateKeyParameters;
 import org.bouncycastle.crypto.params.Ed448PublicKeyParameters;
-import org.bouncycastle.crypto.params.X25519PublicKeyParameters;
-import org.bouncycastle.crypto.params.X448PublicKeyParameters;
+import org.bouncycastle.crypto.params.MLDSAKeyGenerationParameters;
+import org.bouncycastle.crypto.params.MLDSAParameters;
+import org.bouncycastle.crypto.params.MLDSAPrivateKeyParameters;
+import org.bouncycastle.crypto.params.MLDSAPublicKeyParameters;
+import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.signers.DSADigestSigner;
 import org.bouncycastle.crypto.signers.ECDSASigner;
 import org.bouncycastle.crypto.signers.Ed25519Signer;
 import org.bouncycastle.crypto.signers.Ed448Signer;
+import org.bouncycastle.crypto.signers.MLDSASigner;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.math.ec.FixedPointCombMultiplier;
 import org.bouncycastle.mls.codec.MLSOutputStream;
@@ -43,6 +48,7 @@ public class BcMlsSigner
 {
     Signer signer;
     ECNamedDomainParameters domainParams;
+    MLDSAParameters mldsaParams;
     int sigID;
 
     public BcMlsSigner(int sigID)
@@ -69,6 +75,18 @@ public class BcMlsSigner
         case ed448:
             signer = new Ed448Signer(new byte[0]);
             break;
+        case mldsa44:
+            signer = new MLDSASigner();
+            mldsaParams = MLDSAParameters.ml_dsa_44;
+            break;
+        case mldsa65:
+            signer = new MLDSASigner();
+            mldsaParams = MLDSAParameters.ml_dsa_65;
+            break;
+        case mldsa87:
+            signer = new MLDSASigner();
+            mldsaParams = MLDSAParameters.ml_dsa_87;
+            break;
         }
     }
 
@@ -91,6 +109,12 @@ public class BcMlsSigner
             Ed448KeyPairGenerator kpg448 = new Ed448KeyPairGenerator();
             kpg448.init(new Ed448KeyGenerationParameters(random));
             return kpg448.generateKeyPair();
+        case mldsa44:
+        case mldsa65:
+        case mldsa87:
+            MLDSAKeyPairGenerator kpgMLDSA = new MLDSAKeyPairGenerator();
+            kpgMLDSA.init(new MLDSAKeyGenerationParameters(random, mldsaParams));
+            return kpgMLDSA.generateKeyPair();
         default:
             throw new IllegalStateException("invalid sig algorithm");
         }
@@ -108,6 +132,10 @@ public class BcMlsSigner
             return ((Ed25519PublicKeyParameters)key).getEncoded();
         case ed448:
             return ((Ed448PublicKeyParameters)key).getEncoded();
+        case mldsa44:
+        case mldsa65:
+        case mldsa87:
+            return ((MLDSAPublicKeyParameters)key).getEncoded();
         default:
             throw new IllegalStateException("invalid sig algorithm");
         }
@@ -126,6 +154,16 @@ public class BcMlsSigner
             return ((Ed25519PrivateKeyParameters)key).getEncoded();
         case ed448:
             return ((Ed448PrivateKeyParameters)key).getEncoded();
+        case mldsa44:
+        case mldsa65:
+        case mldsa87:
+            // the 32-byte seed of FIPS 204; the key pair is regenerated from it on deserialization
+            byte[] seed = ((MLDSAPrivateKeyParameters)key).getSeed();
+            if (seed == null)
+            {
+                throw new IllegalArgumentException("ML-DSA private key does not carry its seed");
+            }
+            return seed;
         default:
             throw new IllegalStateException("invalid sig algorithm");
         }
@@ -141,9 +179,13 @@ public class BcMlsSigner
             ECPoint G = domainParams.getCurve().decodePoint(pub);
             return new ECPublicKeyParameters(G, domainParams);
         case ed25519:
-            return new X25519PublicKeyParameters(pub);
+            return new Ed25519PublicKeyParameters(pub);
         case ed448:
-            return new X448PublicKeyParameters(pub);
+            return new Ed448PublicKeyParameters(pub);
+        case mldsa44:
+        case mldsa65:
+        case mldsa87:
+            return new MLDSAPublicKeyParameters(mldsaParams, pub);
         default:
             throw new IllegalStateException("Unknown mode");
         }
@@ -167,6 +209,11 @@ public class BcMlsSigner
         case ed448:
             Ed448PrivateKeyParameters ed448 = new Ed448PrivateKeyParameters(priv);
             return new AsymmetricCipherKeyPair(ed448.generatePublicKey(), ed448);
+        case mldsa44:
+        case mldsa65:
+        case mldsa87:
+            MLDSAPrivateKeyParameters mldsa = new MLDSAPrivateKeyParameters(mldsaParams, priv);
+            return new AsymmetricCipherKeyPair(mldsa.getPublicKeyParameters(), mldsa);
         default:
             throw new IllegalStateException("invalid sig algorithm");
         }
@@ -190,6 +237,13 @@ public class BcMlsSigner
             break;
         case ed448:
             signer.init(true, new Ed448PrivateKeyParameters(priv));
+            break;
+        case mldsa44:
+        case mldsa65:
+        case mldsa87:
+            // FIPS 204 sec. 3.4 hedged signing with the empty context, as draft-ietf-tls-mldsa requires
+            signer.init(true, new ParametersWithRandom(new MLDSAPrivateKeyParameters(mldsaParams, priv),
+                CryptoServicesRegistrar.getSecureRandom()));
             break;
         }
         signer.update(signContentBytes, 0, signContentBytes.length);
@@ -215,6 +269,11 @@ public class BcMlsSigner
             break;
         case ed448:
             signer.init(false, new Ed448PublicKeyParameters(pub));
+            break;
+        case mldsa44:
+        case mldsa65:
+        case mldsa87:
+            signer.init(false, new MLDSAPublicKeyParameters(mldsaParams, pub));
             break;
         }
         signer.update(signContentBytes, 0, signContentBytes.length);

@@ -3,7 +3,6 @@ package org.bouncycastle.crypto.hpke;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.SecretWithEncapsulation;
-import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.prng.FixedSecureRandom;
 import org.bouncycastle.pqc.crypto.xwing.XWingKEMExtractor;
@@ -18,8 +17,10 @@ import org.bouncycastle.util.Arrays;
  * X-Wing (X25519 / ML-KEM-768 hybrid) as an HPKE KEM per draft-connolly-cfrg-xwing-kem.
  * <p>
  * The private key wire format is the 32-byte X-Wing seed; {@code DeriveKeyPair}
- * derives that seed as SHAKE256(ikm, 32). X-Wing is not an authenticated KEM,
- * so the auth and auth_psk modes are not supported.
+ * derives that seed as the SHAKE256 LabeledDerive of the ikm with the label "DeriveKeyPair",
+ * as draft-ietf-hpke-pq sec. 4 specifies for the hybrid KEMs (where X-Wing is MLKEM768-X25519,
+ * KEM id 0x647a). X-Wing is not an authenticated KEM, so the auth and auth_psk modes are not
+ * supported.
  *
  * @see <a href="https://datatracker.ietf.org/doc/draft-connolly-cfrg-xwing-kem/">X-Wing KEM</a>
  */
@@ -47,8 +48,8 @@ class XWingKEM
     AsymmetricCipherKeyPair DeriveKeyPair(byte[] ikm)
     {
         /*
-         * draft-connolly-cfrg-xwing-kem: DeriveKeyPair(ikm) with ikm of at least 32 octets
-         * generates the key pair from the seed SHAKE256(ikm, 32).
+         * draft-ietf-hpke-pq sec. 4: seed = SHAKE256.LabeledDerive(ikm, "DeriveKeyPair", "", 32),
+         * with an ikm that SHOULD be at least 32 octets.
          */
         if (ikm == null)
         {
@@ -59,12 +60,7 @@ class XWingKEM
             throw new IllegalArgumentException("'ikm' must be at least " + Nsk + " bytes");
         }
 
-        SHAKEDigest shake = new SHAKEDigest(256);
-        shake.update(ikm, 0, ikm.length);
-        byte[] seed = new byte[Nsk];
-        shake.doFinal(seed, 0, seed.length);
-
-        return keyPairFromSeed(seed);
+        return keyPairFromSeed(labeledDeriveSHAKE256(HPKE.kem_X_WING, ikm, "DeriveKeyPair", null, Nsk));
     }
 
     byte[][] Encap(AsymmetricKeyParameter recipientPublicKey)
