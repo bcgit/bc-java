@@ -2,6 +2,8 @@ package org.bouncycastle.crypto.test;
 
 import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
+import org.bouncycastle.crypto.digests.SHAKEDigest;
+import org.bouncycastle.crypto.params.LMOtsParameters;
 import org.bouncycastle.crypto.params.LMSigParameters;
 import org.bouncycastle.crypto.params.MLDSAParameters;
 import org.bouncycastle.crypto.params.MLKEMParameters;
@@ -56,11 +58,28 @@ public class PQCParametersTest
         check(LMSigParameters.lms_sha256_n24_h10, 3, 192);
         check(LMSigParameters.lms_shake256_n32_h15, 5, 256);
         check(LMSigParameters.lms_shake256_n24_h20, 3, 192);
+        check(LMOtsParameters.sha256_n32_w8, 5, 256);
+        check(LMOtsParameters.sha256_n24_w4, 3, 192);
+        check(LMOtsParameters.shake256_n32_w1, 5, 256);
+        check(LMOtsParameters.shake256_n24_w2, 3, 192);
+        check(org.bouncycastle.pqc.crypto.lms.LMSigParameters.lms_sha256_n32_h5, 5, 256);
+        check(org.bouncycastle.pqc.crypto.lms.LMSigParameters.lms_shake256_n24_h10, 3, 192);
+        check(org.bouncycastle.pqc.crypto.lms.LMOtsParameters.sha256_n32_w4, 5, 256);
+        check(org.bouncycastle.pqc.crypto.lms.LMOtsParameters.shake256_n24_w8, 3, 192);
 
         // XMSS / XMSS^MT (Table 3; the SHA-512 set is outside SP 800-208 and capped at 256)
         check(new XMSSParameters(10, new SHA256Digest()), 5, 256);
         check(new XMSSParameters(10, new SHA512Digest()), 5, 256);
         check(new XMSSMTParameters(20, 2, new SHA256Digest()), 5, 256);
+        check(XMSSParameters.lookupByOID(0x00000013), 3, 192);       // XMSS-SHAKE256_10_192
+        check(XMSSMTParameters.lookupByOID(0x00000021), 3, 192);     // XMSSMT-SHA2_20/2_192
+        // RFC 8391 SHAKE128 sets (n = 32): SHAKE128 caps the strength at 128 bits
+        check(new XMSSParameters(10, new SHAKEDigest(128)), 1, 128);
+        check(new XMSSMTParameters(20, 2, new SHAKEDigest(128)), 1, 128);
+        check(new XMSSParameters(10, new SHAKEDigest(256)), 5, 256);
+        check(new org.bouncycastle.pqc.crypto.xmss.XMSSParameters(10, new SHA256Digest()), 5, 256);
+        check(new org.bouncycastle.pqc.crypto.xmss.XMSSParameters(10, new SHAKEDigest(128)), 1, 128);
+        check(new org.bouncycastle.pqc.crypto.xmss.XMSSMTParameters(20, 2, new SHA512Digest()), 5, 256);
 
         // Falcon (round 3 submission) and HQC (October 2026 specification)
         check(FalconParameters.falcon_512, 1, 128);

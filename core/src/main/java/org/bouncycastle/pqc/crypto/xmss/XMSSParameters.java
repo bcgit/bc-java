@@ -7,6 +7,7 @@ import java.util.Map;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.crypto.Digest;
+import org.bouncycastle.crypto.params.PQCParameters;
 import org.bouncycastle.util.Integers;
 
 /**
@@ -16,6 +17,7 @@ import org.bouncycastle.util.Integers;
  */
 @Deprecated
 public final class XMSSParameters
+    implements PQCParameters
 {
     private static final Map<Integer, XMSSParameters> paramsLookupTable;
 
@@ -146,6 +148,33 @@ public final class XMSSParameters
     public int getTreeDigestSize()
     {
         return treeDigestSize;
+    }
+
+    /**
+     * Return the NIST security category of this parameter set, as
+     * {@link org.bouncycastle.crypto.params.XMSSParameters#getSecurityCategory()} reports it.
+     */
+    public int getSecurityCategory()
+    {
+        if (NISTObjectIdentifiers.id_shake128.equals(treeDigestOID))
+        {
+            return 1;
+        }
+        return (treeDigestSize <= 24) ? 3 : 5;
+    }
+
+    /**
+     * Return the classical security strength of this parameter set, as
+     * {@link org.bouncycastle.crypto.params.XMSSParameters#getClassicalSecurityStrength()}
+     * reports it.
+     */
+    public int getClassicalSecurityStrength()
+    {
+        if (NISTObjectIdentifiers.id_shake128.equals(treeDigestOID))
+        {
+            return Math.min(128, 8 * treeDigestSize);
+        }
+        return Math.min(256, 8 * treeDigestSize);
     }
 
     /**

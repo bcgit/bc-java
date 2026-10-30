@@ -11,6 +11,10 @@ import org.bouncycastle.util.Pack;
  *
  * It is interesting to ponder why the, apart from the extra IV, the other difference here from MD5
  * is the "endianness" of the word processing!
+ * <p>
+ * Note: SHA-1 is deprecated for all uses (NIST IR 8547, Table 8, footnote 4) and a
+ * {@link org.bouncycastle.crypto.constraints.BitsOfSecurityConstraint} of 128 refuses it.
+ * </p>
  */
 public class SHA1Digest
     extends GeneralDigest

@@ -216,6 +216,11 @@ public final class CryptoServicesRegistrar
      */
     public static void checkConstraints(CryptoServiceProperties cryptoService)
     {
+        if (cryptoService.getPurpose() == CryptoServicePurpose.INTERNAL)
+        {
+            return;
+        }
+
         servicesConstraints.check(cryptoService);
     }
 

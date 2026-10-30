@@ -8,6 +8,7 @@ import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.util.Integers;
 
 public class LMOtsParameters
+    implements PQCParameters
 {
     public static final int reserved = 0;
     public static final LMOtsParameters sha256_n32_w1 = create(0x01, 32, 1, NISTObjectIdentifiers.id_sha256);
@@ -149,6 +150,25 @@ public class LMOtsParameters
     public int getSigLen()
     {
         return sigLen;
+    }
+
+    /**
+     * Return the NIST security category of this parameter set: 3 for the SHA-256/192 and
+     * SHAKE256/192 sets (n = 24) and 5 for the SHA-256 and SHAKE256/256 sets (n = 32)
+     * (NIST IR 8547, Table 3).
+     */
+    public int getSecurityCategory()
+    {
+        return (n <= 24) ? 3 : 5;
+    }
+
+    /**
+     * Return the classical security strength of this parameter set: 8 times the hash output
+     * length n, so 192 or 256 bits (NIST IR 8547, Table 3).
+     */
+    public int getClassicalSecurityStrength()
+    {
+        return 8 * n;
     }
 
     public ASN1ObjectIdentifier getDigestOID()

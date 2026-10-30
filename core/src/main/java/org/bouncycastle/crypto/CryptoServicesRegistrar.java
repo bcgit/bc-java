@@ -12,6 +12,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Logger;
 
 import org.bouncycastle.asn1.x9.X9ECParameters;
+import org.bouncycastle.crypto.constraints.QuantumVulnerableConstraint;
 import org.bouncycastle.crypto.params.DHParameters;
 import org.bouncycastle.crypto.params.DHValidationParameters;
 import org.bouncycastle.crypto.params.DSAParameters;
@@ -219,7 +220,7 @@ public final class CryptoServicesRegistrar
 
         if (preconfiguredConstraints)
         {
-            if (Properties.isOverrideSet("org.bouncycastle.constraints.allow_override"))
+            if (Properties.isOverrideSet(Properties.CONSTRAINTS_ALLOW_OVERRIDE))
             {
                 servicesConstraints.set(newConstraints);
             }
@@ -498,9 +499,25 @@ public final class CryptoServicesRegistrar
 
     private static CryptoServicesConstraints getDefaultConstraints()
     {
-        // TODO: return one based on system/security properties if set.
+        String policy = Properties.getPropertyValue(Properties.CONSTRAINTS_QUANTUM_VULNERABLE);
+        if (policy == null)
+        {
+            return noConstraintsImpl;
+        }
 
-        return noConstraintsImpl;
+        CryptoServicesConstraints constraints;
+        try
+        {
+            constraints = QuantumVulnerableConstraint.forPolicy(policy);
+        }
+        catch (IllegalArgumentException e)
+        {
+            // a failure here would leave the whole class unusable, so report it and carry on unconstrained
+            LOG.warning("ignoring " + Properties.CONSTRAINTS_QUANTUM_VULNERABLE + ": " + e.getMessage());
+            return noConstraintsImpl;
+        }
+
+        return (constraints == null) ? noConstraintsImpl : constraints;
     }
 
     /**

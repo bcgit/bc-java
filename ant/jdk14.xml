@@ -196,6 +196,8 @@
                 <exclude name="**/crypto/params/LMSVectorUtils.java"/>
                 <exclude name="**/pqc/**/LMS*.java"/>
                 <exclude name="**/pqc/**/HSS*.java"/>
+                <!-- uses the LMS/HSS and XMSS generators, which this build excludes -->
+                <exclude name="**/crypto/test/PQCConstraintsTest.java"/>
                 <exclude name="**/pqc/**/HRSS*.java"/>
                 <exclude name="**/pqc/**/PolynomialTest.java"/>
                 <exclude name="**/pqc/**/HPS*.java"/>

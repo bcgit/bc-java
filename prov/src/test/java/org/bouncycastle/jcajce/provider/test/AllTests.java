@@ -43,6 +43,7 @@ public class AllTests
         suite.addTestSuite(SecretKeyUtilTest.class);
         suite.addTestSuite(PKCS12PBMAC1StoreTest.class);
         suite.addTestSuite(SignatureSetParameterTest.class);
+        suite.addTestSuite(CryptoServiceConstraintsTest.class);
 
         return new BCTestSetup(suite);
     }

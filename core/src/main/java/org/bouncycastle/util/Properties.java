@@ -602,6 +602,27 @@ public class Properties
      */
     public static final String TSP_ALLOWED_IMPRINT_ALGORITHMS = "org.bouncycastle.tsp.allowed_imprint_algorithms";
 
+    /**
+     * Selects the crypto services constraint {@code CryptoServicesRegistrar} installs at start-up when
+     * no other is set: "nist" for the NIST IR 8547 timetable on the quantum-vulnerable public-key
+     * algorithms (deprecated after 2030, disallowed after 2035 except for verification and decryption),
+     * "log" to log their use, "legacy" to refuse them for anything but verification and decryption,
+     * "reject" to refuse them outright, and "none" - the default when unset - for no constraint (see
+     * {@code QuantumVulnerableConstraint.forPolicy(String)}). A constraint installed this way can be
+     * replaced through {@code CryptoServicesRegistrar.setServicesConstraints()} only when
+     * {@link #CONSTRAINTS_ALLOW_OVERRIDE} is set. An unrecognised value is logged as a warning and
+     * no constraint is installed. Read once, via {@link #getPropertyValue(String)}, when
+     * {@code CryptoServicesRegistrar} is loaded.
+     */
+    public static final String CONSTRAINTS_QUANTUM_VULNERABLE = "org.bouncycastle.constraints.quantum_vulnerable";
+
+    /**
+     * Set to "true" to let {@code CryptoServicesRegistrar.setServicesConstraints()} replace a constraint
+     * installed from a property at start-up, such as {@link #CONSTRAINTS_QUANTUM_VULNERABLE}; otherwise
+     * such an attempt is logged and ignored. Read via {@link #isOverrideSet(String)}.
+     */
+    public static final String CONSTRAINTS_ALLOW_OVERRIDE = "org.bouncycastle.constraints.allow_override";
+
     private Properties()
     {
     }

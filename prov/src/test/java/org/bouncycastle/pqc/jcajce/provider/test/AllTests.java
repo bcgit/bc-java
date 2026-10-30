@@ -62,6 +62,7 @@ public class AllTests
         suite.addTestSuite(MLKEMTest.class);
         suite.addTestSuite(MLKEMKeyPairGeneratorTest.class);
         suite.addTestSuite(MLDSAKeyPairGeneratorTest.class);
+        suite.addTestSuite(PQCDefaultRandomTest.class);
         suite.addTestSuite(MLDSATest.class);
         suite.addTestSuite(BIKEKeyPairGeneratorTest.class);
         suite.addTestSuite(BIKETest.class);

@@ -84,6 +84,7 @@
                 <exclude name="**/asymmetric/DSTU*.java" />
                 <exclude name="**/asymmetric/dstu/*.java" />
                 <exclude name="**/Logging*.java" />
+                <exclude name="**/QuantumVulnerable*.java" />
                 <exclude name="**/provider/config/PKCS12StoreParameter.java" />
                 <exclude name="**/COMPOSITE.java"/>
                 <exclude name="**/gemss/*.java"/>
@@ -259,6 +260,8 @@
             </fileset>
             <fileset dir="core/src/test/java">
                 <exclude name="**/MQVTest.java" />
+                <exclude name="**/crypto/test/PQCConstraintsTest.java" />
+                <exclude name="**/crypto/test/QuantumVulnerableConstraintTest.java" />
                 <exclude name="**/ECDSA5Test.java" />
                 <exclude name="**/NamedCurveTest.java" />
                 <exclude name="**/nist/NistCertPathTest.java" />

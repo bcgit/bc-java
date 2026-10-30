@@ -404,7 +404,142 @@ def collectPqcSecurity(ClassLoader loader)
             }
         }
     }
+    // XMSS and XMSS^MT are registered per tree digest (XMSS-SHA256, XMSSMT-SHAKE128, ...) with the
+    // height left to the key, and the category and strength depend on the digest alone, so read
+    // them off a representative parameter set for each RFC 8391 digest
+    try
+    {
+        def oidCls = Class.forName('org.bouncycastle.asn1.ASN1ObjectIdentifier', true, loader)
+        def xmssCls = Class.forName('org.bouncycastle.crypto.params.XMSSParameters', true, loader)
+        def xmssCtor = xmssCls.getConstructor(int, oidCls)
+        [SHA256: '2.16.840.1.101.3.4.2.1', SHA512: '2.16.840.1.101.3.4.2.3',
+         SHAKE128: '2.16.840.1.101.3.4.2.11', SHAKE256: '2.16.840.1.101.3.4.2.12'].each { digest, oid ->
+            def p = xmssCtor.newInstance(10, oidCls.getConstructor(String).newInstance(oid))
+            def category = xmssCls.getMethod('getSecurityCategory').invoke(p)
+            def classical = xmssCls.getMethod('getClassicalSecurityStrength').invoke(p)
+            ['XMSS-', 'XMSSMT-'].each { prefix ->
+                result[norm(prefix + digest)] = [name: prefix + digest, category: category, classical: classical]
+            }
+        }
+    }
+    catch (ClassNotFoundException e)
+    {
+        // older jar without the XMSS parameter classes in crypto.params
+    }
     return result
+}
+
+/*
+ * The CycloneDX 1.6 security-level fields for one CBOM asset, or null if the asset name does not
+ * fix them. Returns [name: parameterSetIdentifier or null, category: nistQuantumSecurityLevel,
+ * classical: classicalSecurityLevel or null].
+ *
+ * - Post-quantum parameter sets come from collectPqcSecurity, by name or, for the
+ *   "...-EXTERNAL-HASH" and "<digest>WITHXMSS-<digest>" signature names, by the parameter set
+ *   or XMSS variant they name.
+ * - The composite and hybrid algorithms (MLDSA44-ECDSA-P256-SHA256, MLKEM768-X25519-SHA3-256,
+ *   X-WING, ...) remain secure while their ML-DSA or ML-KEM component does, so they report that
+ *   component's parameter set, category and strength.
+ * - The quantum-vulnerable public-key algorithms NIST IR 8547 deprecates after 2030 and
+ *   disallows after 2035 (RSA, DSA, DH/MQV, the EC schemes, EdDSA, X25519/X448, ElGamal, SM2,
+ *   GOST R 34.10, DSTU 4145, the pairing-based SM9, SAKKE and BLS12-381, and the PAKEs built on
+ *   discrete logarithms) report category 0 - "none of the categories are met" - and a classical
+ *   strength only where the name fixes the curve: 128 bits for 25519 and the 256-bit GOST curves, 224 for
+ *   448 (half the field size, as ConstraintUtils.bitsOfSecurityFor(ECCurve) has it) and 256 for
+ *   the 512-bit GOST curves. RSA, DSA, DH and the named-curve-free EC schemes take their strength
+ *   from the key, so it is left out rather than guessed.
+ *
+ * Names are matched so that an unrecognised algorithm gets no fields at all, never a wrong 0.
+ */
+ext.cbomSecurityFor = { String assetName, Map pqcSecurity ->
+    def norm = { String n -> n.toUpperCase().replaceAll(/[-_\/. ]/, '') }
+    def n = assetName.toUpperCase()
+
+    def pqc = pqcSecurity[norm(n)]
+    if (pqc != null)
+    {
+        return pqc
+    }
+    if (n.endsWith('-EXTERNAL-HASH'))
+    {
+        // ML-DSA-44-WITH-SHA512-EXTERNAL-HASH: the pre-hash parameter set, with the digest supplied
+        pqc = pqcSecurity[norm(n.substring(0, n.length() - '-EXTERNAL-HASH'.length()))]
+        if (pqc != null)
+        {
+            return pqc
+        }
+    }
+    def xmss = (n =~ /WITH(XMSS(?:MT)?-[A-Z0-9]+)$/)
+    if (xmss.find())
+    {
+        return pqcSecurity[norm(xmss.group(1))]
+    }
+
+    def hybrid = (n =~ /^(MLDSA(?:44|65|87)|MLKEM(?:512|768|1024))-/)
+    if (hybrid.find())
+    {
+        return pqcSecurity[hybrid.group(1)]
+    }
+    if (n == 'X-WING')
+    {
+        return pqcSecurity['MLKEM768']
+    }
+
+    // an optional "<digest>WITH" prefix, the scheme, then the end of the name or a separator
+    // introducing a mode, padding, KDF or format suffix
+    def quantumVulnerable = /^(?:[A-Z0-9()-]+WITH)?(?:RSA|RAWRSASSA-PSS|RSASSA-PSS|RSAPSS|RSA-KEM|RSA-KTS-KEM-KWS|X9\.31|ISO 9796-2(?: PSS)?|DSA|DDSA|DETDSA|DH|DHU|DHIES|IES|XIES|MQV|ELGAMAL|EC|ECDSA|ECDDSA|PLAIN-ECDSA|CVC-ECDSA|ECNR|ECDH|ECDHC|ECCDH|ECCDHU|ECMQV|ECKAEG|ECIES|ECIES-KEM|ETSIKEM|ECGOST3410|ECGOST3410-2012|ECGOST3410-2012-256|ECGOST3410-2012-512|ECCSI|GOST3410|DSTU4145|DSTU4145LE|SM2|SM2 KEY EXCHANGE|SM9|SM9-SIGN|SM9-ENC|SM9-KEM|SAKKE|BLS12-381|BIP340|EDDSA|ED25519|ED25519CTX|ED25519PH|ED448|ED448PH|XDH|X25519|X25519U|X448|X448U|NACCACHESTERN|J-PAKE|EC J-PAKE|OWL|SRP-6A)(?:$|[\/(]|WITH|AND|KEK|INP1363FORMAT).*/
+    if (!(n ==~ quantumVulnerable))
+    {
+        return null
+    }
+    def classical = null
+    if (n =~ /(?:^|WITH)(?:ED25519|X25519)/ || n =~ /ECGOST3410-2012-256/)
+    {
+        classical = 128
+    }
+    else if (n =~ /(?:^|WITH)(?:ED448|X448)/)
+    {
+        classical = 224
+    }
+    else if (n =~ /ECGOST3410-2012-512/)
+    {
+        classical = 256
+    }
+    return [name: null, category: 0, classical: classical]
+}
+
+/*
+ * The CycloneDX 1.6 schema's constraints on the three security-level fields (bom-1.6.schema.json,
+ * cryptoProperties.algorithmProperties): parameterSetIdentifier a string, classicalSecurityLevel
+ * an integer >= 0, nistQuantumSecurityLevel an integer from 0 to 6. Returns the violations found
+ * in the assets of the passed BOM map, so generateCbom can refuse to write a BOM that would not
+ * validate.
+ */
+ext.cbomSecurityFieldErrors = { Map bom ->
+    def errors = []
+    bom.components.each { c ->
+        def ap = c.cryptoProperties?.algorithmProperties
+        if (ap == null)
+        {
+            return
+        }
+        if (ap.containsKey('parameterSetIdentifier') && !(ap.parameterSetIdentifier instanceof String))
+        {
+            errors << "${c.name}: parameterSetIdentifier is not a string"
+        }
+        if (ap.containsKey('classicalSecurityLevel')
+            && !(ap.classicalSecurityLevel instanceof Integer && ap.classicalSecurityLevel >= 0))
+        {
+            errors << "${c.name}: classicalSecurityLevel ${ap.classicalSecurityLevel} is not an integer >= 0"
+        }
+        if (ap.containsKey('nistQuantumSecurityLevel')
+            && !(ap.nistQuantumSecurityLevel instanceof Integer
+                 && ap.nistQuantumSecurityLevel >= 0 && ap.nistQuantumSecurityLevel <= 6))
+        {
+            errors << "${c.name}: nistQuantumSecurityLevel ${ap.nistQuantumSecurityLevel} is not an integer from 0 to 6"
+        }
+    }
+    return errors
 }
 
 tasks.register('generateCbom') {
@@ -571,7 +706,6 @@ tasks.register('generateCbom') {
         }
 
         def libRef = "pkg:maven/org.bouncycastle/${jarFile.name.replaceAll(/-\d.*/, '')}@${project(':prov').version}"
-        def normName = { String n -> n.toUpperCase().replaceAll(/[-_\/. ]/, '') }
         def components = assets.values().collect { a ->
             // bc:api records how the asset is reachable: through the JCA providers, or only
             // through the public lightweight API (org.bouncycastle.crypto.**) in the same jar
@@ -602,14 +736,21 @@ tasks.register('generateCbom') {
                     cryptoFunctions: a.functions as List
                 ]
             ]
-            // CycloneDX 1.6 parameterSetIdentifier / classicalSecurityLevel / nistQuantumSecurityLevel,
-            // read off the library's own PQCParameters implementations (NIST IR 8547 Tables 3 and 5)
-            def pqc = pqcSecurity[normName(a.name)]
-            if (pqc != null)
+            // CycloneDX 1.6 parameterSetIdentifier / classicalSecurityLevel / nistQuantumSecurityLevel:
+            // post-quantum and hybrid assets from the library's own PQCParameters implementations
+            // (NIST IR 8547 Tables 3 and 5), quantum-vulnerable ones as category 0 (see cbomSecurityFor)
+            def sec = cbomSecurityFor(a.name, pqcSecurity)
+            if (sec != null)
             {
-                cryptoProps.algorithmProperties.parameterSetIdentifier = pqc.name
-                cryptoProps.algorithmProperties.classicalSecurityLevel = pqc.classical
-                cryptoProps.algorithmProperties.nistQuantumSecurityLevel = pqc.category
+                if (sec.name != null)
+                {
+                    cryptoProps.algorithmProperties.parameterSetIdentifier = sec.name
+                }
+                if (sec.classical != null)
+                {
+                    cryptoProps.algorithmProperties.classicalSecurityLevel = sec.classical
+                }
+                cryptoProps.algorithmProperties.nistQuantumSecurityLevel = sec.category
             }
             if (!a.oids.isEmpty())
             {
@@ -646,6 +787,12 @@ tasks.register('generateCbom') {
             components: components,
             dependencies: [[ref: libRef, provides: components.collect { it['bom-ref'] }]]
         ]
+
+        def fieldErrors = cbomSecurityFieldErrors(bom)
+        if (!fieldErrors.isEmpty())
+        {
+            throw new GradleException("CBOM security-level fields violate the CycloneDX 1.6 schema:\n  " + fieldErrors.join('\n  '))
+        }
 
         def out = new File(outDir.get().asFile, "${jarFile.name.replaceAll(/-\d.*/, '')}-${project(':prov').version}-cyclonedx.json")
         out.parentFile.mkdirs()

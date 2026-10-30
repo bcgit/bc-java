@@ -8,7 +8,6 @@ import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
-import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.generators.MLKEMKeyPairGenerator;
 import org.bouncycastle.crypto.params.MLKEMKeyGenerationParameters;
 import org.bouncycastle.crypto.params.MLKEMParameters;
@@ -20,13 +19,18 @@ import org.bouncycastle.jcajce.util.SpecUtil;
 import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Strings;
 
+/**
+ * ML-KEM (FIPS 203) key pair generation. A generator obtained as "ML-KEM" and not initialised
+ * produces ML-KEM-768 keys, the parameter set NIST recommends (NIST IR 8547). An initialisation
+ * that gives no SecureRandom, including this default and a generator obtained under a parameter set
+ * name such as "ML-KEM-512", draws the key from the provider's 256 bit DEFAULT DRBG.
+ */
 public class MLKEMKeyPairGeneratorSpi
     extends java.security.KeyPairGenerator
 {
     MLKEMKeyGenerationParameters param;
     MLKEMKeyPairGenerator engine = new MLKEMKeyPairGenerator();
 
-    SecureRandom random = CryptoServicesRegistrar.getSecureRandom();
     boolean initialised = false;
     private MLKEMParameters mlkemParameters;
 
@@ -42,7 +46,7 @@ public class MLKEMKeyPairGeneratorSpi
 
         if (param == null)
         {
-            param = new MLKEMKeyGenerationParameters(random, mlkemParameters);
+            param = new MLKEMKeyGenerationParameters(createDefaultRandom(), mlkemParameters);
         }
 
         engine.init(param);
@@ -61,14 +65,7 @@ public class MLKEMKeyPairGeneratorSpi
         AlgorithmParameterSpec params)
         throws InvalidAlgorithmParameterException
     {
-        try
-        {
-            initialize(params, new BCJcaJceHelper().createSecureRandom("DEFAULT"));
-        }
-        catch (NoSuchAlgorithmException e)
-        {
-            throw Exceptions.illegalStateException("unable to find DEFAULT DRBG", e);
-        }
+        initialize(params, createDefaultRandom());
     }
 
     public void initialize(
@@ -122,6 +119,19 @@ public class MLKEMKeyPairGeneratorSpi
         MLKEMPrivateKeyParameters priv = (MLKEMPrivateKeyParameters)pair.getPrivate();
 
         return new KeyPair(new BCMLKEMPublicKey(pub), new BCMLKEMPrivateKey(priv));
+    }
+
+    // the provider's 256 bit DEFAULT DRBG, used wherever the caller supplies no SecureRandom
+    private static SecureRandom createDefaultRandom()
+    {
+        try
+        {
+            return new BCJcaJceHelper().createSecureRandom("DEFAULT");
+        }
+        catch (NoSuchAlgorithmException e)
+        {
+            throw Exceptions.illegalStateException("unable to find DEFAULT DRBG", e);
+        }
     }
 
     private static String getNameFromParams(AlgorithmParameterSpec paramSpec)
