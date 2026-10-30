@@ -26,11 +26,17 @@ import org.bouncycastle.bcpg.EdDSAPublicBCPGKey;
 import org.bouncycastle.bcpg.EdSecretBCPGKey;
 import org.bouncycastle.bcpg.ElGamalPublicBCPGKey;
 import org.bouncycastle.bcpg.ElGamalSecretBCPGKey;
+import org.bouncycastle.bcpg.MLDSACompositePublicBCPGKey;
+import org.bouncycastle.bcpg.MLDSACompositeSecretBCPGKey;
+import org.bouncycastle.bcpg.MLKEMCompositePublicBCPGKey;
+import org.bouncycastle.bcpg.MLKEMCompositeSecretBCPGKey;
 import org.bouncycastle.bcpg.OctetArrayBCPGKey;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.RSAPublicBCPGKey;
 import org.bouncycastle.bcpg.RSASecretBCPGKey;
+import org.bouncycastle.bcpg.SLHDSAPublicBCPGKey;
+import org.bouncycastle.bcpg.SLHDSASecretBCPGKey;
 import org.bouncycastle.bcpg.X25519PublicBCPGKey;
 import org.bouncycastle.bcpg.X25519SecretBCPGKey;
 import org.bouncycastle.bcpg.X448PublicBCPGKey;
@@ -49,8 +55,17 @@ import org.bouncycastle.crypto.params.Ed448PublicKeyParameters;
 import org.bouncycastle.crypto.params.ElGamalParameters;
 import org.bouncycastle.crypto.params.ElGamalPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ElGamalPublicKeyParameters;
+import org.bouncycastle.crypto.params.MLDSAParameters;
+import org.bouncycastle.crypto.params.MLDSAPrivateKeyParameters;
+import org.bouncycastle.crypto.params.MLDSAPublicKeyParameters;
+import org.bouncycastle.crypto.params.MLKEMParameters;
+import org.bouncycastle.crypto.params.MLKEMPrivateKeyParameters;
+import org.bouncycastle.crypto.params.MLKEMPublicKeyParameters;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
+import org.bouncycastle.crypto.params.SLHDSAParameters;
+import org.bouncycastle.crypto.params.SLHDSAPrivateKeyParameters;
+import org.bouncycastle.crypto.params.SLHDSAPublicKeyParameters;
 import org.bouncycastle.crypto.params.X25519PrivateKeyParameters;
 import org.bouncycastle.crypto.params.X25519PublicKeyParameters;
 import org.bouncycastle.crypto.params.X448PrivateKeyParameters;
@@ -207,6 +222,51 @@ public class BcPGPKeyConverter
                 ElGamalSecretBCPGKey elPriv = (ElGamalSecretBCPGKey)privPk;
                 return new ElGamalPrivateKeyParameters(elPriv.getX(), new ElGamalParameters(elPub.getP(), elPub.getG()));
             }
+            // RFC 9980 ML-DSA + EdDSA composites: EdDSA secret key || 32 octet ML-DSA seed
+            case PublicKeyAlgorithmTags.MLDSA65_Ed25519:
+            case PublicKeyAlgorithmTags.MLDSA87_Ed448:
+            {
+                MLDSACompositeSecretBCPGKey compPriv = (MLDSACompositeSecretBCPGKey)privPk;
+                int algorithm = pubPk.getAlgorithm();
+                AsymmetricKeyParameter eddsaPriv;
+                if (algorithm == PublicKeyAlgorithmTags.MLDSA65_Ed25519)
+                {
+                    eddsaPriv = new Ed25519PrivateKeyParameters(compPriv.getEdDSASecretKey());
+                }
+                else
+                {
+                    eddsaPriv = new Ed448PrivateKeyParameters(compPriv.getEdDSASecretKey());
+                }
+                // the seed form expands the signing key with ML-DSA.KeyGen_internal (RFC 9980 sec. 5.3.2.2)
+                MLDSAPrivateKeyParameters mldsaPriv = new MLDSAPrivateKeyParameters(getMLDSAParameters(algorithm), compPriv.getMLDSASeed());
+                return new BcPGPCompositeKeyParameters(true, eddsaPriv, mldsaPriv);
+            }
+            // RFC 9980 SLH-DSA: SK.seed || SK.prf || PK.seed || PK.root
+            case PublicKeyAlgorithmTags.SLHDSA_SHAKE_128s:
+            case PublicKeyAlgorithmTags.SLHDSA_SHAKE_128f:
+            case PublicKeyAlgorithmTags.SLHDSA_SHAKE_256s:
+            {
+                return new SLHDSAPrivateKeyParameters(getSLHDSAParameters(pubPk.getAlgorithm()), ((SLHDSASecretBCPGKey)privPk).getKey());
+            }
+            // RFC 9980 ML-KEM + ECDH composites: ECDH secret key || 64 octet ML-KEM seed d || z
+            case PublicKeyAlgorithmTags.MLKEM768_X25519:
+            case PublicKeyAlgorithmTags.MLKEM1024_X448:
+            {
+                MLKEMCompositeSecretBCPGKey compPriv = (MLKEMCompositeSecretBCPGKey)privPk;
+                int algorithm = pubPk.getAlgorithm();
+                AsymmetricKeyParameter ecdhPriv;
+                if (algorithm == PublicKeyAlgorithmTags.MLKEM768_X25519)
+                {
+                    ecdhPriv = new X25519PrivateKeyParameters(compPriv.getECDHSecretKey());
+                }
+                else
+                {
+                    ecdhPriv = new X448PrivateKeyParameters(compPriv.getECDHSecretKey());
+                }
+                // the seed form expands the decapsulation key with ML-KEM.KeyGen_internal (RFC 9980 sec. 4.3.2.2)
+                MLKEMPrivateKeyParameters mlkemPriv = new MLKEMPrivateKeyParameters(getMLKEMParameters(algorithm), compPriv.getMLKEMSeed());
+                return new BcPGPCompositeKeyParameters(true, ecdhPriv, mlkemPriv);
+            }
             case PublicKeyAlgorithmTags.RSA_ENCRYPT:
             case PublicKeyAlgorithmTags.RSA_GENERAL:
             case PublicKeyAlgorithmTags.RSA_SIGN:
@@ -332,6 +392,50 @@ public class BcPGPKeyConverter
                 ElGamalPublicBCPGKey elK = (ElGamalPublicBCPGKey) publicPk.getKey();
                 return new ElGamalPublicKeyParameters(elK.getY(), new ElGamalParameters(elK.getP(), elK.getG()));
             }
+            // RFC 9980 ML-DSA + EdDSA composites
+            case PublicKeyAlgorithmTags.MLDSA65_Ed25519:
+            case PublicKeyAlgorithmTags.MLDSA87_Ed448:
+            {
+                MLDSACompositePublicBCPGKey compK = (MLDSACompositePublicBCPGKey)publicPk.getKey();
+                int algorithm = publicPk.getAlgorithm();
+                AsymmetricKeyParameter eddsaPub;
+                if (algorithm == PublicKeyAlgorithmTags.MLDSA65_Ed25519)
+                {
+                    eddsaPub = new Ed25519PublicKeyParameters(compK.getEdDSAPublicKey());
+                }
+                else
+                {
+                    eddsaPub = new Ed448PublicKeyParameters(compK.getEdDSAPublicKey());
+                }
+                MLDSAPublicKeyParameters mldsaPub = new MLDSAPublicKeyParameters(getMLDSAParameters(algorithm), compK.getMLDSAPublicKey());
+                return new BcPGPCompositeKeyParameters(false, eddsaPub, mldsaPub);
+            }
+            // RFC 9980 SLH-DSA
+            case PublicKeyAlgorithmTags.SLHDSA_SHAKE_128s:
+            case PublicKeyAlgorithmTags.SLHDSA_SHAKE_128f:
+            case PublicKeyAlgorithmTags.SLHDSA_SHAKE_256s:
+            {
+                return new SLHDSAPublicKeyParameters(getSLHDSAParameters(publicPk.getAlgorithm()), ((SLHDSAPublicBCPGKey)publicPk.getKey()).getKey());
+            }
+            // RFC 9980 ML-KEM + ECDH composites
+            case PublicKeyAlgorithmTags.MLKEM768_X25519:
+            case PublicKeyAlgorithmTags.MLKEM1024_X448:
+            {
+                MLKEMCompositePublicBCPGKey compK = (MLKEMCompositePublicBCPGKey)publicPk.getKey();
+                int algorithm = publicPk.getAlgorithm();
+                AsymmetricKeyParameter ecdhPub;
+                if (algorithm == PublicKeyAlgorithmTags.MLKEM768_X25519)
+                {
+                    ecdhPub = new X25519PublicKeyParameters(compK.getECDHPublicKey());
+                }
+                else
+                {
+                    ecdhPub = new X448PublicKeyParameters(compK.getECDHPublicKey());
+                }
+                // the constructor applies the FIPS 203 sec. 7.2 modulus check to the encapsulation key
+                MLKEMPublicKeyParameters mlkemPub = new MLKEMPublicKeyParameters(getMLKEMParameters(algorithm), compK.getMLKEMPublicKey());
+                return new BcPGPCompositeKeyParameters(false, ecdhPub, mlkemPub);
+            }
 
             case PublicKeyAlgorithmTags.RSA_ENCRYPT:
             case PublicKeyAlgorithmTags.RSA_GENERAL:
@@ -429,6 +533,64 @@ public class BcPGPKeyConverter
         {
             ElGamalPrivateKeyParameters esK = (ElGamalPrivateKeyParameters)privKey;
             return new ElGamalSecretBCPGKey(esK.getX());
+        }
+        // RFC 9980 ML-DSA + EdDSA composites
+        case PublicKeyAlgorithmTags.MLDSA65_Ed25519:
+        case PublicKeyAlgorithmTags.MLDSA87_Ed448:
+        {
+            int algorithm = pubKey.getAlgorithm();
+            BcPGPCompositeKeyParameters comp = getCompositeKey(algorithm, privKey);
+            byte[] eddsaEnc;
+            if (algorithm == PublicKeyAlgorithmTags.MLDSA65_Ed25519)
+            {
+                eddsaEnc = ((Ed25519PrivateKeyParameters)comp.getTraditionalKey()).getEncoded();
+            }
+            else
+            {
+                eddsaEnc = ((Ed448PrivateKeyParameters)comp.getTraditionalKey()).getEncoded();
+            }
+            MLDSAPrivateKeyParameters mldsaPriv = (MLDSAPrivateKeyParameters)comp.getPostQuantumKey();
+            checkParameters(algorithm, getMLDSAParameters(algorithm), mldsaPriv.getParameters());
+            byte[] seed = mldsaPriv.getSeed();
+            if (seed == null)
+            {
+                throw new PGPException("ML-DSA private key carries no seed - RFC 9980 sec. 5.3.2.2 stores the secret key in seed format only");
+            }
+            return new MLDSACompositeSecretBCPGKey(algorithm, eddsaEnc, seed);
+        }
+        // RFC 9980 SLH-DSA
+        case PublicKeyAlgorithmTags.SLHDSA_SHAKE_128s:
+        case PublicKeyAlgorithmTags.SLHDSA_SHAKE_128f:
+        case PublicKeyAlgorithmTags.SLHDSA_SHAKE_256s:
+        {
+            int algorithm = pubKey.getAlgorithm();
+            SLHDSAPrivateKeyParameters slhPriv = (SLHDSAPrivateKeyParameters)privKey;
+            checkParameters(algorithm, getSLHDSAParameters(algorithm), slhPriv.getParameters());
+            return new SLHDSASecretBCPGKey(algorithm, slhPriv.getEncoded());
+        }
+        // RFC 9980 ML-KEM + ECDH composites
+        case PublicKeyAlgorithmTags.MLKEM768_X25519:
+        case PublicKeyAlgorithmTags.MLKEM1024_X448:
+        {
+            int algorithm = pubKey.getAlgorithm();
+            BcPGPCompositeKeyParameters comp = getCompositeKey(algorithm, privKey);
+            byte[] ecdhEnc;
+            if (algorithm == PublicKeyAlgorithmTags.MLKEM768_X25519)
+            {
+                ecdhEnc = ((X25519PrivateKeyParameters)comp.getTraditionalKey()).getEncoded();
+            }
+            else
+            {
+                ecdhEnc = ((X448PrivateKeyParameters)comp.getTraditionalKey()).getEncoded();
+            }
+            MLKEMPrivateKeyParameters mlkemPriv = (MLKEMPrivateKeyParameters)comp.getPostQuantumKey();
+            checkParameters(algorithm, getMLKEMParameters(algorithm), mlkemPriv.getParameters());
+            byte[] seed = mlkemPriv.getSeed();
+            if (seed == null)
+            {
+                throw new PGPException("ML-KEM private key carries no seed - RFC 9980 sec. 4.3.2.2 stores the secret key in seed format only");
+            }
+            return new MLKEMCompositeSecretBCPGKey(algorithm, ecdhEnc, seed);
         }
         case PublicKeyAlgorithmTags.RSA_ENCRYPT:
         case PublicKeyAlgorithmTags.RSA_GENERAL:
@@ -561,6 +723,51 @@ public class BcPGPKeyConverter
                 ((X448PublicKeyParameters)pubKey).encode(pointEnc, 0);
                 return new X448PublicBCPGKey(pointEnc);
             }
+            // RFC 9980 ML-DSA + EdDSA composites
+            case PublicKeyAlgorithmTags.MLDSA65_Ed25519:
+            case PublicKeyAlgorithmTags.MLDSA87_Ed448:
+            {
+                BcPGPCompositeKeyParameters comp = getCompositeKey(algorithm, pubKey);
+                byte[] eddsaEnc;
+                if (algorithm == PublicKeyAlgorithmTags.MLDSA65_Ed25519)
+                {
+                    eddsaEnc = ((Ed25519PublicKeyParameters)comp.getTraditionalKey()).getEncoded();
+                }
+                else
+                {
+                    eddsaEnc = ((Ed448PublicKeyParameters)comp.getTraditionalKey()).getEncoded();
+                }
+                MLDSAPublicKeyParameters mldsaPub = (MLDSAPublicKeyParameters)comp.getPostQuantumKey();
+                checkParameters(algorithm, getMLDSAParameters(algorithm), mldsaPub.getParameters());
+                return new MLDSACompositePublicBCPGKey(algorithm, eddsaEnc, mldsaPub.getEncoded());
+            }
+            // RFC 9980 SLH-DSA
+            case PublicKeyAlgorithmTags.SLHDSA_SHAKE_128s:
+            case PublicKeyAlgorithmTags.SLHDSA_SHAKE_128f:
+            case PublicKeyAlgorithmTags.SLHDSA_SHAKE_256s:
+            {
+                SLHDSAPublicKeyParameters slhPub = (SLHDSAPublicKeyParameters)pubKey;
+                checkParameters(algorithm, getSLHDSAParameters(algorithm), slhPub.getParameters());
+                return new SLHDSAPublicBCPGKey(algorithm, slhPub.getEncoded());
+            }
+            // RFC 9980 ML-KEM + ECDH composites
+            case PublicKeyAlgorithmTags.MLKEM768_X25519:
+            case PublicKeyAlgorithmTags.MLKEM1024_X448:
+            {
+                BcPGPCompositeKeyParameters comp = getCompositeKey(algorithm, pubKey);
+                byte[] ecdhEnc;
+                if (algorithm == PublicKeyAlgorithmTags.MLKEM768_X25519)
+                {
+                    ecdhEnc = ((X25519PublicKeyParameters)comp.getTraditionalKey()).getEncoded();
+                }
+                else
+                {
+                    ecdhEnc = ((X448PublicKeyParameters)comp.getTraditionalKey()).getEncoded();
+                }
+                MLKEMPublicKeyParameters mlkemPub = (MLKEMPublicKeyParameters)comp.getPostQuantumKey();
+                checkParameters(algorithm, getMLKEMParameters(algorithm), mlkemPub.getParameters());
+                return new MLKEMCompositePublicBCPGKey(algorithm, ecdhEnc, mlkemPub.getEncoded());
+            }
 
             default:
             {
@@ -610,5 +817,84 @@ public class BcPGPKeyConverter
         ECNamedDomainParameters parameters = implGetParametersEC(ecPub);
         ECPoint pubPoint = BcUtil.decodePoint(ecPub.getEncodedPoint(), parameters.getCurve());
         return new ECPublicKeyParameters(pubPoint, parameters);
+    }
+
+    private static BcPGPCompositeKeyParameters getCompositeKey(int algorithm, AsymmetricKeyParameter key)
+        throws PGPException
+    {
+        if (!(key instanceof BcPGPCompositeKeyParameters))
+        {
+            throw new PGPException("public key algorithm " + algorithm + " requires a BcPGPCompositeKeyParameters, got "
+                + key.getClass().getName());
+        }
+        return (BcPGPCompositeKeyParameters)key;
+    }
+
+    private static void checkParameters(int algorithm, Object expected, Object actual)
+        throws PGPException
+    {
+        if (expected != actual)
+        {
+            throw new PGPException("component key parameters " + actual + " do not match public key algorithm " + algorithm);
+        }
+    }
+
+    /**
+     * Return the ML-DSA parameter set of an RFC 9980 ML-DSA + EdDSA composite algorithm.
+     *
+     * @param algorithm {@link PublicKeyAlgorithmTags#MLDSA65_Ed25519} or {@link PublicKeyAlgorithmTags#MLDSA87_Ed448}
+     * @return ML-DSA-65 or ML-DSA-87
+     */
+    public static MLDSAParameters getMLDSAParameters(int algorithm)
+    {
+        switch (algorithm)
+        {
+        case PublicKeyAlgorithmTags.MLDSA65_Ed25519:
+            return MLDSAParameters.ml_dsa_65;
+        case PublicKeyAlgorithmTags.MLDSA87_Ed448:
+            return MLDSAParameters.ml_dsa_87;
+        default:
+            throw new IllegalArgumentException("not an ML-DSA composite algorithm: " + algorithm);
+        }
+    }
+
+    /**
+     * Return the SLH-DSA parameter set of an RFC 9980 SLH-DSA algorithm.
+     *
+     * @param algorithm one of the SLH-DSA code points
+     * @return SLH-DSA-SHAKE-128s, -128f or -256s
+     */
+    public static SLHDSAParameters getSLHDSAParameters(int algorithm)
+    {
+        switch (algorithm)
+        {
+        case PublicKeyAlgorithmTags.SLHDSA_SHAKE_128s:
+            return SLHDSAParameters.shake_128s;
+        case PublicKeyAlgorithmTags.SLHDSA_SHAKE_128f:
+            return SLHDSAParameters.shake_128f;
+        case PublicKeyAlgorithmTags.SLHDSA_SHAKE_256s:
+            return SLHDSAParameters.shake_256s;
+        default:
+            throw new IllegalArgumentException("not an SLH-DSA algorithm: " + algorithm);
+        }
+    }
+
+    /**
+     * Return the ML-KEM parameter set of an RFC 9980 ML-KEM + ECDH composite algorithm.
+     *
+     * @param algorithm {@link PublicKeyAlgorithmTags#MLKEM768_X25519} or {@link PublicKeyAlgorithmTags#MLKEM1024_X448}
+     * @return ML-KEM-768 or ML-KEM-1024
+     */
+    public static MLKEMParameters getMLKEMParameters(int algorithm)
+    {
+        switch (algorithm)
+        {
+        case PublicKeyAlgorithmTags.MLKEM768_X25519:
+            return MLKEMParameters.ml_kem_768;
+        case PublicKeyAlgorithmTags.MLKEM1024_X448:
+            return MLKEMParameters.ml_kem_1024;
+        default:
+            throw new IllegalArgumentException("not an ML-KEM composite algorithm: " + algorithm);
+        }
     }
 }

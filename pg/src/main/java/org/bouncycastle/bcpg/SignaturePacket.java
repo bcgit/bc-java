@@ -288,8 +288,8 @@ public class SignaturePacket
 
     /**
      * Parse the algorithm-specific signature encoding.
-     * Ed25519 and Ed448 do not populate the signature MPInteger field, but instead read the raw signature to
-     * signatureEncoding directly.
+     * Ed25519 and Ed448, as well as the RFC 9980 ML-DSA + EdDSA composites and SLH-DSA, do not populate the
+     * signature MPInteger field, but instead read the raw signature to signatureEncoding directly.
      *
      * @param in input stream which skipped the head of the signature
      * @throws IOException if the packet is malformed
@@ -322,6 +322,19 @@ public class SignaturePacket
                 break;
             case Ed25519:
                 signatureEncoding = new byte[org.bouncycastle.math.ec.rfc8032.Ed25519.SIGNATURE_SIZE];
+                in.readFully(signatureEncoding);
+                break;
+            case MLDSA65_Ed25519:
+            case MLDSA87_Ed448:
+                // RFC 9980 sec. 5.3.1: the EdDSA signature followed by the ML-DSA signature, both fixed length
+                signatureEncoding = new byte[MLDSACompositePublicBCPGKey.getSignatureLength(keyAlgorithm)];
+                in.readFully(signatureEncoding);
+                break;
+            case SLHDSA_SHAKE_128s:
+            case SLHDSA_SHAKE_128f:
+            case SLHDSA_SHAKE_256s:
+                // RFC 9980 sec. 6.2.1: the fixed length SLH-DSA signature
+                signatureEncoding = new byte[SLHDSAPublicBCPGKey.getSignatureLength(keyAlgorithm)];
                 in.readFully(signatureEncoding);
                 break;
             case ECDSA:

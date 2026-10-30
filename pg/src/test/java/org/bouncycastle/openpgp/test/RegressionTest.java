@@ -95,6 +95,8 @@ public class RegressionTest
         new PGPKeyRingGeneratorTest(),
         new PGPShortEncSessionKeyTest(),
         new PGPSignatureMergeTest(),
+        new PGPRFC9980VectorTest(),
+        new PGPRFC9980KeyPairTest(),
     };
 
     public static void main(String[] args)

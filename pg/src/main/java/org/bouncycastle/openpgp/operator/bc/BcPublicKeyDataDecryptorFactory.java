@@ -7,8 +7,10 @@ import org.bouncycastle.bcpg.AEADEncDataPacket;
 import org.bouncycastle.bcpg.ECDHPublicBCPGKey;
 import org.bouncycastle.bcpg.ECPublicBCPGKey;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
+import org.bouncycastle.bcpg.MLKEMCompositePublicBCPGKey;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
+import org.bouncycastle.bcpg.PublicKeyUtils;
 import org.bouncycastle.bcpg.SymmetricEncIntegrityPacket;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.bcpg.X25519PublicBCPGKey;
@@ -20,11 +22,13 @@ import org.bouncycastle.crypto.Wrapper;
 import org.bouncycastle.crypto.agreement.ECDHRawAgreement;
 import org.bouncycastle.crypto.agreement.X25519Agreement;
 import org.bouncycastle.crypto.agreement.X448Agreement;
+import org.bouncycastle.crypto.kems.MLKEMExtractor;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.ECNamedDomainParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.ElGamalPrivateKeyParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.crypto.params.MLKEMPrivateKeyParameters;
 import org.bouncycastle.crypto.params.X25519PublicKeyParameters;
 import org.bouncycastle.crypto.params.X448PublicKeyParameters;
 import org.bouncycastle.math.ec.ECPoint;
@@ -37,6 +41,7 @@ import org.bouncycastle.openpgp.operator.AbstractPublicKeyDataDecryptorFactory;
 import org.bouncycastle.openpgp.operator.PGPDataDecryptor;
 import org.bouncycastle.openpgp.operator.PGPPad;
 import org.bouncycastle.openpgp.operator.RFC6637Utils;
+import org.bouncycastle.openpgp.operator.RFC9980Utils;
 import org.bouncycastle.util.Arrays;
 
 import java.io.IOException;
@@ -94,6 +99,10 @@ public class BcPublicKeyDataDecryptorFactory
             else if (keyAlgorithm == PublicKeyAlgorithmTags.ECDH)
             {
                 return recoverECDHSessionData(secKeyData, privKey);
+            }
+            else if (PublicKeyUtils.isMLKEMCompositeAlgorithm(keyAlgorithm))
+            {
+                return recoverMLKEMCompositeSessionData(keyAlgorithm, secKeyData, pkeskVersion, privKey);
             }
             else if (keyAlgorithm == PublicKeyAlgorithmTags.RSA_ENCRYPT ||
                     keyAlgorithm == PublicKeyAlgorithmTags.RSA_GENERAL)
@@ -271,6 +280,63 @@ public class BcPublicKeyDataDecryptorFactory
         return unwrapSessionData(keyEnc, SymmetricKeyAlgorithmTags.AES_128, new KeyParameter(hkdfOut));
     }
 
+    /**
+     * The decryption procedure of RFC 9980 sec. 4.2.4: parse ecdhCipherText || mlkemCipherText || len ||
+     * [symAlgId] || C, decapsulate both components, recombine the key shares into the KEK (sec. 4.2.1) and
+     * unwrap the session key with AES-256 key wrap. For a v3 packet the symmetric algorithm MUST be AES and
+     * the unwrapped key length MUST match it (sec. 4.3.1).
+     */
+    private byte[] recoverMLKEMCompositeSessionData(int keyAlgorithm,
+                                                    byte[][] secKeyData,
+                                                    int pkeskVersion,
+                                                    AsymmetricKeyParameter privKey)
+        throws PGPException, InvalidCipherTextException
+    {
+        PublicKeyPacket pubKeyPacket = getPublicKeyPacket();
+        if (pubKeyPacket.getAlgorithm() != keyAlgorithm)
+        {
+            // sec. 4.2.4 step 3: the own and the extracted algorithm ID MUST match
+            throw new PGPException("PKESK public key algorithm " + keyAlgorithm + " does not match the key's algorithm "
+                + pubKeyPacket.getAlgorithm());
+        }
+        MLKEMCompositePublicBCPGKey compositeKey = (MLKEMCompositePublicBCPGKey)pubKeyPacket.getKey();
+
+        boolean containsSKAlg = containsSKAlg(pkeskVersion);
+        byte[][] parts = RFC9980Utils.parseEncryptedSessionKey(secKeyData[0], keyAlgorithm, containsSKAlg);
+        byte[] ecdhCipherText = parts[0];
+        byte[] mlkemCipherText = parts[1];
+        byte[] wrapped = parts[2];
+
+        BcPublicKeyCryptoCallback callback = getCryptoCallback(privKey);
+
+        // ECDH-KEM.Decaps (sec. 4.1.1)
+        byte[] ecdhKeyShare;
+        if (keyAlgorithm == PublicKeyAlgorithmTags.MLKEM768_X25519)
+        {
+            ecdhKeyShare = callback.decrypt(PublicKeyAlgorithmTags.X25519, new X25519PublicKeyParameters(ecdhCipherText));
+        }
+        else
+        {
+            ecdhKeyShare = callback.decrypt(PublicKeyAlgorithmTags.X448, new X448PublicKeyParameters(ecdhCipherText));
+        }
+
+        // ML-KEM.Decaps (sec. 4.1.2)
+        byte[] mlkemKeyShare = callback.decrypt(keyAlgorithm, new byte[][]{ mlkemCipherText });
+
+        // multiKeyCombine (sec. 4.2.1)
+        byte[] kek = RFC9980Utils.deriveKEK(new BcPGPDigestCalculatorProvider().get(HashAlgorithmTags.SHA3_256),
+            mlkemKeyShare, ecdhKeyShare, ecdhCipherText, compositeKey.getECDHPublicKey(), keyAlgorithm);
+
+        byte[] sessionKey = unwrapSessionData(wrapped, RFC9980Utils.KEY_WRAP_ALGORITHM, new KeyParameter(kek));
+
+        if (containsSKAlg)
+        {
+            RFC9980Utils.checkV3SessionKey(parts[3][0] & 0xff, sessionKey);
+        }
+
+        return sessionKey;
+    }
+
     // OpenPGP v4
     @Override
     public PGPDataDecryptor createDataDecryptor(boolean withIntegrityPacket, int encAlgorithm, byte[] key)
@@ -350,6 +416,12 @@ public class BcPublicKeyDataDecryptorFactory
                 case PublicKeyAlgorithmTags.ELGAMAL_ENCRYPT:
                 case PublicKeyAlgorithmTags.ELGAMAL_GENERAL:
                     return decryptElGamal(keyAlgorithm, pEnc);
+
+                case PublicKeyAlgorithmTags.MLKEM768_X25519:
+                case PublicKeyAlgorithmTags.MLKEM1024_X448:
+                    // ML-KEM.Decaps of the composite's post-quantum component: pEnc[0] is the ML-KEM
+                    // ciphertext, the result the ML-KEM key share (RFC 9980 sec. 4.1.2)
+                    return new MLKEMExtractor((MLKEMPrivateKeyParameters)componentKey(true)).extractSecret(pEnc[0]);
             }
             throw new PGPException("Unsupported key algorithm: " + keyAlgorithm);
         }
@@ -364,12 +436,31 @@ public class BcPublicKeyDataDecryptorFactory
                     return BcUtil.getSecret(new ECDHRawAgreement(), privKey, peerKey);
 
                 case PublicKeyAlgorithmTags.X25519:
-                    return BcUtil.getSecret(new X25519Agreement(), privKey, peerKey);
+                    return BcUtil.getSecret(new X25519Agreement(), componentKey(false), peerKey);
 
                 case PublicKeyAlgorithmTags.X448:
-                    return BcUtil.getSecret(new X448Agreement(), privKey, peerKey);
+                    return BcUtil.getSecret(new X448Agreement(), componentKey(false), peerKey);
             }
             throw new PGPException("Unsupported key algorithm: " + keyAlgorithm);
+        }
+
+        /**
+         * Return the private key to operate with: the requested component of an RFC 9980 composite key, or
+         * the key itself when it is not composite.
+         */
+        private AsymmetricKeyParameter componentKey(boolean postQuantum)
+            throws PGPException
+        {
+            if (privKey instanceof BcPGPCompositeKeyParameters)
+            {
+                BcPGPCompositeKeyParameters comp = (BcPGPCompositeKeyParameters)privKey;
+                return postQuantum ? comp.getPostQuantumKey() : comp.getTraditionalKey();
+            }
+            if (postQuantum)
+            {
+                throw new PGPException("ML-KEM decapsulation requires an RFC 9980 composite private key");
+            }
+            return privKey;
         }
 
         private byte[] decryptRSA(int keyAlgorithm, byte[] sessionKey)

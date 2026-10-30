@@ -15,6 +15,9 @@ import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.bcpg.DSASecretBCPGKey;
 import org.bouncycastle.bcpg.ECSecretBCPGKey;
 import org.bouncycastle.bcpg.Ed25519SecretBCPGKey;
+import org.bouncycastle.bcpg.MLDSACompositeSecretBCPGKey;
+import org.bouncycastle.bcpg.MLKEMCompositeSecretBCPGKey;
+import org.bouncycastle.bcpg.SLHDSASecretBCPGKey;
 import org.bouncycastle.bcpg.Ed448SecretBCPGKey;
 import org.bouncycastle.bcpg.EdSecretBCPGKey;
 import org.bouncycastle.bcpg.ElGamalSecretBCPGKey;
@@ -778,6 +781,16 @@ public class PGPSecretKey
                 return new PGPPrivateKey(this.getKeyID(), pubPk, new Ed25519SecretBCPGKey(in));
             case PGPPublicKey.Ed448:
                 return new PGPPrivateKey(this.getKeyID(), pubPk, new Ed448SecretBCPGKey(in));
+            case PGPPublicKey.MLDSA65_Ed25519:
+            case PGPPublicKey.MLDSA87_Ed448:
+                return new PGPPrivateKey(this.getKeyID(), pubPk, new MLDSACompositeSecretBCPGKey(pubPk.getAlgorithm(), in));
+            case PGPPublicKey.SLHDSA_SHAKE_128s:
+            case PGPPublicKey.SLHDSA_SHAKE_128f:
+            case PGPPublicKey.SLHDSA_SHAKE_256s:
+                return new PGPPrivateKey(this.getKeyID(), pubPk, new SLHDSASecretBCPGKey(pubPk.getAlgorithm(), in));
+            case PGPPublicKey.MLKEM768_X25519:
+            case PGPPublicKey.MLKEM1024_X448:
+                return new PGPPrivateKey(this.getKeyID(), pubPk, new MLKEMCompositeSecretBCPGKey(pubPk.getAlgorithm(), in));
             default:
                 throw new PGPException("unknown public key algorithm encountered");
             }

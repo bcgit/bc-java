@@ -7,15 +7,18 @@ import java.security.SecureRandom;
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.bcpg.ECDHPublicBCPGKey;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
+import org.bouncycastle.bcpg.MLKEMCompositePublicBCPGKey;
 import org.bouncycastle.bcpg.MPInteger;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyPacket;
+import org.bouncycastle.bcpg.PublicKeyUtils;
 import org.bouncycastle.bcpg.SymmetricKeyAlgorithmTags;
 import org.bouncycastle.crypto.AsymmetricBlockCipher;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
 import org.bouncycastle.crypto.KeyGenerationParameters;
 import org.bouncycastle.crypto.RawAgreement;
+import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.crypto.Wrapper;
 import org.bouncycastle.crypto.agreement.ECDHRawAgreement;
 import org.bouncycastle.crypto.agreement.X25519Agreement;
@@ -23,6 +26,7 @@ import org.bouncycastle.crypto.agreement.X448Agreement;
 import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
 import org.bouncycastle.crypto.generators.X25519KeyPairGenerator;
 import org.bouncycastle.crypto.generators.X448KeyPairGenerator;
+import org.bouncycastle.crypto.kems.MLKEMGenerator;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.ECKeyGenerationParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
@@ -37,6 +41,7 @@ import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.operator.PGPPad;
 import org.bouncycastle.openpgp.operator.PublicKeyKeyEncryptionMethodGenerator;
 import org.bouncycastle.openpgp.operator.RFC6637Utils;
+import org.bouncycastle.openpgp.operator.RFC9980Utils;
 import org.bouncycastle.util.Arrays;
 
 /**
@@ -161,6 +166,13 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
                     isV3 ? symAlgId : (byte)0);
             }
 
+            // ML-KEM-768 + X25519, ML-KEM-1024 + X448 (RFC 9980)
+            else if (PublicKeyUtils.isMLKEMCompositeAlgorithm(pubKey.getAlgorithm()))
+            {
+                return encryptSessionInfoWithMLKEMCompositeKey(pubKeyPacket, (BcPGPCompositeKeyParameters)cryptoPublicKey,
+                    sessionKey, isV3 ? symAlgId : (byte)0, isV3);
+            }
+
             // RSA / ElGamal etc.
             else
             {
@@ -243,6 +255,61 @@ public class BcPublicKeyKeyEncryptionMethodGenerator
             Arrays.concatenate(ephPubEncoding, pubKeyPacket.getKey().getEncoded(), secret), "OpenPGP " + algorithmName));
 
         return getSessionInfo(ephPubEncoding, optSymAlgId, getWrapper(symmetricKeyAlgorithm, key, sessionKey));
+    }
+
+    /**
+     * The encryption procedure of RFC 9980 sec. 4.2.3: X25519/X448-KEM and ML-KEM encapsulate independently,
+     * the two key shares feed the SHA3-256 key combiner (sec. 4.2.1) that yields the KEK, and the session key
+     * is wrapped with AES-256 key wrap (RFC 3394). The algorithm-specific PKESK field is
+     * ecdhCipherText || mlkemCipherText || len || [symAlgId] || C, the symmetric algorithm octet appearing in
+     * the clear in a v3 packet only (sec. 4.3.1).
+     */
+    private byte[] encryptSessionInfoWithMLKEMCompositeKey(PublicKeyPacket pubKeyPacket,
+                                                           BcPGPCompositeKeyParameters recipientKey,
+                                                           byte[] sessionKey,
+                                                           byte optSymAlgId,
+                                                           boolean isV3)
+        throws PGPException
+    {
+        int algorithm = pubKeyPacket.getAlgorithm();
+        MLKEMCompositePublicBCPGKey compositeKey = (MLKEMCompositePublicBCPGKey)pubKeyPacket.getKey();
+
+        if (isV3 && !RFC9980Utils.isAllowedV3PKESKSymmetricAlgorithm(optSymAlgId & 0xff))
+        {
+            throw new PGPException("v3 PKESK packet of an ML-KEM composite scheme MUST use AES-128, AES-192 or AES-256 (RFC 9980 sec. 4.3.1), got symmetric algorithm "
+                + (optSymAlgId & 0xff));
+        }
+
+        // ECDH-KEM.Encaps (sec. 4.1.1): the ephemeral public key is the ciphertext, the shared coordinate the key share
+        AsymmetricCipherKeyPair ephKp;
+        byte[] ecdhCipherText;
+        byte[] ecdhKeyShare;
+        if (algorithm == PublicKeyAlgorithmTags.MLKEM768_X25519)
+        {
+            ephKp = getAsymmetricCipherKeyPair(new X25519KeyPairGenerator(), new X25519KeyGenerationParameters(random));
+            ecdhCipherText = ((X25519PublicKeyParameters)ephKp.getPublic()).getEncoded();
+            ecdhKeyShare = BcUtil.getSecret(new X25519Agreement(), ephKp.getPrivate(), recipientKey.getTraditionalKey());
+        }
+        else
+        {
+            ephKp = getAsymmetricCipherKeyPair(new X448KeyPairGenerator(), new X448KeyGenerationParameters(random));
+            ecdhCipherText = ((X448PublicKeyParameters)ephKp.getPublic()).getEncoded();
+            ecdhKeyShare = BcUtil.getSecret(new X448Agreement(), ephKp.getPrivate(), recipientKey.getTraditionalKey());
+        }
+
+        // ML-KEM.Encaps (sec. 4.1.2)
+        SecretWithEncapsulation mlkemEnc = new MLKEMGenerator(random).generateEncapsulated(recipientKey.getPostQuantumKey());
+        byte[] mlkemCipherText = mlkemEnc.getEncapsulation();
+        byte[] mlkemKeyShare = mlkemEnc.getSecret();
+
+        // multiKeyCombine (sec. 4.2.1)
+        byte[] kek = RFC9980Utils.deriveKEK(new BcPGPDigestCalculatorProvider().get(HashAlgorithmTags.SHA3_256),
+            mlkemKeyShare, ecdhKeyShare, ecdhCipherText, compositeKey.getECDHPublicKey(), algorithm);
+
+        // C = AESKeyWrap(KEK, sessionKey) with AES-256
+        byte[] wrapped = getWrapper(RFC9980Utils.KEY_WRAP_ALGORITHM, new KeyParameter(kek), sessionKey);
+
+        return getSessionInfo(Arrays.concatenate(ecdhCipherText, mlkemCipherText), optSymAlgId, wrapped);
     }
 
     private byte[] getWrapper(int symmetricKeyAlgorithm, KeyParameter key, byte[] sessionData)

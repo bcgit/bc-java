@@ -14,6 +14,7 @@ import java.security.Signature;
 
 import javax.crypto.Cipher;
 import javax.crypto.KeyAgreement;
+import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.spec.IvParameterSpec;
@@ -82,6 +83,12 @@ class OperatorHelper
         throws GeneralSecurityException
     {
         return helper.createKeyAgreement(algorithm);
+    }
+
+    KeyGenerator createKeyGenerator(String algorithm)
+        throws GeneralSecurityException
+    {
+        return helper.createKeyGenerator(algorithm);
     }
 
     public KeyPairGenerator createKeyPairGenerator(String algorithm)

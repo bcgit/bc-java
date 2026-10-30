@@ -15,14 +15,23 @@ import org.bouncycastle.crypto.ec.CustomNamedCurves;
 import org.bouncycastle.crypto.generators.ECKeyPairGenerator;
 import org.bouncycastle.crypto.generators.Ed25519KeyPairGenerator;
 import org.bouncycastle.crypto.generators.Ed448KeyPairGenerator;
+import org.bouncycastle.crypto.generators.MLDSAKeyPairGenerator;
+import org.bouncycastle.crypto.generators.MLKEMKeyPairGenerator;
 import org.bouncycastle.crypto.generators.RSAKeyPairGenerator;
+import org.bouncycastle.crypto.generators.SLHDSAKeyPairGenerator;
 import org.bouncycastle.crypto.generators.X25519KeyPairGenerator;
 import org.bouncycastle.crypto.generators.X448KeyPairGenerator;
 import org.bouncycastle.crypto.params.ECKeyGenerationParameters;
 import org.bouncycastle.crypto.params.ECNamedDomainParameters;
 import org.bouncycastle.crypto.params.Ed25519KeyGenerationParameters;
 import org.bouncycastle.crypto.params.Ed448KeyGenerationParameters;
+import org.bouncycastle.crypto.params.MLDSAKeyGenerationParameters;
+import org.bouncycastle.crypto.params.MLDSAParameters;
+import org.bouncycastle.crypto.params.MLKEMKeyGenerationParameters;
+import org.bouncycastle.crypto.params.MLKEMParameters;
 import org.bouncycastle.crypto.params.RSAKeyGenerationParameters;
+import org.bouncycastle.crypto.params.SLHDSAKeyGenerationParameters;
+import org.bouncycastle.crypto.params.SLHDSAParameters;
 import org.bouncycastle.crypto.params.X25519KeyGenerationParameters;
 import org.bouncycastle.crypto.params.X448KeyGenerationParameters;
 import org.bouncycastle.openpgp.PGPException;
@@ -104,6 +113,137 @@ public class BcPGPKeyPairGeneratorProvider
             gen.init(new X448KeyGenerationParameters(random));
             AsymmetricCipherKeyPair keyPair = gen.generateKeyPair();
             return new BcPGPKeyPair(version, PublicKeyAlgorithmTags.X448, keyPair, creationTime);
+        }
+
+        @Override
+        public PGPKeyPair generateMLDSA65Ed25519KeyPair()
+            throws PGPException
+        {
+            return generateMLDSACompositeKeyPair(PublicKeyAlgorithmTags.MLDSA65_Ed25519);
+        }
+
+        @Override
+        public PGPKeyPair generateMLDSA87Ed448KeyPair()
+            throws PGPException
+        {
+            return generateMLDSACompositeKeyPair(PublicKeyAlgorithmTags.MLDSA87_Ed448);
+        }
+
+        @Override
+        public PGPKeyPair generateSLHDSAShake128sKeyPair()
+            throws PGPException
+        {
+            return generateSLHDSAKeyPair(PublicKeyAlgorithmTags.SLHDSA_SHAKE_128s, SLHDSAParameters.shake_128s);
+        }
+
+        @Override
+        public PGPKeyPair generateSLHDSAShake128fKeyPair()
+            throws PGPException
+        {
+            return generateSLHDSAKeyPair(PublicKeyAlgorithmTags.SLHDSA_SHAKE_128f, SLHDSAParameters.shake_128f);
+        }
+
+        @Override
+        public PGPKeyPair generateSLHDSAShake256sKeyPair()
+            throws PGPException
+        {
+            return generateSLHDSAKeyPair(PublicKeyAlgorithmTags.SLHDSA_SHAKE_256s, SLHDSAParameters.shake_256s);
+        }
+
+        @Override
+        public PGPKeyPair generateMLKEM768X25519KeyPair()
+            throws PGPException
+        {
+            return generateMLKEMCompositeKeyPair(PublicKeyAlgorithmTags.MLKEM768_X25519);
+        }
+
+        @Override
+        public PGPKeyPair generateMLKEM1024X448KeyPair()
+            throws PGPException
+        {
+            return generateMLKEMCompositeKeyPair(PublicKeyAlgorithmTags.MLKEM1024_X448);
+        }
+
+        /**
+         * RFC 9980 sec. 5.2.1: the ML-DSA and the EdDSA component keys are generated independently.
+         */
+        private PGPKeyPair generateMLDSACompositeKeyPair(int algorithm)
+            throws PGPException
+        {
+            checkPQCKeyVersion(algorithm);
+
+            AsymmetricCipherKeyPair eddsaKp;
+            MLDSAParameters mldsaParams;
+            if (algorithm == PublicKeyAlgorithmTags.MLDSA65_Ed25519)
+            {
+                Ed25519KeyPairGenerator gen = new Ed25519KeyPairGenerator();
+                gen.init(new Ed25519KeyGenerationParameters(random));
+                eddsaKp = gen.generateKeyPair();
+                mldsaParams = MLDSAParameters.ml_dsa_65;
+            }
+            else
+            {
+                Ed448KeyPairGenerator gen = new Ed448KeyPairGenerator();
+                gen.init(new Ed448KeyGenerationParameters(random));
+                eddsaKp = gen.generateKeyPair();
+                mldsaParams = MLDSAParameters.ml_dsa_87;
+            }
+
+            MLDSAKeyPairGenerator mldsaGen = new MLDSAKeyPairGenerator();
+            mldsaGen.init(new MLDSAKeyGenerationParameters(random, mldsaParams));
+            AsymmetricCipherKeyPair mldsaKp = mldsaGen.generateKeyPair();
+
+            return new BcPGPKeyPair(version, algorithm, compose(eddsaKp, mldsaKp), creationTime);
+        }
+
+        private PGPKeyPair generateSLHDSAKeyPair(int algorithm, SLHDSAParameters parameters)
+            throws PGPException
+        {
+            checkPQCKeyVersion(algorithm);
+
+            SLHDSAKeyPairGenerator gen = new SLHDSAKeyPairGenerator();
+            gen.init(new SLHDSAKeyGenerationParameters(random, parameters));
+            AsymmetricCipherKeyPair keyPair = gen.generateKeyPair();
+            return new BcPGPKeyPair(version, algorithm, keyPair, creationTime);
+        }
+
+        /**
+         * RFC 9980 sec. 4.2.2: the ML-KEM and the ECDH component keys are generated independently.
+         */
+        private PGPKeyPair generateMLKEMCompositeKeyPair(int algorithm)
+            throws PGPException
+        {
+            checkPQCKeyVersion(algorithm);
+
+            AsymmetricCipherKeyPair ecdhKp;
+            MLKEMParameters mlkemParams;
+            if (algorithm == PublicKeyAlgorithmTags.MLKEM768_X25519)
+            {
+                X25519KeyPairGenerator gen = new X25519KeyPairGenerator();
+                gen.init(new X25519KeyGenerationParameters(random));
+                ecdhKp = gen.generateKeyPair();
+                mlkemParams = MLKEMParameters.ml_kem_768;
+            }
+            else
+            {
+                X448KeyPairGenerator gen = new X448KeyPairGenerator();
+                gen.init(new X448KeyGenerationParameters(random));
+                ecdhKp = gen.generateKeyPair();
+                mlkemParams = MLKEMParameters.ml_kem_1024;
+            }
+
+            MLKEMKeyPairGenerator mlkemGen = new MLKEMKeyPairGenerator();
+            mlkemGen.init(new MLKEMKeyGenerationParameters(random, mlkemParams));
+            AsymmetricCipherKeyPair mlkemKp = mlkemGen.generateKeyPair();
+
+            return new BcPGPKeyPair(version, algorithm, compose(ecdhKp, mlkemKp), creationTime);
+        }
+
+        private static AsymmetricCipherKeyPair compose(AsymmetricCipherKeyPair traditional, AsymmetricCipherKeyPair postQuantum)
+        {
+            return new AsymmetricCipherKeyPair(
+                new BcPGPCompositeKeyParameters(false, traditional.getPublic(), postQuantum.getPublic()),
+                new BcPGPCompositeKeyParameters(true, traditional.getPrivate(), postQuantum.getPrivate()));
         }
 
         @Override

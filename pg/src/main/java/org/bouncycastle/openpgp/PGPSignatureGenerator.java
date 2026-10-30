@@ -9,6 +9,7 @@ import org.bouncycastle.bcpg.HashUtils;
 import org.bouncycastle.bcpg.MPInteger;
 import org.bouncycastle.bcpg.OnePassSignaturePacket;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
+import org.bouncycastle.bcpg.PublicKeyUtils;
 import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.SignaturePacket;
 import org.bouncycastle.bcpg.SignatureSubpacket;
@@ -121,6 +122,13 @@ public class PGPSignatureGenerator
         else
         {
             throw new PGPException("Missing private key.");
+        }
+
+        if (PublicKeyUtils.isPQCAlgorithm(contentSigner.getKeyAlgorithm()) && version != SignaturePacket.VERSION_6)
+        {
+            // RFC 9980 sec. 5.3.1 and 6.2.1: the PQ(/T) signature algorithms MUST be used only with v6 signatures
+            throw new PGPException("public key algorithm " + contentSigner.getKeyAlgorithm()
+                + " MUST only be used with version 6 signatures (RFC 9980), not version " + version);
         }
 
         sigOut = contentSigner.getOutputStream();
@@ -298,7 +306,13 @@ public class PGPSignatureGenerator
         }
         case PublicKeyAlgorithmTags.Ed25519:
         case PublicKeyAlgorithmTags.Ed448:
-            // Contrary to EDDSA_LEGACY, the new PK algorithms Ed25519, Ed448 do not use MPI encoding
+        case PublicKeyAlgorithmTags.MLDSA65_Ed25519:
+        case PublicKeyAlgorithmTags.MLDSA87_Ed448:
+        case PublicKeyAlgorithmTags.SLHDSA_SHAKE_128s:
+        case PublicKeyAlgorithmTags.SLHDSA_SHAKE_128f:
+        case PublicKeyAlgorithmTags.SLHDSA_SHAKE_256s:
+            // Contrary to EDDSA_LEGACY, the new PK algorithms Ed25519, Ed448 and the RFC 9980 algorithms
+            // do not use MPI encoding
             sigValues = null;
             break;
         default:

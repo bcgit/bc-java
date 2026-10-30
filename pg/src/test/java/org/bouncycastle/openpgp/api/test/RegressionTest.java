@@ -28,6 +28,7 @@ public class RegressionTest
         new OpenPGPV4KeyGenerationTest(),
         new OpenPGPV6DirectKeySignatureTest(),
         new OpenPGPV6KeyGeneratorTest(),
+        new OpenPGPPQCKeyGenerationTest(),
         new StaticV6OpenPGPMessageGeneratorTest(),
     };
 

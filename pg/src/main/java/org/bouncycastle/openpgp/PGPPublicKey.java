@@ -25,6 +25,7 @@ import org.bouncycastle.bcpg.ElGamalPublicBCPGKey;
 import org.bouncycastle.bcpg.KeyIdentifier;
 import org.bouncycastle.bcpg.OctetArrayBCPGKey;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
+import org.bouncycastle.bcpg.PublicKeyUtils;
 import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.PublicSubkeyPacket;
 import org.bouncycastle.bcpg.RSAPublicBCPGKey;
@@ -121,10 +122,35 @@ public class PGPPublicKey
                     }
                 }
             }
+            else if (PublicKeyUtils.isPQCAlgorithm(publicPk.getAlgorithm()))
+            {
+                // a composite key has no single key length, so report the classical security strength
+                // of the parameter set in bits (NIST security category 1, 3 and 5 as 128, 192 and 256)
+                this.keyStrength = getPQCKeyStrength(publicPk.getAlgorithm());
+            }
             else if (key instanceof OctetArrayBCPGKey)
             {
                 this.keyStrength = key.getEncoded().length * 8;
             }
+        }
+    }
+
+    private static int getPQCKeyStrength(int algorithm)
+    {
+        switch (algorithm)
+        {
+        case SLHDSA_SHAKE_128s:
+        case SLHDSA_SHAKE_128f:
+            return 128;
+        case MLDSA65_Ed25519:
+        case MLKEM768_X25519:
+            return 192;
+        case MLDSA87_Ed448:
+        case SLHDSA_SHAKE_256s:
+        case MLKEM1024_X448:
+            return 256;
+        default:
+            return -1; // unknown
         }
     }
 
@@ -476,7 +502,8 @@ public class PGPPublicKey
 
         return ((algorithm == RSA_GENERAL) || (algorithm == RSA_ENCRYPT)
             || (algorithm == ELGAMAL_ENCRYPT) || (algorithm == ELGAMAL_GENERAL)
-            || (algorithm == DIFFIE_HELLMAN) || (algorithm == ECDH) || (algorithm == X448) || (algorithm == X25519));
+            || (algorithm == DIFFIE_HELLMAN) || (algorithm == ECDH) || (algorithm == X448) || (algorithm == X25519)
+            || (algorithm == MLKEM768_X25519) || (algorithm == MLKEM1024_X448));
     }
 
     /**
@@ -502,7 +529,10 @@ public class PGPPublicKey
     }
 
     /**
-     * Return the strength of the key in bits.
+     * Return the strength of the key in bits: the modulus size for RSA, DSA and ElGamal, the field size for
+     * an EC curve, the key length for X25519/X448 and Ed25519/Ed448. The RFC 9980 PQ(/T) algorithms have no
+     * single key length, so for them the classical security strength of the parameter set is reported
+     * instead - 128, 192 or 256 for NIST security category 1, 3 or 5.
      *
      * @return bit strength of key.
      */

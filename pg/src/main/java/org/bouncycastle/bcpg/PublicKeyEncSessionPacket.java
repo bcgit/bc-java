@@ -116,6 +116,10 @@ public class PublicKeyEncSessionPacket
         case ECDH:
         case X448:
         case X25519:
+        case MLKEM768_X25519:
+        case MLKEM1024_X448:
+            // the ML-KEM composites (RFC 9980 sec. 4.3.1) follow the X25519/X448 layout: fixed-length
+            // ciphertexts, a one-octet length, the symmetric algorithm octet in a v3 packet, the wrapped key
             data = new byte[1][];
 
             data[0] = Streams.readAll(in);

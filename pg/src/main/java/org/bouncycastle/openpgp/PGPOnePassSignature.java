@@ -9,6 +9,7 @@ import org.bouncycastle.bcpg.BCPGOutputStream;
 import org.bouncycastle.bcpg.HashUtils;
 import org.bouncycastle.bcpg.KeyIdentifier;
 import org.bouncycastle.bcpg.OnePassSignaturePacket;
+import org.bouncycastle.bcpg.PublicKeyUtils;
 import org.bouncycastle.bcpg.Packet;
 import org.bouncycastle.bcpg.SignaturePacket;
 import org.bouncycastle.openpgp.operator.PGPContentVerifier;
@@ -61,6 +62,13 @@ public class PGPOnePassSignature
     public void init(PGPContentVerifierBuilderProvider verifierBuilderProvider, PGPPublicKey pubKey)
         throws PGPException
     {
+        if (PublicKeyUtils.isPQCAlgorithm(sigPack.getKeyAlgorithm()) && getVersion() != SignaturePacket.VERSION_6)
+        {
+            // RFC 9980 sec. 5.3.1 and 6.2.1: the PQ(/T) signature algorithms MUST be used only with v6 signatures
+            throw new PGPException("public key algorithm " + sigPack.getKeyAlgorithm()
+                + " MUST only be used with version 6 signatures (RFC 9980), not version " + getVersion());
+        }
+
         PGPContentVerifierBuilder verifierBuilder = verifierBuilderProvider.get(sigPack.getKeyAlgorithm(), sigPack.getHashAlgorithm());
 
         verifier = verifierBuilder.build(pubKey);

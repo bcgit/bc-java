@@ -133,6 +133,7 @@ import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.CollectionStore;
 import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.Store;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
@@ -926,16 +927,39 @@ public class NewSignedDataTest
         ASN1ObjectIdentifier[] oids = CMSTestUtil.collidingOIDs(15);
         int n = oids.length;
         ASN1EncodableVector algs = new ASN1EncodableVector(n);
+        ASN1EncodableVector control = new ASN1EncodableVector(n);
         for (int i = 0; i != n; i++)
         {
             // the OID contents hash alike, so as OCTET STRING parameters they make the identifiers hash alike
             byte[] enc = oids[i].getEncoded();
-            algs.add(new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256, new DEROctetString(Arrays.copyOfRange(enc, 2, enc.length))));
+            byte[] params = Arrays.copyOfRange(enc, 2, enc.length);
+            algs.add(new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256, new DEROctetString(params)));
+
+            // same count and sizes, but the leading counter keeps the hash codes apart
+            byte[] distinct = new byte[params.length];
+            Pack.intToBigEndian(i, distinct, 0);
+            control.add(new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256, new DEROctetString(distinct)));
         }
         for (int i = 1; i != n; i++)
         {
             assertEquals(algs.get(0).hashCode(), algs.get(i).hashCode());
         }
+        assertTrue(control.get(0).hashCode() != control.get(n - 1).hashCode());
+
+        // a wall-clock bound alone flakes on a loaded machine (pkix runs 8 forks in parallel),
+        // so bound the colliding case against the same work without the collisions. Before the
+        // digest sets were ordered the colliding case ran around 50 times slower than the control.
+        long controlElapsed = timeDigestAlgorithmSets(control);
+        long elapsed = timeDigestAlgorithmSets(algs);
+
+        assertTrue("digest algorithm sets took " + elapsed + "ms against " + controlElapsed + "ms without collisions",
+            elapsed < 5 * controlElapsed + 1000L);
+    }
+
+    private long timeDigestAlgorithmSets(ASN1EncodableVector algs)
+        throws Exception
+    {
+        int n = algs.size();
         SignedData sd = new SignedData(new DLSet(algs), new ContentInfo(CMSObjectIdentifiers.data, new DEROctetString(new byte[]{ 'h', 'i' })), null, null, new DERSet());
         byte[] msg = new ContentInfo(CMSObjectIdentifiers.signedData, sd).getEncoded();
         AlgorithmIdentifier last = AlgorithmIdentifier.getInstance(algs.get(n - 1));
@@ -952,7 +976,8 @@ public class NewSignedDataTest
         assertTrue(parsed.contains(last));
         assertTrue(loaded.contains(last));
         assertFalse(loaded.contains(new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256)));
-        assertTrue("digest algorithm sets took " + elapsed + "ms", elapsed < 3000L);
+
+        return elapsed;
     }
 
     public void testCollidingUnsignedAttributesStayLinear()

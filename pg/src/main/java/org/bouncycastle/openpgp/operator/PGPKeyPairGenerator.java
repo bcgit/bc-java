@@ -4,6 +4,7 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.sec.SECObjectIdentifiers;
 import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
+import org.bouncycastle.bcpg.PublicKeyUtils;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPKeyPair;
 
@@ -366,6 +367,132 @@ public abstract class PGPKeyPairGenerator
             throws PGPException
     {
         return generateECDSAKeyPair(TeleTrusTObjectIdentifiers.brainpoolP512r1);
+    }
+
+    /**
+     * Generate an ML-DSA-65 + Ed25519 composite signing key pair
+     * ({@link PublicKeyAlgorithmTags#MLDSA65_Ed25519}, RFC 9980 sec. 5). The two component keys are generated
+     * independently, as RFC 9980 sec. 5.2.1 requires. Only version 6 keys may use this algorithm.
+     *
+     * @return ML-DSA-65 + Ed25519 key pair
+     * @throws PGPException if the key pair cannot be generated, or the generator is for a key version other than 6
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc9980.html#section-5">
+     * RFC 9980 - Composite Signature Schemes</a>
+     */
+    public PGPKeyPair generateMLDSA65Ed25519KeyPair()
+        throws PGPException
+    {
+        throw new PGPException("ML-DSA-65 + Ed25519 key pair generation is not supported by this generator");
+    }
+
+    /**
+     * Generate an ML-DSA-87 + Ed448 composite signing key pair
+     * ({@link PublicKeyAlgorithmTags#MLDSA87_Ed448}, RFC 9980 sec. 5). The two component keys are generated
+     * independently, as RFC 9980 sec. 5.2.1 requires. Only version 6 keys may use this algorithm.
+     *
+     * @return ML-DSA-87 + Ed448 key pair
+     * @throws PGPException if the key pair cannot be generated, or the generator is for a key version other than 6
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc9980.html#section-5">
+     * RFC 9980 - Composite Signature Schemes</a>
+     */
+    public PGPKeyPair generateMLDSA87Ed448KeyPair()
+        throws PGPException
+    {
+        throw new PGPException("ML-DSA-87 + Ed448 key pair generation is not supported by this generator");
+    }
+
+    /**
+     * Generate an SLH-DSA-SHAKE-128s signing key pair ({@link PublicKeyAlgorithmTags#SLHDSA_SHAKE_128s},
+     * RFC 9980 sec. 6). Only version 6 keys may use this algorithm.
+     *
+     * @return SLH-DSA-SHAKE-128s key pair
+     * @throws PGPException if the key pair cannot be generated, or the generator is for a key version other than 6
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc9980.html#section-6">
+     * RFC 9980 - SLH-DSA</a>
+     */
+    public PGPKeyPair generateSLHDSAShake128sKeyPair()
+        throws PGPException
+    {
+        throw new PGPException("SLH-DSA-SHAKE-128s key pair generation is not supported by this generator");
+    }
+
+    /**
+     * Generate an SLH-DSA-SHAKE-128f signing key pair ({@link PublicKeyAlgorithmTags#SLHDSA_SHAKE_128f},
+     * RFC 9980 sec. 6). Only version 6 keys may use this algorithm.
+     *
+     * @return SLH-DSA-SHAKE-128f key pair
+     * @throws PGPException if the key pair cannot be generated, or the generator is for a key version other than 6
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc9980.html#section-6">
+     * RFC 9980 - SLH-DSA</a>
+     */
+    public PGPKeyPair generateSLHDSAShake128fKeyPair()
+        throws PGPException
+    {
+        throw new PGPException("SLH-DSA-SHAKE-128f key pair generation is not supported by this generator");
+    }
+
+    /**
+     * Generate an SLH-DSA-SHAKE-256s signing key pair ({@link PublicKeyAlgorithmTags#SLHDSA_SHAKE_256s},
+     * RFC 9980 sec. 6). Only version 6 keys may use this algorithm.
+     *
+     * @return SLH-DSA-SHAKE-256s key pair
+     * @throws PGPException if the key pair cannot be generated, or the generator is for a key version other than 6
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc9980.html#section-6">
+     * RFC 9980 - SLH-DSA</a>
+     */
+    public PGPKeyPair generateSLHDSAShake256sKeyPair()
+        throws PGPException
+    {
+        throw new PGPException("SLH-DSA-SHAKE-256s key pair generation is not supported by this generator");
+    }
+
+    /**
+     * Generate an ML-KEM-768 + X25519 composite encryption key pair
+     * ({@link PublicKeyAlgorithmTags#MLKEM768_X25519}, RFC 9980 sec. 4). The two component keys are generated
+     * independently, as RFC 9980 sec. 4.2.2 requires. The algorithm may be used with version 6 keys and, as the
+     * single exception among the PQ(/T) algorithms, with version 4 encryption subkeys.
+     *
+     * @return ML-KEM-768 + X25519 key pair
+     * @throws PGPException if the key pair cannot be generated, or the generator is for a key version other than 4 or 6
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc9980.html#section-4">
+     * RFC 9980 - Composite KEM Schemes</a>
+     */
+    public PGPKeyPair generateMLKEM768X25519KeyPair()
+        throws PGPException
+    {
+        throw new PGPException("ML-KEM-768 + X25519 key pair generation is not supported by this generator");
+    }
+
+    /**
+     * Generate an ML-KEM-1024 + X448 composite encryption key pair
+     * ({@link PublicKeyAlgorithmTags#MLKEM1024_X448}, RFC 9980 sec. 4). The two component keys are generated
+     * independently, as RFC 9980 sec. 4.2.2 requires. Only version 6 keys may use this algorithm.
+     *
+     * @return ML-KEM-1024 + X448 key pair
+     * @throws PGPException if the key pair cannot be generated, or the generator is for a key version other than 6
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc9980.html#section-4">
+     * RFC 9980 - Composite KEM Schemes</a>
+     */
+    public PGPKeyPair generateMLKEM1024X448KeyPair()
+        throws PGPException
+    {
+        throw new PGPException("ML-KEM-1024 + X448 key pair generation is not supported by this generator");
+    }
+
+    /**
+     * Check that the generator's key version may carry the given RFC 9980 algorithm (sec. 3.5).
+     *
+     * @param algorithm public key algorithm ID
+     * @throws PGPException if the key version is not permitted for the algorithm
+     */
+    protected void checkPQCKeyVersion(int algorithm)
+        throws PGPException
+    {
+        if (!PublicKeyUtils.isAlgorithmAllowedForKeyVersion(algorithm, version))
+        {
+            throw new PGPException("An implementation MUST NOT generate a version " + version
+                + " key with public key algorithm " + algorithm + " (RFC 9980 sec. 3.5).");
+        }
     }
 
     /**

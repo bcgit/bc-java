@@ -9,6 +9,8 @@ package org.bouncycastle.bcpg;
  *     RFC4880 - Public-Key Algorithms</a>
  * @see <a href="https://www.ietf.org/archive/id/draft-koch-librepgp-00.html#name-public-key-algorithms">
  *     LibrePGP - Public-Key Algorithms</a>
+ * @see <a href="https://www.rfc-editor.org/rfc/rfc9980.html#section-11">
+ *     RFC 9980 - Post-Quantum Cryptography in OpenPGP, IANA Considerations</a>
  */
 public interface PublicKeyAlgorithmTags 
 {
@@ -96,6 +98,70 @@ public interface PublicKeyAlgorithmTags
      * Ed448 signing algorithm.
      */
     int Ed448 = 28;            // new style Ed448
+
+    /**
+     * ML-DSA-65 + Ed25519 composite signature algorithm (RFC 9980 sec. 5).
+     * Conformant implementations MUST implement this algorithm. MUST only be used with v6 keys and signatures.
+     *
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc9980.html#section-5">
+     *     RFC 9980 - Composite Signature Schemes</a>
+     */
+    int MLDSA65_Ed25519 = 30;
+
+    /**
+     * ML-DSA-87 + Ed448 composite signature algorithm (RFC 9980 sec. 5).
+     * MUST only be used with v6 keys and signatures.
+     *
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc9980.html#section-5">
+     *     RFC 9980 - Composite Signature Schemes</a>
+     */
+    int MLDSA87_Ed448 = 31;
+
+    /**
+     * SLH-DSA-SHAKE-128s signature algorithm (RFC 9980 sec. 6).
+     * MUST only be used with v6 keys and signatures.
+     *
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc9980.html#section-6">
+     *     RFC 9980 - SLH-DSA</a>
+     */
+    int SLHDSA_SHAKE_128s = 32;
+
+    /**
+     * SLH-DSA-SHAKE-128f signature algorithm (RFC 9980 sec. 6).
+     * MUST only be used with v6 keys and signatures.
+     *
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc9980.html#section-6">
+     *     RFC 9980 - SLH-DSA</a>
+     */
+    int SLHDSA_SHAKE_128f = 33;
+
+    /**
+     * SLH-DSA-SHAKE-256s signature algorithm (RFC 9980 sec. 6).
+     * MUST only be used with v6 keys and signatures.
+     *
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc9980.html#section-6">
+     *     RFC 9980 - SLH-DSA</a>
+     */
+    int SLHDSA_SHAKE_256s = 34;
+
+    /**
+     * ML-KEM-768 + X25519 composite encryption algorithm (RFC 9980 sec. 4).
+     * Conformant implementations MUST implement this algorithm. It is the only PQ(/T) algorithm that may also be
+     * used in a v4 (encryption-capable sub)key; all others MUST only be used with v6 keys.
+     *
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc9980.html#section-4">
+     *     RFC 9980 - Composite KEM Schemes</a>
+     */
+    int MLKEM768_X25519 = 35;
+
+    /**
+     * ML-KEM-1024 + X448 composite encryption algorithm (RFC 9980 sec. 4).
+     * MUST only be used with v6 keys.
+     *
+     * @see <a href="https://www.rfc-editor.org/rfc/rfc9980.html#section-4">
+     *     RFC 9980 - Composite KEM Schemes</a>
+     */
+    int MLKEM1024_X448 = 36;
 
     int EXPERIMENTAL_1 = 100;
     int EXPERIMENTAL_2 = 101;

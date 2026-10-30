@@ -19,7 +19,9 @@ import org.bouncycastle.bcpg.HashUtils;
 import org.bouncycastle.bcpg.KeyIdentifier;
 import org.bouncycastle.bcpg.MPInteger;
 import org.bouncycastle.bcpg.Packet;
+import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
+import org.bouncycastle.bcpg.PublicKeyUtils;
 import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.bcpg.SignaturePacket;
 import org.bouncycastle.bcpg.SignatureSubpacket;
@@ -329,6 +331,13 @@ public class PGPSignature
             throw new PGPException("MUST NOT verify v4 signature with non-v4 key.");
         }
 
+        if (PublicKeyUtils.isPQCAlgorithm(getKeyAlgorithm()) && getVersion() != SignaturePacket.VERSION_6)
+        {
+            // RFC 9980 sec. 5.3.1 and 6.2.1: the PQ(/T) signature algorithms MUST be used only with v6 signatures
+            throw new PGPException("public key algorithm " + getKeyAlgorithm()
+                + " MUST only be used with version 6 signatures (RFC 9980), not version " + getVersion());
+        }
+
         PGPContentVerifierBuilder verifierBuilder = createVerifierProvider(verifierBuilderProvider);
 
         init(verifierBuilder.build(pubKey));
@@ -497,6 +506,13 @@ public class PGPSignature
         return doVerifyCertification(rawID, key);
     }
 
+    private static boolean isForbiddenPQCBindingHash(int hashAlgorithm)
+    {
+        return hashAlgorithm == HashAlgorithmTags.MD5
+            || hashAlgorithm == HashAlgorithmTags.SHA1
+            || hashAlgorithm == HashAlgorithmTags.RIPEMD160;
+    }
+
     boolean doVerifyCertification(byte[] rawID, PGPPublicKey key)
         throws PGPException
     {
@@ -536,6 +552,14 @@ public class PGPSignature
             && PGPSignature.SUBKEY_REVOCATION != sigType)
         {
             throw new PGPException("signature is not a key binding signature.");
+        }
+
+        if (sigType == SUBKEY_BINDING && PublicKeyUtils.isPQCAlgorithm(pubKey.getAlgorithm())
+            && isForbiddenPQCBindingHash(getHashAlgorithm()))
+        {
+            // RFC 9980 sec. 7.2: a subkey binding signature over a PQ(/T) key MUST NOT be made with MD5, SHA-1 or
+            // RIPEMD-160 and a receiving implementation MUST treat such a signature as invalid
+            return false;
         }
 
         return doVerifyCertification(masterKey, pubKey);

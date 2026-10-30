@@ -8,6 +8,27 @@
 - Tests pass `-Dbc.test.data.home=<core/src/test/data>` for fixture lookups.
 - The `:test` task runs each test class in its own JVM (`forkEvery = 1`).
 
+## pg operator tests: three defaults that silently pick a different path
+
+Found while writing the RFC 9980 round-trip tests (`PGPRFC9980KeyPairTest`); each produced a confusing
+failure one layer away from the real cause.
+
+- **`BcPGPDataEncryptorBuilder` / `JcePGPDataEncryptorBuilder.setWithAEAD(...)` selects the LibrePGP
+  v5-style OCB packet, not the RFC 9580 v2 SEIPD.** Add `.setUseV6AEAD()` to get a v6 PKESK and v2
+  SEIPD; without it `PublicKeyKeyEncryptionMethodGenerator.generate` emits a v3 PKESK even for a v6 key.
+- **AEAD secret-key protection binds the key packet, tag included, as associated data.**
+  `PGPSecretKey(privKey, pubKey, ...)` turns an encryption-only key into a subkey packet whatever
+  `isMasterKey` says, so an encryptor built with `pubKey.getPublicKeyPacket()` of the primary form fails
+  on recovery with "mac check in OCB failed". Convert with `keyPair.asSubkey(fingerprintCalculator)`
+  first and build the encryptor from that packet.
+- **`PreferredAEADCiphersuites.builder(...)` always appends the mandatory AES-128/OCB explicitly**, so a
+  certificate built through it never has an unusable explicit AEAD list; a negotiation test that needs
+  one has to go through the v1 SEIPD path (Features with MDC only, symmetric preferences set directly).
+
+Note also that `pg` had no `TestResourceFinder` until 1.87 (its fixtures were inline); it now carries the
+same copy as the other modules under `pg/src/test/java/org/bouncycastle/test/`, reading
+`bc-test-data/openpgp/openpgp-pqc/rfc9980` for the RFC 9980 Appendix A vectors.
+
 ## Key agreement tests run with and without a UKM
 
 Any test of a CMS or JCA key agreement scheme should exercise it **both with and without a user
