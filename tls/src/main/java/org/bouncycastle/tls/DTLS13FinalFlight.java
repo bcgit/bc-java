@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.util.Hashtable;
 import java.util.Vector;
 
+import org.bouncycastle.util.Longs;
+
 /**
  * RFC 9147 5.8.1. The WAITING state of the side that sent the final flight of the handshake, kept running
  * after that side has otherwise completed.
@@ -54,6 +56,14 @@ class DTLS13FinalFlight
 
     /** The handshake epoch the peer's final flight was protected under, or -1 if none was retired. */
     private final int peerFlightEpoch;
+
+    /**
+     * RFC 9147 5.8.1. The fragments of the peer's flight read again since this flight was last resent in
+     * answer to one, each (message_seq, fragment_offset, fragment_length) packed into a Long mapped to
+     * itself. A retransmitted flight is answered once, not once per record it arrives in; see
+     * {@link #receivedHandshakeRecord(int, byte[], int, int)}.
+     */
+    private final Hashtable peerFragmentsSeen = new Hashtable();
 
     private int resendMillis;
     private Timeout resendTimeout;
@@ -121,10 +131,59 @@ class DTLS13FinalFlight
      * {@link DTLSReliableHandshake#matchesFlight(Hashtable, int, int, byte[], int, int)} makes, and the same
      * one the other side applies before answering with an ACK. The peer only retransmits because it has not
      * received our flight, or not all of it, so what is outstanding of ours goes back out at once.
+     * <p>
+     * What is answered is the retransmitted flight, not each record of it. The peer's flight is several
+     * records, and at a small MTU several datagrams, and a resend for every one of them would send that many
+     * copies of ours. The fragments each record carries are remembered instead: the first record after an
+     * answered retransmission is a new one and is answered, as is a record repeating a fragment already
+     * remembered, which can only be the peer's next retransmission (RFC 9147 7.2, it resends the same
+     * outstanding fragments until something of ours arrives); a record bringing only fragments not yet seen
+     * is the rest of a retransmission already answered. The timer's own resends leave the memory alone, so a
+     * retransmission that straddles a timer expiry is still answered once.
+     * </p>
      */
     synchronized void receivedHandshakeRecord(int epoch, byte[] buf, int off, int len) throws IOException
     {
-        if (outstanding && DTLSReliableHandshake.matchesFlight(peerFlight, peerFlightEpoch, epoch, buf, off, len))
+        if (!outstanding
+            || !DTLSReliableHandshake.matchesFlight(peerFlight, peerFlightEpoch, epoch, buf, off, len))
+        {
+            return;
+        }
+
+        // matchesFlight has already checked the framing of every fragment in the record
+        Vector fragments = new Vector();
+        boolean newRetransmission = peerFragmentsSeen.isEmpty();
+
+        while (len >= DTLSReliableHandshake.MESSAGE_HEADER_LENGTH)
+        {
+            int message_seq = TlsUtils.readUint16(buf, off + 4);
+            int fragment_offset = TlsUtils.readUint24(buf, off + 6);
+            int fragment_length = TlsUtils.readUint24(buf, off + 9);
+
+            Long fragment = Longs.valueOf(((long)message_seq << 48) | ((long)fragment_offset << 24) | fragment_length);
+            if (peerFragmentsSeen.containsKey(fragment))
+            {
+                newRetransmission = true;
+            }
+            fragments.addElement(fragment);
+
+            int message_length = DTLSReliableHandshake.MESSAGE_HEADER_LENGTH + fragment_length;
+            off += message_length;
+            len -= message_length;
+        }
+
+        if (newRetransmission)
+        {
+            peerFragmentsSeen.clear();
+        }
+
+        for (int i = 0; i < fragments.size(); ++i)
+        {
+            Object fragment = fragments.elementAt(i);
+            peerFragmentsSeen.put(fragment, fragment);
+        }
+
+        if (newRetransmission)
         {
             resend(System.currentTimeMillis());
         }
@@ -203,5 +262,6 @@ class DTLS13FinalFlight
         // The flight's bodies are the largest thing held here, and nothing will read them again
         messages.removeAllElements();
         flightTracker.reset();
+        peerFragmentsSeen.clear();
     }
 }

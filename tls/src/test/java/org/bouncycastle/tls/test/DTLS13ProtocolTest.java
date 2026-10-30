@@ -362,12 +362,11 @@ public class DTLS13ProtocolTest
         String clientEpochs = epochSequence(harness.clientRecords());
 
         /*
-         * The flight is a Certificate and a Finished, so two epoch-2 records, and both of them must come back:
-         * counting epoch-2 records from the first epoch-3 record onwards is what distinguishes a
-         * retransmission from the original flight, which is already two epoch-2 records of its own.
+         * The whole flight was in the dropped datagram, so every record of it must come back: counting epoch-2
+         * records from the first epoch-3 record onwards is what distinguishes a retransmission from the
+         * original flight, which is already that many epoch-2 records of its own.
          */
-        assertTrue("the client did not retransmit its whole final flight after reaching the application epoch"
-            + " (epochs: " + clientEpochs + ")", countEpoch2AfterFirstEpoch3(clientEpochs) >= 2);
+        checkLostRecordsRetransmitted(harness, clientEpochs);
 
         checkUnifiedHeadersAfterHello(harness.clientRecords(), "client");
 
@@ -562,11 +561,11 @@ public class DTLS13ProtocolTest
      * <p>
      * The loss is deterministic rather than seeded-random: the datagram carrying the start of the flight is
      * dropped outright, the way {@link #testClientServerWithClientFinishedLost} drops the bare Finished, so
-     * that the flight under test is certainly the thing that was lost and the drop is counted where the
-     * test can see it. The same handshake is also run first at the normal MTU, purely to count how many
-     * records the flight needs when nothing has to be fragmented: the two runs send the identical sequence
-     * of handshake messages, so the extra records at the smaller MTU can only be fragmentation - which is
-     * how fragmentation is established here without decrypting anything.
+     * that the flight under test is certainly the thing that was lost and the drop is counted, with the
+     * records it carried, where the test can see it. The same handshake is also run first at the normal MTU,
+     * purely to count how many records the flight needs when nothing has to be fragmented: the two runs send
+     * the identical sequence of handshake messages, so the extra records at the smaller MTU can only be
+     * fragmentation - which is how fragmentation is established here without decrypting anything.
      * </p>
      */
     public void testClientServerWithClientAuthenticationFlightLost() throws Exception
@@ -628,12 +627,12 @@ public class DTLS13ProtocolTest
             + DEFAULT_MTU + ")", flightRecords > unfragmentedFlightRecords);
 
         /*
-         * And the whole of that fragmented flight came back after the client had moved on to the application
-         * epoch: retransmission is at the epoch a fragment was first sent under, not at the current one.
+         * And what was lost of that fragmented flight came back after the client had moved on to the
+         * application epoch: retransmission is at the epoch a fragment was first sent under, not at the current
+         * one. Only the lost part comes back, not the whole flight: the server acknowledges the records of the
+         * flight that did arrive (RFC 9147 7.1) and the client resends only what is unacknowledged (7.2).
          */
-        assertTrue("the client did not retransmit its whole authenticated flight after reaching the"
-            + " application epoch (epochs: " + clientEpochs + ")",
-            countEpoch2AfterFirstEpoch3(clientEpochs) >= flightRecords);
+        checkLostRecordsRetransmitted(harness, clientEpochs);
 
         checkUnifiedHeadersAfterHello(harness.clientRecords(), "client");
 
@@ -2067,6 +2066,27 @@ public class DTLS13ProtocolTest
     }
 
     /**
+     * RFC 9147 5.8.1 and 7.2. The records the dropped datagram carried were resent at the handshake epoch after
+     * the client had moved on to the application epoch - and not more than twice over. The client resends what
+     * is outstanding once when its own retransmit timer expires and once when it reads the server's
+     * retransmitted flight, whichever of those comes first (or both, when they nearly coincide), and the
+     * server's ACK of the complete flight then ends it; a count beyond two copies means a retransmitted server
+     * flight of several records drew a resend for each record instead of one for the flight.
+     */
+    private static void checkLostRecordsRetransmitted(Harness harness, String clientEpochs)
+    {
+        int lostRecords = harness.droppedRecords;
+        assertTrue("the dropped datagram carried no records", lostRecords > 0);
+
+        int retransmitted = countEpoch2AfterFirstEpoch3(clientEpochs);
+
+        assertTrue("the client did not retransmit the " + lostRecords + " lost record(s) after reaching the"
+            + " application epoch (epochs: " + clientEpochs + ")", retransmitted >= lostRecords);
+        assertTrue("the client retransmitted the " + lostRecords + " lost record(s) more than twice over"
+            + " (epochs: " + clientEpochs + ")", retransmitted <= 2 * lostRecords);
+    }
+
+    /**
      * How many epoch-2 records appear after the first epoch-3 one. A side's original final flight is already
      * several epoch-2 records, so only the ones after it has moved on to the application epoch can be a
      * retransmission of that flight, and the count says how much of the flight came back.
@@ -2283,6 +2303,7 @@ public class DTLS13ProtocolTest
         int clientKeyUpdateCopies = -1;
 
         int dropped = 0;
+        int droppedRecords = 0;
         int delayed = 0;
         int reordered = 0;
         int replayed = 0;
@@ -2806,6 +2827,7 @@ public class DTLS13ProtocolTest
             finally
             {
                 this.dropped = recording.getDropped();
+                this.droppedRecords = recording.getDroppedRecords();
                 this.delayed = recording.getDelayed();
                 this.keyUpdateDatagramsDropped = recording.getKeyUpdateDropped();
                 this.reordered = recording.getReordered();
@@ -3410,6 +3432,7 @@ public class DTLS13ProtocolTest
         private byte[] injected = null;
         private int clientHellosSent = 0;
         private int dropped = 0;
+        private int droppedRecords = 0;
         private int keyUpdateDropped = 0;
         private int reordered = 0;
         private int replayed = 0;
@@ -3439,6 +3462,12 @@ public class DTLS13ProtocolTest
         int getDropped()
         {
             return dropped;
+        }
+
+        /** How many records the dropped handshake-epoch datagram(s) carried: what the client has to resend. */
+        int getDroppedRecords()
+        {
+            return droppedRecords;
         }
 
         int getDelayed()
@@ -3664,6 +3693,7 @@ public class DTLS13ProtocolTest
             {
                 dropFirstEpoch2Datagram = false;
                 ++dropped;
+                droppedRecords += records.size();
 
                 System.out.println("DTLS 1.3 test: dropped the client's " + len + " byte handshake-epoch flight");
                 return;
