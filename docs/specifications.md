@@ -600,7 +600,7 @@ Note: default key sizes are in bold.
 | HC128        | \(128\)                   |                                               |
 | HC256        | \(256\)                   |                                               |
 | ChaCha       | **128**/256               | 64 bit IV                                     |
-| ChaCha7539   | 256                       | 96 bit IV, the RFC 7539/8439 form of ChaCha20 |
+| ChaCha7539   | 256                       | 96 bit IV, ChaCha20 per RFC 7539/8439; initial counter via BCChaCha20ParameterSpec, or ChaCha20ParameterSpec (Java 11) |
 | ASCON-AEAD128 | 128                      | SP 800-232 AEAD, 128 bit nonce, 128 bit tag   |
 | Salsa20      | **128**/256               | 64 bit IV                                     |
 | XSalsa20     | 256                       | 192 bit IV                                    |
