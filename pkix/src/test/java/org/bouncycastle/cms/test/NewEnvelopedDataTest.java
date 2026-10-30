@@ -731,6 +731,25 @@ public class NewEnvelopedDataTest
                 new CMSEnvelopedData(large);
             }
         }));
+
+        // the store compares issuer names on lookup, not when it is built, so the lookup is timed too
+        final RecipientInformationStore smallStore = new CMSEnvelopedData(small).getRecipientInfos();
+        final RecipientInformationStore largeStore = new CMSEnvelopedData(large).getRecipientInfos();
+        final KeyTransRecipientId smallRid = new KeyTransRecipientId(CMSTestUtil.makeLargeName(n / 8, false), BigInteger.ONE);
+        final KeyTransRecipientId largeRid = new KeyTransRecipientId(plain, BigInteger.ONE);
+        CMSTestUtil.assertLinearGrowth("getRecipients", CMSTestUtil.minNanos(new CMSTestUtil.Timed()
+        {
+            public void run()
+            {
+                smallStore.getRecipients(smallRid);
+            }
+        }), CMSTestUtil.minNanos(new CMSTestUtil.Timed()
+        {
+            public void run()
+            {
+                largeStore.getRecipients(largeRid);
+            }
+        }));
     }
 
     private static byte[] reorderedRecipientsMessage(int n)
