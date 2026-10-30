@@ -1,5 +1,6 @@
 package org.bouncycastle.cert;
 
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AccessDescription;
@@ -8,22 +9,23 @@ import org.bouncycastle.asn1.x509.CertDiscoveryMethod;
 import org.bouncycastle.asn1.x509.Certificate;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.asn1.x509.OtherName;
+import org.bouncycastle.asn1.x509.RelatedCertificate;
 import org.bouncycastle.asn1.x509.RelatedCertificateDescriptor;
 
 /**
  * Fluent builder for the {@link RelatedCertificateDescriptor} structure
- * defined by draft-ietf-lamps-certdiscovery, plus the wrapping required to
+ * defined by draft-ietf-lamps-certdiscovery-04, plus the wrapping required to
  * place it in a SubjectInfoAccess extension.
  *
- * <p>Typical use, adding a "fetch the agility companion over HTTP" entry to a
- * certificate's SubjectInfoAccess extension:</p>
+ * <p>Typical use, adding a "fetch the companion certificate over HTTP" entry
+ * to a certificate's SubjectInfoAccess extension:</p>
  *
  * <pre>
  *     AccessDescription ad = new RelatedCertificateDescriptorBuilder()
  *         .setMethodByUri("https://example.com/companion.cer")
- *         .setIntent(BCObjectIdentifiers.id_rcd_agility)
  *         .setSignatureAlgorithm(sigAlg)
  *         .setPublicKeyAlgorithm(spkiAlg)
+ *         .setCertHash(new RelatedCertificate(digAlg, new DEROctetString(hash)))
  *         .buildAccessDescription();
  *     // ad goes into a SEQUENCE OF AccessDescription added as the
  *     // SubjectInfoAccess extension on an X509v3CertificateBuilder.
@@ -34,9 +36,9 @@ import org.bouncycastle.asn1.x509.RelatedCertificateDescriptor;
 public class RelatedCertificateDescriptorBuilder
 {
     private CertDiscoveryMethod method;
-    private ASN1ObjectIdentifier intent;
     private AlgorithmIdentifier signatureAlgorithm;
     private AlgorithmIdentifier publicKeyAlgorithm;
+    private RelatedCertificate certHash;
 
     public RelatedCertificateDescriptorBuilder setMethod(CertDiscoveryMethod method)
     {
@@ -77,14 +79,11 @@ public class RelatedCertificateDescriptorBuilder
     }
 
     /**
-     * Set the optional DiscoveryIntentId (an OID under
-     * {@link BCObjectIdentifiers#id_rcd}: agility, redundancy, dual,
-     * privKeyStmt or self).
+     * Convenience for {@code setMethod(CertDiscoveryMethod.byOther(methodType, methodValue))}.
      */
-    public RelatedCertificateDescriptorBuilder setIntent(ASN1ObjectIdentifier intent)
+    public RelatedCertificateDescriptorBuilder setMethodByOther(ASN1ObjectIdentifier methodType, ASN1Encodable methodValue)
     {
-        this.intent = intent;
-        return this;
+        return setMethod(CertDiscoveryMethod.byOther(methodType, methodValue));
     }
 
     public RelatedCertificateDescriptorBuilder setSignatureAlgorithm(AlgorithmIdentifier signatureAlgorithm)
@@ -100,6 +99,15 @@ public class RelatedCertificateDescriptorBuilder
     }
 
     /**
+     * Set the optional RFC 9763 hash of the Referenced Certificate.
+     */
+    public RelatedCertificateDescriptorBuilder setCertHash(RelatedCertificate certHash)
+    {
+        this.certHash = certHash;
+        return this;
+    }
+
+    /**
      * Build the bare descriptor.
      */
     public RelatedCertificateDescriptor build()
@@ -109,7 +117,7 @@ public class RelatedCertificateDescriptorBuilder
             throw new IllegalStateException("'method' must be set before build()");
         }
 
-        return new RelatedCertificateDescriptor(method, intent, signatureAlgorithm, publicKeyAlgorithm);
+        return new RelatedCertificateDescriptor(method, signatureAlgorithm, publicKeyAlgorithm, certHash);
     }
 
     /**

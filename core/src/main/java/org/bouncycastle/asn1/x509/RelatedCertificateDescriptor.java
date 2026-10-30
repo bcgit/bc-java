@@ -6,7 +6,6 @@ import java.util.List;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
-import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
@@ -16,8 +15,8 @@ import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 
 /**
  * Descriptor for a related certificate, as defined by
- * draft-ietf-lamps-certdiscovery (Certificate Discovery in PKIX). Carried as
- * the value of an {@link OtherName} (type-id
+ * draft-ietf-lamps-certdiscovery-04 (A Mechanism for X.509 Certificate Discovery).
+ * Carried as the value of an {@link OtherName} (type-id
  * {@link BCObjectIdentifiers#id_on_relatedCertificateDescriptor}) inside the
  * {@code accessLocation} GeneralName of an {@link AccessDescription} whose
  * {@code accessMethod} is
@@ -27,34 +26,32 @@ import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
  * <pre>
  *     RelatedCertificateDescriptor ::= SEQUENCE {
  *         method               CertDiscoveryMethod,
- *         intent               DiscoveryIntentId OPTIONAL,
- *         signatureAlgorithm   [0] IMPLICIT AlgorithmIdentifier OPTIONAL,
- *         publicKeyAlgorithm   [1] IMPLICIT AlgorithmIdentifier OPTIONAL
+ *         signatureAlgorithm   [0] AlgorithmIdentifier{SIGNATURE-ALGORITHM, {...}} OPTIONAL,
+ *         publicKeyAlgorithm   [1] AlgorithmIdentifier{PUBLIC-KEY, {...}} OPTIONAL,
+ *         certHash             [2] RelatedCertificate OPTIONAL
  *     }
- *
- *     DiscoveryIntentId ::= OBJECT IDENTIFIER
  * </pre>
  *
- * Intent OIDs are defined under {@link BCObjectIdentifiers#id_rcd} (placeholder
- * arc pending IANA assignment): {@link BCObjectIdentifiers#id_rcd_agility},
- * {@link BCObjectIdentifiers#id_rcd_redundancy},
- * {@link BCObjectIdentifiers#id_rcd_dual},
- * {@link BCObjectIdentifiers#id_rcd_priv_key_stmt},
- * {@link BCObjectIdentifiers#id_rcd_self}.
+ * The module is defined with EXPLICIT TAGS, so the three optional fields are
+ * explicitly tagged. {@code certHash} is the RFC 9763 {@link RelatedCertificate}
+ * structure, a hash over the entire Referenced Certificate. The draft requires
+ * that none of the optional fields is present when the method is
+ * {@code byInclusion}; this class carries what it is given and leaves that
+ * rule to the caller.
  */
 public class RelatedCertificateDescriptor
     extends ASN1Object
 {
     private final CertDiscoveryMethod method;
-    private final ASN1ObjectIdentifier intent;
     private final AlgorithmIdentifier signatureAlgorithm;
     private final AlgorithmIdentifier publicKeyAlgorithm;
+    private final RelatedCertificate certHash;
 
     public RelatedCertificateDescriptor(
         CertDiscoveryMethod method,
-        ASN1ObjectIdentifier intent,
         AlgorithmIdentifier signatureAlgorithm,
-        AlgorithmIdentifier publicKeyAlgorithm)
+        AlgorithmIdentifier publicKeyAlgorithm,
+        RelatedCertificate certHash)
     {
         if (method == null)
         {
@@ -62,9 +59,9 @@ public class RelatedCertificateDescriptor
         }
 
         this.method = method;
-        this.intent = intent;
         this.signatureAlgorithm = signatureAlgorithm;
         this.publicKeyAlgorithm = publicKeyAlgorithm;
+        this.certHash = certHash;
     }
 
     public RelatedCertificateDescriptor(CertDiscoveryMethod method)
@@ -83,12 +80,6 @@ public class RelatedCertificateDescriptor
 
         int count = seq.size(), pos = 1;
 
-        ASN1ObjectIdentifier intent = null;
-        if (pos < count && seq.getObjectAt(pos).toASN1Primitive() instanceof ASN1ObjectIdentifier)
-        {
-            intent = ASN1ObjectIdentifier.getInstance(seq.getObjectAt(pos++));
-        }
-
         AlgorithmIdentifier signatureAlgorithm = null;
         if (pos < count)
         {
@@ -96,7 +87,7 @@ public class RelatedCertificateDescriptor
             if (tag0 != null)
             {
                 pos++;
-                signatureAlgorithm = AlgorithmIdentifier.getInstance(tag0, false);
+                signatureAlgorithm = AlgorithmIdentifier.getInstance(tag0, true);
             }
         }
 
@@ -107,7 +98,18 @@ public class RelatedCertificateDescriptor
             if (tag1 != null)
             {
                 pos++;
-                publicKeyAlgorithm = AlgorithmIdentifier.getInstance(tag1, false);
+                publicKeyAlgorithm = AlgorithmIdentifier.getInstance(tag1, true);
+            }
+        }
+
+        RelatedCertificate certHash = null;
+        if (pos < count)
+        {
+            ASN1TaggedObject tag2 = ASN1TaggedObject.getContextOptional(seq.getObjectAt(pos), 2);
+            if (tag2 != null)
+            {
+                pos++;
+                certHash = RelatedCertificate.getInstance(ASN1Sequence.getInstance(tag2, true));
             }
         }
 
@@ -116,9 +118,9 @@ public class RelatedCertificateDescriptor
             throw new IllegalArgumentException("unexpected element at position " + pos);
         }
 
-        this.intent = intent;
         this.signatureAlgorithm = signatureAlgorithm;
         this.publicKeyAlgorithm = publicKeyAlgorithm;
+        this.certHash = certHash;
     }
 
     public static RelatedCertificateDescriptor getInstance(Object obj)
@@ -184,11 +186,6 @@ public class RelatedCertificateDescriptor
         return method;
     }
 
-    public ASN1ObjectIdentifier getIntent()
-    {
-        return intent;
-    }
-
     public AlgorithmIdentifier getSignatureAlgorithm()
     {
         return signatureAlgorithm;
@@ -199,23 +196,32 @@ public class RelatedCertificateDescriptor
         return publicKeyAlgorithm;
     }
 
+    /**
+     * Return the RFC 9763 hash of the Referenced Certificate, or {@code null}
+     * if absent.
+     */
+    public RelatedCertificate getCertHash()
+    {
+        return certHash;
+    }
+
     public ASN1Primitive toASN1Primitive()
     {
         ASN1EncodableVector v = new ASN1EncodableVector(4);
 
         v.add(method);
 
-        if (intent != null)
-        {
-            v.add(intent);
-        }
         if (signatureAlgorithm != null)
         {
-            v.add(new DERTaggedObject(false, 0, signatureAlgorithm));
+            v.add(new DERTaggedObject(true, 0, signatureAlgorithm));
         }
         if (publicKeyAlgorithm != null)
         {
-            v.add(new DERTaggedObject(false, 1, publicKeyAlgorithm));
+            v.add(new DERTaggedObject(true, 1, publicKeyAlgorithm));
+        }
+        if (certHash != null)
+        {
+            v.add(new DERTaggedObject(true, 2, certHash));
         }
 
         return new DERSequence(v);

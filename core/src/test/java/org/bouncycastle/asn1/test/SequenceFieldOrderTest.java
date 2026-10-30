@@ -38,6 +38,7 @@ import org.bouncycastle.asn1.ocsp.RevokedInfo;
 import org.bouncycastle.asn1.ocsp.ServiceLocator;
 import org.bouncycastle.asn1.ocsp.SingleResponse;
 import org.bouncycastle.asn1.ocsp.TBSRequest;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.Attribute;
 import org.bouncycastle.asn1.pkcs.ContentInfo;
 import org.bouncycastle.asn1.pkcs.IssuerAndSerialNumber;
@@ -512,17 +513,18 @@ public class SequenceFieldOrderTest
             }
         };
         ASN1Encodable method = CertDiscoveryMethod.byUri("https://a.example/cert");
-        ASN1Encodable intent = new ASN1ObjectIdentifier("1.2.3.4");
-        ASN1Encodable sigAlg = ctx(0, false, SHA256_RSA);
-        ASN1Encodable keyAlg = ctx(1, false, RSA);
+        ASN1Encodable sigAlg = ctx(0, true, SHA256_RSA);
+        ASN1Encodable keyAlg = ctx(1, true, RSA);
+        ASN1Encodable certHash = ctx(2, true, new DERSequence(new ASN1Encodable[]{ new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256), new DEROctetString(new byte[32]) }));
 
         accepts("RelatedCertificateDescriptor", p, els(method));
-        accepts("RelatedCertificateDescriptor", p, els(method, intent, sigAlg, keyAlg));
+        accepts("RelatedCertificateDescriptor", p, els(method, sigAlg, keyAlg, certHash));
         accepts("RelatedCertificateDescriptor", p, els(method, keyAlg));
+        accepts("RelatedCertificateDescriptor", p, els(method, certHash));
         rejects("RelatedCertificateDescriptor duplicate", p, els(method, sigAlg, sigAlg));
         rejects("RelatedCertificateDescriptor order", p, els(method, keyAlg, sigAlg));
-        rejects("RelatedCertificateDescriptor intent after tags", p, els(method, sigAlg, intent));
-        rejects("RelatedCertificateDescriptor unknown tag", p, els(method, ctx(2, false, RSA)));
+        rejects("RelatedCertificateDescriptor certHash before tags", p, els(method, certHash, sigAlg));
+        rejects("RelatedCertificateDescriptor unknown tag", p, els(method, ctx(3, true, RSA)));
     }
 
     private void rsaParams()
