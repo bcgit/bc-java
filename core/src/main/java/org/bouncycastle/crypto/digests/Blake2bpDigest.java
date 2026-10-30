@@ -26,10 +26,10 @@ public class Blake2bpDigest
     private byte[] salt = null;
     private byte[] param = null;
     private byte[] key = null;
-    private final int BLAKE2B_BLOCKBYTES = 128;
-    private final int BLAKE2B_KEYBYTES = 64;
-    private final int BLAKE2B_OUTBYTES = 64;
-    private final int PARALLELISM_DEGREE = 4;
+    private static final int BLAKE2B_BLOCKBYTES = 128;
+    private static final int BLAKE2B_KEYBYTES = 64;
+    private static final int BLAKE2B_OUTBYTES = 64;
+    private static final int PARALLELISM_DEGREE = 4;
 
     private final byte[] singleByte = new byte[1];
 

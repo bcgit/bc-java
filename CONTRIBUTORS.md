@@ -469,7 +469,7 @@ We also wish to acknowledge financial and collaborative support from [CISCO](htt
 - Amazon AWS Security Team - isolation and identification of performance bottlenecks in the BC PEM parsing support.
 - Phillip Schichtel \<https://github.com/pschichtel\> - initial code for specifying wrapping algorithm with PGP PBE encryption method, forcing of session key usage.
 - Alexander Dippel \<https://github.com/adippel\> - corrections to prevent NPEs on chunked encoding of EST responses.
-- Johann N. Löfflmann \<https://github.com/jonelo\> - fix to "too small" buffer issue in Blake2sp.
+- Johann N. Löfflmann \<https://github.com/jonelo\> - fix to "too small" buffer issue in Blake2sp, fix to Blake2bpDigest.getByteLength() returning 0 (PR #2538).
 - Scott Xu \<https://github.com/scott-xu\> - message fix in OpenSSHPublicKeyUtil
 - Scott Arciszewski \<https://github/scottarc\> - correction to ant scripts to ensure UTF8 support.
 - GitHub Security team - identification of the X509LDAPCertStoreSpi wildcard bug (see CVE-2023-33201).
