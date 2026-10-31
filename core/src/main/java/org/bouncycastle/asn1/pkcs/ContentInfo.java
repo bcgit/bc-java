@@ -1,6 +1,5 @@
 package org.bouncycastle.asn1.pkcs;
 
-import java.util.Enumeration;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
@@ -11,6 +10,7 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
 import org.bouncycastle.asn1.BERSequence;
 import org.bouncycastle.asn1.BERTaggedObject;
+import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DLSequence;
 
 public class ContentInfo
@@ -40,13 +40,16 @@ public class ContentInfo
     private ContentInfo(
         ASN1Sequence  seq)
     {
-        Enumeration   e = seq.getObjects();
-
-        contentType = (ASN1ObjectIdentifier)e.nextElement();
-
-        if (e.hasMoreElements())
+        if (seq.size() < 1 || seq.size() > 2)
         {
-            content = ((ASN1TaggedObject)e.nextElement()).getExplicitBaseObject();
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
+
+        contentType = ASN1ObjectIdentifier.getInstance(seq.getObjectAt(0));
+
+        if (seq.size() > 1)
+        {
+            content = ASN1TaggedObject.getInstance(seq.getObjectAt(1), BERTags.CONTEXT_SPECIFIC, 0).getExplicitBaseObject();
         }
 
         isBer = seq instanceof BERSequence;

@@ -53,12 +53,16 @@ public class RC2CBCParameter
         if (seq.size() == 1)
         {
             version = null;
-            iv = (ASN1OctetString)seq.getObjectAt(0);
+            iv = ASN1OctetString.getInstance(seq.getObjectAt(0));
+        }
+        else if (seq.size() == 2)
+        {
+            version = ASN1Integer.getInstance(seq.getObjectAt(0));
+            iv = ASN1OctetString.getInstance(seq.getObjectAt(1));
         }
         else
         {
-            version = (ASN1Integer)seq.getObjectAt(0);
-            iv = (ASN1OctetString)seq.getObjectAt(1);
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
         }
     }
 

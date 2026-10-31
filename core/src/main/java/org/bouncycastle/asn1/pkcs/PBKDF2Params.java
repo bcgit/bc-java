@@ -1,7 +1,6 @@
 package org.bouncycastle.asn1.pkcs;
 
 import java.math.BigInteger;
-import java.util.Enumeration;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
@@ -134,46 +133,34 @@ public class PBKDF2Params
     private PBKDF2Params(
         ASN1Sequence seq)
     {
-        Enumeration e = seq.getObjects();
-
-        octStr = (ASN1OctetString)e.nextElement();
-        iterationCount = (ASN1Integer)e.nextElement();
-
-        if (e.hasMoreElements())
+        int count = seq.size();
+        if (count < 2 || count > 4)
         {
-            Object o = e.nextElement();
-
-            if (o instanceof ASN1Integer)
-            {
-                keyLength = ASN1Integer.getInstance(o);
-                if (e.hasMoreElements())
-                {
-                    o = e.nextElement();
-                }
-                else
-                {
-                    o = null;
-                }
-            }
-            else
-            {
-                keyLength = null;
-            }
-
-            if (o != null)
-            {
-                prf = AlgorithmIdentifier.getInstance(o);
-            }
-            else
-            {
-                prf = null;
-            }
+            throw new IllegalArgumentException("Bad sequence size: " + count);
         }
-        else
+
+        octStr = ASN1OctetString.getInstance(seq.getObjectAt(0));
+        iterationCount = ASN1Integer.getInstance(seq.getObjectAt(1));
+
+        // keyLength INTEGER OPTIONAL, then prf AlgorithmIdentifier DEFAULT hmacWithSHA1, in that order
+        int i = 2;
+        ASN1Integer keyLength = null;
+        if (i < count && seq.getObjectAt(i) instanceof ASN1Integer)
         {
-            keyLength = null;
-            prf = null;
+            keyLength = ASN1Integer.getInstance(seq.getObjectAt(i++));
         }
+        AlgorithmIdentifier prf = null;
+        if (i < count)
+        {
+            prf = AlgorithmIdentifier.getInstance(seq.getObjectAt(i++));
+        }
+        if (i != count)
+        {
+            throw new IllegalArgumentException("unexpected element at position " + i);
+        }
+
+        this.keyLength = keyLength;
+        this.prf = prf;
     }
 
     /**

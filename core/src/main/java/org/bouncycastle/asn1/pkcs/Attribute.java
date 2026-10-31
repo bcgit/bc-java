@@ -36,11 +36,16 @@ public class Attribute
         throw new IllegalArgumentException("unknown object in factory: " + o.getClass().getName());
     }
     
-    public Attribute(
+    private Attribute(
         ASN1Sequence seq)
     {
-        attrType = (ASN1ObjectIdentifier)seq.getObjectAt(0);
-        attrValues = (ASN1Set)seq.getObjectAt(1);
+        if (seq.size() != 2)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
+
+        attrType = ASN1ObjectIdentifier.getInstance(seq.getObjectAt(0));
+        attrValues = ASN1Set.getInstance(seq.getObjectAt(1));
     }
 
     public Attribute(

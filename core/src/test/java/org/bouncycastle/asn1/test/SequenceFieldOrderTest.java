@@ -45,6 +45,25 @@ import org.bouncycastle.asn1.pkcs.Attribute;
 import org.bouncycastle.asn1.pkcs.ContentInfo;
 import org.bouncycastle.asn1.pkcs.IssuerAndSerialNumber;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.asn1.x509.DigestInfo;
+import org.bouncycastle.asn1.pkcs.CertificationRequest;
+import org.bouncycastle.asn1.pkcs.RSAPrivateKeyStructure;
+import org.bouncycastle.asn1.pkcs.RSAPrivateKey;
+import org.bouncycastle.asn1.pkcs.DHParameter;
+import org.bouncycastle.asn1.pkcs.EncryptedPrivateKeyInfo;
+import org.bouncycastle.asn1.pkcs.RC2CBCParameter;
+import org.bouncycastle.asn1.pkcs.PBEParameter;
+import org.bouncycastle.asn1.pkcs.PKCS12PBEParams;
+import org.bouncycastle.asn1.pkcs.PBMAC1Params;
+import org.bouncycastle.asn1.pkcs.PBES2Parameters;
+import org.bouncycastle.asn1.pkcs.PBKDF2Params;
+import org.bouncycastle.asn1.pkcs.MacData;
+import org.bouncycastle.asn1.pkcs.Pfx;
+import org.bouncycastle.asn1.pkcs.EncryptedData;
+import org.bouncycastle.asn1.pkcs.SafeBag;
+import org.bouncycastle.asn1.pkcs.SecretBag;
+import org.bouncycastle.asn1.pkcs.CRLBag;
+import org.bouncycastle.asn1.pkcs.CertBag;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.pkcs.RSAESOAEPparams;
 import org.bouncycastle.asn1.pkcs.RSASSAPSSparams;
@@ -220,6 +239,8 @@ public class SequenceFieldOrderTest
         otherName();
         certificationRequestInfo();
         basicConstraints();
+        pkcs12Types();
+        pkcsParameterTypes();
         rsaParams();
         privateKeyInfo();
         pkcs7SignerInfo();
@@ -783,6 +804,159 @@ public class SequenceFieldOrderTest
         accepts("BasicConstraints", p, els(ASN1Boolean.TRUE, ONE));
         accepts("BasicConstraints pathLen only", p, els(ONE));
         rejects("BasicConstraints trailing", p, els(ASN1Boolean.TRUE, ONE, ONE));
+    }
+
+    private Parser pkcsParser(final int which)
+    {
+        return new Parser()
+        {
+            public Object parse(ASN1Sequence seq)
+            {
+                switch (which)
+                {
+                case 0: return ContentInfo.getInstance(seq);
+                case 1: return SafeBag.getInstance(seq);
+                case 2: return CertBag.getInstance(seq);
+                case 3: return CRLBag.getInstance(seq);
+                case 4: return SecretBag.getInstance(seq);
+                case 5: return EncryptedData.getInstance(seq);
+                case 6: return Pfx.getInstance(seq);
+                case 7: return MacData.getInstance(seq);
+                case 8: return PBKDF2Params.getInstance(seq);
+                case 9: return PBES2Parameters.getInstance(seq);
+                case 10: return PBMAC1Params.getInstance(seq);
+                case 11: return PKCS12PBEParams.getInstance(seq);
+                case 12: return PBEParameter.getInstance(seq);
+                case 13: return RC2CBCParameter.getInstance(seq);
+                case 14: return EncryptedPrivateKeyInfo.getInstance(seq);
+                case 15: return IssuerAndSerialNumber.getInstance(seq);
+                case 16: return Attribute.getInstance(seq);
+                case 17: return DHParameter.getInstance(seq);
+                case 18: return RSAPrivateKey.getInstance(seq);
+                case 19: return new RSAPrivateKeyStructure(seq);
+                default: return CertificationRequest.getInstance(seq);
+                }
+            }
+        };
+    }
+
+    private void pkcs12Types()
+        throws IOException
+    {
+        ASN1Encodable data = PKCSObjectIdentifiers.data;
+        ASN1Encodable octets = new DEROctetString(new byte[8]);
+        ASN1Encodable value = ctx(0, true, octets);
+
+        Parser p = pkcsParser(0);
+        accepts("pkcs ContentInfo", p, els(data));
+        accepts("pkcs ContentInfo content", p, els(data, value));
+        rejects("pkcs ContentInfo [5] content", p, els(data, ctx(5, true, octets)));
+        rejects("pkcs ContentInfo trailing", p, els(data, value, ONE));
+
+        String[] names = { "SafeBag", "CertBag", "CRLBag", "SecretBag" };
+        ASN1Encodable[] ids = { PKCSObjectIdentifiers.certBag, PKCSObjectIdentifiers.x509Certificate, PKCSObjectIdentifiers.x509Crl, new ASN1ObjectIdentifier("1.2.3.4") };
+        for (int i = 0; i != names.length; i++)
+        {
+            p = pkcsParser(i + 1);
+            accepts(names[i], p, els(ids[i], value));
+            rejects(names[i] + " [5] value", p, els(ids[i], ctx(5, true, octets)));
+            rejects(names[i] + " APPLICATION 0 value", p, els(ids[i], new DERTaggedObject(true, BERTags.APPLICATION, 0, octets)));
+        }
+        accepts("SafeBag attributes", pkcsParser(1), els(PKCSObjectIdentifiers.certBag, value, new DERSet()));
+        rejects("SafeBag trailing", pkcsParser(1), els(PKCSObjectIdentifiers.certBag, value, new DERSet(), ONE));
+        for (int i = 2; i != 5; i++)
+        {
+            rejects(names[i - 1] + " trailing", pkcsParser(i), els(ids[i - 1], value, ONE));
+        }
+
+        ASN1Encodable zero = new ASN1Integer(0);
+        ASN1Encodable eci = new DERSequence(els(data, SHA256_RSA));
+        p = pkcsParser(5);
+        accepts("pkcs EncryptedData", p, els(zero, eci));
+        rejects("pkcs EncryptedData trailing", p, els(zero, eci, ONE));
+
+        ASN1Encodable three = new ASN1Integer(3);
+        ASN1Encodable authSafe = new DERSequence(els(data, value));
+        ASN1Encodable macData = new DERSequence(els(new DigestInfo(SHA256_RSA, new byte[32]), octets));
+        p = pkcsParser(6);
+        accepts("Pfx", p, els(three, authSafe));
+        accepts("Pfx macData", p, els(three, authSafe, macData));
+        rejects("Pfx trailing", p, els(three, authSafe, macData, ONE));
+        p = pkcsParser(7);
+        accepts("MacData", p, els(new DigestInfo(SHA256_RSA, new byte[32]), octets));
+        accepts("MacData iterations", p, els(new DigestInfo(SHA256_RSA, new byte[32]), octets, ONE));
+        rejects("MacData trailing", p, els(new DigestInfo(SHA256_RSA, new byte[32]), octets, ONE, ONE));
+    }
+
+    private void pkcsParameterTypes()
+        throws IOException
+    {
+        ASN1Encodable octets = new DEROctetString(new byte[8]);
+        ASN1Encodable hmac = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_hmacWithSHA256, DERNull.INSTANCE);
+
+        Parser p = pkcsParser(8);
+        accepts("PBKDF2Params", p, els(octets, ONE));
+        accepts("PBKDF2Params keyLength", p, els(octets, ONE, ONE));
+        accepts("PBKDF2Params prf", p, els(octets, ONE, hmac));
+        accepts("PBKDF2Params keyLength prf", p, els(octets, ONE, ONE, hmac));
+        rejects("PBKDF2Params prf before keyLength", p, els(octets, ONE, hmac, ONE));
+        rejects("PBKDF2Params trailing", p, concat(els(octets, ONE, ONE, hmac), els(ONE)));
+
+        ASN1Encodable kdf = new DERSequence(els(PKCSObjectIdentifiers.id_PBKDF2, new DERSequence(els(octets, ONE))));
+        ASN1Encodable scheme = new AlgorithmIdentifier(new ASN1ObjectIdentifier("2.16.840.1.101.3.4.1.2"), new DEROctetString(new byte[16]));
+        for (int i = 9; i != 11; i++)
+        {
+            p = pkcsParser(i);
+            accepts("PBES2/PBMAC1 params", p, els(kdf, scheme));
+            rejects("PBES2/PBMAC1 params trailing", p, els(kdf, scheme, ONE));
+        }
+
+        for (int i = 11; i != 13; i++)
+        {
+            p = pkcsParser(i);
+            accepts("PBE params", p, els(octets, ONE));
+            rejects("PBE params trailing", p, els(octets, ONE, ONE));
+        }
+
+        p = pkcsParser(13);
+        accepts("RC2CBCParameter", p, els(octets));
+        accepts("RC2CBCParameter version", p, els(ONE, octets));
+        rejects("RC2CBCParameter trailing", p, els(ONE, octets, ONE));
+
+        p = pkcsParser(14);
+        accepts("EncryptedPrivateKeyInfo", p, els(SHA256_RSA, octets));
+        rejects("EncryptedPrivateKeyInfo trailing", p, els(SHA256_RSA, octets, ONE));
+
+        p = pkcsParser(15);
+        accepts("IssuerAndSerialNumber", p, els(new X500Name("CN=Test"), ONE));
+        rejects("IssuerAndSerialNumber trailing", p, els(new X500Name("CN=Test"), ONE, ONE));
+
+        p = pkcsParser(16);
+        accepts("pkcs Attribute", p, els(PKCSObjectIdentifiers.pkcs_9_at_contentType, new DERSet(PKCSObjectIdentifiers.data)));
+        rejects("pkcs Attribute trailing", p, els(PKCSObjectIdentifiers.pkcs_9_at_contentType, new DERSet(PKCSObjectIdentifiers.data), ONE));
+
+        p = pkcsParser(17);
+        accepts("DHParameter", p, els(ONE, ONE));
+        accepts("DHParameter l", p, els(ONE, ONE, ONE));
+        rejects("DHParameter trailing", p, els(ONE, ONE, ONE, ONE));
+
+        ASN1Encodable[] rsa = new ASN1Encodable[9];
+        for (int i = 0; i != rsa.length; i++)
+        {
+            rsa[i] = i == 0 ? new ASN1Integer(0) : ONE;
+        }
+        for (int i = 18; i != 20; i++)
+        {
+            p = pkcsParser(i);
+            accepts("RSAPrivateKey", p, rsa);
+            accepts("RSAPrivateKey otherPrimeInfos", p, concat(rsa, els(new DERSequence())));
+            rejects("RSAPrivateKey trailing", p, concat(rsa, els(new DERSequence(), ONE)));
+        }
+
+        p = pkcsParser(20);
+        ASN1Encodable cri = new DERSequence(els(new ASN1Integer(0), new X500Name("CN=Test"), SPKI, ctx(0, false, new DERSet())));
+        accepts("CertificationRequest", p, els(cri, SHA256_RSA, new DERBitString(new byte[]{ 1 })));
+        rejects("CertificationRequest trailing", p, els(cri, SHA256_RSA, new DERBitString(new byte[]{ 1 }), ONE));
     }
 
     private void rsaParams()

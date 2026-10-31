@@ -1,6 +1,5 @@
 package org.bouncycastle.asn1.pkcs;
 
-import java.util.Enumeration;
 
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1OctetString;
@@ -20,10 +19,13 @@ public class EncryptedPrivateKeyInfo
     private EncryptedPrivateKeyInfo(
         ASN1Sequence  seq)
     {
-        Enumeration e = seq.getObjects();
+        if (seq.size() != 2)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
 
-        algId = AlgorithmIdentifier.getInstance(e.nextElement());
-        data = ASN1OctetString.getInstance(e.nextElement());
+        algId = AlgorithmIdentifier.getInstance(seq.getObjectAt(0));
+        data = ASN1OctetString.getInstance(seq.getObjectAt(1));
     }
 
     public EncryptedPrivateKeyInfo(

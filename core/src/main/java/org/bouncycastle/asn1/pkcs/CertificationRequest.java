@@ -61,9 +61,14 @@ public class CertificationRequest
     public CertificationRequest(
         ASN1Sequence seq)
     {
+        if (seq.size() != 3)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
+
         reqInfo = CertificationRequestInfo.getInstance(seq.getObjectAt(0));
         sigAlgId = AlgorithmIdentifier.getInstance(seq.getObjectAt(1));
-        sigBits = (DERBitString)seq.getObjectAt(2);
+        sigBits = ASN1BitString.getInstance(seq.getObjectAt(2));
     }
 
     public CertificationRequestInfo getCertificationRequestInfo()

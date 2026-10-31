@@ -52,10 +52,15 @@ public class EncryptedData
          return null;
     }
      
-    private EncryptedData(
-        ASN1Sequence seq)
+    private EncryptedData(ASN1Sequence seq)
     {
-        ASN1Integer version = (ASN1Integer)seq.getObjectAt(0);
+        if (seq.size() != 2)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
+
+        ASN1Integer version = ASN1Integer.getInstance(seq.getObjectAt(0));
+
         if (!version.hasValue(0))
         {
             throw new IllegalArgumentException("sequence not version 0");

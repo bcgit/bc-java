@@ -1,7 +1,6 @@
 package org.bouncycastle.asn1.pkcs;
 
 import java.math.BigInteger;
-import java.util.Enumeration;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
@@ -52,14 +51,17 @@ public class DHParameter
     private DHParameter(
         ASN1Sequence  seq)
     {
-        Enumeration     e = seq.getObjects();
-
-        p = ASN1Integer.getInstance(e.nextElement());
-        g = ASN1Integer.getInstance(e.nextElement());
-
-        if (e.hasMoreElements())
+        if (seq.size() < 2 || seq.size() > 3)
         {
-            l = (ASN1Integer)e.nextElement();
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
+
+        p = ASN1Integer.getInstance(seq.getObjectAt(0));
+        g = ASN1Integer.getInstance(seq.getObjectAt(1));
+
+        if (seq.size() > 2)
+        {
+            l = ASN1Integer.getInstance(seq.getObjectAt(2));
         }
         else
         {

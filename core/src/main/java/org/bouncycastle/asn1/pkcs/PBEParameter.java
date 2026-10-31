@@ -31,8 +31,13 @@ public class PBEParameter
     private PBEParameter(
         ASN1Sequence  seq)
     {
-        salt = (ASN1OctetString)seq.getObjectAt(0);
-        iterations = (ASN1Integer)seq.getObjectAt(1);
+        if (seq.size() != 2)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
+
+        salt = ASN1OctetString.getInstance(seq.getObjectAt(0));
+        iterations = ASN1Integer.getInstance(seq.getObjectAt(1));
     }
 
     public static PBEParameter getInstance(

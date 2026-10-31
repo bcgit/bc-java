@@ -34,8 +34,13 @@ public class IssuerAndSerialNumber
     private IssuerAndSerialNumber(
         ASN1Sequence    seq)
     {
+        if (seq.size() != 2)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
+
         this.name = X500Name.getInstance(seq.getObjectAt(0));
-        this.certSerialNumber = (ASN1Integer)seq.getObjectAt(1);
+        this.certSerialNumber = ASN1Integer.getInstance(seq.getObjectAt(1));
     }
 
     public IssuerAndSerialNumber(

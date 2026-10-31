@@ -1,6 +1,5 @@
 package org.bouncycastle.asn1.pkcs;
 
-import java.util.Enumeration;
 
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Object;
@@ -49,8 +48,12 @@ public class PBMAC1Params
     private PBMAC1Params(
         ASN1Sequence  obj)
     {
-        Enumeration e = obj.getObjects();
-        ASN1Sequence  funcSeq = ASN1Sequence.getInstance(((ASN1Encodable)e.nextElement()).toASN1Primitive());
+        if (obj.size() != 2)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + obj.size());
+        }
+
+        ASN1Sequence  funcSeq = ASN1Sequence.getInstance(obj.getObjectAt(0).toASN1Primitive());
 
         if (funcSeq.getObjectAt(0).equals(id_PBKDF2))
         {
@@ -61,7 +64,7 @@ public class PBMAC1Params
             func = AlgorithmIdentifier.getInstance(funcSeq);
         }
 
-        scheme = AlgorithmIdentifier.getInstance(e.nextElement());
+        scheme = AlgorithmIdentifier.getInstance(obj.getObjectAt(1));
     }
 
     public AlgorithmIdentifier getKeyDerivationFunc()

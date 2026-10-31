@@ -40,6 +40,11 @@ public class MacData
     private MacData(
         ASN1Sequence seq)
     {
+        if (seq.size() < 2 || seq.size() > 3)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
+
         this.digInfo = DigestInfo.getInstance(seq.getObjectAt(0));
 
         this.salt = Arrays.clone(ASN1OctetString.getInstance(seq.getObjectAt(1)).getOctets());

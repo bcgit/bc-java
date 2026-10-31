@@ -27,7 +27,12 @@ public class PKCS12PBEParams
     private PKCS12PBEParams(
         ASN1Sequence  seq)
     {
-        iv = (ASN1OctetString)seq.getObjectAt(0);
+        if (seq.size() != 2)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
+
+        iv = ASN1OctetString.getInstance(seq.getObjectAt(0));
         iterations = ASN1Integer.getInstance(seq.getObjectAt(1));
     }
 

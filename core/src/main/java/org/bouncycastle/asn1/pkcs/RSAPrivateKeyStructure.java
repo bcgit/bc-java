@@ -1,7 +1,6 @@
 package org.bouncycastle.asn1.pkcs;
 
 import java.math.BigInteger;
-import java.util.Enumeration;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
@@ -72,30 +71,33 @@ public class RSAPrivateKeyStructure
     }
 
     public RSAPrivateKeyStructure(
-        ASN1Sequence  seq)
+        ASN1Sequence seq)
     {
-        Enumeration e = seq.getObjects();
+        if (seq.size() < 9 || seq.size() > 10)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
 
-        ASN1Integer v = (ASN1Integer)e.nextElement();
+        ASN1Integer v = ASN1Integer.getInstance(seq.getObjectAt(0));
         int versionValue = v.intValueExact();
         if (versionValue < 0 || versionValue > 1)
         {
             throw new IllegalArgumentException("wrong version for RSA private key");
         }
-
         version = versionValue;
-        modulus = ((ASN1Integer)e.nextElement()).getValue();
-        publicExponent = ((ASN1Integer)e.nextElement()).getValue();
-        privateExponent = ((ASN1Integer)e.nextElement()).getValue();
-        prime1 = ((ASN1Integer)e.nextElement()).getValue();
-        prime2 = ((ASN1Integer)e.nextElement()).getValue();
-        exponent1 = ((ASN1Integer)e.nextElement()).getValue();
-        exponent2 = ((ASN1Integer)e.nextElement()).getValue();
-        coefficient = ((ASN1Integer)e.nextElement()).getValue();
-        
-        if (e.hasMoreElements())
+
+        modulus = ASN1Integer.getInstance(seq.getObjectAt(1)).getValue();
+        publicExponent = ASN1Integer.getInstance(seq.getObjectAt(2)).getValue();
+        privateExponent = ASN1Integer.getInstance(seq.getObjectAt(3)).getValue();
+        prime1 = ASN1Integer.getInstance(seq.getObjectAt(4)).getValue();
+        prime2 = ASN1Integer.getInstance(seq.getObjectAt(5)).getValue();
+        exponent1 = ASN1Integer.getInstance(seq.getObjectAt(6)).getValue();
+        exponent2 = ASN1Integer.getInstance(seq.getObjectAt(7)).getValue();
+        coefficient = ASN1Integer.getInstance(seq.getObjectAt(8)).getValue();
+
+        if (seq.size() > 9)
         {
-            otherPrimeInfos = (ASN1Sequence)e.nextElement();
+            otherPrimeInfos = ASN1Sequence.getInstance(seq.getObjectAt(9));
         }
     }
 

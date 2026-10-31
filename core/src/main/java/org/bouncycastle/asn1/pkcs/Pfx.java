@@ -20,6 +20,11 @@ public class Pfx
     private Pfx(
         ASN1Sequence   seq)
     {
+        if (seq.size() < 2 || seq.size() > 3)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
+
         ASN1Integer version = ASN1Integer.getInstance(seq.getObjectAt(0));
         if (!version.hasValue(3))
         {
