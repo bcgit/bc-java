@@ -242,7 +242,7 @@ public class CMSAuthenticatedDataParser
     }
 
     /**
-     * return the ASN.1 encoded encryption algorithm parameters, or null if
+     * return the ASN.1 encoded MAC algorithm parameters, or null if
      * there aren't any.
      */
     public byte[] getMacAlgParams()
@@ -253,7 +253,7 @@ public class CMSAuthenticatedDataParser
         }
         catch (Exception e)
         {
-            throw new RuntimeException("exception getting encryption parameters " + e);
+            throw new RuntimeException("exception getting MAC parameters " + e);
         }
     }
 
@@ -307,7 +307,7 @@ public class CMSAuthenticatedDataParser
     }
 
     /**
-     * return a table of the unauthenticated attributes indexed by
+     * return a table of the authenticated attributes indexed by
      * the OID of the attribute.
      *
      * @throws java.io.IOException

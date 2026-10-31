@@ -264,7 +264,7 @@ public class CMSAuthenticatedData
         }
         catch (Exception e)
         {
-            throw new RuntimeException("exception getting encryption parameters " + e);
+            throw new RuntimeException("exception getting MAC parameters " + e);
         }
     }
 
