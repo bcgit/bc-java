@@ -464,24 +464,51 @@ public interface BCObjectIdentifiers
 
     /**
      * Placeholder for the id-rcd discovery-intent arc defined by
-     * draft-ietf-lamps-certdiscovery-03 (registered as TBD4). Parent of the
-     * five DiscoveryIntentId values below.
-     * <p>
-     * 1.3.6.1.4.1.22554.4.5 (BC private placeholder; replace with the
-     * IANA-assigned id-rcd once the draft progresses to RFC)
+     * draft-ietf-lamps-certdiscovery-03. Parent of the five DiscoveryIntentId
+     * values below. 1.3.6.1.4.1.22554.4.5 (BC private placeholder).
+     *
+     * @deprecated draft-ietf-lamps-certdiscovery-04 removed the intent field from
+     * RelatedCertificateDescriptor and with it the id-rcd arc; nothing in BC uses
+     * these values and they will be removed.
      */
+    @Deprecated
     ASN1ObjectIdentifier id_rcd = bc_ext.branch("5");
 
-    /** id-rcd-agility: secondary certificate provides cryptographic agility. */
-    ASN1ObjectIdentifier id_rcd_agility       = id_rcd.branch("1");
-    /** id-rcd-redundancy: secondary certificate is a backup (different CA / validity). */
-    ASN1ObjectIdentifier id_rcd_redundancy    = id_rcd.branch("2");
-    /** id-rcd-dual: secondary certificate provides the complementary key usage (sign/encrypt split). */
-    ASN1ObjectIdentifier id_rcd_dual          = id_rcd.branch("3");
-    /** id-rcd-priv-key-stmt: secondary certificate carries a proof-of-possession statement signed for the primary. */
+    /**
+     * id-rcd-agility: secondary certificate provides cryptographic agility.
+     *
+     * @deprecated removed with the intent field in draft-ietf-lamps-certdiscovery-04, see {@link #id_rcd}.
+     */
+    @Deprecated
+    ASN1ObjectIdentifier id_rcd_agility = id_rcd.branch("1");
+    /**
+     * id-rcd-redundancy: secondary certificate is a backup (different CA / validity).
+     *
+     * @deprecated removed with the intent field in draft-ietf-lamps-certdiscovery-04, see {@link #id_rcd}.
+     */
+    @Deprecated
+    ASN1ObjectIdentifier id_rcd_redundancy = id_rcd.branch("2");
+    /**
+     * id-rcd-dual: secondary certificate provides the complementary key usage (sign/encrypt split).
+     *
+     * @deprecated removed with the intent field in draft-ietf-lamps-certdiscovery-04, see {@link #id_rcd}.
+     */
+    @Deprecated
+    ASN1ObjectIdentifier id_rcd_dual = id_rcd.branch("3");
+    /**
+     * id-rcd-priv-key-stmt: secondary certificate carries a proof-of-possession statement signed for the primary.
+     *
+     * @deprecated removed with the intent field in draft-ietf-lamps-certdiscovery-04, see {@link #id_rcd}.
+     */
+    @Deprecated
     ASN1ObjectIdentifier id_rcd_priv_key_stmt = id_rcd.branch("4");
-    /** id-rcd-self: descriptor points at the location of the current certificate itself. */
-    ASN1ObjectIdentifier id_rcd_self          = id_rcd.branch("5");
+    /**
+     * id-rcd-self: descriptor points at the location of the current certificate itself.
+     *
+     * @deprecated removed with the intent field in draft-ietf-lamps-certdiscovery-04, see {@link #id_rcd}.
+     */
+    @Deprecated
+    ASN1ObjectIdentifier id_rcd_self = id_rcd.branch("5");
 
     /**
      * KEM(5) algorithms
