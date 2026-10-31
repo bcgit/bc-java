@@ -53,6 +53,7 @@ public class RegressionTest
         new ArmoredOutputStreamUTF8Test(),
         new UnrecognizableSubkeyParserTest(),
         new PGPObjectFactorySecretSubkeyTest(),
+        new PGPObjectFactoryUnsupportedVersionTest(),
         new IgnoreUnknownEncryptedSessionKeys(),
         new PGPEncryptedDataTest(),
         new PGPAeadTest(),

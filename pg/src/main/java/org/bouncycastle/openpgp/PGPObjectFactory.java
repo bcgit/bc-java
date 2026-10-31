@@ -79,9 +79,24 @@ public class PGPObjectFactory
      * Return the next object in the stream, or <code>null</code> if the end of stream is reached.
      *
      * @return one of the supported objects - see class docs for details.
-     * @throws IOException if an error occurs reading from the wrapped stream or parsing data.
+     * @throws IOException if an error occurs reading from the wrapped stream or parsing data, including
+     * a packet of a version this implementation does not support (the {@link UnsupportedPacketVersionException}
+     * is available as the cause).
      */
     public Object nextObject()
+        throws IOException
+    {
+        try
+        {
+            return readNextObject();
+        }
+        catch (UnsupportedPacketVersionException e)
+        {
+            throw Exceptions.ioException(e.getMessage(), e);
+        }
+    }
+
+    private Object readNextObject()
         throws IOException
     {
         int tag = in.nextPacketTag();

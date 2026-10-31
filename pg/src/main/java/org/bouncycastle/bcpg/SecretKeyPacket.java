@@ -227,7 +227,14 @@ public class SecretKeyPacket
         {
             if (s2kUsage == USAGE_CHECKSUM || s2kUsage == USAGE_SHA1 || s2kUsage == USAGE_AEAD)
             {
-                s2k = new S2K(in);
+                try
+                {
+                    s2k = new S2K(in);
+                }
+                catch (UnsupportedPacketVersionException e)
+                {
+                    throw new MalformedPacketException("Unsupported S2K type", e);
+                }
             }
         }
         if (s2kUsage == USAGE_AEAD)
