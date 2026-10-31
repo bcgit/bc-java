@@ -1,7 +1,13 @@
 package org.bouncycastle.cms.test;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.security.Provider;
+
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 
 import junit.framework.TestCase;
 import org.bouncycastle.asn1.ASN1Encodable;
@@ -12,31 +18,50 @@ import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.DERTaggedObject;
+import org.bouncycastle.asn1.cms.Attribute;
+import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.cms.CMSAlgorithm;
 import org.bouncycastle.cms.CMSAuthEnvelopedData;
 import org.bouncycastle.cms.CMSAuthEnvelopedDataParser;
+import org.bouncycastle.cms.CMSAuthEnvelopedDataStreamGenerator;
 import org.bouncycastle.cms.CMSAuthenticatedData;
 import org.bouncycastle.cms.CMSAuthenticatedDataParser;
+import org.bouncycastle.cms.CMSAuthenticatedDataStreamGenerator;
 import org.bouncycastle.cms.CMSCompressedDataParser;
 import org.bouncycastle.cms.CMSEncryptedData;
 import org.bouncycastle.cms.CMSEnvelopedData;
 import org.bouncycastle.cms.CMSEnvelopedDataParser;
+import org.bouncycastle.cms.CMSEnvelopedDataStreamGenerator;
 import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.cms.CMSSignedData;
 import org.bouncycastle.cms.CMSSignedDataParser;
 import org.bouncycastle.cms.CMSTypedStream;
+import org.bouncycastle.cms.RecipientInformation;
+import org.bouncycastle.cms.RecipientInformationStore;
+import org.bouncycastle.cms.SimpleAttributeTableGenerator;
+import org.bouncycastle.cms.jcajce.JceCMSContentEncryptorBuilder;
+import org.bouncycastle.cms.jcajce.JceCMSMacCalculatorBuilder;
+import org.bouncycastle.cms.jcajce.JceKEKAuthEnvelopedRecipient;
+import org.bouncycastle.cms.jcajce.JceKEKAuthenticatedRecipient;
+import org.bouncycastle.cms.jcajce.JceKEKEnvelopedRecipient;
+import org.bouncycastle.cms.jcajce.JceKEKRecipientInfoGenerator;
 import org.bouncycastle.cms.jcajce.ZlibExpanderProvider;
+import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.operator.DigestCalculatorProvider;
+import org.bouncycastle.operator.OutputAEADEncryptor;
 import org.bouncycastle.operator.bc.BcDigestCalculatorProvider;
+import org.bouncycastle.tsp.cms.CMSTimeStampedDataParser;
+import org.bouncycastle.util.encoders.Hex;
 
 /**
- * Malformed but DER-parseable CMS content - an absent, empty or truncated inner SEQUENCE, a
- * mandatory field of the wrong type, encapsulated content left out - has to surface from the CMS
- * containers and their streaming parsers as the checked exceptions they declare, never as an
- * unchecked NoSuchElementException / ArrayIndexOutOfBoundsException / NullPointerException /
- * ClassCastException.
+ * Malformed CMS content - an absent, empty or truncated inner SEQUENCE, a mandatory field of the
+ * wrong type, encapsulated content left out, a field whose encoding does not decode - has to
+ * surface from the CMS containers and their streaming parsers as the checked exceptions they
+ * declare, never as an unchecked NoSuchElementException / ArrayIndexOutOfBoundsException /
+ * NullPointerException / ClassCastException / IllegalStateException.
  */
 public class CMSMalformedContentTest
     extends TestCase
@@ -49,6 +74,14 @@ public class CMSMalformedContentTest
     private static final AlgorithmIdentifier ZLIB = new AlgorithmIdentifier(CMSObjectIdentifiers.zlibCompress);
 
     private static final DigestCalculatorProvider DIGESTS = new BcDigestCalculatorProvider();
+
+    // a malformed primitive BIT STRING (pad bits 9) and a constructed one holding an empty segment
+    private static final String[] BAD_BIT_STRINGS = new String[]{ "03020900", "2380030000000000" };
+    private static final String SIGNED_DATA_HEX = "06092a864886f70d010702";
+    private static final String DATA_HEX = "06092a864886f70d010701";
+    private static final String AES_CBC_HEX = "300b0609608648016503040102";
+    private static final String EMPTY_SET_HEX = "31800000";
+    private static final String BER_ENCAP_HEX = "3080" + DATA_HEX + "0000";
 
     private interface Parse
     {
@@ -134,6 +167,15 @@ public class CMSMalformedContentTest
         }
     };
 
+    private static final Parse TIME_STAMPED_PARSER = new Parse()
+    {
+        public void run(byte[] encoding)
+            throws Exception
+        {
+            new CMSTimeStampedDataParser(encoding).getTimeStampTokens();
+        }
+    };
+
     private static final Parse COMPRESSED_PARSER = new Parse()
     {
         public void run(byte[] encoding)
@@ -163,6 +205,16 @@ public class CMSMalformedContentTest
             new ASN1Integer(1), new DERSet(SHA256), new ASN1Integer(2), new DERSet() }));
         expectRejected("signerInfos not a SET", parsers, contentInfo(type, new ASN1Encodable[]{
             new ASN1Integer(1), new DERSet(SHA256), new ContentInfo(DATA, null), new ASN1Integer(2) }));
+
+        // indefinite-length SignedData whose fields hold a malformed primitive / constructed BIT STRING
+        for (int i = 0; i != BAD_BIT_STRINGS.length; i++)
+        {
+            String bad = BAD_BIT_STRINGS[i];
+            expectRejected("bad BIT STRING in certificates " + i, parsers, berContentInfo(SIGNED_DATA_HEX,
+                "020101" + EMPTY_SET_HEX + BER_ENCAP_HEX + "a080" + bad + "0000" + EMPTY_SET_HEX));
+            expectRejected("bad BIT STRING in digestAlgorithms " + i, parsers, berContentInfo(SIGNED_DATA_HEX,
+                "020101" + "3180" + bad + "0000" + BER_ENCAP_HEX + EMPTY_SET_HEX));
+        }
     }
 
     public void testEnvelopedData()
@@ -187,6 +239,12 @@ public class CMSMalformedContentTest
         // encryptedContent is OPTIONAL in the ASN.1 but there is nothing to decrypt without it
         expectMissingContent("no encryptedContent", parsers, contentInfo(type, new ASN1Encodable[]{
             new ASN1Integer(0), recipientInfos(), encryptedContentInfo(false) }));
+
+        for (int i = 0; i != BAD_BIT_STRINGS.length; i++)
+        {
+            expectRejected("bad BIT STRING in recipientInfos " + i, parsers, berContentInfo("06092a864886f70d010703",
+                "020100" + "3180" + BAD_BIT_STRINGS[i] + "0000" + "3080" + DATA_HEX + AES_CBC_HEX + "8001ff" + "0000"));
+        }
     }
 
     public void testAuthenticatedData()
@@ -217,6 +275,164 @@ public class CMSMalformedContentTest
 
         expectMissingContent("no eContent", new Parse[]{ AUTHENTICATED_PARSER }, contentInfo(type, new ASN1Encodable[]{
             new ASN1Integer(0), recipientInfos(), AES_CBC, new ContentInfo(DATA, null), mac() }));
+
+        for (int i = 0; i != BAD_BIT_STRINGS.length; i++)
+        {
+            expectRejected("bad BIT STRING in recipientInfos " + i, parsers, berContentInfo("060b2a864886f70d0109100102",
+                "020100" + "3180" + BAD_BIT_STRINGS[i] + "0000" + AES_CBC_HEX + BER_ENCAP_HEX + "0400"));
+        }
+    }
+
+    public void testTimeStampedData()
+        throws Exception
+    {
+        String tsd = "060b2a864886f70d010910011f";
+        Parse[] parsers = new Parse[]{ TIME_STAMPED_PARSER };
+
+        expectRejected("wrong content type", parsers, berContentInfo(DATA_HEX, "020101"));
+        expectRejected("no temporalEvidence", parsers, berContentInfo(tsd, "020101" + "0400"));
+        for (int i = 0; i != BAD_BIT_STRINGS.length; i++)
+        {
+            expectRejected("bad BIT STRING in metaData " + i, parsers, berContentInfo(tsd,
+                "020101" + "3080" + BAD_BIT_STRINGS[i] + "0000" + "0400" + "a0803080308000000000" + "0000"));
+            expectRejected("bad BIT STRING in temporalEvidence " + i, parsers, berContentInfo(tsd,
+                "020101" + "0400" + "a080" + BAD_BIT_STRINGS[i] + "0000"));
+        }
+    }
+
+    /**
+     * The attribute sets are only reached once the content has been read, so these are real messages
+     * whose marker attribute value is patched after generation.
+     */
+    public void testMalformedAttributes()
+        throws Exception
+    {
+        final Provider bc = new BouncyCastleProvider();
+        final SecretKey kek = new SecretKeySpec(new byte[16], "AES");
+        final byte[] kekId = new byte[]{ 1, 2, 3 };
+
+        // Attribute { 1.2.3.4, SET { BIT STRING 5a5a5a } }
+        String attr = "300d06032a0304" + "3106" + "0304005a5a5a";
+        AttributeTable attrs = new AttributeTable(Attribute.getInstance(Hex.decode(attr)));
+
+        byte[][] messages = new byte[5][];
+        Parse[] parsers = new Parse[5];
+
+        CMSEnvelopedDataStreamGenerator envGen = new CMSEnvelopedDataStreamGenerator();
+        envGen.addRecipientInfoGenerator(new JceKEKRecipientInfoGenerator(kekId, kek).setProvider(bc));
+        envGen.setUnprotectedAttributeGenerator(new SimpleAttributeTableGenerator(attrs));
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        OutputStream out = envGen.open(bOut, new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES128_CBC).setProvider(bc).build());
+        out.write(new byte[20]);
+        out.close();
+        messages[0] = bOut.toByteArray();
+        parsers[0] = new Parse()
+        {
+            public void run(byte[] encoding)
+                throws Exception
+            {
+                CMSEnvelopedDataParser ep = new CMSEnvelopedDataParser(encoding);
+                firstRecipient(ep.getRecipientInfos()).getContentStream(new JceKEKEnvelopedRecipient(kek).setProvider(bc)).drain();
+                ep.getUnprotectedAttributes();
+            }
+        };
+
+        for (int i = 0; i != 2; i++)
+        {
+            CMSAuthEnvelopedDataStreamGenerator authEnvGen = new CMSAuthEnvelopedDataStreamGenerator();
+            authEnvGen.addRecipientInfoGenerator(new JceKEKRecipientInfoGenerator(kekId, kek).setProvider(bc));
+            if (i == 0)
+            {
+                authEnvGen.setAuthenticatedAttributeGenerator(new SimpleAttributeTableGenerator(attrs));
+            }
+            else
+            {
+                authEnvGen.setUnauthenticatedAttributeGenerator(new SimpleAttributeTableGenerator(attrs));
+            }
+            bOut = new ByteArrayOutputStream();
+            out = authEnvGen.open(bOut, (OutputAEADEncryptor)new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES128_GCM).setProvider(bc).build());
+            out.write(new byte[20]);
+            out.close();
+            messages[1 + i] = bOut.toByteArray();
+            parsers[1 + i] = new Parse()
+            {
+                public void run(byte[] encoding)
+                    throws Exception
+                {
+                    CMSAuthEnvelopedDataParser ep = new CMSAuthEnvelopedDataParser(encoding);
+                    firstRecipient(ep.getRecipientInfos()).getContentStream(new JceKEKAuthEnvelopedRecipient(kek).setProvider(bc)).drain();
+                    ep.getAuthAttrs();
+                    ep.getMac();
+                    ep.getUnauthAttrs();
+                }
+            };
+        }
+
+        for (int i = 0; i != 2; i++)
+        {
+            CMSAuthenticatedDataStreamGenerator authGen = new CMSAuthenticatedDataStreamGenerator();
+            authGen.addRecipientInfoGenerator(new JceKEKRecipientInfoGenerator(kekId, kek).setProvider(bc));
+            if (i == 0)
+            {
+                authGen.setAuthenticatedAttributeGenerator(new SimpleAttributeTableGenerator(attrs));
+            }
+            else
+            {
+                authGen.setUnauthenticatedAttributeGenerator(new SimpleAttributeTableGenerator(attrs));
+            }
+            bOut = new ByteArrayOutputStream();
+            out = authGen.open(bOut, new JceCMSMacCalculatorBuilder(CMSAlgorithm.DES_EDE3_CBC).setProvider(bc).build(),
+                DIGESTS.get(SHA256));
+            out.write(new byte[20]);
+            out.close();
+            messages[3 + i] = bOut.toByteArray();
+            parsers[3 + i] = new Parse()
+            {
+                public void run(byte[] encoding)
+                    throws Exception
+                {
+                    CMSAuthenticatedDataParser ap = new CMSAuthenticatedDataParser(encoding, DIGESTS);
+                    firstRecipient(ap.getRecipientInfos()).getContentStream(new JceKEKAuthenticatedRecipient(kek).setProvider(bc)).drain();
+                    ap.getAuthAttrs();
+                    ap.getMac();
+                    ap.getUnauthAttrs();
+                }
+            };
+        }
+
+        String[] labels = { "unprotectedAttrs", "AuthEnveloped authAttrs", "AuthEnveloped unauthAttrs",
+            "Authenticated authAttrs", "Authenticated unauthAttrs" };
+        for (int i = 0; i != messages.length; i++)
+        {
+            String hex = Hex.toHexString(messages[i]);
+            assertTrue(labels[i], hex.indexOf(attr) >= 0);
+
+            // the unpatched message is the compatibility half
+            parsers[i].run(messages[i]);
+
+            Parse[] p = new Parse[]{ parsers[i] };
+            expectRejected(labels[i] + ": bad BIT STRING in a value", p,
+                Hex.decode(hex.replace(attr, "300d06032a0304" + "3106" + "0304095a5a5a")));
+            expectRejected(labels[i] + ": element not an Attribute", p,
+                Hex.decode(hex.replace(attr, "040d06032a0304" + "3106" + "0304005a5a5a")));
+        }
+
+        // getUnauthAttrs() has to read past the authenticated attributes and the mac itself
+        CMSAuthEnvelopedDataParser aep = new CMSAuthEnvelopedDataParser(messages[2]);
+        firstRecipient(aep.getRecipientInfos()).getContentStream(new JceKEKAuthEnvelopedRecipient(kek).setProvider(bc)).drain();
+        assertNotNull(aep.getUnauthAttrs());
+        assertNotNull(aep.getMac());
+
+        CMSAuthenticatedDataParser ap = new CMSAuthenticatedDataParser(messages[4], DIGESTS);
+        firstRecipient(ap.getRecipientInfos()).getContentStream(new JceKEKAuthenticatedRecipient(kek).setProvider(bc)).drain();
+        assertNotNull(ap.getUnauthAttrs());
+        assertNotNull(ap.getAuthAttrs());
+        assertNotNull(ap.getMac());
+    }
+
+    private static RecipientInformation firstRecipient(RecipientInformationStore store)
+    {
+        return (RecipientInformation)store.getRecipients().iterator().next();
     }
 
     public void testAuthEnvelopedData()
@@ -334,6 +550,14 @@ public class CMSMalformedContentTest
         throws IOException
     {
         return new DERSequence(type).getEncoded();
+    }
+
+    /**
+     * An indefinite-length ContentInfo, [0] and content SEQUENCE around the given hex fields.
+     */
+    private static byte[] berContentInfo(String typeHex, String fieldsHex)
+    {
+        return Hex.decode("3080" + typeHex + "a080" + "3080" + fieldsHex + "0000" + "0000" + "0000");
     }
 
     private static byte[] contentInfo(ASN1ObjectIdentifier type, ASN1Encodable[] fields)

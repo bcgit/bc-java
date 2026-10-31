@@ -5,6 +5,7 @@ import java.io.IOException;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1OctetString;
+import org.bouncycastle.asn1.ASN1OctetStringParser;
 import org.bouncycastle.asn1.ASN1ParsingException;
 import org.bouncycastle.asn1.ASN1SequenceParser;
 import org.bouncycastle.asn1.ASN1SetParser;
@@ -133,6 +134,10 @@ public class AuthEnvelopedDataParser
         if (nextObject instanceof ASN1TaggedObjectParser)
         {
             ASN1TaggedObjectParser o = (ASN1TaggedObjectParser)nextObject;
+            if (!o.hasContextTag(1))
+            {
+                throw new IOException("AuthEnvelopedData has an unexpected element after authEncryptedContentInfo");
+            }
             nextObject = null;
             return (ASN1SetParser)ASN1Util.parseContextBaseUniversal(o, 1, false, BERTags.SET_OF);
         }
@@ -141,7 +146,7 @@ public class AuthEnvelopedDataParser
         // EncryptedContentInfo is not id-data."
         if (!isData)
         {
-            throw new ASN1ParsingException("authAttrs must be present with non-data content");
+            throw new IOException("authAttrs must be present with non-data content");
         }
 
         return null;
@@ -163,7 +168,12 @@ public class AuthEnvelopedDataParser
         ASN1Encodable o = nextObject;
         nextObject = null;
 
-        return ASN1OctetString.getInstance(o.toASN1Primitive());
+        if (!(o instanceof ASN1OctetStringParser))
+        {
+            throw new IOException("AuthEnvelopedData mac is not an OCTET STRING");
+        }
+
+        return ASN1OctetString.getInstance(((ASN1OctetStringParser)o).getLoadedObject());
     }
 
     public ASN1SetParser getUnauthAttrs()
@@ -176,7 +186,7 @@ public class AuthEnvelopedDataParser
 
         if (nextObject != null)
         {
-            if (!(nextObject instanceof ASN1TaggedObjectParser))
+            if (!(nextObject instanceof ASN1TaggedObjectParser) || !((ASN1TaggedObjectParser)nextObject).hasContextTag(2))
             {
                 throw new IOException("AuthEnvelopedData has an unexpected element after mac");
             }

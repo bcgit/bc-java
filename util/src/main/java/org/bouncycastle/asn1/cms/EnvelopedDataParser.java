@@ -123,7 +123,7 @@ public class EnvelopedDataParser
 
         if (_nextObject != null)
         {
-            if (!(_nextObject instanceof ASN1TaggedObjectParser))
+            if (!(_nextObject instanceof ASN1TaggedObjectParser) || !((ASN1TaggedObjectParser)_nextObject).hasContextTag(1))
             {
                 throw new IOException("EnvelopedData has an unexpected element after encryptedContentInfo");
             }

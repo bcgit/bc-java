@@ -143,7 +143,7 @@ public class CMSAuthenticatedDataParser
             //
             // read the recipients
             //
-            ASN1Set recipientInfos = ASN1Set.getInstance(authData.getRecipientInfos().toASN1Primitive());
+            ASN1Set recipientInfos = ASN1Set.getInstance(authData.getRecipientInfos().getLoadedObject());
 
             this.macAlg = authData.getMacAlgorithm();
 
@@ -285,7 +285,7 @@ public class CMSAuthenticatedDataParser
 
             if (set != null)
             {
-                authAttrSet = (ASN1Set)set.toASN1Primitive();
+                authAttrSet = ASN1Set.getInstance(set.getLoadedObject());
             }
 
             // RFC 5652 sec 9.1: digestAlgorithm and authAttrs are set together. The secureReadable
@@ -321,7 +321,7 @@ public class CMSAuthenticatedDataParser
 
             if (set != null)
             {
-                authAttrs = new AttributeTable(set);
+                authAttrs = CMSUtils.getAttributeTable(set);
             }
         }
 
@@ -339,6 +339,7 @@ public class CMSAuthenticatedDataParser
     {
         if (unauthAttrs == null && unauthAttrNotRead)
         {
+            getMac();     // the unauthenticated attributes follow the authenticated attributes and the mac
             unauthAttrNotRead = false;
             unauthAttrs = CMSUtils.getAttributesTable(authData.getUnauthAttrs());
         }

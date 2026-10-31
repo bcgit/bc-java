@@ -71,6 +71,19 @@ public class CMSTimeStampedDataParser
         {
             throw new CMSException("parsing exception: " + e.getMessage(), e);
         }
+        catch (ClassCastException e)
+        {
+            // malformed content surfaces from the ASN.1 layer as one of these three runtime types, see CMSTimeStampedData
+            throw new CMSException("Malformed content: " + e, e);
+        }
+        catch (IllegalArgumentException e)
+        {
+            throw new CMSException("Malformed content: " + e, e);
+        }
+        catch (IllegalStateException e)
+        {
+            throw new CMSException("Malformed content: " + e, e);
+        }
     }
 
     /**
@@ -243,6 +256,18 @@ public class CMSTimeStampedDataParser
         catch (IOException e)
         {
             throw new CMSException("unable to parse evidence block: " + e.getMessage(), e);
+        }
+        catch (ClassCastException e)
+        {
+            throw new CMSException("unable to parse evidence block: " + e, e);
+        }
+        catch (IllegalArgumentException e)
+        {
+            throw new CMSException("unable to parse evidence block: " + e, e);
+        }
+        catch (IllegalStateException e)
+        {
+            throw new CMSException("unable to parse evidence block: " + e, e);
         }
     }
 }

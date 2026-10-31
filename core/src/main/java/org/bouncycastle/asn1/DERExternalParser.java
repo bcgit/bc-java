@@ -72,5 +72,9 @@ public class DERExternalParser
         {
             throw new ASN1Exception("corrupted stream detected", e);
         }
+        catch (IllegalStateException e)
+        {
+            throw new ASN1Exception("corrupted stream detected", e);
+        }
     }
 }

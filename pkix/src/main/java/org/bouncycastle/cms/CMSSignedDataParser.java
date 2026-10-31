@@ -186,7 +186,7 @@ public class CMSSignedDataParser
 
             while ((o = digAlgs.readObject()) != null)
             {
-                ASN1Primitive algPrim = o.toASN1Primitive();
+                ASN1Primitive algPrim = CMSUtils.getLoadedObject(o);
 
                 digestAlgsVector.add(algPrim);
 
@@ -856,10 +856,11 @@ public class CMSSignedDataParser
 
     private static ASN1Set getASN1Set(
         ASN1SetParser asn1SetParser)
+        throws IOException
     {
         return asn1SetParser == null
             ?   null
-            :   ASN1Set.getInstance(asn1SetParser.toASN1Primitive());
+            :   ASN1Set.getInstance(asn1SetParser.getLoadedObject());
     }
 
     private static void pipeEncapsulatedOctetString(ContentInfoParser encapContentInfo,

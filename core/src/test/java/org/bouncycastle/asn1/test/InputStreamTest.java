@@ -2,10 +2,15 @@ package org.bouncycastle.asn1.test;
 
 import java.io.IOException;
 
+import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1Exception;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.asn1.ASN1StreamParser;
+import org.bouncycastle.asn1.InMemoryRepresentable;
 import org.bouncycastle.util.encoders.Base64;
+import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
 public class InputStreamTest
@@ -89,6 +94,40 @@ public class InputStreamTest
         // choices, so only require the clean IOException
         testWithByteArray(memoryError1, null);
         testWithByteArray(memoryError2, null);
+
+        // malformed content inside indefinite-length constructed encodings
+        testWithByteArray(Hex.decode("23800300000000"), "content octets cannot be empty");
+        testWithByteArray(Hex.decode("3080030209000000"), "invalid pad bits detected");
+        testWithByteArray(Hex.decode("3180030209000000"), "invalid pad bits detected");
+        testWithByteArray(Hex.decode("a3800300000000"), "truncated BIT STRING detected");
+        // EXTERNAL holding an implicitly tagged object
+        testWithByteArray(Hex.decode("28808001840000"), "corrupted stream detected");
+
+        // and through the streaming parser, where the same content must surface as a checked exception
+        testWithStreamParser(Hex.decode("23800300000000"), "content octets cannot be empty");
+        testWithStreamParser(Hex.decode("230403020900"), "pad bits cannot be greater than 7 or less than 0");
+        testWithStreamParser(Hex.decode("2380030109000000"), "zero length data with non-zero pad bits");
+        testWithStreamParser(Hex.decode("3080030209000000"), "invalid pad bits detected");
+        testWithStreamParser(Hex.decode("3004030209000000"), "invalid pad bits detected");
+        testWithStreamParser(Hex.decode("3180030209000000"), "invalid pad bits detected");
+        testWithStreamParser(Hex.decode("a3800300000000"), "truncated BIT STRING detected");
+        testWithStreamParser(Hex.decode("28808001840000"), "corrupted stream detected");
+    }
+
+    private void testWithStreamParser(byte[] data, String message)
+        throws IOException
+    {
+        ASN1Encodable obj = new ASN1StreamParser(data).readObject();
+        try
+        {
+            ((InMemoryRepresentable)obj).getLoadedObject();
+
+            fail("malformed input accepted without exception");
+        }
+        catch (ASN1Exception e)
+        {
+            isEquals(e.getMessage(), message, e.getMessage());
+        }
     }
 
     private void testWithByteArray(byte[] data, String message)

@@ -9,6 +9,7 @@ import org.bouncycastle.asn1.ASN1OctetStringParser;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1SequenceParser;
 import org.bouncycastle.asn1.DERIA5String;
+import org.bouncycastle.asn1.InMemoryRepresentable;
 
 /**
  * Parser for <a href="https://tools.ietf.org/html/rfc5544">RFC 5544</a>:
@@ -48,7 +49,8 @@ public class TimeStampedDataParser
         }
         if (obj instanceof MetaData || obj instanceof ASN1SequenceParser)
         {
-            this.metaData = MetaData.getInstance(obj.toASN1Primitive());
+            this.metaData = MetaData.getInstance(obj instanceof ASN1SequenceParser
+                ? ((ASN1SequenceParser)obj).getLoadedObject() : obj.toASN1Primitive());
             obj = parser.readObject();
         }
         if (obj instanceof ASN1OctetStringParser)
@@ -107,7 +109,13 @@ public class TimeStampedDataParser
     {
         if (temporalEvidence == null)
         {
-            temporalEvidence = Evidence.getInstance(parser.readObject().toASN1Primitive());
+            ASN1Encodable obj = parser.readObject();
+
+            if (obj != null)
+            {
+                temporalEvidence = Evidence.getInstance(obj instanceof InMemoryRepresentable
+                    ? ((InMemoryRepresentable)obj).getLoadedObject() : obj.toASN1Primitive());
+            }
         }
 
         return temporalEvidence;

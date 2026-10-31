@@ -282,6 +282,26 @@ public class CMSSequenceFieldOrderTest
         }
     }
 
+    /**
+     * A field with the wrong tag, or of the wrong type, has to be reported as the IOException the getter declares.
+     */
+    private void rejectsStreamChecked(String label, StreamParser parser, ASN1Encodable[] elements)
+    {
+        try
+        {
+            parser.parse(stream(elements));
+            fail(label + " accepted an invalid encoding");
+        }
+        catch (IOException e)
+        {
+            // expected
+        }
+        catch (RuntimeException e)
+        {
+            fail(label + " threw " + e);
+        }
+    }
+
     private void streamingParsers()
         throws IOException
     {
@@ -339,7 +359,7 @@ public class CMSSequenceFieldOrderTest
         acceptsStream("EnvelopedDataParser unprotectedAttrs", enveloped, concat(envelopedHead, new ASN1Encodable[]{ unprotectedAttrs }));
         rejectsStream("EnvelopedDataParser trailing", enveloped, concat(envelopedHead, els(unprotectedAttrs, ONE)));
         rejectsStream("EnvelopedDataParser INTEGER after encryptedContentInfo", enveloped, concat(envelopedHead, new ASN1Encodable[]{ ONE }));
-        rejectsStream("EnvelopedDataParser [5] unprotectedAttrs", enveloped, concat(envelopedHead, new ASN1Encodable[]{ ctx(5, false, ATTRS) }));
+        rejectsStreamChecked("EnvelopedDataParser [5] unprotectedAttrs", enveloped, concat(envelopedHead, new ASN1Encodable[]{ ctx(5, false, ATTRS) }));
 
         StreamParser authEnveloped = new StreamParser()
         {
@@ -361,6 +381,11 @@ public class CMSSequenceFieldOrderTest
         acceptsStream("AuthEnvelopedDataParser unauthAttrs", authEnveloped, concat(authEnvelopedHead, new ASN1Encodable[]{ unauthAttrs2 }));
         rejectsStream("AuthEnvelopedDataParser trailing", authEnveloped, concat(authEnvelopedHead, els(unauthAttrs2, ONE)));
         rejectsStream("AuthEnvelopedDataParser INTEGER after mac", authEnveloped, concat(authEnvelopedHead, new ASN1Encodable[]{ ONE }));
+        rejectsStreamChecked("AuthEnvelopedDataParser [1] unauthAttrs", authEnveloped, concat(authEnvelopedHead, new ASN1Encodable[]{ ctx(1, false, ATTRS) }));
+        rejectsStreamChecked("AuthEnvelopedDataParser [3] authAttrs", authEnveloped, new ASN1Encodable[]{ ZERO, RECIPIENTS, ECI, ctx(3, false, ATTRS), OCTETS });
+        rejectsStreamChecked("AuthEnvelopedDataParser INTEGER mac", authEnveloped, new ASN1Encodable[]{ ZERO, RECIPIENTS, ECI, ONE });
+        rejectsStreamChecked("AuthEnvelopedDataParser no authAttrs with non-data content", authEnveloped,
+            new ASN1Encodable[]{ ZERO, RECIPIENTS, new DERSequence(new ASN1Encodable[]{ CMSObjectIdentifiers.signedData, AES }), OCTETS });
 
         StreamParser authenticated = new StreamParser()
         {
@@ -387,6 +412,9 @@ public class CMSSequenceFieldOrderTest
         rejectsStream("AuthenticatedDataParser [5] digestAlgorithm", authenticated, concat(authenticatedHead, concat(new ASN1Encodable[]{ ctx(5, false, SHA256) }, authenticatedTail)));
         rejectsStream("AuthenticatedDataParser trailing", authenticated, concat(authenticatedHead, concat(authenticatedTail, els(unauthAttrs3, ONE))));
         rejectsStream("AuthenticatedDataParser INTEGER after mac", authenticated, concat(authenticatedHead, concat(authenticatedTail, new ASN1Encodable[]{ ONE })));
+        rejectsStreamChecked("AuthenticatedDataParser [2] unauthAttrs", authenticated, concat(authenticatedHead, concat(authenticatedTail, new ASN1Encodable[]{ ctx(2, false, ATTRS) })));
+        rejectsStreamChecked("AuthenticatedDataParser [3] authAttrs", authenticated, concat(authenticatedHead, new ASN1Encodable[]{ DATA, ctx(3, false, ATTRS), OCTETS }));
+        rejectsStreamChecked("AuthenticatedDataParser INTEGER mac", authenticated, concat(authenticatedHead, new ASN1Encodable[]{ DATA, ONE }));
 
         StreamParser contentInfo = new StreamParser()
         {

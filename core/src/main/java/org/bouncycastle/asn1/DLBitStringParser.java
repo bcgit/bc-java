@@ -36,7 +36,14 @@ public class DLBitStringParser
     public ASN1Primitive getLoadedObject()
         throws IOException
     {
-        return ASN1BitString.createPrimitive(stream.toByteArray());
+        try
+        {
+            return ASN1BitString.createPrimitive(stream.toByteArray());
+        }
+        catch (IllegalArgumentException e)
+        {
+            throw new ASN1Exception(e.getMessage(), e);
+        }
     }
 
     public ASN1Primitive toASN1Primitive()
@@ -56,7 +63,7 @@ public class DLBitStringParser
         int length = stream.getRemaining();
         if (length < 1)
         {
-            throw new IllegalStateException("content octets cannot be empty");
+            throw new ASN1Exception("content octets cannot be empty");
         }
 
         padBits = stream.read();
@@ -64,11 +71,11 @@ public class DLBitStringParser
         {
             if (length < 2)
             {
-                throw new IllegalStateException("zero length data with non-zero pad bits");
+                throw new ASN1Exception("zero length data with non-zero pad bits");
             }
             if (padBits > 7)
             {
-                throw new IllegalStateException("pad bits cannot be greater than 7 or less than 0");
+                throw new ASN1Exception("pad bits cannot be greater than 7 or less than 0");
             }
             if (octetAligned)
             {

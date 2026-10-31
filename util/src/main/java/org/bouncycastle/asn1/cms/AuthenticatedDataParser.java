@@ -5,6 +5,7 @@ import java.io.IOException;
 import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1OctetString;
+import org.bouncycastle.asn1.ASN1OctetStringParser;
 import org.bouncycastle.asn1.ASN1SequenceParser;
 import org.bouncycastle.asn1.ASN1SetParser;
 import org.bouncycastle.asn1.ASN1TaggedObjectParser;
@@ -175,6 +176,10 @@ public class AuthenticatedDataParser
         if (nextObject instanceof ASN1TaggedObjectParser)
         {
             ASN1TaggedObjectParser o = (ASN1TaggedObjectParser)nextObject;
+            if (!o.hasContextTag(2))
+            {
+                throw new IOException("AuthenticatedData has an unexpected element after encapContentInfo");
+            }
             nextObject = null;
             return (ASN1SetParser)ASN1Util.parseContextBaseUniversal(o, 2, false, BERTags.SET_OF);
         }
@@ -198,7 +203,12 @@ public class AuthenticatedDataParser
         ASN1Encodable o = nextObject;
         nextObject = null;
 
-        return ASN1OctetString.getInstance(o.toASN1Primitive());
+        if (!(o instanceof ASN1OctetStringParser))
+        {
+            throw new IOException("AuthenticatedData mac is not an OCTET STRING");
+        }
+
+        return ASN1OctetString.getInstance(((ASN1OctetStringParser)o).getLoadedObject());
     }
 
     public ASN1SetParser getUnauthAttrs()
@@ -211,7 +221,7 @@ public class AuthenticatedDataParser
 
         if (nextObject != null)
         {
-            if (!(nextObject instanceof ASN1TaggedObjectParser))
+            if (!(nextObject instanceof ASN1TaggedObjectParser) || !((ASN1TaggedObjectParser)nextObject).hasContextTag(3))
             {
                 throw new IOException("AuthenticatedData has an unexpected element after mac");
             }
