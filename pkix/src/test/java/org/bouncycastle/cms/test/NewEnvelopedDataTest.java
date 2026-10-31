@@ -716,40 +716,40 @@ public class NewEnvelopedDataTest
 
         final byte[] small = reorderedRecipientsMessage(n / 8);
         final byte[] large = reorderedRecipientsMessage(n);
-        CMSTestUtil.assertLinearGrowth("CMSEnvelopedData", CMSTestUtil.minNanos(new CMSTestUtil.Timed()
+        CMSTestUtil.assertLinearGrowth("CMSEnvelopedData", new CMSTestUtil.Timed()
         {
             public void run()
                 throws Exception
             {
                 new CMSEnvelopedData(small);
             }
-        }), CMSTestUtil.minNanos(new CMSTestUtil.Timed()
+        }, new CMSTestUtil.Timed()
         {
             public void run()
                 throws Exception
             {
                 new CMSEnvelopedData(large);
             }
-        }));
+        });
 
         // the store compares issuer names on lookup, not when it is built, so the lookup is timed too
         final RecipientInformationStore smallStore = new CMSEnvelopedData(small).getRecipientInfos();
         final RecipientInformationStore largeStore = new CMSEnvelopedData(large).getRecipientInfos();
         final KeyTransRecipientId smallRid = new KeyTransRecipientId(CMSTestUtil.makeLargeName(n / 8, false), BigInteger.ONE);
         final KeyTransRecipientId largeRid = new KeyTransRecipientId(plain, BigInteger.ONE);
-        CMSTestUtil.assertLinearGrowth("getRecipients", CMSTestUtil.minNanos(new CMSTestUtil.Timed()
+        CMSTestUtil.assertLinearGrowth("getRecipients", new CMSTestUtil.Timed()
         {
             public void run()
             {
                 smallStore.getRecipients(smallRid);
             }
-        }), CMSTestUtil.minNanos(new CMSTestUtil.Timed()
+        }, new CMSTestUtil.Timed()
         {
             public void run()
             {
                 largeStore.getRecipients(largeRid);
             }
-        }));
+        });
     }
 
     private static byte[] reorderedRecipientsMessage(int n)
@@ -774,21 +774,21 @@ public class NewEnvelopedDataTest
 
         final byte[] small = collidingRecipientsMessage(issuer, k / 8);
         final byte[] large = collidingRecipientsMessage(issuer, k);
-        CMSTestUtil.assertLinearGrowth("CMSEnvelopedData", CMSTestUtil.minNanos(new CMSTestUtil.Timed()
+        CMSTestUtil.assertLinearGrowth("CMSEnvelopedData", new CMSTestUtil.Timed()
         {
             public void run()
                 throws Exception
             {
                 new CMSEnvelopedData(small);
             }
-        }), CMSTestUtil.minNanos(new CMSTestUtil.Timed()
+        }, new CMSTestUtil.Timed()
         {
             public void run()
                 throws Exception
             {
                 new CMSEnvelopedData(large);
             }
-        }));
+        });
     }
 
     private static byte[] collidingRecipientsMessage(X500Name issuer, int k)

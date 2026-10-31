@@ -868,18 +868,53 @@ public class CMSTestUtil
             throws Exception;
     }
 
-    /** The fastest of three runs, which drops most of the noise a loaded machine adds. */
-    public static long minNanos(Timed timed)
+    /**
+     * Check that the large case, eight times the input of the small one, takes less than 24 times as
+     * long. The two are timed alternately, so a burst of load from the parallel test forks lands on
+     * both rather than on whichever happened to be running, and the fastest of five rounds is kept.
+     * A noisy comparison is repeated before it is reported: quadratic work grows about sixty-four
+     * times and so fails every attempt.
+     */
+    public static void assertLinearGrowth(String what, Timed small, Timed large)
         throws Exception
     {
-        long best = Long.MAX_VALUE;
-        for (int i = 0; i != 3; i++)
+        long smallTime = 0;
+        long largeTime = 0;
+        for (int attempt = 0; attempt != 3; attempt++)
         {
-            long start = nanoTime();
-            timed.run();
-            best = Math.min(best, nanoTime() - start);
+            smallTime = Long.MAX_VALUE;
+            largeTime = Long.MAX_VALUE;
+            for (int round = 0; round != 5; round++)
+            {
+                smallTime = Math.min(smallTime, timeOf(small));
+                largeTime = Math.min(largeTime, timeOf(large));
+            }
+            if (largeTime < 24 * smallTime)
+            {
+                return;
+            }
         }
-        return best;
+        assertLinearGrowth(what, smallTime, largeTime);
+    }
+
+    /**
+     * The time of one run, repeating it for at least 20ms so that a short run still measures
+     * something on the millisecond clock nanoTime() falls back to.
+     */
+    private static long timeOf(Timed timed)
+        throws Exception
+    {
+        long start = nanoTime();
+        long elapsed;
+        int count = 0;
+        do
+        {
+            timed.run();
+            count++;
+            elapsed = nanoTime() - start;
+        }
+        while (elapsed < 20000000L);
+        return elapsed / count;
     }
 
     private static final java.lang.reflect.Method NANO_TIME = findNanoTime();

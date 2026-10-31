@@ -877,21 +877,21 @@ public class NewSignedDataTest
 
         final byte[] smallSigners = reorderedSignersMessage(n / 8);
         final byte[] largeSigners = reorderedSignersMessage(n);
-        CMSTestUtil.assertLinearGrowth("getSignerInfos", CMSTestUtil.minNanos(new CMSTestUtil.Timed()
+        CMSTestUtil.assertLinearGrowth("getSignerInfos", new CMSTestUtil.Timed()
         {
             public void run()
                 throws Exception
             {
                 new CMSSignedData(smallSigners).getSignerInfos();
             }
-        }), CMSTestUtil.minNanos(new CMSTestUtil.Timed()
+        }, new CMSTestUtil.Timed()
         {
             public void run()
                 throws Exception
             {
                 new CMSSignedData(largeSigners).getSignerInfos();
             }
-        }));
+        });
 
         // one signer and one certificate whose issuer is the reordered form: the documented lookup
         final CMSSignedData smallLookup = reorderedLookupMessage(n / 8);
@@ -900,19 +900,19 @@ public class NewSignedDataTest
         final SignerId largeSid = ((SignerInformation)largeLookup.getSignerInfos().getSigners().iterator().next()).getSID();
 
         assertEquals(1, largeLookup.getCertificates().getMatches(largeSid).size());
-        CMSTestUtil.assertLinearGrowth("getMatches", CMSTestUtil.minNanos(new CMSTestUtil.Timed()
+        CMSTestUtil.assertLinearGrowth("getMatches", new CMSTestUtil.Timed()
         {
             public void run()
             {
                 smallLookup.getCertificates().getMatches(smallSid);
             }
-        }), CMSTestUtil.minNanos(new CMSTestUtil.Timed()
+        }, new CMSTestUtil.Timed()
         {
             public void run()
             {
                 largeLookup.getCertificates().getMatches(largeSid);
             }
-        }));
+        });
     }
 
     private static byte[] reorderedSignersMessage(int n)
@@ -947,21 +947,21 @@ public class NewSignedDataTest
 
         final byte[] small = collidingSignersMessage(issuer, k / 8);
         final byte[] large = collidingSignersMessage(issuer, k);
-        CMSTestUtil.assertLinearGrowth("getSignerInfos", CMSTestUtil.minNanos(new CMSTestUtil.Timed()
+        CMSTestUtil.assertLinearGrowth("getSignerInfos", new CMSTestUtil.Timed()
         {
             public void run()
                 throws Exception
             {
                 new CMSSignedData(small).getSignerInfos();
             }
-        }), CMSTestUtil.minNanos(new CMSTestUtil.Timed()
+        }, new CMSTestUtil.Timed()
         {
             public void run()
                 throws Exception
             {
                 new CMSSignedData(large).getSignerInfos();
             }
-        }));
+        });
     }
 
     private static byte[] collidingSignersMessage(X500Name issuer, int k)
@@ -1048,21 +1048,21 @@ public class NewSignedDataTest
 
         final byte[] small = collidingAttributesMessage(CMSTestUtil.collidingOIDs(12));
         final byte[] large = collidingAttributesMessage(oids);
-        CMSTestUtil.assertLinearGrowth("unsigned attribute table", CMSTestUtil.minNanos(new CMSTestUtil.Timed()
+        CMSTestUtil.assertLinearGrowth("unsigned attribute table", new CMSTestUtil.Timed()
         {
             public void run()
                 throws Exception
             {
                 unsignedAttributeTable(small);
             }
-        }), CMSTestUtil.minNanos(new CMSTestUtil.Timed()
+        }, new CMSTestUtil.Timed()
         {
             public void run()
                 throws Exception
             {
                 unsignedAttributeTable(large);
             }
-        }));
+        });
     }
 
     private static byte[] collidingAttributesMessage(ASN1ObjectIdentifier[] oids)
