@@ -147,6 +147,14 @@ public class Blake2bDigest
         this.t0 = digest.t0;
         this.t1 = digest.t1;
         this.f0 = digest.f0;
+        this.f1 = digest.f1;
+        this.fanout = digest.fanout;
+        this.depth = digest.depth;
+        this.leafLength = digest.leafLength;
+        this.nodeOffset = digest.nodeOffset;
+        this.nodeDepth = digest.nodeDepth;
+        this.innerHashLength = digest.innerHashLength;
+        this.isLastNode = digest.isLastNode;
         this.purpose = digest.purpose;
     }
 
@@ -292,13 +300,13 @@ public class Blake2bDigest
         this.purpose = CryptoServicePurpose.ANY;
         digestLength = param[0];
         keyLength = param[1];
-        fanout = param[2];
-        depth = param[3];
+        fanout = param[2] & 0xFF;
+        depth = param[3] & 0xFF;
         leafLength = Pack.littleEndianToInt(param, 4);
-        nodeOffset |= Pack.littleEndianToInt(param, 8);
+        nodeOffset = Pack.littleEndianToLong(param, 8);
         //xoflength
-        nodeDepth = param[16];
-        innerHashLength = param[17];
+        nodeDepth = param[16] & 0xFF;
+        innerHashLength = param[17] & 0xFF;
 //        byte[] salt = new byte[16];
 //        byte[] personalization = new byte[16];
 //        System.arraycopy(param, 16, salt, 0, 8);
@@ -310,7 +318,7 @@ public class Blake2bDigest
     private void init()
     {
         chainValue[0] = blake2b_IV[0]
-            ^ (digestLength | (keyLength << 8) | ((fanout << 16) | (depth << 24) | (leafLength << 32)));
+            ^ (digestLength | (keyLength << 8) | (fanout << 16) | ((long)depth << 24) | ((leafLength & 0xFFFFFFFFL) << 32));
         chainValue[1] = blake2b_IV[1] ^ nodeOffset;
         chainValue[2] = blake2b_IV[2] ^ ( nodeDepth | (innerHashLength << 8) );
 
@@ -471,7 +479,6 @@ public class Blake2bDigest
         f1 = 0L;
         t0 = 0L;
         t1 = 0L;
-        isLastNode = false;
 
         Arrays.fill(internalState, 0L);
 
@@ -525,6 +532,10 @@ public class Blake2bDigest
         internalState[posB] = Longs.rotateRight(internalState[posB] ^ internalState[posC], 63); // replaces 11 of BLAKE
     }
 
+    /**
+     * Mark this digest as computing the last node at its level of a hash tree. The setting is kept
+     * by reset() and by the copy constructor, like the other tree parameters.
+     */
     protected void setAsLastNode()
     {
         isLastNode = true;

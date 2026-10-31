@@ -3,6 +3,7 @@ package org.bouncycastle.crypto.test;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.Blake2bDigest;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
@@ -91,9 +92,101 @@ public class Blake2bDigestTest
         }
     }
 
+    // fanout, depth, leaf length, node offset, node depth, inner length: expected from Python's hashlib.blake2b
+    private static final long[][] parameterBlocks =
+        {
+            { 2, 2, 4096L, 0L, 0, 0 },
+            { 2, 2, 0xff000001L, 0L, 0, 0 },
+            { 2, 200, 1L, 0L, 0, 0 },
+            { 200, 3, 0L, 7L, 2, 32 },
+            { 2, 2, 0L, (1L << 44) - 1, 1, 64 },
+            { 2, 2, 0L, 1L << 32, 0, 0 },
+            { 1, 1, 0x01010020L, 0L, 0, 0 },
+        };
+
+    private static final String[] parameterBlockHashes =
+        {
+            "6f7b06e531f3349bce0e60198e446535b8e784412ff29c0ed301c49987dac149",
+            "f37435dc697b6de279f70e924a3861e088ee106c7f0e974e09c5708bd103356d",
+            "fb1ed091bcb7f4ef17eb242bf096b25c82d33b7fdb721c691b4435baaea3a4ca",
+            "6e81ec04eb9d9e4ea6718c6c449b86ba6fd303ead49c2be5e89d11da1772a0a2",
+            "ae5305efa4e8911b504ee0c09b4120ad67f4f64b365d549103c68174540ded76",
+            "5fcc7557293f3fd8357128d2af37d6f94e64234ea14ee0f6124d73aa6ba02c83",
+            "168a54880f64e9fa7cda21ae41f58f1fa2d21766286ea36e050c0c3e06ae80df",
+        };
+
+    private static class LastNodeDigest
+        extends Blake2bDigest
+    {
+        LastNodeDigest(byte[] param)
+        {
+            super(null, param);
+            setAsLastNode();
+        }
+    }
+
+    private static byte[] parameterBlock(long[] fields)
+    {
+        byte[] param = new byte[64];
+        param[0] = 32;
+        param[2] = (byte)fields[0];
+        param[3] = (byte)fields[1];
+        Pack.intToLittleEndian((int)fields[2], param, 4);
+        Pack.longToLittleEndian(fields[3], param, 8);
+        param[16] = (byte)fields[4];
+        param[17] = (byte)fields[5];
+        return param;
+    }
+
+    private void checkHash(String label, String expected, Blake2bDigest digest, byte[] message, int off)
+    {
+        digest.update(message, off, message.length - off);
+        byte[] hash = new byte[32];
+        digest.doFinal(hash, 0);
+        if (!Arrays.areEqual(Hex.decode(expected), hash))
+        {
+            fail(label, expected, new String(Hex.encode(hash)));
+        }
+    }
+
+    private void parameterBlockTest()
+    {
+        byte[] message = new byte[100];
+        for (int i = 0; i != message.length; i++)
+        {
+            message[i] = (byte)i;
+        }
+
+        for (int i = 0; i != parameterBlocks.length; i++)
+        {
+            byte[] param = parameterBlock(parameterBlocks[i]);
+            String expected = parameterBlockHashes[i];
+
+            Blake2bDigest digest = new Blake2bDigest(null, param);
+            checkHash("parameter block " + i, expected, digest, message, 0);
+            checkHash("parameter block after reset " + i, expected, digest, message, 0);
+
+            digest.update(message, 0, 40);
+            Blake2bDigest copy = new Blake2bDigest(digest);
+            checkHash("copy of parameter block " + i, expected, copy, message, 40);
+            checkHash("copy of parameter block after reset " + i, expected, copy, message, 0);
+        }
+
+        // hashlib.blake2b(message, digest_size=32, fanout=2, depth=2, leaf_size=4096, last_node=True)
+        String lastNode = "ee84d71e587104bea56b37f12375c4e967d99470f014dafac39d724729b4ad7d";
+        Blake2bDigest lastNodeDigest = new LastNodeDigest(parameterBlock(parameterBlocks[0]));
+        checkHash("last node", lastNode, lastNodeDigest, message, 0);
+        checkHash("last node after reset", lastNode, lastNodeDigest, message, 0);
+        Blake2bDigest lastNodeCopy = new Blake2bDigest(new LastNodeDigest(parameterBlock(parameterBlocks[0])));
+        checkHash("copy of last node", lastNode, lastNodeCopy, message, 0);
+        checkHash("copy of last node after reset", lastNode, lastNodeCopy, message, 0);
+    }
+
     public void performTest()
         throws Exception
     {
+        parameterBlockTest();
+
         // test keyed test vectors:
 
         Blake2bDigest blake2bkeyed = new Blake2bDigest(Hex.decode(keyedTestVectors[0][1]));

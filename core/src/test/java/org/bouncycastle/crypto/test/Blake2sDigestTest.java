@@ -292,6 +292,47 @@ public class Blake2sDigestTest
         }
     }
 
+    private static class LastNodeDigest
+        extends Blake2sDigest
+    {
+        LastNodeDigest()
+        {
+            super(256);
+            setAsLastNode();
+        }
+    }
+
+    private void testLastNode()
+    {
+        byte[] message = new byte[100];
+        for (int i = 0; i != message.length; i++)
+        {
+            message[i] = (byte)i;
+        }
+
+        // hashlib.blake2s(message, digest_size=32, fanout=1, depth=1, last_node=True)
+        byte[] expected = Hex.decode("3ce454cbddaa5d8bd02442edd9633d28208dccc0d5ccb1fb03cdfc14d3046e06");
+
+        Blake2sDigest digest = new LastNodeDigest();
+        checkLastNode("last node", expected, digest, message);
+        checkLastNode("last node after reset", expected, digest, message);
+
+        Blake2sDigest copy = new Blake2sDigest(new LastNodeDigest());
+        checkLastNode("copy of last node", expected, copy, message);
+        checkLastNode("copy of last node after reset", expected, copy, message);
+    }
+
+    private void checkLastNode(String label, byte[] expected, Blake2sDigest digest, byte[] message)
+    {
+        digest.update(message, 0, message.length);
+        byte[] hash = new byte[32];
+        digest.doFinal(hash, 0);
+        if (!Arrays.areEqual(expected, hash))
+        {
+            fail(label, new String(Hex.encode(expected)), new String(Hex.encode(hash)));
+        }
+    }
+
     public void performTest()
         throws Exception
     {
@@ -301,6 +342,7 @@ public class Blake2sDigestTest
         runSelfTest();
         testNullKeyVsUnkeyed();
         testLengthConstruction();
+        testLastNode();
     }
 
     public static void main(String[] args)

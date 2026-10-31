@@ -164,6 +164,8 @@ public class Blake2sDigest
         this.t0 = digest.t0;
         this.t1 = digest.t1;
         this.f0 = digest.f0;
+        this.f1 = digest.f1;
+        this.isLastNode = digest.isLastNode;
         this.salt = Arrays.clone(digest.salt);
         this.personalization = Arrays.clone(digest.personalization);
         this.fanout = digest.fanout;
@@ -286,13 +288,13 @@ public class Blake2sDigest
         this.purpose = CryptoServicePurpose.ANY;
         digestLength = param[0];
         keyLength = param[1];
-        fanout = param[2];
-        depth = param[3];
+        fanout = param[2] & 0xFF;
+        depth = param[3] & 0xFF;
         leafLength = Pack.littleEndianToInt(param, 4);
-        nodeOffset |= Pack.littleEndianToInt(param, 8);
-        //xoflength
-        nodeDepth = param[14];
-        innerHashLength = param[15];
+        // bytes 8 to 13: node offset (for BLAKE2X, a 32 bit node offset and the XOF length)
+        nodeOffset = (Pack.littleEndianToInt(param, 8) & 0xFFFFFFFFL) | ((long)Pack.littleEndianToShort(param, 12) & 0xFFFFL) << 32;
+        nodeDepth = param[14] & 0xFF;
+        innerHashLength = param[15] & 0xFF;
         byte[] salt = new byte[8];
         byte[] personalization = new byte[8];
         System.arraycopy(param, 16, salt, 0, 8);
@@ -493,7 +495,6 @@ public class Blake2sDigest
         f1 = 0;
         t0 = 0;
         t1 = 0;
-        isLastNode = false;
 
         Arrays.fill(internalState, 0);
 
@@ -547,6 +548,10 @@ public class Blake2sDigest
         internalState[posB] = Integers.rotateRight(internalState[posB] ^ internalState[posC], 7);
     }
 
+    /**
+     * Mark this digest as computing the last node at its level of a hash tree. The setting is kept
+     * by reset() and by the copy constructor, like the other tree parameters.
+     */
     protected void setAsLastNode()
     {
         isLastNode = true;
