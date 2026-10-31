@@ -108,7 +108,8 @@ ANT_HOME=/opt/apache-ant-1.6.5 JAVA_HOME=/opt/jdk1.4.2 /opt/apache-ant-1.6.5/bin
   `org.bouncycastle.pqc.crypto.hqc` with the signed provider jar — `GFTest` lives in that
   main-namespace package to reach the package-private `GF` — so an unsigned `bctest` fails
   that suite with `SecurityException: class "…hqc.GF"'s signer information does not match
-  signer information of other classes in the same package`. The `test` target **cannot**
+  signer information of other classes in the same package`. `org.bouncycastle.pqc.crypto.ntruprime`
+  is shared the same way, for `UtilsTest` and the package-private `Utils`. The `test` target **cannot**
   work here: its `build-test` dependency re-jars `bctest` on *every* invocation (ant's
   `init` re-copies and re-preprocesses the sources, so javac always has work to do), which
   strips the signature again after `bcsign4` ran. `test-signed` delegates to the same junit

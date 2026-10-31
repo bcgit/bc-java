@@ -27,9 +27,43 @@ class Utils
             g[i] = (byte)((((getRandomUnsignedInteger(random) & 0x3fffffff) * 3) >>> 30) - 1);
     }
 
-    protected static int getModFreeze(int x, int n)
+    /**
+     * floor(2^32 / 3), the factor getModFreeze() takes for reductions modulo 3.
+     */
+    static final long BARRETT_3 = 0x100000000L / 3;
+
+    /**
+     * Return floor(2^32 / n), the factor getModFreeze() takes for modulus n. The modulus is public, so dividing by
+     * it here is safe; callers compute the factor once, outside their loops.
+     */
+    protected static long getBarrettFactor(int n)
     {
-        return getSignedDivMod((x + ((n - 1) / 2)), n)[1] - ((n - 1) / 2);
+        return 0x100000000L / n;
+    }
+
+    /**
+     * Return x mod n in [-(n - 1) / 2, (n - 1) / 2], for n = 3 or q and any x with x + (n - 1) / 2 in the int range,
+     * without branches, divisions or allocation. The multiply-shift estimate of the quotient is the true quotient or
+     * one off it either way, leaving a remainder in [-n, 2n) that two masked corrections bring into [0, n).
+     *
+     * @param barrett getBarrettFactor(n).
+     */
+    protected static int getModFreeze(int x, int n, long barrett)
+    {
+        int y = x + ((n - 1) / 2);
+        int r = y - n * (int)((y * barrett) >> 32);
+        r += n & (r >> 31);
+        r -= n;
+        r += n & (r >> 31);
+        return r - ((n - 1) / 2);
+    }
+
+    /**
+     * Return x mod 3 in {-1, 0, 1} for x in [-2, 2], without branches.
+     */
+    private static int getSmallModFreeze3(int x)
+    {
+        return x + 3 * (((1 - x) >> 31) - ((x + 1) >> 31));
     }
 
     protected static boolean isInvertiblePolynomialInR3(byte[] g, byte[] ginv, int p)
@@ -70,10 +104,11 @@ class Utils
                 r[i] ^= t;
             }
 
+            // g is small, so f, h, r, v and sign all stay in {-1, 0, 1} and the sums in [-2, 2]
             for (i = 0; i < p + 1; i++)
-                h[i] = (byte)getModFreeze(h[i] + sign * f[i], 3);
+                h[i] = (byte)getSmallModFreeze3(h[i] + sign * f[i]);
             for (i = 0; i < p + 1; i++)
-                r[i] = (byte)getModFreeze(r[i] + sign * v[i], 3);
+                r[i] = (byte)getSmallModFreeze3(r[i] + sign * v[i]);
 
             for (i = 0; i < p; i++)
                 h[i] = h[i+1];
@@ -145,9 +180,21 @@ class Utils
 
     protected static int getInverseInRQ(int x, int q)
     {
+        // x^(q - 2) by square-and-multiply: the exponent is public, so the sequence of operations depends on q alone
+        long barrett = getBarrettFactor(q);
+        int e = q - 2, bit = 0;
+        while ((e >>> bit) > 1)
+            bit++;
+
         int ai = x;
-        for (int i = 1; i < q - 2; i++)
-            ai = getModFreeze(x * ai, q);
+        while (--bit >= 0)
+        {
+            ai = getModFreeze(ai * ai, q, barrett);
+            if (((e >>> bit) & 1) != 0)
+            {
+                ai = getModFreeze(ai * x, q, barrett);
+            }
+        }
         return ai;
     }
 
@@ -158,6 +205,7 @@ class Utils
         short[] r = new short[p + 1];
         short[] v = new short[p + 1];
         int loop, delta, scale, swap, h0, g0, t, i;
+        long barrett = getBarrettFactor(q);
 
         r[0] = (short)getInverseInRQ(3, q);
         h[0] = 1;
@@ -191,9 +239,9 @@ class Utils
             h0 = h[0];
             g0 = g[0];
             for (i = 0; i < p + 1; i++)
-                g[i] = (short)getModFreeze((h0 * g[i]) - (g0 * h[i]), q);
+                g[i] = (short)getModFreeze((h0 * g[i]) - (g0 * h[i]), q, barrett);
             for (i = 0; i < p + 1; i++)
-                r[i] = (short)getModFreeze((h0 * r[i]) - (g0 * v[i]), q);
+                r[i] = (short)getModFreeze((h0 * r[i]) - (g0 * v[i]), q, barrett);
 
             for (i = 0; i < p; i++)
                 g[i] = g[i+1];
@@ -202,39 +250,114 @@ class Utils
 
         scale = getInverseInRQ(h[0], q);
         for (i = 0; i < p; i++)
-            finv3[i] = (short)getModFreeze(scale * v[p - 1 - i], q);
+            finv3[i] = (short)getModFreeze(scale * v[p - 1 - i], q, barrett);
+    }
+
+    private static final int KARATSUBA_THRESHOLD = 32;
+
+    /**
+     * Return the length the Karatsuba recursion runs at for degree p: the smallest c * 2^k >= p with
+     * c <= KARATSUBA_THRESHOLD, so that every level splits evenly. The operands are padded with zeros to it.
+     */
+    private static int getKaratsubaLength(int p)
+    {
+        int k = 0;
+        while (((p - 1) >> k) + 1 > KARATSUBA_THRESHOLD)
+            k++;
+        return (((p - 1) >> k) + 1) << k;
+    }
+
+    /**
+     * r[rOff .. rOff + 2n - 2] = a * b for operands of length n = c * 2^k, using 4n words of t from tOff as scratch.
+     * The control flow depends on n alone. Each level at most doubles the bounds on the operands' coefficients, so
+     * for |a| <= A and |b| <= B every intermediate value is at most n * 2^k * A * B in magnitude.
+     */
+    private static void karatsuba(int[] a, int aOff, int[] b, int bOff, int n, int[] r, int rOff, int[] t, int tOff)
+    {
+        if (n <= KARATSUBA_THRESHOLD)
+        {
+            for (int i = 0; i < 2 * n - 1; i++)
+            {
+                r[rOff + i] = 0;
+            }
+            for (int i = 0; i < n; i++)
+            {
+                int ai = a[aOff + i];
+                for (int j = 0; j < n; j++)
+                {
+                    r[rOff + i + j] += ai * b[bOff + j];
+                }
+            }
+            return;
+        }
+
+        int m = n >>> 1;
+
+        // z0 = a0 * b0 and z2 = a1 * b1, straight into place
+        karatsuba(a, aOff, b, bOff, m, r, rOff, t, tOff);
+        karatsuba(a, aOff + m, b, bOff + m, m, r, rOff + 2 * m, t, tOff);
+        r[rOff + 2 * m - 1] = 0;
+
+        // z1 = (a0 + a1) * (b0 + b1) - z0 - z2, completed before it is added in, since it overlaps z0 and z2
+        int sa = tOff, sb = tOff + m, z1 = tOff + 2 * m;
+        for (int i = 0; i < m; i++)
+        {
+            t[sa + i] = a[aOff + i] + a[aOff + m + i];
+            t[sb + i] = b[bOff + i] + b[bOff + m + i];
+        }
+        karatsuba(t, sa, t, sb, m, t, z1, t, z1 + 2 * m - 1);
+        for (int i = 0; i < 2 * m - 1; i++)
+        {
+            t[z1 + i] -= r[rOff + i] + r[rOff + 2 * m + i];
+        }
+        for (int i = 0; i < 2 * m - 1; i++)
+        {
+            r[rOff + m + i] += t[z1 + i];
+        }
+    }
+
+    /**
+     * Return the exact product of a and b, both of degree < p and zero-padded to getKaratsubaLength(p), reduced
+     * modulo x^p - x - 1, in its first p words.
+     * <p>
+     * One factor is always reduced, |coefficients| <= (q - 1) / 2, and the other small: in {-1, 0, 1}, or up to 2
+     * from a decoded small polynomial. The recursion's intermediates are then below n * 2^k * ((q - 1) / 2) * 2,
+     * at most 1280 * 64 * 3939 * 2 < 2^30 (sntrup1277), and the reduced coefficients below 3 * p * ((q - 1) / 2) * 2,
+     * so int arithmetic is exact for every parameter set and each coefficient is reduced modulo q (or 3) only once.
+     */
+    private static int[] getProductModXpX1(int[] a, int[] b, int p)
+    {
+        int n = a.length;
+        int[] fg = new int[2 * n - 1];
+        karatsuba(a, 0, b, 0, n, fg, 0, new int[4 * n], 0);
+
+        // x^p = x + 1
+        for (int i = p + p - 2; i >= p; i--)
+        {
+            fg[i - p] += fg[i];
+            fg[i - p + 1] += fg[i];
+        }
+        return fg;
     }
 
     protected static void multiplicationInRQ(short[] h, short[] finv3, byte[] g, int p, int q)
     {
-        short[] fg = new short[p + p - 1];
-        short result;
-        int i, j;
-
-        for (i = 0; i < p; i++)
+        int n = getKaratsubaLength(p);
+        int[] a = new int[n];
+        int[] b = new int[n];
+        for (int i = 0; i < p; i++)
         {
-            result = 0;
-            for (j = 0; j <= i; j++)
-                result = (short)getModFreeze(result + (finv3[j] * g[i - j]), q);
-            fg[i] = result;
+            a[i] = finv3[i];
+            b[i] = g[i];
         }
 
-        for (i = p; i < p + p - 1; i++)
-        {
-            result = 0;
-            for (j = i - p + 1; j < p; j++)
-                result = (short)getModFreeze(result + (finv3[j] * g[i - j]), q);
-            fg[i] = result;
-        }
+        int[] fg = getProductModXpX1(a, b, p);
 
-        for (i = p + p - 2; i >= p; i--)
+        long barrett = getBarrettFactor(q);
+        for (int i = 0; i < p; i++)
         {
-            fg[i - p] = (short)getModFreeze(fg[i - p] + fg[i], q);
-            fg[i - p + 1] = (short)getModFreeze(fg[i - p + 1] + fg[i], q);
+            h[i] = (short)getModFreeze(fg[i], q, barrett);
         }
-
-        for (i = 0; i < p; i++)
-            h[i] = fg[i];
     }
 
     private static void encode(byte[] out, short[] R, short[] M, int len, int start)
@@ -348,7 +471,7 @@ class Utils
     protected static void roundPolynomial(short[] out, short[] in)
     {
         for (int i = 0; i < out.length; i++)
-            out[i] = (short)(in[i] - getModFreeze(in[i], 3));
+            out[i] = (short)(in[i] - getModFreeze(in[i], 3, BARRETT_3));
     }
 
     protected static void getRoundedEncodedPolynomial(byte[] out, short[] in, int p, int q)
@@ -484,8 +607,9 @@ class Utils
 
     protected static void top(byte[] out, short[] bA, byte[] r, int q, int tau0, int tau1)
     {
+        long barrett = getBarrettFactor(q);
         for (int i = 0; i < out.length; i++)
-            out[i] = (byte)((tau1 * (getModFreeze(bA[i] + r[i] * ((q - 1) / 2), q) + tau0) + 16384) >>> 15);
+            out[i] = (byte)((tau1 * (getModFreeze(bA[i] + r[i] * ((q - 1) / 2), q, barrett) + tau0) + 16384) >>> 15);
     }
 
     protected static void getTopEncodedPolynomial(byte[] out, byte[] in)
@@ -515,46 +639,34 @@ class Utils
 
     protected static void scalarMultiplicationInRQ(short[] out, short[] in, int scalar, int q)
     {
+        long barrett = getBarrettFactor(q);
         for (int i = 0; i < in.length; i++)
-            out[i] = (short)getModFreeze(scalar * in[i], q);
+            out[i] = (short)getModFreeze(scalar * in[i], q, barrett);
     }
 
     protected static void transformRQToR3(byte[] out, short[] in)
     {
         for (int i = 0; i < in.length; i++)
-            out[i] = (byte)getModFreeze(in[i], 3);
+            out[i] = (byte)getModFreeze(in[i], 3, BARRETT_3);
     }
 
     protected static void multiplicationInR3(byte[] h, byte[] finv3, byte[] g, int p)
     {
-        byte[] fg = new byte[p + p - 1];
-        byte result;
-        int i, j;
-
-        for (i = 0; i < p; i++)
+        int n = getKaratsubaLength(p);
+        int[] a = new int[n];
+        int[] b = new int[n];
+        for (int i = 0; i < p; i++)
         {
-            result = 0;
-            for (j = 0; j <= i; j++)
-                result = (byte) getModFreeze(result + (finv3[j] * g[i - j]), 3);
-            fg[i] = result;
+            a[i] = finv3[i];
+            b[i] = g[i];
         }
 
-        for (i = p; i < p + p - 1; i++)
-        {
-            result = 0;
-            for (j = i - p + 1; j < p; j++)
-                result = (byte)getModFreeze(result + (finv3[j] * g[i - j]), 3);
-            fg[i] = result;
-        }
+        int[] fg = getProductModXpX1(a, b, p);
 
-        for (i = p + p - 2; i >= p; i--)
+        for (int i = 0; i < p; i++)
         {
-            fg[i - p] = (byte)getModFreeze(fg[i - p] + fg[i], 3);
-            fg[i - p + 1] = (byte)getModFreeze(fg[i - p + 1] + fg[i], 3);
+            h[i] = (byte)getModFreeze(fg[i], 3, BARRETT_3);
         }
-
-        for (i = 0; i < p; i++)
-            h[i] = fg[i];
     }
 
     protected static void checkForSmallPolynomial(byte[] r, byte[] ev, int p, int w)
@@ -589,8 +701,9 @@ class Utils
 
     protected static void right(byte[] out, short[] aB, byte[] T, int q, int w, int tau2, int tau3)
     {
+        long barrett = getBarrettFactor(q);
         for (int i = 0; i < out.length; i++)
-            out[i] = (byte)(-checkLessThanZero(getModFreeze(getModFreeze((tau3 * T[i]) - tau2, q) - aB[i] + (4 * w) + 1, q)));
+            out[i] = (byte)(-checkLessThanZero(getModFreeze(getModFreeze((tau3 * T[i]) - tau2, q, barrett) - aB[i] + (4 * w) + 1, q, barrett)));
     }
 
     private static int[] getUnsignedDivMod(int dividend, int n)
@@ -617,22 +730,6 @@ class Utils
         q += mask;
 
         return new int[]{toIntExact(q), toIntExact(x)};
-    }
-
-    private static int[] getSignedDivMod(int x, int n)
-    {
-        int q, r, mask;
-
-        int[] div1 = getUnsignedDivMod(toIntExact(0x80000000 + iToUnsignedLong(x)), n);
-        int[] div2 = getUnsignedDivMod(0x80000000, n);
-
-        q = toIntExact(iToUnsignedLong(div1[0]) - iToUnsignedLong(div2[0]));
-        r = toIntExact(iToUnsignedLong(div1[1]) - iToUnsignedLong(div2[1]));
-        mask = -(r >>> 31);
-        r += mask & n;
-        q += mask;
-
-        return new int[]{q, r};
     }
 
     private static int checkLessThanZero(int x)

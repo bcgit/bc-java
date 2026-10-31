@@ -1028,6 +1028,7 @@
              <!-- main-namespace test fixture the bcpg copy now excludes; the openpgp.api tests resolve it from here -->
              <fileset dir="${src.dir}" includes="org/bouncycastle/openpgp/OpenPGPTestKeys.java" />
              <fileset dir="${src.dir}" includes="**/pqc/crypto/hqc/*Test.java" />
+             <fileset dir="${src.dir}" includes="**/pqc/crypto/ntruprime/*Test.java" />
              <fileset dir="${src.dir}" includes="**/pqc/math/ntru/*Test.java" />
              <fileset dir="${src.dir}" includes="**/tsp/*UnitTest.java" />
              <fileset dir="${src.dir}" includes="**/utiltest/*Test.java" />
