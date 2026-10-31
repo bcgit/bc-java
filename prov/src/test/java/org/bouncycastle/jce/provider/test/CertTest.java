@@ -13,6 +13,7 @@ import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.security.PublicKey;
+import java.security.Provider;
 import java.security.Security;
 import java.security.SignatureException;
 import java.security.cert.CRL;
@@ -1974,6 +1975,51 @@ public class CertTest
      * JDK provider), since the BC X509Certificate fully implements
      * getExtendedKeyUsage() (github #1796).
      */
+    /*
+     * Another provider registered as "BC" (Android 4.1's bundled BC 1.46, say) must not supply the
+     * signature algorithm name of a certificate parsed by this provider - github #2506.
+     */
+    private void testForeignBCProviderSigAlgName()
+        throws Exception
+    {
+        byte[] encoded = TestUtils.generateRootCert(TestUtils.generateRSAKeyPair()).getEncoded();
+
+        Provider[] provs = Security.getProviders();
+        int bcPos = -1;
+        for (int i = 0; i != provs.length; i++)
+        {
+            if ("BC".equals(provs[i].getName()))
+            {
+                bcPos = i + 1;
+            }
+        }
+        Provider registered = Security.getProvider("BC");
+
+        Provider foreign = new Provider("BC", 1.46, "older provider")
+        {
+        };
+        foreign.put("Alg.Alias.Signature.1.2.840.113549.1.1.11", "SHA256WithRSAEncryption");
+
+        Security.removeProvider("BC");
+        try
+        {
+            Security.addProvider(foreign);
+
+            CertificateFactory cf = CertificateFactory.getInstance("X.509", new BouncyCastleProvider());
+            X509Certificate cert = (X509Certificate)cf.generateCertificate(new ByteArrayInputStream(encoded));
+
+            isEquals("SHA256WITHRSA", cert.getSigAlgName());
+        }
+        finally
+        {
+            Security.removeProvider("BC");
+            if (registered != null)
+            {
+                Security.insertProviderAt(registered, bcPos);
+            }
+        }
+    }
+
     private void testCriticalEkuIssue1796()
         throws Exception
     {
@@ -2110,6 +2156,7 @@ public class CertTest
         testCertPathEncAvailableTest();
 
         testCriticalEkuIssue1796();
+        testForeignBCProviderSigAlgName();
 
         sm2SignedDataTestIssue1355();
     }

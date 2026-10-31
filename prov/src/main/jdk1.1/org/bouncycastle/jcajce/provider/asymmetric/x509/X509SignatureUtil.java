@@ -155,7 +155,8 @@ class X509SignatureUtil
     {
         Provider prov = Security.getProvider(BouncyCastleProvider.PROVIDER_NAME);
 
-        if (prov != null)
+        // never take a name from another provider registered as "BC"
+        if (prov instanceof BouncyCastleProvider)
         {
             String algName = lookupAlg(prov, algOid);
             if (algName != null)
@@ -168,7 +169,7 @@ class X509SignatureUtil
 
         for (int i = 0; i != provs.length; i++)
         {
-            if (prov != provs[i])
+            if (prov != provs[i] && !isForeignBC(provs[i]))
             {
                 String algName = lookupAlg(provs[i], algOid);
                 if (algName != null)
@@ -179,6 +180,11 @@ class X509SignatureUtil
         }
 
         return algOid.getId();
+    }
+
+    private static boolean isForeignBC(Provider prov)
+    {
+        return BouncyCastleProvider.PROVIDER_NAME.equals(prov.getName()) && !(prov instanceof BouncyCastleProvider);
     }
 
     private static String lookupAlg(Provider prov, ASN1ObjectIdentifier algOid)

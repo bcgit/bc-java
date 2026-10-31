@@ -25,6 +25,7 @@ import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.internal.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.internal.asn1.misc.MiscObjectIdentifiers;
 import org.bouncycastle.internal.asn1.oiw.OIWObjectIdentifiers;
+import org.bouncycastle.jcajce.util.BCJcaJceHelper;
 import org.bouncycastle.jcajce.util.MessageDigestUtils;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Exceptions;
@@ -178,24 +179,22 @@ class X509SignatureUtil
 
     private static String findAlgName(ASN1ObjectIdentifier algOid)
     {
-        Provider prov = Security.getProvider(BouncyCastleProvider.PROVIDER_NAME);
+        // a registered BouncyCastleProvider, or a private one - never another provider registered as "BC"
+        Provider prov = new BCJcaJceHelper().getProvider();
 
-        if (prov != null)
+        String algName = lookupAlg(prov, algOid);
+        if (algName != null)
         {
-            String algName = lookupAlg(prov, algOid);
-            if (algName != null)
-            {
-                return algName;
-            }
+            return algName;
         }
 
         Provider[] provs = Security.getProviders();
 
         for (int i = 0; i != provs.length; i++)
         {
-            if (prov != provs[i])
+            if (prov != provs[i] && !isForeignBC(provs[i]))
             {
-                String algName = lookupAlg(provs[i], algOid);
+                algName = lookupAlg(provs[i], algOid);
                 if (algName != null)
                 {
                     return algName;
@@ -204,6 +203,11 @@ class X509SignatureUtil
         }
 
         return algOid.getId();
+    }
+
+    private static boolean isForeignBC(Provider prov)
+    {
+        return BouncyCastleProvider.PROVIDER_NAME.equals(prov.getName()) && !(prov instanceof BouncyCastleProvider);
     }
 
     private static String lookupAlg(Provider prov, ASN1ObjectIdentifier algOid)

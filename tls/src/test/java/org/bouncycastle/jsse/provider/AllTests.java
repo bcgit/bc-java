@@ -24,6 +24,7 @@ public class AllTests
         suite.addTestSuite(HostnameUtilTest.class);
         suite.addTestSuite(OcspStapleCacheTest.class);
         suite.addTestSuite(OcspStapleHttpFetcherTest.class);
+        suite.addTestSuite(ProvAlgorithmCheckerSigAlgNameTest.class);
 
         return suite;
     }

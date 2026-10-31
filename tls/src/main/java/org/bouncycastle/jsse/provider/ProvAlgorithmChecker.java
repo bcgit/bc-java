@@ -21,6 +21,7 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
+import org.bouncycastle.asn1.gm.GMObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
@@ -64,7 +65,30 @@ class ProvAlgorithmChecker
 
     private static Map<String, String> createSigAlgNames()
     {
-        Map<String, String> names = new HashMap<String, String>(4);
+        Map<String, String> names = new HashMap<String, String>();
+
+        /*
+         * Fixed names, as used in SignatureSchemeInfo, so that the constraints check does not depend on
+         * X509Certificate.getSigAlgName(), whose spelling varies with the certificate implementation and
+         * the registered providers (see github #2506).
+         */
+        names.put(PKCSObjectIdentifiers.md5WithRSAEncryption.getId(), "MD5withRSA");
+        names.put(PKCSObjectIdentifiers.sha1WithRSAEncryption.getId(), "SHA1withRSA");
+        names.put(PKCSObjectIdentifiers.sha224WithRSAEncryption.getId(), "SHA224withRSA");
+        names.put(PKCSObjectIdentifiers.sha256WithRSAEncryption.getId(), "SHA256withRSA");
+        names.put(PKCSObjectIdentifiers.sha384WithRSAEncryption.getId(), "SHA384withRSA");
+        names.put(PKCSObjectIdentifiers.sha512WithRSAEncryption.getId(), "SHA512withRSA");
+
+        names.put(X9ObjectIdentifiers.ecdsa_with_SHA1.getId(), "SHA1withECDSA");
+        names.put(X9ObjectIdentifiers.ecdsa_with_SHA224.getId(), "SHA224withECDSA");
+        names.put(X9ObjectIdentifiers.ecdsa_with_SHA256.getId(), "SHA256withECDSA");
+        names.put(X9ObjectIdentifiers.ecdsa_with_SHA384.getId(), "SHA384withECDSA");
+        names.put(X9ObjectIdentifiers.ecdsa_with_SHA512.getId(), "SHA512withECDSA");
+
+        names.put(NISTObjectIdentifiers.dsa_with_sha224.getId(), "SHA224withDSA");
+        names.put(NISTObjectIdentifiers.dsa_with_sha256.getId(), "SHA256withDSA");
+
+        names.put(GMObjectIdentifiers.sm2sign_with_sm3.getId(), "SM3withSM2");
 
         names.put(EdECObjectIdentifiers.id_Ed25519.getId(), "Ed25519");
         names.put(EdECObjectIdentifiers.id_Ed448.getId(), "Ed448");
