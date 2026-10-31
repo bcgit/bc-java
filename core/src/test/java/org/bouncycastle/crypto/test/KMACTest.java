@@ -149,6 +149,40 @@ public class KMACTest
         testClone(resBuf, message, expected, new KMAC(128, new byte[0]), Hex.decode("eeaabeef"));
         testMemo(resBuf, message, expected, new KMAC(128, new byte[0]), Hex.decode("eeaabeef"));
         testEncodedState(resBuf, message, expected, new KMAC(128, new byte[0]), Hex.decode("eeaabeef"));
+        testMemoResetKeepsKey(message, expected);
+    }
+
+    /**
+     * reset(Memoable) has to take the key as well as the state: doFinal() re-absorbs the key, so the
+     * second MAC after the reset shows which key the object was left holding.
+     */
+    private void testMemoResetKeepsKey(byte[] message, byte[] expected)
+    {
+        KMAC source = new KMAC(128, new byte[0]);
+        source.init(new KeyParameter(Hex.decode("eeaabeef")));
+
+        KMAC otherKey = new KMAC(128, new byte[0]);
+        otherKey.init(new KeyParameter(Hex.decode("00112233")));
+
+        checkMemoResetKeepsKey("uninitialised target", new KMAC(128, new byte[0]), source, message, expected);
+        checkMemoResetKeepsKey("target with another key", otherKey, source, message, expected);
+    }
+
+    private void checkMemoResetKeepsKey(String label, KMAC target, KMAC source, byte[] message, byte[] expected)
+    {
+        byte[] resBuf = new byte[32];
+
+        target.reset(source);
+
+        for (int i = 0; i != 2; i++)
+        {
+            target.update(message, 0, message.length);
+            target.doFinal(resBuf, 0);
+            if (!areEqual(expected, resBuf))
+            {
+                fail("MAC " + (i + 1) + " after reset(Memoable) wrong: " + label);
+            }
+        }
     }
 
     private void doFinalTest()

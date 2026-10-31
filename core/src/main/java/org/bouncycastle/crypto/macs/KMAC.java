@@ -73,6 +73,7 @@ public class KMAC
         this.cshake.reset(original.cshake);
         this.bitLength = original.bitLength;
         this.outputLength = original.outputLength;
+        this.key = original.key;
         this.initialised = original.initialised;
         this.firstOutput = original.firstOutput;
     }
