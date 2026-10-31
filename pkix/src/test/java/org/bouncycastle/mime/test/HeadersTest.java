@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import junit.framework.TestCase;
+import org.bouncycastle.cms.test.CMSTestUtil;
 import org.bouncycastle.mime.Headers;
 import org.bouncycastle.util.Strings;
 
@@ -179,9 +180,9 @@ public class HeadersTest
         long best = Long.MAX_VALUE;
         for (int i = 0; i != runs; i++)
         {
-            long start = System.nanoTime();
+            long start = CMSTestUtil.nanoTime();
             new Headers(new ByteArrayInputStream(data), "7bit");
-            best = Math.min(best, System.nanoTime() - start);
+            best = Math.min(best, CMSTestUtil.nanoTime() - start);
         }
         return best;
     }

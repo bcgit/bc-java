@@ -318,7 +318,7 @@ public class BcEnvelopedDataTest
         CMSEnvelopedData ed = edGen.generate(new CMSProcessableByteArray(data),
             new BcCMSContentEncryptorBuilder(CMSAlgorithm.AES128_CBC).build());
 
-        RecipientInformation recipient = ed.getRecipientInfos().getRecipients().iterator().next();
+        RecipientInformation recipient = (RecipientInformation)ed.getRecipientInfos().getRecipients().iterator().next();
 
         assertTrue(Arrays.equals(data, recipient.getContent(
             new BcKEMEnvelopedRecipient(PrivateKeyFactory.createKey(_reciMLKemKP.getPrivate().getEncoded())))));
@@ -332,7 +332,7 @@ public class BcEnvelopedDataTest
         ed = edGen.generate(new CMSProcessableByteArray(data),
             new BcCMSContentEncryptorBuilder(CMSAlgorithm.AES256_CBC).build());
 
-        recipient = ed.getRecipientInfos().getRecipients().iterator().next();
+        recipient = (RecipientInformation)ed.getRecipientInfos().getRecipients().iterator().next();
 
         assertTrue(Arrays.equals(new byte[]{ 1, 2, 3 }, ((org.bouncycastle.cms.KEMRecipientId)recipient.getRID()).getSubjectKeyIdentifier()));
         assertTrue(Arrays.equals(data, recipient.getContent(new JceKEMEnvelopedRecipient(_reciMLKemKP.getPrivate()).setProvider(BC))));
@@ -366,7 +366,7 @@ public class BcEnvelopedDataTest
 
         try
         {
-            rebuild(contentInfo, envData, ori, badLength).getRecipientInfos().getRecipients().iterator().next()
+            ((RecipientInformation)rebuild(contentInfo, envData, ori, badLength).getRecipientInfos().getRecipients().iterator().next())
                 .getContent(new BcKEMEnvelopedRecipient(PrivateKeyFactory.createKey(_reciMLKemKP.getPrivate().getEncoded())));
             fail("kekLength mismatch accepted");
         }
@@ -377,12 +377,12 @@ public class BcEnvelopedDataTest
 
         // truncated KEM ciphertext
         KEMRecipientInfo badCt = new KEMRecipientInfo(kemInfo.getRecipientIdentifier(), kemInfo.getKem(),
-            new DEROctetString(Arrays.copyOf(kemInfo.getKemct().getOctets(), 1087)), kemInfo.getKdf(), new ASN1Integer(32), null,
+            new DEROctetString(org.bouncycastle.util.Arrays.copyOf(kemInfo.getKemct().getOctets(), 1087)), kemInfo.getKdf(), new ASN1Integer(32), null,
             kemInfo.getWrap(), kemInfo.getEncryptedKey());
 
         try
         {
-            rebuild(contentInfo, envData, ori, badCt).getRecipientInfos().getRecipients().iterator().next()
+            ((RecipientInformation)rebuild(contentInfo, envData, ori, badCt).getRecipientInfos().getRecipients().iterator().next())
                 .getContent(new BcKEMEnvelopedRecipient(PrivateKeyFactory.createKey(_reciMLKemKP.getPrivate().getEncoded())));
             fail("short KEM ciphertext accepted");
         }
@@ -395,7 +395,7 @@ public class BcEnvelopedDataTest
         KeyPair otherKP = CMSTestUtil.makeMLKem768KeyPair();
         try
         {
-            ed.getRecipientInfos().getRecipients().iterator().next()
+            ((RecipientInformation)ed.getRecipientInfos().getRecipients().iterator().next())
                 .getContent(new BcKEMEnvelopedRecipient(PrivateKeyFactory.createKey(otherKP.getPrivate().getEncoded())));
             fail("wrong key accepted");
         }

@@ -393,8 +393,8 @@ public class JcePublicKeyDataDecryptorFactoryBuilder
             {
                 throw new PGPException("ML-KEM composite decryption requires a CompositePrivateKey of two component keys");
             }
-            PrivateKey xdhPriv = ((CompositePrivateKey)privateKey).getPrivateKeys().get(0);
-            PrivateKey mlkemPriv = ((CompositePrivateKey)privateKey).getPrivateKeys().get(1);
+            PrivateKey xdhPriv = (PrivateKey)((CompositePrivateKey)privateKey).getPrivateKeys().get(0);
+            PrivateKey mlkemPriv = (PrivateKey)((CompositePrivateKey)privateKey).getPrivateKeys().get(1);
 
             // ECDH-KEM.Decaps (sec. 4.1.1)
             boolean x25519 = keyAlgorithm == PublicKeyAlgorithmTags.MLKEM768_X25519;

@@ -217,8 +217,8 @@ public class JcaPGPContentSignerBuilder
                     helper.createSignature(keyAlgorithm == PublicKeyAlgorithmTags.MLDSA65_Ed25519 ? "Ed25519" : "Ed448"),
                     helper.createSignature("ML-DSA")
                 };
-                signatures[0].initSign(comp.getPrivateKeys().get(0), hedge);
-                signatures[1].initSign(comp.getPrivateKeys().get(1), hedge);
+                signatures[0].initSign((PrivateKey)comp.getPrivateKeys().get(0), hedge);
+                signatures[1].initSign((PrivateKey)comp.getPrivateKeys().get(1), hedge);
                 signatureLengths = new int[]{
                     MLDSACompositePublicBCPGKey.getEdDSASignatureLength(keyAlgorithm),
                     MLDSACompositePublicBCPGKey.getMLDSASignatureLength(keyAlgorithm)

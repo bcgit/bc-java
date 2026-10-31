@@ -875,11 +875,46 @@ public class CMSTestUtil
         long best = Long.MAX_VALUE;
         for (int i = 0; i != 3; i++)
         {
-            long start = System.nanoTime();
+            long start = nanoTime();
             timed.run();
-            best = Math.min(best, System.nanoTime() - start);
+            best = Math.min(best, nanoTime() - start);
         }
         return best;
+    }
+
+    private static final java.lang.reflect.Method NANO_TIME = findNanoTime();
+
+    private static java.lang.reflect.Method findNanoTime()
+    {
+        try
+        {
+            return System.class.getMethod("nanoTime", new Class[0]);
+        }
+        catch (Exception e)
+        {
+            return null;
+        }
+    }
+
+    /**
+     * System.nanoTime() where the runtime has it, otherwise currentTimeMillis() scaled to
+     * nanoseconds: nanoTime() arrived with Java 5 and these tests are also compiled and run by
+     * the jdk1.4 build.
+     */
+    public static long nanoTime()
+    {
+        if (NANO_TIME != null)
+        {
+            try
+            {
+                return ((Long)NANO_TIME.invoke(null, new Object[0])).longValue();
+            }
+            catch (Exception e)
+            {
+                // fall through to the millisecond clock
+            }
+        }
+        return System.currentTimeMillis() * 1000000L;
     }
 
     /**

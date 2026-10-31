@@ -32,6 +32,7 @@ import org.bouncycastle.cert.X509CRLHolder;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.operator.DigestAlgorithmIdentifierFinder;
 import org.bouncycastle.util.CollectionStore;
+import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Store;
 
 class CMSSignedHelper
@@ -72,7 +73,7 @@ class CMSSignedHelper
         ML_DSA_DIGESTS.put(NISTObjectIdentifiers.id_ml_dsa_65, mlDsa65);
         ML_DSA_DIGESTS.put(NISTObjectIdentifiers.id_ml_dsa_87, mlDsa87);
 
-        Integer n16 = Integer.valueOf(16), n24 = Integer.valueOf(24), n32 = Integer.valueOf(32);
+        Integer n16 = Integers.valueOf(16), n24 = Integers.valueOf(24), n32 = Integers.valueOf(32);
         SLH_DSA_N.put(NISTObjectIdentifiers.id_slh_dsa_sha2_128s, n16);
         SLH_DSA_N.put(NISTObjectIdentifiers.id_slh_dsa_sha2_128f, n16);
         SLH_DSA_N.put(NISTObjectIdentifiers.id_slh_dsa_shake_128s, n16);
@@ -86,7 +87,7 @@ class CMSSignedHelper
         SLH_DSA_N.put(NISTObjectIdentifiers.id_slh_dsa_shake_256s, n32);
         SLH_DSA_N.put(NISTObjectIdentifiers.id_slh_dsa_shake_256f, n32);
 
-        Integer b224 = Integer.valueOf(224), b256 = Integer.valueOf(256), b384 = Integer.valueOf(384), b512 = Integer.valueOf(512);
+        Integer b224 = Integers.valueOf(224), b256 = Integers.valueOf(256), b384 = Integers.valueOf(384), b512 = Integers.valueOf(512);
         DIGEST_OUTPUT_BITS.put(NISTObjectIdentifiers.id_sha224, b224);
         DIGEST_OUTPUT_BITS.put(NISTObjectIdentifiers.id_sha512_224, b224);
         DIGEST_OUTPUT_BITS.put(NISTObjectIdentifiers.id_sha3_224, b224);

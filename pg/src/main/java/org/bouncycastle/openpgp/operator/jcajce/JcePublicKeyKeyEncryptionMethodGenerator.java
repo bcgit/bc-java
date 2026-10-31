@@ -295,8 +295,8 @@ public class JcePublicKeyKeyEncryptionMethodGenerator
         {
             throw new PGPException("ML-KEM composite encryption requires a CompositePublicKey of two component keys");
         }
-        PublicKey xdhPub = ((CompositePublicKey)cryptoPublicKey).getPublicKeys().get(0);
-        PublicKey mlkemPub = ((CompositePublicKey)cryptoPublicKey).getPublicKeys().get(1);
+        PublicKey xdhPub = (PublicKey)((CompositePublicKey)cryptoPublicKey).getPublicKeys().get(0);
+        PublicKey mlkemPub = (PublicKey)((CompositePublicKey)cryptoPublicKey).getPublicKeys().get(1);
 
         // ECDH-KEM.Encaps (sec. 4.1.1): the ephemeral public key is the ciphertext, the shared coordinate the key share
         String curveName = algorithm == PublicKeyAlgorithmTags.MLKEM768_X25519 ? "X25519" : "X448";
