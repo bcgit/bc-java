@@ -6,7 +6,6 @@ import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
-import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
@@ -28,9 +27,6 @@ import org.bouncycastle.pqc.crypto.falcon.FalconPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.haetae.HAETAEPrivateKeyParameters;
 import org.bouncycastle.pqc.legacy.hawk.HawkPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.lms.Composer;
-import org.bouncycastle.pqc.crypto.lms.HSSPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.lms.LMSPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.mayo.MayoPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.newhope.NHPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.ntru.NTRUPrivateKeyParameters;
@@ -99,26 +95,6 @@ public class PrivateKeyInfoFactory
             }
 
             return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(octets));
-        }
-        else if (privateKey instanceof LMSPrivateKeyParameters)
-        {
-            LMSPrivateKeyParameters params = (LMSPrivateKeyParameters)privateKey;
-
-            byte[] encoding = Composer.compose().u32str(1).bytes(params).build();
-            byte[] pubEncoding = Composer.compose().u32str(1).bytes(params.getPublicKey()).build();
-
-            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_alg_hss_lms_hashsig);
-            return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(encoding), attributes, pubEncoding);
-        }
-        else if (privateKey instanceof HSSPrivateKeyParameters)
-        {
-            HSSPrivateKeyParameters params = (HSSPrivateKeyParameters)privateKey;
-
-            byte[] encoding = Composer.compose().u32str(params.getL()).bytes(params).build();
-            byte[] pubEncoding = Composer.compose().u32str(params.getL()).bytes(params.getPublicKey().getLMSPublicKey()).build();
-
-            AlgorithmIdentifier algorithmIdentifier = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_alg_hss_lms_hashsig);
-            return new PrivateKeyInfo(algorithmIdentifier, new DEROctetString(encoding), attributes, pubEncoding);
         }
         else if (privateKey instanceof SPHINCSPlusPrivateKeyParameters)
         {

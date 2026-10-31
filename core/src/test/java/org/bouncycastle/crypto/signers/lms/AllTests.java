@@ -20,6 +20,7 @@ public class AllTests
 
         suite.addTestSuite(BufferedMessageTests.class);
         suite.addTestSuite(LMOtsTests.class);
+        suite.addTestSuite(PromotionKnownAnswerTests.class);
         suite.addTestSuite(TypeTests.class);
         suite.addTestSuite(VerifyContextTests.class);
 

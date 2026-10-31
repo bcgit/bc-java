@@ -77,7 +77,7 @@ public class JcaContentSignerBuilder
         this(signatureAlgorithm, (AlgorithmIdentifier)null);
     }
 
-    // NOTE: LMS (org.bouncycastle.pqc.crypto.lms) is excluded from the jdk1.4 distribution
+    // NOTE: LMS (org.bouncycastle.crypto.signers.lms) is excluded from the jdk1.4 distribution
     // (ant/jdk14.xml), so the base getSigDigAlgId(PublicKey)/LMSigParameters lookup and the
     // JcaContentSignerBuilder(String, PublicKey) constructor built on it are dropped here.
 

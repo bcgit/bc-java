@@ -12,7 +12,6 @@ import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
-import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
@@ -42,8 +41,6 @@ import org.bouncycastle.pqc.legacy.hawk.HawkParameters;
 import org.bouncycastle.pqc.legacy.hawk.HawkPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCPublicKeyParameters;
-import org.bouncycastle.pqc.crypto.lms.HSSPublicKeyParameters;
-import org.bouncycastle.pqc.crypto.lms.LMSKeyParameters;
 import org.bouncycastle.pqc.crypto.mayo.MayoParameters;
 import org.bouncycastle.pqc.crypto.mayo.MayoPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.newhope.NHPublicKeyParameters;
@@ -80,7 +77,6 @@ public class PublicKeyFactory
     {
         converters.put(PQCObjectIdentifiers.sphincs256, new SPHINCSConverter());
         converters.put(PQCObjectIdentifiers.newHope, new NHConverter());
-        converters.put(PKCSObjectIdentifiers.id_alg_hss_lms_hashsig, new LMSConverter());
         converters.put(BCObjectIdentifiers.sphincsPlus, new SPHINCSPlusConverter());
 
         converters.put(BCObjectIdentifiers.sphincsPlus_sha2_128s_r3, new SPHINCSPlusConverter());
@@ -443,30 +439,6 @@ public class PublicKeyFactory
             throws IOException
         {
             return new NHPublicKeyParameters(keyInfo.getPublicKeyData().getBytes());
-        }
-    }
-
-    private static class LMSConverter
-        extends SubjectPublicKeyInfoConverter
-    {
-        AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
-            throws IOException
-        {
-            byte[] keyEnc = keyInfo.getPublicKeyData().getOctets();
-            ASN1OctetString data = (ASN1OctetString)Utils.parseData(keyEnc);
-
-            if (data != null)
-            {
-                return getLmsKeyParameters(data.getOctets());
-            }
-
-            return getLmsKeyParameters(keyEnc);
-        }
-
-        private LMSKeyParameters getLmsKeyParameters(byte[] keyEnc)
-            throws IOException
-        {
-            return HSSPublicKeyParameters.getInstance(keyEnc);
         }
     }
 

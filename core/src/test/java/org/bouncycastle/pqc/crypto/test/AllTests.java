@@ -21,7 +21,6 @@ public class AllTests
 
         suite.addTestSuite(LMSTest.class);
         suite.addTestSuite(HSSTest.class);
-        suite.addTestSuite(LMSPromotionCompatibilityTest.class);
 //        suite.addTestSuite(SphincsPlusTest.class);   -- now deprecated
         // CMCE (Classic McEliece) tests split out into AllTestsCMCE so they can run as a separate (parallel) fork.
         suite.addTestSuite(FrodoKEMConcurrencyTest.class);

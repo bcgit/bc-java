@@ -62,10 +62,6 @@ public class PQCParametersTest
         check(LMOtsParameters.sha256_n24_w4, 3, 192);
         check(LMOtsParameters.shake256_n32_w1, 5, 256);
         check(LMOtsParameters.shake256_n24_w2, 3, 192);
-        check(org.bouncycastle.pqc.crypto.lms.LMSigParameters.lms_sha256_n32_h5, 5, 256);
-        check(org.bouncycastle.pqc.crypto.lms.LMSigParameters.lms_shake256_n24_h10, 3, 192);
-        check(org.bouncycastle.pqc.crypto.lms.LMOtsParameters.sha256_n32_w4, 5, 256);
-        check(org.bouncycastle.pqc.crypto.lms.LMOtsParameters.shake256_n24_w8, 3, 192);
 
         // XMSS / XMSS^MT (Table 3; the SHA-512 set is outside SP 800-208 and capped at 256)
         check(new XMSSParameters(10, new SHA256Digest()), 5, 256);

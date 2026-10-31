@@ -2,7 +2,7 @@
 
 This document describes the byte encoding Bouncy Castle uses for a Leighton-Micali Signature
 (LMS) private key — the value returned by
-`org.bouncycastle.pqc.crypto.lms.LMSPrivateKeyParameters.getEncoded()` and accepted by
+`org.bouncycastle.crypto.params.LMSPrivateKeyParameters.getEncoded()` and accepted by
 `LMSPrivateKeyParameters.getInstance()`, and the payload carried inside a PKCS#8
 `PrivateKeyInfo` for an LMS key.
 
@@ -231,7 +231,11 @@ the 56-byte public key:
 
 ## Where this is implemented
 
-- `core/src/main/java/org/bouncycastle/pqc/crypto/lms/LMSPrivateKeyParameters.java` —
+- `core/src/main/java/org/bouncycastle/crypto/params/LMSPrivateKeyParameters.java` —
   `getEncoded()` writes the format, `getInstance()` reads and validates it.
-- `core/src/main/java/org/bouncycastle/pqc/crypto/util/PrivateKeyInfoFactory.java` /
+- `core/src/main/java/org/bouncycastle/crypto/util/PrivateKeyInfoFactory.java` /
   `PrivateKeyFactory.java` — the PKCS#8 wrapping and unwrapping.
+
+The `org.bouncycastle.pqc.crypto.lms` package that carried a second copy of these, and its
+branches in `org.bouncycastle.pqc.crypto.util`, were removed in 1.87; keys it wrote are read by
+the classes above.

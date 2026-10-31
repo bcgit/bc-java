@@ -13,7 +13,6 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
-import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
@@ -47,7 +46,6 @@ import org.bouncycastle.pqc.legacy.hawk.HawkParameters;
 import org.bouncycastle.pqc.legacy.hawk.HawkPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCParameters;
 import org.bouncycastle.pqc.crypto.hqc.HQCPrivateKeyParameters;
-import org.bouncycastle.pqc.crypto.lms.HSSPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.mayo.MayoParameters;
 import org.bouncycastle.pqc.crypto.mayo.MayoPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.newhope.NHPrivateKeyParameters;
@@ -139,20 +137,6 @@ public class PrivateKeyFactory
         else if (algOID.equals(PQCObjectIdentifiers.newHope))
         {
             return new NHPrivateKeyParameters(convert(ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets()));
-        }
-        else if (algOID.equals(PKCSObjectIdentifiers.id_alg_hss_lms_hashsig))
-        {
-            ASN1OctetString lmsKey = parseOctetString(keyInfo.getPrivateKey(), 64);
-            byte[] keyEnc = lmsKey.getOctets();
-            ASN1BitString pubKey = keyInfo.getPublicKeyData();
-
-            if (pubKey != null)
-            {
-                byte[] pubEnc = pubKey.getOctets();
-
-                return HSSPrivateKeyParameters.getInstance(Arrays.copyOfRange(keyEnc, 4, keyEnc.length), pubEnc);
-            }
-            return HSSPrivateKeyParameters.getInstance(Arrays.copyOfRange(keyEnc, 4, keyEnc.length));
         }
         else if (Utils.sphincsPlusParams.containsKey(algOID))
         {
@@ -379,33 +363,6 @@ public class PrivateKeyFactory
         {
             throw new IOException("algorithm identifier in private key not recognised: " + algOID);
         }
-    }
-
-    /**
-     * So it seems for the new PQC algorithms, there's a couple of approaches to what goes in the OCTET STRING
-     */
-    private static ASN1OctetString parseOctetString(ASN1OctetString octStr, int expectedLength)
-        throws IOException
-    {
-        byte[] data = octStr.getOctets();
-        //
-        // it's the right length for a RAW encoding, just return it.
-        //
-        if (data.length == expectedLength)
-        {
-            return octStr;
-        }
-
-        //
-        // possible internal OCTET STRING, possibly long form with or without the internal OCTET STRING
-        ASN1OctetString obj = Utils.parseOctetData(data);
-
-        if (obj != null)
-        {
-            return ASN1OctetString.getInstance(obj);
-        }
-
-        return octStr;
     }
 
     /**

@@ -408,19 +408,6 @@ public class JcajceParameterSpecTest
         isTrue("lms sig params", lms.getLMSigParameters() == LMSigParameters.lms_sha256_n32_h5);
         isTrue("lms ots params", lms.getLMOtsParameters() == LMOtsParameters.sha256_n32_w1);
 
-        // the deprecated accessors must still answer, mapping back to the pqc.crypto.lms types
-        isTrue("lms sig params (deprecated)",
-            lms.getSigParams() == org.bouncycastle.pqc.crypto.lms.LMSigParameters.lms_sha256_n32_h5);
-        isTrue("lms ots params (deprecated)",
-            lms.getOtsParams() == org.bouncycastle.pqc.crypto.lms.LMOtsParameters.sha256_n32_w1);
-
-        // and a spec built through the deprecated constructor must resolve to the same parameters
-        LMSParameterSpec legacyBuilt = new LMSParameterSpec(
-            org.bouncycastle.pqc.crypto.lms.LMSigParameters.lms_sha256_n32_h5,
-            org.bouncycastle.pqc.crypto.lms.LMOtsParameters.sha256_n32_w1);
-        isTrue("legacy ctor sig params", legacyBuilt.getLMSigParameters() == LMSigParameters.lms_sha256_n32_h5);
-        isTrue("legacy ctor ots params", legacyBuilt.getLMOtsParameters() == LMOtsParameters.sha256_n32_w1);
-
         LMSHSSParameterSpec hss = new LMSHSSParameterSpec(new LMSParameterSpec[]{ lms });
         isEquals("hss specs length", 1, hss.getLMSSpecs().length);
         isTrue("hss spec element", hss.getLMSSpecs()[0] == lms);
