@@ -1,6 +1,5 @@
 package org.bouncycastle.asn1.icao;
 
-import java.util.Enumeration;
 
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
@@ -59,12 +58,13 @@ public class DataGroupHash
 
     private DataGroupHash(ASN1Sequence seq)
     {
-        Enumeration e = seq.getObjects();
+        if (seq.size() != 2)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
 
-        // dataGroupNumber
-        dataGroupNumber = ASN1Integer.getInstance(e.nextElement());
-        // dataGroupHashValue
-        dataGroupHashValue = ASN1OctetString.getInstance(e.nextElement());
+        dataGroupNumber = ASN1Integer.getInstance(seq.getObjectAt(0));
+        dataGroupHashValue = ASN1OctetString.getInstance(seq.getObjectAt(1));
     }
 
     public DataGroupHash(

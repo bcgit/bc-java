@@ -38,6 +38,11 @@ public class SignedPublicKeyAndChallenge
 
     private SignedPublicKeyAndChallenge(ASN1Sequence seq)
     {
+        if (seq.size() != 3)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
+
         pkacSeq = seq;
         pubKeyAndChal = PublicKeyAndChallenge.getInstance(seq.getObjectAt(0));
     }

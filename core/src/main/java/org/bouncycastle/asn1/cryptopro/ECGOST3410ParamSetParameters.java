@@ -1,7 +1,6 @@
 package org.bouncycastle.asn1.cryptopro;
 
 import java.math.BigInteger;
-import java.util.Enumeration;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
@@ -58,14 +57,17 @@ public class ECGOST3410ParamSetParameters
     public ECGOST3410ParamSetParameters(
         ASN1Sequence  seq)
     {
-        Enumeration     e = seq.getObjects();
+        if (seq.size() != 6)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
 
-        a = (ASN1Integer)e.nextElement();
-        b = (ASN1Integer)e.nextElement();
-        p = (ASN1Integer)e.nextElement();
-        q = (ASN1Integer)e.nextElement();
-        x = (ASN1Integer)e.nextElement();
-        y = (ASN1Integer)e.nextElement();
+        a = ASN1Integer.getInstance(seq.getObjectAt(0));
+        b = ASN1Integer.getInstance(seq.getObjectAt(1));
+        p = ASN1Integer.getInstance(seq.getObjectAt(2));
+        q = ASN1Integer.getInstance(seq.getObjectAt(3));
+        x = ASN1Integer.getInstance(seq.getObjectAt(4));
+        y = ASN1Integer.getInstance(seq.getObjectAt(5));
     }
     
     public BigInteger getP()

@@ -41,8 +41,13 @@ public class CAST5CBCParameters
     private CAST5CBCParameters(
         ASN1Sequence  seq)
     {
-        iv = (ASN1OctetString)seq.getObjectAt(0);
-        keyLength = (ASN1Integer)seq.getObjectAt(1);
+        if (seq.size() != 2)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
+
+        iv = ASN1OctetString.getInstance(seq.getObjectAt(0));
+        keyLength = ASN1Integer.getInstance(seq.getObjectAt(1));
     }
 
     public byte[] getIV()

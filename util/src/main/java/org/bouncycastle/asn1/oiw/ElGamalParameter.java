@@ -1,7 +1,6 @@
 package org.bouncycastle.asn1.oiw;
 
 import java.math.BigInteger;
-import java.util.Enumeration;
 
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
@@ -25,10 +24,13 @@ public class ElGamalParameter
     private ElGamalParameter(
         ASN1Sequence  seq)
     {
-        Enumeration     e = seq.getObjects();
+        if (seq.size() != 2)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
 
-        p = (ASN1Integer)e.nextElement();
-        g = (ASN1Integer)e.nextElement();
+        p = ASN1Integer.getInstance(seq.getObjectAt(0));
+        g = ASN1Integer.getInstance(seq.getObjectAt(1));
     }
 
     public static ElGamalParameter getInstance(Object o)

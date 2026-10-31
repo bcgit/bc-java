@@ -30,6 +30,11 @@ public class EncryptedPrivateKeyData
 
     private EncryptedPrivateKeyData(ASN1Sequence seq)
     {
+        if (seq.size() != 2)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
+
         encryptedPrivateKeyInfo = EncryptedPrivateKeyInfo.getInstance(seq.getObjectAt(0));
         ASN1Sequence certSeq = ASN1Sequence.getInstance(seq.getObjectAt(1));
         certificateChain = new Certificate[certSeq.size()];

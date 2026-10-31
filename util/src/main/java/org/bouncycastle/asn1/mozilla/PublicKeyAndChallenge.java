@@ -42,6 +42,11 @@ public class PublicKeyAndChallenge
 
     private PublicKeyAndChallenge(ASN1Sequence seq)
     {
+        if (seq.size() != 2)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
+
         pkacSeq = seq;
         spki = SubjectPublicKeyInfo.getInstance(seq.getObjectAt(0));
         challenge = ASN1IA5String.getInstance(seq.getObjectAt(1));

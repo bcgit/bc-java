@@ -46,7 +46,12 @@ public class MonetaryValue
     private MonetaryValue(
         ASN1Sequence seq)
     {
-        Enumeration e = seq.getObjects();    
+        if (seq.size() != 3)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
+
+        Enumeration e = seq.getObjects();
         // currency
         currency = Iso4217CurrencyCode.getInstance(e.nextElement());
         // hashAlgorithm

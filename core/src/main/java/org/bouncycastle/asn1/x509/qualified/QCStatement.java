@@ -44,6 +44,11 @@ public class QCStatement
     private QCStatement(
         ASN1Sequence seq)
     {
+        if (seq.size() < 1 || seq.size() > 2)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
+
         Enumeration e = seq.getObjects();
 
         // qcStatementId

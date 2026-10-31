@@ -98,6 +98,11 @@ public class X9FieldID
     private X9FieldID(
         ASN1Sequence  seq)
     {
+        if (seq.size() != 2)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
+
         this.id = ASN1ObjectIdentifier.getInstance(seq.getObjectAt(0));
         this.parameters = seq.getObjectAt(1).toASN1Primitive();
     }

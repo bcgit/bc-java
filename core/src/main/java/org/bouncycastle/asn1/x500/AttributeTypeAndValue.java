@@ -18,8 +18,13 @@ public class AttributeTypeAndValue
 
     private AttributeTypeAndValue(ASN1Sequence seq)
     {
-        type = (ASN1ObjectIdentifier)seq.getObjectAt(0);
-        value = (ASN1Encodable)seq.getObjectAt(1);
+        if (seq.size() != 2)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
+
+        type = ASN1ObjectIdentifier.getInstance(seq.getObjectAt(0));
+        value = seq.getObjectAt(1);
     }
 
     public static AttributeTypeAndValue getInstance(Object o)

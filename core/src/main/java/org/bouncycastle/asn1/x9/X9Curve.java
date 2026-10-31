@@ -2,6 +2,7 @@ package org.bouncycastle.asn1.x9;
 
 import java.math.BigInteger;
 
+import org.bouncycastle.asn1.ASN1BitString;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Object;
@@ -48,6 +49,11 @@ public class X9Curve
         BigInteger    cofactor,
         ASN1Sequence  seq)
     {   
+        if (seq.size() < 2 || seq.size() > 3)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
+
         fieldIdentifier = fieldID.getIdentifier();
         if (fieldIdentifier.equals(prime_field))
         {   
@@ -95,7 +101,7 @@ public class X9Curve
 
         if (seq.size() == 3)
         {
-            seed = ((DERBitString)seq.getObjectAt(2)).getBytes();
+            seed = ASN1BitString.getInstance(seq.getObjectAt(2)).getBytes();
         }   
     }   
 

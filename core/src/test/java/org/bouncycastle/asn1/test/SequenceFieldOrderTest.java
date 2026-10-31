@@ -120,6 +120,24 @@ import org.bouncycastle.asn1.x509.V3TBSCertificateGenerator;
 import org.bouncycastle.asn1.x9.DomainParameters;
 import org.bouncycastle.asn1.x9.ValidationParams;
 import org.bouncycastle.asn1.x509.Validity;
+import org.bouncycastle.asn1.bc.EncryptedObjectStoreData;
+import org.bouncycastle.asn1.bc.EncryptedPrivateKeyData;
+import org.bouncycastle.asn1.bc.EncryptedSecretKeyData;
+import org.bouncycastle.asn1.bc.SecretKeyData;
+import org.bouncycastle.asn1.cryptopro.ECGOST3410ParamSetParameters;
+import org.bouncycastle.asn1.cryptopro.GOST3410ParamSetParameters;
+import org.bouncycastle.asn1.ua.DSTU4145BinaryField;
+import org.bouncycastle.asn1.ua.DSTU4145Params;
+import org.bouncycastle.asn1.x500.AttributeTypeAndValue;
+import org.bouncycastle.asn1.x509.qualified.BiometricData;
+import org.bouncycastle.asn1.x509.qualified.Iso4217CurrencyCode;
+import org.bouncycastle.asn1.x509.qualified.MonetaryValue;
+import org.bouncycastle.asn1.x509.qualified.QCStatement;
+import org.bouncycastle.asn1.x509.qualified.SemanticsInformation;
+import org.bouncycastle.asn1.x509.qualified.TypeOfBiometricData;
+import org.bouncycastle.asn1.x9.X9Curve;
+import org.bouncycastle.asn1.x9.X9FieldID;
+import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.util.test.SimpleTest;
 
 /**
@@ -249,6 +267,8 @@ public class SequenceFieldOrderTest
         ocspResponses();
         bcTypes();
         domainParameters();
+        fixedSizeTypes();
+        qualifiedTypes();
     }
 
     private void authorityKeyIdentifier()
@@ -1306,6 +1326,209 @@ public class SequenceFieldOrderTest
         ASN1Encodable[] curve = ((ASN1Sequence)new DSTU4145ECBinary(DSTU4145NamedCurves.getByOID(DSTU4145NamedCurves.getOIDs()[0])).toASN1Primitive()).toArray();
         accepts("DSTU4145ECBinary", dstu, curve);
         rejects("DSTU4145ECBinary trailing element", dstu, concat(curve, els(ONE)));
+    }
+
+    private void fixedSizeTypes()
+        throws IOException
+    {
+        final ASN1Encodable octets = new DEROctetString(new byte[8]);
+        final ASN1ObjectIdentifier oid = new ASN1ObjectIdentifier("1.2.3.4");
+
+        Parser p = new Parser()
+        {
+            public Object parse(ASN1Sequence seq)
+            {
+                return EncryptedObjectStoreData.getInstance(seq);
+            }
+        };
+        accepts("EncryptedObjectStoreData", p, els(SHA256_RSA, octets));
+        rejects("EncryptedObjectStoreData trailing", p, els(SHA256_RSA, octets, ONE));
+        rejects("EncryptedObjectStoreData short", p, els(SHA256_RSA));
+
+        p = new Parser()
+        {
+            public Object parse(ASN1Sequence seq)
+            {
+                return EncryptedSecretKeyData.getInstance(seq);
+            }
+        };
+        accepts("EncryptedSecretKeyData", p, els(SHA256_RSA, octets));
+        rejects("EncryptedSecretKeyData trailing", p, els(SHA256_RSA, octets, ONE));
+
+        p = new Parser()
+        {
+            public Object parse(ASN1Sequence seq)
+            {
+                return SecretKeyData.getInstance(seq);
+            }
+        };
+        accepts("SecretKeyData", p, els(oid, octets));
+        rejects("SecretKeyData trailing", p, els(oid, octets, ONE));
+
+        p = new Parser()
+        {
+            public Object parse(ASN1Sequence seq)
+            {
+                return EncryptedPrivateKeyData.getInstance(seq);
+            }
+        };
+        ASN1Encodable epki = new EncryptedPrivateKeyInfo(SHA256_RSA, new byte[8]);
+        accepts("EncryptedPrivateKeyData", p, els(epki, new DERSequence()));
+        rejects("EncryptedPrivateKeyData trailing", p, els(epki, new DERSequence(), ONE));
+
+        p = new Parser()
+        {
+            public Object parse(ASN1Sequence seq)
+            {
+                return GOST3410ParamSetParameters.getInstance(seq);
+            }
+        };
+        ASN1Encodable[] four = concat(els(ONE, ONE), els(ONE, ONE));
+        accepts("GOST3410ParamSetParameters", p, four);
+        rejects("GOST3410ParamSetParameters trailing", p, concat(four, els(ONE)));
+        rejects("GOST3410ParamSetParameters short", p, els(ONE, ONE, ONE));
+
+        p = new Parser()
+        {
+            public Object parse(ASN1Sequence seq)
+            {
+                return ECGOST3410ParamSetParameters.getInstance(seq);
+            }
+        };
+        ASN1Encodable[] six = concat(four, els(ONE, ONE));
+        accepts("ECGOST3410ParamSetParameters", p, six);
+        rejects("ECGOST3410ParamSetParameters trailing", p, concat(six, els(ONE)));
+        rejects("ECGOST3410ParamSetParameters short", p, concat(four, els(ONE)));
+
+        p = new Parser()
+        {
+            public Object parse(ASN1Sequence seq)
+            {
+                return DSTU4145BinaryField.getInstance(seq);
+            }
+        };
+        accepts("DSTU4145BinaryField trinomial", p, els(ONE, ONE));
+        accepts("DSTU4145BinaryField pentanomial", p, els(ONE, new DERSequence(els(ONE, ONE, ONE))));
+        rejects("DSTU4145BinaryField trailing", p, els(ONE, ONE, ONE));
+        rejects("DSTU4145BinaryField pentanomial short", p, els(ONE, new DERSequence(els(ONE, ONE))));
+        rejects("DSTU4145BinaryField pentanomial trailing", p, els(ONE, new DERSequence(concat(els(ONE, ONE), els(ONE, ONE)))));
+
+        p = new Parser()
+        {
+            public Object parse(ASN1Sequence seq)
+            {
+                return DSTU4145Params.getInstance(seq);
+            }
+        };
+        ASN1Encodable dke = new DEROctetString(DSTU4145Params.getDefaultDKE());
+        accepts("DSTU4145Params", p, els(DSTU4145NamedCurves.getOIDs()[0]));
+        accepts("DSTU4145Params dke", p, els(DSTU4145NamedCurves.getOIDs()[0], dke));
+        rejects("DSTU4145Params trailing", p, els(DSTU4145NamedCurves.getOIDs()[0], dke, ONE));
+
+        p = new Parser()
+        {
+            public Object parse(ASN1Sequence seq)
+            {
+                return AttributeTypeAndValue.getInstance(seq);
+            }
+        };
+        accepts("AttributeTypeAndValue", p, els(oid, new DERUTF8String("v")));
+        rejects("AttributeTypeAndValue trailing", p, els(oid, new DERUTF8String("v"), ONE));
+        rejects("AttributeTypeAndValue short", p, els(oid));
+
+        p = new Parser()
+        {
+            public Object parse(ASN1Sequence seq)
+            {
+                return DigestInfo.getInstance(seq);
+            }
+        };
+        accepts("DigestInfo", p, els(SHA256_RSA, octets));
+        rejects("DigestInfo trailing", p, els(SHA256_RSA, octets, ONE));
+        rejects("DigestInfo short", p, els(SHA256_RSA));
+
+        p = new Parser()
+        {
+            public Object parse(ASN1Sequence seq)
+            {
+                return X9FieldID.getInstance(seq);
+            }
+        };
+        accepts("X9FieldID", p, els(X9ObjectIdentifiers.prime_field, ONE));
+        rejects("X9FieldID trailing", p, els(X9ObjectIdentifiers.prime_field, ONE, ONE));
+
+        final X9FieldID fp = new X9FieldID(new BigInteger("FFFFFFFF00000001000000000000000000000000FFFFFFFFFFFFFFFFFFFFFFFF", 16));
+        p = new Parser()
+        {
+            public Object parse(ASN1Sequence seq)
+            {
+                return new X9Curve(fp, null, null, seq);
+            }
+        };
+        ASN1Encodable coefficient = new DEROctetString(new byte[]{ 1 });
+        accepts("X9Curve", p, els(coefficient, coefficient));
+        accepts("X9Curve seed", p, els(coefficient, coefficient, new DERBitString(new byte[4])));
+        rejects("X9Curve trailing", p, concat(els(coefficient, coefficient, new DERBitString(new byte[4])), els(ONE)));
+        rejects("X9Curve short", p, els(coefficient));
+    }
+
+    private void qualifiedTypes()
+        throws IOException
+    {
+        final ASN1Encodable octets = new DEROctetString(new byte[8]);
+        final ASN1ObjectIdentifier oid = new ASN1ObjectIdentifier("1.2.3.4");
+        ASN1Encodable type = new TypeOfBiometricData(TypeOfBiometricData.PICTURE);
+        ASN1Encodable uri = new DERIA5String("http://example.com");
+
+        Parser p = new Parser()
+        {
+            public Object parse(ASN1Sequence seq)
+            {
+                return BiometricData.getInstance(seq);
+            }
+        };
+        accepts("BiometricData", p, els(type, SHA256_RSA, octets));
+        accepts("BiometricData uri", p, concat(els(type, SHA256_RSA, octets), els(uri)));
+        rejects("BiometricData trailing", p, concat(els(type, SHA256_RSA, octets), els(uri, ONE)));
+        rejects("BiometricData short", p, els(type, SHA256_RSA));
+
+        p = new Parser()
+        {
+            public Object parse(ASN1Sequence seq)
+            {
+                return MonetaryValue.getInstance(seq);
+            }
+        };
+        ASN1Encodable currency = new Iso4217CurrencyCode("AUD");
+        accepts("MonetaryValue", p, els(currency, ONE, ONE));
+        rejects("MonetaryValue trailing", p, concat(els(currency, ONE, ONE), els(ONE)));
+        rejects("MonetaryValue short", p, els(currency, ONE));
+
+        p = new Parser()
+        {
+            public Object parse(ASN1Sequence seq)
+            {
+                return QCStatement.getInstance(seq);
+            }
+        };
+        accepts("QCStatement", p, els(oid));
+        accepts("QCStatement info", p, els(oid, ONE));
+        rejects("QCStatement trailing", p, els(oid, ONE, ONE));
+
+        p = new Parser()
+        {
+            public Object parse(ASN1Sequence seq)
+            {
+                return SemanticsInformation.getInstance(seq);
+            }
+        };
+        ASN1Encodable names = new DERSequence(new GeneralName(GeneralName.dNSName, "a.example"));
+        accepts("SemanticsInformation id", p, els(oid));
+        accepts("SemanticsInformation names", p, els(names));
+        accepts("SemanticsInformation both", p, els(oid, names));
+        rejects("SemanticsInformation trailing", p, els(oid, names, ONE));
+        rejects("SemanticsInformation repeated names", p, els(names, names));
+        rejects("SemanticsInformation repeated id", p, els(oid, oid));
     }
 
     public static void main(String[] args)

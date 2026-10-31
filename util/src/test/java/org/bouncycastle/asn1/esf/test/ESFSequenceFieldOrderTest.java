@@ -11,6 +11,7 @@ import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.DERUTF8String;
 import org.bouncycastle.asn1.esf.CommitmentTypeIndication;
 import org.bouncycastle.asn1.esf.CommitmentTypeQualifier;
+import org.bouncycastle.asn1.esf.CrlListID;
 import org.bouncycastle.asn1.esf.CrlOcspRef;
 import org.bouncycastle.asn1.esf.RevocationValues;
 import org.bouncycastle.asn1.esf.SPUserNotice;
@@ -178,6 +179,17 @@ public class ESFSequenceFieldOrderTest
         accepts("SigPolicyQualifierInfo", qualifierInfo, els(OID, ONE));
         rejects("SigPolicyQualifierInfo trailing element", qualifierInfo, els(OID, ONE, ONE));
         rejects("SigPolicyQualifierInfo missing qualifier", qualifierInfo, els(OID));
+
+        Parser crlList = new Parser()
+        {
+            public Object parse(ASN1Sequence seq)
+            {
+                return CrlListID.getInstance(seq);
+            }
+        };
+        accepts("CrlListID", crlList, els(EMPTY));
+        rejects("CrlListID trailing element", crlList, els(EMPTY, EMPTY));
+        rejects("CrlListID empty", crlList, new ASN1Encodable[0]);
     }
 
     public static void main(String[] args)

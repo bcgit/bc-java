@@ -1,6 +1,5 @@
 package org.bouncycastle.asn1.x509.qualified;
 
-import java.util.Enumeration;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Object;
@@ -47,34 +46,32 @@ public class SemanticsInformation
         
     private SemanticsInformation(ASN1Sequence seq)
     {
-        Enumeration e = seq.getObjects();
         if (seq.size() < 1)
         {
              throw new IllegalArgumentException("no objects in SemanticsInformation");
         }
-        
-        Object object = e.nextElement();
-        if (object instanceof ASN1ObjectIdentifier)
+
+        // semanticsIdentifier OPTIONAL, then nameRegistrationAuthorities OPTIONAL, at least one present
+        int i = 0;
+        if (seq.getObjectAt(0) instanceof ASN1ObjectIdentifier)
         {
-            semanticsIdentifier = ASN1ObjectIdentifier.getInstance(object);
-            if (e.hasMoreElements())
+            semanticsIdentifier = ASN1ObjectIdentifier.getInstance(seq.getObjectAt(0));
+            i++;
+        }
+
+        if (i < seq.size())
+        {
+            ASN1Sequence generalNameSeq = ASN1Sequence.getInstance(seq.getObjectAt(i++));
+            nameRegistrationAuthorities = new GeneralName[generalNameSeq.size()];
+            for (int j = 0; j < generalNameSeq.size(); j++)
             {
-                object = e.nextElement();
-            }
-            else
-            {
-                object = null;
+                nameRegistrationAuthorities[j] = GeneralName.getInstance(generalNameSeq.getObjectAt(j));
             }
         }
-        
-        if (object != null)
+
+        if (i != seq.size())
         {
-            ASN1Sequence generalNameSeq = ASN1Sequence.getInstance(object);
-            nameRegistrationAuthorities = new GeneralName[generalNameSeq.size()];
-            for (int i= 0; i < generalNameSeq.size(); i++)
-            {
-                nameRegistrationAuthorities[i] = GeneralName.getInstance(generalNameSeq.getObjectAt(i));
-            } 
+            throw new IllegalArgumentException("unexpected element at position " + i);
         }
     }
         

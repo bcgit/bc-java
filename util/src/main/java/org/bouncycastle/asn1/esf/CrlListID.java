@@ -35,7 +35,12 @@ public class CrlListID
 
     private CrlListID(ASN1Sequence seq)
     {
-        this.crls = (ASN1Sequence)seq.getObjectAt(0);
+        if (seq.size() != 1)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
+
+        this.crls = ASN1Sequence.getInstance(seq.getObjectAt(0));
         Enumeration e = this.crls.getObjects();
         while (e.hasMoreElements())
         {

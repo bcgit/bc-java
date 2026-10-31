@@ -1,6 +1,5 @@
 package org.bouncycastle.asn1.x509;
 
-import java.util.Enumeration;
 
 import org.bouncycastle.asn1.ASN1Object;
 import org.bouncycastle.asn1.ASN1OctetString;
@@ -58,10 +57,13 @@ public class DigestInfo
     public DigestInfo(
         ASN1Sequence  obj)
     {
-        Enumeration             e = obj.getObjects();
+        if (obj.size() != 2)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + obj.size());
+        }
 
-        algId = AlgorithmIdentifier.getInstance(e.nextElement());
-        digest = ASN1OctetString.getInstance(e.nextElement()).getOctets();
+        algId = AlgorithmIdentifier.getInstance(obj.getObjectAt(0));
+        digest = ASN1OctetString.getInstance(obj.getObjectAt(1)).getOctets();
     }
 
     public AlgorithmIdentifier getAlgorithmId()

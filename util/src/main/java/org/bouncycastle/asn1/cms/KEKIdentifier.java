@@ -42,7 +42,7 @@ public class KEKIdentifier
     private KEKIdentifier(
         ASN1Sequence seq)
     {
-        keyIdentifier = (ASN1OctetString)seq.getObjectAt(0);
+        keyIdentifier = ASN1OctetString.getInstance(seq.getObjectAt(0));
 
         switch (seq.size())
         {
@@ -51,7 +51,7 @@ public class KEKIdentifier
         case 2:
             if (seq.getObjectAt(1) instanceof ASN1GeneralizedTime)
             {
-                date = (ASN1GeneralizedTime)seq.getObjectAt(1);
+                date = ASN1GeneralizedTime.getInstance(seq.getObjectAt(1));
             }
             else
             {
@@ -59,7 +59,7 @@ public class KEKIdentifier
             }
             break;
         case 3:
-            date  = (ASN1GeneralizedTime)seq.getObjectAt(1);
+            date  = ASN1GeneralizedTime.getInstance(seq.getObjectAt(1));
             other = OtherKeyAttribute.getInstance(seq.getObjectAt(2));
             break;
         default:

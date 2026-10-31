@@ -31,6 +31,11 @@ public class EncryptedObjectStoreData
 
     private EncryptedObjectStoreData(ASN1Sequence seq)
     {
+        if (seq.size() != 2)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
+
         this.encryptionAlgorithm = AlgorithmIdentifier.getInstance(seq.getObjectAt(0));
         this.encryptedContent = ASN1OctetString.getInstance(seq.getObjectAt(1));
     }

@@ -79,6 +79,10 @@ public class DSTU4145Params
         if (obj != null)
         {
             ASN1Sequence seq = ASN1Sequence.getInstance(obj);
+            if (seq.size() < 1 || seq.size() > 2)
+            {
+                throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+            }
             DSTU4145Params params;
 
             if (seq.getObjectAt(0) instanceof ASN1ObjectIdentifier)

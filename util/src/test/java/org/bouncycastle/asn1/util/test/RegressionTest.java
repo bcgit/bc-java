@@ -150,6 +150,7 @@ public class RegressionTest
         new TimeStampRequestTest(),
         new SMIMETest(),
         new TSPSequenceFieldOrderTest(),
+        new MiscSequenceFieldOrderTest(),
     };
 
     public static void main(String[] args)

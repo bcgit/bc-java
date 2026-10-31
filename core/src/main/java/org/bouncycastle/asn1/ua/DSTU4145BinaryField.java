@@ -14,6 +14,11 @@ public class DSTU4145BinaryField
 
     private DSTU4145BinaryField(ASN1Sequence seq)
     {
+        if (seq.size() != 2)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
+
         m = ASN1Integer.getInstance(seq.getObjectAt(0)).intPositiveValueExact();
 
         if (seq.getObjectAt(1) instanceof ASN1Integer)
@@ -23,6 +28,10 @@ public class DSTU4145BinaryField
         else if (seq.getObjectAt(1) instanceof ASN1Sequence)
         {
             ASN1Sequence coefs = ASN1Sequence.getInstance(seq.getObjectAt(1));
+            if (coefs.size() != 3)
+            {
+                throw new IllegalArgumentException("Bad sequence size: " + coefs.size());
+            }
 
             k = ASN1Integer.getInstance(coefs.getObjectAt(0)).intPositiveValueExact();
             j = ASN1Integer.getInstance(coefs.getObjectAt(1)).intPositiveValueExact();

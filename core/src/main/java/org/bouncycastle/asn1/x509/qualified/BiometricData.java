@@ -48,6 +48,11 @@ public class BiometricData
             
     private BiometricData(ASN1Sequence seq)
     {
+        if (seq.size() < 3 || seq.size() > 4)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
+
         Enumeration e = seq.getObjects();
 
         // typeOfBiometricData

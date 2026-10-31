@@ -650,6 +650,28 @@ public class CMSSequenceFieldOrderTest
         };
         accepts("OtherKeyAttribute", oka, els(CMSObjectIdentifiers.data, ONE));
         rejects("OtherKeyAttribute trailing element", oka, els(CMSObjectIdentifiers.data, ONE, ONE));
+
+        Parser attr = new Parser()
+        {
+            public Object parse(ASN1Sequence seq)
+            {
+                return Attribute.getInstance(seq);
+            }
+        };
+        accepts("Attribute", attr, els(CMSAttributes.contentType, new DERSet(CMSObjectIdentifiers.data)));
+        rejects("Attribute trailing element", attr, els(CMSAttributes.contentType, new DERSet(CMSObjectIdentifiers.data), ONE));
+        rejects("Attribute short", attr, els(CMSAttributes.contentType));
+
+        Parser ias = new Parser()
+        {
+            public Object parse(ASN1Sequence seq)
+            {
+                return IssuerAndSerialNumber.getInstance(seq);
+            }
+        };
+        accepts("IssuerAndSerialNumber", ias, els(new X500Name("CN=Test"), ONE));
+        rejects("IssuerAndSerialNumber trailing element", ias, els(new X500Name("CN=Test"), ONE, ONE));
+        rejects("IssuerAndSerialNumber serial type", ias, els(new X500Name("CN=Test"), OCTETS));
     }
 
     private void keyIdentifiers()

@@ -31,6 +31,11 @@ public class EncryptedSecretKeyData
 
     private EncryptedSecretKeyData(ASN1Sequence seq)
     {
+        if (seq.size() != 2)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
+
         this.keyEncryptionAlgorithm = AlgorithmIdentifier.getInstance(seq.getObjectAt(0));
         this.encryptedKeyData = ASN1OctetString.getInstance(seq.getObjectAt(1));
     }

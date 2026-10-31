@@ -1,7 +1,6 @@
 package org.bouncycastle.asn1.cryptopro;
 
 import java.math.BigInteger;
-import java.util.Enumeration;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Integer;
@@ -55,12 +54,15 @@ public class GOST3410ParamSetParameters
     public GOST3410ParamSetParameters(
         ASN1Sequence  seq)
     {
-        Enumeration     e = seq.getObjects();
+        if (seq.size() != 4)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
 
-        keySize = ((ASN1Integer)e.nextElement()).intValueExact();
-        p = (ASN1Integer)e.nextElement();
-        q = (ASN1Integer)e.nextElement();
-        a = (ASN1Integer)e.nextElement();
+        keySize = ASN1Integer.getInstance(seq.getObjectAt(0)).intValueExact();
+        p = ASN1Integer.getInstance(seq.getObjectAt(1));
+        q = ASN1Integer.getInstance(seq.getObjectAt(2));
+        a = ASN1Integer.getInstance(seq.getObjectAt(3));
     }
 
     /**
