@@ -51,6 +51,11 @@ public class BasicConstraints
     private BasicConstraints(
         ASN1Sequence   seq)
     {
+        if (seq.size() > 2)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
+
         if (seq.size() == 0)
         {
             this.cA = null;

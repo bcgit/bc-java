@@ -54,6 +54,12 @@ import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.ua.DSTU4145ECBinary;
 import org.bouncycastle.asn1.ua.DSTU4145NamedCurves;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x509.OtherName;
+import org.bouncycastle.asn1.x509.AttributeCertificateInfo;
+import org.bouncycastle.asn1.x509.AttCertIssuer;
+import org.bouncycastle.asn1.sec.ECPrivateKeyStructure;
+import org.bouncycastle.asn1.sec.ECPrivateKey;
+import org.bouncycastle.asn1.pkcs.CertificationRequestInfo;
 import org.bouncycastle.asn1.x509.AuthorityKeyIdentifier;
 import org.bouncycastle.asn1.x509.BasicConstraints;
 import org.bouncycastle.asn1.x509.Certificate;
@@ -209,6 +215,11 @@ public class SequenceFieldOrderTest
         ietfAttrSyntax();
         personalData();
         x509Extensions();
+        attributeCertificateInfo();
+        ecPrivateKey();
+        otherName();
+        certificationRequestInfo();
+        basicConstraints();
         rsaParams();
         privateKeyInfo();
         pkcs7SignerInfo();
@@ -655,6 +666,123 @@ public class SequenceFieldOrderTest
 
         accepts("X509Extensions", p, els(keyUsage, basicConstraints));
         rejects("X509Extensions repeated extension", p, els(keyUsage, keyUsage));
+    }
+
+    private void attributeCertificateInfo()
+        throws IOException
+    {
+        Parser p = new Parser()
+        {
+            public Object parse(ASN1Sequence seq)
+            {
+                return AttributeCertificateInfo.getInstance(seq);
+            }
+        };
+        ASN1Encodable[] head = new ASN1Encodable[]{ ONE, new Holder(GN), new AttCertIssuer(new V2Form(GN)), SHA256_RSA, ONE,
+            new DERSequence(els(new DERGeneralizedTime("20000101000000Z"), new DERGeneralizedTime("20300101000000Z"))), new DERSequence() };
+        ASN1Encodable issuerUniqueID = new DERBitString(new byte[]{ 1 });
+        ASN1Encodable exts1 = new DERSequence(new DERSequence(els(Extension.noRevAvail, new DEROctetString(new byte[]{ 5, 0 }))));
+        ASN1Encodable exts2 = new DERSequence(new DERSequence(els(Extension.auditIdentity, new DEROctetString(new byte[]{ 4, 0 }))));
+
+        accepts("AttributeCertificateInfo", p, head);
+        accepts("AttributeCertificateInfo", p, concat(head, els(issuerUniqueID, exts1)));
+        accepts("AttributeCertificateInfo", p, concat(head, els(exts1)));
+        rejects("AttributeCertificateInfo extensions twice", p, concat(head, els(exts1, exts2)));
+        rejects("AttributeCertificateInfo extensions before issuerUniqueID", p, concat(head, els(exts1, issuerUniqueID)));
+        rejects("AttributeCertificateInfo trailing", p, concat(head, els(ONE)));
+    }
+
+    private void ecPrivateKey()
+        throws IOException
+    {
+        Parser[] parsers = new Parser[]{
+            new Parser()
+            {
+                public Object parse(ASN1Sequence seq)
+                {
+                    return ECPrivateKey.getInstance(seq);
+                }
+            },
+            new Parser()
+            {
+                public Object parse(ASN1Sequence seq)
+                {
+                    return new ECPrivateKeyStructure(seq);
+                }
+            }
+        };
+        ASN1Encodable key = new DEROctetString(new byte[32]);
+        ASN1Encodable p256 = ctx(0, true, new ASN1ObjectIdentifier("1.2.840.10045.3.1.7"));
+        ASN1Encodable p384 = ctx(0, true, new ASN1ObjectIdentifier("1.3.132.0.34"));
+        ASN1Encodable pub = ctx(1, true, new DERBitString(new byte[]{ 4, 1, 2 }));
+
+        for (int i = 0; i != parsers.length; i++)
+        {
+            Parser p = parsers[i];
+            String label = i == 0 ? "ECPrivateKey" : "ECPrivateKeyStructure";
+            accepts(label, p, els(ONE, key));
+            accepts(label, p, els(ONE, key, p256, pub));
+            accepts(label, p, els(ONE, key, pub));
+            rejects(label + " [0] twice", p, els(ONE, key, p256, p384));
+            rejects(label + " [1] before [0]", p, els(ONE, key, pub, p256));
+            rejects(label + " unknown tag", p, els(ONE, key, ctx(5, true, p256)));
+            rejects(label + " trailing", p, els(ONE, key, p256, ONE));
+        }
+    }
+
+    private void otherName()
+        throws IOException
+    {
+        Parser p = new Parser()
+        {
+            public Object parse(ASN1Sequence seq)
+            {
+                return OtherName.getInstance(seq);
+            }
+        };
+        ASN1Encodable oid = new ASN1ObjectIdentifier("1.2.3.4");
+        ASN1Encodable value = new DERUTF8String("x");
+
+        accepts("OtherName", p, els(oid, ctx(0, true, value)));
+        rejects("OtherName [5] value", p, els(oid, ctx(5, true, value)));
+        rejects("OtherName APPLICATION 0 value", p, els(oid, new DERTaggedObject(true, BERTags.APPLICATION, 0, value)));
+    }
+
+    private void certificationRequestInfo()
+        throws IOException
+    {
+        Parser p = new Parser()
+        {
+            public Object parse(ASN1Sequence seq)
+            {
+                return CertificationRequestInfo.getInstance(seq);
+            }
+        };
+        ASN1Encodable zero = new ASN1Integer(0);
+        ASN1Encodable subject = new X500Name("CN=Test");
+        ASN1Encodable attributes = ctx(0, false, new DERSet());
+
+        accepts("CertificationRequestInfo", p, els(zero, subject, SPKI, attributes));
+        // attributes is treated as optional for the encoders that leave it out
+        accepts("CertificationRequestInfo no attributes", p, els(zero, subject, SPKI));
+        rejects("CertificationRequestInfo [5] attributes", p, els(zero, subject, SPKI, ctx(5, false, new DERSet())));
+        rejects("CertificationRequestInfo trailing", p, concat(els(zero, subject, SPKI, attributes), els(ONE)));
+    }
+
+    private void basicConstraints()
+        throws IOException
+    {
+        Parser p = new Parser()
+        {
+            public Object parse(ASN1Sequence seq)
+            {
+                return BasicConstraints.getInstance(seq);
+            }
+        };
+        accepts("BasicConstraints", p, new ASN1Encodable[0]);
+        accepts("BasicConstraints", p, els(ASN1Boolean.TRUE, ONE));
+        accepts("BasicConstraints pathLen only", p, els(ONE));
+        rejects("BasicConstraints trailing", p, els(ASN1Boolean.TRUE, ONE, ONE));
     }
 
     private void rsaParams()

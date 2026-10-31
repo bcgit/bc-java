@@ -273,10 +273,27 @@ public class PEMParser
             {
                 ASN1Sequence seq = ASN1Sequence.getInstance(encoding);
 
-                org.bouncycastle.asn1.sec.ECPrivateKey pKey = org.bouncycastle.asn1.sec.ECPrivateKey.getInstance(seq);
-                AlgorithmIdentifier algId = new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey,
-                    pKey.getParametersObject());
-                PrivateKeyInfo privInfo = new PrivateKeyInfo(algId, pKey);
+                org.bouncycastle.asn1.sec.ECPrivateKey pKey;
+                AlgorithmIdentifier algId;
+                PrivateKeyInfo privInfo;
+                if (seq.size() > 1 && seq.getObjectAt(1) instanceof ASN1Sequence)
+                {
+                    // some encoders put a PKCS#8 PrivateKeyInfo under the EC PRIVATE KEY header
+                    privInfo = PrivateKeyInfo.getInstance(seq);
+                    algId = privInfo.getPrivateKeyAlgorithm();
+                    if (!X9ObjectIdentifiers.id_ecPublicKey.equals(algId.getAlgorithm()))
+                    {
+                        throw new PEMException("EC PRIVATE KEY block carries a " + algId.getAlgorithm() + " key");
+                    }
+                    pKey = org.bouncycastle.asn1.sec.ECPrivateKey.getInstance(privInfo.parsePrivateKey());
+                }
+                else
+                {
+                    pKey = org.bouncycastle.asn1.sec.ECPrivateKey.getInstance(seq);
+                    algId = new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey,
+                        pKey.getParametersObject());
+                    privInfo = new PrivateKeyInfo(algId, pKey);
+                }
 
                 ASN1BitString publicKey = pKey.getPublicKey();
                 SubjectPublicKeyInfo pubInfo = null;

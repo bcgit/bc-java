@@ -22,6 +22,8 @@ import java.security.Signature;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.DSAParams;
+import java.security.interfaces.ECPrivateKey;
+import java.security.interfaces.ECPublicKey;
 import java.security.interfaces.DSAPrivateKey;
 import java.security.interfaces.DSAPublicKey;
 import java.security.interfaces.RSAPrivateCrtKey;
@@ -984,7 +986,8 @@ public class ParserTest
     private void doNoECPublicKeyTest()
         throws Exception
     {
-        // EC private key without the public key defined. Note: this encoding is actually invalid.
+        // A PKCS#8 PrivateKeyInfo under an EC PRIVATE KEY header, as some encoders write it; the
+        // inner ECPrivateKey carries the public key, which is now recovered rather than dropped.
         String ecSample =
                     "-----BEGIN EC PRIVATE KEY-----\n" +
                     "MIGTAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBHkwdwIBAQQgvYiiubZYNO1WXXi3\n" +
@@ -997,18 +1000,31 @@ public class ParserTest
 
         PEMKeyPair kp = (PEMKeyPair)pemRd.readObject();
 
-        isTrue(kp.getPublicKeyInfo() == null);
+        isTrue(kp.getPublicKeyInfo() != null);
+        isEquals(X9ObjectIdentifiers.id_ecPublicKey, kp.getPrivateKeyInfo().getPrivateKeyAlgorithm().getAlgorithm());
+        isEquals(X9ObjectIdentifiers.id_ecPublicKey, kp.getPublicKeyInfo().getAlgorithm().getAlgorithm());
+
+        KeyPair pair = new JcaPEMKeyConverter().setProvider("BC").getKeyPair(kp);
+        isTrue(pair.getPrivate() instanceof ECPrivateKey);
+        isTrue(pair.getPublic() instanceof ECPublicKey);
     }
 
     private void doParseAttrECKeyTest()
         throws Exception
     {
-        // EC private key extremely dodgy attributes.
+        // garbage under an EC PRIVATE KEY header: it is not an ECPrivateKey, and is rejected as such
+        // now that ECPrivateKey checks its fields rather than accepting any SEQUENCE (github #2516)
         PEMParser pemRd = openPEMResource("ec_attr_key.pem");
 
-        PEMKeyPair kp = (PEMKeyPair)pemRd.readObject();
-
-        isTrue(kp.getPublicKeyInfo() == null);
+        try
+        {
+            pemRd.readObject();
+            fail("malformed EC PRIVATE KEY accepted");
+        }
+        catch (PEMException e)
+        {
+            isTrue(e.getMessage().startsWith("problem creating EC private key: "));
+        }
     }
 
     public static void main(

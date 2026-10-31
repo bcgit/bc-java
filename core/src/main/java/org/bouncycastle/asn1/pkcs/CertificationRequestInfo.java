@@ -9,6 +9,7 @@ import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 import org.bouncycastle.asn1.x500.X500Name;
@@ -100,7 +101,12 @@ public class CertificationRequestInfo
     private CertificationRequestInfo(
         ASN1Sequence  seq)
     {
-        version = (ASN1Integer)seq.getObjectAt(0);
+        if (seq.size() < 3 || seq.size() > 4)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + seq.size());
+        }
+
+        version = ASN1Integer.getInstance(seq.getObjectAt(0));
 
         subject = X500Name.getInstance(seq.getObjectAt(1));
         subjectPKInfo = SubjectPublicKeyInfo.getInstance(seq.getObjectAt(2));
@@ -111,7 +117,7 @@ public class CertificationRequestInfo
         //
         if (seq.size() > 3)
         {
-            ASN1TaggedObject tagobj = (ASN1TaggedObject)seq.getObjectAt(3);
+            ASN1TaggedObject tagobj = ASN1TaggedObject.getInstance(seq.getObjectAt(3), BERTags.CONTEXT_SPECIFIC, 0);
             attributes = ASN1Set.getInstance(tagobj, false);
         }
 

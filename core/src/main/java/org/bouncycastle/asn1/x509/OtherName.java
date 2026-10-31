@@ -6,6 +6,7 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.ASN1TaggedObject;
+import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERTaggedObject;
 
@@ -71,7 +72,7 @@ public class OtherName
         }
 
         this.typeID = ASN1ObjectIdentifier.getInstance(seq.getObjectAt(0));
-        this.value = ASN1TaggedObject.getInstance(seq.getObjectAt(1)).getExplicitBaseObject();
+        this.value = ASN1TaggedObject.getInstance(seq.getObjectAt(1), BERTags.CONTEXT_SPECIFIC, 0).getExplicitBaseObject();
     }
 
     public ASN1ObjectIdentifier getTypeID()

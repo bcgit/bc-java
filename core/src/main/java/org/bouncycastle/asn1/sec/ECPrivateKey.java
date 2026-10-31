@@ -52,6 +52,30 @@ public class ECPrivateKey
 
     private ECPrivateKey(ASN1Sequence seq)
     {
+        int count = seq.size();
+        if (count < 2 || count > 4)
+        {
+            throw new IllegalArgumentException("Bad sequence size: " + count);
+        }
+
+        ASN1Integer.getInstance(seq.getObjectAt(0));
+        ASN1OctetString.getInstance(seq.getObjectAt(1));
+
+        // parameters [0] then publicKey [1], each optional, in that order
+        int i = 2;
+        if (i < count && ASN1TaggedObject.getContextOptional(seq.getObjectAt(i), 0) != null)
+        {
+            i++;
+        }
+        if (i < count && ASN1TaggedObject.getContextOptional(seq.getObjectAt(i), 1) != null)
+        {
+            i++;
+        }
+        if (i != count)
+        {
+            throw new IllegalArgumentException("unexpected element at position " + i);
+        }
+
         this.seq = seq;
     }
 

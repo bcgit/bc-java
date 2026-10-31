@@ -78,18 +78,24 @@ public class AttributeCertificateInfo
         this.attrCertValidityPeriod = AttCertValidityPeriod.getInstance(seq.getObjectAt(start + 4));
         this.attributes = ASN1Sequence.getInstance(seq.getObjectAt(start + 5));
         
-        for (int i = start + 6; i < seq.size(); i++)
+        // issuerUniqueID then extensions, each optional, in that order
+        int i = start + 6, count = seq.size();
+        if (i < count && seq.getObjectAt(i) instanceof ASN1BitString)
         {
-            ASN1Encodable    obj = seq.getObjectAt(i);
-
-            if (obj instanceof ASN1BitString)
+            this.issuerUniqueID = ASN1BitString.getInstance(seq.getObjectAt(i++));
+        }
+        if (i < count)
+        {
+            ASN1Encodable obj = seq.getObjectAt(i);
+            if (obj instanceof ASN1Sequence || obj instanceof Extensions)
             {
-                this.issuerUniqueID = ASN1BitString.getInstance(seq.getObjectAt(i));
+                this.extensions = Extensions.getInstance(obj);
+                i++;
             }
-            else if (obj instanceof ASN1Sequence || obj instanceof Extensions)
-            {
-                this.extensions = Extensions.getInstance(seq.getObjectAt(i));
-            }
+        }
+        if (i != count)
+        {
+            throw new IllegalArgumentException("unexpected element at position " + i);
         }
     }
     
