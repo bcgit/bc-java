@@ -7,7 +7,6 @@ import org.bouncycastle.bcpg.BCPGKey;
 import org.bouncycastle.bcpg.HashAlgorithmTags;
 import org.bouncycastle.bcpg.RSAPublicBCPGKey;
 import org.bouncycastle.openpgp.operator.PGPDigestCalculator;
-import org.bouncycastle.util.BigIntegers;
 
 /**
  * Compute the GnuPG-style "keygrip" for a public key. The keygrip is a 20-byte
@@ -20,8 +19,10 @@ import org.bouncycastle.util.BigIntegers;
  * </p>
  * <p>
  * Currently RSA public keys are supported; the algorithm matches libgcrypt's
- * {@code _gcry_rsa_compute_keygrip} (SHA-1 of the canonical unsigned big-endian
- * encoding of the modulus n).
+ * RSA {@code compute_keygrip}, which hashes n as it appears in the key's
+ * S-expression: the signed (two's complement) big-endian encoding, so a modulus
+ * with its top bit set, as every full-length RSA modulus has, is hashed with a
+ * leading zero byte.
  * </p>
  */
 public class KeyGripCalculator
@@ -60,7 +61,7 @@ public class KeyGripCalculator
         digestCalculator.reset();
 
         OutputStream out = digestCalculator.getOutputStream();
-        byte[] n = BigIntegers.asUnsignedByteArray(((RSAPublicBCPGKey)key).getModulus());
+        byte[] n = ((RSAPublicBCPGKey)key).getModulus().toByteArray();
         out.write(n);
         out.close();
 
