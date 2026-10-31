@@ -360,18 +360,9 @@ class X509Util
         //
         for (int i = 0; i != prov.length; i++)
         {
-            //
-            // try case insensitive
-            //
-            Implementation imp = getImplementation(baseName, Strings.toUpperCase(algorithm), prov[i]);
-            if (imp != null)
-            {
-                return imp;
-            }
-
             try
             {
-                imp = getImplementation(baseName, algorithm, prov[i]);
+                return getImplementation(baseName, algorithm, prov[i]);
             }
             catch (NoSuchAlgorithmException e)
             {

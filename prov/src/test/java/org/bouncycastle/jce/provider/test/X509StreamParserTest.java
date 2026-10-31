@@ -6,6 +6,7 @@ import java.security.Security;
 import java.security.cert.X509CRL;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
+import java.util.Collections;
 
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1InputStream;
@@ -18,6 +19,8 @@ import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.test.SimpleTest;
 import org.bouncycastle.x509.X509AttributeCertificate;
 import org.bouncycastle.x509.X509CertificatePair;
+import org.bouncycastle.x509.X509CollectionStoreParameters;
+import org.bouncycastle.x509.X509Store;
 import org.bouncycastle.x509.X509StreamParser;
 
 public class X509StreamParserTest
@@ -342,6 +345,27 @@ public class X509StreamParserTest
         {
             fail("wrong number of Attribute Certificates found - expected 0");
         }
+
+        checkNoProviderNamed(rootCert);
+    }
+
+    // with BC added by Security.addProvider, providers without the service come first
+    private void checkNoProviderNamed(X509Certificate rootCert)
+        throws Exception
+    {
+        X509StreamParser parser = X509StreamParser.getInstance("Certificate");
+
+        isEquals("BC", parser.getProvider().getName());
+
+        parser.init(new ByteArrayInputStream(CertPathTest.rootCertBin));
+
+        isTrue("certificate not parsed", rootCert.equals(parser.read()));
+
+        X509Store store = X509Store.getInstance("Certificate/Collection",
+            new X509CollectionStoreParameters(Collections.singletonList(rootCert)));
+
+        isEquals("BC", store.getProvider().getName());
+        isEquals(1, store.getMatches(null).size());
     }
 
     public String getName()
