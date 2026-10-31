@@ -227,6 +227,33 @@ public class ECDSA5Test
         PrivateKey priv = kpGen.generateKeyPair().getPrivate();
         isTrue(!privKey.equals(priv));
         isTrue(!minimalPrivKey.equals(priv));
+
+        // equal public keys must hash equal whichever curve implementation backs them
+        AlgorithmParameterSpec[] specs = new AlgorithmParameterSpec[]{
+            null, new ECGenParameterSpec("prime256v1"), new ECGenParameterSpec("secp192r1"), new ECGenParameterSpec("sect283k1") };
+        for (int i = 0; i != specs.length; i++)
+        {
+            if (specs[i] == null)
+            {
+                kpGen.initialize(192);
+            }
+            else
+            {
+                kpGen.initialize(specs[i]);
+            }
+
+            ECPublicKey pub = (ECPublicKey)kpGen.generateKeyPair().getPublic();
+            PublicKey decoded = kfBc.generatePublic(new X509EncodedKeySpec(pub.getEncoded()));
+            ECParameterSpec p = pub.getParams();
+            PublicKey explicit = kfBc.generatePublic(new ECPublicKeySpec(pub.getW(),
+                new ECParameterSpec(p.getCurve(), p.getGenerator(), p.getOrder(), p.getCofactor())));
+
+            isTrue(pub.equals(decoded) && decoded.equals(pub));
+            isTrue(pub.hashCode() == decoded.hashCode());
+            isTrue(pub.equals(explicit) && explicit.equals(pub));
+            isTrue(pub.hashCode() == explicit.hashCode());
+            isTrue(decoded.hashCode() == explicit.hashCode());
+        }
     }
 
     private void pointCompressionTest()

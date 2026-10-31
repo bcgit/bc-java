@@ -668,6 +668,7 @@ public class ECPointTest extends TestCase
         // NOTE: We intentionally test points for equality in both directions
         assertEquals(message, a, b);
         assertEquals(message, b, a);
+        assertEquals(message + " (hashCode)", a.hashCode(), b.hashCode());
     }
 
     private void assertOptionalValuesAgree(Object a, Object b)

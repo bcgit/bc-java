@@ -446,8 +446,9 @@ public abstract class ECPoint
 
             ECPoint p = normalize();
 
-            hc ^= p.getXCoord().hashCode() * 17;
-            hc ^= p.getYCoord().hashCode() * 257;
+            // hash the values, not the field element representation, as equals() compares across curve implementations
+            hc ^= p.getXCoord().toBigInteger().hashCode() * 17;
+            hc ^= p.getYCoord().toBigInteger().hashCode() * 257;
         }
 
         return hc;
