@@ -169,11 +169,11 @@ public class Base64Encoder
         }
 
         // empty data!
-        if (end == 0)
+        if (end == off)
         {
             return 0;
         }
-        
+
         int  i = 0;
         int  finish = end;
 
@@ -234,6 +234,11 @@ public class Base64Encoder
         int e1 = nextI(data, e0 + 1, end);
         int e2 = nextI(data, e1 + 1, end);
         int e3 = nextI(data, e2 + 1, end);
+
+        if (e3 >= end)
+        {
+            throw new IOException("truncated final block in base64 data");
+        }
 
         outLen += decodeLastBlock(out, (char)data[e0], (char)data[e1], (char)data[e2], (char)data[e3]);
 

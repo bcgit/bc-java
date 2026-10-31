@@ -215,11 +215,11 @@ public class Base32Encoder
         }
 
         // empty data!
-        if (end == 0)
+        if (end == off)
         {
             return 0;
         }
-        
+
         int  i = 0;
         int  finish = end;
 
@@ -302,6 +302,11 @@ public class Base32Encoder
         int e5 = nextI(data, e4 + 1, end);
         int e6 = nextI(data, e5 + 1, end);
         int e7 = nextI(data, e6 + 1, end);
+
+        if (e7 >= end)
+        {
+            throw new IOException("truncated final block in base32 data");
+        }
 
         outLen += decodeLastBlock(out,
             (char)data[e0], (char)data[e1], (char)data[e2], (char)data[e3],

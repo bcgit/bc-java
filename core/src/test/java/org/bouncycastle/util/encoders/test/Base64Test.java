@@ -91,6 +91,71 @@ public class Base64Test extends AbstractCoderTest
         }
     }
 
+    /**
+     * decode(byte[], off, length, out) must not look at anything outside the slice: an empty slice
+     * produces nothing and a slice that ends part way through a block is rejected, whatever follows it.
+     */
+    public void testDecodeStaysInsideSlice()
+        throws IOException
+    {
+        Encoder encoder = new Base64Encoder();
+        byte[] data = Strings.toByteArray("XXXXXXXXdGVzdGluZw==");
+        byte[] blanks = Strings.toByteArray("XXXXXXXX \r\n\tdGVzdGluZw==");
+
+        assertEquals("", decodeSlice(encoder, data, 8, 0));
+        assertEquals("", decodeSlice(encoder, blanks, 8, 4));
+
+        assertEquals("tes", decodeSlice(encoder, data, 8, 4));
+        assertEquals("testin", decodeSlice(encoder, data, 8, 8));
+        assertEquals("testing", decodeSlice(encoder, data, 8, 12));
+
+        for (int off = 0; off <= 8; off += 8)
+        {
+            byte[] slice = (off == 0) ? Strings.toByteArray("dGVzdGluZw==") : data;
+            for (int length = 1; length < 12; length++)
+            {
+                if (length % 4 != 0)
+                {
+                    truncatedSliceTest(encoder, slice, off, length);
+                }
+            }
+        }
+
+        truncatedSliceTest(encoder, Strings.toByteArray("dG"), 0, 2);
+    }
+
+    private void truncatedSliceTest(Encoder encoder, byte[] data, int off, int length)
+    {
+        try
+        {
+            decodeSlice(encoder, data, off, length);
+            fail("truncated slice decoded: off=" + off + " length=" + length);
+        }
+        catch (IOException e)
+        {
+            assertEquals("truncated final block in base64 data", e.getMessage());
+        }
+
+        try
+        {
+            Base64.decode(data, off, length);
+            fail("truncated slice decoded: off=" + off + " length=" + length);
+        }
+        catch (DecoderException e)
+        {
+            // expected
+        }
+    }
+
+    private String decodeSlice(Encoder encoder, byte[] data, int off, int length)
+        throws IOException
+    {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        int count = encoder.decode(data, off, length, out);
+        assertEquals(out.size(), count);
+        return Strings.fromByteArray(out.toByteArray());
+    }
+
     public void testWithWhitespace()
         throws Exception
     {

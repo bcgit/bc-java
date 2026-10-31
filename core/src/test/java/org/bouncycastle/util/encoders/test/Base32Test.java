@@ -132,6 +132,61 @@ public class Base32Test
         }
     }
 
+    /**
+     * decode(byte[], off, length, out) must not look at anything outside the slice: an empty slice
+     * produces nothing and a slice that ends part way through a block is rejected, whatever follows it.
+     */
+    public void testDecodeStaysInsideSlice()
+        throws IOException
+    {
+        Encoder encoder = new Base32Encoder();
+        // "testingXYZ" is two full blocks
+        byte[] data = Strings.toByteArray("XXXXXXXXORSXG5DJNZTVQWK2");
+        byte[] blanks = Strings.toByteArray("XXXXXXXX \r\n\tORSXG5DJNZTVQWK2");
+
+        assertEquals("", decodeSlice(encoder, data, 8, 0));
+        assertEquals("", decodeSlice(encoder, blanks, 8, 4));
+
+        assertEquals("testi", decodeSlice(encoder, data, 8, 8));
+        assertEquals("testingXYZ", decodeSlice(encoder, data, 8, 16));
+
+        for (int off = 0; off <= 8; off += 8)
+        {
+            byte[] slice = (off == 0) ? Strings.toByteArray("ORSXG5DJNZTVQWK2") : data;
+            for (int length = 1; length < 16; length++)
+            {
+                if (length % 8 != 0)
+                {
+                    truncatedSliceTest(encoder, slice, off, length);
+                }
+            }
+        }
+
+        truncatedSliceTest(encoder, Strings.toByteArray("ORSX"), 0, 4);
+    }
+
+    private void truncatedSliceTest(Encoder encoder, byte[] data, int off, int length)
+    {
+        try
+        {
+            decodeSlice(encoder, data, off, length);
+            fail("truncated slice decoded: off=" + off + " length=" + length);
+        }
+        catch (IOException e)
+        {
+            assertEquals("truncated final block in base32 data", e.getMessage());
+        }
+    }
+
+    private String decodeSlice(Encoder encoder, byte[] data, int off, int length)
+        throws IOException
+    {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        int count = encoder.decode(data, off, length, out);
+        assertEquals(out.size(), count);
+        return Strings.fromByteArray(out.toByteArray());
+    }
+
     public void testWithWhitespace()
         throws Exception
     {
