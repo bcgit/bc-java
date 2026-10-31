@@ -31,7 +31,7 @@ public class DESedeParameters
         int     offset,
         int     length)
     {
-        for (int i = offset; i < length; i += DES_KEY_LENGTH)
+        for (int i = offset; i < offset + length; i += DES_KEY_LENGTH)
         {
             if (DESParameters.isWeakKey(key, i))
             {
@@ -59,11 +59,11 @@ public class DESedeParameters
      * return true if the passed in key is a real 2/3 part DES-EDE key.
      *
      * @param key bytes making up the key
-     * @param offset offset into the byte array the key starts at
+     * @param offset offset into the byte array the key starts at, the key running to the end of the array
      */
     public static boolean isRealEDEKey(byte[] key, int offset)
     {
-        return key.length == 16 ? isReal2Key(key, offset) : isReal3Key(key, offset);
+        return key.length - offset == 16 ? isReal2Key(key, offset) : isReal3Key(key, offset);
     }
 
     /**

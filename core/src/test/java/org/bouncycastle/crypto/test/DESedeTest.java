@@ -162,6 +162,35 @@ public class DESedeTest
                 fail("wrong exception");
             }
         }
+
+        // weak third key must be found at a non-zero offset too
+        byte[] k = Hex.decode("0123456789abcdef");
+        byte[] buf = new byte[8 + 24];
+        System.arraycopy(k, 0, buf, 8, 8);
+        System.arraycopy(k, 0, buf, 16, 8);
+        System.arraycopy(weakKey, 16, buf, 24, 8);
+        if (!DESedeParameters.isWeakKey(buf, 8, 24) || !DESedeParameters.isWeakKey(buf, 8))
+        {
+            fail("weak third key missed at offset 8");
+        }
+        if (DESedeParameters.isWeakKey(buf, 8, 16))
+        {
+            fail("weak key found outside length");
+        }
+
+        // a two part key at a non-zero offset is checked as a two part key
+        byte[] buf2 = new byte[8 + 16];
+        System.arraycopy(Hex.decode("0123456789abcdef"), 0, buf2, 8, 8);
+        System.arraycopy(Hex.decode("fedcba9876543210"), 0, buf2, 16, 8);
+        if (!DESedeParameters.isRealEDEKey(buf2, 8))
+        {
+            fail("real two part key not recognised at offset 8");
+        }
+        System.arraycopy(buf2, 8, buf2, 16, 8);
+        if (DESedeParameters.isRealEDEKey(buf2, 8))
+        {
+            fail("degenerate two part key accepted at offset 8");
+        }
     }
 
     public String getName()
