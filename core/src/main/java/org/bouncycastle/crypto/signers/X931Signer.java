@@ -211,6 +211,7 @@ public class X931Signer
         }
         catch (Exception e)
         {
+            reset();
             return false;
         }
 
@@ -230,6 +231,7 @@ public class X931Signer
             }
             else
             {
+                reset();
                 return false;
             }
         }

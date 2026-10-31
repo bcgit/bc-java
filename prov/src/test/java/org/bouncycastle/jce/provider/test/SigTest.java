@@ -291,6 +291,10 @@ public class SigTest
         trySig("SHA512(256)WithRSA/X9.31", data, signingKey, verifyKey);
         trySig("WhirlpoolWithRSA/X9.31", data, signingKey, verifyKey);
 
+        tryFailedVerifyState("SHA256withRSA/X9.31", signingKey, verifyKey);
+        tryFailedVerifyState("SHA256withRSA/ISO9796-2", signingKey, verifyKey);
+        tryForeignTrailer(signingKey, verifyKey);
+
         tryPssSig("SHA224withRSAandSHAKE128", data, signingKey, verifyKey);
         tryPssSig("SHA224withRSAandSHAKE256", data, signingKey, verifyKey);
         tryPssSig("SHA512(224)withRSAandSHAKE128", data, signingKey, verifyKey);
@@ -363,6 +367,78 @@ public class SigTest
         {
             fail("RIPEMD160/ISO verification failed");
         }
+    }
+
+    /**
+     * Signature.verify() resets the object to its state after initVerify, whether or not it succeeds: a signature
+     * over a || b must not verify b after a failed verify of a.
+     */
+    private void tryFailedVerifyState(String algorithm, PrivateKey signingKey, PublicKey verifyKey)
+        throws Exception
+    {
+        byte[] a = new byte[10];
+        Arrays.fill(a, (byte)0x61);
+        byte[] b = new byte[300];
+        Arrays.fill(b, (byte)0x62);
+
+        Signature signer = Signature.getInstance(algorithm, "BC");
+        signer.initSign(signingKey);
+        signer.update(a);
+        signer.update(b);
+        byte[] sigBytes = signer.sign();
+
+        Signature verifier = Signature.getInstance(algorithm, "BC");
+        verifier.initVerify(verifyKey);
+
+        verifier.update(a);
+        isTrue(algorithm + " accepted an over-long signature", !verifier.verify(new byte[sigBytes.length + 2]));
+        verifier.update(b);
+        isTrue(algorithm + " accepted a signature over a || b for b alone", !verifier.verify(sigBytes));
+
+        verifier.update(a);
+        verifier.update(b);
+        isTrue(algorithm + " rejected a valid signature after failed verifies", verifier.verify(sigBytes));
+    }
+
+    /**
+     * An ISO 9796-2 signature whose trailer names a different digest is reported as a SignatureException,
+     * and leaves the verifier usable.
+     */
+    private void tryForeignTrailer(PrivateKey signingKey, PublicKey verifyKey)
+        throws Exception
+    {
+        int modLen = (((RSAPublicKey)verifyKey).getModulus().bitLength() + 7) / 8;
+        byte[] block = new byte[modLen];
+        Arrays.fill(block, (byte)0xbb);
+        block[0] = 0x4b;
+        block[modLen - 2] = 0x33;     // the SHA-1 trailer, 0x33cc
+        block[modLen - 1] = (byte)0xcc;
+
+        Cipher rsa = Cipher.getInstance("RSA/NONE/NoPadding", "BC");
+        rsa.init(Cipher.ENCRYPT_MODE, signingKey);
+        byte[] foreign = rsa.doFinal(block);
+
+        byte[] data = new byte[20];
+        Signature signer = Signature.getInstance("SHA256withRSA/ISO9796-2", "BC");
+        signer.initSign(signingKey);
+        signer.update(data);
+        byte[] sigBytes = signer.sign();
+
+        Signature verifier = Signature.getInstance("SHA256withRSA/ISO9796-2", "BC");
+        verifier.initVerify(verifyKey);
+        verifier.update(data);
+        try
+        {
+            verifier.verify(foreign);
+            fail("SHA256withRSA/ISO9796-2 accepted a SHA-1 trailer");
+        }
+        catch (SignatureException e)
+        {
+            isTrue(e.getMessage().startsWith("signer initialised with wrong digest for trailer"));
+        }
+
+        verifier.update(data);
+        isTrue("SHA256withRSA/ISO9796-2 rejected a valid signature after a foreign trailer", verifier.verify(sigBytes));
     }
 
     private void trySig(String algorithm, byte[] data, PrivateKey signingKey, PublicKey verifyKey)

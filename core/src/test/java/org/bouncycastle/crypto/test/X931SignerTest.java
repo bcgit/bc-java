@@ -2,6 +2,7 @@ package org.bouncycastle.crypto.test;
 
 import java.math.BigInteger;
 
+import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.digests.SHA1Digest;
 import org.bouncycastle.crypto.digests.SHA224Digest;
 import org.bouncycastle.crypto.engines.RSAEngine;
@@ -53,6 +54,18 @@ public class X931SignerTest
         shouldPassSignatureTest1();
         shouldPassSignatureTest2();
         shouldPassSignatureTest3();
+
+        // a failed verify must not leave the message in the digest for the next one
+        AsymmetricCipherKeyPair kp = new AsymmetricCipherKeyPair(rsaPublic, rsaPrivate);
+        int[] lengths = { 10, 300 };
+        for (int i = 0; i != lengths.length; i++)
+        {
+            for (int j = 0; j != lengths.length; j++)
+            {
+                ISO9796Test.checkFailedVerifyState("X931Signer", new X931Signer(new RSAEngine(), new SHA1Digest()),
+                    new X931Signer(new RSAEngine(), new SHA1Digest()), kp, lengths[i], lengths[j]);
+            }
+        }
     }
 
     private void shouldPassSignatureTest1()

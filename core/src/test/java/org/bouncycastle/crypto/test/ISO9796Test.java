@@ -7,6 +7,7 @@ import org.bouncycastle.crypto.AsymmetricBlockCipher;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.InvalidCipherTextException;
+import org.bouncycastle.crypto.Signer;
 import org.bouncycastle.crypto.digests.RIPEMD128Digest;
 import org.bouncycastle.crypto.digests.RIPEMD160Digest;
 import org.bouncycastle.crypto.digests.SHA1Digest;
@@ -1091,6 +1092,77 @@ public class ISO9796Test
         return verifier.verifySignature(sig);
     }
 
+    /**
+     * A failed verify has to leave the signer as it was after init, not holding the message for the next verify.
+     */
+    private void doFailedVerifyStateTest(AsymmetricCipherKeyPair kp)
+        throws Exception
+    {
+        int[] lengths = { 10, 300 };
+        for (int i = 0; i != lengths.length; i++)
+        {
+            for (int j = 0; j != lengths.length; j++)
+            {
+                checkFailedVerifyState("ISO9796d2Signer", new ISO9796d2Signer(new RSAEngine(), new SHA1Digest(), true),
+                    new ISO9796d2Signer(new RSAEngine(), new SHA1Digest(), true), kp, lengths[i], lengths[j]);
+                checkFailedVerifyState("ISO9796d2PSSSigner", new ISO9796d2PSSSigner(new RSAEngine(), new SHA1Digest(), 20, true),
+                    new ISO9796d2PSSSigner(new RSAEngine(), new SHA1Digest(), 20, true), kp, lengths[i], lengths[j]);
+            }
+        }
+    }
+
+    static void checkFailedVerifyState(String label, Signer signer, Signer verifier, AsymmetricCipherKeyPair kp, int aLen, int bLen)
+        throws Exception
+    {
+        byte[] a = new byte[aLen];
+        Arrays.fill(a, (byte)0x61);
+        byte[] b = new byte[bLen];
+        Arrays.fill(b, (byte)0x62);
+        byte[] msg = Arrays.concatenate(a, b);
+
+        signer.init(true, kp.getPrivate());
+        signer.update(msg, 0, msg.length);
+        byte[] sig = signer.generateSignature();
+
+        verifier.init(false, kp.getPublic());
+
+        // a signature too long for the RSA engine fails, and must not leave a in place as a prefix for b
+        verifier.update(a, 0, a.length);
+        if (verifier.verifySignature(new byte[sig.length + 2]))
+        {
+            throw new IllegalStateException(label + " accepted an over-long signature");
+        }
+        verifier.update(b, 0, b.length);
+        if (verifier.verifySignature(sig))
+        {
+            throw new IllegalStateException(label + " accepted a signature over a || b for b alone, a " + aLen + ", b " + bLen);
+        }
+
+        // a corrupted signature fails, and the next verify of the right message succeeds
+        byte[] corrupt = Arrays.clone(sig);
+        corrupt[corrupt.length / 2] ^= 1;
+        verifier.update(msg, 0, msg.length);
+        boolean corruptOk;
+        try
+        {
+            corruptOk = verifier.verifySignature(corrupt);
+        }
+        catch (RuntimeException e)
+        {
+            // ISO9796d2Signer throws for an unrecognised trailer, or one naming another digest
+            corruptOk = false;
+        }
+        if (corruptOk)
+        {
+            throw new IllegalStateException(label + " accepted a corrupted signature");
+        }
+        verifier.update(msg, 0, msg.length);
+        if (!verifier.verifySignature(sig))
+        {
+            throw new IllegalStateException(label + " rejected a valid signature after a failed verify, a " + aLen + ", b " + bLen);
+        }
+    }
+
     public void performTest()
         throws Exception
     {
@@ -1116,6 +1188,7 @@ public class ISO9796Test
         AsymmetricCipherKeyPair kp = kpGen.generateKeyPair();
 
         doRecoveredMessageBindingTest(kp);
+        doFailedVerifyStateTest(kp);
     }
 
     public static void main(

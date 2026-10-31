@@ -486,6 +486,7 @@ public class ISO9796d2PSSSigner
             }
             catch (Exception e)
             {
+                reset();
                 return false;
             }
         }
@@ -551,6 +552,7 @@ public class ISO9796d2PSSSigner
         {
             fullMessage = false;
             messageLength = 0;
+            clearBlock(mBuf);
             clearBlock(recoveredMessage);
             return false;
         }

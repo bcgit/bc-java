@@ -17,6 +17,7 @@ import org.bouncycastle.crypto.digests.WhirlpoolDigest;
 import org.bouncycastle.crypto.engines.RSABlindedEngine;
 import org.bouncycastle.crypto.signers.ISO9796d2Signer;
 import org.bouncycastle.crypto.util.DigestFactory;
+import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 
 public class ISOSignatureSpi
     extends SignatureSpi
@@ -83,9 +84,19 @@ public class ISOSignatureSpi
         byte[]  sigBytes) 
         throws SignatureException
     {
-        boolean yes = signer.verifySignature(sigBytes);
-
-        return yes;
+        try
+        {
+            return signer.verifySignature(sigBytes);
+        }
+        catch (IllegalStateException e)
+        {
+            // the signature names a different digest in its trailer
+            throw SecurityExceptions.signatureException(e.getMessage(), e);
+        }
+        catch (IllegalArgumentException e)
+        {
+            throw SecurityExceptions.signatureException(e.getMessage(), e);
+        }
     }
 
     protected void engineSetParameter(
