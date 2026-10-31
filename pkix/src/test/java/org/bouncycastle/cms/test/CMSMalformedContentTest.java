@@ -352,7 +352,19 @@ public class CMSMalformedContentTest
             bOut = new ByteArrayOutputStream();
             out = authEnvGen.open(bOut, (OutputAEADEncryptor)new JceCMSContentEncryptorBuilder(CMSAlgorithm.AES128_GCM).setProvider(bc).build());
             out.write(new byte[20]);
-            out.close();
+            try
+            {
+                out.close();
+            }
+            catch (IOException e)
+            {
+                // a runtime without Cipher.updateAAD (pre-1.7) cannot generate authenticated attributes, so that case is skipped
+                if (i == 0 && e.getMessage().startsWith("authenticated attributes require AEAD AAD support"))
+                {
+                    continue;
+                }
+                throw e;
+            }
             messages[1 + i] = bOut.toByteArray();
             parsers[1 + i] = new Parse()
             {
@@ -404,6 +416,11 @@ public class CMSMalformedContentTest
             "Authenticated authAttrs", "Authenticated unauthAttrs" };
         for (int i = 0; i != messages.length; i++)
         {
+            if (messages[i] == null)
+            {
+                continue;
+            }
+
             String hex = Hex.toHexString(messages[i]);
             assertTrue(labels[i], hex.indexOf(attr) >= 0);
 
@@ -412,9 +429,9 @@ public class CMSMalformedContentTest
 
             Parse[] p = new Parse[]{ parsers[i] };
             expectRejected(labels[i] + ": bad BIT STRING in a value", p,
-                Hex.decode(hex.replace(attr, "300d06032a0304" + "3106" + "0304095a5a5a")));
+                Hex.decode(replace(hex, attr, "300d06032a0304" + "3106" + "0304095a5a5a")));
             expectRejected(labels[i] + ": element not an Attribute", p,
-                Hex.decode(hex.replace(attr, "040d06032a0304" + "3106" + "0304005a5a5a")));
+                Hex.decode(replace(hex, attr, "040d06032a0304" + "3106" + "0304005a5a5a")));
         }
 
         // getUnauthAttrs() has to read past the authenticated attributes and the mac itself
@@ -500,6 +517,20 @@ public class CMSMalformedContentTest
                 // expected
             }
         }
+    }
+
+    // String.replace(CharSequence, CharSequence) is Java 5, and this test is compiled for the jdk1.4 distribution
+    private static String replace(String s, String target, String replacement)
+    {
+        StringBuffer buf = new StringBuffer();
+        int start = 0;
+        int i;
+        while ((i = s.indexOf(target, start)) >= 0)
+        {
+            buf.append(s.substring(start, i)).append(replacement);
+            start = i + target.length();
+        }
+        return buf.append(s.substring(start)).toString();
     }
 
     private static void expectRejected(String label, Parse[] parsers, byte[] encoding)
