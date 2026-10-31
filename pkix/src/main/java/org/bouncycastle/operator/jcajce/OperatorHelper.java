@@ -23,6 +23,7 @@ import java.util.Map;
 import javax.crypto.Cipher;
 import javax.crypto.KeyAgreement;
 
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
@@ -388,11 +389,11 @@ class OperatorHelper
         {
             if (digAlgId.getAlgorithm().equals(NISTObjectIdentifiers.id_shake256_len))
             {
-                dig = helper.createMessageDigest("SHAKE256-" + ASN1Integer.getInstance(digAlgId.getParameters()).getValue());
+                dig = helper.createMessageDigest("SHAKE256-" + getXofLength(digAlgId));
             }
             else if (digAlgId.getAlgorithm().equals(NISTObjectIdentifiers.id_shake128_len))
             {
-                dig = helper.createMessageDigest("SHAKE128-" + ASN1Integer.getInstance(digAlgId.getParameters()).getValue());
+                dig = helper.createMessageDigest("SHAKE128-" + getXofLength(digAlgId));
             }
             else
             {
@@ -417,6 +418,25 @@ class OperatorHelper
         }
 
         return dig;
+    }
+
+    private static String getXofLength(AlgorithmIdentifier digAlgId)
+        throws NoSuchAlgorithmException
+    {
+        ASN1Encodable params = digAlgId.getParameters();
+        if (params == null)
+        {
+            throw new NoSuchAlgorithmException("SHAKE output length missing");
+        }
+
+        try
+        {
+            return ASN1Integer.getInstance(params).getValue().toString();
+        }
+        catch (IllegalArgumentException e)
+        {
+            throw new NoSuchAlgorithmException("SHAKE output length malformed");
+        }
     }
 
     Signature createSignature(AlgorithmIdentifier sigAlgId)

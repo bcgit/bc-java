@@ -4,6 +4,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.gm.GMObjectIdentifiers;
@@ -38,6 +39,11 @@ import org.bouncycastle.operator.OperatorCreationException;
 public class BcDefaultDigestProvider
     implements BcDigestProvider
 {
+    /**
+     * Upper bound on the output length of a -len SHAKE identifier - the standard uses are 256 and 512 bits (RFC 8419).
+     */
+    private static final int MAX_XOF_LENGTH_BITS = 4096;
+
     private static final Map lookup = createTable();
 
     private static Map createTable()
@@ -124,15 +130,17 @@ public class BcDefaultDigestProvider
         table.put(NISTObjectIdentifiers.id_shake128_len, new BcDigestProvider()
         {
             public ExtendedDigest get(AlgorithmIdentifier digestAlgorithmIdentifier)
+                throws OperatorCreationException
             {
-                return new AdjustedXof(new SHAKEDigest(128), ASN1Integer.getInstance(digestAlgorithmIdentifier.getParameters()).intValueExact());
+                return new AdjustedXof(new SHAKEDigest(128), getXofLength(digestAlgorithmIdentifier));
             }
         });
         table.put(NISTObjectIdentifiers.id_shake256_len, new BcDigestProvider()
         {
             public ExtendedDigest get(AlgorithmIdentifier digestAlgorithmIdentifier)
+                throws OperatorCreationException
             {
-                return new AdjustedXof(new SHAKEDigest(256), ASN1Integer.getInstance(digestAlgorithmIdentifier.getParameters()).intValueExact());
+                return new AdjustedXof(new SHAKEDigest(256), getXofLength(digestAlgorithmIdentifier));
             }
         });
         table.put(PKCSObjectIdentifiers.md5, new BcDigestProvider()
@@ -227,6 +235,37 @@ public class BcDefaultDigestProvider
         }
 
         return extProv.get(digestAlgorithmIdentifier);
+    }
+
+    /**
+     * Return the output length in bits a -len SHAKE identifier asks for, which must be present, positive, a whole
+     * number of bytes and no more than MAX_XOF_LENGTH_BITS, as it sizes the digest buffer.
+     */
+    private static int getXofLength(AlgorithmIdentifier digestAlgorithmIdentifier)
+        throws OperatorCreationException
+    {
+        ASN1Encodable params = digestAlgorithmIdentifier.getParameters();
+        if (params == null)
+        {
+            throw new OperatorCreationException("SHAKE output length missing");
+        }
+
+        int length;
+        try
+        {
+            length = ASN1Integer.getInstance(params).intValueExact();
+        }
+        catch (RuntimeException e)
+        {
+            throw new OperatorCreationException("SHAKE output length malformed: " + e.getMessage(), e);
+        }
+
+        if (length <= 0 || length > MAX_XOF_LENGTH_BITS || (length & 7) != 0)
+        {
+            throw new OperatorCreationException("SHAKE output length not supported: " + length);
+        }
+
+        return length;
     }
 
     /**

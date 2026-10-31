@@ -20,21 +20,32 @@ import java.util.Map;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
+import org.bouncycastle.asn1.ASN1Set;
+import org.bouncycastle.asn1.BEROctetString;
+import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
+import org.bouncycastle.asn1.DERSequence;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.cms.Attribute;
 import org.bouncycastle.asn1.cms.AttributeTable;
 import org.bouncycastle.asn1.cms.CMSAttributes;
+import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.cms.ContentInfo;
+import org.bouncycastle.asn1.cms.IssuerAndSerialNumber;
+import org.bouncycastle.asn1.cms.SignerIdentifier;
+import org.bouncycastle.asn1.cms.SignerInfo;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.cert.X509AttributeCertificateHolder;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaCRLStore;
@@ -55,6 +66,7 @@ import org.bouncycastle.cms.SignerId;
 import org.bouncycastle.cms.SignerInfoGeneratorBuilder;
 import org.bouncycastle.cms.SignerInformation;
 import org.bouncycastle.cms.SignerInformationStore;
+import org.bouncycastle.cms.SignerInformationVerifier;
 import org.bouncycastle.cms.bc.BcECSignerInfoVerifierBuilder;
 import org.bouncycastle.cms.bc.BcEdDSASignerInfoVerifierBuilder;
 import org.bouncycastle.cms.bc.BcRSASignerInfoVerifierBuilder;
@@ -72,7 +84,9 @@ import org.bouncycastle.operator.BufferingContentSigner;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.DefaultDigestAlgorithmIdentifierFinder;
 import org.bouncycastle.operator.DefaultSignatureAlgorithmIdentifierFinder;
+import org.bouncycastle.operator.DigestCalculator;
 import org.bouncycastle.operator.DigestCalculatorProvider;
+import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.bc.BcContentSignerBuilder;
 import org.bouncycastle.operator.bc.BcDigestCalculatorProvider;
 import org.bouncycastle.operator.bc.BcRSAContentSignerBuilder;
@@ -80,6 +94,7 @@ import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
 import org.bouncycastle.util.CollectionStore;
 import org.bouncycastle.util.Store;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.io.Streams;
 
@@ -1879,6 +1894,83 @@ public class BcSignedDataTest
 
             assertEquals(true, signer.verify(new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(cert)));
         }
+    }
+
+    public void testShakeLenOutputLength()
+        throws Exception
+    {
+        BcDigestCalculatorProvider digProv = new BcDigestCalculatorProvider();
+        ASN1ObjectIdentifier[] oids = new ASN1ObjectIdentifier[]{ NISTObjectIdentifiers.id_shake128_len, NISTObjectIdentifiers.id_shake256_len };
+
+        int[] good = new int[]{ 256, 512, 4096 };
+        for (int i = 0; i != oids.length; i++)
+        {
+            for (int j = 0; j != good.length; j++)
+            {
+                DigestCalculator calc = digProv.get(new AlgorithmIdentifier(oids[i], ASN1Integer.valueOf(good[j])));
+                calc.getOutputStream().write(Strings.toByteArray("abc"));
+                assertEquals(good[j] / 8, calc.getDigest().length);
+            }
+        }
+
+        // absent, not an INTEGER, not positive, not a whole number of bytes, too large, beyond an int
+        ASN1Encodable[] bad = new ASN1Encodable[]{ null, DERNull.INSTANCE, ASN1Integer.valueOf(0), ASN1Integer.valueOf(-8),
+            ASN1Integer.valueOf(12), ASN1Integer.valueOf(4104), ASN1Integer.valueOf(2147483640), ASN1Integer.valueOf(Integer.MAX_VALUE),
+            ASN1Integer.valueOf(1L << 40) };
+
+        X509CertificateHolder ecCert = new JcaX509CertificateHolder(_signEcDsaCert);
+        SignerInformationVerifier ecVerifier = new BcECSignerInfoVerifierBuilder(new DefaultCMSSignatureAlgorithmNameGenerator(),
+            new DefaultSignatureAlgorithmIdentifierFinder(), new DefaultDigestAlgorithmIdentifierFinder(), digProv).build(ecCert);
+
+        for (int i = 0; i != oids.length; i++)
+        {
+            for (int j = 0; j != bad.length; j++)
+            {
+                AlgorithmIdentifier digAlgId = new AlgorithmIdentifier(oids[i], bad[j]);
+
+                try
+                {
+                    digProv.get(digAlgId);
+                    fail("no exception for " + bad[j]);
+                }
+                catch (OperatorCreationException e)
+                {
+                    assertTrue(e.getMessage().startsWith("SHAKE output length"));
+                }
+
+                // the streaming parser skips a digest it cannot create
+                CMSSignedDataParser sp = new CMSSignedDataParser(digProv, shakeLenSignedData(digAlgId, null));
+                sp.getSignedContent().drain();
+                assertEquals(0, sp.getSignerInfos().size());
+
+                // a signer naming it fails with a checked exception
+                SignerInfo signerInfo = new SignerInfo(new SignerIdentifier(new IssuerAndSerialNumber(ecCert.getIssuer(), ecCert.getSerialNumber())),
+                    digAlgId, (ASN1Set)null, new AlgorithmIdentifier(X9ObjectIdentifiers.ecdsa_with_SHA256), new DEROctetString(new byte[8]), (ASN1Set)null);
+                CMSSignedData sd = new CMSSignedData(shakeLenSignedData(digAlgId, signerInfo));
+                SignerInformation signer = (SignerInformation)sd.getSignerInfos().getSigners().iterator().next();
+                try
+                {
+                    signer.verify(ecVerifier);
+                    fail("no exception for " + bad[j]);
+                }
+                catch (CMSException e)
+                {
+                    assertTrue(e.getCause() instanceof OperatorCreationException);
+                }
+            }
+        }
+    }
+
+    private static byte[] shakeLenSignedData(AlgorithmIdentifier digAlgId, SignerInfo signerInfo)
+        throws IOException
+    {
+        ASN1EncodableVector v = new ASN1EncodableVector();
+        v.add(new ASN1Integer(1));
+        v.add(new DERSet(digAlgId));
+        v.add(new ContentInfo(CMSObjectIdentifiers.data, new BEROctetString(Strings.toByteArray("hello"))));
+        v.add(signerInfo == null ? new DERSet() : new DERSet(signerInfo));
+
+        return new ContentInfo(CMSObjectIdentifiers.signedData, new DERSequence(v)).getEncoded(ASN1Encoding.DER);
     }
 
     private static class TestCMSSignatureAlgorithmNameGenerator
