@@ -5,5 +5,7 @@
  * the public {@link org.bouncycastle.crypto.generators.CMCEKeyPairGenerator},
  * {@link org.bouncycastle.crypto.kems.CMCEKEMGenerator} and
  * {@link org.bouncycastle.crypto.kems.CMCEKEMExtractor}.
+ * <p>
+ * Deprecated: now believed unsafe to use - will be removed in a future release.
  */
 package org.bouncycastle.crypto.kems.cmce;

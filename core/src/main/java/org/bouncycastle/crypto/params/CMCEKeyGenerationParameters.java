@@ -4,6 +4,10 @@ import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.KeyGenerationParameters;
 
+/**
+ * @deprecated Now believed unsafe to use - will be removed in a future release.
+ */
+@Deprecated
 public class CMCEKeyGenerationParameters
     extends KeyGenerationParameters
 {

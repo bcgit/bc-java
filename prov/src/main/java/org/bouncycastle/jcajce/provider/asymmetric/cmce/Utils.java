@@ -6,6 +6,10 @@ import java.util.Map;
 import org.bouncycastle.crypto.params.CMCEParameters;
 import org.bouncycastle.jcajce.spec.CMCEParameterSpec;
 
+/**
+ * @deprecated Now believed unsafe to use - will be removed in a future release.
+ */
+@Deprecated
 class Utils
 {
     private static Map parameters = new HashMap();

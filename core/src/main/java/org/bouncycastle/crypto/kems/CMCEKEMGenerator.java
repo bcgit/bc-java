@@ -10,6 +10,10 @@ import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.CMCEPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.util.SecretWithEncapsulationImpl;
 
+/**
+ * @deprecated Now believed unsafe to use - will be removed in a future release.
+ */
+@Deprecated
 public class CMCEKEMGenerator
     implements EncapsulatedSecretGenerator
 {

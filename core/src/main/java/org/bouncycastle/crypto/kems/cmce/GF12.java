@@ -2,6 +2,10 @@ package org.bouncycastle.crypto.kems.cmce;
 
 import org.bouncycastle.math.raw.Interleave;
 
+/**
+ * @deprecated Now believed unsafe to use - will be removed in a future release.
+ */
+@Deprecated
 final class GF12
     extends GF
 {

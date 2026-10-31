@@ -14,7 +14,9 @@ import org.bouncycastle.util.Arrays;
  * flag: when pc, a 32-byte confirmation C1 = Hash(2, e) is appended to the ciphertext and the
  * session key is hashed over the full C0 || C1. The semi-systematic "f" key-generation variant is
  * selected by the {@code usePivots} flag.
+ * @deprecated Now believed unsafe to use - will be removed in a future release.
  */
+@Deprecated
 public class CMCEEngine
 {
     private final int SYS_N;       // = 3488;

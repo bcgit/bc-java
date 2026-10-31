@@ -5,6 +5,10 @@ import javax.security.auth.Destroyable;
 import org.bouncycastle.crypto.kems.cmce.CMCEEngine;
 import org.bouncycastle.util.Arrays;
 
+/**
+ * @deprecated Now believed unsafe to use - will be removed in a future release.
+ */
+@Deprecated
 public class CMCEPrivateKeyParameters
     extends CMCEKeyParameters
     implements Destroyable

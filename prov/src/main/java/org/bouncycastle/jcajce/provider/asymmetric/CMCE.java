@@ -7,6 +7,10 @@ import org.bouncycastle.jcajce.provider.util.AsymmetricAlgorithmProvider;
 import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
 import org.bouncycastle.jcajce.util.SpiUtil;
 
+/**
+ * @deprecated Now believed unsafe to use - will be removed in a future release.
+ */
+@Deprecated
 public class CMCE
 {
     private static final String PREFIX = "org.bouncycastle.jcajce.provider.asymmetric" + ".cmce.";

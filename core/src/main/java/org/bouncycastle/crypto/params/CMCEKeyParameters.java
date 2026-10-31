@@ -1,5 +1,9 @@
 package org.bouncycastle.crypto.params;
 
+/**
+ * @deprecated Now believed unsafe to use - will be removed in a future release.
+ */
+@Deprecated
 public class CMCEKeyParameters
     extends AsymmetricKeyParameter
 {

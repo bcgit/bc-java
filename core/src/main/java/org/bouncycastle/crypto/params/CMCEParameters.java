@@ -14,7 +14,9 @@ import org.bouncycastle.util.Arrays;
  * GF(2^13) and produce a 256-bit (32-byte) session key. The non-standardised mceliece348864 size is
  * not provided; the deprecated NIST round 3 implementation that carried it, formerly under
  * {@code org.bouncycastle.pqc.crypto.cmce}, has been removed.
+ * @deprecated Now believed unsafe to use - will be removed in a future release.
  */
+@Deprecated
 public class CMCEParameters
     implements KEMParameters
 {

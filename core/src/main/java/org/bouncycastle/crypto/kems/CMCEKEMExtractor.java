@@ -4,6 +4,10 @@ import org.bouncycastle.crypto.EncapsulatedSecretExtractor;
 import org.bouncycastle.crypto.kems.cmce.CMCEEngine;
 import org.bouncycastle.crypto.params.CMCEPrivateKeyParameters;
 
+/**
+ * @deprecated Now believed unsafe to use - will be removed in a future release.
+ */
+@Deprecated
 public class CMCEKEMExtractor
     implements EncapsulatedSecretExtractor
 {

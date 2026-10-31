@@ -26,6 +26,9 @@ import org.bouncycastle.jcajce.util.SpecUtil;
 import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Strings;
 
+/**
+ * @deprecated Now believed unsafe to use - will be removed in a future release.
+ */
 public class CMCEKeyPairGeneratorSpi
     extends java.security.KeyPairGenerator
 {

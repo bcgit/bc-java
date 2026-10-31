@@ -18,6 +18,10 @@ import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.internal.asn1.iso.ISOIECObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.asymmetric.util.BasePQCKeyFactorySpi;
 
+/**
+ * @deprecated Now believed unsafe to use - will be removed in a future release.
+ */
+@Deprecated
 public class CMCEKeyFactorySpi
     extends BasePQCKeyFactorySpi
 {

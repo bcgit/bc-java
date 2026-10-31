@@ -11,6 +11,10 @@ import org.bouncycastle.crypto.params.CMCEParameters;
 import org.bouncycastle.crypto.params.CMCEPrivateKeyParameters;
 import org.bouncycastle.crypto.params.CMCEPublicKeyParameters;
 
+/**
+ * @deprecated Now believed unsafe to use - will be removed in a future release.
+ */
+@Deprecated
 public class CMCEKeyPairGenerator
     implements AsymmetricCipherKeyPairGenerator
 {

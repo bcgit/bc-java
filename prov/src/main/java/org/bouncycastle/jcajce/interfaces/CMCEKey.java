@@ -4,6 +4,10 @@ import java.security.Key;
 
 import org.bouncycastle.jcajce.spec.CMCEParameterSpec;
 
+/**
+ * @deprecated Now believed unsafe to use - will be removed in a future release.
+ */
+@Deprecated
 public interface CMCEKey
     extends Key
 {

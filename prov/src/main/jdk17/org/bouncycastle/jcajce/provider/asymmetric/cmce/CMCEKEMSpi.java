@@ -22,7 +22,9 @@ import org.bouncycastle.jcajce.spec.KTSParameterSpec;
  * With a null spec the shared secret is the mechanism's own 256-bit session key - the
  * interoperable form. A {@link KTSParameterSpec} KDF may optionally be layered on top for
  * generic use.
+ * @deprecated Now believed unsafe to use - will be removed in a future release.
  */
+@Deprecated
 public abstract class CMCEKEMSpi
     implements KEMSpi
 {

@@ -14,7 +14,9 @@ import org.bouncycastle.jcajce.provider.asymmetric.util.KemSpiUtil;
  *  NOTE: Per javadoc for javax.crypto.KEM, "Encapsulator and Decapsulator objects are also immutable. It is safe to
  *  invoke multiple encapsulate and decapsulate methods on the same Encapsulator or Decapsulator object at the same
  *  time. Each invocation of encapsulate will generate a new shared secret and key encapsulation message."
+ * @deprecated Now believed unsafe to use - will be removed in a future release.
  */
+@Deprecated
 class CMCEDecapsulatorSpi
     implements KEMSpi.DecapsulatorSpi
 {

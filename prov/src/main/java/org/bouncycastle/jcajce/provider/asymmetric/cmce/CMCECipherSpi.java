@@ -33,6 +33,10 @@ import org.bouncycastle.jcajce.spec.KTSParameterSpec;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Exceptions;
 
+/**
+ * @deprecated Now believed unsafe to use - will be removed in a future release.
+ */
+@Deprecated
 public class CMCECipherSpi
     extends CipherSpi
 {

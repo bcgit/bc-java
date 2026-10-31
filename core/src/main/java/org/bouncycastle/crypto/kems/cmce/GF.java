@@ -1,5 +1,9 @@
 package org.bouncycastle.crypto.kems.cmce;
 
+/**
+ * @deprecated Now believed unsafe to use - will be removed in a future release.
+ */
+@Deprecated
 abstract class GF
 {
     GF()

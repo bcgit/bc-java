@@ -10,7 +10,9 @@ import org.bouncycastle.util.Strings;
  * AlgorithmSpec for the standardised Classic McEliece (ISO/IEC 18033-2:2006/Amd 2:2026, Clause 13).
  * Each of the four security parameter sets has a base variant, a semi-systematic "f" variant, a
  * plaintext-confirmation "pc" variant, and a combined "pcf" variant.
+ * @deprecated Now believed unsafe to use - will be removed in a future release.
  */
+@Deprecated
 public class CMCEParameterSpec
     implements AlgorithmParameterSpec
 {

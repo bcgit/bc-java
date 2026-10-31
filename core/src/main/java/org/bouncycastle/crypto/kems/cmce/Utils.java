@@ -2,6 +2,10 @@ package org.bouncycastle.crypto.kems.cmce;
 
 import org.bouncycastle.util.Pack;
 
+/**
+ * @deprecated Now believed unsafe to use - will be removed in a future release.
+ */
+@Deprecated
 class Utils
 {
     //working
