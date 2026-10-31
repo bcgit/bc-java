@@ -556,22 +556,29 @@ public class SExpression
         out.flush();
     }
 
+    /**
+     * Return true if this expression's first value is the passed in label.
+     *
+     * @param label the label to look for.
+     * @return true if the first value is a string, quoted string or octet string equal to label, false otherwise,
+     * including when the expression is empty or starts with a nested expression.
+     */
     public boolean hasLabel(String label)
     {
         if (values.isEmpty())
         {
-            throw new IllegalArgumentException("S-Expression is empty");
+            return false;
         }
         Object val = values.get(0);
         if (val instanceof String || val instanceof QuotedString)
         {
-            val = val.toString();
+            return val.toString().equals(label);
         }
-        else
+        if (val instanceof byte[])
         {
-            val = Strings.fromByteArray((byte[])val);
+            return Strings.fromByteArray((byte[])val).equals(label);
         }
-        return val.equals(label);
+        return false;
     }
 
     public SExpression getExpressionWithLabel(String label)

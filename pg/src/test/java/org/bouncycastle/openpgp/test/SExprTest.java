@@ -142,6 +142,34 @@ public class SExprTest
         return "SExprTest";
     }
 
+    // github #2535: a child expression starting with a nested list, as in a GnuPG protected key, or an empty one
+    private void hasLabelTest()
+        throws IOException
+    {
+        SExpression expr = SExpression.parse(Strings.toByteArray("(protected mode ((sha1 salt count) iv) data)"), 10);
+
+        isTrue(expr.hasLabel("protected"));
+        isTrue(!expr.hasLabel("mode"));
+        isTrue(expr.getExpressionWithLabel("x") == null);
+
+        SExpression params = expr.getExpression(2);
+        isTrue(!params.hasLabel("sha1"));
+        isTrue(params.getExpressionWithLabel("sha1") != null);
+
+        try
+        {
+            expr.getExpressionWithLabelOrFail("x");
+            fail("no exception");
+        }
+        catch (IllegalArgumentException e)
+        {
+            isEquals("label x was not found", e.getMessage());
+        }
+
+        isTrue(!SExpression.parse(Strings.toByteArray("()"), 10).hasLabel("x"));
+        isTrue(SExpression.parse(Strings.toByteArray("(a () (b c))"), 10).getExpressionWithLabel("b") != null);
+    }
+
     private void corruptStreamTest()
     {
         try
@@ -238,6 +266,7 @@ public class SExprTest
         throws Exception
     {
         corruptStreamTest();
+        hasLabelTest();
 
         SExprParser parser = new SExprParser(new JcaPGPDigestCalculatorProviderBuilder().build());
 
