@@ -420,8 +420,13 @@ public final class CryptoServicesRegistrar
             throw new IllegalArgumentException("Bad property value passed");
         }
 
-        // set the property for the current thread as well to avoid mass confusion
-        localSetThread(property, propertyValue);
+        // update the current thread's value as well, if it has one, to avoid mass confusion
+        Map properties = (Map)threadProperties.get(Thread.currentThread());
+
+        if (properties != null && properties.containsKey(property.name))
+        {
+            properties.put(property.name, propertyValue);
+        }
 
         globalProperties.put(property.name, propertyValue);
     }
@@ -459,11 +464,18 @@ public final class CryptoServicesRegistrar
 
         if (properties == null)
         {
-            properties = new HashMap();
-            threadProperties.put(Thread.currentThread(), properties);
+            return null;
         }
 
-        return (Object[])properties.remove(property.name);
+        Object[] values = (Object[])properties.remove(property.name);
+
+        // drop an emptied map so the thread is left holding nothing of ours
+        if (properties.isEmpty())
+        {
+            threadProperties.remove(Thread.currentThread());
+        }
+
+        return values;
     }
 
     private static DHParameters toDH(DSAParameters dsaParams)

@@ -136,7 +136,8 @@ public class RegressionTest
         new StreamCipherResetTest(),
         new SICPositionTest(),
         new SM3DigestTest(),
-        new PQCParametersTest()
+        new PQCParametersTest(),
+        new CryptoServicesRegistrarPropertyTest()
     };
 
     public static void main(String[] args)

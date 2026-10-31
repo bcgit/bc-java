@@ -196,6 +196,7 @@ public class RegressionTest
             new SymmetricConstraintsTest(),
             new DigestConstraintsTest(),
             new PQCParametersTest(),
+            new CryptoServicesRegistrarPropertyTest(),
             new PQCConstraintsTest(),
             new QuantumVulnerableConstraintTest(),
             new RadixConverterTest(),
