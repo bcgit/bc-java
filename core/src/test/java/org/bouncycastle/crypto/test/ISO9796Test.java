@@ -4,6 +4,7 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.AsymmetricBlockCipher;
+import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.digests.RIPEMD128Digest;
@@ -13,8 +14,10 @@ import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.encodings.ISO9796d1Encoding;
 import org.bouncycastle.crypto.engines.RSABlindedEngine;
 import org.bouncycastle.crypto.engines.RSAEngine;
+import org.bouncycastle.crypto.generators.RSAKeyPairGenerator;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithSalt;
+import org.bouncycastle.crypto.params.RSAKeyGenerationParameters;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.signers.ISO9796d2PSSSigner;
 import org.bouncycastle.crypto.signers.ISO9796d2Signer;
@@ -1032,6 +1035,62 @@ public class ISO9796Test
         }
     }
 
+    /**
+     * ISO9796d2PSSSigner has to compare the message passed in with the one recovered from the signature.
+     */
+    private void doRecoveredMessageBindingTest(AsymmetricCipherKeyPair kp)
+        throws Exception
+    {
+        // 1024 bit modulus, SHA-1, 20 byte salt, implicit trailer
+        int capacity = 128 - 20 - 20 - 2;
+
+        byte[] shortMsg = new byte[16];
+        Arrays.fill(shortMsg, (byte)0x41);
+        byte[] sig = pssSign(kp, shortMsg);
+
+        isTrue("PSS short message rejected", pssVerify(kp, shortMsg, sig));
+        byte[] other = Arrays.clone(shortMsg);
+        other[0] ^= 1;
+        isTrue("PSS accepted a different message in the recoverable part", !pssVerify(kp, other, sig));
+        other = new byte[16];
+        Arrays.fill(other, (byte)0x42);
+        isTrue("PSS accepted a different message of the same length", !pssVerify(kp, other, sig));
+        isTrue("PSS accepted a shorter message", !pssVerify(kp, Arrays.copyOf(shortMsg, 15), sig));
+
+        byte[] longMsg = new byte[300];
+        for (int i = 0; i != longMsg.length; i++)
+        {
+            longMsg[i] = (byte)i;
+        }
+        sig = pssSign(kp, longMsg);
+
+        isTrue("PSS long message rejected", pssVerify(kp, longMsg, sig));
+        int[] changes = { 0, capacity - 1, capacity, longMsg.length - 1 };
+        for (int i = 0; i != changes.length; i++)
+        {
+            other = Arrays.clone(longMsg);
+            other[changes[i]] ^= 1;
+            isTrue("PSS accepted a long message changed at " + changes[i], !pssVerify(kp, other, sig));
+        }
+    }
+
+    private static byte[] pssSign(AsymmetricCipherKeyPair kp, byte[] msg)
+        throws Exception
+    {
+        ISO9796d2PSSSigner signer = new ISO9796d2PSSSigner(new RSAEngine(), new SHA1Digest(), 20, true);
+        signer.init(true, kp.getPrivate());
+        signer.update(msg, 0, msg.length);
+        return signer.generateSignature();
+    }
+
+    private static boolean pssVerify(AsymmetricCipherKeyPair kp, byte[] msg, byte[] sig)
+    {
+        ISO9796d2PSSSigner verifier = new ISO9796d2PSSSigner(new RSAEngine(), new SHA1Digest(), 20, true);
+        verifier.init(false, kp.getPublic());
+        verifier.update(msg, 0, msg.length);
+        return verifier.verifySignature(sig);
+    }
+
     public void performTest()
         throws Exception
     {
@@ -1051,6 +1110,12 @@ public class ISO9796Test
         doShortPartialTest();
         doFullMessageTest();
         doMalformedSignatureTest();
+
+        RSAKeyPairGenerator kpGen = new RSAKeyPairGenerator();
+        kpGen.init(new RSAKeyGenerationParameters(BigInteger.valueOf(65537), new SecureRandom(), 1024, 100));
+        AsymmetricCipherKeyPair kp = kpGen.generateKeyPair();
+
+        doRecoveredMessageBindingTest(kp);
     }
 
     public static void main(
