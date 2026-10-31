@@ -180,6 +180,11 @@ public class ECGOST2012SignatureSpi512
 
         digest.doFinal(hash, 0);
 
+        if (sigBytes.length != size)
+        {
+            return false;
+        }
+
         BigInteger[] sig;
 
         try

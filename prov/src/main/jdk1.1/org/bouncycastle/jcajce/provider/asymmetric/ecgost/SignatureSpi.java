@@ -164,6 +164,11 @@ public class SignatureSpi
 
         digest.doFinal(hash, 0);
 
+        if (sigBytes.length != 64)
+        {
+            return false;
+        }
+
         BigInteger[]    sig;
 
         try

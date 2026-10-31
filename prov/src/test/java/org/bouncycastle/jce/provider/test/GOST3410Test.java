@@ -902,6 +902,56 @@ public class GOST3410Test
 
         generationTest();
         parametersTest();
+
+        signatureLengthTest("GOST3411WITHGOST3410", "GOST3410", new GOST3410ParameterSpec(CryptoProObjectIdentifiers.gostR3410_94_CryptoPro_A.getId()), 64);
+        signatureLengthTest("GOST3411WITHECGOST3410", "ECGOST3410", new ECNamedCurveGenParameterSpec("GostR3410-2001-CryptoPro-A"), 64);
+        if (Security.getProvider("BC").containsKey("KeyFactory.ECGOST3410-2012"))
+        {
+            signatureLengthTest("GOST3411-2012-256WITHECGOST3410-2012-256", "ECGOST3410-2012", new ECNamedCurveGenParameterSpec("Tc26-Gost-3410-12-256-paramSetA"), 64);
+            signatureLengthTest("GOST3411-2012-512WITHECGOST3410-2012-512", "ECGOST3410-2012", new ECNamedCurveGenParameterSpec("Tc26-Gost-3410-12-512-paramSetA"), 128);
+        }
+    }
+
+    /**
+     * A GOST signature has exactly one encoding (RFC 4491 sec. 2.2.2, RFC 9215 sec. 2): bytes appended
+     * to it, or a truncated one, must not verify, and must not leave the verifier unusable.
+     */
+    private void signatureLengthTest(String sigAlg, String keyAlg, java.security.spec.AlgorithmParameterSpec spec, int sigLen)
+        throws Exception
+    {
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance(keyAlg, "BC");
+        kpGen.initialize(spec, new SecureRandom());
+        KeyPair kp = kpGen.generateKeyPair();
+
+        byte[] msg = Strings.toByteArray("hello");
+
+        Signature s = Signature.getInstance(sigAlg, "BC");
+        s.initSign(kp.getPrivate());
+        s.update(msg);
+        byte[] sig = s.sign();
+
+        isEquals(sigAlg + " signature length", sigLen, sig.length);
+
+        Signature v = Signature.getInstance(sigAlg, "BC");
+        v.initVerify(kp.getPublic());
+
+        v.update(msg);
+        isTrue(sigAlg + " valid signature rejected", v.verify(sig));
+
+        byte[][] bad = new byte[][]{
+            org.bouncycastle.util.Arrays.append(sig, (byte)0),
+            org.bouncycastle.util.Arrays.concatenate(sig, new byte[16]),
+            org.bouncycastle.util.Arrays.copyOf(sig, sig.length - 1),
+            new byte[0]
+        };
+        for (int i = 0; i != bad.length; i++)
+        {
+            v.update(msg);
+            isTrue(sigAlg + " signature of length " + bad[i].length + " accepted", !v.verify(bad[i]));
+        }
+
+        v.update(msg);
+        isTrue(sigAlg + " valid signature rejected after invalid ones", v.verify(sig));
     }
 
     protected byte[] toByteArray(String input)

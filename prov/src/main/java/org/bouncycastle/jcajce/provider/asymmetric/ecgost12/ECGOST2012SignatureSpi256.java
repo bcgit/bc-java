@@ -178,6 +178,11 @@ public class ECGOST2012SignatureSpi256
 
         digest.doFinal(hash, 0);
 
+        if (sigBytes.length != size)
+        {
+            return false;
+        }
+
         BigInteger[]    sig;
 
         try
