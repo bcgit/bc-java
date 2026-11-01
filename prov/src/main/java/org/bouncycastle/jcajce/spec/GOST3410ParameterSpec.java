@@ -6,6 +6,7 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.cryptopro.ECGOST3410NamedCurves;
 import org.bouncycastle.internal.asn1.rosstandart.RosstandartObjectIdentifiers;
+import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
 
 /**
  * ParameterSpec for a GOST 3410-1994/2001/2012 algorithm parameters.
@@ -85,6 +86,24 @@ public class GOST3410ParameterSpec
     public ASN1ObjectIdentifier getEncryptionParamSet()
     {
         return encryptionParamSet;
+    }
+
+    /**
+     * Return the parameter sets, for example "GOST3410 parameters [publicKeyParamSet=GostR3410-2001-CryptoPro-A
+     * (1.2.643.2.2.35.1), digestParamSet=1.2.643.2.2.30.1]".
+     */
+    public String toString()
+    {
+        StringBuilder buf = new StringBuilder("GOST3410 parameters [publicKeyParamSet=");
+
+        buf.append((publicKeyParamSet == null) ? null : ECUtil.namedCurveToString(publicKeyParamSet.getId()));
+        buf.append(", digestParamSet=").append(digestParamSet);
+        if (encryptionParamSet != null)
+        {
+            buf.append(", encryptionParamSet=").append(encryptionParamSet);
+        }
+
+        return buf.append(']').toString();
     }
 
     private static ASN1ObjectIdentifier getOid(String paramName)

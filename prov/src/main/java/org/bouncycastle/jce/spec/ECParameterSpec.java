@@ -1,5 +1,6 @@
 package org.bouncycastle.jce.spec;
 
+import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
 
@@ -117,5 +118,13 @@ public class ECParameterSpec
     public int hashCode()
     {
         return this.getCurve().hashCode() ^ this.getG().hashCode();
+    }
+
+    /**
+     * Return a short description of the curve, for example "EC parameters (Fp, 256-bit field)".
+     */
+    public String toString()
+    {
+        return ECUtil.curveToString(curve);
     }
 }

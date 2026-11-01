@@ -53,4 +53,12 @@ public class XDHParameterSpec
     {
         return curveName;
     }
+
+    /**
+     * Return the curve name, X25519 or X448.
+     */
+    public String toString()
+    {
+        return curveName;
+    }
 }

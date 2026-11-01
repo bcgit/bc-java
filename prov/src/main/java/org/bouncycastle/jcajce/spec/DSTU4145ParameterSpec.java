@@ -3,8 +3,11 @@ package org.bouncycastle.jcajce.spec;
 import java.security.spec.ECParameterSpec;
 
 import org.bouncycastle.asn1.ua.DSTU4145Params;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.crypto.params.ECDomainParameters;
+import org.bouncycastle.crypto.params.ECNamedDomainParameters;
 import org.bouncycastle.jcajce.provider.asymmetric.util.EC5Util;
+import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
 import org.bouncycastle.util.Arrays;
 
 /**
@@ -50,5 +53,23 @@ public class DSTU4145ParameterSpec
     public int hashCode()
     {
         return this.parameters.hashCode();
+    }
+
+    /**
+     * Return the curve OID if the parameters are named, otherwise a description of the curve, for
+     * example "EC parameters (F2m, 163-bit field)".
+     */
+    public String toString()
+    {
+        if (parameters instanceof ECNamedDomainParameters)
+        {
+            ASN1ObjectIdentifier name = ((ECNamedDomainParameters)parameters).getName();
+            if (name != null)
+            {
+                return ECUtil.namedCurveToString(name.getId());
+            }
+        }
+
+        return ECUtil.curveToString(parameters.getCurve());
     }
 }

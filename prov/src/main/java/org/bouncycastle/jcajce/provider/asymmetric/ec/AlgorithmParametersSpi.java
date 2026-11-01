@@ -191,6 +191,15 @@ public class AlgorithmParametersSpi
     @Override
     protected String engineToString()
     {
-        return "EC Parameters";
+        if (curveName != null)
+        {
+            return ECUtil.namedCurveToString(curveName);
+        }
+        if (ecParameterSpec == null)
+        {
+            return "EC parameters (implicitlyCA)";
+        }
+
+        return EC5Util.curveToString(ecParameterSpec.getCurve());
     }
 }

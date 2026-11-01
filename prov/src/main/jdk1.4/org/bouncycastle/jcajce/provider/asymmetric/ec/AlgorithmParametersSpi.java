@@ -148,6 +148,11 @@ public class AlgorithmParametersSpi
 
     protected String engineToString()
     {
-        return "EC Parameters";
+        if (ecParameterSpec == null)
+        {
+            return "EC parameters (implicitlyCA)";
+        }
+
+        return ecParameterSpec.toString();
     }
 }

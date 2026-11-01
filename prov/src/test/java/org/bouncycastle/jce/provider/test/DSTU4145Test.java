@@ -13,7 +13,12 @@ import java.security.Security;
 import java.security.Signature;
 import java.security.spec.ECGenParameterSpec;
 
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
+import org.bouncycastle.asn1.ua.DSTU4145NamedCurves;
+import org.bouncycastle.crypto.params.ECDomainParameters;
+import org.bouncycastle.crypto.params.ECNamedDomainParameters;
+import org.bouncycastle.jcajce.spec.DSTU4145ParameterSpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECParameterSpec;
 import org.bouncycastle.jce.spec.ECPrivateKeySpec;
@@ -41,6 +46,17 @@ public class DSTU4145Test
         //parametersTest();
         generateFromCurveTest();
         unrecognisedKeyInitSignTest();
+        toStringTest();
+    }
+
+    private void toStringTest()
+    {
+        ASN1ObjectIdentifier oid = DSTU4145NamedCurves.getOIDs()[0];
+        ECDomainParameters params = DSTU4145NamedCurves.getByOID(oid);
+
+        isEquals(oid.getId(), new DSTU4145ParameterSpec(new ECNamedDomainParameters(oid, params)).toString());
+        isEquals("EC parameters (F2m, 163-bit field)",
+            new DSTU4145ParameterSpec(new ECDomainParameters(params.getCurve(), params.getG(), params.getN(), params.getH())).toString());
     }
 
     private void unrecognisedKeyInitSignTest()

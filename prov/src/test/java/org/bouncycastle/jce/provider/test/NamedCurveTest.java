@@ -1,6 +1,7 @@
 package org.bouncycastle.jce.provider.test;
 
 import java.math.BigInteger;
+import java.security.AlgorithmParameters;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -24,6 +25,7 @@ import java.util.Set;
 import javax.crypto.KeyAgreement;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
 import org.bouncycastle.asn1.cryptopro.ECGOST3410NamedCurves;
 import org.bouncycastle.asn1.nist.NISTNamedCurves;
 import org.bouncycastle.asn1.sec.SECNamedCurves;
@@ -31,7 +33,11 @@ import org.bouncycastle.asn1.teletrust.TeleTrusTNamedCurves;
 import org.bouncycastle.asn1.x509.Extension;
 import org.bouncycastle.asn1.x9.X962NamedCurves;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
+import org.bouncycastle.jcajce.spec.GOST3410ParameterSpec;
+import org.bouncycastle.jce.ECNamedCurveTable;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.jce.spec.ECNamedCurveGenParameterSpec;
+import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 import org.bouncycastle.jce.spec.ECNamedCurveSpec;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -383,6 +389,72 @@ public class NamedCurveTest
         kf.generatePublic(pubSpec);
     }
 
+    // toString() is what other providers print for BC key parameters, e.g. SunEC's "Curve not supported: ..."
+    private void testToString()
+        throws Exception
+    {
+        String brainpool = "brainpoolP256r1 (1.3.36.3.3.2.8.1.1.7)";
+        String fp256 = "EC parameters (Fp, 256-bit field)";
+        String f2m163 = "EC parameters (F2m, 163-bit field)";
+
+        ECNamedCurveParameterSpec bcSpec = ECNamedCurveTable.getParameterSpec("brainpoolP256r1");
+        isEquals(brainpool, bcSpec.toString());
+        isEquals(brainpool, namedSpec("brainpoolP256r1", bcSpec).toString());
+
+        // an OID given as the name is shown once, after the table name when there is one
+        isEquals(brainpool, namedSpec("1.3.36.3.3.2.8.1.1.7", bcSpec).toString());
+        isEquals("1.3.6.1.4.1.99999.1", namedSpec("1.3.6.1.4.1.99999.1", bcSpec).toString());
+        isEquals("madeUpCurve", namedSpec("madeUpCurve", bcSpec).toString());
+
+        // no name: describe the curve
+        isEquals(fp256, namedSpec(null, bcSpec).toString());
+        isEquals(fp256, new ECNamedCurveParameterSpec(null, bcSpec.getCurve(), bcSpec.getG(), bcSpec.getN()).toString());
+        isEquals(fp256, new org.bouncycastle.jce.spec.ECParameterSpec(bcSpec.getCurve(), bcSpec.getG(), bcSpec.getN()).toString());
+
+        ECNamedCurveParameterSpec f2mSpec = ECNamedCurveTable.getParameterSpec("sect163k1");
+        isEquals("sect163k1 (1.3.132.0.1)", f2mSpec.toString());
+        isEquals(f2m163, namedSpec(null, f2mSpec).toString());
+        isEquals(f2m163, new org.bouncycastle.jce.spec.ECParameterSpec(f2mSpec.getCurve(), f2mSpec.getG(), f2mSpec.getN()).toString());
+
+        isEquals("secp384r1 (1.3.132.0.34)", new ECNamedCurveGenParameterSpec("secp384r1").toString());
+
+        // the parameters of a BC key, generated and decoded
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("EC", "BC");
+        kpGen.initialize(new ECGenParameterSpec("brainpoolP256r1"));
+        ECPublicKey pub = (ECPublicKey)kpGen.generateKeyPair().getPublic();
+        isEquals(brainpool, pub.getParams().toString());
+
+        ECPublicKey decoded = (ECPublicKey)KeyFactory.getInstance("EC", "BC").generatePublic(new X509EncodedKeySpec(pub.getEncoded()));
+        isEquals(brainpool, decoded.getParams().toString());
+
+        AlgorithmParameters params = AlgorithmParameters.getInstance("EC", "BC");
+        params.init(new ECGenParameterSpec("secp384r1"));
+        isEquals("secp384r1 (1.3.132.0.34)", params.toString());
+
+        params = AlgorithmParameters.getInstance("EC", "BC");
+        params.init(pub.getParams());
+        AlgorithmParameters decodedParams = AlgorithmParameters.getInstance("EC", "BC");
+        decodedParams.init(params.getEncoded());
+        isEquals(brainpool, decodedParams.toString());
+
+        java.security.spec.ECParameterSpec explicit = new java.security.spec.ECParameterSpec(
+            pub.getParams().getCurve(), pub.getParams().getGenerator(), pub.getParams().getOrder(), pub.getParams().getCofactor());
+        params = AlgorithmParameters.getInstance("EC", "BC");
+        params.init(explicit);
+        isEquals(fp256, params.toString());
+
+        isEquals("GOST3410 parameters [publicKeyParamSet=GostR3410-2001-CryptoPro-A (1.2.643.2.2.35.1), digestParamSet=1.2.643.2.2.30.1]",
+            new GOST3410ParameterSpec("GostR3410-2001-CryptoPro-A").toString());
+        isEquals("GOST3410 parameters [publicKeyParamSet=GostR3410-2001-CryptoPro-A (1.2.643.2.2.35.1), digestParamSet=1.2.643.2.2.30.1, encryptionParamSet=1.2.643.2.2.31.1]",
+            new GOST3410ParameterSpec(CryptoProObjectIdentifiers.gostR3410_2001_CryptoPro_A,
+                CryptoProObjectIdentifiers.gostR3411_94_CryptoProParamSet, CryptoProObjectIdentifiers.id_Gost28147_89_CryptoPro_A_ParamSet).toString());
+    }
+
+    private static ECNamedCurveSpec namedSpec(String name, ECNamedCurveParameterSpec spec)
+    {
+        return new ECNamedCurveSpec(name, spec.getCurve(), spec.getG(), spec.getN(), spec.getH(), spec.getSeed());
+    }
+
     public String getName()
     {
         return "NamedCurve";
@@ -433,6 +505,7 @@ public class NamedCurveTest
 
         testAcceptable();
         testAdditional();
+        testToString();
     }
     
     public static void main(

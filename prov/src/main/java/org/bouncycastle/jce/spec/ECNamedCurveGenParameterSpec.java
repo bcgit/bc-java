@@ -2,6 +2,8 @@ package org.bouncycastle.jce.spec;
 
 import java.security.spec.AlgorithmParameterSpec;
 
+import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
+
 /**
  * Named curve generation spec
  * <p>
@@ -24,5 +26,13 @@ public class ECNamedCurveGenParameterSpec
     public String getName()
     {
         return name;
+    }
+
+    /**
+     * Return the curve name and its OID, for example "secp384r1 (1.3.132.0.34)".
+     */
+    public String toString()
+    {
+        return String.valueOf(ECUtil.namedCurveToString(name));
     }
 }

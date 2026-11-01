@@ -269,6 +269,21 @@ public class EC5Util
         return new EllipticCurve(field, a, b, null);
     }
 
+    /**
+     * Describe EC domain parameters that carry no name for toString(), as
+     * {@link ECUtil#curveToString(ECCurve)} does, without converting the curve.
+     *
+     * @param curve the curve.
+     * @return the description.
+     */
+    public static String curveToString(
+        EllipticCurve curve)
+    {
+        ECField field = curve.getField();
+
+        return ECUtil.curveToString(field instanceof ECFieldFp, field.getFieldSize());
+    }
+
     public static ECCurve convertCurve(
         EllipticCurve ec)
     {

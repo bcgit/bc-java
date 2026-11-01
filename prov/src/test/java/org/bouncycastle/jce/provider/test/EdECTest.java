@@ -121,11 +121,40 @@ public class EdECTest
         isTrue(!minimalPrivKey.equals(priv));
     }
 
+    // EdDSA parameters print as the RFC 8032 variant they select
+    private void testToString()
+        throws Exception
+    {
+        byte[] ctx = Strings.toByteArray("abc");
+
+        isEquals("Ed25519", new EdDSAParameterSpec(EdDSAParameterSpec.Ed25519).toString());
+        isEquals("Ed25519", new EdDSAParameterSpec(EdDSAParameterSpec.Ed25519, false, new byte[0]).toString());
+        isEquals("Ed25519ctx [context=3 bytes]", new EdDSAParameterSpec(EdDSAParameterSpec.Ed25519, false, ctx).toString());
+        isEquals("Ed25519ph", new EdDSAParameterSpec(EdDSAParameterSpec.Ed25519, true).toString());
+        isEquals("Ed25519ph [context=3 bytes]", new EdDSAParameterSpec(EdDSAParameterSpec.Ed25519, true, ctx).toString());
+        isEquals("Ed448", new EdDSAParameterSpec(EdDSAParameterSpec.Ed448).toString());
+        isEquals("Ed448 [context=3 bytes]", new EdDSAParameterSpec(EdDSAParameterSpec.Ed448, false, ctx).toString());
+        isEquals("Ed448ph", new EdDSAParameterSpec(EdDSAParameterSpec.Ed448, true).toString());
+        isEquals("Ed448ph [context=3 bytes]", new EdDSAParameterSpec(EdDSAParameterSpec.Ed448, true, ctx).toString());
+
+        isEquals("X25519", new XDHParameterSpec(XDHParameterSpec.X25519).toString());
+        isEquals("X448", new XDHParameterSpec(XDHParameterSpec.X448).toString());
+
+        AlgorithmParameters params = AlgorithmParameters.getInstance("Ed448", "BC");
+        params.init(new EdDSAParameterSpec(EdDSAParameterSpec.Ed448, true, ctx));
+        isEquals("Ed448ph [context=3 bytes]", params.toString());
+
+        params = AlgorithmParameters.getInstance("Ed25519", "BC");
+        params.init(new EdDSAParameterSpec(EdDSAParameterSpec.Ed25519, false, ctx));
+        isEquals("Ed25519ctx [context=3 bytes]", params.toString());
+    }
+
     public void performTest()
         throws Exception
     {
         testEquals();
         testEqualsXDH();
+        testToString();
 
         KeyFactory kFact = KeyFactory.getInstance("EdDSA", "BC");
 

@@ -98,8 +98,7 @@ public class AlgorithmParametersSpi
 
     protected String engineToString()
     {
-        return curveName + " Parameters [prehash=" + prehash
-            + ", context=" + ((context == null) ? "none" : (context.length + " bytes")) + "]";
+        return new EdDSAParameterSpec(curveName, prehash, context).toString();
     }
 
     public static class Ed25519

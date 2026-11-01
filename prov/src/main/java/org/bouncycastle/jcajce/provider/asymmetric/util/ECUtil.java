@@ -28,6 +28,7 @@ import org.bouncycastle.jce.interfaces.ECPublicKey;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ECNamedCurveParameterSpec;
 import org.bouncycastle.jce.spec.ECParameterSpec;
+import org.bouncycastle.math.ec.ECAlgorithms;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.math.ec.FixedPointCombMultiplier;
@@ -432,6 +433,61 @@ public class ECUtil
         ASN1ObjectIdentifier oid)
     {
         return ECNamedCurveTable.getName(oid);
+    }
+
+    /**
+     * Describe a named curve for toString() in the "name (oid)" form SunEC's own named curves use, so
+     * messages read the same whichever provider made the key. A name that is itself an OID is shown
+     * once, after the table name when there is one, and a name with no known OID is shown as given.
+     *
+     * @param name the curve name, or an OID in dotted form.
+     * @return the description, or null if name is null.
+     */
+    public static String namedCurveToString(String name)
+    {
+        if (name == null || name.length() == 0)
+        {
+            return name;
+        }
+
+        ASN1ObjectIdentifier oid = getNamedCurveOid(name);
+        if (oid == null)
+        {
+            return name;
+        }
+
+        String id = oid.getId();
+        if (!id.equals(name))
+        {
+            return name + " (" + id + ")";
+        }
+
+        String tableName = getCurveName(oid);
+
+        return (tableName == null) ? id : tableName + " (" + id + ")";
+    }
+
+    /**
+     * Describe EC domain parameters that carry no name for toString(), by field type and size, for
+     * example "EC parameters (Fp, 256-bit field)".
+     *
+     * @param curve the curve, may be null.
+     * @return the description.
+     */
+    public static String curveToString(ECCurve curve)
+    {
+        if (curve == null)
+        {
+            return "EC parameters";
+        }
+
+        return curveToString(ECAlgorithms.isFpCurve(curve), curve.getFieldSize());
+    }
+
+    // shared with EC5Util, which describes java.security.spec curves the same way
+    static String curveToString(boolean isFp, int fieldSize)
+    {
+        return "EC parameters (" + (isFp ? "Fp" : "F2m") + ", " + fieldSize + "-bit field)";
     }
 
     public static String privateKeyToString(String algorithm, BigInteger d, org.bouncycastle.jce.spec.ECParameterSpec spec)

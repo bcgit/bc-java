@@ -115,4 +115,31 @@ public class EdDSAParameterSpec
     {
         return Arrays.clone(context);
     }
+
+    /**
+     * Return the RFC 8032 name of the variant these parameters select (Ed25519, Ed25519ctx, Ed25519ph,
+     * Ed448 or Ed448ph), followed by the context length when there is a context, for example
+     * "Ed448ph [context=5 bytes]".
+     */
+    public String toString()
+    {
+        boolean hasContext = context != null && context.length != 0;
+        String name;
+
+        if (curveName.equals(Ed448))
+        {
+            name = prehash ? "Ed448ph" : Ed448;
+        }
+        else if (prehash)
+        {
+            name = "Ed25519ph";
+        }
+        else
+        {
+            // RFC 8032: Ed25519ctx requires a non-empty context; an empty context is pure Ed25519.
+            name = hasContext ? "Ed25519ctx" : Ed25519;
+        }
+
+        return hasContext ? name + " [context=" + context.length + " bytes]" : name;
+    }
 }
