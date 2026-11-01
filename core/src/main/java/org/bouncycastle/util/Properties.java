@@ -153,6 +153,13 @@ public class Properties
     public static final String OPENPGP_MAX_ARMOR_HEADERS = "org.bouncycastle.openpgp.max_armor_headers";
 
     /**
+     * If set to "true", BCPGInputStream rejects a packet whose first Partial Body Length is less than 512 octets, which
+     * RFC 9580 sec. 4.2.1.4 forbids. Off by default, so that messages written by earlier versions of BC with a
+     * partial-body buffer shorter than 512 bytes (which BCPGOutputStream no longer produces) can still be read.
+     */
+    public static final String OPENPGP_STRICT_PARTIAL_BODY_LENGTH = "org.bouncycastle.openpgp.strict_partial_body_length";
+
+    /**
      * If set to "true", the BC PKCS#12 KeyStore will additionally accept (on load only)
      * SafeBags of type secretBag that use SunJCE's non-standard nested encoding —
      * a SecretBag whose secretTypeId is pkcs8ShroudedKeyBag and whose secretValue is

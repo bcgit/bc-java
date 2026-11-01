@@ -10,12 +10,16 @@ import org.bouncycastle.bcpg.ArmoredInputStream;
 import org.bouncycastle.bcpg.ArmoredOutputStream;
 import org.bouncycastle.bcpg.BCPGInputStream;
 import org.bouncycastle.bcpg.BCPGOutputStream;
+import org.bouncycastle.bcpg.ExperimentalPacket;
 import org.bouncycastle.bcpg.Packet;
 import org.bouncycastle.bcpg.PacketFormat;
+import org.bouncycastle.bcpg.PacketTags;
 import org.bouncycastle.bcpg.UserIDPacket;
 import org.bouncycastle.openpgp.PGPObjectFactory;
 import org.bouncycastle.openpgp.PGPSecretKeyRing;
 import org.bouncycastle.openpgp.bc.BcPGPObjectFactory;
+import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.io.Streams;
@@ -283,6 +287,67 @@ public class BCPGOutputStreamTest
         }
     }
 
+    /**
+     * RFC 9580 sec. 4.2.1.4: the first Partial Body Length has to be at least 512 octets. BCPGOutputStream no longer
+     * writes a shorter one whatever buffer it is given, and BCPGInputStream rejects one only when
+     * Properties.OPENPGP_STRICT_PARTIAL_BODY_LENGTH is set.
+     */
+    private void testPartialBodyMinimumLength()
+        throws IOException
+    {
+        byte[] data = new byte[2000];
+        for (int i = 0; i != data.length; i++)
+        {
+            data[i] = (byte)i;
+        }
+
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        BCPGOutputStream pOut = new BCPGOutputStream(bOut, PacketTags.EXPERIMENTAL_1, new byte[16]);
+        pOut.write(data);
+        pOut.close();
+        byte[] written = bOut.toByteArray();
+
+        isEquals("packet header", 0xC0 | PacketTags.EXPERIMENTAL_1, written[0] & 0xFF);
+        isEquals("first partial body length", 0xE0 | 9, written[1] & 0xFF);
+
+        // first chunk of 16 octets, then a final 3 octet chunk
+        byte[] shortChunk = new byte[1 + 1 + 16 + 1 + 3];
+        shortChunk[0] = (byte)(0xC0 | PacketTags.EXPERIMENTAL_1);
+        shortChunk[1] = (byte)(0xE0 | 4);
+        System.arraycopy(data, 0, shortChunk, 2, 16);
+        shortChunk[18] = 3;
+        System.arraycopy(data, 16, shortChunk, 19, 3);
+
+        isTrue("default read of 512 octet first chunk", Arrays.areEqual(data, readExperimental(written)));
+        isTrue("default read of 16 octet first chunk", Arrays.areEqual(Arrays.copyOf(data, 19), readExperimental(shortChunk)));
+
+        System.setProperty(Properties.OPENPGP_STRICT_PARTIAL_BODY_LENGTH, "true");
+        try
+        {
+            isTrue("strict read of 512 octet first chunk", Arrays.areEqual(data, readExperimental(written)));
+            try
+            {
+                readExperimental(shortChunk);
+                fail("16 octet first partial body length accepted");
+            }
+            catch (IOException e)
+            {
+                isEquals("first partial body length less than 512 octets", e.getMessage());
+            }
+        }
+        finally
+        {
+            System.getProperties().remove(Properties.OPENPGP_STRICT_PARTIAL_BODY_LENGTH);
+        }
+    }
+
+    private static byte[] readExperimental(byte[] encoding)
+        throws IOException
+    {
+        BCPGInputStream pIn = new BCPGInputStream(new ByteArrayInputStream(encoding));
+        return ((ExperimentalPacket)pIn.readPacket()).getContents();
+    }
+
     @Override
     public String getName()
     {
@@ -297,6 +362,7 @@ public class BCPGOutputStreamTest
         testForceNewPacketFormat();
         testRoundTripPacketFormat();
         testRoundtripMixedPacketFormats();
+        testPartialBodyMinimumLength();
     }
 
     public static void main(String[] args)

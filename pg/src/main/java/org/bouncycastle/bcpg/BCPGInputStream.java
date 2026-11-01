@@ -5,6 +5,7 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.io.Streams;
 
 /**
@@ -205,6 +206,10 @@ public class BCPGInputStream
             boolean[] flags = new boolean[3];
             bodyLen = StreamUtil.readBodyLen(this, flags);
             partial = flags[StreamUtil.flag_partial];
+            if (partial && bodyLen < 512 && Properties.isOverrideSet(Properties.OPENPGP_STRICT_PARTIAL_BODY_LENGTH))
+            {
+                throw new IOException("first partial body length less than 512 octets");
+            }
         }
         else
         {

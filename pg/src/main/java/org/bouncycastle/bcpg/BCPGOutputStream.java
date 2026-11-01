@@ -36,6 +36,7 @@ public class BCPGOutputStream
     private int partialOffset;
 
     private static final int BUF_SIZE_POWER = 16; // 2^16 size buffer on long files
+    private static final int MIN_PARTIAL_BUFFER_SIZE = 512; // RFC 9580 sec. 4.2.1.4: first partial length at least 512 octets
 
     /**
      * Base constructor - generate a PGP protocol encoding with old-style packets whenever
@@ -138,6 +139,10 @@ public class BCPGOutputStream
 
     /**
      * Create a new style partial input stream buffered into chunks.
+     * <p>
+     * RFC 9580 sec. 4.2.1.4 requires the first partial body length to be at least 512 octets, so a buffer shorter than
+     * that is not used and a 512 byte one is allocated in its place.
+     * </p>
      *
      * @param out    output stream to write to.
      * @param tag    packet tag.
@@ -154,7 +159,7 @@ public class BCPGOutputStream
         this.packetFormat = PacketFormat.CURRENT;
         this.writeHeader(tag, false, true, 0);
 
-        this.partialBuffer = buffer;
+        this.partialBuffer = buffer.length < MIN_PARTIAL_BUFFER_SIZE ? new byte[MIN_PARTIAL_BUFFER_SIZE] : buffer;
 
         int length = partialBuffer.length;
 
