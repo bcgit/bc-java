@@ -182,10 +182,117 @@ public class Blake2bDigestTest
         checkHash("copy of last node after reset", lastNode, lastNodeCopy, message, 0);
     }
 
+    private static byte[] keyedParameterBlock(int keyLength, byte saltByte, byte personalByte)
+    {
+        byte[] param = new byte[64];
+        param[0] = 32;
+        param[1] = (byte)keyLength;
+        param[2] = 1;
+        param[3] = 1;
+        param[32] = saltByte;
+        param[48] = personalByte;
+        return param;
+    }
+
+    /**
+     * The key, salt and personalization given with an explicit parameter block have to be used - reference values
+     * from Python's hashlib.blake2b(message, digest_size=32, key=..., salt=..., person=...).
+     */
+    private void parameterBlockKeyTest()
+    {
+        byte[] message = Strings.toByteArray("pay 100 to alice");
+        byte[] key = new byte[32];
+        for (int i = 0; i != key.length; i++)
+        {
+            key[i] = (byte)i;
+        }
+        byte[] otherKey = new byte[32];
+        otherKey[0] = 99;
+
+        // key=bytes(range(32))
+        String keyed = "506198205a70e42a24454fdb42560289f373003fc2c595dbb174b6ce15649142";
+        // salt=b'\x01' + bytes(15), person=b'\x02' + bytes(15)
+        String salted = "7b78cadbd5fc717c47dd9100fee2fa3331b402bf6f73d3325ab0c22cc74561ab";
+        // both of the above
+        String keyedSalted = "89bc924b32fb8ad0b6dce0f7ddf76dc7f32c856728ebe0c4056f918db9ad9b02";
+
+        Blake2bDigest digest = new Blake2bDigest(key, keyedParameterBlock(32, (byte)0, (byte)0));
+        checkHash("keyed parameter block", keyed, digest, message, 0);
+        checkHash("keyed parameter block after reset", keyed, digest, message, 0);
+        digest.update(message, 0, 5);
+        checkHash("copy of keyed parameter block", keyed, new Blake2bDigest(digest), message, 5);
+
+        checkHash("salted parameter block", salted, new Blake2bDigest(null, keyedParameterBlock(0, (byte)1, (byte)2)), message, 0);
+        checkHash("keyed and salted parameter block", keyedSalted, new Blake2bDigest(key, keyedParameterBlock(32, (byte)1, (byte)2)), message, 0);
+
+        byte[] tag = new byte[32];
+        byte[] otherTag = new byte[32];
+        digest = new Blake2bDigest(key, keyedParameterBlock(32, (byte)0, (byte)0));
+        digest.update(message, 0, message.length);
+        digest.doFinal(tag, 0);
+        digest = new Blake2bDigest(otherKey, keyedParameterBlock(32, (byte)0, (byte)0));
+        digest.update(message, 0, message.length);
+        digest.doFinal(otherTag, 0);
+        isTrue("different keys gave the same tag", !Arrays.areEqual(tag, otherTag));
+
+        // a null key leaves the key to the caller, as BLAKE2bp does, and so does not give the keyed tag
+        digest = new Blake2bDigest(null, keyedParameterBlock(32, (byte)0, (byte)0));
+        digest.update(message, 0, message.length);
+        digest.doFinal(otherTag, 0);
+        isTrue("a null key gave the keyed tag", !Arrays.areEqual(tag, otherTag));
+
+        try
+        {
+            new Blake2bDigest(key, keyedParameterBlock(0, (byte)0, (byte)0));
+            fail("key accepted with a key length of 0 in the parameter block");
+        }
+        catch (IllegalArgumentException e)
+        {
+            isEquals("key length does not match parameter block", e.getMessage());
+        }
+
+        try
+        {
+            new Blake2bDigest(null, new byte[18]);
+            fail("short parameter block accepted");
+        }
+        catch (IllegalArgumentException e)
+        {
+            isEquals("BLAKE2b parameter block must be 64 bytes", e.getMessage());
+        }
+    }
+
+    /**
+     * An empty key is no key, as in hashlib.blake2b(message, key=b''), not a block of zeros.
+     */
+    private void emptyKeyTest()
+    {
+        byte[] message = Strings.toByteArray("pay 100 to alice");
+
+        // hashlib.blake2b(message, digest_size=32, key=b'')
+        String unkeyed256 = "f5689c1f157ad1211337d7f631d209c5dc483b5f06396f7bb80e4a1482da1f0c";
+        Blake2bDigest digest = new Blake2bDigest(new byte[0], 32, null, null);
+        checkHash("empty key", unkeyed256, digest, message, 0);
+        checkHash("empty key after reset", unkeyed256, digest, message, 0);
+
+        // hashlib.blake2b(message, key=b'')
+        byte[] expected = Hex.decode("a1da4c14c2c9766c77b0240cf792324fd1009e069f154836b09db59b21f7444e7b347a3c855e86516c5a127ed60242f18c8c112e55449cfd5315814bc5d12db7");
+        digest = new Blake2bDigest(new byte[0]);
+        for (int i = 0; i != 2; i++)
+        {
+            digest.update(message, 0, message.length);
+            byte[] hash = new byte[64];
+            digest.doFinal(hash, 0);
+            isTrue("empty prefix-MAC key " + i, Arrays.areEqual(expected, hash));
+        }
+    }
+
     public void performTest()
         throws Exception
     {
         parameterBlockTest();
+        parameterBlockKeyTest();
+        emptyKeyTest();
 
         // test keyed test vectors:
 
