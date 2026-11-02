@@ -69,7 +69,7 @@ public class NTRULPRimeTest
                 }
 
                 // System.out.println("Running Test-" + count + " ...");
-                NISTSecureRandom random = new NISTSecureRandom(seed, null);
+                SecureRandom random = new ReferenceDrawsRandom(new NISTSecureRandom(seed, null), 4 * paramSpec.getP());
                 NTRULPRimeKeyPairGenerator keyPairGenerator = new NTRULPRimeKeyPairGenerator();
                 keyPairGenerator.init(new NTRULPRimeKeyGenerationParameters(random, paramSpec));
 

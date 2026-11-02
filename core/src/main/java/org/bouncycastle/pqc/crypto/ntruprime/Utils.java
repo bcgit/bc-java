@@ -8,23 +8,29 @@ import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.modes.SICBlockCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.bouncycastle.util.Pack;
 
 class Utils
 {
-    protected static int getRandomUnsignedInteger(SecureRandom random)
+    /**
+     * Fill L with uniform random 32-bit words, drawn in a single call and decoded little-endian. The reference draws
+     * each word by its own 4-byte call (urandom32), so with a deterministic generator such as the KATs', which
+     * discards the rest of its last block on every call, its words differ from this single call's; the KAT tests split
+     * this request to match.
+     */
+    private static void getRandomUnsignedIntegers(SecureRandom random, int[] L)
     {
-        byte[] c = new byte[4];
-        random.nextBytes(c);
-        return (bToUnsignedInt(c[0])
-                + (bToUnsignedInt(c[1]) << 8)
-                + (bToUnsignedInt(c[2]) << 16)
-                + (bToUnsignedInt(c[3]) << 24));
+        byte[] bytes = new byte[L.length * 4];
+        random.nextBytes(bytes);
+        Pack.littleEndianToInt(bytes, 0, L);
     }
 
     protected static void getRandomSmallPolynomial(SecureRandom random, byte[] g)
     {
+        int[] L = new int[g.length];
+        getRandomUnsignedIntegers(random, L);
         for (int i = 0; i < g.length; i++)
-            g[i] = (byte)((((getRandomUnsignedInteger(random) & 0x3fffffff) * 3) >>> 30) - 1);
+            g[i] = (byte)((((L[i] & 0x3fffffff) * 3) >>> 30) - 1);
     }
 
     /**
@@ -173,8 +179,7 @@ class Utils
     protected static void getRandomShortPolynomial(SecureRandom random, byte[] f, int p, int w)
     {
         int[] L = new int[p];
-        for (int i = 0; i < p; i++)
-            L[i] = getRandomUnsignedInteger(random);
+        getRandomUnsignedIntegers(random, L);
         sortGenerateShortPolynomial(f, L, p, w);
     }
 

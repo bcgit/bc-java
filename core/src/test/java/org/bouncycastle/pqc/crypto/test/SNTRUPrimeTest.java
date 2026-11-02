@@ -71,7 +71,7 @@ public class SNTRUPrimeTest
                 }
                 // System.out.println("Running Test-" + count + " ...");
 
-                NISTSecureRandom random = new NISTSecureRandom(seed, null);
+                SecureRandom random = new ReferenceDrawsRandom(new NISTSecureRandom(seed, null), 4 * paramSpec.getP());
                 SNTRUPrimeKeyPairGenerator keyPairGenerator = new SNTRUPrimeKeyPairGenerator();
                 keyPairGenerator.init(new SNTRUPrimeKeyGenerationParameters(random, paramSpec));
 
