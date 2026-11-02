@@ -8,6 +8,7 @@ import java.security.SecureRandom;
 import junit.framework.TestCase;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.SecretWithEncapsulation;
+import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.pqc.crypto.ntruprime.NTRULPRimeKEMExtractor;
 import org.bouncycastle.pqc.crypto.ntruprime.NTRULPRimeKEMGenerator;
 import org.bouncycastle.pqc.crypto.ntruprime.NTRULPRimeKeyGenerationParameters;
@@ -100,8 +101,12 @@ public class NTRULPRimeTest
     }
 
     /**
-     * A ciphertext changed anywhere decapsulates, by implicit rejection, to a secret of its own rather than the
-     * encapsulated one, and the same one each time.
+     * A ciphertext changed anywhere decapsulates, by implicit rejection, to the secret the reference derives from rho
+     * and the received ciphertext, SHA-512(0 | rho | ciphertext)[0:32], rather than the encapsulated one.
+     * <p>
+     * The secret used to be derived with prefix 1, as for a valid ciphertext, and from the re-encrypted ciphertext,
+     * which depends only on the decrypted r, so ciphertexts that decrypt to the same r - such as two that differ only
+     * in the confirmation hash - shared a rejection secret, telling an attacker so.
      */
     public void testImplicitRejection()
     {
@@ -109,27 +114,44 @@ public class NTRULPRimeTest
         NTRULPRimeKeyPairGenerator keyPairGenerator = new NTRULPRimeKeyPairGenerator();
         keyPairGenerator.init(new NTRULPRimeKeyGenerationParameters(random, NTRULPRimeParameters.ntrulpr761));
         AsymmetricCipherKeyPair keyPair = keyPairGenerator.generateKeyPair();
+        NTRULPRimePrivateKeyParameters privateKey = (NTRULPRimePrivateKeyParameters)keyPair.getPrivate();
 
         SecretWithEncapsulation secretEncapsulation = new NTRULPRimeKEMGenerator(random).generateEncapsulated(
             keyPair.getPublic());
         byte[] secret = secretEncapsulation.getSecret();
         byte[] ct = secretEncapsulation.getEncapsulation();
 
-        NTRULPRimeKEMExtractor kemExtractor = new NTRULPRimeKEMExtractor(
-            (NTRULPRimePrivateKeyParameters)keyPair.getPrivate());
+        NTRULPRimeKEMExtractor kemExtractor = new NTRULPRimeKEMExtractor(privateKey);
+        byte[] rho = privateKey.getRho();
 
-        // the first byte, the last bytes of the rounded polynomial and of T, and the confirmation hash
-        int[] positions = { 0, ct.length - 161, ct.length - 33, ct.length - 1 };
+        // the first byte, the last bytes of the rounded polynomial and of T, and the confirmation hash (twice)
+        int[] positions = { 0, ct.length - 161, ct.length - 33, ct.length - 1, ct.length - 1 };
+        byte[][] rejected = new byte[positions.length][];
         for (int k = 0; k != positions.length; k++)
         {
             byte[] tampered = Arrays.clone(ct);
-            tampered[positions[k]] ^= (byte)0x80;
+            tampered[positions[k]] ^= (byte)(0x80 >>> k);
 
-            byte[] rejected = kemExtractor.extractSecret(tampered);
-            assertFalse(Arrays.areEqual(secret, rejected));
-            assertTrue(Arrays.areEqual(rejected, kemExtractor.extractSecret(tampered)));
+            rejected[k] = kemExtractor.extractSecret(tampered);
+            assertFalse(Arrays.areEqual(secret, rejected[k]));
+            assertTrue(Arrays.areEqual(Arrays.copyOfRange(hashWithPrefix(0, rho, tampered), 0, 32), rejected[k]));
         }
 
+        // a changed confirmation hash decrypts to the same r, so re-encrypts to ct: not what the secret depends on
+        assertFalse(Arrays.areEqual(Arrays.copyOfRange(hashWithPrefix(1, rho, ct), 0, 32), rejected[3]));
+        assertFalse(Arrays.areEqual(rejected[3], rejected[4]));
+
         assertTrue(Arrays.areEqual(secret, kemExtractor.extractSecret(ct)));
+    }
+
+    private static byte[] hashWithPrefix(int prefix, byte[] a, byte[] b)
+    {
+        SHA512Digest digest = new SHA512Digest();
+        digest.update((byte)prefix);
+        digest.update(a, 0, a.length);
+        digest.update(b, 0, b.length);
+        byte[] hash = new byte[digest.getDigestSize()];
+        digest.doFinal(hash, 0);
+        return hash;
     }
 }

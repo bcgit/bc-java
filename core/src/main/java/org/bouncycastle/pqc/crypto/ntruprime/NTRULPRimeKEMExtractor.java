@@ -168,13 +168,16 @@ public class NTRULPRimeKEMExtractor
         Utils.updateDiffMask(encR, privateKey.getRho(), mask);
 
         /*
-         * ss = SHA-512(1 | encR | ct)[0:32]
+         * ss = SHA-512((mask + 1) | encR | encapsulation)[0:32]
+         *
+         * The received ciphertext, not the re-encrypted one: on rejection the secret must depend on the ciphertext
+         * alone, or two ciphertexts that decrypt to the same r would give the same secret.
          */
-        byte[] ssInput = new byte[encR.length + ct.length];
+        byte[] ssInput = new byte[encR.length + encapsulation.length];
         System.arraycopy(encR, 0, ssInput, 0, encR.length);
-        System.arraycopy(ct, 0, ssInput, encR.length, ct.length);
+        System.arraycopy(encapsulation, 0, ssInput, encR.length, encapsulation.length);
 
-        byte[] ssPrefix = {1};
+        byte[] ssPrefix = {(byte)(mask + 1)};
         byte[] ssHash = Utils.getHashWithPrefix(ssPrefix, ssInput);
 
         return Arrays.copyOfRange(ssHash, 0, params.getSessionKeySize() / 8);

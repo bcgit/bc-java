@@ -137,14 +137,17 @@ public class SNTRUPrimeKEMExtractor
         Utils.updateDiffMask(encR, privateKey.getRho(), mask);
 
         /*
-         * ss = SHA-512((mask + 1) | SHA-512(3|encR)[0:32] | ct)[0:32]
+         * ss = SHA-512((mask + 1) | SHA-512(3|encR)[0:32] | encapsulation)[0:32]
+         *
+         * The received ciphertext, not the re-encrypted one: on rejection the secret must depend on the ciphertext
+         * alone, or two ciphertexts that decrypt to the same r would give the same secret.
          */
         byte[] innerSSPrefix = {3};
         byte[] innerSSHash = Utils.getHashWithPrefix(innerSSPrefix, encR);
 
-        byte[] ssInput = new byte[(innerSSHash.length / 2) + ct.length];
+        byte[] ssInput = new byte[(innerSSHash.length / 2) + encapsulation.length];
         System.arraycopy(innerSSHash, 0, ssInput, 0, innerSSHash.length / 2);
-        System.arraycopy(ct, 0, ssInput, innerSSHash.length / 2, ct.length);
+        System.arraycopy(encapsulation, 0, ssInput, innerSSHash.length / 2, encapsulation.length);
 
         byte[] ssPrefix = {(byte)(mask + 1)};
         byte[] ssHash = Utils.getHashWithPrefix(ssPrefix, ssInput);
