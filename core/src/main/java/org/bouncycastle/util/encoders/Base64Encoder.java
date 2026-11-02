@@ -191,19 +191,19 @@ public class Base64Encoder
 
         while (i < finish)
         {
-            b1 = decodingTable[data[i++]];
+            b1 = lookup(data[i++]);
             
             i = nextI(data, i, finish);
             
-            b2 = decodingTable[data[i++]];
+            b2 = lookup(data[i++]);
             
             i = nextI(data, i, finish);
             
-            b3 = decodingTable[data[i++]];
+            b3 = lookup(data[i++]);
             
             i = nextI(data, i, finish);
             
-            b4 = decodingTable[data[i++]];
+            b4 = lookup(data[i++]);
 
             if ((b1 | b2 | b3 | b4) < 0)
             {
@@ -305,19 +305,19 @@ public class Base64Encoder
         
         while (i < finish)
         {
-            b1 = decodingTable[data.charAt(i++)];
+            b1 = lookup(data.charAt(i++));
             
             i = nextI(data, i, finish);
             
-            b2 = decodingTable[data.charAt(i++)];
+            b2 = lookup(data.charAt(i++));
             
             i = nextI(data, i, finish);
             
-            b3 = decodingTable[data.charAt(i++)];
+            b3 = lookup(data.charAt(i++));
             
             i = nextI(data, i, finish);
             
-            b4 = decodingTable[data.charAt(i++)];
+            b4 = lookup(data.charAt(i++));
 
             if ((b1 | b2 | b3 | b4) < 0)
             {
@@ -370,8 +370,8 @@ public class Base64Encoder
                 throw new IOException("invalid characters encountered at end of base64 data");
             }
             
-            b1 = decodingTable[c1];
-            b2 = decodingTable[c2];
+            b1 = lookup(c1);
+            b2 = lookup(c2);
 
             if ((b1 | b2) < 0)
             {
@@ -384,9 +384,9 @@ public class Base64Encoder
         }
         else if (c4 == padding)
         {
-            b1 = decodingTable[c1];
-            b2 = decodingTable[c2];
-            b3 = decodingTable[c3];
+            b1 = lookup(c1);
+            b2 = lookup(c2);
+            b3 = lookup(c3);
 
             if ((b1 | b2 | b3) < 0)
             {
@@ -400,10 +400,10 @@ public class Base64Encoder
         }
         else
         {
-            b1 = decodingTable[c1];
-            b2 = decodingTable[c2];
-            b3 = decodingTable[c3];
-            b4 = decodingTable[c4];
+            b1 = lookup(c1);
+            b2 = lookup(c2);
+            b3 = lookup(c3);
+            b4 = lookup(c4);
 
             if ((b1 | b2 | b3 | b4) < 0)
             {
@@ -425,5 +425,11 @@ public class Base64Encoder
             i++;
         }
         return i;
+    }
+
+    private byte lookup(int c)
+    {
+        // anything outside the table, a non-ASCII character or a negative byte, is invalid
+        return (c >= 0 && c < decodingTable.length) ? decodingTable[c] : (byte)0xff;
     }
 }

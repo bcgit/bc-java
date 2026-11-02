@@ -142,14 +142,14 @@ public class HexEncoder
                 i++;
             }
 
-            b1 = decodingTable[data[i++]];
+            b1 = lookup(data[i++]);
 
             while (i < end && ignore((char)data[i]))
             {
                 i++;
             }
 
-            b2 = decodingTable[data[i++]];
+            b2 = lookup(data[i++]);
 
             if ((b1 | b2) < 0)
             {
@@ -210,14 +210,14 @@ public class HexEncoder
                 i++;
             }
 
-            b1 = decodingTable[data.charAt(i++)];
+            b1 = lookup(data.charAt(i++));
 
             while (i < end && ignore(data.charAt(i)))
             {
                 i++;
             }
 
-            b2 = decodingTable[data.charAt(i++)];
+            b2 = lookup(data.charAt(i++));
 
             if ((b1 | b2) < 0)
             {
@@ -264,8 +264,8 @@ public class HexEncoder
         int strPos = off;
         for (int i = 0; i < resultLen; ++i)
         {
-            byte b1 = decodingTable[str.charAt(strPos++)];
-            byte b2 = decodingTable[str.charAt(strPos++)];
+            byte b1 = lookup(str.charAt(strPos++));
+            byte b2 = lookup(str.charAt(strPos++));
 
             int n = (b1 << 4) | b2;
             if (n < 0)
@@ -276,5 +276,11 @@ public class HexEncoder
             result[i] = (byte)n;
         }
         return result;
+    }
+
+    private byte lookup(int c)
+    {
+        // anything outside the table, a non-ASCII character or a negative byte, is invalid
+        return (c >= 0 && c < decodingTable.length) ? decodingTable[c] : (byte)0xff;
     }
 }

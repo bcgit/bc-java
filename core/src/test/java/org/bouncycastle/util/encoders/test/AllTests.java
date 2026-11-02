@@ -22,6 +22,7 @@ public class AllTests
         suite.addTestSuite(UrlBase64Test.class);
         suite.addTestSuite(HexTest.class);
         suite.addTestSuite(Base32Test.class);
+        suite.addTestSuite(NonASCIIDecodeTest.class);
         return new BCTestSetup(suite);
     }
 

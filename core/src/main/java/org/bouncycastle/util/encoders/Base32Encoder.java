@@ -237,35 +237,35 @@ public class Base32Encoder
 
         while (i < finish)
         {
-            b1 = decodingTable[data[i++]];
+            b1 = lookup(data[i++]);
             
             i = nextI(data, i, finish);
             
-            b2 = decodingTable[data[i++]];
+            b2 = lookup(data[i++]);
             
             i = nextI(data, i, finish);
             
-            b3 = decodingTable[data[i++]];
+            b3 = lookup(data[i++]);
             
             i = nextI(data, i, finish);
             
-            b4 = decodingTable[data[i++]];
+            b4 = lookup(data[i++]);
 
             i = nextI(data, i, finish);
 
-            b5 = decodingTable[data[i++]];
+            b5 = lookup(data[i++]);
 
             i = nextI(data, i, finish);
 
-            b6 = decodingTable[data[i++]];
+            b6 = lookup(data[i++]);
 
             i = nextI(data, i, finish);
 
-            b7 = decodingTable[data[i++]];
+            b7 = lookup(data[i++]);
 
             i = nextI(data, i, finish);
 
-            b8 = decodingTable[data[i++]];
+            b8 = lookup(data[i++]);
 
             if ((b1 | b2 | b3 | b4 | b5 | b6 | b7 | b8) < 0)
             {
@@ -350,13 +350,13 @@ public class Base32Encoder
         {
             if (c7 != padding)
             {
-                b1 = decodingTable[c1];
-                b2 = decodingTable[c2];
-                b3 = decodingTable[c3];
-                b4 = decodingTable[c4];
-                b5 = decodingTable[c5];
-                b6 = decodingTable[c6];
-                b7 = decodingTable[c7];
+                b1 = lookup(c1);
+                b2 = lookup(c2);
+                b3 = lookup(c3);
+                b4 = lookup(c4);
+                b5 = lookup(c5);
+                b6 = lookup(c6);
+                b7 = lookup(c7);
 
                 if ((b1 | b2 | b3 | b4 | b5 | b6 | b7) < 0)
                 {
@@ -377,11 +377,11 @@ public class Base32Encoder
 
             if (c5 != padding)
             {
-                b1 = decodingTable[c1];
-                b2 = decodingTable[c2];
-                b3 = decodingTable[c3];
-                b4 = decodingTable[c4];
-                b5 = decodingTable[c5];
+                b1 = lookup(c1);
+                b2 = lookup(c2);
+                b3 = lookup(c3);
+                b4 = lookup(c4);
+                b5 = lookup(c5);
 
                 if ((b1 | b2 | b3 | b4 | b5) < 0)
                 {
@@ -397,10 +397,10 @@ public class Base32Encoder
 
             if (c4 != padding)
             {
-                b1 = decodingTable[c1];
-                b2 = decodingTable[c2];
-                b3 = decodingTable[c3];
-                b4 = decodingTable[c4];
+                b1 = lookup(c1);
+                b2 = lookup(c2);
+                b3 = lookup(c3);
+                b4 = lookup(c4);
 
                 if ((b1 | b2 | b3 | b4) < 0)
                 {
@@ -418,8 +418,8 @@ public class Base32Encoder
                 throw new IOException("invalid characters encountered at end of base32 data");
             }
 
-            b1 = decodingTable[c1];
-            b2 = decodingTable[c2];
+            b1 = lookup(c1);
+            b2 = lookup(c2);
 
             if ((b1 | b2) < 0)
             {
@@ -432,14 +432,14 @@ public class Base32Encoder
         }
         else
         {
-            b1 = decodingTable[c1];
-            b2 = decodingTable[c2];
-            b3 = decodingTable[c3];
-            b4 = decodingTable[c4];
-            b5 = decodingTable[c5];
-            b6 = decodingTable[c6];
-            b7 = decodingTable[c7];
-            b8 = decodingTable[c8];
+            b1 = lookup(c1);
+            b2 = lookup(c2);
+            b3 = lookup(c3);
+            b4 = lookup(c4);
+            b5 = lookup(c5);
+            b6 = lookup(c6);
+            b7 = lookup(c7);
+            b8 = lookup(c8);
 
             if ((b1 | b2 | b3 | b4 | b5 | b6 | b7 | b8) < 0)
             {
@@ -454,5 +454,11 @@ public class Base32Encoder
             
             return 5;
         } 
+    }
+
+    private byte lookup(int c)
+    {
+        // anything outside the table, a non-ASCII character or a negative byte, is invalid
+        return (c >= 0 && c < decodingTable.length) ? decodingTable[c] : (byte)0xff;
     }
 }
