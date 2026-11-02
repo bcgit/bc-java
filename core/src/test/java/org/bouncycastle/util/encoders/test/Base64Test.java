@@ -124,6 +124,43 @@ public class Base64Test extends AbstractCoderTest
         truncatedSliceTest(encoder, Strings.toByteArray("dG"), 0, 2);
     }
 
+    /**
+     * decode(String, out) must reject a string that ends part way through a block, whatever
+     * whitespace follows it, rather than read past the last character.
+     */
+    public void testDecodeStringTruncated()
+        throws IOException
+    {
+        Encoder encoder = new Base64Encoder();
+        String full = "dGVzdGluZw==";
+
+        for (int length = 1; length < full.length(); length++)
+        {
+            if (length % 4 != 0)
+            {
+                truncatedStringTest(encoder, full.substring(0, length));
+                truncatedStringTest(encoder, full.substring(0, length) + " \r\n");
+            }
+        }
+
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        encoder.decode(full + " \r\n", out);
+        assertEquals("testing", Strings.fromByteArray(out.toByteArray()));
+    }
+
+    private void truncatedStringTest(Encoder encoder, String data)
+    {
+        try
+        {
+            encoder.decode(data, new ByteArrayOutputStream());
+            fail("truncated string decoded: " + data.trim());
+        }
+        catch (IOException e)
+        {
+            assertEquals("truncated final block in base64 data", e.getMessage());
+        }
+    }
+
     private void truncatedSliceTest(Encoder encoder, byte[] data, int off, int length)
     {
         try

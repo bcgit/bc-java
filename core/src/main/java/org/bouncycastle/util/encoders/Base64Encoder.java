@@ -348,6 +348,11 @@ public class Base64Encoder
         int e2 = nextI(data, e1 + 1, end);
         int e3 = nextI(data, e2 + 1, end);
 
+        if (e3 >= end)
+        {
+            throw new IOException("truncated final block in base64 data");
+        }
+
         length += decodeLastBlock(out, data.charAt(e0), data.charAt(e1), data.charAt(e2), data.charAt(e3));
         
         return length;
