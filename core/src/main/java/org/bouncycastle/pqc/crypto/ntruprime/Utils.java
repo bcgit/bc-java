@@ -365,62 +365,103 @@ class Utils
         }
     }
 
-    private static void encode(byte[] out, short[] R, short[] M, int len, int start)
+    /*
+     * The reference's Encode and Decode handle a list of values, each with its own modulus. Each level combines
+     * neighbouring values in pairs, takes bytes from the bottom of each pair's combined value while its combined
+     * modulus is at least 16384, and leaves the rest to the next level, carrying an unpaired last value over
+     * unchanged. Here all the moduli are equal at the top level, and pairing keeps them equal except for the last
+     * (only the last pair, or the unpaired last value, involves it), so a level is described by its count n, the
+     * common modulus m and the last value's modulus mLast.
+     */
+
+    /**
+     * Return the number of bytes taken from the bottom of a pair's combined value, for combined modulus mm.
+     */
+    private static int getPairBytes(int mm)
     {
-        if (len == 1)
+        int bytes = 0;
+        while (mm >= 16384)
         {
-            short r = R[0];
-            short m = M[0];
-            while (m > 1)
+            mm = (mm + 255) >>> 8;
+            bytes++;
+        }
+        return bytes;
+    }
+
+    /**
+     * Return the modulus of what remains of a pair's combined value once getPairBytes(mm) bytes are taken from it.
+     */
+    private static int getPairModulus(int mm)
+    {
+        while (mm >= 16384)
+        {
+            mm = (mm + 255) >>> 8;
+        }
+        return mm;
+    }
+
+    /**
+     * Encode n values from R into out: the last below mLast, the others below m. Overwrites R. The sequence of
+     * operations depends only on n, m and mLast.
+     */
+    private static void encode(byte[] out, short[] R, int n, int m, int mLast)
+    {
+        int pos = 0;
+
+        while (n > 1)
+        {
+            int pairs = n >>> 1;
+            boolean lastPaired = (n & 1) == 0;
+
+            int b = getPairBytes(m * m), m2 = getPairModulus(m * m);
+            int bLast = 0, m2Last = mLast;
+            if (lastPaired)
             {
-                out[start++] = (byte)r;
-                r = (short)(r >>> 8);
-                m = (short)((m + 255) >>> 8);
+                bLast = getPairBytes(m * mLast);
+                m2Last = getPairModulus(m * mLast);
             }
+
+            // pair j's combined value replaces R[j], which has been read by then
+            for (int j = 0; j < pairs; j++)
+            {
+                int bj = (lastPaired && j == pairs - 1) ? bLast : b;
+
+                int r = R[2 * j] + R[2 * j + 1] * m;
+                for (int k = 0; k < bj; k++)
+                {
+                    out[pos++] = (byte)r;
+                    r >>>= 8;
+                }
+                R[j] = (short)r;
+            }
+
+            if (!lastPaired)
+            {
+                R[pairs] = R[n - 1];
+            }
+
+            n = pairs + (n & 1);
+            m = m2;
+            mLast = m2Last;
         }
 
-        if (len > 1)
+        int r0 = R[0];
+        while (mLast > 1)
         {
-            short[] R2 = new short[(len + 1) / 2];
-            short[] M2 = new short[(len + 1) / 2];
-            int i;
-
-            for (i = 0; i < len - 1; i += 2)
-            {
-                int m0 = M[i];
-                int r = R[i] + (R[i + 1] * m0);
-                int m = M[i + 1] * m0;
-                while (m >= 16384)
-                {
-                    out[start++] = (byte)r;
-                    r = r >>> 8;
-                    m = (m + 255) >>> 8;
-                }
-                R2[i / 2] = (short)r;
-                M2[i / 2] = (short)m;
-            }
-
-            if (i < len)
-            {
-                R2[i / 2] = R[i];
-                M2[i / 2] = M[i];
-            }
-
-            encode(out, R2, M2,(len + 1) / 2, start);
+            out[pos++] = (byte)r0;
+            r0 >>>= 8;
+            mLast = (mLast + 255) >>> 8;
         }
     }
 
     protected static void getEncodedPolynomial(byte[] enc, short[] h, int p, int q)
     {
         short[] R = new short[p];
-        short[] M = new short[p];
 
         for (int i = 0; i < p; i++)
             R[i] = (short)(h[i] + ((q - 1) / 2));
-        for (int i = 0; i < p; i++)
-            M[i] = (short)q;
 
-        encode(enc, R, M, p, 0);
+        encode(enc, R, p, q, q);
     }
 
     protected static void getEncodedSmallPolynomial(byte[] encSP, byte[] sp, int p)
@@ -459,18 +500,13 @@ class Utils
                     + (bToUnsignedInt(aesOutput[(i * 4) + 3]) << 24));
     }
 
-    private static int getUnsignedMod(int x, int n)
-    {
-        return getUnsignedDivMod(x, n)[1];
-    }
-
     protected static void generatePolynomialInRQFromSeed(short[] G, byte[] seed, int p, int q)
     {
         int[] L = new int[p];
         expand(L, seed);
 
         for (int i = 0; i < p; i++)
-            G[i] = (short)(getUnsignedMod(L[i], q) - ((q - 1) / 2));
+            G[i] = (short)((int)(iToUnsignedLong(L[i]) % q) - ((q - 1) / 2));
     }
 
     protected static void roundPolynomial(short[] out, short[] in)
@@ -482,15 +518,12 @@ class Utils
     protected static void getRoundedEncodedPolynomial(byte[] out, short[] in, int p, int q)
     {
         short[] R = new short[p];
-        short[] M = new short[p];
 
         for (int i = 0; i < p; i++)
-        {
             R[i] = (short)(((in[i] + ((q - 1) / 2)) * 10923) >>> 15);
-            M[i] = (short)((q + 2) / 3);
-        }
 
-        encode(out, R, M, p, 0);
+        int m = (q + 2) / 3;
+        encode(out, R, p, m, m);
     }
 
     protected static byte[] getHashWithPrefix(byte[] prefix, byte[] hashInput)
@@ -505,80 +538,70 @@ class Utils
         return hash;
     }
 
-    private static void decode(short[] out, byte[] S, short[] M, int len, int start, int sIndex)
+    /**
+     * Decode n values from s at sOff into out[0 .. n - 1]: the last below mLast, the others below m. The input is
+     * public (a public key or ciphertext), so the divisions are fine. A truncated input fails with an
+     * ArrayIndexOutOfBoundsException, since the last byte of an encoding is always read.
+     */
+    private static void decode(short[] out, byte[] s, int sOff, int n, int m, int mLast)
     {
-        if (len == 1)
+        if (n == 1)
         {
-            if (M[0] == 1)
-                out[start] = 0;
-            else if (M[0] <= 256)
-                out[start] = (short)getUnsignedMod(bToUnsignedInt(S[sIndex]), M[0]);
+            if (mLast == 1)
+                out[0] = 0;
+            else if (mLast <= 256)
+                out[0] = (short)(bToUnsignedInt(s[sOff]) % mLast);
             else
-                out[start] = (short)getUnsignedMod(bToUnsignedInt(S[sIndex]) + (bToUnsignedInt(S[sIndex + 1]) << 8), M[0]);
+                out[0] = (short)((bToUnsignedInt(s[sOff]) | (bToUnsignedInt(s[sOff + 1]) << 8)) % mLast);
+            return;
         }
 
-        if (len > 1)
+        int pairs = n >>> 1;
+        boolean lastPaired = (n & 1) == 0;
+
+        int b = getPairBytes(m * m), m2 = getPairModulus(m * m);
+        int bLast = 0, m2Last = mLast;
+        if (lastPaired)
         {
-            short[] R2 = new short[(len + 1) / 2];
-            short[] M2 = new short[(len + 1) / 2];
-            short[] bottomr = new short[len / 2];
-            int[] bottomt = new int[len / 2];
-            int i;
+            bLast = getPairBytes(m * mLast);
+            m2Last = getPairModulus(m * mLast);
+        }
 
-            for (i = 0; i < len - 1; i += 2)
+        // The pairs' bottom bytes come first, then the next level's encoding, which is decoded into the start of out
+        // and then expanded in place, from the end down so that no value is overwritten before it is read
+        int bottomBytes = (lastPaired ? pairs - 1 : pairs) * b + bLast;
+        decode(out, s, sOff + bottomBytes, pairs + (n & 1), m2, m2Last);
+
+        if (!lastPaired)
+        {
+            out[n - 1] = out[pairs];
+        }
+
+        for (int j = pairs - 1; j >= 0; j--)
+        {
+            boolean last = lastPaired && j == pairs - 1;
+            int bj = last ? bLast : b;
+            int bOff = sOff + j * b;
+
+            // below 2^14 * 2^16, since every decoded value is reduced
+            int r = out[j] << (8 * bj);
+            for (int k = 0; k < bj; k++)
             {
-                int m = M[i] * (int)M[i+1];
-                if (m > (256 * 16383))
-                {
-                    bottomt[i / 2] = 256 * 256;
-                    bottomr[i / 2] = (short)(bToUnsignedInt(S[sIndex]) + (256 * bToUnsignedInt(S[sIndex + 1])));
-                    sIndex += 2;
-                    M2[i / 2] = (short)((((m + 255) >>> 8) + 255) >>> 8);
-                }
-                else if (m >= 16384)
-                {
-                    bottomt[i / 2] = 256;
-                    bottomr[i / 2] = (short)bToUnsignedInt(S[sIndex]);
-                    sIndex += 1;
-                    M2[i / 2] = (short)((m + 255) >>> 8);
-                }
-                else
-                {
-                    bottomt[i / 2] = 1;
-                    bottomr[i / 2] = 0;
-                    M2[i / 2] = (short)m;
-                }
+                r |= bToUnsignedInt(s[bOff + k]) << (8 * k);
             }
-            if (i < len)
-                M2[i / 2] = M[i];
 
-            decode(R2, S, M2,(len + 1) / 2, start, sIndex);
-
-            for (i = 0; i < len - 1; i += 2)
-            {
-                int r = sToUnsignedInt(bottomr[i / 2]);
-                r += bottomt[i / 2] * sToUnsignedInt(R2[i / 2]);
-                int[] r01 = getUnsignedDivMod(r, M[i]);
-                out[start++] = (short)r01[1];
-                out[start++] = (short)getUnsignedMod(r01[0], M[i + 1]);
-            }
-            if (i < len)
-                out[start] = R2[i / 2];
+            out[2 * j] = (short)(r % m);
+            // the reduction is only needed for invalid inputs
+            out[2 * j + 1] = (short)((r / m) % (last ? mLast : m));
         }
     }
 
     protected static void getDecodedPolynomial(short[] h, byte[] enc, int p, int q)
     {
-        short[] R = new short[p];
-        short[] M = new short[p];
+        decode(h, enc, 0, p, q, q);
 
         for (int i = 0; i < p; i++)
-            M[i] = (short)q;
-
-        decode(R, enc, M, p, 0, 0);
-
-        for (int i = 0; i < p; i++)
-            h[i] = (short)(R[i] - ((q - 1) / 2));
+            h[i] = (short)(h[i] - ((q - 1) / 2));
     }
 
     protected static void getRandomInputs(SecureRandom random, byte[] r)
@@ -598,16 +621,11 @@ class Utils
 
     protected static void getRoundedDecodedPolynomial(short[] h, byte[] enc, int p, int q)
     {
-        short[] R = new short[p];
-        short[] M = new short[p];
+        int m = (q + 2) / 3;
+        decode(h, enc, 0, p, m, m);
 
         for (int i = 0; i < p; i++)
-            M[i] = (short)((q + 2) / 3);
-
-        decode(R, enc, M, p, 0, 0);
-
-        for (int i = 0; i < p; i++)
-            h[i] = (short)((R[i] * 3) - ((q - 1) / 2));
+            h[i] = (short)((h[i] * 3) - ((q - 1) / 2));
     }
 
     protected static void top(byte[] out, short[] bA, byte[] r, int q, int tau0, int tau1)
@@ -722,32 +740,6 @@ class Utils
             out[i] = (byte)(-checkLessThanZero(getModFreeze(getModFreeze((tau3 * T[i]) - tau2, q, barrett) - aB[i] + (4 * w) + 1, q, barrett)));
     }
 
-    private static int[] getUnsignedDivMod(int dividend, int n)
-    {
-        long x = iToUnsignedLong(dividend);
-        long v = iToUnsignedLong(0x80000000);
-        long q, qpart, mask;
-
-        v /= n;
-        q = 0;
-
-        qpart = (x * v) >>> 31;
-        x -= qpart * n;
-        q += qpart;
-
-        qpart = (x * v) >>> 31;
-        x -= qpart * n;
-        q += qpart;
-
-        x -= n;
-        q += 1;
-        mask = -(x >>> 63);
-        x += mask & n;
-        q += mask;
-
-        return new int[]{toIntExact(q), toIntExact(x)};
-    }
-
     private static int checkLessThanZero(int x)
     {
         return -(int)(x >>> 31);
@@ -765,24 +757,8 @@ class Utils
         return b & 0xff;
     }
 
-    static int sToUnsignedInt(short s)
-    {
-        return s & 0xffff;
-    }
-    
     static long iToUnsignedLong(int i)
     {
         return i & 0xffffffffL;
-    }
-
-    static int toIntExact(long l)
-    {
-        int i = (int)l;
-
-        if (i != l)
-        {
-            throw new IllegalStateException("value out of integer range");
-        }
-        return i;
     }
 }

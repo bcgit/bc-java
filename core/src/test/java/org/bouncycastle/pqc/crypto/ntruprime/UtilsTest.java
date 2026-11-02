@@ -300,6 +300,43 @@ public class UtilsTest
         }
     }
 
+    /**
+     * A truncated encoding is rejected rather than decoded with the missing bytes taken as anything.
+     */
+    public void testDecodeTruncated()
+    {
+        for (int k = 0; k != PQ.length; k++)
+        {
+            int p = PQ[k][0], q = PQ[k][1];
+            int[] mq = new int[p], mr = new int[p];
+            for (int i = 0; i < p; i++)
+            {
+                mq[i] = q;
+                mr[i] = (q + 2) / 3;
+            }
+
+            short[] h = new short[p];
+            try
+            {
+                Utils.getDecodedPolynomial(h, new byte[referenceEncode(new int[p], mq).length - 1], p, q);
+                fail("p = " + p);
+            }
+            catch (ArrayIndexOutOfBoundsException e)
+            {
+                // expected
+            }
+            try
+            {
+                Utils.getRoundedDecodedPolynomial(h, new byte[referenceEncode(new int[p], mr).length - 1], p, q);
+                fail("p = " + p);
+            }
+            catch (ArrayIndexOutOfBoundsException e)
+            {
+                // expected
+            }
+        }
+    }
+
     private void checkDecodedPolynomial(byte[] enc, int[] m, int p, int q)
     {
         int[] expected = referenceDecode(enc, 0, m);
