@@ -509,7 +509,7 @@ class Utils
             else if (M[0] <= 256)
                 out[start] = (short)getUnsignedMod(bToUnsignedInt(S[sIndex]), M[0]);
             else
-                out[start] = (short)getUnsignedMod(bToUnsignedInt(S[sIndex]) + (S[sIndex + 1] << 8), M[0]);
+                out[start] = (short)getUnsignedMod(bToUnsignedInt(S[sIndex]) + (bToUnsignedInt(S[sIndex + 1]) << 8), M[0]);
         }
 
         if (len > 1)

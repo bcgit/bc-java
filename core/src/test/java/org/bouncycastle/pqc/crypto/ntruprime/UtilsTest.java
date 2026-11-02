@@ -1,8 +1,10 @@
 package org.bouncycastle.pqc.crypto.ntruprime;
 
+import java.io.ByteArrayOutputStream;
 import java.util.Random;
 
 import junit.framework.TestCase;
+import org.bouncycastle.util.Arrays;
 
 /**
  * Tests for the arithmetic in NTRU Prime's {@link Utils}.
@@ -241,6 +243,226 @@ public class UtilsTest
         System.arraycopy(a, 0, shorter, 0, shorter.length);
         assertEquals(-1, Utils.getCiphertextDiffMask(a, shorter));
         assertEquals(-1, Utils.getCiphertextDiffMask(shorter, a));
+    }
+
+    /**
+     * Decoding agrees with the reference's Decode, read with unsigned bytes and long arithmetic, for random byte
+     * strings, which are mostly non-canonical encodings holding larger bytes than a valid one can, and for valid
+     * encodings; encoding agrees with the reference's Encode.
+     */
+    public void testEncodeDecode()
+    {
+        for (int k = 0; k != PQ.length; k++)
+        {
+            int p = PQ[k][0], q = PQ[k][1], half = (q - 1) / 2, m3 = (q + 2) / 3;
+
+            int[] mq = new int[p], mr = new int[p];
+            for (int i = 0; i < p; i++)
+            {
+                mq[i] = q;
+                mr[i] = m3;
+            }
+
+            for (int trial = 0; trial < 100; trial++)
+            {
+                // Rq: public keys
+                int[] r = new int[p];
+                short[] h = new short[p];
+                for (int i = 0; i < p; i++)
+                {
+                    r[i] = trial == 0 ? q - 1 : random.nextInt(q);
+                    h[i] = (short)(r[i] - half);
+                }
+                byte[] expected = referenceEncode(r, mq);
+                byte[] enc = new byte[expected.length];
+                Utils.getEncodedPolynomial(enc, h, p, q);
+                assertTrue("p = " + p, Arrays.areEqual(expected, enc));
+                checkDecodedPolynomial(enc, mq, p, q);
+
+                enc = randomBytes(enc.length, trial);
+                checkDecodedPolynomial(enc, mq, p, q);
+
+                // rounded: ciphertexts and NTRU LPRime public keys
+                for (int i = 0; i < p; i++)
+                {
+                    r[i] = trial == 0 ? m3 - 1 : random.nextInt(m3);
+                    h[i] = (short)(3 * r[i] - half);
+                }
+                expected = referenceEncode(r, mr);
+                enc = new byte[expected.length];
+                Utils.getRoundedEncodedPolynomial(enc, h, p, q);
+                assertTrue("p = " + p, Arrays.areEqual(expected, enc));
+                checkRoundedDecodedPolynomial(enc, mr, p, q);
+
+                enc = randomBytes(enc.length, trial);
+                checkRoundedDecodedPolynomial(enc, mr, p, q);
+            }
+        }
+    }
+
+    private void checkDecodedPolynomial(byte[] enc, int[] m, int p, int q)
+    {
+        int[] expected = referenceDecode(enc, 0, m);
+        short[] h = new short[p];
+        Utils.getDecodedPolynomial(h, enc, p, q);
+        for (int i = 0; i < p; i++)
+        {
+            if (h[i] != expected[i] - (q - 1) / 2)
+            {
+                fail("getDecodedPolynomial p = " + p + ", coefficient " + i + ": " + h[i] + ", expected "
+                    + (expected[i] - (q - 1) / 2));
+            }
+        }
+    }
+
+    private void checkRoundedDecodedPolynomial(byte[] enc, int[] m, int p, int q)
+    {
+        int[] expected = referenceDecode(enc, 0, m);
+        short[] h = new short[p];
+        Utils.getRoundedDecodedPolynomial(h, enc, p, q);
+        for (int i = 0; i < p; i++)
+        {
+            if (h[i] != 3 * expected[i] - (q - 1) / 2)
+            {
+                fail("getRoundedDecodedPolynomial p = " + p + ", coefficient " + i + ": " + h[i] + ", expected "
+                    + (3 * expected[i] - (q - 1) / 2));
+            }
+        }
+    }
+
+    /**
+     * Random bytes, all 0xff on the first trial.
+     */
+    private byte[] randomBytes(int len, int trial)
+    {
+        byte[] b = new byte[len];
+        if (trial == 0)
+        {
+            Arrays.fill(b, (byte)0xff);
+        }
+        else
+        {
+            random.nextBytes(b);
+        }
+        return b;
+    }
+
+    /**
+     * The reference's Encode: r[i] in [0, m[i]).
+     */
+    private static byte[] referenceEncode(int[] r, int[] m)
+    {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        referenceEncode(out, r, m);
+        return out.toByteArray();
+    }
+
+    private static void referenceEncode(ByteArrayOutputStream out, int[] r, int[] m)
+    {
+        int len = r.length;
+        if (len == 1)
+        {
+            long r0 = r[0], m0 = m[0];
+            while (m0 > 1)
+            {
+                out.write((int)r0);
+                r0 >>= 8;
+                m0 = (m0 + 255) >> 8;
+            }
+            return;
+        }
+
+        int[] r2 = new int[(len + 1) / 2], m2 = new int[(len + 1) / 2];
+        int i;
+        for (i = 0; i < len - 1; i += 2)
+        {
+            long ri = r[i] + (long)r[i + 1] * m[i];
+            long mi = (long)m[i + 1] * m[i];
+            while (mi >= 16384)
+            {
+                out.write((int)ri);
+                ri >>= 8;
+                mi = (mi + 255) >> 8;
+            }
+            r2[i / 2] = (int)ri;
+            m2[i / 2] = (int)mi;
+        }
+        if (i < len)
+        {
+            r2[i / 2] = r[i];
+            m2[i / 2] = m[i];
+        }
+        referenceEncode(out, r2, m2);
+    }
+
+    /**
+     * The reference's Decode, for any bytes.
+     */
+    private static int[] referenceDecode(byte[] s, int sOff, int[] m)
+    {
+        int len = m.length;
+        int[] out = new int[len];
+        if (len == 1)
+        {
+            if (m[0] == 1)
+            {
+                out[0] = 0;
+            }
+            else if (m[0] <= 256)
+            {
+                out[0] = (s[sOff] & 0xff) % m[0];
+            }
+            else
+            {
+                out[0] = ((s[sOff] & 0xff) + ((s[sOff + 1] & 0xff) << 8)) % m[0];
+            }
+            return out;
+        }
+
+        int[] m2 = new int[(len + 1) / 2];
+        long[] bottomr = new long[len / 2], bottomt = new long[len / 2];
+        int i;
+        for (i = 0; i < len - 1; i += 2)
+        {
+            long mi = (long)m[i] * m[i + 1];
+            if (mi > 256 * 16383)
+            {
+                bottomt[i / 2] = 256 * 256;
+                bottomr[i / 2] = (s[sOff] & 0xff) + 256 * (s[sOff + 1] & 0xff);
+                sOff += 2;
+                m2[i / 2] = (int)((((mi + 255) >> 8) + 255) >> 8);
+            }
+            else if (mi >= 16384)
+            {
+                bottomt[i / 2] = 256;
+                bottomr[i / 2] = s[sOff] & 0xff;
+                sOff += 1;
+                m2[i / 2] = (int)((mi + 255) >> 8);
+            }
+            else
+            {
+                bottomt[i / 2] = 1;
+                bottomr[i / 2] = 0;
+                m2[i / 2] = (int)mi;
+            }
+        }
+        if (i < len)
+        {
+            m2[i / 2] = m[i];
+        }
+
+        int[] r2 = referenceDecode(s, sOff, m2);
+        for (i = 0; i < len - 1; i += 2)
+        {
+            long r = bottomr[i / 2] + bottomt[i / 2] * r2[i / 2];
+            out[i] = (int)(r % m[i]);
+            out[i + 1] = (int)((r / m[i]) % m[i + 1]);
+        }
+        if (i < len)
+        {
+            out[i] = r2[i / 2];
+        }
+        return out;
     }
 
     private static void checkModFreeze(int x, int n, long barrett)
