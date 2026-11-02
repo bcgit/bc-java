@@ -56,6 +56,7 @@ import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.internal.asn1.bsi.BSIObjectIdentifiers;
 import org.bouncycastle.internal.asn1.eac.EACObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
+import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.spec.MQVParameterSpec;
 import org.bouncycastle.jce.ECKeyUtil;
 import org.bouncycastle.jce.ECNamedCurveTable;
@@ -1362,6 +1363,243 @@ public class ECDSA5Test
         return sig;
     }
 
+    // a key BC cannot convert is reported with InvalidKeyException, never an unchecked exception
+    private void testKeyConversionErrors()
+        throws Exception
+    {
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("EC", "BC");
+
+        kpGen.initialize(new ECGenParameterSpec("prime192v1"));
+
+        KeyPair pair = kpGen.generateKeyPair();
+        ECPublicKey pub = (ECPublicKey)pair.getPublic();
+        ECPrivateKey priv = (ECPrivateKey)pair.getPrivate();
+
+        // JCA keys from another provider, over a field size that is not prime
+        ECParameterSpec params = pub.getParams();
+        EllipticCurve curve = params.getCurve();
+        BigInteger p = ((ECFieldFp)curve.getField()).getP();
+        ECParameterSpec badParams = new ECParameterSpec(
+            new EllipticCurve(new ECFieldFp(p.add(BigInteger.ONE)), curve.getA(), curve.getB()),
+            params.getGenerator(), params.getOrder(), params.getCofactor());
+
+        checkInvalidPublicKey("invalid EC public key: ", jcaPublicKey(pub.getW(), badParams));
+        checkInvalidPrivateKey("invalid EC private key: ", jcaPrivateKey(priv.getS(), badParams));
+
+        // keys implementing the BC interfaces, with a generator that is not on the curve
+        org.bouncycastle.jce.spec.ECParameterSpec bcParams = ECNamedCurveTable.getParameterSpec("prime192v1");
+        org.bouncycastle.math.ec.ECPoint g = bcParams.getG();
+        org.bouncycastle.jce.spec.ECParameterSpec badBcParams = new org.bouncycastle.jce.spec.ECParameterSpec(
+            bcParams.getCurve(),
+            bcParams.getCurve().createPoint(g.getAffineXCoord().toBigInteger(), g.getAffineYCoord().toBigInteger().add(BigInteger.ONE)),
+            bcParams.getN());
+        org.bouncycastle.math.ec.ECPoint q = bcParams.getG().multiply(priv.getS()).normalize();
+
+        checkInvalidPublicKey("invalid EC public key: ", bcPublicKey(q, badBcParams));
+        checkInvalidPrivateKey("invalid EC private key: ", bcPrivateKey(priv.getS(), badBcParams));
+
+        // BC-interface keys with no parameters use implicitlyCA: refused when none are configured, used when
+        // they are. JCA keys have no implicitlyCA (the java.security.spec key specs refuse null parameters),
+        // so a JCA key without parameters is refused either way.
+        if (BouncyCastleProvider.CONFIGURATION.getEcImplicitlyCa() == null)
+        {
+            checkInvalidPublicKey("EC public key uses implicitlyCA parameters but none are configured", bcPublicKey(q, null));
+            checkInvalidPrivateKey("EC private key uses implicitlyCA parameters but none are configured", bcPrivateKey(priv.getS(), null));
+        }
+        checkInvalidPublicKey("EC public key has no domain parameters", jcaPublicKey(pub.getW(), null));
+        checkInvalidPrivateKey("EC private key has no domain parameters", jcaPrivateKey(priv.getS(), null));
+
+        ConfigurableProvider bcProv = (ConfigurableProvider)Security.getProvider("BC");
+        bcProv.setParameter(ConfigurableProvider.THREAD_LOCAL_EC_IMPLICITLY_CA, bcParams);
+        try
+        {
+            checkSignVerify(bcPrivateKey(priv.getS(), null), bcPublicKey(q, null));
+            checkSignVerify(bcPrivateKey(priv.getS(), null), pub);
+
+            checkInvalidPublicKey("EC public key has no domain parameters", jcaPublicKey(pub.getW(), null));
+            checkInvalidPrivateKey("EC private key has no domain parameters", jcaPrivateKey(priv.getS(), null));
+        }
+        finally
+        {
+            bcProv.setParameter(ConfigurableProvider.THREAD_LOCAL_EC_IMPLICITLY_CA, null);
+        }
+    }
+
+    private void checkSignVerify(PrivateKey privKey, PublicKey pubKey)
+        throws Exception
+    {
+        byte[] msg = Strings.toByteArray("implicitlyCA");
+        Signature s = Signature.getInstance("ECDSA", "BC");
+
+        s.initSign(privKey);
+        s.update(msg);
+        byte[] sig = s.sign();
+
+        s.initVerify(pubKey);
+        s.update(msg);
+        isTrue("implicitlyCA signature did not verify", s.verify(sig));
+    }
+
+    private void checkInvalidPublicKey(String message, PublicKey key)
+        throws Exception
+    {
+        try
+        {
+            Signature.getInstance("ECDSA", "BC").initVerify(key);
+            fail("no exception for: " + message);
+        }
+        catch (InvalidKeyException e)
+        {
+            isTrue("wrong message: " + e.getMessage(), e.getMessage().startsWith(message));
+        }
+        catch (RuntimeException e)
+        {
+            fail("unchecked exception for: " + message, e);
+        }
+    }
+
+    private void checkInvalidPrivateKey(String message, PrivateKey key)
+        throws Exception
+    {
+        try
+        {
+            Signature.getInstance("ECDSA", "BC").initSign(key);
+            fail("no exception for: " + message);
+        }
+        catch (InvalidKeyException e)
+        {
+            isTrue("wrong message: " + e.getMessage(), e.getMessage().startsWith(message));
+        }
+        catch (RuntimeException e)
+        {
+            fail("unchecked exception for: " + message, e);
+        }
+    }
+
+    private static PublicKey jcaPublicKey(final ECPoint w, final ECParameterSpec params)
+    {
+        return new ECPublicKey()
+        {
+            public ECPoint getW()
+            {
+                return w;
+            }
+
+            public ECParameterSpec getParams()
+            {
+                return params;
+            }
+
+            public String getAlgorithm()
+            {
+                return "EC";
+            }
+
+            public String getFormat()
+            {
+                return null;
+            }
+
+            public byte[] getEncoded()
+            {
+                return null;
+            }
+        };
+    }
+
+    private static PrivateKey jcaPrivateKey(final BigInteger s, final ECParameterSpec params)
+    {
+        return new ECPrivateKey()
+        {
+            public BigInteger getS()
+            {
+                return s;
+            }
+
+            public ECParameterSpec getParams()
+            {
+                return params;
+            }
+
+            public String getAlgorithm()
+            {
+                return "EC";
+            }
+
+            public String getFormat()
+            {
+                return null;
+            }
+
+            public byte[] getEncoded()
+            {
+                return null;
+            }
+        };
+    }
+
+    private static PublicKey bcPublicKey(final org.bouncycastle.math.ec.ECPoint q, final org.bouncycastle.jce.spec.ECParameterSpec params)
+    {
+        return new org.bouncycastle.jce.interfaces.ECPublicKey()
+        {
+            public org.bouncycastle.math.ec.ECPoint getQ()
+            {
+                return q;
+            }
+
+            public org.bouncycastle.jce.spec.ECParameterSpec getParameters()
+            {
+                return params;
+            }
+
+            public String getAlgorithm()
+            {
+                return "EC";
+            }
+
+            public String getFormat()
+            {
+                return null;
+            }
+
+            public byte[] getEncoded()
+            {
+                return null;
+            }
+        };
+    }
+
+    private static PrivateKey bcPrivateKey(final BigInteger d, final org.bouncycastle.jce.spec.ECParameterSpec params)
+    {
+        return new org.bouncycastle.jce.interfaces.ECPrivateKey()
+        {
+            public BigInteger getD()
+            {
+                return d;
+            }
+
+            public org.bouncycastle.jce.spec.ECParameterSpec getParameters()
+            {
+                return params;
+            }
+
+            public String getAlgorithm()
+            {
+                return "EC";
+            }
+
+            public String getFormat()
+            {
+                return null;
+            }
+
+            public byte[] getEncoded()
+            {
+                return null;
+            }
+        };
+    }
+
     public String getName()
     {
         return "ECDSA5";
@@ -1372,6 +1610,7 @@ public class ECDSA5Test
     {
         testKeyConversion();
         testAdaptiveKeyConversion();
+        testKeyConversionErrors();
         testEquals();
         decodeTest();
         testECDSA239bitPrime();

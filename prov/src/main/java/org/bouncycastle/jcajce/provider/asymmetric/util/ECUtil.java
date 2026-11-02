@@ -122,22 +122,35 @@ public class ECUtil
         if (params instanceof ECNamedCurveParameterSpec)
         {
             ECNamedCurveParameterSpec nParams = (ECNamedCurveParameterSpec)params;
-            ASN1ObjectIdentifier nameOid = ECUtil.getNamedCurveOid(nParams.getName());
+            ASN1ObjectIdentifier nameOid = getNamedCurveOid(nParams.getName());
 
-            domainParameters = new ECNamedDomainParameters(nameOid, nParams.getCurve(), nParams.getG(), nParams.getN(), nParams.getH(), nParams.getSeed());
+            domainParameters = toNamedDomainParameters(nameOid, nParams);
         }
         else if (params == null)
         {
             org.bouncycastle.jce.spec.ECParameterSpec iSpec = configuration.getEcImplicitlyCa();
 
-            domainParameters = new ECDomainParameters(iSpec.getCurve(), iSpec.getG(), iSpec.getN(), iSpec.getH(), iSpec.getSeed());
+            domainParameters = toDomainParameters(iSpec);
         }
         else
         {
-            domainParameters = new ECDomainParameters(params.getCurve(), params.getG(), params.getN(), params.getH(), params.getSeed());
+            domainParameters = toDomainParameters(params);
         }
 
         return domainParameters;
+    }
+
+    private static ECDomainParameters toDomainParameters(
+        org.bouncycastle.jce.spec.ECParameterSpec spec)
+    {
+        return new ECDomainParameters(spec.getCurve(), spec.getG(), spec.getN(), spec.getH(), spec.getSeed());
+    }
+
+    private static ECNamedDomainParameters toNamedDomainParameters(
+        ASN1ObjectIdentifier                      name,
+        org.bouncycastle.jce.spec.ECParameterSpec spec)
+    {
+        return new ECNamedDomainParameters(name, spec.getCurve(), spec.getG(), spec.getN(), spec.getH(), spec.getSeed());
     }
 
     public static ECDomainParameters getDomainParameters(
@@ -149,7 +162,7 @@ public class ECUtil
         if (params.isNamedCurve())
         {
             ASN1ObjectIdentifier oid = ASN1ObjectIdentifier.getInstance(params.getParameters());
-            X9ECParameters ecP = ECUtil.getNamedCurveByOid(oid);
+            X9ECParameters ecP = getNamedCurveByOid(oid);
             if (ecP == null)
             {
                 Map extraCurves = configuration.getAdditionalECParameters();
@@ -162,13 +175,13 @@ public class ECUtil
         {
             org.bouncycastle.jce.spec.ECParameterSpec iSpec = configuration.getEcImplicitlyCa();
 
-            domainParameters = new ECDomainParameters(iSpec.getCurve(), iSpec.getG(), iSpec.getN(), iSpec.getH(), iSpec.getSeed());
+            domainParameters = toDomainParameters(iSpec);
         }
         else
         {
             X9ECParameters ecP = X9ECParameters.getInstance(params.getParameters());
 
-            domainParameters = new ECDomainParameters(ecP.getCurve(), ecP.getG(), ecP.getN(), ecP.getH(), ecP.getSeed());
+            domainParameters = new ECDomainParameters(ecP);
         }
 
         return domainParameters;
@@ -180,44 +193,87 @@ public class ECUtil
     {
         if (key instanceof ECPublicKey)
         {
-            ECPublicKey    k = (ECPublicKey)key;
-            ECParameterSpec s = k.getParameters();
-
-            return new ECPublicKeyParameters(
-                            k.getQ(),
-                            new ECDomainParameters(s.getCurve(), s.getG(), s.getN(), s.getH(), s.getSeed()));
+            return bcPublicKeyParameter((ECPublicKey)key);
         }
         else if (key instanceof java.security.interfaces.ECPublicKey)
         {
-            java.security.interfaces.ECPublicKey pubKey = (java.security.interfaces.ECPublicKey)key;
-            ECParameterSpec s = EC5Util.convertSpec(pubKey.getParams());
-            return new ECPublicKeyParameters(
-                EC5Util.convertPoint(pubKey.getParams(), pubKey.getW()),
-                            new ECDomainParameters(s.getCurve(), s.getG(), s.getN(), s.getH(), s.getSeed()));
+            return jcaPublicKeyParameter((java.security.interfaces.ECPublicKey)key);
         }
         else
         {
-            // see if we can build a key from key.getEncoded()
-            try
+            return encodedPublicKeyParameter(key);
+        }
+    }
+
+    private static AsymmetricKeyParameter bcPublicKeyParameter(
+        ECPublicKey    key)
+        throws InvalidKeyException
+    {
+        try
+        {
+            ECParameterSpec s = getKeyParameters(key.getParameters(), "public");
+
+            return new ECPublicKeyParameters(key.getQ(), toDomainParameters(s));
+        }
+        catch (RuntimeException e)
+        {
+            throw SecurityExceptions.invalidKeyException("invalid EC public key: " + e.getMessage(), e);
+        }
+    }
+
+    private static AsymmetricKeyParameter jcaPublicKeyParameter(
+        java.security.interfaces.ECPublicKey    key)
+        throws InvalidKeyException
+    {
+        try
+        {
+            java.security.spec.ECParameterSpec params = key.getParams();
+            if (params == null)
             {
-                byte[] bytes = key.getEncoded();
-
-                if (bytes == null)
-                {
-                    throw new InvalidKeyException("no encoding for EC public key");
-                }
-
-                PublicKey publicKey = BouncyCastleProvider.getPublicKey(SubjectPublicKeyInfo.getInstance(bytes));
-
-                if (publicKey instanceof java.security.interfaces.ECPublicKey)
-                {
-                    return ECUtil.generatePublicKeyParameter(publicKey);
-                }
+                // the JCA has no implicitlyCA: ECKey.getParams() always has parameters, and the key specs refuse null
+                throw new InvalidKeyException("EC public key has no domain parameters");
             }
-            catch (Exception e)
+
+            ECParameterSpec s = EC5Util.convertSpec(params);
+
+            return new ECPublicKeyParameters(EC5Util.convertPoint(s.getCurve(), key.getW()), toDomainParameters(s));
+        }
+        catch (RuntimeException e)
+        {
+            throw SecurityExceptions.invalidKeyException("invalid EC public key: " + e.getMessage(), e);
+        }
+    }
+
+    // A key that is neither a BC nor a JCA EC key: rebuild it from its encoding with the BC provider, and
+    // convert the result directly rather than through generatePublicKeyParameter, so it cannot recurse.
+    private static AsymmetricKeyParameter encodedPublicKeyParameter(
+        PublicKey    key)
+        throws InvalidKeyException
+    {
+        PublicKey publicKey;
+        try
+        {
+            byte[] bytes = key.getEncoded();
+
+            if (bytes == null)
             {
-                throw new InvalidKeyException("cannot identify EC public key: " + e.toString());
+                throw new InvalidKeyException("no encoding for EC public key");
             }
+
+            publicKey = BouncyCastleProvider.getPublicKey(SubjectPublicKeyInfo.getInstance(bytes));
+        }
+        catch (Exception e)
+        {
+            throw SecurityExceptions.invalidKeyException("cannot identify EC public key: " + e.toString(), e);
+        }
+
+        if (publicKey instanceof ECPublicKey)
+        {
+            return bcPublicKeyParameter((ECPublicKey)publicKey);
+        }
+        else if (publicKey instanceof java.security.interfaces.ECPublicKey)
+        {
+            return jcaPublicKeyParameter((java.security.interfaces.ECPublicKey)publicKey);
         }
 
         throw new InvalidKeyException("cannot identify EC public key.");
@@ -229,68 +285,133 @@ public class ECUtil
     {
         if (key instanceof ECPrivateKey)
         {
-            ECPrivateKey  k = (ECPrivateKey)key;
-            ECParameterSpec s = k.getParameters();
-
-            if (s == null)
-            {
-                s = BouncyCastleProvider.CONFIGURATION.getEcImplicitlyCa();
-            }
-
-            if (k.getParameters() instanceof ECNamedCurveParameterSpec)
-            {
-                String name = ((ECNamedCurveParameterSpec)k.getParameters()).getName();
-                return new ECPrivateKeyParameters(
-                    k.getD(),
-                    new ECNamedDomainParameters(ECNamedCurveTable.getOID(name),
-                        s.getCurve(), s.getG(), s.getN(), s.getH(), s.getSeed()));
-            }
-            else
-            {
-                return new ECPrivateKeyParameters(
-                    k.getD(),
-                    new ECDomainParameters(s.getCurve(), s.getG(), s.getN(), s.getH(), s.getSeed()));
-            }
+            return bcPrivateKeyParameter((ECPrivateKey)key);
         }
         else if (key instanceof java.security.interfaces.ECPrivateKey)
         {
-            java.security.interfaces.ECPrivateKey privKey = (java.security.interfaces.ECPrivateKey)key;
-            try
-            {
-                ECParameterSpec s = EC5Util.convertSpec(privKey.getParams());
-                return new ECPrivateKeyParameters(
-                                privKey.getS(),
-                                new ECDomainParameters(s.getCurve(), s.getG(), s.getN(), s.getH(), s.getSeed()));
-            }
-            catch (RuntimeException e)
-            {
-                throw SecurityExceptions.invalidKeyException(
-                    "cannot recognise EC private key - its parameters are not accessible (a hardware-backed key?): " + e.getMessage(), e);
-            }
+            return jcaPrivateKeyParameter((java.security.interfaces.ECPrivateKey)key);
         }
         else
         {
-            // see if we can build a key from key.getEncoded()
-            try
+            return encodedPrivateKeyParameter(key);
+        }
+    }
+
+    private static AsymmetricKeyParameter bcPrivateKeyParameter(
+        ECPrivateKey    key)
+        throws InvalidKeyException
+    {
+        try
+        {
+            return privateKeyParameter(key.getD(), getKeyParameters(key.getParameters(), "private"));
+        }
+        catch (RuntimeException e)
+        {
+            throw SecurityExceptions.invalidKeyException("invalid EC private key: " + e.getMessage(), e);
+        }
+    }
+
+    private static AsymmetricKeyParameter jcaPrivateKeyParameter(
+        java.security.interfaces.ECPrivateKey    key)
+        throws InvalidKeyException
+    {
+        java.security.spec.ECParameterSpec params;
+        BigInteger d;
+        try
+        {
+            params = key.getParams();
+            d = key.getS();
+        }
+        catch (RuntimeException e)
+        {
+            throw SecurityExceptions.invalidKeyException(
+                "cannot recognise EC private key - its parameters are not accessible (a hardware-backed key?): " + e.getMessage(), e);
+        }
+
+        if (params == null)
+        {
+            // the JCA has no implicitlyCA: ECKey.getParams() always has parameters, and the key specs refuse null
+            throw new InvalidKeyException("EC private key has no domain parameters");
+        }
+
+        try
+        {
+            return privateKeyParameter(d, EC5Util.convertSpec(params));
+        }
+        catch (RuntimeException e)
+        {
+            throw SecurityExceptions.invalidKeyException("invalid EC private key: " + e.getMessage(), e);
+        }
+    }
+
+    // Shared by the BC and JCA private key paths, once the key's parameters are known (implicitlyCA resolved).
+    private static AsymmetricKeyParameter privateKeyParameter(
+        BigInteger      d,
+        ECParameterSpec s)
+    {
+        if (s instanceof ECNamedCurveParameterSpec)
+        {
+            String name = ((ECNamedCurveParameterSpec)s).getName();
+            // TODO Use getNamedCurveOid(name), as getDomainParameters does; it also accepts a name that is already an OID
+            ASN1ObjectIdentifier nameOid = ECNamedCurveTable.getOID(name);
+
+            return new ECPrivateKeyParameters(d, toNamedDomainParameters(nameOid, s));
+        }
+
+        return new ECPrivateKeyParameters(d, toDomainParameters(s));
+    }
+
+    // A key's own domain parameters, or the configured implicitlyCA ones when it has none.
+    private static ECParameterSpec getKeyParameters(
+        ECParameterSpec s,
+        String          keyType)
+        throws InvalidKeyException
+    {
+        if (s != null)
+        {
+            return s;
+        }
+
+        // TODO A key built with its own ProviderConfiguration should resolve implicitlyCA through that, not the global one
+        ECParameterSpec implicitlyCa = BouncyCastleProvider.CONFIGURATION.getEcImplicitlyCa();
+        if (implicitlyCa == null)
+        {
+            throw new InvalidKeyException("EC " + keyType + " key uses implicitlyCA parameters but none are configured");
+        }
+
+        return implicitlyCa;
+    }
+
+    // A key that is neither a BC nor a JCA EC key: rebuild it from its encoding with the BC provider, and
+    // convert the result directly rather than through generatePrivateKeyParameter, so it cannot recurse.
+    private static AsymmetricKeyParameter encodedPrivateKeyParameter(
+        PrivateKey    key)
+        throws InvalidKeyException
+    {
+        PrivateKey privateKey;
+        try
+        {
+            byte[] bytes = key.getEncoded();
+
+            if (bytes == null)
             {
-                byte[] bytes = key.getEncoded();
-
-                if (bytes == null)
-                {
-                    throw new InvalidKeyException("no encoding for EC private key");
-                }
-
-                PrivateKey privateKey = BouncyCastleProvider.getPrivateKey(PrivateKeyInfo.getInstance(bytes));
-
-                if (privateKey instanceof java.security.interfaces.ECPrivateKey)
-                {
-                    return ECUtil.generatePrivateKeyParameter(privateKey);
-                }
+                throw new InvalidKeyException("no encoding for EC private key");
             }
-            catch (Exception e)
-            {
-                throw new InvalidKeyException("cannot identify EC private key: " + e.toString());
-            }
+
+            privateKey = BouncyCastleProvider.getPrivateKey(PrivateKeyInfo.getInstance(bytes));
+        }
+        catch (Exception e)
+        {
+            throw SecurityExceptions.invalidKeyException("cannot identify EC private key: " + e.toString(), e);
+        }
+
+        if (privateKey instanceof ECPrivateKey)
+        {
+            return bcPrivateKeyParameter((ECPrivateKey)privateKey);
+        }
+        else if (privateKey instanceof java.security.interfaces.ECPrivateKey)
+        {
+            return jcaPrivateKeyParameter((java.security.interfaces.ECPrivateKey)privateKey);
         }
 
         throw new InvalidKeyException("can't identify EC private key.");
