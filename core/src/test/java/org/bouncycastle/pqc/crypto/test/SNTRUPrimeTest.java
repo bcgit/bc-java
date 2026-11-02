@@ -3,6 +3,7 @@ package org.bouncycastle.pqc.crypto.test;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.security.SecureRandom;
 
 import junit.framework.TestCase;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
@@ -98,5 +99,39 @@ public class SNTRUPrimeTest
 
             resource.close();
         }
+    }
+
+    /**
+     * A ciphertext changed anywhere decapsulates, by implicit rejection, to a secret of its own rather than the
+     * encapsulated one, and the same one each time.
+     */
+    public void testImplicitRejection()
+    {
+        SecureRandom random = new SecureRandom();
+        SNTRUPrimeKeyPairGenerator keyPairGenerator = new SNTRUPrimeKeyPairGenerator();
+        keyPairGenerator.init(new SNTRUPrimeKeyGenerationParameters(random, SNTRUPrimeParameters.sntrup761));
+        AsymmetricCipherKeyPair keyPair = keyPairGenerator.generateKeyPair();
+
+        SecretWithEncapsulation secretEncapsulation = new SNTRUPrimeKEMGenerator(random).generateEncapsulated(
+            keyPair.getPublic());
+        byte[] secret = secretEncapsulation.getSecret();
+        byte[] ct = secretEncapsulation.getEncapsulation();
+
+        SNTRUPrimeKEMExtractor kemExtractor = new SNTRUPrimeKEMExtractor(
+            (SNTRUPrimePrivateKeyParameters)keyPair.getPrivate());
+
+        // the first byte, the last byte of the rounded polynomial, and the confirmation hash
+        int[] positions = { 0, ct.length - 33, ct.length - 1 };
+        for (int k = 0; k != positions.length; k++)
+        {
+            byte[] tampered = Arrays.clone(ct);
+            tampered[positions[k]] ^= (byte)0x80;
+
+            byte[] rejected = kemExtractor.extractSecret(tampered);
+            assertFalse(Arrays.areEqual(secret, rejected));
+            assertTrue(Arrays.areEqual(rejected, kemExtractor.extractSecret(tampered)));
+        }
+
+        assertTrue(Arrays.areEqual(secret, kemExtractor.extractSecret(ct)));
     }
 }

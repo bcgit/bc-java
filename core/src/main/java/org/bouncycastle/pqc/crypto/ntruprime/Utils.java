@@ -684,6 +684,17 @@ class Utils
             r[i] = (byte)(ev[i] & ~mask);
     }
 
+    /**
+     * Return 0 if a and b are equal and -1 otherwise, without branching on their contents.
+     */
+    protected static int getCiphertextDiffMask(byte[] a, byte[] b)
+    {
+        int diff = a.length ^ b.length;
+        for (int i = 0; i < a.length && i < b.length; i++)
+            diff |= a[i] ^ b[i];
+        return checkNotEqualToZero(diff);
+    }
+
     protected static void updateDiffMask(byte[] encR, byte[] rho, int mask)
     {
         for (int i = 0; i < encR.length; i++)

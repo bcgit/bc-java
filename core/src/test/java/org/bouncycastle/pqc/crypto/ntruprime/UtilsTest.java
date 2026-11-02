@@ -215,6 +215,34 @@ public class UtilsTest
         }
     }
 
+    public void testCiphertextDiffMask()
+    {
+        byte[] a = new byte[1039];
+        random.nextBytes(a);
+        byte[] b = (byte[])a.clone();
+
+        assertEquals(0, Utils.getCiphertextDiffMask(a, b));
+        assertEquals(0, Utils.getCiphertextDiffMask(new byte[0], new byte[0]));
+
+        // every bit of the first, a middle and the last byte, the sign bit included
+        int[] positions = { 0, a.length / 2, a.length - 1 };
+        for (int k = 0; k != positions.length; k++)
+        {
+            for (int bit = 0; bit < 8; bit++)
+            {
+                b[positions[k]] ^= (byte)(1 << bit);
+                assertEquals(-1, Utils.getCiphertextDiffMask(a, b));
+                b[positions[k]] ^= (byte)(1 << bit);
+            }
+        }
+        assertEquals(0, Utils.getCiphertextDiffMask(a, b));
+
+        byte[] shorter = new byte[a.length - 1];
+        System.arraycopy(a, 0, shorter, 0, shorter.length);
+        assertEquals(-1, Utils.getCiphertextDiffMask(a, shorter));
+        assertEquals(-1, Utils.getCiphertextDiffMask(shorter, a));
+    }
+
     private static void checkModFreeze(int x, int n, long barrett)
     {
         int expected = centredMod(x, n);
