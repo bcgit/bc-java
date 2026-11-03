@@ -4,6 +4,7 @@
 
 - [Release Notes](releasenotes.md)
 - [Specifications](specifications.md)
+- [Specification & Interoperability](interoperability.md) - the standards supported, the source for the bouncycastle.org page of the same name
 
 ## Testing TLS
 

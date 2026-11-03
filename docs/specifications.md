@@ -2,15 +2,23 @@
 
 ## 1.0 Introduction
 
-The Bouncy Castle Crypto package is a Java implementation of cryptographic algorithms. The package is organised so that it contains a light-weight API suitable for use in any environment (including the newly released J2ME) with the additional infrastructure to conform the algorithms to the JCE framework.
+The Bouncy Castle Crypto package is a Java implementation of cryptographic algorithms. The package is organised so that it contains a light-weight API suitable for use in any environment, with the additional infrastructure to conform the algorithms to the JCE framework.
 
-Except where otherwise stated, this software is distributed under a license based on the MIT X Consortium license. To view the license, see [here](../LICENSE.html). The OpenPGP library also includes a modified BZIP2 library which is licensed under the [Apache Software License, Version 2.0](https://www.apache.org/licenses/).
+Except where otherwise stated, this software is distributed under a license based on the MIT X Consortium license. To view the license, see [here](../LICENSE.md). The OpenPGP library also includes a modified BZIP2 library which is licensed under the [Apache Software License, Version 2.0](https://www.apache.org/licenses/).
 
-If you have the full package you will have six jar files, bcprov\*.jar which contains the BC provider, jce-\*.jar which contains the JCE provider, clean room API, and bcmail\*.jar which contains the mail API.
+The package is distributed as the following jar files:
 
-Note: if you are using JDK 1.0, you will just find a class hierarchy in the classes directory.
+- **bcprov** - the light-weight API and the BC and BCPQC providers (the light-weight API alone is also available as **bccore**).
+- **bcutil** - ASN.1 support for the higher level APIs.
+- **bcpkix** - X.509 certificates and CRLs, CMS, OCSP, time-stamping, CMP, CRMF, EST, PKCS#10, PKCS#12 and related PKIX support.
+- **bcpg** - OpenPGP, and **bcpgsc** - OpenPGP smart card and token support.
+- **bctls** - the TLS/DTLS API and the BCJSSE provider (**bctls-klog** is a variant that can log TLS secrets for debugging).
+- **bcmls** - Messaging Layer Security.
+- **bcmail** - S/MIME using JavaMail (javax.mail), and **bcjmail** - S/MIME using Jakarta Mail (jakarta.mail).
 
-To view examples, look at the test programs in the packages:
+The formats, protocols and algorithms supported, with references to the standards that define them, are listed in [interoperability.md](interoperability.md).
+
+To view examples, look at the misc module and the test programs in the packages:
 
 - **org.bouncycastle.crypto.test**
 - **org.bouncycastle.jce.provider.test**
@@ -55,6 +63,8 @@ The Bouncy Castle provider can make use of the following two system properties:
   - Signers
 - JCE compatible framework for a Bouncy Castle provider "BC".
 - JCE compatible framework for a Bouncy Castle post-quantum provider "BCPQC".
+
+For the standards behind each format, protocol and algorithm, see [interoperability.md](interoperability.md).
 
 ### 4.1 Post-quantum transition
 
@@ -416,11 +426,11 @@ The standardised versions of Classic McEliece, FrodoKEM, and ML-KEM are implemen
 
 DSA, ECDSA, Ed25519 and Ed448 (RFC 8032), BIP-340 Schnorr, SM2, ISO-9796-2, GOST-3410-94, GOST-3410-2001, GOST-3410-2012, DSTU-4145-2002, RSA-PSS, and BLS12-381 signatures (draft-irtf-cfrg-bls-signature, with the scheme classes in **org.bouncycastle.crypto.bls**) are supported by the **org.bouncycastle.crypto.signers** package. Note: as these are light weight classes, if you need to use SHA1 or GOST-3411 (as defined in the relevant standards) you'll also need to make use of the appropriate digest class in conjunction with these. Classes for generating DSA and ECDSA parameters can be found in the **org.bouncycastle.crypto.params** and **org.bouncycastle.crypto.generators** packages. The standardised post-quantum signature algorithms - ML-DSA (FIPS 204), SLH-DSA (FIPS 205) and the stateful hash-based LMS/HSS and XMSS/XMSS^MT (SP 800-208) - are provided under **org.bouncycastle.crypto.signers** with their parameters under **org.bouncycastle.crypto.params**; the candidates still in NIST's processes (Falcon, Mayo, Snova and the additional-signatures round candidates) are provided under **org.bouncycastle.pqc.crypto**. See the post-quantum transition section (4.1) for which of these NIST recommends and for what.
 
-### 5.4 Elliptic Curve Transforms.
+### 5.3 Elliptic Curve Transforms.
 
 The org.bouncycastle.crypto.ec package contains implementations for a variety of EC cryptographic transforms such as EC ElGamal.
 
-### 5.5 TLS/DTLS
+### 5.4 TLS/DTLS
 
 The org.bouncycastle.tls package (the bctls jar) contains implementations of TLS 1.0 to 1.3 and DTLS 1.0, 1.2 and 1.3, with the **BCJSSE** provider in org.bouncycastle.jsse offering them through the JSSE API. The ML-KEM hybrid groups of RFC 10024 (X25519MLKEM768, SecP256r1MLKEM768, SecP384r1MLKEM1024) and the pure ML-KEM groups of draft-ietf-tls-mlkem (MLKEM512/768/1024) are supported for TLS 1.3 and DTLS 1.3 key exchange, and the ML-DSA and SLH-DSA signature schemes of draft-ietf-tls-mldsa and draft-ietf-tls-slhdsa for authentication.
 
@@ -430,15 +440,15 @@ Post-quantum key exchange in TLS:
 - In **BCJSSE** the default group list is X25519MLKEM768, x25519, x448, secp256r1, secp384r1, secp521r1, ...; the client sends key shares for X25519MLKEM768 and x25519. The list is set with the `jdk.tls.namedGroups` system property or `BCSSLParameters.setNamedGroups()`, the key shares with the `org.bouncycastle.jsse.client.earlyKeyShares` property or `BCSSLParameters.setEarlyKeyShares()`, and a server selects from the client's list in the server's own order of preference when `BCSSLParameters.setUseNamedGroupsOrder(true)` or the `org.bouncycastle.jsse.useNamedGroupsOrder` property is set. The pure ML-KEM groups are not offered unless named in the list. A peer that does not support the hybrid group falls back to the classical key share without a HelloRetryRequest.
 - The ML-DSA and SLH-DSA signature schemes are off by default in **BCJSSE** and enabled with the `jdk.tls.client.SignatureSchemes` / `jdk.tls.server.SignatureSchemes` properties or `BCSSLParameters.setSignatureSchemes()`.
 
-### 5.6 Deterministic Random Bit Generators (DRBG) and SecureRandom wrappers
+### 5.5 Deterministic Random Bit Generators (DRBG) and SecureRandom wrappers
 
 The org.bouncycastle.crypto.prng package contains implementations for a variety of bit generators including those from SP 800-90A and X9.31, as well as builders for SecureRandom objects based around them.
 
-### 5.7 ASN.1 package
+### 5.6 ASN.1 package
 
 The light-weight API has direct interfaces into a package capable of reading and writing DER-encoded ASN.1 objects and for the generation of X.509 V3 certificate objects and PKCS12 files. BER InputStream and OutputStream classes are provided as well.
 
-### 5.8 Crypto services constraints
+### 5.7 Crypto services constraints
 
 The light-weight API can be told which algorithms it may use. When a cipher, digest, MAC, signer, KEM, key agreement or key pair generator is created or initialised it describes itself to **org.bouncycastle.crypto.CryptoServicesRegistrar.checkConstraints()** as a **CryptoServiceProperties**: a service name (such as "RSA", "ECDSA", "ML-KEM" or "RSAKeyGen"), the bits of security it provides, its key or parameters, and a **CryptoServicePurpose** - KEYGEN, SIGNING, VERIFYING, ENCRYPTION, DECRYPTION, AGREEMENT, AUTHENTICATION, VERIFICATION, PRF or ANY. The installed **CryptoServicesConstraints** either accepts the service or throws the unchecked **CryptoServiceConstraintsException**. The post-quantum algorithms report the classical security strength NIST assigns to their parameter set, and a hash an algorithm builds internally (the SHAKE inside ML-DSA, say) reports the purpose INTERNAL and is not checked on its own.
 
@@ -1084,17 +1094,13 @@ There are no classes for supporting EC in the JDK prior to JDK 1.5. If you are u
 - org.bouncycastle.jce.interfaces
 - org.bouncycastle.jce
 
-### 7.0 BouncyCastle S/MIME
+## 7.0 Bouncy Castle S/MIME
 
-To be able to fully compile and utilise the BouncyCastle S/MIME package (including the test classes) you need the jar files for the following APIs.
+The S/MIME API comes in two forms with the same classes: **bcmail**, built on JavaMail and the JavaBeans Activation Framework (the javax.mail and javax.activation packages, for example the Maven artifacts javax.mail:mail and javax.activation:activation), and **bcjmail**, built on Jakarta Mail and Jakarta Activation (the jakarta.mail and jakarta.activation packages, for example jakarta.mail:jakarta.mail-api and jakarta.activation:jakarta.activation-api). The mail and activation jars for the chosen form must be on the class path, together with JUnit to run the tests.
 
-- Junit - <https://www.junit.org>
-- JavaMail - <https://java.sun.com/products/javamail/index.html>
-- The Java Activation Framework - <https://java.sun.com/products/javabeans/glasgow/jaf.html>
+### 7.1 Setting up Bouncy Castle S/MIME in JavaMail or Jakarta Mail
 
-### 7.1 Setting up BouncyCastle S/MIME in JavaMail
-
-The BouncyCastle S/MIME handlers may be set in JavaMail two ways.
+The Bouncy Castle S/MIME handlers may be set in JavaMail or Jakarta Mail in two ways. The handler class names are the same for bcmail and bcjmail.
 
 - STATICALLY  
   Add the following entries to the mailcap file:
@@ -1107,7 +1113,7 @@ The BouncyCastle S/MIME handlers may be set in JavaMail two ways.
           
 
 - DYNAMICALLY  
-  The following code will add the BouncyCastle S/MIME handlers dynamically:
+  The following code will add the Bouncy Castle S/MIME handlers dynamically (with bcjmail, import the same classes from jakarta.activation instead):
 
           import javax.activation.MailcapCommandMap;
           import javax.activation.CommandMap;

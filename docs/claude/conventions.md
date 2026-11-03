@@ -419,6 +419,15 @@ A CVE-bearing fix appears **twice** in its release's block: once as the "Defects
 
 **A CVE number stays out of everything until the final release of the version that fixes it.** Before then it goes in no release-note entry, no Security Advisories list, no commit message, no source or test comment, no javadoc, no documentation - anywhere public or headed that way. The defect entry is written in full without it; the cross-references above, and the Security Advisories list, are added as part of cutting the release. Until then the number lives only in the maintainer's local CVE records.
 
+## `specifications.md` and `interoperability.md` are updated every release
+
+Both documents in `docs/` are part of cutting a release, alongside the release notes, and are checked against what the release actually ships:
+
+- `docs/specifications.md` is the developer reference: the light-weight classes and provider algorithm names, key sizes, system properties and setup. Add what the release added, and remove what it removed.
+- `docs/interoperability.md` is the standards map, and the source for the Specification & Interoperability page on bouncycastle.org, which mirrors it. Its section names and two-column tables match that page, so keep them stable; add or remove rows rather than restructuring. When a cited standard is replaced (an RFC obsoleted, a draft published as an RFC, an algorithm selected or dropped by NIST), update the row, and check every link added (see "URLs in source, docs, and Javadoc" below).
+
+The usual sources for what changed are the release's "Additional Features and Functionality" entries and any removal entries in `docs/releasenotes.md`. Algorithms removed from the tree (Picnic, Rainbow and GeMSS by 1.86) must come out of both documents; the web page carried them long after they had gone.
+
 ## Version bumps touch more than the build props — the OpenPGP armor stamp is easy to miss
 
 Changing the BC version (opening a dev cycle, cutting a release) is a fixed, multi-file edit, and the version string is stamped in several places besides the build properties. Update **all** of these together:
