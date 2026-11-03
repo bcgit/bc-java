@@ -37,6 +37,7 @@ public class AllTests
         suite.addTestSuite(AllTests.class);
         suite.addTestSuite(GetInstanceTest.class);
         suite.addTestSuite(SetSortEncodingCountTest.class);
+        suite.addTestSuite(SetSortedElementsTest.class);
         suite.addTestSuite(ASN1SequenceParserTest.class);
         suite.addTestSuite(EnumeratedTest.class);
 

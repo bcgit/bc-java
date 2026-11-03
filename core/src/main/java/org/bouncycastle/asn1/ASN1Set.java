@@ -221,7 +221,7 @@ public abstract class ASN1Set
         }
 
         this.elements = tmp;
-        this.sortedElements = (doSort || tmp.length < 2) ? elements : null;
+        this.sortedElements = (doSort || tmp.length < 2) ? tmp : null;
     }
 
     /**
@@ -243,7 +243,7 @@ public abstract class ASN1Set
         }
 
         this.elements = tmp;
-        this.sortedElements = (doSort || tmp.length < 2) ? elements : null;
+        this.sortedElements = (doSort || tmp.length < 2) ? tmp : null;
     }
 
     ASN1Set(boolean isSorted, ASN1Encodable[] elements)
