@@ -18,7 +18,7 @@ import org.bouncycastle.jcajce.interfaces.MLKEMPrivateKey;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 /**
- * The BC ML-DSA, ML-KEM and SLH-DSA keys report their parameter set through
+ * The BC ML-DSA, ML-KEM, SLH-DSA and FrodoKEM keys report their parameter set through
  * java.security.AsymmetricKey.getParams() as a NamedParameterSpec, as the JDK's own keys do
  * (github #2467). This runs against the multi-release jar, so it exercises the jdk1.11 copy of
  * NamedParameterSpecUtil reached from the base-tree key classes.
@@ -30,7 +30,9 @@ public class NamedKeyParamsMRTest
         {
             "ML-DSA-44-WITH-SHA512", "ML-DSA-65-WITH-SHA512", "ML-DSA-87-WITH-SHA512",
             "SLH-DSA-SHA2-128S", "SLH-DSA-SHAKE-128F", "SLH-DSA-SHA2-192F", "SLH-DSA-SHAKE-256F",
-            "SLH-DSA-SHA2-128S-WITH-SHA256"
+            "SLH-DSA-SHA2-128S-WITH-SHA256",
+            "frodokem976shake", "frodokem1344shake", "efrodokem976shake", "efrodokem1344shake",
+            "frodokem976aes", "frodokem1344aes", "efrodokem976aes", "efrodokem1344aes"
         };
 
     private static final String[] SHARED = new String[]
@@ -56,6 +58,27 @@ public class NamedKeyParamsMRTest
         for (int i = 0; i != BC_ONLY.length; i++)
         {
             checkBCKeyPair(BC_ONLY[i]);
+        }
+    }
+
+    /**
+     * The name a FrodoKEM key reports through getParams() is accepted back by the family's
+     * generic KeyPairGenerator as a NamedParameterSpec.
+     */
+    public void testFrodoKEMNameRoundTrip()
+        throws Exception
+    {
+        for (int i = 0; i != BC_ONLY.length; i++)
+        {
+            String name = BC_ONLY[i];
+            if (!name.contains("frodokem"))
+            {
+                continue;
+            }
+            KeyPair kp = KeyPairGenerator.getInstance(name, "BC").generateKeyPair();
+            KeyPairGenerator kpg = KeyPairGenerator.getInstance("FrodoKEM", "BC");
+            kpg.initialize(kp.getPublic().getParams());
+            assertEquals(name, paramsName(kpg.generateKeyPair().getPublic()));
         }
     }
 

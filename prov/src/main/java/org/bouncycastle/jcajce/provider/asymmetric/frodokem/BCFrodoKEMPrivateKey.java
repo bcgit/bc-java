@@ -3,6 +3,7 @@ package org.bouncycastle.jcajce.provider.asymmetric.frodokem;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.security.spec.AlgorithmParameterSpec;
 
 import javax.security.auth.Destroyable;
 
@@ -13,6 +14,7 @@ import org.bouncycastle.crypto.params.FrodoKEMPublicKeyParameters;
 import org.bouncycastle.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.jcajce.interfaces.FrodoKEMPrivateKey;
+import org.bouncycastle.jcajce.provider.asymmetric.util.NamedParameterSpecUtil;
 import org.bouncycastle.jcajce.spec.FrodoKEMParameterSpec;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Exceptions;
@@ -117,6 +119,17 @@ public class BCFrodoKEMPrivateKey
     public String getFormat()
     {
         return "PKCS#8";
+    }
+
+    /**
+     * Return the parameter set of this key as a java.security.spec.NamedParameterSpec, the form the
+     * JDK's own keys report through java.security.AsymmetricKey.getParams() from Java 22.
+     *
+     * @return a NamedParameterSpec naming the parameter set on Java 11 and later, null otherwise.
+     */
+    public AlgorithmParameterSpec getParams()
+    {
+        return NamedParameterSpecUtil.getNamedParameterSpec(getAlgorithm());
     }
 
     public FrodoKEMParameterSpec getParameterSpec()
