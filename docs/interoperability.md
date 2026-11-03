@@ -133,15 +133,15 @@ The following post-quantum algorithms are standardized and implemented.
 
 For further details on these algorithms, refer to [NIST Post-Quantum Cryptography](https://csrc.nist.gov/Projects/post-quantum-cryptography).
 
-The post-quantum algorithms below have been submitted to the NIST and other PQC standardization processes, but are not yet standardized. They are available for experimenting and hybrid cryptography, but are unsuitable for long-term use until standardized.
+The post-quantum algorithms below have been submitted to the NIST and other PQC standardization processes. Apart from FrodoKEM and Classic McEliece, which ISO/IEC 18033-2:2006/Amd 2:2026 standardizes, none is yet standardized: they are available for experimenting and hybrid cryptography, but are unsuitable for long-term use until standardized.
 
 ### Key Encapsulation Mechanisms (KEMs)
 
 | Key Encapsulation Mechanism | Status |
 |---|---|
 | HQC | Selected by NIST for standardization ([NIST IR 8545](https://csrc.nist.gov/pubs/ir/8545/final)) |
-| Classic McEliece | NIST Round 4 candidate, being standardized in ISO/IEC 18033-2, recommended by BSI |
-| FrodoKEM | NIST Round 3 alternate candidate, being standardized in ISO/IEC 18033-2, recommended by BSI |
+| Classic McEliece | Standardized in [ISO/IEC 18033-2:2006/Amd 2:2026](https://www.iso.org/standard/86890.html); NIST Round 4 candidate; no longer recommended by BSI, and likely to be deprecated |
+| FrodoKEM | Standardized in [ISO/IEC 18033-2:2006/Amd 2:2026](https://www.iso.org/standard/86890.html); NIST Round 3 alternate candidate; recommended by BSI |
 | BIKE | NIST Round 4 candidate, not selected |
 | NTRU | NIST Round 3 finalist, not selected |
 | NTRU Prime (Streamlined NTRU Prime, NTRU LPRime) | NIST Round 3 alternate candidate, not selected |
