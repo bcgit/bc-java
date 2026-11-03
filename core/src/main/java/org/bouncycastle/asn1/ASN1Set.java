@@ -174,7 +174,7 @@ public abstract class ASN1Set
 
     protected final ASN1Encodable[] elements;
 
-    protected ASN1Encodable[] sortedElements;
+    protected volatile ASN1Encodable[] sortedElements;
 
     protected ASN1Set()
     {
@@ -367,13 +367,21 @@ public abstract class ASN1Set
      */
     ASN1Primitive toDERObject()
     {
-        if (sortedElements == null)
+        ASN1Encodable[] sorted = sortedElements;
+        if (sorted == null)
         {
-            sortedElements = (ASN1Encodable[])elements.clone();
-            sort(sortedElements);
+            /*
+             * Sort a copy and only then publish it, through the volatile field so that its sorted
+             * contents are visible with it: another thread re-encoding this SET at the same
+             * time must find either no cached order or a complete one, never one part way through
+             * the sort.
+             */
+            sorted = (ASN1Encodable[])elements.clone();
+            sort(sorted);
+            sortedElements = sorted;
         }
 
-        return new DERSet(true, sortedElements);
+        return new DERSet(true, sorted);
     }
 
     /**

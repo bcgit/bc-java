@@ -4,13 +4,16 @@ import java.io.IOException;
 
 import junit.framework.TestCase;
 import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Integer;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.BERSet;
+import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSet;
 import org.bouncycastle.asn1.DLSet;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Pack;
 
 /**
  * ASN1Set keeps its elements in DER order, in sortedElements, alongside the elements themselves:
@@ -84,6 +87,91 @@ public class SetSortedElementsTest
 
             assertTrue(name + " DER encoding follows the caller's array",
                 Arrays.areEqual(expected, set.getEncoded(ASN1Encoding.DER)));
+        }
+    }
+
+    private static final int CONCURRENT_COUNT = 2000;
+    private static final int CONCURRENT_THREADS = 8;
+    private static final int CONCURRENT_TRIALS = 25;
+
+    /**
+     * Holds the encoders back until all of them have started, so that they reach the SET together.
+     */
+    private static class StartGate
+    {
+        volatile boolean open;
+    }
+
+    /**
+     * The first DER encoding of a SET not built in DER order - every SET the parser reads - sorts a
+     * copy of the elements and caches it. The copy used to be cached before it was sorted, so another
+     * thread encoding the same SET at the same time could take it unsorted, or part way through the
+     * sort with some elements present twice and others missing. With the early publication nearly
+     * every concurrent encoding here came out wrong; a pass cannot prove the race absent, but a
+     * failure is never spurious.
+     */
+    public void testConcurrentFirstDEREncoding()
+        throws Exception
+    {
+        // descending order, so the cached copy is wrong for as long as it is unsorted
+        ASN1EncodableVector v = new ASN1EncodableVector();
+        for (int i = CONCURRENT_COUNT; i > 0; --i)
+        {
+            v.add(new DEROctetString(Pack.intToBigEndian(i)));
+        }
+
+        byte[] dlEncoding = new DLSet(v).getEncoded(ASN1Encoding.DL);
+        byte[] expected = new DERSet(v).getEncoded(ASN1Encoding.DER);
+
+        for (int trial = 0; trial != CONCURRENT_TRIALS; ++trial)
+        {
+            final ASN1Set shared = ASN1Set.getInstance(dlEncoding);
+            final StartGate gate = new StartGate();
+            final byte[][] results = new byte[CONCURRENT_THREADS][];
+            final Throwable[] failures = new Throwable[CONCURRENT_THREADS];
+
+            Thread[] threads = new Thread[CONCURRENT_THREADS];
+            for (int t = 0; t != CONCURRENT_THREADS; ++t)
+            {
+                final int index = t;
+                threads[t] = new Thread()
+                {
+                    public void run()
+                    {
+                        while (!gate.open)
+                        {
+                            Thread.yield();
+                        }
+
+                        try
+                        {
+                            results[index] = shared.getEncoded(ASN1Encoding.DER);
+                        }
+                        catch (Throwable e)
+                        {
+                            failures[index] = e;
+                        }
+                    }
+                };
+                threads[t].start();
+            }
+
+            gate.open = true;
+
+            for (int t = 0; t != CONCURRENT_THREADS; ++t)
+            {
+                threads[t].join();
+            }
+
+            for (int t = 0; t != CONCURRENT_THREADS; ++t)
+            {
+                if (failures[t] != null)
+                {
+                    fail("trial " + trial + ", thread " + t + ": " + failures[t]);
+                }
+                assertTrue("trial " + trial + ", thread " + t + ": wrong DER encoding",
+                    Arrays.areEqual(expected, results[t]));
+            }
         }
     }
 }
