@@ -7,19 +7,26 @@ description: Build, sign, and test the legacy jdk15to18 (Java 5) distribution vi
 
 The legacy `jdk15to18` artifact is a **1.5-bytecode** jar built on **JDK 8** and run on a **genuine JRE 5**. That split is the source of every non-obvious problem here: code that compiles fine (JDK 8 resolves all APIs) can still fail at runtime on JRE 5 because the API didn't exist in 1.5. The Gradle build (`--release 8`) cannot catch any of this; only this pipeline can.
 
-This skill is for driving `sh build1-5to1-8` and getting `sh build1-5to1-8 test` green.
+This skill is for driving `sh build1-5to1-8` and getting the JRE 5 test run green.
 
-## The three steps — order matters
+## The four steps — order matters
 
 ```
 sh build1-5to1-8                                   # 1. BUILD on JDK 8  -> unsigned jars
-bcsign build/artifacts/jdk1.5/jars/*.jar           # 2. SIGN (release machine only)
-sh build1-5to1-8 test                              # 3. TEST on genuine JRE 5
+A15="env JAVA_HOME=/usr/lib/jvm/java-1.5.0-oracle-i586 ANT_HOME=/opt/apache-ant-1.6.5 JAVA_VERSION_PREFIX=1.5 \
+     PATH=/opt/apache-ant-1.6.5/bin:/usr/lib/jvm/java-1.5.0-oracle-i586/bin:$PATH ant -f ant/jdk15+.xml"
+$A15 build-test                                    # 2. COMPILE the tests with genuine javac 1.5, re-jar bctest
+bcsign build/artifacts/jdk1.5/jars/*.jar           # 3. SIGN every jar, bctest included (release machine only)
+$A15 test-signed                                   # 4. TEST on genuine JRE 5, against the jars as signed
 ```
 
-**The build clobbers signatures.** `sh build1-5to1-8` (no arg) rewrites every jar in `build/artifacts/jdk1.5/jars/` unsigned. So you must always **build → sign → test**, in that order. Never run the no-arg build again after signing without re-signing.
+**Run `test-signed`, not `test` (and not `sh build1-5to1-8 test`).** The `test` target depends on `build-test`, which re-jars `bctest` every time and so strips the signature `bcsign` put on it. `bctest` shares packages with the signed jars (`pqc.crypto.hqc`, `pqc.crypto.ntruprime`, `openpgp`, `cert.dane.fetcher`), and JRE 5 requires every class in a package to share signer info, so an unsigned `bctest` fails those suites with `SecurityException: class "...JndiDANEFetcherFactory"'s signer information does not match signer information of other classes in the same package`. `test-signed` runs the same suites with no `build-test` dependency, which is why `build-test` is its own step 2, before signing. This mirrors the jdk1.4 flow in `docs/claude/build-jdk14.md`.
 
-**`test` does not rebuild the provider.** The `test` target only compiles the *test* tree and runs JUnit against the already-built (and signed) jars. So you can re-run `sh build1-5to1-8 test` as many times as you like without re-signing — only a no-arg rebuild forces a re-sign.
+**Ant itself must run on Java 5.** The test steps put JRE 5 on `JAVA_HOME`, and Ant starts on that JVM. Ant 1.10 needs Java 8, so if the `ant` first on the `PATH` is 1.10 (as `/opt/ant` is here) both `sh build1-5to1-8 test` and a bare `ant ... test-signed` die at once with `UnsupportedClassVersionError: Bad version number in .class file`, before any test runs. Use Ant 1.6.5 (`/opt/apache-ant-1.6.5`, the one `build1-4` uses), as the `A15` line above does. The no-arg build runs on JDK 8 and is unaffected.
+
+**`build-test` is incremental.** After a no-arg build it recompiles only the test sources that changed since (a handful), so step 2 is not a full genuine-javac-1.5 compile of the test tree. Clear `build/bctest-jdk15to18-*` first when that compile is what you are checking.
+
+**The build clobbers signatures.** `sh build1-5to1-8` (no arg) and `build-test` both rewrite jars in `build/artifacts/jdk1.5/jars/` unsigned. So sign after both, and re-sign after any rebuild. `test-signed` builds nothing, so it can be re-run as often as you like without re-signing.
 
 ### Step 1 — build (JDK 8)
 
@@ -41,9 +48,9 @@ Sign the whole jar dir: `bcsign build/artifacts/jdk1.5/jars/*.jar`.
 
 **Why signing is mandatory:** on JDK 5 the JCE requires providers performing `Cipher`/`Mac`/`KeyGenerator` work to be jars signed with a trusted JCE code-signing cert. An unsigned dev jar makes essentially every crypto test fail with `java.lang.SecurityException: JCE cannot authenticate the provider BC` (pure-ASN.1 suites still pass, which is the tell).
 
-### Step 3 — test (genuine JRE 5)
+### Steps 2 to 4 — compile the tests, sign, run (genuine JRE 5)
 
-The `test` branch of `build1-5to1-8` switches `JAVA_HOME=$JDK5PATH` (`/usr/lib/jvm/java-1.5.0-oracle-i586`) and runs `ant -f ant/jdk15+.xml test`: it copies+overlays sources, compiles the test tree with **genuine javac 1.5**, then runs the `**/AllTests.java` suites under **JRE 5**. Reports land in `build/artifacts/jdk1.5/reports/xml/TEST-*.xml` (parse these for failures — the console only prints `Test <suite> FAILED`).
+`build-test`, run under JRE 5, copies and overlays the test sources, compiles the changed ones with **genuine javac 1.5** and re-jars `bctest`. After signing, `test-signed` runs the `**/AllTests.java` suites under **JRE 5**. Reports land in `build/artifacts/jdk1.5/reports/xml/TEST-*.xml` (parse these for failures — the console only prints `Test <suite> FAILED`). A full run takes about two hours here. To re-check a few suites after a small change, rebuild, re-sign and run them directly: `"$J5/bin/java" -cp <all jars in build/artifacts/jdk1.5/jars>:<junit 4 jar> junit.textui.TestRunner <AllTests class>`.
 
 ## Two distinct classes of failure
 
@@ -107,9 +114,12 @@ If `-Xint` passes but JIT fails, it's a JVM defect — don't "fix" the BC code; 
 | Need | Command |
 |---|---|
 | Full build (JDK 8) | `sh build1-5to1-8` |
+| Compile tests (genuine javac 1.5) | `$A15 build-test` (Ant 1.6.5, see above) |
 | Sign (release machine) | `bcsign build/artifacts/jdk1.5/jars/*.jar` |
-| Test (JRE 5) | `sh build1-5to1-8 test` |
+| Test (JRE 5) | `$A15 test-signed` |
 | Clean | `sh build1-5to1-8 clean` |
 | Failure detail | `build/artifacts/jdk1.5/reports/xml/TEST-*.xml` |
 
 Overriding JDKs: `JDKPATH` (build JDK, default 8) and `JDK5PATH` (test JRE, default the oracle i586 5) are read from the environment by `build1-5to1-8`.
+
+**Stale `jdk1.5` overlays.** `<module>/src/main/jdk1.5/` overlays replace the base class outright, so a base feature added later is silently missing from this distribution, and only surfaces here. The 1.87 pass found two in pg: `JcaPGPKeyConverter` (forked October 2024, so with no RFC 9980 key conversion - deleted, as base is usable for this build once a captured local is `final`) and `OpenPGPDefaultPolicy` (missing the RFC 9980 algorithms, so PQC self-signatures verified but were refused by policy). Before a release, list each overlay's last commit against its base file's (`git log -1 -- <overlay>` vs `-- <base>`); an overlay older than its base is a candidate.
