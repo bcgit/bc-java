@@ -234,7 +234,7 @@ public class JcaPGPKeyConverter
         }
 
         PublicKeyPacket pubPk = privKey.getPublicKeyPacket();
-        BCPGKey privPk = privKey.getPrivateKeyDataPacket();
+        final BCPGKey privPk = privKey.getPrivateKeyDataPacket();
 
         try
         {
@@ -1074,7 +1074,6 @@ public class JcaPGPKeyConverter
         return null;
     }
 
-    @FunctionalInterface
     private interface BCPGKeyOperation
     {
         BCPGKey getBCPGKey(byte[] key);
@@ -1100,7 +1099,6 @@ public class JcaPGPKeyConverter
         return pointEnc;
     }
 
-    @FunctionalInterface
     private interface Operation
     {
         PrivateKeyInfo getPrivateKeyInfos()

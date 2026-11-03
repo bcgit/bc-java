@@ -226,11 +226,20 @@ public class ECIESTest
         KeyPairGenerator bcGen = KeyPairGenerator.getInstance("EC", "BC");
         bcGen.initialize(new ECGenParameterSpec("secp256r1"), new SecureRandom());
         KeyPair bc = bcGen.generateKeyPair();
-        KeyPairGenerator sunGen = KeyPairGenerator.getInstance("EC", "SunEC");
-        sunGen.initialize(new ECGenParameterSpec("secp256r1"), new SecureRandom());
-        KeyPair sun = sunGen.generateKeyPair();
-        Key[] ecKeys = { bc.getPublic(), bc.getPrivate(), sun.getPublic(), sun.getPrivate(),
-            new IEKeySpec(bc.getPrivate(), bc.getPublic()) };
+        Key[] ecKeys;
+        // SunEC only exists from Java 7, so on older JREs only BC's own keys are checked
+        if (Security.getProvider("SunEC") != null)
+        {
+            KeyPairGenerator sunGen = KeyPairGenerator.getInstance("EC", "SunEC");
+            sunGen.initialize(new ECGenParameterSpec("secp256r1"), new SecureRandom());
+            KeyPair sun = sunGen.generateKeyPair();
+            ecKeys = new Key[]{ bc.getPublic(), bc.getPrivate(), sun.getPublic(), sun.getPrivate(),
+                new IEKeySpec(bc.getPrivate(), bc.getPublic()) };
+        }
+        else
+        {
+            ecKeys = new Key[]{ bc.getPublic(), bc.getPrivate(), new IEKeySpec(bc.getPrivate(), bc.getPublic()) };
+        }
         Key aes = new SecretKeySpec(new byte[16], "AES");
 
         IESCipher ies = new IESCipher.ECIES();
