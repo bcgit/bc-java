@@ -4,6 +4,7 @@ import junit.extensions.TestSetup;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import org.bouncycastle.util.test.SimpleTestResult;
 
 public class AllTests
     extends TestCase
@@ -11,8 +12,16 @@ public class AllTests
     public static void main (String[] args)
     {
         junit.textui.TestRunner.run (suite());
+    }
 
-        UTF8Test.main(null);
+    public void testUTF8()
+    {
+        SimpleTestResult result = (SimpleTestResult)new UTF8Test().perform();
+
+        if (!result.isSuccessful())
+        {
+            fail(result.toString());
+        }
     }
     
     public static Test suite()
@@ -23,6 +32,7 @@ public class AllTests
         suite.addTestSuite(HexTest.class);
         suite.addTestSuite(Base32Test.class);
         suite.addTestSuite(NonASCIIDecodeTest.class);
+        suite.addTestSuite(AllTests.class);
         return new BCTestSetup(suite);
     }
 

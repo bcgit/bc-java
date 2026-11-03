@@ -128,6 +128,38 @@ public class UTF8
      */
     public static int transcodeToUTF16(byte[] utf8, int utf8Off, int utf8Length, char[] utf16)
     {
+        return transcodeToUTF16(utf8, utf8Off, utf8Length, utf16, false);
+    }
+
+    /**
+     * Transcode a UTF-8 encoding into a UTF-16 representation, optionally replacing malformed input
+     * rather than failing.
+     * <p>
+     * With {@code lenient} false this behaves exactly as
+     * {@link #transcodeToUTF16(byte[], int, int, char[])}. With {@code lenient} true, each maximal
+     * subpart of an ill-formed sequence is replaced by a single U+FFFD REPLACEMENT CHARACTER, as
+     * recommended in the Unicode Standard, ch. 3, "U+FFFD Substitution of Maximal Subparts" (the
+     * practice the WHATWG Encoding Standard also requires): a byte that cannot begin a sequence is
+     * replaced on its own, a sequence broken by an unexpected byte is replaced up to but not
+     * including that byte, which is then decoded afresh, and a sequence truncated by the end of the
+     * input is replaced. Well-formed input is decoded identically in either mode, and no unmatched
+     * surrogates are produced. Each replacement accounts for at least one input byte, so an output
+     * array at least as long as the input is still sufficient; -1 is then returned only if
+     * {@code utf16} is too small.
+     * </p>
+     *
+     * @param utf8       A non-null array containing a UTF-8 encoding.
+     * @param utf8Off    start position in the array for the encoding.
+     * @param utf8Length length in bytes of the encoding.
+     * @param utf16      A non-null array, at least as long as {@code utf8Length} in order to ensure
+     *                   the output will fit.
+     * @param lenient    true to replace malformed input with U+FFFD, false to fail on it.
+     * @return The number of UTF-16 code units written to {@code utf16} (beginning from index 0), or
+     * else -1 if the {@code utf16} is too small, or, when not lenient, if the input was malformed or
+     * encoded any unmappable characters.
+     */
+    public static int transcodeToUTF16(byte[] utf8, int utf8Off, int utf8Length, char[] utf16, boolean lenient)
+    {
         int i = utf8Off, j = 0;
         int maxI = utf8Off + utf8Length;
 
@@ -153,17 +185,36 @@ public class UTF8
             {
                 if (i >= maxI)
                 {
-                    return -1;
+                    if (!lenient)
+                    {
+                        return -1;
+                    }
+
+                    // sequence truncated by the end of the input
+                    state = S_ERR;
+                    break;
                 }
 
                 codeUnit = utf8[i++];
                 codePoint = (codePoint << 6) | (codeUnit & 0x3F);
                 state = transitionTable[state + ((codeUnit & 0xFF) >>> 4)];
+
+                if (state == S_ERR && lenient)
+                {
+                    // the byte that broke the sequence is not part of it, so decode it afresh
+                    --i;
+                }
             }
 
             if (state == S_ERR)
             {
-                return -1;
+                if (!lenient || j >= utf16.length)
+                {
+                    return -1;
+                }
+
+                utf16[j++] = '\uFFFD';
+                continue;
             }
 
             if (codePoint <= 0xFFFF)

@@ -12,6 +12,7 @@ public class RegressionTest
         new JceExternalPublicKeyDataDecryptorFactoryBuilderTest(),
         new OpenPGPConfiguredPolicyTest(),
         new OpenPGPDecompressionLimitTest(),
+        new OpenPGPLiteralDataFileNameTest(),
         new OpenPGPCertificateTest(),
         new OpenPGPDetachedSignatureProcessorTest(),
         new OpenPGPDocumentSignatureExpiryTest(),

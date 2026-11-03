@@ -31,9 +31,13 @@ public class SignerUserID
         super(SignatureSubpacketTags.SIGNER_USER_ID, critical, false, Strings.toUTF8ByteArray(userID));
     }
     
+    /**
+     * Return the signer's user ID, decoded as UTF-8. A malformed sequence is decoded as U+FFFD rather than
+     * causing an exception; use {@link #getRawID()} for the exact bytes.
+     */
     public String getID()
     {
-        return Strings.fromUTF8ByteArray(data);
+        return Strings.fromUTF8ByteArray(data, true);
     }
 
     public byte[] getRawID()

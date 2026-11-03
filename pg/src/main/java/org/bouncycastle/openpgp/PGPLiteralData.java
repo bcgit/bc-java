@@ -90,7 +90,9 @@ public class PGPLiteralData
     }
 
     /**
-     * Return the file name associated with the data packet.
+     * Return the file name associated with the data packet, decoded as UTF-8. A file name that is not valid
+     * UTF-8 has each malformed sequence decoded as U+FFFD rather than causing an exception; use
+     * {@link #getRawFileName()} for the exact bytes.
      */
     public String getFileName()
     {

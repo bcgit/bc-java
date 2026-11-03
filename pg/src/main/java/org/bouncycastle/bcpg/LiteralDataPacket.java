@@ -71,11 +71,16 @@ public class LiteralDataPacket
     }
 
     /**
-     * Return the file name associated with the data packet.
+     * Return the file name associated with the data packet, decoded as UTF-8.
+     * <p>
+     * The file name is advisory and is read before any integrity check on the message, so it need not be valid
+     * UTF-8; a malformed sequence is decoded as U+FFFD rather than causing an exception. Use
+     * {@link #getRawFileName()} for the exact bytes.
+     * </p>
      */
     public String getFileName()
     {
-        return Strings.fromUTF8ByteArray(fileName);
+        return Strings.fromUTF8ByteArray(fileName, true);
     }
 
     /**

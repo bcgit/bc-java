@@ -60,6 +60,42 @@ public final class Strings
         return new String(chars, 0, len);
     }
 
+    /**
+     * Decode a UTF-8 encoding, optionally replacing malformed input rather than failing.
+     *
+     * @param bytes   the UTF-8 encoding.
+     * @param lenient true to decode each maximal subpart of an ill-formed sequence as U+FFFD, false to
+     *                throw an IllegalArgumentException as {@link #fromUTF8ByteArray(byte[])} does.
+     * @return the decoded string.
+     * @see UTF8#transcodeToUTF16(byte[], int, int, char[], boolean)
+     */
+    public static String fromUTF8ByteArray(byte[] bytes, boolean lenient)
+    {
+        return fromUTF8ByteArray(bytes, 0, bytes.length, lenient);
+    }
+
+    /**
+     * Decode part of a UTF-8 encoding, optionally replacing malformed input rather than failing.
+     *
+     * @param bytes   the array holding the UTF-8 encoding.
+     * @param off     the offset of the encoding in bytes.
+     * @param length  the length of the encoding.
+     * @param lenient true to decode each maximal subpart of an ill-formed sequence as U+FFFD, false to
+     *                throw an IllegalArgumentException as {@link #fromUTF8ByteArray(byte[], int, int)} does.
+     * @return the decoded string.
+     * @see UTF8#transcodeToUTF16(byte[], int, int, char[], boolean)
+     */
+    public static String fromUTF8ByteArray(byte[] bytes, int off, int length, boolean lenient)
+    {
+        char[] chars = new char[length];
+        int len = UTF8.transcodeToUTF16(bytes, off, length, chars, lenient);
+        if (len < 0)
+        {
+            throw new IllegalArgumentException("Invalid UTF-8 input");
+        }
+        return new String(chars, 0, len);
+    }
+
     public static byte[] toUTF8ByteArray(String string)
     {
         return toUTF8ByteArray(string.toCharArray());
