@@ -133,6 +133,13 @@ public abstract class TlsProtocol
     private ByteQueue handshakeQueue = new ByteQueue(0);
 //    private ByteQueue heartbeatQueue = new ByteQueue();
 
+    /*
+     * Non-blocking mode only: an inbound handshake message whose dispatch was deferred (see
+     * shouldDeferHandshakeMessage) and is waiting for processDeferredHandshake().
+     */
+    private short deferredHandshakeType = -1;
+    private HandshakeMessageInput deferredHandshakeMessage = null;
+
     final RecordStream recordStream;
     final Object recordWriteLock = new Object();
 
@@ -502,6 +509,9 @@ public abstract class TlsProtocol
         this.receivedChangeCipherSpec = false;
         this.expectSessionTicket = false;
         this.handshakeTimeout = null;
+
+        this.deferredHandshakeType = -1;
+        this.deferredHandshakeMessage = null;
     }
 
     protected void completeHandshake()
@@ -677,75 +687,93 @@ public abstract class TlsProtocol
                 break;
             }
 
-            /*
-             * Check ChangeCipherSpec status
-             */
-            switch (type)
-            {
-            case HandshakeType.hello_request:
-                break;
-
-            default:
-            {
-                ProtocolVersion negotiatedVersion = getContext().getServerVersion();
-                if (null != negotiatedVersion && TlsUtils.isTLSv13(negotiatedVersion))
-                {
-                    break;
-                }
-
-                checkReceivedChangeCipherSpec(HandshakeType.finished == type);
-                break;
-            }
-            }
-
             HandshakeMessageInput buf = queue.readHandshakeMessage(totalLength);
 
-            switch (type)
+            if (!blocking && shouldDeferHandshakeMessage(type))
             {
-            /*
-             * These message types aren't included in the transcript.
-             */
-            case HandshakeType.hello_request:
-            case HandshakeType.key_update:
-                break;
-
-            /*
-             * Not included in the transcript for (D)TLS 1.3+
-             */
-            case HandshakeType.new_session_ticket:
-            {
-                ProtocolVersion negotiatedVersion = getContext().getServerVersion();
-                if (null != negotiatedVersion && !TlsUtils.isTLSv13(negotiatedVersion))
-                {
-                    buf.updateHash(handshakeHash);
-                }
-
+                /*
+                 * Hold a copy, since 'buf' may be a view of the record buffer. Any further messages stay
+                 * in the queue until processDeferredHandshake() dispatches this one: its handler may be
+                 * the one that installs the read keys the following record needs.
+                 */
+                this.deferredHandshakeType = type;
+                this.deferredHandshakeMessage = buf.copy();
                 break;
             }
 
-            /*
-             * These message types are deferred to the handler to explicitly update the transcript.
-             */
-            case HandshakeType.certificate_verify:
-            case HandshakeType.client_hello:
-            case HandshakeType.finished:
-            case HandshakeType.server_hello:
-                break;
+            dispatchHandshakeMessage(type, buf);
+        }
+    }
 
-            /*
-             * For all others we automatically update the transcript immediately. 
-             */
-            default:
+    private void dispatchHandshakeMessage(short type, HandshakeMessageInput buf)
+        throws IOException
+    {
+        /*
+         * Check ChangeCipherSpec status
+         */
+        switch (type)
+        {
+        case HandshakeType.hello_request:
+            break;
+
+        default:
+        {
+            ProtocolVersion negotiatedVersion = getContext().getServerVersion();
+            if (null != negotiatedVersion && TlsUtils.isTLSv13(negotiatedVersion))
+            {
+                break;
+            }
+
+            checkReceivedChangeCipherSpec(HandshakeType.finished == type);
+            break;
+        }
+        }
+
+        switch (type)
+        {
+        /*
+         * These message types aren't included in the transcript.
+         */
+        case HandshakeType.hello_request:
+        case HandshakeType.key_update:
+            break;
+
+        /*
+         * Not included in the transcript for (D)TLS 1.3+
+         */
+        case HandshakeType.new_session_ticket:
+        {
+            ProtocolVersion negotiatedVersion = getContext().getServerVersion();
+            if (null != negotiatedVersion && !TlsUtils.isTLSv13(negotiatedVersion))
             {
                 buf.updateHash(handshakeHash);
-                break;
-            }
             }
 
-            buf.skip(4);
-
-            handleHandshakeMessage(type, buf);
+            break;
         }
+
+        /*
+         * These message types are deferred to the handler to explicitly update the transcript.
+         */
+        case HandshakeType.certificate_verify:
+        case HandshakeType.client_hello:
+        case HandshakeType.finished:
+        case HandshakeType.server_hello:
+            break;
+
+        /*
+         * For all others we automatically update the transcript immediately.
+         */
+        default:
+        {
+            buf.updateHash(handshakeHash);
+            break;
+        }
+        }
+
+        buf.skip(4);
+
+        handleHandshakeMessage(type, buf);
     }
 
     private void processAlertQueue()
@@ -1397,6 +1425,11 @@ public abstract class TlsProtocol
         {
             throw new IOException("Connection is closed, cannot accept any more input");
         }
+        if (hasDeferredHandshake())
+        {
+            throw new IllegalStateException(
+                "Cannot accept input while a deferred handshake is pending! Use processDeferredHandshake() first.");
+        }
 
         // Fast path if the input is arriving one record at a time
         if (inputBuffers.available() == 0 && safeReadFullRecord(input, inputOff, inputLen))
@@ -1414,6 +1447,11 @@ public abstract class TlsProtocol
 
         inputBuffers.addBytes(input, inputOff, inputLen);
 
+        processInputBuffers();
+    }
+
+    private void processInputBuffers() throws IOException
+    {
         // loop while there are enough bytes to read the length of the next record
         while (inputBuffers.available() >= RecordFormat.FRAGMENT_OFFSET)
         {
@@ -1442,7 +1480,123 @@ public abstract class TlsProtocol
                 }
                 break;
             }
+
+            if (hasDeferredHandshake())
+            {
+                // The deferred handler may install the read keys the next record needs
+                break;
+            }
         }
+    }
+
+    /**
+     * Non-blocking mode only. Whether the dispatch of an inbound handshake message of the given type should
+     * be deferred. A deferred message is held, and no further input is accepted, until
+     * {@link #processDeferredHandshake()} dispatches it; that lets the handshake work for the message -
+     * typically the expensive part: certificate validation, signature generation or verification, key
+     * agreement, and the response flight - run on a thread of the caller's choosing (as for
+     * <code>SSLEngine.getDelegatedTask()</code>). The default is never to defer.
+     *
+     * @param handshakeType the {@link HandshakeType} of the message about to be dispatched.
+     * @return true to defer the message, false to dispatch it immediately.
+     */
+    protected boolean shouldDeferHandshakeMessage(short handshakeType)
+    {
+        return false;
+    }
+
+    /**
+     * Non-blocking mode only. Whether a deferred handshake step is pending; while one is, {@link #offerInput}
+     * refuses further input until {@link #processDeferredHandshake()} has been called.
+     */
+    public boolean hasDeferredHandshake()
+    {
+        return !closed && isDeferredHandshakePending();
+    }
+
+    protected boolean isDeferredHandshakePending()
+    {
+        return null != deferredHandshakeMessage;
+    }
+
+    /**
+     * Non-blocking mode only. Perform the pending deferred handshake step (see
+     * {@link #shouldDeferHandshakeMessage(short)}), including any handshake messages that it generates, then
+     * continue processing any input already buffered. May be called from any thread, but never concurrently
+     * with any other method of this protocol.
+     *
+     * @throws IOException if the handshake fails (as for {@link #offerInput}, any alert has already been
+     *         queued for output).
+     * @throws IllegalStateException if in blocking mode, or no deferred handshake step is pending.
+     */
+    public void processDeferredHandshake() throws IOException
+    {
+        if (blocking)
+        {
+            throw new IllegalStateException("Cannot use processDeferredHandshake() in blocking mode!");
+        }
+        if (!hasDeferredHandshake())
+        {
+            throw new IllegalStateException("No deferred handshake is pending");
+        }
+
+        try
+        {
+            dispatchDeferredHandshake();
+        }
+        catch (TlsFatalAlertReceived e)
+        {
+//            assert isFailed();
+            throw e;
+        }
+        catch (TlsFatalAlert e)
+        {
+            handleException(e.getAlertDescription(), "Failed to process deferred handshake", e);
+            throw e;
+        }
+        catch (IOException e)
+        {
+            handleException(AlertDescription.internal_error, "Failed to process deferred handshake", e);
+            throw e;
+        }
+        catch (RuntimeException e)
+        {
+            handleException(AlertDescription.internal_error, "Failed to process deferred handshake", e);
+            throw new TlsFatalAlert(AlertDescription.internal_error, e);
+        }
+
+        if (closed)
+        {
+            if (!appDataReady)
+            {
+                // NOTE: Any close during the handshake should have raised an exception.
+                throw new TlsFatalAlert(AlertDescription.internal_error);
+            }
+            return;
+        }
+
+        if (!hasDeferredHandshake())
+        {
+            processInputBuffers();
+        }
+    }
+
+    protected void dispatchDeferredHandshake() throws IOException
+    {
+        short type = deferredHandshakeType;
+        HandshakeMessageInput buf = deferredHandshakeMessage;
+        if (null == buf)
+        {
+            throw new TlsFatalAlert(AlertDescription.internal_error);
+        }
+
+        this.deferredHandshakeType = -1;
+        this.deferredHandshakeMessage = null;
+
+        dispatchHandshakeMessage(type, buf);
+
+        // Any further messages from the same record were left queued behind the deferred one
+        processHandshakeQueue(handshakeQueue);
     }
 
     public int getApplicationDataLimit()

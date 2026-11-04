@@ -22,6 +22,7 @@ public class TlsClientProtocol
     TlsClientContextImpl tlsClientContext = null;
 
     protected Hashtable clientAgreements = null;
+    private boolean deferredClientHello = false;
     OfferedPsks.BindersConfig clientBinders = null;
     protected ClientHello clientHello = null;
     protected TlsKeyExchange keyExchange = null;
@@ -104,6 +105,13 @@ public class TlsClientProtocol
     {
         super.beginHandshake(renegotiation);
 
+        if (!blocking && shouldDeferClientHello())
+        {
+            // The ClientHello (including key share generation) is produced by processDeferredHandshake()
+            this.deferredClientHello = true;
+            return;
+        }
+
         sendClientHello();
         this.connection_state = CS_CLIENT_HELLO;
     }
@@ -111,6 +119,8 @@ public class TlsClientProtocol
     protected void cleanupHandshake()
     {
         super.cleanupHandshake();
+
+        this.deferredClientHello = false;
 
         this.clientAgreements = null;
         this.clientBinders = null;
@@ -131,10 +141,40 @@ public class TlsClientProtocol
     {
         return tlsClientContext;
     }
-    
+
     protected TlsPeer getPeer()
     {
         return tlsClient;
+    }
+
+    /**
+     * Non-blocking mode only. Whether sending the initial ClientHello should be deferred from
+     * {@link #connect(TlsClient)} to {@link #processDeferredHandshake()}, so that its preparation (notably
+     * the key share generation) can run on a thread of the caller's choosing. The default is not to defer.
+     * See also {@link #shouldDeferHandshakeMessage(short)}.
+     */
+    protected boolean shouldDeferClientHello()
+    {
+        return false;
+    }
+
+    protected boolean isDeferredHandshakePending()
+    {
+        return deferredClientHello || super.isDeferredHandshakePending();
+    }
+
+    protected void dispatchDeferredHandshake() throws IOException
+    {
+        if (deferredClientHello)
+        {
+            this.deferredClientHello = false;
+
+            sendClientHello();
+            this.connection_state = CS_CLIENT_HELLO;
+            return;
+        }
+
+        super.dispatchDeferredHandshake();
     }
 
     protected void handle13HandshakeMessage(short type, HandshakeMessageInput buf)

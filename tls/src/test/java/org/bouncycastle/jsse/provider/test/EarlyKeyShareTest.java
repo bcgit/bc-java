@@ -100,6 +100,13 @@ public class EarlyKeyShareTest
         clientEngine.setEnabledProtocols(new String[]{ "TLSv1.3" });
         clientEngine.beginHandshake();
 
+        // The ClientHello may be produced by a delegated task rather than by beginHandshake() itself
+        Runnable task;
+        while ((task = clientEngine.getDelegatedTask()) != null)
+        {
+            task.run();
+        }
+
         ByteBuffer clientToServer = ByteBuffer.allocate(clientEngine.getSession().getPacketBufferSize());
         clientEngine.wrap(ByteBuffer.allocate(0), clientToServer);
         clientToServer.flip();
