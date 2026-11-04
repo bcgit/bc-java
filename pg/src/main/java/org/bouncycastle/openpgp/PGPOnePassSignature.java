@@ -25,6 +25,7 @@ public class PGPOnePassSignature
 {
     private OnePassSignaturePacket sigPack;
     private PGPContentVerifier verifier;
+    private PGPContentVerifier legacyTextVerifier;
 
     private static OnePassSignaturePacket cast(Packet packet)
         throws IOException
@@ -73,11 +74,21 @@ public class PGPOnePassSignature
 
         verifier = verifierBuilder.build(pubKey);
 
-        lastb = 0;
+        resetTextState();
+        legacyTextVerifier = null;
         sigOut = verifier.getOutputStream();
 
         checkSaltSize();
-        updateWithSalt();
+        updateWithSalt(sigOut);
+
+        if (sigType == PGPSignature.CANONICAL_TEXT_DOCUMENT && isLegacyTextFormAllowed())
+        {
+            // a second hash over the pre-1.87 form, consulted only if the data held a bare CR
+            // and the signature does not verify over the current form (github #2553).
+            legacyTextVerifier = verifierBuilder.build(pubKey);
+            legacyTextSigOut = legacyTextVerifier.getOutputStream();
+            updateWithSalt(legacyTextSigOut);
+        }
     }
 
     private void checkSaltSize()
@@ -96,14 +107,14 @@ public class PGPOnePassSignature
         }
     }
 
-    private void updateWithSalt()
+    private void updateWithSalt(OutputStream out)
         throws PGPException
     {
         if (version == SignaturePacket.VERSION_6)
         {
             try
             {
-                sigOut.write(getSalt());
+                out.write(getSalt());
             }
             catch (IOException e)
             {
@@ -125,9 +136,10 @@ public class PGPOnePassSignature
     {
         compareSalt(pgpSig);
         
+        byte[] trailer = pgpSig.getSignatureTrailer();
         try
         {
-            sigOut.write(pgpSig.getSignatureTrailer());
+            sigOut.write(trailer);
 
             sigOut.close();
         }
@@ -136,7 +148,12 @@ public class PGPOnePassSignature
             throw new PGPException("unable to add trailer: " + e.getMessage(), e);
         }
 
-        return verifier.verify(pgpSig.getSignature());
+        if (verifier.verify(pgpSig.getSignature()))
+        {
+            return true;
+        }
+
+        return verifyLegacyTextForm(legacyTextVerifier, trailer, pgpSig.getSignature());
     }
 
     private void compareSalt(PGPSignature signature)

@@ -133,7 +133,7 @@ public class PGPSignatureGenerator
 
         sigOut = contentSigner.getOutputStream();
         sigType = contentSigner.getType();
-        lastb = 0;
+        resetTextState();
 
         if (providedKeyAlgorithm >= 0 && providedKeyAlgorithm != contentSigner.getKeyAlgorithm())
         {

@@ -206,6 +206,7 @@ public class PGPSignature
     private final TrustPacket trustPck;
 
     private volatile PGPContentVerifier verifier;
+    private PGPContentVerifier legacyTextVerifier;
 
     private static SignaturePacket cast(Packet packet)
         throws IOException
@@ -341,6 +342,15 @@ public class PGPSignature
         PGPContentVerifierBuilder verifierBuilder = createVerifierProvider(verifierBuilderProvider);
 
         init(verifierBuilder.build(pubKey));
+
+        if (sigType == CANONICAL_TEXT_DOCUMENT && isLegacyTextFormAllowed())
+        {
+            // a second hash over the pre-1.87 form, consulted only if the data held a bare CR
+            // and the signature does not verify over the current form (github #2553).
+            legacyTextVerifier = verifierBuilder.build(pubKey);
+            legacyTextSigOut = legacyTextVerifier.getOutputStream();
+            updateWithSalt(legacyTextSigOut);
+        }
     }
 
     PGPContentVerifierBuilder createVerifierProvider(PGPContentVerifierBuilderProvider verifierBuilderProvider)
@@ -353,11 +363,12 @@ public class PGPSignature
         throws PGPException
     {
         this.verifier = verifier;
-        this.lastb = 0;
+        this.legacyTextVerifier = null;
+        resetTextState();
         this.sigOut = verifier.getOutputStream();
 
         checkSaltSize();
-        updateWithSalt();
+        updateWithSalt(sigOut);
     }
 
     private void checkSaltSize()
@@ -376,14 +387,14 @@ public class PGPSignature
         }
     }
 
-    private void updateWithSalt()
+    private void updateWithSalt(OutputStream out)
         throws PGPException
     {
         if (getVersion() == SignaturePacket.VERSION_6)
         {
             try
             {
-                sigOut.write(sigPck.getSalt());
+                out.write(sigPck.getSalt());
             }
             catch (IOException e)
             {
@@ -404,9 +415,10 @@ public class PGPSignature
     public boolean verify()
         throws PGPException
     {
+        byte[] trailer = this.getSignatureTrailer();
         try
         {
-            sigOut.write(this.getSignatureTrailer());
+            sigOut.write(trailer);
 
             sigOut.close();
         }
@@ -415,7 +427,12 @@ public class PGPSignature
             throw new PGPException(e.getMessage(), e);
         }
 
-        return verifier.verify(this.getSignature());
+        if (verifier.verify(this.getSignature()))
+        {
+            return true;
+        }
+
+        return verifyLegacyTextForm(legacyTextVerifier, trailer, this.getSignature());
     }
 
 

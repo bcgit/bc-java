@@ -53,7 +53,7 @@ public class PGPV3SignatureGenerator
         contentSigner = contentSignerBuilder.build(signatureType, key);
         sigOut = contentSigner.getOutputStream();
         sigType = contentSigner.getType();
-        lastb = 0;
+        resetTextState();
 
 //        if (providedKeyAlgorithm >= 0 && providedKeyAlgorithm != contentSigner.getKeyAlgorithm())
 //        {

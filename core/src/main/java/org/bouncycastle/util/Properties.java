@@ -160,6 +160,19 @@ public class Properties
     public static final String OPENPGP_STRICT_PARTIAL_BODY_LENGTH = "org.bouncycastle.openpgp.strict_partial_body_length";
 
     /**
+     * If set to "true" (the default), verifying an OpenPGP text signature (type 0x01) over data
+     * containing a bare CR - one not followed by a LF - also accepts the signature over the form
+     * releases before 1.87 hashed, in which that CR was hashed as CR LF. The signature is first
+     * checked against the current form, which hashes a bare CR unaltered as GnuPG, GopenPGP,
+     * OpenPGP.js, RNP and most other implementations do (github #2553); signatures are always
+     * generated in the current form. The legacy form is also what Sequoia 2.x generates. Set it
+     * to "false" to accept only the current form, at the cost of no longer verifying text
+     * signatures earlier BC releases (or Sequoia) made over such data. Read via
+     * {@link #isOverrideSet(String, boolean)}.
+     */
+    public static final String OPENPGP_TEXT_SIG_ALLOW_LEGACY_CR = "org.bouncycastle.openpgp.text_sig_allow_legacy_cr";
+
+    /**
      * If set to "true", the BC PKCS#12 KeyStore will additionally accept (on load only)
      * SafeBags of type secretBag that use SunJCE's non-standard nested encoding —
      * a SecretBag whose secretTypeId is pkcs8ShroudedKeyBag and whose secretValue is

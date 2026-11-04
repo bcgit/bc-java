@@ -13,6 +13,12 @@ import java.util.StringTokenizer;
  */
 public class Properties
 {
+    /**
+     * If not set to "false", verifying an OpenPGP text signature also accepts the pre-1.87
+     * canonical form, in which a bare CR was hashed as CR LF (github #2553).
+     */
+    public static final String OPENPGP_TEXT_SIG_ALLOW_LEGACY_CR = "org.bouncycastle.openpgp.text_sig_allow_legacy_cr";
+
     private Properties()
     {
     }

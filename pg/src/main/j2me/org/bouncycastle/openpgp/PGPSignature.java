@@ -18,6 +18,7 @@ import org.bouncycastle.bcpg.UserAttributeSubpacket;
 import org.bouncycastle.openpgp.operator.PGPContentVerifier;
 import org.bouncycastle.openpgp.operator.PGPContentVerifierBuilder;
 import org.bouncycastle.openpgp.operator.PGPContentVerifierBuilderProvider;
+import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.Strings;
 
@@ -49,6 +50,9 @@ public class PGPSignature
     private PGPContentVerifier verifier;
     private byte               lastb;
     private OutputStream       sigOut;
+    private PGPContentVerifier legacyTextVerifier;
+    private OutputStream       legacyTextSigOut;
+    private boolean            sawBareCR;
 
     PGPSignature(
         BCPGInputStream    pIn)
@@ -121,6 +125,18 @@ public class PGPSignature
 
         lastb = 0;
         sigOut = verifier.getOutputStream();
+        sawBareCR = false;
+        legacyTextVerifier = null;
+        legacyTextSigOut = null;
+
+        if (signatureType == PGPSignature.CANONICAL_TEXT_DOCUMENT
+            && !Properties.isOverrideSetTo(Properties.OPENPGP_TEXT_SIG_ALLOW_LEGACY_CR, false))
+        {
+            // a second hash over the pre-1.87 form, consulted only if the data held a bare CR
+            // and the signature does not verify over the current form (github #2553).
+            legacyTextVerifier = verifierBuilder.build(pubKey);
+            legacyTextSigOut = legacyTextVerifier.getOutputStream();
+        }
     }
 
     public void update(
@@ -128,22 +144,43 @@ public class PGPSignature
     {
         if (signatureType == PGPSignature.CANONICAL_TEXT_DOCUMENT)
         {
-            if (b == '\r')
+            if (lastb == '\r' && b != '\n')
+            {
+                sawBareCR = true;
+            }
+
+            // a LF not preceded by a CR is hashed as CR LF, every other byte, a bare CR
+            // included, unaltered (github #2553).
+            if (b == '\n' && lastb != '\r')
             {
                 byteUpdate((byte)'\r');
                 byteUpdate((byte)'\n');
             }
-            else if (b == '\n')
-            {
-                if (lastb != '\r')
-                {
-                    byteUpdate((byte)'\r');
-                    byteUpdate((byte)'\n');
-                }
-            }
             else
             {
                 byteUpdate(b);
+            }
+
+            if (legacyTextSigOut != null)
+            {
+                // the pre-1.87 form: CR, LF and CR LF are all hashed as CR LF
+                if (b == '\r')
+                {
+                    legacyByteUpdate((byte)'\r');
+                    legacyByteUpdate((byte)'\n');
+                }
+                else if (b == '\n')
+                {
+                    if (lastb != '\r')
+                    {
+                        legacyByteUpdate((byte)'\r');
+                        legacyByteUpdate((byte)'\n');
+                    }
+                }
+                else
+                {
+                    legacyByteUpdate(b);
+                }
             }
 
             lastb = b;
@@ -192,6 +229,18 @@ public class PGPSignature
         }
     }
 
+    private void legacyByteUpdate(byte b)
+    {
+        try
+        {
+            legacyTextSigOut.write(b);
+        }
+        catch (IOException e)
+        {
+            throw new PGPRuntimeOperationException(e.getMessage(), e);
+        }
+    }
+
     private void blockUpdate(byte[] block, int off, int len)
     {
         try
@@ -207,9 +256,10 @@ public class PGPSignature
     public boolean verify()
         throws PGPException
     {
+        byte[] trailer = this.getSignatureTrailer();
         try
         {
-            sigOut.write(this.getSignatureTrailer());
+            sigOut.write(trailer);
 
             sigOut.close();
         }
@@ -218,7 +268,28 @@ public class PGPSignature
             throw new PGPException(e.getMessage(), e);
         }
 
-        return verifier.verify(this.getSignature());
+        if (verifier.verify(this.getSignature()))
+        {
+            return true;
+        }
+
+        if (legacyTextSigOut == null || !(sawBareCR || lastb == '\r'))
+        {
+            return false;
+        }
+
+        try
+        {
+            legacyTextSigOut.write(trailer);
+
+            legacyTextSigOut.close();
+        }
+        catch (IOException e)
+        {
+            throw new PGPException(e.getMessage(), e);
+        }
+
+        return legacyTextVerifier.verify(this.getSignature());
     }
 
 
