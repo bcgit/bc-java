@@ -333,7 +333,7 @@ public class ArmoredInputStream
         }
 
         boolean crSeen = false;
-        boolean crLfSeen = false;
+        boolean lfSeen = false;
 
         if (headerFound)
         {
@@ -366,6 +366,10 @@ public class ArmoredInputStream
                 if (c == '\r')
                 {
                     crSeen = true;
+                }
+                else if (c == '\n')
+                {
+                    lfSeen = true;
                 }
                 if (eolReached && (last != '\r' && c == '\n'))
                 {
@@ -427,8 +431,6 @@ public class ArmoredInputStream
                 last = c;
             }
 
-            crLfSeen = crLf;
-
             if (crLf)
             {
                 int nl = in.read(); // skip last \n
@@ -449,9 +451,10 @@ public class ArmoredInputStream
 
         if (clearText)
         {
-            // An armor whose own lines end in a bare CR is a classic Mac (CR-only) text file, so
-            // a bare CR is its line ending; in any other message it is ordinary text (github #2553).
-            bareCRLineEndings = (crSeen && !crLfSeen)
+            // An armor whose own lines end in a bare CR - no LF anywhere in its headers - is a
+            // classic Mac (CR-only) text file, so a bare CR is its line ending; in any other
+            // message it is ordinary text (github #2553).
+            bareCRLineEndings = (crSeen && !lfSeen)
                 || Properties.isOverrideSet(Properties.OPENPGP_CSF_BARE_CR_LINE_ENDING);
         }
 

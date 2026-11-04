@@ -251,6 +251,14 @@ public class PGPClearSignedBareCRTest
         isEquals("cr only", "a\n-b\n", ct.text);
         isTrue("cr only verifies", ct.verify(aliceKey));
 
+        // a CR inside a header value of an LF-armored message does not make it a CR-only file
+        String crInHeader = "-----BEGIN PGP SIGNED MESSAGE-----\nHash: SHA512\nComment: a\rComment: b\n\n"
+            + "a\r-b\n"
+            + armoredSignature(aliceKey, alicePriv, "a\r-b");
+        ct = read(crInHeader, false);
+        isEquals("cr in header", "a\r-b\n", ct.text);
+        isTrue("cr in header verifies", ct.verify(aliceKey));
+
         // a legacy message with a bare CR but no dash after it still verifies through the text
         // signature's legacy canonical form (Properties.OPENPGP_TEXT_SIG_ALLOW_LEGACY_CR)
         String midLine = "-----BEGIN PGP SIGNED MESSAGE-----\nHash: SHA512\n\n"
