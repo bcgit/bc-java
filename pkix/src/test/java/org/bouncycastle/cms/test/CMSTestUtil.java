@@ -14,7 +14,6 @@ import java.security.cert.X509CRL;
 import java.security.cert.X509Certificate;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.DSAParameterSpec;
-import junit.framework.Assert;
 import org.bouncycastle.jce.spec.ECNamedCurveGenParameterSpec;
 import java.util.Date;
 import java.util.HashMap;
@@ -959,7 +958,11 @@ public class CMSTestUtil
      */
     public static void assertLinearGrowth(String what, long smallTime, long largeTime)
     {
-        Assert.assertTrue(what + " time grew by " + (largeTime / Math.max(smallTime, 1L)) + "x for 8x the input ("
-            + smallTime / 1000000 + "ms, " + largeTime / 1000000 + "ms)", largeTime < 24 * smallTime);
+        // no junit here: OSS-Fuzz compiles this class into its CMS fuzzer without junit on the classpath
+        if (largeTime >= 24 * smallTime)
+        {
+            throw new AssertionError(what + " time grew by " + (largeTime / Math.max(smallTime, 1L)) + "x for 8x the input ("
+                + smallTime / 1000000 + "ms, " + largeTime / 1000000 + "ms)");
+        }
     }
 }
