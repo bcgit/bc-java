@@ -31,6 +31,7 @@ import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X962Parameters;
 import org.bouncycastle.asn1.x9.X9ECParameters;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
+import org.bouncycastle.crypto.kems.mlkem.MLKEMEngine;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.CMCEParameters;
 import org.bouncycastle.crypto.params.CMCEPrivateKeyParameters;
@@ -59,6 +60,7 @@ import org.bouncycastle.crypto.params.SLHDSAParameters;
 import org.bouncycastle.crypto.params.SLHDSAPrivateKeyParameters;
 import org.bouncycastle.crypto.params.X25519PrivateKeyParameters;
 import org.bouncycastle.crypto.params.X448PrivateKeyParameters;
+import org.bouncycastle.crypto.signers.mldsa.MLDSAEngine;
 import org.bouncycastle.internal.asn1.edec.EdECObjectIdentifiers;
 import org.bouncycastle.internal.asn1.isara.IsaraObjectIdentifiers;
 import org.bouncycastle.internal.asn1.iso.ISOIECObjectIdentifiers;
@@ -233,7 +235,7 @@ public class PrivateKeyFactory
         else if (Utils.mldsaParams.containsKey(algOID))
         {
             MLDSAParameters mldsaParams = Utils.mldsaParamsLookup(algOID);
-            ASN1Primitive mldsaKey = parsePrivateKeyChoice(keyInfo.getPrivateKey(), 32, mldsaParams.getName());
+            ASN1Primitive mldsaKey = parsePrivateKeyChoice(keyInfo.getPrivateKey(), 32, mldsaExpandedKeyLength(mldsaParams), mldsaParams.getName());
 
             MLDSAPublicKeyParameters pubParams = null;
             if (keyInfo.getPublicKeyData() != null)
@@ -342,7 +344,7 @@ public class PrivateKeyFactory
             algOID.equals(NISTObjectIdentifiers.id_alg_ml_kem_1024))
         {
             MLKEMParameters mlkemParams = Utils.mlkemParamsLookup(algOID);
-            ASN1Primitive mlkemKey = parsePrivateKeyChoice(keyInfo.getPrivateKey(), 64, mlkemParams.getName());
+            ASN1Primitive mlkemKey = parsePrivateKeyChoice(keyInfo.getPrivateKey(), 64, mlkemExpandedKeyLength(mlkemParams), mlkemParams.getName());
 
             MLKEMPublicKeyParameters pubParams = null;
             if (keyInfo.getPublicKeyData() != null)
@@ -526,20 +528,26 @@ public class PrivateKeyFactory
      * {@link ASN1Sequence}. Three pre-RFC forms, which the drafts this library followed before the RFCs were
      * published produced, are still read and come back as an {@link ASN1OctetString} too: the raw seed as the
      * OCTET STRING's content, the raw expanded key as its content, and the seed in an untagged inner OCTET STRING.
+     * <p>
+     * The raw forms are recognised by their length before anything is parsed. Their content is random, so it can
+     * begin with bytes that read as a tag and a length exactly covering the rest - about once in 2^24 for an
+     * expanded key - and only the length tells them apart reliably: no DER encoding of a CHOICE arm is as long as
+     * the raw seed or the raw expanded key.
      */
-    private static ASN1Primitive parsePrivateKeyChoice(ASN1OctetString octStr, int seedLength, String algorithmName)
+    private static ASN1Primitive parsePrivateKeyChoice(ASN1OctetString octStr, int seedLength, int expandedKeyLength,
+        String algorithmName)
     {
         byte[] data = octStr.getOctets();
 
-        // pre-RFC: the raw seed as the content of the OCTET STRING
-        if (data.length == seedLength)
+        // pre-RFC: the raw seed or the raw expanded key as the content of the OCTET STRING
+        if (data.length == seedLength || data.length == expandedKeyLength)
         {
             return octStr;
         }
 
         if (data.length == 0 || Utils.isRaw(data))
         {
-            // pre-RFC: the raw expanded key as the content of the OCTET STRING (its length is checked by the key constructor)
+            // not a DER value, and neither raw form's length: returned for the key constructor to reject by its length
             return octStr;
         }
 
@@ -564,6 +572,24 @@ public class PrivateKeyFactory
         }
 
         throw new IllegalArgumentException("invalid " + algorithmName + " private key");
+    }
+
+    // FIPS 204 sec. 4: the expanded private key is rho, K, tr, s1, s2 and t0, as MLDSAPrivateKeyParameters checks
+    private static int mldsaExpandedKeyLength(MLDSAParameters params)
+    {
+        MLDSAEngine eng = MLDSAEngine.getInstance(params, null);
+
+        return 2 * MLDSAEngine.SeedBytes + MLDSAEngine.TrBytes
+            + (eng.getDilithiumL() + eng.getDilithiumK()) * eng.getDilithiumPolyEtaPackedBytes()
+            + eng.getDilithiumK() * MLDSAEngine.DilithiumPolyT0PackedBytes;
+    }
+
+    // FIPS 203 sec. 7.1: the decapsulation key is dk_PKE, ek, H(ek) and z, as MLKEMPrivateKeyParameters checks
+    private static int mlkemExpandedKeyLength(MLKEMParameters params)
+    {
+        MLKEMEngine eng = MLKEMEngine.getInstance(params);
+
+        return eng.getIndCpaSecretKeyBytes() + eng.getIndCpaPublicKeyBytes() + 2 * MLKEMEngine.SymBytes;
     }
 
     private static void checkChoiceLength(byte[] value, int expectedLength, String algorithmName, String field)

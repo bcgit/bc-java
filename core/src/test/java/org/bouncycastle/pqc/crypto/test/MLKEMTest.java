@@ -162,7 +162,20 @@ public class MLKEMTest
             checkChoiceRejected(name + " short expandedKey", algId, new DEROctetString(Arrays.copyOf(expanded, expanded.length - 1)), "invalid length");
             checkChoiceRejected(name + " long expandedKey", algId, new DEROctetString(Arrays.copyOf(expanded, expanded.length + 1)), "invalid length");
             checkChoiceRejected(name + " 63 byte OCTET STRING", algId, new DEROctetString(Arrays.copyOf(seed, 63)), "invalid length");
-            checkRawRejected(name + " raw 65 bytes", algId, Arrays.copyOf(seed, 65), "invalid length");
+            // byte 1 is cleared so the content never reads as a tag and a length covering the rest, as a random
+            // seed's 63 (0x3F) there would make it
+            byte[] raw65 = Arrays.copyOf(seed, 65);
+            raw65[1] = 0;
+            checkRawRejected(name + " raw 65 bytes", algId, raw65, "invalid length");
+
+            // a raw expanded key whose first bytes read as [0] and a length exactly covering the rest is still the
+            // raw expanded key: only H(ek) binds the expanded key, so the prefix can be forced onto s here
+            byte[] misleading = Arrays.clone(expanded);
+            misleading[0] = (byte)0x80;
+            misleading[1] = (byte)0x82;
+            misleading[2] = (byte)((expanded.length - 4) >> 8);
+            misleading[3] = (byte)(expanded.length - 4);
+            checkRawAccepted(name + " raw expandedKey that reads as [0]", algId, misleading, misleading);
 
             // both: exactly two elements, a 64 byte seed and an expandedKey of the right length that matches it
             checkChoiceRejected(name + " both with expandedKey as seed", algId, new DERSequence(new ASN1Encodable[]{ new DEROctetString(expanded), new DEROctetString(expanded) }), "seed must be 64 bytes");

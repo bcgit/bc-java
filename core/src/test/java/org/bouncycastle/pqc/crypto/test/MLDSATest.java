@@ -996,7 +996,11 @@ public class MLDSATest
             checkChoiceRejected(name + " short expandedKey", algId, new DEROctetString(Arrays.copyOf(expanded, expanded.length - 1)), "invalid length");
             checkChoiceRejected(name + " long expandedKey", algId, new DEROctetString(Arrays.copyOf(expanded, expanded.length + 1)), "invalid length");
             checkChoiceRejected(name + " 31 byte OCTET STRING", algId, new DEROctetString(Arrays.copyOf(seed, 31)), "invalid length");
-            checkRawRejected(name + " raw 33 bytes", algId, Arrays.copyOf(seed, 33), "invalid length");
+            // byte 1 is cleared so the content never reads as a tag and a length covering the rest, as a random
+            // seed's 31 (0x1F) there would make it
+            byte[] raw33 = Arrays.copyOf(seed, 33);
+            raw33[1] = 0;
+            checkRawRejected(name + " raw 33 bytes", algId, raw33, "invalid length");
 
             // both: exactly two elements, a 32 byte seed and an expandedKey of the right length that matches it
             checkChoiceRejected(name + " both with expandedKey as seed", algId, new DERSequence(new ASN1Encodable[]{ new DEROctetString(expanded), new DEROctetString(expanded) }), "seed must be 32 bytes");
@@ -1006,6 +1010,24 @@ public class MLDSATest
             flipped[expanded.length - 1] ^= 1;
             checkChoiceRejected(name + " both inconsistent", algId, new DERSequence(new ASN1Encodable[]{ new DEROctetString(seed), new DEROctetString(flipped) }), "inconsistent");
         }
+    }
+
+    /**
+     * A raw expanded key is random content, so it can begin with bytes that read as a tag and a length exactly
+     * covering the rest - about once in 2^24 keys - and must still be read as the raw expanded key. tr binds rho,
+     * so the prefix cannot be forced onto an ML-DSA key: this seed was found by search, and its rho begins
+     * 77 82 09 fc, a tag and the length 2556 that covers the other bytes of an ML-DSA-44 expanded key exactly.
+     */
+    public void testRawExpandedKeyThatReadsAsDer()
+        throws Exception
+    {
+        MLDSAPrivateKeyParameters priv = new MLDSAPrivateKeyParameters(MLDSAParameters.ml_dsa_44,
+            Hex.decode("9dd9520100000000000000000000000000000000000000000000000000000000"));
+        byte[] expanded = priv.getEncoded();
+        assertTrue(Arrays.areEqual(Hex.decode("778209fc"), Arrays.copyOf(expanded, 4)));
+
+        AlgorithmIdentifier algId = PrivateKeyInfoFactory.createPrivateKeyInfo(priv).getPrivateKeyAlgorithm();
+        checkRawAccepted("ml-dsa-44 raw expandedKey that reads as DER", algId, expanded, expanded);
     }
 
     private static void checkChoiceAccepted(String label, AlgorithmIdentifier algId, ASN1Encodable privateKey, byte[] expanded)
