@@ -89,12 +89,12 @@ public class PrivateKeyInfo
 
     private static int getVersionValue(ASN1Integer version)
     {
-        int versionValue = version.intValueExact();
-        if (versionValue < 0 || versionValue > 1)
+        // tested before converting, as a version too large for an int is as invalid as 2
+        if (!version.hasValue(0) && !version.hasValue(1))
         {
             throw new IllegalArgumentException("invalid version for private key info");
         }
-        return versionValue;
+        return version.intValueExact();
     }
 
     /**
@@ -202,6 +202,11 @@ public class PrivateKeyInfo
 
     private PrivateKeyInfo(ASN1Sequence seq)
     {
+        if (seq.size() < 3)
+        {
+            throw new IllegalArgumentException("bad sequence size: " + seq.size());
+        }
+
         Enumeration e = seq.getObjects();
 
         this.version = ASN1Integer.getInstance(e.nextElement());

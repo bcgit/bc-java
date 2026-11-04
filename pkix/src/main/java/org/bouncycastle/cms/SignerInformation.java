@@ -32,6 +32,7 @@ import org.bouncycastle.operator.ContentVerifier;
 import org.bouncycastle.operator.DigestCalculator;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.RawContentVerifier;
+import org.bouncycastle.operator.RuntimeOperatorException;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.io.TeeOutputStream;
 
@@ -497,6 +498,12 @@ public class SignerInformation
         catch (IOException e)
         {
             throw new CMSException("can't process mime object to create signature.", e);
+        }
+        catch (RuntimeOperatorException e)
+        {
+            // a verifier's verify() declares no checked exception, so one whose Signature refuses the
+            // signature bytes - a DSA or ECDSA signature that does not decode, say - reports it unchecked
+            throw new CMSException("unable to verify signature: " + e.getMessage(), e);
         }
     }
 

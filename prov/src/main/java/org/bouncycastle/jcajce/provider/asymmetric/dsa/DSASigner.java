@@ -22,6 +22,7 @@ import org.bouncycastle.crypto.signers.DSAEncoding;
 import org.bouncycastle.crypto.signers.HMacDSAKCalculator;
 import org.bouncycastle.crypto.signers.StandardDSAEncoding;
 import org.bouncycastle.crypto.util.DigestFactory;
+import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 
 public class DSASigner
     extends SignatureSpi
@@ -47,7 +48,7 @@ public class DSASigner
         CipherParameters    param = DSAUtil.generatePublicKeyParameter(publicKey);
 
         digest.reset();
-        signer.init(false, param);
+        initSigner(false, param);
     }
 
     protected void engineInitSign(
@@ -71,7 +72,22 @@ public class DSASigner
         }
 
         digest.reset();
-        signer.init(true, param);
+        initSigner(true, param);
+    }
+
+    // the signer refuses a key it cannot use - one with no domain parameters, say - with
+    // IllegalArgumentException, which init reports as the InvalidKeyException it declares
+    private void initSigner(boolean forSigning, CipherParameters param)
+        throws InvalidKeyException
+    {
+        try
+        {
+            signer.init(forSigning, param);
+        }
+        catch (IllegalArgumentException e)
+        {
+            throw SecurityExceptions.invalidKeyException(e.getMessage(), e);
+        }
     }
 
     protected void engineUpdate(

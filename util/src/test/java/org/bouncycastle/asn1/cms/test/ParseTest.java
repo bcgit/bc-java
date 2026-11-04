@@ -12,6 +12,7 @@ import org.bouncycastle.asn1.cms.ContentInfo;
 import org.bouncycastle.asn1.cms.ContentInfoParser;
 import org.bouncycastle.asn1.cms.EncryptedContentInfoParser;
 import org.bouncycastle.asn1.cms.EnvelopedDataParser;
+import org.bouncycastle.asn1.cms.SignerInfo;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.encoders.Base64;
 import org.bouncycastle.util.encoders.Hex;
@@ -269,6 +270,23 @@ public class ParseTest
 
     byte[] longTagged = Hex.decode("9f1f023330");
     
+    /**
+     * A SignerInfo with fewer elements than its five required ones is refused as malformed, rather than
+     * running out of elements part way through.
+     */
+    public void testShortSignerInfo()
+    {
+        try
+        {
+            SignerInfo.getInstance(Hex.decode("3003020101"));
+            fail("short SignerInfo accepted");
+        }
+        catch (IllegalArgumentException e)
+        {
+            assertEquals("bad sequence size: 1", e.getMessage());
+        }
+    }
+
     public void testClassCast()
         throws IOException
     {

@@ -32,6 +32,11 @@ public class PKIMessage
 
     private PKIMessage(ASN1Sequence seq)
     {
+        if (seq.size() < 1)
+        {
+            throw new IllegalArgumentException("PKIMessage missing PKIHeader structure");
+        }
+
         Enumeration en = seq.getObjects();
 
         header = PKIHeader.getInstance(en.nextElement());

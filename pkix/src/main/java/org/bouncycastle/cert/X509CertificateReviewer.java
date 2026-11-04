@@ -217,6 +217,11 @@ public class X509CertificateReviewer
 
     private static Review reviewSequence(ASN1Sequence certSeq, List findings)
     {
+        // empty input decodes to no object at all, and a null sequence may be passed in directly
+        if (certSeq == null)
+        {
+            return error(findings, "certificate", "no certificate: the encoding is empty", null);
+        }
         if (certSeq.size() != 3)
         {
             return error(findings, "certificate",

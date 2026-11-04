@@ -20,6 +20,10 @@ public class ECNamedDomainParameters
         {
             x9 = ECNamedCurveTable.getByOID(name);
         }
+        if (x9 == null)
+        {
+            throw new IllegalArgumentException("unknown named curve: " + name);
+        }
         return new ECNamedDomainParameters(name, x9);
     }
 

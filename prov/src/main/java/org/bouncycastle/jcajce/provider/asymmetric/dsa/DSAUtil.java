@@ -66,6 +66,10 @@ public class DSAUtil
         PublicKey    key)
         throws InvalidKeyException
     {
+        if (key == null)
+        {
+            throw new InvalidKeyException("DSA public key required, not null");
+        }
         if (key instanceof BCDSAPublicKey)
         {
             return ((BCDSAPublicKey)key).engineGetKeyParameters();
@@ -94,6 +98,10 @@ public class DSAUtil
         PrivateKey    key)
         throws InvalidKeyException
     {
+        if (key == null)
+        {
+            throw new InvalidKeyException("DSA private key required, not null");
+        }
         if (key instanceof DSAPrivateKey)
         {
             DSAPrivateKey    k = (DSAPrivateKey)key;
@@ -115,6 +123,12 @@ public class DSAUtil
 
     static String generateKeyFingerprint(BigInteger y, DSAParams params)
     {
+        // a key may have no domain parameters of its own, inheriting them from its issuer (RFC 3279
+        // sec. 2.3.2)
+        if (params == null)
+        {
+            return new Fingerprint(y.toByteArray()).toString();
+        }
         return new Fingerprint(Arrays.concatenate(y.toByteArray(), params.getP().toByteArray(), params.getQ().toByteArray(), params.getG().toByteArray())).toString();
     }
 }

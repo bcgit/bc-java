@@ -21,6 +21,7 @@ public class RegressionTest
             new ElGamalTest(),
             new DSATest(),
             new ECTest(),
+            new KeyInfoMalformedInputTest(),
             new DeterministicDSATest(),
             new ECGOST3410Test(),
             new ECGOST3410KeyEncodingTest(),

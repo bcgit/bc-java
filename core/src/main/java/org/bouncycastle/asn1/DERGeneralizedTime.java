@@ -1,8 +1,10 @@
 package org.bouncycastle.asn1;
 
 import java.io.IOException;
+import java.math.BigInteger;
 import java.util.Date;
 
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 
 /**
@@ -42,62 +44,72 @@ public class DERGeneralizedTime
 
     private byte[] getDERTime()
     {
-        if (contents[contents.length - 1] == 'Z')
-        {
-            if (!hasMinutes())
-            {
-                byte[] derTime = new byte[contents.length + 4];
-
-                System.arraycopy(contents, 0, derTime, 0, contents.length - 1);
-                System.arraycopy(Strings.toByteArray("0000Z"), 0, derTime, contents.length - 1, 5);
-
-                return derTime;
-            }
-            else if (!hasSeconds())
-            {
-                byte[] derTime = new byte[contents.length + 2];
-
-                System.arraycopy(contents, 0, derTime, 0, contents.length - 1);
-                System.arraycopy(Strings.toByteArray("00Z"), 0, derTime, contents.length - 1, 3);
-
-                return derTime;
-            }
-            else if (hasFractionalSeconds())
-            {
-                int ind = contents.length - 2;
-                while (ind > 0 && contents[ind] == '0')
-                {
-                    ind--;
-                }
-
-                if (contents[ind] == '.')
-                {
-                    byte[] derTime = new byte[ind + 1];
-
-                    System.arraycopy(contents, 0, derTime, 0, ind);
-                    derTime[ind] = (byte)'Z';
-
-                    return derTime;
-                }
-                else
-                {
-                    byte[] derTime = new byte[ind + 2];
-
-                    System.arraycopy(contents, 0, derTime, 0, ind + 1);
-                    derTime[ind + 1] = (byte)'Z';
-
-                    return derTime;
-                }
-            }
-            else
-            {
-                return contents;
-            }
-        }
-        else
+        if (contents[contents.length - 1] != 'Z')
         {
             return contents; // TODO: is there a better way?
         }
+
+        // DER is YYYYMMDDHHMMSS[.fff]Z: seconds always present, a fraction only of a second, with no
+        // trailing zeros and '.' as the separator. X.680 also allows the minutes and seconds to be left
+        // out, and a fraction of whichever unit comes last, so that fraction is carried down into
+        // minutes and seconds. It always comes out exact: a decimal fraction of 3600 or 60 seconds is
+        // a decimal number of seconds.
+        int end = contents.length - 1;
+        int whole = hasMinutes() ? (hasSeconds() ? 14 : 12) : 10;
+        int unitSeconds = (whole == 10) ? 3600 : (whole == 12) ? 60 : 1;
+
+        String fraction = "";
+        if (whole < end && (contents[whole] == '.' || contents[whole] == ','))
+        {
+            fraction = Strings.fromByteArray(Arrays.copyOfRange(contents, whole + 1, end));
+        }
+
+        int seconds = 0;
+        String secondsFraction = "";
+        if (fraction.length() != 0)
+        {
+            BigInteger[] carried = new BigInteger(fraction).multiply(BigInteger.valueOf(unitSeconds))
+                .divideAndRemainder(BigInteger.valueOf(10).pow(fraction.length()));
+            seconds = carried[0].intValue();
+            secondsFraction = carried[1].toString();
+            while (secondsFraction.length() < fraction.length())
+            {
+                secondsFraction = "0" + secondsFraction;
+            }
+            int last = secondsFraction.length();
+            while (last > 0 && secondsFraction.charAt(last - 1) == '0')
+            {
+                last--;
+            }
+            secondsFraction = secondsFraction.substring(0, last);
+        }
+
+        StringBuffer derTime = new StringBuffer(Strings.fromByteArray(Arrays.copyOfRange(contents, 0, whole)));
+        if (whole == 10)
+        {
+            appendTwoDigits(derTime, seconds / 60);
+            appendTwoDigits(derTime, seconds % 60);
+        }
+        else if (whole == 12)
+        {
+            appendTwoDigits(derTime, seconds);
+        }
+        if (secondsFraction.length() != 0)
+        {
+            derTime.append('.').append(secondsFraction);
+        }
+        derTime.append('Z');
+
+        return Strings.toByteArray(derTime.toString());
+    }
+
+    private static void appendTwoDigits(StringBuffer buf, int value)
+    {
+        if (value < 10)
+        {
+            buf.append('0');
+        }
+        buf.append(value);
     }
 
     int encodedLength(boolean withTag)

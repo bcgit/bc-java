@@ -4,11 +4,17 @@ import java.math.BigInteger;
 import java.security.SecureRandom;
 
 import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.nist.NISTNamedCurves;
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
+import org.bouncycastle.asn1.sec.ECPrivateKey;
 import org.bouncycastle.asn1.sec.SECNamedCurves;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.ECNamedCurveTable;
 import org.bouncycastle.asn1.x9.X9ECParameters;
+import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.BasicAgreement;
 import org.bouncycastle.crypto.StagedAgreement;
@@ -25,6 +31,7 @@ import org.bouncycastle.crypto.params.ECDHUPrivateParameters;
 import org.bouncycastle.crypto.params.ECDHUPublicParameters;
 import org.bouncycastle.crypto.params.ECDomainParameters;
 import org.bouncycastle.crypto.params.ECKeyGenerationParameters;
+import org.bouncycastle.crypto.params.ECNamedDomainParameters;
 import org.bouncycastle.crypto.params.ECPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ECPublicKeyParameters;
 import org.bouncycastle.crypto.params.MQVPrivateParameters;
@@ -32,6 +39,8 @@ import org.bouncycastle.crypto.params.MQVPublicParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.signers.DSADigestSigner;
 import org.bouncycastle.crypto.signers.ECDSASigner;
+import org.bouncycastle.crypto.util.PrivateKeyFactory;
+import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.math.ec.ECConstants;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
@@ -1143,6 +1152,7 @@ public class ECTest
     public void performTest()
     {
         decodeTest();
+        testUnknownNamedCurve();
         testECDSA192bitPrime();
         testECDSA239bitPrime();
         testECDSA191bitBinary();
@@ -1173,6 +1183,51 @@ public class ECTest
         testECDHStagedAgreement();
     }
 
+
+    /**
+     * A named curve the library does not know is refused with IllegalArgumentException, by the lookup and
+     * by the key factories that use it, rather than failing on the missing parameters.
+     */
+    private void testUnknownNamedCurve()
+    {
+        ASN1ObjectIdentifier unknown = new ASN1ObjectIdentifier("1.2.3.4.5.6.7");
+        AlgorithmIdentifier algId = new AlgorithmIdentifier(X9ObjectIdentifiers.id_ecPublicKey, unknown);
+        try
+        {
+            ECNamedDomainParameters.lookup(unknown);
+            fail("unknown curve accepted by lookup");
+        }
+        catch (IllegalArgumentException e)
+        {
+            isEquals("unknown named curve: 1.2.3.4.5.6.7", e.getMessage());
+        }
+        try
+        {
+            PrivateKeyFactory.createKey(new PrivateKeyInfo(algId, new ECPrivateKey(256, BigIntegers.ONE)));
+            fail("unknown curve accepted for a private key");
+        }
+        catch (IllegalArgumentException e)
+        {
+            isEquals("unknown named curve: 1.2.3.4.5.6.7", e.getMessage());
+        }
+        catch (java.io.IOException e)
+        {
+            fail("unexpected exception", e);
+        }
+        try
+        {
+            PublicKeyFactory.createKey(new SubjectPublicKeyInfo(algId, Hex.decode("0401020304")));
+            fail("unknown curve accepted for a public key");
+        }
+        catch (IllegalArgumentException e)
+        {
+            isEquals("unknown named curve: 1.2.3.4.5.6.7", e.getMessage());
+        }
+        catch (java.io.IOException e)
+        {
+            fail("unexpected exception", e);
+        }
+    }
 
     public static void main(
         String[] args)

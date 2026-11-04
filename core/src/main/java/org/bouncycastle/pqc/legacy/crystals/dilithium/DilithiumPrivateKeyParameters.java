@@ -31,6 +31,10 @@ public class DilithiumPrivateKeyParameters
         super(true, params);
 
         DilithiumEngine eng = params.getEngine(null);
+        if (encoding.length != eng.getCryptoSecretKeyBytes())
+        {
+            throw new IllegalArgumentException("'encoding' has invalid length");
+        }
         int index = 0;
         this.rho = Arrays.copyOfRange(encoding, 0, DilithiumEngine.SeedBytes); index += DilithiumEngine.SeedBytes;
         this.k = Arrays.copyOfRange(encoding, index, index + DilithiumEngine.SeedBytes); index += DilithiumEngine.SeedBytes;

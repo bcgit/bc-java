@@ -144,8 +144,8 @@ public class PrivateKeyFactory
 //      else if (algOID.equals(X9ObjectIdentifiers.dhpublicnumber))
         else if (algOID.equals(PKCSObjectIdentifiers.dhKeyAgreement))
         {
-            DHParameter params = DHParameter.getInstance(algId.getParameters());
-            ASN1Integer derX = (ASN1Integer)keyInfo.parsePrivateKey();
+            DHParameter params = DHParameter.getInstance(requiredParameters(algId, "DH"));
+            ASN1Integer derX = ASN1Integer.getInstance(keyInfo.parsePrivateKey());
 
             BigInteger lVal = params.getL();
             int l = lVal == null ? 0 : lVal.intValue();
@@ -155,15 +155,15 @@ public class PrivateKeyFactory
         }
         else if (algOID.equals(OIWObjectIdentifiers.elGamalAlgorithm))
         {
-            ElGamalParameter params = ElGamalParameter.getInstance(algId.getParameters());
-            ASN1Integer derX = (ASN1Integer)keyInfo.parsePrivateKey();
+            ElGamalParameter params = ElGamalParameter.getInstance(requiredParameters(algId, "ElGamal"));
+            ASN1Integer derX = ASN1Integer.getInstance(keyInfo.parsePrivateKey());
 
             return new ElGamalPrivateKeyParameters(derX.getValue(), new ElGamalParameters(
                 params.getP(), params.getG()));
         }
         else if (algOID.equals(X9ObjectIdentifiers.id_dsa))
         {
-            ASN1Integer derX = (ASN1Integer)keyInfo.parsePrivateKey();
+            ASN1Integer derX = ASN1Integer.getInstance(keyInfo.parsePrivateKey());
             ASN1Encodable algParameters = algId.getParameters();
 
             DSAParameters parameters = null;
@@ -187,7 +187,18 @@ public class PrivateKeyFactory
              */
             ECPrivateKey ecPrivateKey = ECPrivateKey.getInstance(keyInfo.parsePrivateKey());
 
-            X962Parameters parameters = X962Parameters.getInstance(algId.getParameters().toASN1Primitive());
+            // RFC 5480 puts the curve in the algorithm parameters; RFC 5915 also allows it in the
+            // ECPrivateKey, which is used when the algorithm carries none
+            ASN1Encodable curve = algId.getParameters();
+            if (curve == null)
+            {
+                curve = ecPrivateKey.getParametersObject();
+            }
+            if (curve == null)
+            {
+                throw new IllegalArgumentException("EC private key requires curve parameters");
+            }
+            X962Parameters parameters = X962Parameters.getInstance(curve.toASN1Primitive());
             ECDomainParameters domainParams;
             if (parameters.isNamedCurve())
             {
@@ -418,7 +429,7 @@ public class PrivateKeyFactory
                 algOID.equals(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_512) ||
                 algOID.equals(RosstandartObjectIdentifiers.id_tc26_gost_3410_12_256))
         {
-            ASN1Encodable algParameters = algId.getParameters();
+            ASN1Encodable algParameters = requiredParameters(algId, "GOST R 34.10");
             // TODO[ecgost] The X962Parameters branch below is unreachable: this getInstance throws on a bare curve
             // OID before the size check runs, and any SEQUENCE that reaches the check is now 1..3 elements (the
             // parameters class rejects the rest). The provider's BCECGOST3410PrivateKey / BCECGOST3410_2012PrivateKey
@@ -599,6 +610,17 @@ public class PrivateKeyFactory
             throw new IllegalArgumentException("invalid " + algorithmName + " private key: " + field + " must be "
                 + expectedLength + " bytes, not " + value.length);
         }
+    }
+
+    // the algorithm parameters the key cannot be interpreted without
+    private static ASN1Encodable requiredParameters(AlgorithmIdentifier algId, String algorithmName)
+    {
+        ASN1Encodable parameters = algId.getParameters();
+        if (parameters == null)
+        {
+            throw new IllegalArgumentException(algorithmName + " private key requires algorithm parameters");
+        }
+        return parameters;
     }
 
     private static byte[] getRawKey(PrivateKeyInfo keyInfo)

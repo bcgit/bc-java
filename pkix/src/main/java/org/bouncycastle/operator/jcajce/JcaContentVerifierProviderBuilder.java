@@ -102,12 +102,20 @@ public class JcaContentVerifierProviderBuilder
             {
                 checkNotLegacyComposite(algorithm);
 
+                // null for a key algorithm the provider does not recognise, which no Signature can be
+                // initialised with
+                PublicKey publicKey = certificate.getPublicKey();
+                if (publicKey == null)
+                {
+                    throw new OperatorCreationException("unable to recover the certificate's public key");
+                }
+
                 Signature sig;
                 try
                 {
                     sig = helper.createSignature(algorithm);
 
-                    sig.initVerify(certificate.getPublicKey());
+                    sig.initVerify(publicKey);
 
                     if (context != null)
                     {
@@ -119,7 +127,7 @@ public class JcaContentVerifierProviderBuilder
                     throw new OperatorCreationException("exception on setup: " + e, e);
                 }
 
-                Signature rawSig = createRawSig(algorithm, certificate.getPublicKey());
+                Signature rawSig = createRawSig(algorithm, publicKey);
 
                 if (rawSig != null)
                 {

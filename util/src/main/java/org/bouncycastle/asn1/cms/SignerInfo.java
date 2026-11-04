@@ -184,6 +184,12 @@ public class SignerInfo
     private SignerInfo(
         ASN1Sequence seq)
     {
+        // version, sid, digestAlgorithm, digestEncryptionAlgorithm and encryptedDigest are required
+        if (seq.size() < 5)
+        {
+            throw new IllegalArgumentException("bad sequence size: " + seq.size());
+        }
+
         Enumeration     e = seq.getObjects();
 
         version = ASN1Integer.getInstance(e.nextElement());

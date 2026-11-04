@@ -52,6 +52,11 @@ public class RSAKeyParameters
 
         if (!isInternal)
         {
+            // an odd negative value would pass the parity test and fail inside the small factor search
+            if (modulus.signum() <= 0)
+            {
+                throw new IllegalArgumentException("RSA modulus must be positive");
+            }
             if (!modulus.testBit(0))
             {
                 throw new IllegalArgumentException("RSA modulus is even");

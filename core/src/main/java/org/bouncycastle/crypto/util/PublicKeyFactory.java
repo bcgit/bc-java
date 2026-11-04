@@ -305,6 +305,17 @@ public class PublicKeyFactory
         }
     }
 
+    // the algorithm parameters the key cannot be interpreted without
+    private static ASN1Encodable requiredParameters(SubjectPublicKeyInfo keyInfo, String algorithmName)
+    {
+        ASN1Encodable parameters = keyInfo.getAlgorithm().getParameters();
+        if (parameters == null)
+        {
+            throw new IllegalArgumentException(algorithmName + " public key requires algorithm parameters");
+        }
+        return parameters;
+    }
+
     private static class RSAConverter
         extends SubjectPublicKeyInfoConverter
     {
@@ -327,7 +338,7 @@ public class PublicKeyFactory
 
             BigInteger y = dhPublicKey.getY();
 
-            DomainParameters dhParams = DomainParameters.getInstance(keyInfo.getAlgorithm().getParameters());
+            DomainParameters dhParams = DomainParameters.getInstance(requiredParameters(keyInfo, "DH"));
 
             BigInteger p = dhParams.getP();
             BigInteger g = dhParams.getG();
@@ -353,8 +364,8 @@ public class PublicKeyFactory
         AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
             throws IOException
         {
-            DHParameter params = DHParameter.getInstance(keyInfo.getAlgorithm().getParameters());
-            ASN1Integer derY = (ASN1Integer)keyInfo.parsePublicKey();
+            DHParameter params = DHParameter.getInstance(requiredParameters(keyInfo, "DH"));
+            ASN1Integer derY = ASN1Integer.getInstance(keyInfo.parsePublicKey());
 
             BigInteger lVal = params.getL();
             int l = lVal == null ? 0 : lVal.intValue();
@@ -370,8 +381,8 @@ public class PublicKeyFactory
         AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
             throws IOException
         {
-            ElGamalParameter params = ElGamalParameter.getInstance(keyInfo.getAlgorithm().getParameters());
-            ASN1Integer derY = (ASN1Integer)keyInfo.parsePublicKey();
+            ElGamalParameter params = ElGamalParameter.getInstance(requiredParameters(keyInfo, "ElGamal"));
+            ASN1Integer derY = ASN1Integer.getInstance(keyInfo.parsePublicKey());
 
             return new ElGamalPublicKeyParameters(derY.getValue(), new ElGamalParameters(
                 params.getP(), params.getG()));
@@ -384,7 +395,7 @@ public class PublicKeyFactory
         AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
             throws IOException
         {
-            ASN1Integer derY = (ASN1Integer)keyInfo.parsePublicKey();
+            ASN1Integer derY = ASN1Integer.getInstance(keyInfo.parsePublicKey());
             ASN1Encodable de = keyInfo.getAlgorithm().getParameters();
 
             DSAParameters parameters = null;
@@ -403,7 +414,7 @@ public class PublicKeyFactory
     {
         AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
         {
-            X962Parameters params = X962Parameters.getInstance(keyInfo.getAlgorithm().getParameters());
+            X962Parameters params = X962Parameters.getInstance(requiredParameters(keyInfo, "EC"));
             ECDomainParameters dParams;
 
             if (params.isNamedCurve())

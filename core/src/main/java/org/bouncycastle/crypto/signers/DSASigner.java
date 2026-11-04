@@ -68,6 +68,13 @@ public class DSASigner
             this.key = (DSAPublicKeyParameters)param;
         }
 
+        // a key without domain parameters, as a certificate may carry (RFC 3279 sec. 2.3.2), has to have
+        // them filled in from its issuer before it can sign or verify
+        if (key.getParameters() == null)
+        {
+            throw new IllegalArgumentException("DSA key has no domain parameters");
+        }
+
         CryptoServicesRegistrar.checkConstraints(Utils.getDefaultProperties("DSA", key, forSigning));
 
         this.random = initSecureRandom(forSigning && !kCalculator.isDeterministic(), providedRandom);

@@ -81,6 +81,12 @@ public class PKIHeader
 
     private PKIHeader(ASN1Sequence seq)
     {
+        // pvno, sender and recipient are required
+        if (seq.size() < 3)
+        {
+            throw new IllegalArgumentException("bad sequence size: " + seq.size());
+        }
+
         Enumeration en = seq.getObjects();
 
         pvno = ASN1Integer.getInstance(en.nextElement());

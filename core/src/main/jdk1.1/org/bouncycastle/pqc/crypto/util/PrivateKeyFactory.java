@@ -179,6 +179,11 @@ public class PrivateKeyFactory
             byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePrivateKey()).getOctets();
             BIKEParameters bikeParams = Utils.bikeParamsLookup(algOID);
 
+            // h0 and h1 of R_BYTE each, then sigma of L_BYTE
+            if (keyEnc.length != 2 * bikeParams.getRByte() + bikeParams.getLByte())
+            {
+                throw new IllegalArgumentException("'encoding' has invalid length");
+            }
             byte[] h0 = Arrays.copyOfRange(keyEnc, 0, bikeParams.getRByte());
             byte[] h1 = Arrays.copyOfRange(keyEnc, bikeParams.getRByte(), 2 * bikeParams.getRByte());
             byte[] sigma = Arrays.copyOfRange(keyEnc, 2 * bikeParams.getRByte(), keyEnc.length);

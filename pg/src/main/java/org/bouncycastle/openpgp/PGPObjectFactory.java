@@ -81,7 +81,9 @@ public class PGPObjectFactory
      * @return one of the supported objects - see class docs for details.
      * @throws IOException if an error occurs reading from the wrapped stream or parsing data, including
      * a packet of a version this implementation does not support (the {@link UnsupportedPacketVersionException}
-     * is available as the cause).
+     * is available as the cause) and a packet or packet sequence the object built from it refuses as
+     * malformed, such as a version 4 SKESK before a version 2 SEIPD (the IllegalArgumentException or
+     * IllegalStateException is available as the cause).
      */
     public Object nextObject()
         throws IOException
@@ -91,6 +93,15 @@ public class PGPObjectFactory
             return readNextObject();
         }
         catch (UnsupportedPacketVersionException e)
+        {
+            throw Exceptions.ioException(e.getMessage(), e);
+        }
+        catch (IllegalArgumentException e)
+        {
+            // the objects built from the packets report a structure they refuse unchecked
+            throw Exceptions.ioException(e.getMessage(), e);
+        }
+        catch (IllegalStateException e)
         {
             throw Exceptions.ioException(e.getMessage(), e);
         }

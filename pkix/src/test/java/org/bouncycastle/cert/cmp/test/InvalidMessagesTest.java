@@ -61,6 +61,34 @@ public class InvalidMessagesTest
         }
     }
 
+    /**
+     * A PKIMessage or PKIHeader with fewer elements than it requires is refused as malformed, rather than
+     * running out of elements part way through.
+     */
+    public void testShortSequences()
+        throws Exception
+    {
+        try
+        {
+            new GeneralPKIMessage(new byte[]{ 0x30, 0x00 });
+            fail("empty PKIMessage accepted");
+        }
+        catch (CertIOException e)
+        {
+            Assert.assertEquals("malformed data: PKIMessage missing PKIHeader structure", e.getMessage());
+        }
+        try
+        {
+            // a PKIMessage whose header holds only pvno
+            new GeneralPKIMessage(new byte[]{ 0x30, 0x05, 0x30, 0x03, 0x02, 0x01, 0x02 });
+            fail("short PKIHeader accepted");
+        }
+        catch (CertIOException e)
+        {
+            Assert.assertEquals("malformed data: bad sequence size: 1", e.getMessage());
+        }
+    }
+
     public void testBadOidSigAlg()
         throws Exception
     {

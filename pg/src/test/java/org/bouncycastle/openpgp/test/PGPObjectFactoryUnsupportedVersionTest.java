@@ -39,6 +39,11 @@ public class PGPObjectFactoryUnsupportedVersionTest
     // v4 RSA secret key, s2k usage 254, AES-256, S2K type 0x75
     private static final String V4_SECRET_KEY_BAD_S2K = "c50f0400000000010008ff000203fe0975";
 
+    // v4 SKESK (AES-256, simple S2K, SHA-256), then a v2 SEIPD (AES-256, OCB, chunk size 6, zero salt), an
+    // order RFC 9580 sec. 5.3 forbids and PGPPBEEncryptedData refuses with IllegalArgumentException
+    private static final String V4_SKESK_BEFORE_V2_SEIPD = "c30404090008" + "d23402090206"
+        + "0000000000000000000000000000000000000000000000000000000000000000" + "00000000000000000000000000000000";
+
     public String getName()
     {
         return "PGPObjectFactoryUnsupportedVersionTest";
@@ -53,6 +58,7 @@ public class PGPObjectFactoryUnsupportedVersionTest
         checkNextObject("AEAD encrypted data", AEAD_BAD_VERSION);
         checkNextObject("signature after session keys", SIG_AFTER_SESSION_KEYS);
         checkNextObject("v4 secret key S2K", V4_SECRET_KEY_BAD_S2K);
+        checkNextObject("v4 SKESK before v2 SEIPD", V4_SKESK_BEFORE_V2_SEIPD);
 
         // the v4 S2K read reports an unknown type as malformed at the packet level, as the v6 one does
         try
@@ -83,7 +89,8 @@ public class PGPObjectFactoryUnsupportedVersionTest
         }
         catch (IOException e)
         {
-            // expected: reported through the declared contract
+            // expected: reported through the declared contract, with what refused it as the cause
+            isTrue(label + ": no cause", e.getCause() != null);
         }
         catch (RuntimeException e)
         {

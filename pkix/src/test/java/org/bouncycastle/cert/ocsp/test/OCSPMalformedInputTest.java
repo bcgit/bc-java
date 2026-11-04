@@ -66,6 +66,9 @@ public class OCSPMalformedInputTest
             checkReq(malformed[i]);
         }
 
+        // a response status too large for an int, which getStatus() used to fail on with an ArithmeticException
+        checkResp(new byte[]{ 0x30, 0x08, 0x0a, 0x06, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00 });
+
         // well-formed input still parses without change.
         byte[] validResp = new OCSPRespBuilder().build(OCSPRespBuilder.SUCCESSFUL, null).getEncoded();
         new OCSPResp(validResp);

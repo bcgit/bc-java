@@ -7,9 +7,11 @@ import java.util.TimeZone;
 
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1GeneralizedTime;
+import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.DERGeneralizedTime;
 import org.bouncycastle.asn1.DERUTCTime;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
@@ -154,9 +156,44 @@ public class GeneralizedTimeTest
         return "GeneralizedTime";
     }
     
+    /**
+     * X.680 lets a GeneralizedTime leave out the minutes and seconds and give a fraction of whichever unit
+     * comes last, with '.' or ',' before it; DER (X.690 sec. 11.7) wants the seconds and a fraction of a
+     * second only. The DER form carries the fraction down - it used to append the missing digits after it,
+     * giving a value that was not DER and grew each time it was re-encoded.
+     */
+    private void derFractionTest()
+        throws Exception
+    {
+        String[][] cases = {
+            { "9050010112.100Z", "90500101120600Z" },          // a tenth of an hour is six minutes
+            { "2026010112.123Z", "20260101120722.8Z" },        // 0.123 h is 442.8 s
+            { "202601011230.5Z", "20260101123030Z" },          // half a minute
+            { "202601011230.25Z", "20260101123015Z" },
+            { "2026010112Z", "20260101120000Z" },
+            { "202601011230Z", "20260101123000Z" },
+            { "20260101123015,500Z", "20260101123015.5Z" },    // ',' becomes '.'
+            { "20260101123015.000Z", "20260101123015Z" },
+            { "20260101123015.120Z", "20260101123015.12Z" },
+        };
+        for (int i = 0; i != cases.length; i++)
+        {
+            // read as the decoder reads a GeneralizedTime off the wire
+            byte[] text = Strings.toByteArray(cases[i][0]);
+            byte[] lenient = Arrays.concatenate(new byte[]{ 0x18, (byte)text.length }, text);
+            byte[] der = ASN1Primitive.fromByteArray(lenient).getEncoded(ASN1Encoding.DER);
+            ASN1GeneralizedTime decoded = ASN1GeneralizedTime.getInstance(der);
+            isEquals(cases[i][0], cases[i][1], decoded.getTimeString());
+            isTrue(cases[i][0] + " DER not stable",
+                Arrays.areEqual(der, ASN1Primitive.fromByteArray(der).getEncoded(ASN1Encoding.DER)));
+        }
+    }
+
     public void performTest()
         throws Exception
     {
+        derFractionTest();
+
         SimpleDateFormat dateF = new SimpleDateFormat("yyyyMMddHHmmss'Z'");
 
         dateF.setTimeZone(new SimpleTimeZone(0,"Z"));

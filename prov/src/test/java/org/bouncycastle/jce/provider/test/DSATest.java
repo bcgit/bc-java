@@ -283,6 +283,50 @@ public class DSATest
         isTrue("hashCode mismatch", key1.hashCode() == key2.hashCode());
         isTrue("not equal", key1.equals(key2));
         isTrue("encoding mismatch", Arrays.areEqual(x509s.getEncoded(), key1.getEncoded()));
+
+        // such a key, inheriting its parameters from its issuer (RFC 3279 sec. 2.3.2), still prints
+        isTrue("toString", key1.toString().startsWith("DSA Public Key ["));
+
+        // but cannot verify until they are filled in, which init reports as InvalidKeyException
+        Signature sig = Signature.getInstance("SHA256withDSA", "BC");
+        try
+        {
+            sig.initVerify(key1);
+            fail("parameterless DSA key accepted for verification");
+        }
+        catch (InvalidKeyException e)
+        {
+            isEquals("DSA key has no domain parameters", e.getMessage());
+        }
+        try
+        {
+            new org.bouncycastle.crypto.signers.DSASigner().init(false, new DSAPublicKeyParameters(BigInteger.valueOf(10001), null));
+            fail("parameterless DSA key accepted by the lightweight signer");
+        }
+        catch (IllegalArgumentException e)
+        {
+            isEquals("DSA key has no domain parameters", e.getMessage());
+        }
+
+        // and a null key is refused as JCA requires, rather than failing inside the provider
+        try
+        {
+            sig.initVerify((PublicKey)null);
+            fail("null public key accepted");
+        }
+        catch (InvalidKeyException e)
+        {
+            isEquals("DSA public key required, not null", e.getMessage());
+        }
+        try
+        {
+            sig.initSign((PrivateKey)null);
+            fail("null private key accepted");
+        }
+        catch (InvalidKeyException e)
+        {
+            isEquals("DSA private key required, not null", e.getMessage());
+        }
     }
 
     private void testValidate()

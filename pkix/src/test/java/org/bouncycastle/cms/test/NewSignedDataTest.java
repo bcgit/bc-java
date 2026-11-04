@@ -124,6 +124,7 @@ import org.bouncycastle.operator.DefaultSignatureAlgorithmIdentifierFinder;
 import org.bouncycastle.operator.DigestCalculator;
 import org.bouncycastle.operator.DigestCalculatorProvider;
 import org.bouncycastle.operator.OperatorCreationException;
+import org.bouncycastle.operator.RuntimeOperatorException;
 import org.bouncycastle.operator.bc.BcContentSignerBuilder;
 import org.bouncycastle.operator.bc.BcDigestCalculatorProvider;
 import org.bouncycastle.operator.bc.BcRSAContentSignerBuilder;
@@ -137,6 +138,7 @@ import org.bouncycastle.util.Pack;
 import org.bouncycastle.util.Store;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Base64;
+import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.io.Streams;
 import org.bouncycastle.util.io.pem.PemObject;
 import org.bouncycastle.util.io.pem.PemReader;
@@ -2895,6 +2897,43 @@ public class NewSignedDataTest
         throws Exception
     {
         encapsulatedTest(_signEcDsaKP, _signEcDsaCert, "SHA1withECDSA");
+    }
+
+    /**
+     * A signer whose ECDSA signature does not decode makes the JCA Signature throw SignatureException,
+     * which the verifier can only pass up unchecked; verify() reports it as the CMSException it declares.
+     */
+    public void testUndecodableECDSASignatureReported()
+        throws Exception
+    {
+        CMSSignedDataGenerator gen = new CMSSignedDataGenerator();
+        gen.addSignerInfoGenerator(new JcaSignerInfoGeneratorBuilder(
+            new JcaDigestCalculatorProviderBuilder().setProvider(BC).build())
+            .build(new JcaContentSignerBuilder("SHA256withECDSA").setProvider(BC).build(_signEcDsaKP.getPrivate()),
+                _signEcDsaCert));
+        gen.addCertificates(new JcaCertStore(Collections.singletonList(_signEcDsaCert)));
+        CMSSignedData signed = gen.generate(new CMSProcessableByteArray("Hello World!".getBytes()), true);
+
+        // the same message with the signer's signature replaced by a SEQUENCE holding only r
+        SignedData sd = SignedData.getInstance(signed.toASN1Structure().getContent());
+        SignerInfo info = SignerInfo.getInstance(sd.getSignerInfos().getObjectAt(0));
+        SignerInfo undecodable = new SignerInfo(info.getSID(), info.getDigestAlgorithm(), info.getAuthenticatedAttributes(),
+            info.getDigestEncryptionAlgorithm(), new DEROctetString(Hex.decode("3003020101")), info.getUnauthenticatedAttributes());
+        CMSSignedData tampered = new CMSSignedData(new ContentInfo(CMSObjectIdentifiers.signedData,
+            new SignedData(sd.getDigestAlgorithms(), sd.getEncapContentInfo(), sd.getCertificates(), sd.getCRLs(),
+                new DERSet(undecodable))));
+
+        SignerInformation signer = (SignerInformation)tampered.getSignerInfos().getSigners().iterator().next();
+        try
+        {
+            signer.verify(new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(_signEcDsaCert));
+            fail("undecodable signature verified");
+        }
+        catch (CMSException e)
+        {
+            assertTrue(e.getMessage().startsWith("unable to verify signature: "));
+            assertTrue(e.getCause() instanceof RuntimeOperatorException);
+        }
     }
 
     public void testECDSAEncapsulatedSubjectKeyID()

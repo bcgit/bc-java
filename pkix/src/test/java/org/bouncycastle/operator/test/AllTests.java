@@ -104,6 +104,43 @@ public class AllTests
     }
 
     /**
+     * A certificate whose key algorithm the provider does not recognise has no PublicKey to give, so a
+     * verifier for it is refused as an operator that cannot be built, rather than a null key being handed
+     * to the Signature.
+     */
+    public void testVerifierForUnrecognisedCertificateKey()
+        throws Exception
+    {
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("EC", BC);
+        kpGen.initialize(256);
+        java.security.KeyPair issuer = kpGen.generateKeyPair();
+
+        org.bouncycastle.asn1.x500.X500Name name = new org.bouncycastle.asn1.x500.X500Name("CN=Test");
+        org.bouncycastle.asn1.x509.SubjectPublicKeyInfo unrecognised = new org.bouncycastle.asn1.x509.SubjectPublicKeyInfo(
+            new AlgorithmIdentifier(new ASN1ObjectIdentifier("1.2.3.4.5.6.7")), new byte[]{ 1, 2, 3 });
+        java.util.Date now = new java.util.Date();
+        org.bouncycastle.cert.X509CertificateHolder holder = new org.bouncycastle.cert.X509v3CertificateBuilder(name,
+            org.bouncycastle.util.BigIntegers.ONE, now, new java.util.Date(now.getTime() + 60000L), name, unrecognised)
+            .build(new org.bouncycastle.operator.jcajce.JcaContentSignerBuilder("SHA256withECDSA").setProvider(BC)
+                .build(issuer.getPrivate()));
+        java.security.cert.X509Certificate cert = new org.bouncycastle.cert.jcajce.JcaX509CertificateConverter()
+            .setProvider(BC).getCertificate(holder);
+        assertNull(cert.getPublicKey());
+
+        org.bouncycastle.operator.ContentVerifierProvider provider =
+            new org.bouncycastle.operator.jcajce.JcaContentVerifierProviderBuilder().setProvider(BC).build(cert);
+        try
+        {
+            provider.get(new AlgorithmIdentifier(X9ObjectIdentifiers.ecdsa_with_SHA256));
+            fail("verifier built for a certificate with no recoverable key");
+        }
+        catch (org.bouncycastle.operator.OperatorCreationException e)
+        {
+            assertEquals("unable to recover the certificate's public key", e.getMessage());
+        }
+    }
+
+    /**
      * DefaultKemAlgorithmIdentifierFinder is the name-to-OID direction of the KEM entries
      * DefaultAlgorithmNameFinder holds, so the two tables have to agree. Round-tripping every
      * name the KEM finder knows back through the name finder locks them together: an entry added

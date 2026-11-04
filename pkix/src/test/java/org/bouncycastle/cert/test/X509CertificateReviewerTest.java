@@ -67,6 +67,24 @@ public class X509CertificateReviewerTest
         assertEquals("encoding", ((Finding)review.getFindings().get(0)).getLocation());
     }
 
+    public void testEmptyEncodingReported()
+        throws Exception
+    {
+        // no bytes decode to no object at all, which reached the sequence checks as null; a null
+        // sequence passed in directly is the same case. Both are reported, as any malformed input is
+        Review review = X509CertificateReviewer.reviewStructure(new byte[0]);
+
+        assertFalse(review.isValid());
+        assertFalse(review.hasCertificate());
+        assertEquals(1, review.getFindings().size());
+        assertEquals("certificate", ((Finding)review.getFindings().get(0)).getLocation());
+
+        review = X509CertificateReviewer.reviewStructure((ASN1Sequence)null);
+
+        assertFalse(review.isValid());
+        assertEquals("certificate", ((Finding)review.getFindings().get(0)).getLocation());
+    }
+
     public void testWrongSequenceSize()
         throws Exception
     {
