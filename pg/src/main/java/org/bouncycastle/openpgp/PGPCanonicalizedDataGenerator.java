@@ -14,6 +14,13 @@ import org.bouncycastle.util.Arrays;
 /**
  * Generator for producing filtered literal data packets which are automatically canonicalized.
  * <p>
+ * For the text formats each LF not preceded by a CR is written as CR LF; every other byte,
+ * a CR not followed by a LF included, is written unaltered, which is the canonical text form
+ * text signatures (type 0x01) are calculated over. Releases before 1.87 also converted a bare
+ * CR to CR LF; a caller that needs that output can convert each bare CR to CR LF before writing
+ * to this generator, and must then pass the same converted data to the signature generator, or
+ * the signature will not verify over the literal data written.
+ * </p><p>
  * PGPCanonicalizedDataGenerator is used by invoking one of the open functions to create an OutputStream that raw
  * data can be supplied to for encoding:  </p>
  * <ul>
@@ -246,16 +253,11 @@ public class PGPCanonicalizedDataGenerator
         {
             if (!isBinary)
             {
-                if (b == '\n' && lastB != '\r')    // Unix
+                // only a LF not preceded by a CR is a line ending to convert; a bare CR is
+                // written as it is, matching how text signatures hash it (github #2553).
+                if (b == '\n' && lastB != '\r')
                 {
                     crlfOut.write('\r');
-                }
-                else if (lastB == '\r')  // MAC
-                {
-                    if (b != '\n')
-                    {
-                        crlfOut.write('\n');
-                    }
                 }
                 lastB = b;
             }
@@ -265,10 +267,6 @@ public class PGPCanonicalizedDataGenerator
         public void close()
             throws IOException
         {
-            if (!isBinary && lastB == '\r')     // MAC
-            {
-                crlfOut.write('\n');
-            }
             crlfOut.close();
         }
     }
