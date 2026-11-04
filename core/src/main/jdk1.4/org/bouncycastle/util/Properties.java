@@ -125,6 +125,12 @@ public class Properties
      */
     public static final String CONSTRAINTS_ALLOW_OVERRIDE = "org.bouncycastle.constraints.allow_override";
 
+    /**
+     * Whether one SM9 encryption user key may serve both the SM9 KEM and SM9 public-key decryption
+     * within the copy of the library in use. Default false.
+     */
+    public static final String SM9_ALLOW_MULTI_USE = "org.bouncycastle.sm9.allow_multi_use";
+
     private Properties()
     {
     }

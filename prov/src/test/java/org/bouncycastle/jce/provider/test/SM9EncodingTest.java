@@ -408,8 +408,12 @@ public class SM9EncodingTest
         KeyPair encMaster = KeyPairGenerator.getInstance("SM9-ENC", "BC").generateKeyPair();
         SM9EncMasterPrivateKey encMasterPrivate = (SM9EncMasterPrivateKey)encMaster.getPrivate();
         PrivateKey encKey = encMasterPrivate.generateUserKeyPair(identity, SM9EncMasterPublicKey.HID).getPrivate();
+        // a key serves one of Cipher.SM9 and the KEM, so the KEM is given a key of its own
+        byte[] kemIdentity = "Carol".getBytes("US-ASCII");
+        PrivateKey kemKey = encMasterPrivate.generateUserKeyPair(kemIdentity, SM9EncMasterPublicKey.HID).getPrivate();
         PrivateKey exchangeKey = encMasterPrivate.generateExchangeKeyPair(identity).getPrivate();
         PublicKey recipient = ((SM9EncMasterPublicKey)encMaster.getPublic()).getUserPublicKey(identity);
+        PublicKey kemRecipient = ((SM9EncMasterPublicKey)encMaster.getPublic()).getUserPublicKey(kemIdentity);
         PublicKey peer = ((SM9EncMasterPublicKey)encMaster.getPublic()).getUserPublicKey(
             "Bob".getBytes("US-ASCII"), SM9EncMasterPrivateKeyParameters.HID_EXCHANGE);
 
@@ -417,7 +421,7 @@ public class SM9EncodingTest
         encryptor.init(Cipher.ENCRYPT_MODE, recipient);
         byte[] ciphertext = encryptor.doFinal(message);
         KeyGenerator encapsulator = KeyGenerator.getInstance("SM9-KEM", "BC");
-        encapsulator.init(new KEMGenerateSpec(recipient, "AES", 128), new SecureRandom());
+        encapsulator.init(new KEMGenerateSpec(kemRecipient, "AES", 128), new SecureRandom());
         byte[] encapsulation = ((SecretKeyWithEncapsulation)encapsulator.generateKey()).getEncapsulation();
 
         Signature signer = Signature.getInstance("SM9", "BC");
@@ -426,12 +430,13 @@ public class SM9EncodingTest
         Cipher decryptor = Cipher.getInstance("SM9", "BC");
         decryptor.init(Cipher.DECRYPT_MODE, encKey);
         KeyGenerator extractor = KeyGenerator.getInstance("SM9-KEM", "BC");
-        extractor.init(new KEMExtractSpec(encKey, encapsulation, "AES", 128));
+        extractor.init(new KEMExtractSpec(kemKey, encapsulation, "AES", 128));
         KeyAgreement agreement = KeyAgreement.getInstance("SM9", "BC");
         agreement.init(exchangeKey, new SM9KeyExchangeSpec(true, 128), new SecureRandom());
 
         ((Destroyable)sigKey).destroy();
         ((Destroyable)encKey).destroy();
+        ((Destroyable)kemKey).destroy();
         ((Destroyable)exchangeKey).destroy();
 
         try
@@ -570,6 +575,20 @@ public class SM9EncodingTest
             + "match its master public key, identity and hid").equals(refused));
         isTrue("an encryption user key for the key exchange is another key",
             !asKem.equals(kf.generatePrivate(new SM9EncUserPrivateKeySpec(point, encMaster, identity, (byte)0x03, true))));
+
+        // a key declared for one of the KEM and decryption is another key than one declared for the other
+        // or for neither, and the same as one declared for the same
+        PrivateKey declaredKem = kf.generatePrivate(new SM9EncUserPrivateKeySpec(point, encMaster, identity, (byte)0x03,
+            SM9EncUserPrivateKeySpec.USAGE_KEM));
+        PrivateKey declaredDecryption = kf.generatePrivate(new SM9EncUserPrivateKeySpec(point, encMaster, identity,
+            (byte)0x03, SM9EncUserPrivateKeySpec.USAGE_DECRYPTION));
+        isTrue("a key declared for the KEM is another key than an undeclared one",
+            !declaredKem.equals(asKem) && !asKem.equals(declaredKem));
+        isTrue("a key declared for the KEM is another key than one declared for decryption",
+            !declaredKem.equals(declaredDecryption));
+        isTrue("keys declared for the same usage are equal", declaredKem.equals(kf.generatePrivate(
+            new SM9EncUserPrivateKeySpec(point, encMaster, identity, (byte)0x03, SM9EncUserPrivateKeySpec.USAGE_KEM)))
+            && declaredKem.hashCode() == asKem.hashCode());
     }
 
     /**

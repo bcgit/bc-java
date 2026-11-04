@@ -279,7 +279,8 @@ public class KeyFactorySpi
                 SM9EncMasterPublicKeyParameters master = encMasterParameters(userSpec.getMasterPublicKey());
                 return new BCSM9EncPrivateKey(userSpec.isExchangeKey()
                     ? SM9EncPrivateKeyParameters.fromEncodedExchangeKey(octets, master, userSpec.getIdentity(), userSpec.getHid())
-                    : SM9EncPrivateKeyParameters.fromEncoded(octets, master, userSpec.getIdentity(), userSpec.getHid()));
+                    : SM9EncPrivateKeyParameters.fromEncoded(octets, master, userSpec.getIdentity(), userSpec.getHid(),
+                        userSpec.getUsage()));
             }
             catch (IOException e)
             {
@@ -333,9 +334,13 @@ public class KeyFactorySpi
         if (keySpec.isAssignableFrom(SM9EncUserPrivateKeySpec.class) && key instanceof BCSM9EncPrivateKey)
         {
             SM9EncPrivateKeyParameters keyParams = ((BCSM9EncPrivateKey)key).getKeyParameters();
-            return new SM9EncUserPrivateKeySpec(key.getEncoded(),
-                new BCSM9EncMasterPublicKey(keyParams.getMasterPublicKey()), keyParams.getIdentity(),
-                keyParams.getHid(), keyParams.isExchangeKey());
+            byte[] encoding = key.getEncoded();
+            BCSM9EncMasterPublicKey masterPublicKey = new BCSM9EncMasterPublicKey(keyParams.getMasterPublicKey());
+            // a key-exchange key is named by the exchangeKey flag, a KEM / decryption key by its usage
+            return keyParams.isExchangeKey()
+                ? new SM9EncUserPrivateKeySpec(encoding, masterPublicKey, keyParams.getIdentity(), keyParams.getHid(), true)
+                : new SM9EncUserPrivateKeySpec(encoding, masterPublicKey, keyParams.getIdentity(), keyParams.getHid(),
+                    keyParams.getUsage());
         }
         // only the master public keys have an X.509 encoding. A user's public key is its identity
         // under the master public key and has no encoding of its own, and the key-exchange

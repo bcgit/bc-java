@@ -17,7 +17,9 @@ import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.crypto.kems.SM9KEMExtractor;
 import org.bouncycastle.crypto.kems.SM9KEMGenerator;
 import org.bouncycastle.crypto.params.SM9EncMasterPrivateKeyParameters;
+import org.bouncycastle.crypto.params.SM9EncPrivateKeyParameters;
 import org.bouncycastle.jcajce.SecretKeyWithEncapsulation;
+import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 import org.bouncycastle.jcajce.spec.KEMExtractSpec;
 import org.bouncycastle.jcajce.spec.KEMGenerateSpec;
 import org.bouncycastle.jcajce.spec.KEMKDFSpec;
@@ -46,7 +48,9 @@ import org.bouncycastle.util.Arrays;
  * <b>Usage warning:</b> an identity's key should be used for this service or for
  * {@code Cipher.SM9}, but not for both. A deployment needing both has its KGC publish a
  * separate hid for each function, as it already does for the key exchange, so that the two
- * keys are distinct.
+ * keys are distinct. {@code init} also refuses for decapsulation a key declared for decryption,
+ * and one that has been used for it - see
+ * {@link SM9EncPrivateKeyParameters#recordUsage(int)}.
  */
 public class SM9KEMKeyGeneratorSpi
     extends KeyGeneratorSpi
@@ -57,6 +61,9 @@ public class SM9KEMKeyGeneratorSpi
 
     private KEMGenerateSpec genSpec;
     private KEMExtractSpec extSpec;
+    // the extractor for extSpec's key, made at init: the key's usage is checked and recorded there,
+    // once, rather than again by each generateKey
+    private SM9KEMExtractor extractor;
     private SecureRandom random;
 
     protected void engineInit(SecureRandom random)
@@ -152,10 +159,30 @@ public class SM9KEMKeyGeneratorSpi
             throw new InvalidAlgorithmParameterException(
                 "SM9-KEM encapsulation requires a KEM / encryption recipient key, not a key-exchange key under HID_EXCHANGE (0x02)");
         }
+        // fetched before the extractor records the use of the key, as fetching the default source can
+        // fail, and an init that fails then leaves no record of the use behind either
+        SecureRandom newRandom = CryptoServicesRegistrar.getSecureRandom(random);
+        SM9KEMExtractor newExtractor = null;
+        if (newExtSpec != null)
+        {
+            try
+            {
+                // the extractor records the key's use for the KEM, refusing a key declared for
+                // decryption or already used for it. Made last, so that a spec refused for anything
+                // else leaves no record behind.
+                newExtractor = new SM9KEMExtractor(
+                    ((BCSM9EncPrivateKey)newExtSpec.getPrivateKey()).getKeyParameters(), keySize);
+            }
+            catch (IllegalArgumentException e)
+            {
+                throw SecurityExceptions.invalidAlgorithmParameterException(e.getMessage(), e);
+            }
+        }
 
         this.genSpec = newGenSpec;
         this.extSpec = newExtSpec;
-        this.random = CryptoServicesRegistrar.getSecureRandom(random);
+        this.extractor = newExtractor;
+        this.random = newRandom;
     }
 
     /**
@@ -167,6 +194,7 @@ public class SM9KEMKeyGeneratorSpi
     {
         this.genSpec = null;
         this.extSpec = null;
+        this.extractor = null;
         this.random = null;
     }
 
@@ -206,10 +234,8 @@ public class SM9KEMKeyGeneratorSpi
         }
         else
         {
-            BCSM9EncPrivateKey userKey = (BCSM9EncPrivateKey)extSpec.getPrivateKey();
             byte[] encapsulation = extSpec.getEncapsulation();
-            SM9KEMExtractor kemExt = new SM9KEMExtractor(userKey.getKeyParameters(), extSpec.getKeySize());
-            byte[] secret = kemExt.extractSecret(encapsulation);
+            byte[] secret = extractor.extractSecret(encapsulation);
             try
             {
                 SecretKeySpec key = new SecretKeySpec(secret, extSpec.getKeyAlgorithmName());

@@ -2,6 +2,7 @@ package org.bouncycastle.jce.provider.test;
 
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
+import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
@@ -9,6 +10,7 @@ import java.security.PublicKey;
 import java.security.Security;
 import java.security.spec.AlgorithmParameterSpec;
 
+import javax.crypto.Cipher;
 import javax.crypto.DecapsulateException;
 import javax.crypto.KEM;
 import javax.crypto.KeyGenerator;
@@ -22,8 +24,10 @@ import org.bouncycastle.jcajce.interfaces.SM9EncMasterPrivateKey;
 import org.bouncycastle.jcajce.interfaces.SM9EncMasterPublicKey;
 import org.bouncycastle.jcajce.spec.KEMExtractSpec;
 import org.bouncycastle.jcajce.spec.KTSParameterSpec;
+import org.bouncycastle.jcajce.spec.SM9EncUserPrivateKeySpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.Strings;
 
 /**
@@ -106,10 +110,165 @@ public class SM9KEM17Test
         assertTrue("KEM.SM9-KEM reproduces the GM/T 0044.5 K", Arrays.areEqual(expectedK, enc.key().getEncoded()));
         assertTrue("KEM.SM9-KEM reproduces the GM/T 0044.5 C", Arrays.areEqual(expectedC, enc.encapsulation()));
 
-        KEM.Decapsulator d = KEM.getInstance("SM9-KEM", "BC").newDecapsulator(
-            masterPriv.generateUserKeyPair(identity, SM9EncMasterPrivateKeyParameters.HID).getPrivate(), null);
-        assertTrue("KEM.SM9-KEM decapsulates the GM/T 0044.5 C to K",
-            Arrays.areEqual(expectedK, d.decapsulate(expectedC).getEncoded()));
+        // GM/T 0044.5 Annex C decapsulates with the user key Annex D decrypts with, which the key-usage
+        // check refuses within one JVM, so the known answer is taken with the check turned off for this
+        // thread, as SM9KEMTest takes it
+        Properties.setThreadOverride(Properties.SM9_ALLOW_MULTI_USE, true);
+        try
+        {
+            KEM.Decapsulator d = KEM.getInstance("SM9-KEM", "BC").newDecapsulator(
+                masterPriv.generateUserKeyPair(identity, SM9EncMasterPrivateKeyParameters.HID).getPrivate(), null);
+            assertTrue("KEM.SM9-KEM decapsulates the GM/T 0044.5 C to K",
+                Arrays.areEqual(expectedK, d.decapsulate(expectedC).getEncoded()));
+        }
+        finally
+        {
+            Properties.removeThreadOverride(Properties.SM9_ALLOW_MULTI_USE);
+        }
+    }
+
+    /**
+     * Within one JVM an encryption user key is held to the first of the KEM and Cipher.SM9 decryption it
+     * is used for: newDecapsulator refuses a key that has decrypted, with the InvalidKeyException it
+     * declares, and Cipher.SM9 refuses a key that has decapsulated.
+     */
+    public void testKeyUsage()
+        throws Exception
+    {
+        byte[] message = Strings.toByteArray("a message of twenty-nine bytes");
+        Cipher encryptor = Cipher.getInstance("SM9", "BC");
+        encryptor.init(Cipher.ENCRYPT_MODE, bobPublic);
+        Cipher decryptor = Cipher.getInstance("SM9", "BC");
+        decryptor.init(Cipher.DECRYPT_MODE, bob.getPrivate());
+        assertTrue(Arrays.areEqual(message, decryptor.doFinal(encryptor.doFinal(message))));
+        try
+        {
+            KEM.getInstance("SM9-KEM", "BC").newDecapsulator(bob.getPrivate(), null);
+            fail("KEM.SM9-KEM took a key that has decrypted");
+        }
+        catch (InvalidKeyException e)
+        {
+            assertEquals("SM9 encryption user key has been used for decryption in this JVM: key-usage separation"
+                + " refuses it for KEM decapsulation (set org.bouncycastle.sm9.allow_multi_use to true to turn"
+                + " the check off)", e.getMessage());
+            assertTrue(e.getCause() instanceof IllegalArgumentException);
+        }
+
+        KeyPair alice = ((SM9EncMasterPrivateKey)masterPair.getPrivate()).generateUserKeyPair(
+            Strings.toByteArray("Alice"), SM9EncMasterPrivateKeyParameters.HID);
+        KEM.Encapsulated enc = KEM.getInstance("SM9-KEM", "BC").newEncapsulator(alice.getPublic(), null, null)
+            .encapsulate();
+        assertTrue(Arrays.areEqual(enc.key().getEncoded(), KEM.getInstance("SM9-KEM", "BC")
+            .newDecapsulator(alice.getPrivate(), null).decapsulate(enc.encapsulation()).getEncoded()));
+        try
+        {
+            decryptor.init(Cipher.DECRYPT_MODE, alice.getPrivate());
+            fail("Cipher.SM9 took a key that has decapsulated");
+        }
+        catch (InvalidKeyException e)
+        {
+            assertEquals("SM9 encryption user key has been used for KEM decapsulation in this JVM: key-usage"
+                + " separation refuses it for decryption (set org.bouncycastle.sm9.allow_multi_use to true to"
+                + " turn the check off)", e.getMessage());
+        }
+    }
+
+    /**
+     * A key rebuilt through KeyFactory.SM9 declared for decryption is refused by newDecapsulator on its
+     * first use, with the InvalidKeyException it declares, and with Properties.SM9_ALLOW_MULTI_USE set
+     * as well; one declared for the KEM decapsulates, and Cipher.SM9 refuses it.
+     */
+    public void testDeclaredUsage()
+        throws Exception
+    {
+        KeyFactory kf = KeyFactory.getInstance("SM9", "BC");
+        SM9EncMasterPublicKey masterPub = (SM9EncMasterPublicKey)masterPair.getPublic();
+        PrivateKey decryptionKey = kf.generatePrivate(new SM9EncUserPrivateKeySpec(bob.getPrivate().getEncoded(),
+            masterPub, bobIdentity, SM9EncMasterPrivateKeyParameters.HID, SM9EncUserPrivateKeySpec.USAGE_DECRYPTION));
+        String declaredForDecryption = "SM9 encryption user key is declared for decryption and cannot be used for"
+            + " KEM decapsulation";
+        try
+        {
+            KEM.getInstance("SM9-KEM", "BC").newDecapsulator(decryptionKey, null);
+            fail("KEM.SM9-KEM took a key declared for decryption");
+        }
+        catch (InvalidKeyException e)
+        {
+            assertEquals(declaredForDecryption, e.getMessage());
+            assertTrue(e.getCause() instanceof IllegalArgumentException);
+        }
+        Properties.setThreadOverride(Properties.SM9_ALLOW_MULTI_USE, true);
+        try
+        {
+            KEM.getInstance("SM9-KEM", "BC").newDecapsulator(decryptionKey, null);
+            fail("KEM.SM9-KEM took a key declared for decryption with the property set");
+        }
+        catch (InvalidKeyException e)
+        {
+            assertEquals(declaredForDecryption, e.getMessage());
+        }
+        finally
+        {
+            Properties.removeThreadOverride(Properties.SM9_ALLOW_MULTI_USE);
+        }
+
+        byte[] alice = Strings.toByteArray("Alice");
+        KeyPair alicePair = ((SM9EncMasterPrivateKey)masterPair.getPrivate()).generateUserKeyPair(alice,
+            SM9EncMasterPrivateKeyParameters.HID);
+        PrivateKey kemKey = kf.generatePrivate(new SM9EncUserPrivateKeySpec(alicePair.getPrivate().getEncoded(),
+            masterPub, alice, SM9EncMasterPrivateKeyParameters.HID, SM9EncUserPrivateKeySpec.USAGE_KEM));
+        KEM.Encapsulated enc = KEM.getInstance("SM9-KEM", "BC").newEncapsulator(alicePair.getPublic(), null, null)
+            .encapsulate();
+        assertTrue(Arrays.areEqual(enc.key().getEncoded(), KEM.getInstance("SM9-KEM", "BC")
+            .newDecapsulator(kemKey, null).decapsulate(enc.encapsulation()).getEncoded()));
+        try
+        {
+            Cipher.getInstance("SM9", "BC").init(Cipher.DECRYPT_MODE, kemKey);
+            fail("Cipher.SM9 took a key declared for the KEM");
+        }
+        catch (InvalidKeyException e)
+        {
+            assertEquals("SM9 encryption user key is declared for KEM decapsulation and cannot be used for"
+                + " decryption", e.getMessage());
+        }
+    }
+
+    /**
+     * A key's use is recorded when newDecapsulator is handed it. With Properties.SM9_ALLOW_MULTI_USE set
+     * for the thread a key that has decrypted is taken, and a decapsulator made then goes on
+     * decapsulating once the key has been recorded for decryption; a new decapsulator is refused.
+     */
+    public void testHandedOverUsage()
+        throws Exception
+    {
+        KEM.Decapsulator d;
+        Properties.setThreadOverride(Properties.SM9_ALLOW_MULTI_USE, true);
+        try
+        {
+            d = KEM.getInstance("SM9-KEM", "BC").newDecapsulator(bob.getPrivate(), null);
+        }
+        finally
+        {
+            Properties.removeThreadOverride(Properties.SM9_ALLOW_MULTI_USE);
+        }
+        byte[] message = Strings.toByteArray("a message of twenty-nine bytes");
+        Cipher encryptor = Cipher.getInstance("SM9", "BC");
+        encryptor.init(Cipher.ENCRYPT_MODE, bobPublic);
+        Cipher decryptor = Cipher.getInstance("SM9", "BC");
+        decryptor.init(Cipher.DECRYPT_MODE, bob.getPrivate());
+        assertTrue(Arrays.areEqual(message, decryptor.doFinal(encryptor.doFinal(message))));
+
+        KEM.Encapsulated enc = KEM.getInstance("SM9-KEM", "BC").newEncapsulator(bobPublic, null, null).encapsulate();
+        assertTrue(Arrays.areEqual(enc.key().getEncoded(), d.decapsulate(enc.encapsulation()).getEncoded()));
+        try
+        {
+            KEM.getInstance("SM9-KEM", "BC").newDecapsulator(bob.getPrivate(), null);
+            fail("KEM.SM9-KEM took a key that has decrypted");
+        }
+        catch (InvalidKeyException e)
+        {
+            // expected
+        }
     }
 
     public void testNoKdfMatchesKeyGeneratorBridge()

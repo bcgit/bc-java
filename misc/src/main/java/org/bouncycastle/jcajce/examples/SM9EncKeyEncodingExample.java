@@ -33,8 +33,10 @@ import org.bouncycastle.util.encoders.Hex;
  * master private key and extracts user keys, and a decryption service that holds only a
  * stored user key plus the KGC's published master public key, the recipient's identity and
  * the hid - it never sees the master private key at all - and can still decrypt, by
- * rebuilding the private key through {@link SM9EncUserPrivateKeySpec}. The master key pair,
- * in contrast, is self-sufficient and round-trips through the plain X.509 / PKCS#8 specs.
+ * rebuilding the private key through {@link SM9EncUserPrivateKeySpec}. The service only
+ * decrypts, so it rebuilds the key declared for decryption, which the provider then refuses
+ * for the SM9 KEM. The master key pair, in contrast, is self-sufficient and round-trips
+ * through the plain X.509 / PKCS#8 specs.
  */
 public class SM9EncKeyEncodingExample
 {
@@ -78,8 +80,10 @@ public class SM9EncKeyEncodingExample
         //    so the KeyFactory checks that they belong together, by the KGC's own relation
         //    between them: a key filed under the wrong master public key, identity or hid is
         //    refused here, with an InvalidKeySpecException, rather than failing a later MAC check.
-        PrivateKey bobRebuilt = kf.generatePrivate(
-            new SM9EncUserPrivateKeySpec(bobEncoded, masterPublic, bobIdentity, hid));
+        //    The service only decrypts, so the key is declared for decryption: the provider
+        //    refuses it for the SM9 KEM, on its first use as on every other.
+        PrivateKey bobRebuilt = kf.generatePrivate(new SM9EncUserPrivateKeySpec(bobEncoded, masterPublic,
+            bobIdentity, hid, SM9EncUserPrivateKeySpec.USAGE_DECRYPTION));
 
         // 4. The rebuilt key knows its own identity - the decryption service does not need
         //    to track it alongside the key.

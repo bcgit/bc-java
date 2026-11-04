@@ -88,8 +88,9 @@ class BCSM9EncPrivateKey
      * Two user keys are equal when they carry the same secret point for the same identity,
      * under the same master public key, hid and usage. The encoding is the point alone, so
      * none of the others would be compared if they were left out: the hid and usage are what
-     * tell the KEM / decryption key of an identity from its key-exchange key, which the
-     * consumers refuse to use in each other's place, and {@link #hashCode()} is taken from
+     * tell the KEM / decryption key of an identity from its key-exchange key, and a key declared
+     * for the KEM from one declared for decryption or for neither, which the consumers refuse to
+     * use in each other's place, and {@link #hashCode()} is taken from
      * the master public key, so two keys equal without it could hash apart.
      * <p>
      * The public discriminators are compared first, in the ordinary way: they are the
@@ -118,7 +119,7 @@ class BCSM9EncPrivateKey
         }
         BCSM9EncPrivateKey other = (BCSM9EncPrivateKey)o;
         if (keyParams.getHid() != other.keyParams.getHid()
-            || keyParams.isExchangeKey() != other.keyParams.isExchangeKey()
+            || keyParams.getUsage() != other.keyParams.getUsage()
             || !Arrays.areEqual(keyParams.getMasterPublicKey().getEncoded(),
                 other.keyParams.getMasterPublicKey().getEncoded())
             || !Arrays.areEqual(keyParams.getIdentity(), other.keyParams.getIdentity()))

@@ -270,13 +270,15 @@ public class SM9CipherTest
         checkEncryptionVector(kat, katBobPair, "SM9/XOR/NoPadding", SM9Cipher.EN_TYPE_STREAM, "modeA");
         checkEncryptionVector(kat, katBobPair, "SM9", SM9Cipher.EN_TYPE_SM4, "modeB");
 
-        // SM9 KEM (GM/T 0044.4) through KeyGenerator.SM9-KEM, to the same recipient public key
+        // SM9 KEM (GM/T 0044.4) through KeyGenerator.SM9-KEM, to Bob's KEM key: a key serves one of
+        // Cipher.SM9 and the KEM, and a KGC offering both publishes a hid for each
+        KeyPair bobKem = masterPriv.generateUserKeyPair(bob, (byte)0x05);
         KeyGenerator kemGen = KeyGenerator.getInstance("SM9-KEM", "BC");
-        kemGen.init(new KEMGenerateSpec(bobPublic, "AES", 128));
+        kemGen.init(new KEMGenerateSpec(bobKem.getPublic(), "AES", 128));
         SecretKeyWithEncapsulation kemEnc = (SecretKeyWithEncapsulation)kemGen.generateKey();
 
         KeyGenerator kemExt = KeyGenerator.getInstance("SM9-KEM", "BC");
-        kemExt.init(new KEMExtractSpec(bobKey, kemEnc.getEncapsulation(), "AES", 128));
+        kemExt.init(new KEMExtractSpec(bobKem.getPrivate(), kemEnc.getEncapsulation(), "AES", 128));
         SecretKeyWithEncapsulation kemDec = (SecretKeyWithEncapsulation)kemExt.generateKey();
         isTrue("SM9-KEM encapsulate/decapsulate agree on a 128-bit key",
             kemEnc.getEncoded().length == 16 && Arrays.areEqual(kemEnc.getEncoded(), kemDec.getEncoded()));
@@ -291,7 +293,7 @@ public class SM9CipherTest
         // a truncated encapsulation is refused cleanly. The try covers only the call that should refuse
         // it, and the message is asserted, so that an unrelated IllegalArgumentException cannot pass
         KeyGenerator kemShort = KeyGenerator.getInstance("SM9-KEM", "BC");
-        kemShort.init(new KEMExtractSpec(bobKey, new byte[10], "AES", 128));
+        kemShort.init(new KEMExtractSpec(bobKem.getPrivate(), new byte[10], "AES", 128));
         try
         {
             kemShort.generateKey();

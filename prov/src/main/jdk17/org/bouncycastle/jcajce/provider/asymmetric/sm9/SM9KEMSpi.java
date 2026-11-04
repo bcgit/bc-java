@@ -10,7 +10,9 @@ import java.security.spec.AlgorithmParameterSpec;
 import javax.crypto.KEMSpi;
 
 import org.bouncycastle.crypto.params.SM9EncMasterPrivateKeyParameters;
+import org.bouncycastle.crypto.params.SM9EncPrivateKeyParameters;
 import org.bouncycastle.jcajce.provider.asymmetric.util.KdfUtil;
+import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 import org.bouncycastle.jcajce.spec.KTSParameterSpec;
 
 /**
@@ -30,7 +32,9 @@ import org.bouncycastle.jcajce.spec.KTSParameterSpec;
  * <b>Usage warning:</b> an identity's key should be used for this service or for
  * {@code Cipher.SM9}, but not for both, whether or not a KTSParameterSpec KDF is layered on
  * top. A deployment needing both has its KGC publish a separate hid for each function, as
- * it already does for the key exchange, so that the two keys are distinct.
+ * it already does for the key exchange, so that the two keys are distinct. {@code newDecapsulator}
+ * also refuses a key declared for decryption, and one that has been used for it -
+ * see {@link SM9EncPrivateKeyParameters#recordUsage(int)}.
  */
 public class SM9KEMSpi
     implements KEMSpi
@@ -82,7 +86,18 @@ public class SM9KEMSpi
 
         KTSParameterSpec kts = resolveSpec(spec);
 
-        return new SM9DecapsulatorSpi(bcPrivateKey, kts);
+        try
+        {
+            // the decapsulator's extractor records the key's use for the KEM, refusing a key declared
+            // for decryption or already used for it - the only refusal left to it once the key and
+            // spec have passed the checks above. Made last, so that a key or spec refused for anything
+            // else leaves no record behind.
+            return new SM9DecapsulatorSpi(bcPrivateKey, kts);
+        }
+        catch (IllegalArgumentException e)
+        {
+            throw SecurityExceptions.invalidKeyException(e.getMessage(), e);
+        }
     }
 
     /**
