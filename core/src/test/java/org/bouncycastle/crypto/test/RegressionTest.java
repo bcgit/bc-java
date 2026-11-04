@@ -166,6 +166,7 @@ public class RegressionTest
             new SM9EngineTest(),
             new SM9SignerTest(),
             new SM9KeyExchangeTest(),
+            new SM9KeyUsageTest(),
             new DSTU7624Test(),
             new DSTU7564Test(),
             new IsoTrailerTest(),

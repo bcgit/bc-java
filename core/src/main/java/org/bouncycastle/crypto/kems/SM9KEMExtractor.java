@@ -19,7 +19,9 @@ import org.bouncycastle.util.Arrays;
  * not for both. Where a deployment needs both functions for one identity, the KGC
  * publishes a separate hid for each - as it already does for the key exchange - so that
  * the two user keys are distinct. That is the arrangement the exchange-versus-KEM
- * separation the constructor requires below already follows.
+ * separation the constructor requires below already follows. The constructor also refuses a
+ * key declared for decryption, and one that has been used for it - see
+ * {@link SM9EncPrivateKeyParameters#recordUsage(int)}.
  */
 public class SM9KEMExtractor
     implements EncapsulatedSecretExtractor
@@ -48,6 +50,8 @@ public class SM9KEMExtractor
             throw new IllegalArgumentException(
                 "SM9 KEM decapsulation requires an encryption user key, not a key-exchange key");
         }
+        // a key is held to the first of the KEM and decryption it is used for
+        key.recordUsage(SM9EncPrivateKeyParameters.USAGE_KEM);
         this.key = key;
         this.keyLenBits = keyLenBits;
     }

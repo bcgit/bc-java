@@ -6,6 +6,7 @@ import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.math.ec.sm9.SM9G2Point;
 import org.bouncycastle.math.ec.sm9.SM9Pairing;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Properties;
 
 /**
  * A user's SM9 encryption private key de = [t2]P2, a point of G2
@@ -15,20 +16,15 @@ import org.bouncycastle.util.Arrays;
  * to form the peer's Q point.
  * <p>
  * A key additionally records which usage it was derived for - KEM/decryption
- * ({@link SM9EncMasterPrivateKeyParameters#generateUserKey(byte[], byte)}) or
- * key exchange ({@link SM9EncMasterPrivateKeyParameters#generateExchangeKey(byte[])})
+ * ({@link SM9EncMasterPrivateKeyParameters#generateUserKey(byte[], byte)}), which can be
+ * declared further for one of the two (see below), or key exchange
+ * ({@link SM9EncMasterPrivateKeyParameters#generateExchangeKey(byte[])})
  * - and the consumers enforce it: the key exchange evaluates the pairing
  * e(R, de) on a <b>peer-supplied</b> point R, so a key that also decapsulates
  * would hand any exchange peer the very pairing oracle on de that the KEM's
  * security argument assumes is unavailable. Keeping the two usages on separate
  * keys (distinct hid, or distinct master keys as the GM/T 0044.5 examples do)
  * is what makes sharing the master key sound.
- * <p>
- * The usage a key records separates the key exchange from KEM / decryption; it does not
- * separate the KEM from public-key encryption. <b>Usage warning:</b> one identity's key
- * should be used for the KEM or for public-key encryption, but not for both. A deployment
- * needing both has its KGC publish a separate hid for each function, which is not
- * something this class can apply.
  * <p>
  * A key rebuilt from its encoding ({@link #fromEncoded} /
  * {@link #fromEncodedExchangeKey}) carries the usage the importer names - the
@@ -39,20 +35,58 @@ import org.bouncycastle.util.Arrays;
  * imported with. Where the KGC derives an identity's exchange key and its KEM /
  * decryption key under one hid, the two are the same point, and the usage is the
  * one thing that check cannot tell.
+ * <p>
+ * <b>Usage warning:</b> one identity's key should be used for the KEM or for public-key
+ * encryption, but not for both. A deployment needing both has its KGC publish a separate hid for
+ * each function. A KEM / decryption key can be declared for one of the two when it is derived or
+ * imported ({@link SM9EncMasterPrivateKeyParameters#generateUserKey(byte[], byte, int)},
+ * {@link #fromEncoded(byte[], SM9EncMasterPublicKeyParameters, byte[], byte, int)}), and is then
+ * refused for the other on every use, its first included. One declared for neither is held to the
+ * first of the two it is used for, and refused for the other - see {@link #recordUsage(int)}.
  */
 public class SM9EncPrivateKeyParameters
     extends AsymmetricKeyParameter
     implements Destroyable
 {
+    /**
+     * The usage of a KEM / decryption key declared for neither of the two when it was derived or
+     * imported: it is held to the first of them it is used for - see
+     * {@link #recordUsage(int)}.
+     */
+    public static final int USAGE_UNSPECIFIED = 0;
+
+    /**
+     * The use of a key for KEM decapsulation (GM/T 0044.4-2016, clause 6): a usage a key can be
+     * declared for, and one {@link #recordUsage(int)} checks.
+     */
+    public static final int USAGE_KEM = 1;
+
+    /**
+     * The use of a key for public-key decryption (GM/T 0044.4-2016, clause 7): a usage a key can be
+     * declared for, and one {@link #recordUsage(int)} checks.
+     */
+    public static final int USAGE_DECRYPTION = 2;
+
+    /**
+     * The usage of a key-exchange key (GM/T 0044.3-2016), as
+     * {@link SM9EncMasterPrivateKeyParameters#generateExchangeKey(byte[])} derives and
+     * {@link #fromEncodedExchangeKey} imports one.
+     */
+    public static final int USAGE_KEY_EXCHANGE = 3;
+
     private SM9G2Point de;
     private volatile boolean destroyed;
     private final SM9EncMasterPublicKeyParameters masterPublicKey;
     private final byte[] identity;
     private final byte hid;
-    private final boolean exchangeKey;
+    private final int usage;
+
+    // the record of the uses of this key's value, found or made the first time it is checked, and let
+    // go by destroy()
+    private SM9KeyUsageGuard.Record usageRecord;
 
     SM9EncPrivateKeyParameters(SM9G2Point de, SM9EncMasterPublicKeyParameters masterPublicKey,
-                               byte[] identity, byte hid, boolean exchangeKey)
+                               byte[] identity, byte hid, int usage)
     {
         super(true);
         this.de = de;
@@ -62,9 +96,16 @@ public class SM9EncPrivateKeyParameters
         // sibling has always cloned in its constructor; every caller here happened to clone first.
         this.identity = Arrays.clone(identity);
         this.hid = hid;
-        this.exchangeKey = exchangeKey;
+        this.usage = usage;
     }
 
+    /**
+     * The private point de. A consumer that decapsulates or decrypts with it calls
+     * {@link #recordUsage(int)} first, as {@link org.bouncycastle.crypto.kems.SM9KEMExtractor} and
+     * {@link org.bouncycastle.crypto.engines.SM9Engine} do when they are handed the key.
+     *
+     * @throws IllegalStateException if this key has been destroyed.
+     */
     public SM9G2Point getPrivatePoint()
     {
         return checkedDe();
@@ -93,7 +134,118 @@ public class SM9EncPrivateKeyParameters
      */
     public boolean isExchangeKey()
     {
-        return exchangeKey;
+        return usage == USAGE_KEY_EXCHANGE;
+    }
+
+    /**
+     * The usage this key was derived or imported for: {@link #USAGE_KEY_EXCHANGE} for a
+     * key-exchange key, {@link #USAGE_KEM} or {@link #USAGE_DECRYPTION} for a KEM / decryption
+     * key declared for one of the two, and {@link #USAGE_UNSPECIFIED} for one declared for neither.
+     */
+    public int getUsage()
+    {
+        return usage;
+    }
+
+    /**
+     * Record that this key is being handed over for {@code usage} - {@link #USAGE_KEM} or
+     * {@link #USAGE_DECRYPTION} - refusing it if it may not be used for that. The KEM and
+     * decryption entry points ({@link org.bouncycastle.crypto.kems.SM9KEMExtractor},
+     * {@link org.bouncycastle.crypto.engines.SM9Engine} and the provider services built on them)
+     * call this when they are handed the key, so the use is recorded then, before the operation
+     * itself runs and whether or not it goes on to succeed. A call made only to find out whether a
+     * use would be accepted records that use as well.
+     * <p>
+     * A key declared for one of the two when it was derived or imported is refused for the other,
+     * on its first use as on every later one. Beyond that, a key is held to the first of the two
+     * it is used for, and refused for the other. The key is recognised by its value - its point
+     * and identity - rather than by this object, so the same key rebuilt from its encoding, or
+     * derived again, is held to the same use, whatever usage that object was declared for.
+     * Setting {@link Properties#SM9_ALLOW_MULTI_USE} to "true" turns this second check off, and
+     * nothing is recorded while it is set; a declared usage still holds. A destroyed key is not
+     * checked against the record of its value and adds nothing to it, whether it was destroyed before
+     * its first use or since: it can no longer be used for either function, which the operation it is
+     * handed to reports.
+     * <p>
+     * The record is kept in memory by the copy of this library in use, and is not kept across a
+     * restart: an application that loads the library once, as most do, keeps one record for its
+     * JVM, while one that loads a separate copy through each of several class loaders keeps a
+     * separate record for each copy. Nor is a key remembered for as long as the process runs: its
+     * record lasts while a key object of its value that has been handed over, and not destroyed
+     * since, is in use, and while it is among the 1024 keys most recently handed over. A key rebuilt
+     * for each use, among more than 1024 keys in use, can be forgotten between two of its uses, and
+     * its next use is then taken as its first; a key declared for one of the two is refused for the
+     * other however often it is rebuilt. The check therefore guards against a key being put to both
+     * uses by mistake within one application; it does not replace using a separate key for each
+     * function.
+     *
+     * @param usage the use about to be made of this key.
+     * @throws IllegalArgumentException if usage is neither of the two, if this is a key-exchange
+     * key, if this key was declared for the other, or if this key has been used for the other.
+     */
+    public void recordUsage(int usage)
+    {
+        if (usage != USAGE_KEM && usage != USAGE_DECRYPTION)
+        {
+            throw new IllegalArgumentException("usage must be USAGE_KEM or USAGE_DECRYPTION");
+        }
+        if (this.usage == USAGE_KEY_EXCHANGE)
+        {
+            throw new IllegalArgumentException("SM9 key-exchange user key cannot be used for " + usageName(usage));
+        }
+        if (this.usage != USAGE_UNSPECIFIED && this.usage != usage)
+        {
+            throw new IllegalArgumentException("SM9 encryption user key is declared for " + usageName(this.usage)
+                + " and cannot be used for " + usageName(usage));
+        }
+        if (!SM9KeyUsageGuard.isOn())
+        {
+            return;
+        }
+        int held;
+        synchronized (this)
+        {
+            // the lock destroy() takes, held until the use is recorded, so that a key destroyed while
+            // this runs adds nothing to the record either
+            if (destroyed)
+            {
+                // a destroyed key cannot be used for either function, which the operation it is handed
+                // to reports; checked here, one destroyed after its first use would be refused for the
+                // other function instead
+                return;
+            }
+            held = SM9KeyUsageGuard.claim(usageRecord(), usage);
+        }
+        if (held != usage)
+        {
+            throw new IllegalArgumentException("SM9 encryption user key has been used for " + usageName(held)
+                + " in this JVM: key-usage separation refuses it for " + usageName(usage) + " (set "
+                + Properties.SM9_ALLOW_MULTI_USE + " to true to turn the check off)");
+        }
+    }
+
+    // the record of the value of this key, found by the value the first time it is wanted; called
+    // with the lock destroy() takes held, and only while this key is not destroyed
+    private SM9KeyUsageGuard.Record usageRecord()
+    {
+        if (usageRecord == null)
+        {
+            byte[] point = de.getEncoded();
+            try
+            {
+                usageRecord = SM9KeyUsageGuard.recordFor(point, identity);
+            }
+            finally
+            {
+                Arrays.clear(point);
+            }
+        }
+        return usageRecord;
+    }
+
+    private static String usageName(int usage)
+    {
+        return (usage == USAGE_KEM) ? "KEM decapsulation" : "decryption";
     }
 
     /**
@@ -150,9 +302,30 @@ public class SM9EncPrivateKeyParameters
     public static SM9EncPrivateKeyParameters fromEncoded(
         byte[] enc, SM9EncMasterPublicKeyParameters masterPublicKey, byte[] identity, byte hid)
     {
+        return fromEncoded(enc, masterPublicKey, identity, hid, USAGE_UNSPECIFIED);
+    }
+
+    /**
+     * Rebuild a KEM / decryption user key from its bare point encoding, as
+     * {@link #fromEncoded(byte[], SM9EncMasterPublicKeyParameters, byte[], byte)} does, declared for
+     * one of the two. A key declared for {@link #USAGE_KEM} or {@link #USAGE_DECRYPTION} is refused
+     * for the other on every use, its first included; {@link #USAGE_UNSPECIFIED} declares neither -
+     * see {@link #recordUsage(int)}.
+     *
+     * @param enc the encoding {@link #getEncoded()} writes.
+     * @param masterPublicKey the encryption master public key the key was derived under.
+     * @param identity the identity the key was derived for.
+     * @param hid the hid the KGC derived the key under.
+     * @param usage {@link #USAGE_KEM}, {@link #USAGE_DECRYPTION} or {@link #USAGE_UNSPECIFIED}.
+     * @return the rebuilt key.
+     */
+    public static SM9EncPrivateKeyParameters fromEncoded(
+        byte[] enc, SM9EncMasterPublicKeyParameters masterPublicKey, byte[] identity, byte hid, int usage)
+    {
+        checkDeclaredUsage(usage);
         SM9SigPrivateKeyParameters.checkContext(masterPublicKey, identity);
         SM9EncMasterPrivateKeyParameters.checkEncryptionHid(hid);
-        return checked(SM9G2Point.decode(enc), masterPublicKey, identity, hid, false);
+        return checked(SM9G2Point.decode(enc), masterPublicKey, identity, hid, usage);
     }
 
     /**
@@ -180,14 +353,24 @@ public class SM9EncPrivateKeyParameters
         byte[] enc, SM9EncMasterPublicKeyParameters masterPublicKey, byte[] identity, byte hid)
     {
         SM9SigPrivateKeyParameters.checkContext(masterPublicKey, identity);
-        return checked(SM9G2Point.decode(enc), masterPublicKey, identity, hid, true);
+        return checked(SM9G2Point.decode(enc), masterPublicKey, identity, hid, USAGE_KEY_EXCHANGE);
+    }
+
+    // the usages a KEM / decryption key can be declared for when it is derived or imported
+    static void checkDeclaredUsage(int usage)
+    {
+        if (usage != USAGE_UNSPECIFIED && usage != USAGE_KEM && usage != USAGE_DECRYPTION)
+        {
+            throw new IllegalArgumentException("usage must be USAGE_UNSPECIFIED, USAGE_KEM or USAGE_DECRYPTION"
+                + " - a key-exchange key comes from generateExchangeKey or fromEncodedExchangeKey");
+        }
     }
 
     // the key de is, once it is checked to be the key the KGC derives for identity and hid under
     // masterPublicKey: e([H1(ID || hid, N)]P1 + P_pub-e, de) = e(P_pub-e, P2). de is secret, and the
     // pairing starts its Miller loop from a random representative of it, as decryption's does
     private static SM9EncPrivateKeyParameters checked(SM9G2Point de, SM9EncMasterPublicKeyParameters masterPublicKey,
-                                                      byte[] identity, byte hid, boolean exchangeKey)
+                                                      byte[] identity, byte hid, int usage)
     {
         ECPoint q;
         try
@@ -205,7 +388,7 @@ public class SM9EncPrivateKeyParameters
             throw new IllegalArgumentException(
                 "SM9 encryption private key does not match its master public key, identity and hid");
         }
-        return new SM9EncPrivateKeyParameters(de, masterPublicKey, identity, hid, exchangeKey);
+        return new SM9EncPrivateKeyParameters(de, masterPublicKey, identity, hid, usage);
     }
 
     /**
@@ -224,6 +407,8 @@ public class SM9EncPrivateKeyParameters
             destroyed = true;
             de = null;
             Arrays.clear(identity);
+            // nor is the record of the value's use held for this object any longer
+            usageRecord = null;
         }
     }
 

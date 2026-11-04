@@ -144,8 +144,29 @@ public class SM9EncMasterPrivateKeyParameters
      */
     public SM9EncPrivateKeyParameters generateUserKey(byte[] identity, byte hid)
     {
+        return generateUserKey(identity, hid, SM9EncPrivateKeyParameters.USAGE_UNSPECIFIED);
+    }
+
+    /**
+     * Derive the KEM / decryption private key of the user identified by {@code identity} under the
+     * given hid, as {@link #generateUserKey(byte[], byte)} does, declared for one of the two. A key
+     * declared for {@link SM9EncPrivateKeyParameters#USAGE_KEM} or
+     * {@link SM9EncPrivateKeyParameters#USAGE_DECRYPTION} is refused for the other on every use, its
+     * first included; {@link SM9EncPrivateKeyParameters#USAGE_UNSPECIFIED} declares neither - see
+     * {@link SM9EncPrivateKeyParameters#recordUsage(int)}.
+     *
+     * @param identity the user's identity.
+     * @param hid the hid the KGC publishes for the function the key serves.
+     * @param usage {@link SM9EncPrivateKeyParameters#USAGE_KEM},
+     * {@link SM9EncPrivateKeyParameters#USAGE_DECRYPTION} or
+     * {@link SM9EncPrivateKeyParameters#USAGE_UNSPECIFIED}.
+     * @return the user's key.
+     */
+    public SM9EncPrivateKeyParameters generateUserKey(byte[] identity, byte hid, int usage)
+    {
+        SM9EncPrivateKeyParameters.checkDeclaredUsage(usage);
         checkEncryptionHid(hid);
-        return generateKey(identity, hid, false);
+        return generateKey(identity, hid, usage);
     }
 
     /**
@@ -155,7 +176,7 @@ public class SM9EncMasterPrivateKeyParameters
      */
     public SM9EncPrivateKeyParameters generateExchangeKey(byte[] identity)
     {
-        return generateKey(identity, HID_EXCHANGE, true);
+        return generateKey(identity, HID_EXCHANGE, SM9EncPrivateKeyParameters.USAGE_KEY_EXCHANGE);
     }
 
     /**
@@ -172,10 +193,10 @@ public class SM9EncMasterPrivateKeyParameters
      */
     public SM9EncPrivateKeyParameters generateExchangeKey(byte[] identity, byte hid)
     {
-        return generateKey(identity, hid, true);
+        return generateKey(identity, hid, SM9EncPrivateKeyParameters.USAGE_KEY_EXCHANGE);
     }
 
-    private SM9EncPrivateKeyParameters generateKey(byte[] identity, byte hid, boolean exchangeKey)
+    private SM9EncPrivateKeyParameters generateKey(byte[] identity, byte hid, int usage)
     {
         SM9SigPrivateKeyParameters.checkContext(publicParams, identity);
         // t2 = ke * (H1(identity || hid, N) + ke)^-1 mod N, in the constant-time arithmetic the
@@ -183,7 +204,7 @@ public class SM9EncMasterPrivateKeyParameters
         BigInteger t2 = SM9KeyDerivation.t2(checkedKe(), identity, hid,
             "SM9 encryption master key must be regenerated for this identity");
         SM9G2Point de = SM9Curve.P2.multiply(t2);
-        return new SM9EncPrivateKeyParameters(de, publicParams, identity, hid, exchangeKey);
+        return new SM9EncPrivateKeyParameters(de, publicParams, identity, hid, usage);
     }
 
     /**

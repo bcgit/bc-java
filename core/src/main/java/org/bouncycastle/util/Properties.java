@@ -630,6 +630,20 @@ public class Properties
      */
     public static final String CONSTRAINTS_ALLOW_OVERRIDE = "org.bouncycastle.constraints.allow_override";
 
+    /**
+     * Set to "true" for a deployment that uses one SM9 encryption user key for both the SM9 KEM
+     * and SM9 public-key decryption. By default an SM9 encryption user key is held, within the
+     * copy of the library in use (one per class loader that loads it), to the first of the two it
+     * is used for, and refused for the other; the key is recognised by its value, so the same key
+     * rebuilt as a new object is held to the same use
+     * (see {@code SM9EncPrivateKeyParameters.recordUsage(int)}). Setting the property turns that
+     * check off, and nothing is recorded while it is set; a key declared for one of the two when
+     * it was derived or imported is still held to that one. Read via
+     * {@link #isOverrideSet(String, boolean)} each time a key is handed to the KEM or to
+     * decryption.
+     */
+    public static final String SM9_ALLOW_MULTI_USE = "org.bouncycastle.sm9.allow_multi_use";
+
     private Properties()
     {
     }

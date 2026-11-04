@@ -24,6 +24,8 @@ import org.bouncycastle.math.ec.sm9.SM9Curve;
 import org.bouncycastle.math.ec.sm9.SM9Pairing;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.Properties;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.test.FixedSecureRandom;
 import org.bouncycastle.util.test.SimpleTest;
 import org.bouncycastle.util.test.TestRandomBigInteger;
@@ -76,7 +78,8 @@ public class SM9KEMTest
 
         checkDegenerateRecipientPoint();
         checkMultiplyRecipientPoint();
-        checkMalformedEncapsulation(master, identity, klen);
+        // under an identity of its own, as the annex's key is the one Annex D decrypts with
+        checkMalformedEncapsulation(master, Strings.toByteArray("Carol"), klen);
         checkUnusableSource(recipient, klen);
 
         // e(P_pub-e, P2) is the same for every operation under a master public key: the key computes it
@@ -93,9 +96,21 @@ public class SM9KEMTest
         isTrue("SM9 KEM encapsulation C",
             Arrays.areEqual(enc.getEncapsulation(), Arrays.concatenate(SM9Vectors.hex(v, "C_x"), SM9Vectors.hex(v, "C_y"))));
 
+        // GM/T 0044.5 Annex C decapsulates with the user key Annex D decrypts with, which the key-usage
+        // check refuses within one JVM - SM9EngineTest decrypts the Annex D ciphertexts in the same run -
+        // so the known answer is taken with the check turned off for this thread
         SM9EncPrivateKeyParameters userKey = master.generateUserKey(identity, SM9EncMasterPrivateKeyParameters.HID);
-        SM9KEMExtractor extractor = new SM9KEMExtractor(userKey, klen);
-        isTrue("SM9 KEM decapsulation", Arrays.areEqual(extractor.extractSecret(enc.getEncapsulation()), SM9Vectors.hex(v, "K")));
+        Properties.setThreadOverride(Properties.SM9_ALLOW_MULTI_USE, true);
+        try
+        {
+            SM9KEMExtractor extractor = new SM9KEMExtractor(userKey, klen);
+            isTrue("SM9 KEM decapsulation",
+                Arrays.areEqual(extractor.extractSecret(enc.getEncapsulation()), SM9Vectors.hex(v, "K")));
+        }
+        finally
+        {
+            Properties.removeThreadOverride(Properties.SM9_ALLOW_MULTI_USE);
+        }
 
         // a key-exchange user key must not decapsulate or decrypt: the usages are kept on separate keys
         SM9EncPrivateKeyParameters exchangeKey = master.generateExchangeKey(identity);
@@ -260,19 +275,22 @@ public class SM9KEMTest
                 + "HID_EXCHANGE (0x02)").equals(e.getMessage()));
         }
 
-        byte otherHid = (byte)0x04;
-        SM9EncPublicKeyParameters recipient = masterPublic.getUserPublicKey(identity, otherHid);
-        SM9EncPrivateKeyParameters userKey = master.generateUserKey(identity, otherHid);
+        // a KGC offering both functions publishes a hid for each, so the two keys are distinct
+        byte kemHid = (byte)0x04;
+        SM9EncPublicKeyParameters recipient = masterPublic.getUserPublicKey(identity, kemHid);
+        SM9EncPrivateKeyParameters userKey = master.generateUserKey(identity, kemHid);
         SecretWithEncapsulation enc = new SM9KEMGenerator(klen, CryptoServicesRegistrar.getSecureRandom())
             .generateEncapsulated(recipient);
         isTrue("a KEM recipient key under a KGC-chosen hid still round-trips",
             Arrays.areEqual(enc.getSecret(), new SM9KEMExtractor(userKey, klen).extractSecret(enc.getEncapsulation())));
+        byte encryptionHid = (byte)0x05;
         byte[] message = new byte[20];
         SM9Engine encryptor = new SM9Engine(SM9Engine.Mode.STREAM);
-        encryptor.init(true, new ParametersWithRandom(recipient, CryptoServicesRegistrar.getSecureRandom()));
+        encryptor.init(true, new ParametersWithRandom(masterPublic.getUserPublicKey(identity, encryptionHid),
+            CryptoServicesRegistrar.getSecureRandom()));
         byte[] ciphertext = encryptor.processBlock(message, 0, message.length);
         SM9Engine decryptor = new SM9Engine(SM9Engine.Mode.STREAM);
-        decryptor.init(false, userKey);
+        decryptor.init(false, master.generateUserKey(identity, encryptionHid));
         isTrue("an encryption recipient key under a KGC-chosen hid still round-trips",
             Arrays.areEqual(message, decryptor.processBlock(ciphertext, 0, ciphertext.length)));
     }

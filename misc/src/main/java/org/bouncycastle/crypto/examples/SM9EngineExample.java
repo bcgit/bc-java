@@ -37,7 +37,8 @@ import org.bouncycastle.util.encoders.Hex;
  * <b>Usage warning:</b> an identity's key should be used for this encryption or for the SM9
  * KEM ({@link SM9KEMExample}), but not for both. A deployment needing both has its KGC
  * publish a separate hid for each function, as it already does for the key exchange, so
- * that the two keys are distinct.
+ * that the two keys are distinct. Bob's key here is declared for decryption when it is
+ * derived, so it is refused for the KEM.
  */
 public class SM9EngineExample
 {
@@ -47,7 +48,8 @@ public class SM9EngineExample
         SecureRandom random = new SecureRandom();
 
         // 1. KGC: generate the SM9 encryption master key pair and derive Bob's
-        //    decryption key from his identity under the encryption hid (0x03).
+        //    decryption key from his identity under the encryption hid (0x03),
+        //    declared for decryption.
         SM9EncMasterKeyPairGenerator kpGen = new SM9EncMasterKeyPairGenerator();
         kpGen.init(new KeyGenerationParameters(random, 256));
         AsymmetricCipherKeyPair master = kpGen.generateKeyPair();
@@ -55,8 +57,8 @@ public class SM9EngineExample
         SM9EncMasterPublicKeyParameters masterPub = (SM9EncMasterPublicKeyParameters)master.getPublic();
 
         byte[] bobIdentity = Strings.toByteArray("Bob");
-        SM9EncPrivateKeyParameters bobKey =
-            masterPriv.generateUserKey(bobIdentity, SM9EncMasterPrivateKeyParameters.HID);
+        SM9EncPrivateKeyParameters bobKey = masterPriv.generateUserKey(bobIdentity,
+            SM9EncMasterPrivateKeyParameters.HID, SM9EncPrivateKeyParameters.USAGE_DECRYPTION);
 
         // 2. Sender: form Bob's public key from the published master public key and his
         //    identity - no certificate or KGC interaction needed - and encrypt (SM4

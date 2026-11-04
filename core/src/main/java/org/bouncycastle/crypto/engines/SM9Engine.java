@@ -46,7 +46,9 @@ import org.bouncycastle.util.BigIntegers;
  * <b>Usage warning:</b> an identity's encryption key should be used for this algorithm
  * or for the KEM ({@link org.bouncycastle.crypto.kems.SM9KEMExtractor}), but not for
  * both. A deployment needing both has its KGC publish a separate hid for each function,
- * as it already does for the key exchange, so that the two keys are distinct.
+ * as it already does for the key exchange, so that the two keys are distinct. {@link #init} also
+ * refuses for decryption a key declared for the KEM, and one that has been used
+ * for it - see {@link SM9EncPrivateKeyParameters#recordUsage(int)}.
  */
 public class SM9Engine
 {
@@ -193,6 +195,8 @@ public class SM9Engine
                 throw new IllegalArgumentException(
                     "SM9 decryption requires an encryption user key, not a key-exchange key");
             }
+            // a key is held to the first of the KEM and decryption it is used for
+            userKey.recordUsage(SM9EncPrivateKeyParameters.USAGE_DECRYPTION);
             this.userKey = userKey;
             this.recipient = null;
             this.random = null;

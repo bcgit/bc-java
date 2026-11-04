@@ -22,7 +22,6 @@ import org.bouncycastle.asn1.gm.SM9Cipher;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
-import org.bouncycastle.crypto.params.SM9EncMasterPrivateKeyParameters;
 import org.bouncycastle.crypto.params.SM9EncPrivateKeyParameters;
 import org.bouncycastle.crypto.params.SM9EncPublicKeyParameters;
 import org.bouncycastle.crypto.engines.SM9Engine;
@@ -62,7 +61,9 @@ import org.bouncycastle.util.Strings;
  * <b>Usage warning:</b> an identity's key should be used for this service or for the SM9
  * KEM ({@code KeyGenerator.SM9-KEM}, {@code KEM.SM9-KEM}), but not for both. A deployment
  * needing both has its KGC publish a separate hid for each function, as it already does for
- * the key exchange, so that the two keys are distinct.
+ * the key exchange, so that the two keys are distinct. {@code init} also refuses for decryption a
+ * key declared for the KEM, and one that has been used for it - see
+ * {@link SM9EncPrivateKeyParameters#recordUsage(int)}.
  * <p>
  * The ciphertext is the GM/T 0080-2020 SM9Cipher structure (see {@link org.bouncycastle.asn1.gm.SM9Cipher}).
  */
@@ -74,9 +75,11 @@ public class CipherSpi
 
     private int state = -1;
     private SM9Engine.Mode mode = SM9Engine.Mode.SM4;
-    private SM9EncPublicKeyParameters recipient;
+    // initialised with the key at init, in either direction, so the key is checked there once - for
+    // decryption, its usage recorded - rather than again by each doFinal
+    private SM9Engine engine;
+    // the decryption key, kept to tell a key destroyed since init from a malformed ciphertext
     private SM9EncPrivateKeyParameters userKey;
-    private SecureRandom random;
 
     protected void engineSetMode(String modeName)
         throws NoSuchAlgorithmException
@@ -163,8 +166,7 @@ public class CipherSpi
         throws InvalidKeyException, InvalidAlgorithmParameterException
     {
         this.state = opmode;
-        this.random = CryptoServicesRegistrar.getSecureRandom(random);
-        this.recipient = null;
+        this.engine = null;
         this.userKey = null;
         buffer.erase();
 
@@ -181,14 +183,18 @@ public class CipherSpi
                     "SM9 encryption requires the recipient's public key from SM9EncMasterPublicKey.getUserPublicKey()");
             }
             SM9EncPublicKeyParameters keyParams = ((BCSM9EncPublicKey)key).getKeyParameters();
-            if (keyParams.getHid() == SM9EncMasterPrivateKeyParameters.HID_EXCHANGE)
+            SM9Engine encryptor = new SM9Engine(mode);
+            try
             {
-                // the engine refuses it as well, but only once doFinal builds it; refused here, where
-                // init can report the wrong kind of key as InvalidKeyException
-                throw new InvalidKeyException(
-                    "SM9 encryption requires an encryption recipient key, not a key-exchange key under HID_EXCHANGE (0x02)");
+                // the engine refuses a recipient key formed under HID_EXCHANGE, the wrong kind of key,
+                // which init and InvalidKeyException are for
+                encryptor.init(true, new ParametersWithRandom(keyParams, CryptoServicesRegistrar.getSecureRandom(random)));
             }
-            recipient = keyParams;
+            catch (IllegalArgumentException e)
+            {
+                throw SecurityExceptions.invalidKeyException(e.getMessage(), e);
+            }
+            engine = encryptor;
         }
         else if (opmode == Cipher.DECRYPT_MODE)
         {
@@ -210,14 +216,20 @@ public class CipherSpi
                 throw new InvalidKeyException("key destroyed");
             }
             SM9EncPrivateKeyParameters keyParams = ((BCSM9EncPrivateKey)key).getKeyParameters();
-            if (keyParams.isExchangeKey())
+            SM9Engine decryptor = new SM9Engine(mode);
+            try
             {
-                // the engine refuses a key-exchange key as well, but only once doFinal builds it,
-                // where the refusal came out as a BadPaddingException blaming the ciphertext; the
-                // key is the wrong kind of key, which init and InvalidKeyException are for, as in
-                // the KEM and key agreement services
-                throw new InvalidKeyException("SM9 decryption requires an encryption user key, not a key-exchange key");
+                // the engine refuses a key-exchange key, and records the key's use for decryption,
+                // refusing a key declared for the KEM or already used for it: the wrong kind of key,
+                // which init and InvalidKeyException are for, as in the KEM and key agreement
+                // services, rather than a refusal inside doFinal reported against the ciphertext
+                decryptor.init(false, keyParams);
             }
+            catch (IllegalArgumentException e)
+            {
+                throw SecurityExceptions.invalidKeyException(e.getMessage(), e);
+            }
+            engine = decryptor;
             userKey = keyParams;
         }
         else if (opmode == Cipher.WRAP_MODE || opmode == Cipher.UNWRAP_MODE)
@@ -264,7 +276,7 @@ public class CipherSpi
     protected byte[] engineDoFinal(byte[] input, int inputOffset, int inputLen)
         throws IllegalBlockSizeException, BadPaddingException
     {
-        if (state == Cipher.DECRYPT_MODE && userKey != null && userKey.isDestroyed())
+        if (userKey != null && userKey.isDestroyed())
         {
             // the key is refused at init; one destroyed since cannot decrypt, which is no fault of
             // the ciphertext - the BadPaddingException below says a ciphertext is malformed - so it
@@ -283,9 +295,8 @@ public class CipherSpi
 
             if (state == Cipher.ENCRYPT_MODE)
             {
-                SM9Engine engine = new SM9Engine(mode);
-                engine.init(true, new ParametersWithRandom(recipient, random));
-                // the plaintext is read where it was buffered, rather than copied out to an array
+                // each call draws an ephemeral of its own from the source the engine took at init.
+                // The plaintext is read where it was buffered, rather than copied out to an array
                 // nothing would clear
                 byte[] raw = engine.processBlock(buffer.getBuf(), 0, buffer.size());   // C1(64) || C3(32) || C2
                 byte[] c1 = new byte[65];
@@ -316,8 +327,6 @@ public class CipherSpi
                     throw new InvalidCipherTextException("non-canonical SM9 ciphertext encoding");
                 }
                 byte[] raw = Arrays.concatenate(Arrays.copyOfRange(c1, 1, 65), c3, c.getC2());
-                SM9Engine engine = new SM9Engine(mode);
-                engine.init(false, userKey);
                 return engine.processBlock(raw, 0, raw.length);
             }
         }

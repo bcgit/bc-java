@@ -2,6 +2,7 @@ package org.bouncycastle.jcajce.spec;
 
 import java.security.spec.EncodedKeySpec;
 
+import org.bouncycastle.crypto.params.SM9EncPrivateKeyParameters;
 import org.bouncycastle.jcajce.interfaces.SM9EncMasterPublicKey;
 import org.bouncycastle.jcajce.interfaces.SM9EncUserKeyGenerator;
 import org.bouncycastle.util.Arrays;
@@ -43,14 +44,41 @@ import org.bouncycastle.util.Arrays;
  * where the exchange key and the decryption key of an identity are the same point;
  * such a master key has to serve one function only, as the GM/T 0044.5 worked
  * examples themselves arrange.
+ * <p>
+ * A KEM / decryption key can also be declared, through the constructor taking a usage, for one
+ * of the SM9 KEM and {@code Cipher.SM9}; it is then refused for the other on every use, its first
+ * included. A key rebuilt without a declaration is held to the first of the two it is used for -
+ * see {@link SM9EncPrivateKeyParameters#recordUsage(int)}. The spec {@code getKeySpec} hands back
+ * carries the usage the key was rebuilt with.
  */
 public class SM9EncUserPrivateKeySpec
     extends EncodedKeySpec
 {
+    /**
+     * The usage of a KEM / decryption key declared for neither of the KEM and {@code Cipher.SM9}:
+     * it is held to the first of them it is used for. The value of
+     * {@link SM9EncPrivateKeyParameters#USAGE_UNSPECIFIED}.
+     */
+    public static final int USAGE_UNSPECIFIED = SM9EncPrivateKeyParameters.USAGE_UNSPECIFIED;
+
+    /**
+     * The usage of a key declared for the SM9 KEM ({@code KeyGenerator.SM9-KEM},
+     * {@code KEM.SM9-KEM}), which {@code Cipher.SM9} refuses. The value of
+     * {@link SM9EncPrivateKeyParameters#USAGE_KEM}.
+     */
+    public static final int USAGE_KEM = SM9EncPrivateKeyParameters.USAGE_KEM;
+
+    /**
+     * The usage of a key declared for SM9 public-key decryption ({@code Cipher.SM9}), which the KEM
+     * refuses. The value of
+     * {@link SM9EncPrivateKeyParameters#USAGE_DECRYPTION}.
+     */
+    public static final int USAGE_DECRYPTION = SM9EncPrivateKeyParameters.USAGE_DECRYPTION;
+
     private final SM9EncMasterPublicKey masterPublicKey;
     private final byte[] identity;
     private final byte hid;
-    private final boolean exchangeKey;
+    private final int usage;
 
     /**
      * Base constructor, for a KEM / decryption user key.
@@ -69,7 +97,7 @@ public class SM9EncUserPrivateKeySpec
     public SM9EncUserPrivateKeySpec(byte[] pkcs8Encoding, SM9EncMasterPublicKey masterPublicKey,
                                     byte[] identity, byte hid)
     {
-        this(pkcs8Encoding, masterPublicKey, identity, hid, false);
+        this(pkcs8Encoding, masterPublicKey, identity, hid, false, USAGE_UNSPECIFIED);
     }
 
     /**
@@ -85,6 +113,35 @@ public class SM9EncUserPrivateKeySpec
      */
     public SM9EncUserPrivateKeySpec(byte[] pkcs8Encoding, SM9EncMasterPublicKey masterPublicKey,
                                     byte[] identity, byte hid, boolean exchangeKey)
+    {
+        this(pkcs8Encoding, masterPublicKey, identity, hid, exchangeKey, USAGE_UNSPECIFIED);
+    }
+
+    /**
+     * @param pkcs8Encoding   the user private key's PKCS#8 encoding, as returned by
+     *                        the key's {@code getEncoded()}.
+     * @param masterPublicKey the encryption master public key the user key was derived under.
+     * @param identity        the user's identity.
+     * @param hid             the private-key generation function identifier the KGC
+     *                        derived the key under.
+     * @param usage           the usage the KEM / decryption key rebuilds for: {@link #USAGE_KEM} or
+     *                        {@link #USAGE_DECRYPTION} for a key declared for one of the two, which
+     *                        the other then refuses on every use, or {@link #USAGE_UNSPECIFIED} for
+     *                        one declared for neither. A key-exchange key is named through the
+     *                        constructor taking {@code exchangeKey}, as
+     *                        {@link SM9EncPrivateKeyParameters#fromEncodedExchangeKey} names one in
+     *                        the light-weight API.
+     */
+    public SM9EncUserPrivateKeySpec(byte[] pkcs8Encoding, SM9EncMasterPublicKey masterPublicKey,
+                                    byte[] identity, byte hid, int usage)
+    {
+        this(pkcs8Encoding, masterPublicKey, identity, hid, false, declaredUsage(usage));
+    }
+
+    // the constructor the public ones share, taking an argument list none of them takes: a key-exchange
+    // key, or a KEM / decryption key declared for usage
+    private SM9EncUserPrivateKeySpec(byte[] pkcs8Encoding, SM9EncMasterPublicKey masterPublicKey,
+                                     byte[] identity, byte hid, boolean exchangeKey, int usage)
     {
         super(pkcs8Encoding);
         if (masterPublicKey == null)
@@ -105,7 +162,19 @@ public class SM9EncUserPrivateKeySpec
         this.masterPublicKey = masterPublicKey;
         this.identity = Arrays.clone(identity);
         this.hid = hid;
-        this.exchangeKey = exchangeKey;
+        this.usage = exchangeKey ? SM9EncPrivateKeyParameters.USAGE_KEY_EXCHANGE : usage;
+    }
+
+    // the usages a KEM / decryption key can be declared for, as SM9EncPrivateKeyParameters.fromEncoded
+    // takes them
+    private static int declaredUsage(int usage)
+    {
+        if (usage != USAGE_UNSPECIFIED && usage != USAGE_KEM && usage != USAGE_DECRYPTION)
+        {
+            throw new IllegalArgumentException("usage must be USAGE_UNSPECIFIED, USAGE_KEM or USAGE_DECRYPTION"
+                + " - a key-exchange key is named by the constructor taking exchangeKey");
+        }
+        return usage;
     }
 
     public SM9EncMasterPublicKey getMasterPublicKey()
@@ -133,7 +202,18 @@ public class SM9EncUserPrivateKeySpec
      */
     public boolean isExchangeKey()
     {
-        return exchangeKey;
+        return usage == SM9EncPrivateKeyParameters.USAGE_KEY_EXCHANGE;
+    }
+
+    /**
+     * The usage the key rebuilds for: {@link #USAGE_KEM} or {@link #USAGE_DECRYPTION} for a KEM /
+     * decryption key declared for one of the two, {@link #USAGE_UNSPECIFIED} for one declared for
+     * neither, and {@link SM9EncPrivateKeyParameters#USAGE_KEY_EXCHANGE} for a key-exchange key, which
+     * {@link #isExchangeKey()} reports as well. The constructor taking a usage takes the first three.
+     */
+    public int getUsage()
+    {
+        return usage;
     }
 
     public String getFormat()

@@ -5,6 +5,7 @@ import java.io.NotSerializableException;
 import java.io.ObjectOutputStream;
 import java.math.BigInteger;
 import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -18,6 +19,7 @@ import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Map;
 
+import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.spec.IvParameterSpec;
 import javax.security.auth.Destroyable;
@@ -32,8 +34,10 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
+import org.bouncycastle.crypto.SecureRandomProvider;
 import org.bouncycastle.crypto.generators.SM9Sm3;
 import org.bouncycastle.crypto.params.SM9EncMasterPrivateKeyParameters;
+import org.bouncycastle.crypto.params.SM9EncPrivateKeyParameters;
 import org.bouncycastle.crypto.params.SM9SigMasterPrivateKeyParameters;
 import org.bouncycastle.jcajce.SecretKeyWithEncapsulation;
 import org.bouncycastle.jcajce.interfaces.SM9EncMasterPrivateKey;
@@ -49,6 +53,7 @@ import org.bouncycastle.jcajce.spec.SM9SigUserPrivateKeySpec;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.math.ec.sm9.SM9Curve;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.test.SimpleTest;
 import org.bouncycastle.util.test.TestRandomBigInteger;
 
@@ -147,6 +152,269 @@ public class SM9KEMTest
         userKeyEqualityTest();
         rejectedInitTest();
         knownAnswerTest();
+        keyUsageTest();
+        handedOverUsageTest();
+        declaredUsageTest();
+        failedInitTest();
+    }
+
+    /**
+     * A key's use is recorded when it is handed to Cipher.SM9 or KeyGenerator.SM9-KEM, at init. One
+     * taken while Properties.SM9_ALLOW_MULTI_USE was set for the thread goes on serving the Cipher or
+     * generator that took it after the key has been recorded for the other function: doFinal decrypts
+     * rather than reporting the ciphertext as malformed, and generateKey decapsulates rather than
+     * throwing an unchecked exception. A new init is refused.
+     */
+    private void handedOverUsageTest()
+        throws Exception
+    {
+        byte[] message = "a message of twenty-nine bytes".getBytes("US-ASCII");
+
+        byte[] quentin = "Quentin".getBytes("US-ASCII");
+        KeyPair quentinPair = masterPriv.generateUserKeyPair(quentin, SM9EncMasterPrivateKeyParameters.HID);
+        Cipher encryptor = Cipher.getInstance("SM9", "BC");
+        encryptor.init(Cipher.ENCRYPT_MODE, quentinPair.getPublic(), random);
+        byte[] ciphertext = encryptor.doFinal(message);
+        Cipher decryptor = Cipher.getInstance("SM9", "BC");
+        Properties.setThreadOverride(Properties.SM9_ALLOW_MULTI_USE, true);
+        try
+        {
+            decryptor.init(Cipher.DECRYPT_MODE, quentinPair.getPrivate());
+        }
+        finally
+        {
+            Properties.removeThreadOverride(Properties.SM9_ALLOW_MULTI_USE);
+        }
+        KeyGenerator encapsulator = KeyGenerator.getInstance("SM9-KEM", "BC");
+        encapsulator.init(new KEMGenerateSpec(quentinPair.getPublic(), "AES", 128), random);
+        SecretKeyWithEncapsulation encapsulated = (SecretKeyWithEncapsulation)encapsulator.generateKey();
+        KeyGenerator decapsulator = KeyGenerator.getInstance("SM9-KEM", "BC");
+        decapsulator.init(new KEMExtractSpec(quentinPair.getPrivate(), encapsulated.getEncapsulation(), "AES", 128));
+        isTrue("the key decapsulates once the Cipher has taken it",
+            Arrays.areEqual(encapsulated.getEncoded(), decapsulator.generateKey().getEncoded()));
+        isTrue("a Cipher initialised before the key decapsulated still decrypts",
+            Arrays.areEqual(message, decryptor.doFinal(ciphertext)));
+        try
+        {
+            decryptor.init(Cipher.DECRYPT_MODE, quentinPair.getPrivate());
+            fail("Cipher.SM9 took a key that has decapsulated");
+        }
+        catch (InvalidKeyException e)
+        {
+            // expected
+        }
+
+        byte[] rupert = "Rupert".getBytes("US-ASCII");
+        KeyPair rupertPair = masterPriv.generateUserKeyPair(rupert, SM9EncMasterPrivateKeyParameters.HID);
+        encapsulator.init(new KEMGenerateSpec(rupertPair.getPublic(), "AES", 128), random);
+        encapsulated = (SecretKeyWithEncapsulation)encapsulator.generateKey();
+        KEMExtractSpec rupertSpec = new KEMExtractSpec(rupertPair.getPrivate(), encapsulated.getEncapsulation(), "AES", 128);
+        Properties.setThreadOverride(Properties.SM9_ALLOW_MULTI_USE, true);
+        try
+        {
+            decapsulator.init(rupertSpec);
+        }
+        finally
+        {
+            Properties.removeThreadOverride(Properties.SM9_ALLOW_MULTI_USE);
+        }
+        encryptor.init(Cipher.ENCRYPT_MODE, rupertPair.getPublic(), random);
+        decryptor.init(Cipher.DECRYPT_MODE, rupertPair.getPrivate());
+        isTrue("the key decrypts once the KeyGenerator has taken it",
+            Arrays.areEqual(message, decryptor.doFinal(encryptor.doFinal(message))));
+        isTrue("a KeyGenerator initialised before the key decrypted still decapsulates",
+            Arrays.areEqual(encapsulated.getEncoded(), decapsulator.generateKey().getEncoded()));
+        try
+        {
+            decapsulator.init(rupertSpec);
+            fail("KeyGenerator.SM9-KEM took a key that has decrypted");
+        }
+        catch (InvalidAlgorithmParameterException e)
+        {
+            // expected
+        }
+    }
+
+    /**
+     * Within one JVM an encryption user key is held to the first of the KEM and Cipher.SM9 decryption it
+     * is used for. Cipher.SM9 refuses at init a key that has decapsulated, and KeyGenerator.SM9-KEM one
+     * that has decrypted, each with the checked exception its init declares, and the key is recognised
+     * however it is rebuilt. With Properties.SM9_ALLOW_MULTI_USE set for the thread both are taken.
+     */
+    private void keyUsageTest()
+        throws Exception
+    {
+        String usedForKem = "SM9 encryption user key has been used for KEM decapsulation in this JVM: key-usage"
+            + " separation refuses it for decryption (set org.bouncycastle.sm9.allow_multi_use to true to turn"
+            + " the check off)";
+        String usedForDecryption = "SM9 encryption user key has been used for decryption in this JVM: key-usage"
+            + " separation refuses it for KEM decapsulation (set org.bouncycastle.sm9.allow_multi_use to true to"
+            + " turn the check off)";
+
+        byte[] oscar = "Oscar".getBytes("US-ASCII");
+        KeyPair oscarPair = masterPriv.generateUserKeyPair(oscar, SM9EncMasterPrivateKeyParameters.HID);
+        KeyGenerator encapsulator = KeyGenerator.getInstance("SM9-KEM", "BC");
+        encapsulator.init(new KEMGenerateSpec(oscarPair.getPublic(), "AES", 128), random);
+        SecretKeyWithEncapsulation encapsulated = (SecretKeyWithEncapsulation)encapsulator.generateKey();
+        KeyGenerator decapsulator = KeyGenerator.getInstance("SM9-KEM", "BC");
+        decapsulator.init(new KEMExtractSpec(oscarPair.getPrivate(), encapsulated.getEncapsulation(), "AES", 128));
+        isTrue("SM9-KEM round trip before the key-usage refusal",
+            Arrays.areEqual(encapsulated.getEncoded(), decapsulator.generateKey().getEncoded()));
+
+        KeyFactory kf = KeyFactory.getInstance("SM9", "BC");
+        PrivateKey[] oscarKeys = { oscarPair.getPrivate(), kf.generatePrivate(new SM9EncUserPrivateKeySpec(
+            oscarPair.getPrivate().getEncoded(), masterPub, oscar, SM9EncMasterPrivateKeyParameters.HID)) };
+        Cipher decryptor = Cipher.getInstance("SM9", "BC");
+        for (int i = 0; i != oscarKeys.length; i++)
+        {
+            try
+            {
+                decryptor.init(Cipher.DECRYPT_MODE, oscarKeys[i]);
+                fail("Cipher.SM9 took a key that has decapsulated");
+            }
+            catch (InvalidKeyException e)
+            {
+                isTrue("Cipher.SM9 key-usage message: " + e.getMessage(), usedForKem.equals(e.getMessage()));
+                isTrue("Cipher.SM9 key-usage cause", e.getCause() instanceof IllegalArgumentException);
+            }
+        }
+
+        byte[] peggy = "Peggy".getBytes("US-ASCII");
+        KeyPair peggyPair = masterPriv.generateUserKeyPair(peggy, SM9EncMasterPrivateKeyParameters.HID);
+        byte[] message = "a message of twenty-nine bytes".getBytes("US-ASCII");
+        Cipher encryptor = Cipher.getInstance("SM9", "BC");
+        encryptor.init(Cipher.ENCRYPT_MODE, peggyPair.getPublic(), random);
+        byte[] ciphertext = encryptor.doFinal(message);
+        decryptor.init(Cipher.DECRYPT_MODE, peggyPair.getPrivate());
+        isTrue("Cipher.SM9 round trip before the key-usage refusal",
+            Arrays.areEqual(message, decryptor.doFinal(ciphertext)));
+        KeyGenerator refused = KeyGenerator.getInstance("SM9-KEM", "BC");
+        KEMExtractSpec peggySpec = new KEMExtractSpec(peggyPair.getPrivate(), encapsulated.getEncapsulation(), "AES", 128);
+        try
+        {
+            refused.init(peggySpec);
+            fail("KeyGenerator.SM9-KEM took a key that has decrypted");
+        }
+        catch (InvalidAlgorithmParameterException e)
+        {
+            isTrue("KeyGenerator.SM9-KEM key-usage message: " + e.getMessage(), usedForDecryption.equals(e.getMessage()));
+            isTrue("KeyGenerator.SM9-KEM key-usage cause", e.getCause() instanceof IllegalArgumentException);
+        }
+        checkUninitialised(refused, "an init refused for the key's usage");
+
+        Properties.setThreadOverride(Properties.SM9_ALLOW_MULTI_USE, true);
+        try
+        {
+            decryptor.init(Cipher.DECRYPT_MODE, oscarPair.getPrivate());
+            refused.init(peggySpec);
+        }
+        finally
+        {
+            Properties.removeThreadOverride(Properties.SM9_ALLOW_MULTI_USE);
+        }
+    }
+
+    /**
+     * A user key rebuilt through KeyFactory.SM9 with a declared usage is held to it: Cipher.SM9 refuses a
+     * key declared for the KEM on its first use, KeyGenerator.SM9-KEM one declared for decryption, the
+     * second with the property set as well, and each goes on serving the use it was declared for.
+     * KeyFactory.getKeySpec reports the usage a key carries, and the spec refuses a usage it does not know.
+     */
+    private void declaredUsageTest()
+        throws Exception
+    {
+        String declaredForKem = "SM9 encryption user key is declared for KEM decapsulation and cannot be used for"
+            + " decryption";
+        String declaredForDecryption = "SM9 encryption user key is declared for decryption and cannot be used for"
+            + " KEM decapsulation";
+        KeyFactory kf = KeyFactory.getInstance("SM9", "BC");
+
+        byte[] trent = "Trent".getBytes("US-ASCII");
+        KeyPair trentPair = masterPriv.generateUserKeyPair(trent, SM9EncMasterPrivateKeyParameters.HID);
+        PrivateKey kemKey = kf.generatePrivate(new SM9EncUserPrivateKeySpec(trentPair.getPrivate().getEncoded(),
+            masterPub, trent, SM9EncMasterPrivateKeyParameters.HID, SM9EncUserPrivateKeySpec.USAGE_KEM));
+        try
+        {
+            Cipher.getInstance("SM9", "BC").init(Cipher.DECRYPT_MODE, kemKey);
+            fail("Cipher.SM9 took a key declared for the KEM");
+        }
+        catch (InvalidKeyException e)
+        {
+            isTrue("Cipher.SM9 declared-usage message: " + e.getMessage(), declaredForKem.equals(e.getMessage()));
+        }
+        KeyGenerator encapsulator = KeyGenerator.getInstance("SM9-KEM", "BC");
+        encapsulator.init(new KEMGenerateSpec(trentPair.getPublic(), "AES", 128), random);
+        SecretKeyWithEncapsulation encapsulated = (SecretKeyWithEncapsulation)encapsulator.generateKey();
+        KeyGenerator decapsulator = KeyGenerator.getInstance("SM9-KEM", "BC");
+        decapsulator.init(new KEMExtractSpec(kemKey, encapsulated.getEncapsulation(), "AES", 128));
+        isTrue("a key declared for the KEM decapsulates",
+            Arrays.areEqual(encapsulated.getEncoded(), decapsulator.generateKey().getEncoded()));
+
+        byte[] victor = "Victor".getBytes("US-ASCII");
+        KeyPair victorPair = masterPriv.generateUserKeyPair(victor, SM9EncMasterPrivateKeyParameters.HID);
+        PrivateKey decryptionKey = kf.generatePrivate(new SM9EncUserPrivateKeySpec(victorPair.getPrivate().getEncoded(),
+            masterPub, victor, SM9EncMasterPrivateKeyParameters.HID, SM9EncUserPrivateKeySpec.USAGE_DECRYPTION));
+        Properties.setThreadOverride(Properties.SM9_ALLOW_MULTI_USE, true);
+        try
+        {
+            KeyGenerator.getInstance("SM9-KEM", "BC").init(
+                new KEMExtractSpec(decryptionKey, encapsulated.getEncapsulation(), "AES", 128));
+            fail("KeyGenerator.SM9-KEM took a key declared for decryption");
+        }
+        catch (InvalidAlgorithmParameterException e)
+        {
+            isTrue("KeyGenerator.SM9-KEM declared-usage message: " + e.getMessage(),
+                declaredForDecryption.equals(e.getMessage()));
+        }
+        finally
+        {
+            Properties.removeThreadOverride(Properties.SM9_ALLOW_MULTI_USE);
+        }
+        byte[] message = "a message of twenty-nine bytes".getBytes("US-ASCII");
+        Cipher encryptor = Cipher.getInstance("SM9", "BC");
+        encryptor.init(Cipher.ENCRYPT_MODE, victorPair.getPublic(), random);
+        Cipher decryptor = Cipher.getInstance("SM9", "BC");
+        decryptor.init(Cipher.DECRYPT_MODE, decryptionKey);
+        isTrue("a key declared for decryption decrypts",
+            Arrays.areEqual(message, decryptor.doFinal(encryptor.doFinal(message))));
+
+        isTrue("getKeySpec reports a declared usage", ((SM9EncUserPrivateKeySpec)kf.getKeySpec(kemKey,
+            SM9EncUserPrivateKeySpec.class)).getUsage() == SM9EncUserPrivateKeySpec.USAGE_KEM);
+        isTrue("getKeySpec reports no usage for an undeclared key", ((SM9EncUserPrivateKeySpec)kf.getKeySpec(
+            trentPair.getPrivate(), SM9EncUserPrivateKeySpec.class)).getUsage() == SM9EncUserPrivateKeySpec.USAGE_UNSPECIFIED);
+        SM9EncUserPrivateKeySpec exchangeSpec = (SM9EncUserPrivateKeySpec)kf.getKeySpec(
+            masterPriv.generateExchangeKeyPair(trent).getPrivate(), SM9EncUserPrivateKeySpec.class);
+        isTrue("getKeySpec reports the key exchange's usage",
+            exchangeSpec.getUsage() == SM9EncPrivateKeyParameters.USAGE_KEY_EXCHANGE && exchangeSpec.isExchangeKey());
+
+        // the usage constructor takes what SM9EncPrivateKeyParameters.fromEncoded takes; a key-exchange key
+        // is named by the exchangeKey flag alone
+        int[] badUsages = { SM9EncPrivateKeyParameters.USAGE_KEY_EXCHANGE, 4, -1 };
+        for (int i = 0; i != badUsages.length; i++)
+        {
+            try
+            {
+                new SM9EncUserPrivateKeySpec(trentPair.getPrivate().getEncoded(), masterPub, trent,
+                    SM9EncMasterPrivateKeyParameters.HID, badUsages[i]);
+                fail("SM9EncUserPrivateKeySpec took usage " + badUsages[i]);
+            }
+            catch (IllegalArgumentException e)
+            {
+                isTrue(e.getMessage(), ("usage must be USAGE_UNSPECIFIED, USAGE_KEM or USAGE_DECRYPTION - a"
+                    + " key-exchange key is named by the constructor taking exchangeKey").equals(e.getMessage()));
+            }
+        }
+        try
+        {
+            new SM9EncUserPrivateKeySpec(trentPair.getPrivate().getEncoded(), masterPub, trent,
+                SM9EncMasterPrivateKeyParameters.HID_EXCHANGE, SM9EncUserPrivateKeySpec.USAGE_KEM);
+            fail("SM9EncUserPrivateKeySpec took the KEM usage under HID_EXCHANGE");
+        }
+        catch (IllegalArgumentException e)
+        {
+            isTrue(e.getMessage(), ("hid must not be HID_EXCHANGE (0x02) for a KEM or decryption user key - that"
+                + " hid names the key exchange").equals(e.getMessage()));
+        }
     }
 
     /**
@@ -179,11 +447,22 @@ public class SM9KEMTest
         isTrue("KeyGenerator.SM9-KEM reproduces the GM/T 0044.5 K", Arrays.areEqual(expectedK, encapsulated.getEncoded()));
         isTrue("KeyGenerator.SM9-KEM reproduces the GM/T 0044.5 C", Arrays.areEqual(expectedC, encapsulated.getEncapsulation()));
 
-        KeyGenerator decapsulator = KeyGenerator.getInstance("SM9-KEM", "BC");
-        decapsulator.init(new KEMExtractSpec(
-            katPriv.generateUserKeyPair(identity, SM9EncMasterPrivateKeyParameters.HID).getPrivate(), expectedC, "AES", klen));
-        isTrue("KeyGenerator.SM9-KEM decapsulates the GM/T 0044.5 C to K",
-            Arrays.areEqual(expectedK, decapsulator.generateKey().getEncoded()));
+        // GM/T 0044.5 Annex C decapsulates with the user key Annex D decrypts with, which the key-usage
+        // check refuses within one JVM - SM9CipherTest decrypts the Annex D ciphertexts in the same run -
+        // so the known answer is taken with the check turned off for this thread
+        Properties.setThreadOverride(Properties.SM9_ALLOW_MULTI_USE, true);
+        try
+        {
+            KeyGenerator decapsulator = KeyGenerator.getInstance("SM9-KEM", "BC");
+            decapsulator.init(new KEMExtractSpec(
+                katPriv.generateUserKeyPair(identity, SM9EncMasterPrivateKeyParameters.HID).getPrivate(), expectedC, "AES", klen));
+            isTrue("KeyGenerator.SM9-KEM decapsulates the GM/T 0044.5 C to K",
+                Arrays.areEqual(expectedK, decapsulator.generateKey().getEncoded()));
+        }
+        finally
+        {
+            Properties.removeThreadOverride(Properties.SM9_ALLOW_MULTI_USE);
+        }
     }
 
     /**
@@ -293,6 +572,60 @@ public class SM9KEMTest
         kGen.init(new KEMExtractSpec(bobKey, noKdf.getEncapsulation(), "AES", 128), random);
         isTrue("SM9-KEM gives one key with or without the default KDF named",
             Arrays.areEqual(noKdf.getEncoded(), kGen.generateKey().getEncoded()));
+    }
+
+    /**
+     * An init that fails after it has examined the spec - here because it was given no random source
+     * and the default one cannot be had - leaves the generator uninitialised, and leaves no record of
+     * the use of the key it was given to decapsulate with, which then decrypts.
+     */
+    private void failedInitTest()
+        throws Exception
+    {
+        byte[] message = "a message of twenty-nine bytes".getBytes("US-ASCII");
+        byte[] sybil = "Sybil".getBytes("US-ASCII");
+        KeyPair sybilPair = masterPriv.generateUserKeyPair(sybil, SM9EncMasterPrivateKeyParameters.HID);
+        KeyGenerator encapsulator = KeyGenerator.getInstance("SM9-KEM", "BC");
+        encapsulator.init(new KEMGenerateSpec(sybilPair.getPublic(), "AES", 128), random);
+        byte[] encapsulation = ((SecretKeyWithEncapsulation)encapsulator.generateKey()).getEncapsulation();
+
+        // a default source this thread cannot have, and the one there was put back afterwards
+        final Thread caller = Thread.currentThread();
+        final boolean specified = CryptoServicesRegistrar.isSecureRandomSpecified();
+        final SecureRandom previous = CryptoServicesRegistrar.getSecureRandom();
+        KeyGenerator decapsulator = KeyGenerator.getInstance("SM9-KEM", "BC");
+        CryptoServicesRegistrar.setSecureRandomProvider(new SecureRandomProvider()
+        {
+            public SecureRandom get()
+            {
+                if (Thread.currentThread() == caller)
+                {
+                    throw new IllegalStateException("no default source");
+                }
+                return previous;
+            }
+        });
+        try
+        {
+            decapsulator.init(new KEMExtractSpec(sybilPair.getPrivate(), encapsulation, "AES", 128), (SecureRandom)null);
+            fail("KeyGenerator.SM9-KEM was initialised with no random source to be had");
+        }
+        catch (IllegalStateException e)
+        {
+            isTrue(e.getMessage(), "no default source".equals(e.getMessage()));
+        }
+        finally
+        {
+            CryptoServicesRegistrar.setSecureRandom(specified ? previous : null);
+        }
+        checkUninitialised(decapsulator, "an init that could not have a random source");
+
+        Cipher encryptor = Cipher.getInstance("SM9", "BC");
+        encryptor.init(Cipher.ENCRYPT_MODE, sybilPair.getPublic(), random);
+        Cipher decryptor = Cipher.getInstance("SM9", "BC");
+        decryptor.init(Cipher.DECRYPT_MODE, sybilPair.getPrivate());
+        isTrue("a key the failed init did not take decrypts",
+            Arrays.areEqual(message, decryptor.doFinal(encryptor.doFinal(message))));
     }
 
     private void checkUninitialised(KeyGenerator kGen, String after)
