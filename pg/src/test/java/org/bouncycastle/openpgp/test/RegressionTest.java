@@ -99,6 +99,7 @@ public class RegressionTest
         new PGPRFC9980VectorTest(),
         new PGPRFC9980KeyPairTest(),
         new PGPTextSignatureCanonicalizationTest(),
+        new PGPClearSignedBareCRTest(),
     };
 
     public static void main(String[] args)

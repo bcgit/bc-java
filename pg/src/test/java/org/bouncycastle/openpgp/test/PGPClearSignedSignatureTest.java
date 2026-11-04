@@ -543,7 +543,7 @@ public class PGPClearSignedSignatureTest
         while ((ch = fIn.read()) >= 0)
         {
             bOut.write(ch);
-            if (ch == '\r' || ch == '\n')
+            if (ch == '\n')    // a CR not followed by LF is text, not a line ending
             {
                 lookAhead = readPassedEOL(bOut, ch, fIn);
                 break;
@@ -563,7 +563,7 @@ public class PGPClearSignedSignatureTest
         do
         {
             bOut.write(ch);
-            if (ch == '\r' || ch == '\n')
+            if (ch == '\n')    // a CR not followed by LF is text, not a line ending
             {
                 lookAhead = readPassedEOL(bOut, ch, fIn);
                 break;

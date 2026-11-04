@@ -19,6 +19,12 @@ public class Properties
      */
     public static final String OPENPGP_TEXT_SIG_ALLOW_LEGACY_CR = "org.bouncycastle.openpgp.text_sig_allow_legacy_cr";
 
+    /**
+     * If set to "true", a bare CR is a line ending in the clear text of every cleartext signed
+     * message, as before 1.87 (github #2553).
+     */
+    public static final String OPENPGP_CSF_BARE_CR_LINE_ENDING = "org.bouncycastle.openpgp.csf_bare_cr_line_ending";
+
     private Properties()
     {
     }

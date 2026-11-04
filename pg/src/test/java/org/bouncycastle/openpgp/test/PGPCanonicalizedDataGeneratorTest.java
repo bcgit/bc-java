@@ -205,8 +205,7 @@ public class PGPCanonicalizedDataGeneratorTest
         }
         sig.update(literal);
 
-        isTrue("text signature over written literal data: " + data.replace("\r", "\\r").replace("\n", "\\n"),
-            sig.verify());
+        isTrue("text signature over written literal data", sig.verify());
     }
 
     private void checkBinaryConversion(String data, String cData)

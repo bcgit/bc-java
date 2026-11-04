@@ -39,6 +39,7 @@ public class Properties
     public static final String OPENPGP_MAX_ARMOR_HEADERS = "org.bouncycastle.openpgp.max_armor_headers";
     public static final String OPENPGP_STRICT_PARTIAL_BODY_LENGTH = "org.bouncycastle.openpgp.strict_partial_body_length";
     public static final String OPENPGP_TEXT_SIG_ALLOW_LEGACY_CR = "org.bouncycastle.openpgp.text_sig_allow_legacy_cr";
+    public static final String OPENPGP_CSF_BARE_CR_LINE_ENDING = "org.bouncycastle.openpgp.csf_bare_cr_line_ending";
     public static final String PKCS12_ALLOW_SUN_SECRET_KEYS = "org.bouncycastle.pkcs12.allow_sun_secret_keys";
     public static final String PKCS1_STRICT_DIGESTINFO = "org.bouncycastle.pkcs1.strict_digestinfo";
     public static final String JSSE_HOSTNAME_CHECK_CN_FALLBACK = "org.bouncycastle.jsse.hostname_check_cn_fallback";
