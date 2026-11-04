@@ -29,6 +29,7 @@ public class AllTests
         suite.addTestSuite(FrodoKEMVectorTest.class);
         suite.addTestSuite(SABERVectorTest.class);
         suite.addTestSuite(NTRUTest.class);
+        suite.addTestSuite(RawPublicKeyEncodingTest.class);
         suite.addTestSuite(NTRUParametersTest.class);
         suite.addTestSuite(FalconTest.class);
         suite.addTestSuite(MLKEMTest.class);

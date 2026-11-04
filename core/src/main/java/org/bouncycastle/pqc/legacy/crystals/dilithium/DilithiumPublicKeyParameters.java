@@ -16,6 +16,10 @@ public class DilithiumPublicKeyParameters
     public DilithiumPublicKeyParameters(DilithiumParameters params, byte[] encoding)
     {
         super(false, params);
+        if (encoding.length != params.getEngine(null).getCryptoPublicKeyBytes())
+        {
+            throw new IllegalArgumentException("'encoding' has invalid length");
+        }
         this.rho = Arrays.copyOfRange(encoding, 0, DilithiumEngine.SeedBytes);
         this.t1 = Arrays.copyOfRange(encoding, DilithiumEngine.SeedBytes, encoding.length);
     }

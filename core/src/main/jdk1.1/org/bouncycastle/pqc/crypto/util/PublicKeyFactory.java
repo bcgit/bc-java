@@ -231,53 +231,71 @@ public class PublicKeyFactory
 
         static DilithiumPublicKeyParameters getPublicKeyParams(DilithiumParameters dilithiumParams, ASN1BitString publicKeyData)
         {
+            byte[] keyEnc = publicKeyData.getOctets();
+
+            // the raw key, as written, is tried first: its leading bytes can read as a DER header covering the
+            // rest, so only a length other than the raw key's says the key is wrapped
             try
             {
-                ASN1Primitive obj = ASN1Primitive.fromByteArray(publicKeyData.getOctets());
+                return new DilithiumPublicKeyParameters(dilithiumParams, keyEnc);
+            }
+            catch (IllegalArgumentException e)
+            {
+                ASN1Primitive obj;
+                try
+                {
+                    obj = ASN1Primitive.fromByteArray(keyEnc);
+                }
+                catch (IOException ex)
+                {
+                    throw e;
+                }
+
                 if (obj instanceof ASN1Sequence)
                 {
                     ASN1Sequence keySeq = ASN1Sequence.getInstance(obj);
 
-                    return new DilithiumPublicKeyParameters(dilithiumParams,
+                    return new DilithiumPublicKeyParameters(dilithiumParams, Arrays.concatenate(
                         ASN1OctetString.getInstance(keySeq.getObjectAt(0)).getOctets(),
-                        ASN1OctetString.getInstance(keySeq.getObjectAt(1)).getOctets());
+                        ASN1OctetString.getInstance(keySeq.getObjectAt(1)).getOctets()));
                 }
-                else
-                {
-                    byte[] encKey = ASN1OctetString.getInstance(obj).getOctets();
 
-                    return new DilithiumPublicKeyParameters(dilithiumParams, encKey);
-                }
-            }
-            catch (Exception e)
-            {
-                // we're a raw encoding
-                return new DilithiumPublicKeyParameters(dilithiumParams, publicKeyData.getOctets());
+                return new DilithiumPublicKeyParameters(dilithiumParams, ASN1OctetString.getInstance(obj).getOctets());
             }
         }
     }
 
     private static class BIKEConverter
-            extends SubjectPublicKeyInfoConverter
+        extends SubjectPublicKeyInfoConverter
     {
         AsymmetricKeyParameter getPublicKeyParameters(SubjectPublicKeyInfo keyInfo, Object defaultParams)
-                throws IOException
+            throws IOException
         {
+            BIKEParameters bikeParams = Utils.bikeParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
+            byte[] keyEnc = keyInfo.getPublicKeyData().getOctets();
+
+            // the raw key, as written, is tried first: its leading bytes can read as an OCTET STRING header
+            // covering the rest, so only a length other than the raw key's says the key is wrapped
             try
             {
-                byte[] keyEnc = ASN1OctetString.getInstance(keyInfo.parsePublicKey()).getOctets();
-
-                BIKEParameters bikeParams = Utils.bikeParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
-
                 return new BIKEPublicKeyParameters(bikeParams, keyEnc);
             }
-            catch (Exception e)
+            catch (IllegalArgumentException e)
             {
-                byte[] keyEnc = keyInfo.getPublicKeyData().getOctets();
-
-                BIKEParameters bikeParams = Utils.bikeParamsLookup(keyInfo.getAlgorithm().getAlgorithm());
-
-                return new BIKEPublicKeyParameters(bikeParams, keyEnc);
+                ASN1Primitive obj;
+                try
+                {
+                    obj = ASN1Primitive.fromByteArray(keyEnc);
+                }
+                catch (IOException ex)
+                {
+                    throw e;
+                }
+                if (!(obj instanceof ASN1OctetString))
+                {
+                    throw e;
+                }
+                return new BIKEPublicKeyParameters(bikeParams, ASN1OctetString.getInstance(obj).getOctets());
             }
         }
     }
