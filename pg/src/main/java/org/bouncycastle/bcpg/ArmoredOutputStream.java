@@ -121,6 +121,8 @@ public class ArmoredOutputStream
     boolean start = true;
     boolean clearText = false;
     boolean newLine = false;
+    // clear text written since beginClearText(), and the last of it was not a LF
+    boolean clearTextUnterminated = false;
 
     String nl = Strings.lineSeparator();
 
@@ -288,6 +290,11 @@ public class ArmoredOutputStream
 
     /**
      * Start a clear text signed message.
+     * <p>
+     * The text written afterwards is dash-escaped line by line. Only a LF (or CR LF) ends a line;
+     * a CR not followed by a LF is part of the text, as in RFC 9580 sec. 7, so when calculating the
+     * signature split the text into lines on LF only and strip trailing white space, CR included.
+     * </p>
      *
      * @param hashAlgorithms hash algorithms
      */
@@ -351,8 +358,14 @@ public class ArmoredOutputStream
         clearText = true;
         newLine = true;
         lastb = 0;
+        clearTextUnterminated = false;
     }
 
+    /**
+     * End the clear text of a cleartext signed message. If the text written did not end with a
+     * LF, a line ending is written before the signature armor that follows, as the signature
+     * armor must start a line (a CR not followed by a LF does not end one, see beginClearText).
+     */
     public void endClearText()
     {
         clearText = false;
@@ -391,28 +404,29 @@ public class ArmoredOutputStream
         {
             out.write(b);
 
-            if (newLine)
+            // RFC 9580 sec. 7: a line ends with LF (or CR LF); a CR not followed by LF is part of
+            // the text, so a dash after one is not at the start of a line and is not escaped
+            // (github #2553).
+            if (newLine && b == '-')
             {
-                if (!(b == '\n' && lastb == '\r'))
-                {
-                    newLine = false;
-                }
-                if (b == '-')
-                {
-                    out.write(' ');
-                    out.write('-');      // dash escape
-                }
+                out.write(' ');
+                out.write('-');      // dash escape
             }
-            if (b == '\r' || (b == '\n' && lastb != '\r'))
-            {
-                newLine = true;
-            }
+            newLine = (b == '\n');
+            clearTextUnterminated = !newLine;
             lastb = b;
             return;
         }
 
         if (start)
         {
+            if (clearTextUnterminated)
+            {
+                // the signature armor must start on a line of its own
+                write(lastb == '\r' ? "\n" : nl);
+                clearTextUnterminated = false;
+            }
+
             boolean newPacket = (b & 0x40) != 0;
             int tag = 0;
 

@@ -25,6 +25,16 @@ import org.bouncycastle.util.Strings;
  * </pre>
  * </p>
  * <p>
+ * In the clear text of a cleartext signed message (see {@link #isClearText()}) a line ends with LF or
+ * CR LF; a CR not followed by LF is part of the text, as RFC 9580 sec. 7 and GnuPG treat it, so a
+ * dash after one is neither un-escaped nor taken as the start of the signature armor. A caller
+ * splitting the text into lines for the signature should therefore split on LF only. The exception
+ * is a message whose armor lines themselves end in a bare CR (a classic Mac text file), where a bare
+ * CR is the line ending and is returned as LF; setting
+ * {@link org.bouncycastle.util.Properties#OPENPGP_CSF_BARE_CR_LINE_ENDING} to "true" treats every
+ * message that way, as releases before 1.87 did.
+ * </p>
+ * <p>
  * By default a cleartext-signed (CSF) message whose payload contains a malformed
  * dash-prefixed line (a leading dash that is neither a "-----" armor header nor a
  * "- " dash-escape, contrary to RFC 4880 7.1) is rejected with an
@@ -156,6 +166,13 @@ public class ArmoredInputStream
     int lastC = 0;
     int lookAhead = -1;
     boolean isEndOfStream;
+    /*
+     * True when a bare CR (one not followed by LF) is a line ending in the clear text of a
+     * cleartext signed message: the armor itself uses bare CR line endings, or
+     * Properties.OPENPGP_CSF_BARE_CR_LINE_ENDING is set. Otherwise only LF (and so CR LF) ends a
+     * line, and a bare CR is ordinary text.
+     */
+    private boolean bareCRLineEndings;
 
     private final boolean validateAllowedHeaders;
     private final boolean csfRejectPrefixedDashes;
@@ -315,6 +332,9 @@ public class ArmoredInputStream
             }
         }
 
+        boolean crSeen = false;
+        boolean lfSeen = false;
+
         if (headerFound)
         {
             boolean eolReached = false;
@@ -342,6 +362,14 @@ public class ArmoredInputStream
                 if (last == '\r' && c == '\n')
                 {
                     crLf = true;
+                }
+                if (c == '\r')
+                {
+                    crSeen = true;
+                }
+                else if (c == '\n')
+                {
+                    lfSeen = true;
                 }
                 if (eolReached && (last != '\r' && c == '\n'))
                 {
@@ -421,6 +449,15 @@ public class ArmoredInputStream
         clearText = "-----BEGIN PGP SIGNED MESSAGE-----".equals(header);
         newLineFound = true;
 
+        if (clearText)
+        {
+            // An armor whose own lines end in a bare CR - no LF anywhere in its headers - is a
+            // classic Mac (CR-only) text file, so a bare CR is its line ending; in any other
+            // message it is ordinary text (github #2553).
+            bareCRLineEndings = (crSeen && !lfSeen)
+                || Properties.isOverrideSet(Properties.OPENPGP_CSF_BARE_CR_LINE_ENDING);
+        }
+
         return headerFound;
     }
 
@@ -484,6 +521,25 @@ public class ArmoredInputStream
         return c;
     }
 
+    /*
+     * In a CR-only message (see bareCRLineEndings) hand a bare CR line ending to the caller as a
+     * LF, so that a caller splitting the clear text into lines need only look for LF.
+     */
+    private int translateBareCR(int c)
+        throws IOException
+    {
+        if (bareCRLineEndings && c == '\r')
+        {
+            int next = in.read();
+            lookAhead = next;
+            if (next != '\n')
+            {
+                return '\n';
+            }
+        }
+        return c;
+    }
+
     public int read()
         throws IOException
     {
@@ -520,7 +576,11 @@ public class ArmoredInputStream
                 c = in.read();
             }
 
-            if (c == '\r' || (c == '\n' && lastC != '\r'))
+            c = translateBareCR(c);
+
+            // RFC 9580 sec. 7: a line ends with LF (or CR LF); a CR not followed by LF is part
+            // of the text, so a dash after one is neither dash-escaped nor an armor boundary.
+            if (c == '\n')
             {
                 newLineFound = true;
             }
@@ -535,7 +595,7 @@ public class ArmoredInputStream
                 }
                 else if (next == ' ')       // a space - drop the "- " dash escape
                 {
-                    c = in.read();
+                    c = translateBareCR(in.read());
                 }
                 else
                 {
@@ -551,14 +611,11 @@ public class ArmoredInputStream
                     // a signature check over the recovered text fails instead of passing.
                     lookAhead = next;
                 }
-                newLineFound = false;
+                newLineFound = (c == '\n');
             }
             else
             {
-                if (c != '\n' && lastC != '\r')
-                {
-                    newLineFound = false;
-                }
+                newLineFound = false;
             }
 
             lastC = c;

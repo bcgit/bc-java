@@ -6,6 +6,8 @@ import java.io.OutputStream;
 
 import org.bouncycastle.bcpg.SignaturePacket;
 import org.bouncycastle.bcpg.UserAttributeSubpacket;
+import org.bouncycastle.openpgp.operator.PGPContentVerifier;
+import org.bouncycastle.util.Properties;
 
 abstract class PGPDefaultSignatureGenerator
 {
@@ -14,40 +16,142 @@ abstract class PGPDefaultSignatureGenerator
     protected int sigType;
     protected final int version;
 
+    /**
+     * Verification only: a second stream fed the pre-1.87 canonical text form, in which a bare CR
+     * was hashed as CR LF, or null if no such fallback is wanted. See {@link #update(byte)}.
+     */
+    protected OutputStream legacyTextSigOut;
+    /**
+     * Set once the text-mode input has contained a CR not followed by LF, the only input on which
+     * the current and the legacy canonical text forms differ.
+     */
+    protected boolean sawBareCR;
+
     public PGPDefaultSignatureGenerator(int version)
     {
         this.version = version;
     }
-    
+
+    /**
+     * Reset the text canonicalisation state for a new signature calculation.
+     */
+    protected void resetTextState()
+    {
+        lastb = 0;
+        sawBareCR = false;
+        legacyTextSigOut = null;
+    }
+
+    /**
+     * Update the signature with a byte of the signed data.
+     * <p>
+     * For a text signature (type 0x01) the data is hashed in canonical text form, as RFC 9580
+     * sec. 5.2.1.2 describes: a LF not preceded by a CR is hashed as CR LF, and every other byte,
+     * a CR not followed by a LF included, is hashed unaltered. A bare CR is therefore not a line
+     * ending, which is what GnuPG, GopenPGP, OpenPGP.js, rpgpie, RNP and PGPy do (github #2553).
+     * Releases before 1.87 hashed a bare CR as CR LF; when verifying, that form is also accepted
+     * unless {@link org.bouncycastle.util.Properties#OPENPGP_TEXT_SIG_ALLOW_LEGACY_CR} is set to
+     * false.
+     * </p>
+     */
     public void update(
         byte b)
     {
         if (sigType == PGPSignature.CANONICAL_TEXT_DOCUMENT)
         {
-            if (b == '\r')
+            if (lastb == '\r' && b != '\n')
             {
-                byteUpdate((byte)'\r');
-                byteUpdate((byte)'\n');
+                sawBareCR = true;
             }
-            else if (b == '\n')
+
+            if (b == '\n' && lastb != '\r')
             {
-                if (lastb != '\r')
-                {
-                    byteUpdate((byte)'\r');
-                    byteUpdate((byte)'\n');
-                }
+                byteUpdate(sigOut, (byte)'\r');
+                byteUpdate(sigOut, (byte)'\n');
             }
             else
             {
-                byteUpdate(b);
+                byteUpdate(sigOut, b);
+            }
+
+            if (legacyTextSigOut != null)
+            {
+                legacyTextUpdate(b);
             }
 
             lastb = b;
         }
         else
         {
-            byteUpdate(b);
+            byteUpdate(sigOut, b);
         }
+    }
+
+    // the pre-1.87 canonical text form: CR, LF and CR LF are all hashed as CR LF.
+    private void legacyTextUpdate(byte b)
+    {
+        if (b == '\r')
+        {
+            byteUpdate(legacyTextSigOut, (byte)'\r');
+            byteUpdate(legacyTextSigOut, (byte)'\n');
+        }
+        else if (b == '\n')
+        {
+            if (lastb != '\r')
+            {
+                byteUpdate(legacyTextSigOut, (byte)'\r');
+                byteUpdate(legacyTextSigOut, (byte)'\n');
+            }
+        }
+        else
+        {
+            byteUpdate(legacyTextSigOut, b);
+        }
+    }
+
+    /**
+     * Return true if the text-mode data hashed so far is one the legacy canonical text form
+     * hashes differently - that is, it holds a bare CR, a trailing CR included.
+     */
+    protected boolean isLegacyTextFormDifferent()
+    {
+        return sawBareCR || lastb == '\r';
+    }
+
+    /**
+     * Return true if a text signature should also be checked against the pre-1.87 canonical text
+     * form (see {@link #update(byte)}).
+     */
+    protected static boolean isLegacyTextFormAllowed()
+    {
+        return Properties.isOverrideSet(Properties.OPENPGP_TEXT_SIG_ALLOW_LEGACY_CR, true);
+    }
+
+    /**
+     * Second chance for a text signature that did not verify over the current canonical form:
+     * check it over the legacy form, if a legacy hash was kept and the data is one on which the two
+     * forms differ (on any other data they are the same bytes, so the answer cannot change).
+     */
+    protected boolean verifyLegacyTextForm(PGPContentVerifier legacyVerifier, byte[] trailer, byte[] signature)
+        throws PGPException
+    {
+        if (legacyVerifier == null || legacyTextSigOut == null || !isLegacyTextFormDifferent())
+        {
+            return false;
+        }
+
+        try
+        {
+            legacyTextSigOut.write(trailer);
+
+            legacyTextSigOut.close();
+        }
+        catch (IOException e)
+        {
+            throw new PGPException(e.getMessage(), e);
+        }
+
+        return legacyVerifier.verify(signature);
     }
 
     public void update(
@@ -76,11 +180,11 @@ abstract class PGPDefaultSignatureGenerator
         }
     }
 
-    private void byteUpdate(byte b)
+    private static void byteUpdate(OutputStream out, byte b)
     {
         try
         {
-            sigOut.write(b);
+            out.write(b);
         }
         catch (IOException e)
         {

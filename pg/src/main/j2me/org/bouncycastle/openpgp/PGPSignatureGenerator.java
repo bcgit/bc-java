@@ -116,24 +116,18 @@ public class PGPSignatureGenerator
     {
         if (sigType == PGPSignature.CANONICAL_TEXT_DOCUMENT)
         {
-            if (b == '\r')
+            // a LF not preceded by a CR is hashed as CR LF, every other byte, a bare CR
+            // included, unaltered (github #2553).
+            if (b == '\n' && lastb != '\r')
             {
                 byteUpdate((byte)'\r');
                 byteUpdate((byte)'\n');
-            }
-            else if (b == '\n')
-            {
-                if (lastb != '\r')
-                {
-                    byteUpdate((byte)'\r');
-                    byteUpdate((byte)'\n');
-                }
             }
             else
             {
                 byteUpdate(b);
             }
-            
+
             lastb = b;
         }
         else

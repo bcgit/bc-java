@@ -160,6 +160,31 @@ public class Properties
     public static final String OPENPGP_STRICT_PARTIAL_BODY_LENGTH = "org.bouncycastle.openpgp.strict_partial_body_length";
 
     /**
+     * If set to "true" (the default), verifying an OpenPGP text signature (type 0x01) over data
+     * containing a bare CR - one not followed by a LF - also accepts the signature over the form
+     * releases before 1.87 hashed, in which that CR was hashed as CR LF. The signature is first
+     * checked against the current form, which hashes a bare CR unaltered as GnuPG, GopenPGP,
+     * OpenPGP.js, RNP and most other implementations do (github #2553); signatures are always
+     * generated in the current form. The legacy form is also what Sequoia 2.x generates. Set it
+     * to "false" to accept only the current form, at the cost of no longer verifying text
+     * signatures earlier BC releases (or Sequoia) made over such data. Read via
+     * {@link #isOverrideSet(String, boolean)}.
+     */
+    public static final String OPENPGP_TEXT_SIG_ALLOW_LEGACY_CR = "org.bouncycastle.openpgp.text_sig_allow_legacy_cr";
+
+    /**
+     * If set to "true", ArmoredInputStream treats a CR not followed by a LF as a line ending in the
+     * clear text of every cleartext signed message, as releases before 1.87 did: a dash after one is
+     * un-escaped or starts the signature armor, and the CR is returned as LF. Off by default, where
+     * only LF and CR LF end a line and a bare CR is ordinary text, as in RFC 9580 sec. 7 and GnuPG
+     * (github #2553); a message whose armor lines themselves end in a bare CR is read the old way
+     * whatever this is set to. Set it to read cleartext signed messages that an earlier release wrote
+     * over CR-only text under LF or CR LF armor. ArmoredOutputStream always writes the current form.
+     * Read via {@link #isOverrideSet(String)}.
+     */
+    public static final String OPENPGP_CSF_BARE_CR_LINE_ENDING = "org.bouncycastle.openpgp.csf_bare_cr_line_ending";
+
+    /**
      * If set to "true", the BC PKCS#12 KeyStore will additionally accept (on load only)
      * SafeBags of type secretBag that use SunJCE's non-standard nested encoding —
      * a SecretBag whose secretTypeId is pkcs8ShroudedKeyBag and whose secretValue is

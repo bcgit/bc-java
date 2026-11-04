@@ -98,6 +98,8 @@ public class RegressionTest
         new PGPSignatureMergeTest(),
         new PGPRFC9980VectorTest(),
         new PGPRFC9980KeyPairTest(),
+        new PGPTextSignatureCanonicalizationTest(),
+        new PGPClearSignedBareCRTest(),
     };
 
     public static void main(String[] args)

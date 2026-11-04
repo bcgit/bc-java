@@ -55,7 +55,7 @@ public class ClearSignedFileProcessor
         while ((ch = fIn.read()) >= 0)
         {
             bOut.write(ch);
-            if (ch == '\r' || ch == '\n')
+            if (ch == '\n')    // a CR not followed by LF is text, not a line ending
             {
                 lookAhead = readPassedEOL(bOut, ch, fIn);
                 break;
@@ -75,7 +75,7 @@ public class ClearSignedFileProcessor
         do
         {
             bOut.write(ch);
-            if (ch == '\r' || ch == '\n')
+            if (ch == '\n')    // a CR not followed by LF is text, not a line ending
             {
                 lookAhead = readPassedEOL(bOut, ch, fIn);
                 break;
@@ -272,7 +272,8 @@ public class ClearSignedFileProcessor
         aOut.beginClearText(digest);
 
         //
-        // note the last \n/\r/\r\n in the file is ignored
+        // note the last \n or \r\n in the file is ignored; a CR not followed by LF is part of
+        // the line, and is stripped with the other trailing white space if it ends one
         //
         ByteArrayOutputStream lineOut = new ByteArrayOutputStream();
         int lookAhead = readInputLine(lineOut, fIn);
