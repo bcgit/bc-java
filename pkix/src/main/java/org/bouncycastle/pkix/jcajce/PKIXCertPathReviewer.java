@@ -2188,6 +2188,29 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
         checkCRLs(paramsPKIX, cert, validDate, sign, workingPublicKey, crlDistPointUrls, index);
     }
     
+    /**
+     * RFC 5280 sec. 5.2: true if the CRL carries a critical extension other than the issuing distribution
+     * point and the delta CRL indicator, the two the CertPathValidator processes.
+     */
+    private static boolean hasUnsupportedCriticalExtension(X509CRL crl)
+    {
+        Set criticalExtensions = crl.getCriticalExtensionOIDs();
+        if (criticalExtensions == null)
+        {
+            return false;
+        }
+
+        for (Iterator it = criticalExtensions.iterator(); it.hasNext();)
+        {
+            String oid = (String)it.next();
+            if (!ISSUING_DISTRIBUTION_POINT.equals(oid) && !DELTA_CRL_INDICATOR.equals(oid))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
     protected void checkCRLs(
             PKIXParameters paramsPKIX,
             X509Certificate cert,
@@ -2212,6 +2235,8 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
         }
     
         crlselect.setCertificateChecking(cert);
+        // a delta CRL lists only the changes since its base, so it cannot decide a status alone (RFC 5280 sec. 5.2.4)
+        crlselect.setCompleteCRLEnabled(true);
     
         Iterator crl_iter;
         try 
@@ -2333,6 +2358,14 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                             continue;
                         }
 
+                        if (onlineCRL.getExtensionValue(DELTA_CRL_INDICATOR) != null)
+                        {
+                            ErrorBundle msg = createErrorBundle("CertPathReviewer.onlineDeltaCRL",
+                                new Object[]{ new UntrustedUrlInput(location) });
+                            addNotification(msg,index);
+                            continue;
+                        }
+
                         Date thisUpdate = onlineCRL.getThisUpdate();
                         Date nextUpdate = onlineCRL.getNextUpdate();
                         Object[] arguments = new Object[]{ new TrustedInput(thisUpdate), new TrustedInput(nextUpdate),
@@ -2393,7 +2426,22 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                 throw new CertPathReviewerException(msg);
             }
 
-            crl_entry = crl.getRevokedCertificate(cert.getSerialNumber());
+            // RFC 5280 sec. 5.2: a CRL with a critical extension that cannot be processed must not be used
+            if (hasUnsupportedCriticalExtension(crl))
+            {
+                ErrorBundle msg = createErrorBundle("CertPathReviewer.crlUnsupportedCriticalExt");
+                throw new CertPathReviewerException(msg);
+            }
+
+            try
+            {
+                crl_entry = getIndirectCRLEntry(crl, cert.getSerialNumber(), getEncodedIssuerPrincipal(cert));
+            }
+            catch (AnnotatedException ae)
+            {
+                ErrorBundle msg = createErrorBundle("CertPathReviewer.crlIssuerException");
+                throw new CertPathReviewerException(msg,ae);
+            }
             if (crl_entry != null)
             {
                 String reason = null;
@@ -2474,82 +2522,6 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                 ErrorBundle msg = createErrorBundle("CertPathReviewer.distrPtExtError");
                 throw new CertPathReviewerException(msg);
             }
-            ASN1Primitive dci;
-            try
-            {
-                dci = getExtensionValue(crl, DELTA_CRL_INDICATOR);
-            }
-            catch (AnnotatedException ae)
-            {
-                ErrorBundle msg = createErrorBundle("CertPathReviewer.deltaCrlExtError");
-                throw new CertPathReviewerException(msg);
-            }
-
-            if (dci != null)
-            {
-                X509CRLStoreSelector baseSelect = new X509CRLStoreSelector();
-
-                try
-                {
-                    baseSelect.addIssuerName(getIssuerPrincipal(crl).getEncoded());
-                }
-                catch (IOException e)
-                {
-                    ErrorBundle msg = createErrorBundle("CertPathReviewer.crlIssuerException");
-                    throw new CertPathReviewerException(msg,e);
-                }
-
-                baseSelect.setMinCRLNumber(((ASN1Integer)dci).getPositiveValue());
-                try
-                {
-                    baseSelect.setMaxCRLNumber(((ASN1Integer)getExtensionValue(crl, CRL_NUMBER)).getPositiveValue().subtract(BigInteger.valueOf(1)));
-                }
-                catch (AnnotatedException ae)
-                {
-                    ErrorBundle msg = createErrorBundle("CertPathReviewer.crlNbrExtError");
-                    throw new CertPathReviewerException(msg,ae);
-                }
-                
-                boolean  foundBase = false;
-                Iterator it;
-                try 
-                {
-                    it  = PKIXCRLUtil.findCRLs(baseSelect, paramsPKIX).iterator();
-                }
-                catch (AnnotatedException ae)
-                {
-                    ErrorBundle msg = createErrorBundle("CertPathReviewer.crlExtractionError");
-                    throw new CertPathReviewerException(msg,ae);
-                }
-                while (it.hasNext())
-                {
-                    X509CRL base = (X509CRL)it.next();
-
-                    ASN1Primitive baseIdp;
-                    try
-                    {
-                        baseIdp = getExtensionValue(base, ISSUING_DISTRIBUTION_POINT);
-                    }
-                    catch (AnnotatedException ae)
-                    {
-                        ErrorBundle msg = createErrorBundle("CertPathReviewer.distrPtExtError");
-                        throw new CertPathReviewerException(msg,ae);
-                    }
-
-                    if (Objects.areEqual(idp, baseIdp))
-                    {
-                        foundBase = true;
-                        break;
-                    }
-                }
-
-                if (!foundBase)
-                {
-                    ErrorBundle msg = createErrorBundle("CertPathReviewer.noBaseCRL");
-                    throw new CertPathReviewerException(msg);
-                }
-            }
-
             if (idp != null)
             {
                 IssuingDistributionPoint    p = IssuingDistributionPoint.getInstance(idp);

@@ -256,6 +256,7 @@
                 <exclude name="**/pkix/test/PKIXCertPathReviewerCrlReasonTest.java"/>
                 <exclude name="**/pkix/test/PKIXCertPathReviewerCrlScopeTest.java"/>
                 <exclude name="**/pkix/test/PKIXCertPathReviewerCrlDistPointTest.java"/>
+                <exclude name="**/pkix/test/PKIXCertPathReviewerCrlSelectionTest.java"/>
                 <exclude name="**/pkix/test/TrustAnchorNameConstraintsTest.java"/>
                 <!-- uses X509RevocationChecker from the excluded pkix/jcajce package; the jdk1.4 pkix AllTests overlay does not reference it -->
                 <exclude name="**/pkix/test/CrlReasonCodeTest.java"/>

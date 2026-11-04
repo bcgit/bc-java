@@ -519,7 +519,7 @@ class CertPathValidatorUtilities
      *
      * @return the entry naming the certificate, or null if the CRL carries none.
      */
-    private static X509CRLEntry getIndirectCRLEntry(X509CRL crl, BigInteger serialNumber, X500Principal certIssuer)
+    static X509CRLEntry getIndirectCRLEntry(X509CRL crl, BigInteger serialNumber, X500Principal certIssuer)
         throws AnnotatedException
     {
         X509CRLEntry entry = crl.getRevokedCertificate(serialNumber);
