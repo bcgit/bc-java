@@ -581,6 +581,19 @@ public class Properties
     public static final String CMS_MAX_DIGEST_ALGORITHMS = "org.bouncycastle.cms.max_digest_algorithms";
 
     /**
+     * Whether a CMS AuthenticatedData message without authenticated attributes may carry a non-zero
+     * initialisation vector for a CBC-MAC (des-ede3-cbc or rc2-cbc as its macAlgorithm). Default false.
+     * <p>
+     * RFC 5652 sec. 9.2 makes the eContent octets alone the MAC input when authAttrs are absent, so
+     * nothing covers the IV carried in the macAlgorithm parameters: the same difference XORed into the
+     * IV and the first content block leaves a CBC-MAC unchanged. BC therefore writes these MACs with a
+     * zero IV and refuses a non-zero one when authenticated attributes are absent; set to "true" to read
+     * such messages, as written by BC before 1.87, accepting that their first eight content bytes are
+     * not protected. A message with authenticated attributes is unaffected, as those bind the content.
+     */
+    public static final String CMS_ALLOW_UNAUTHENTICATED_CBC_MAC_IV = "org.bouncycastle.cms.allow_unauthenticated_cbc_mac_iv";
+
+    /**
      * The largest SEED, in bytes, accepted in an LMS or HSS private key encoding. Default 1024.
      * <p>
      * SP 800-208 sec. 6.1 makes SEED n bytes (24 or 32 for the defined parameter sets), so the default is far

@@ -29,13 +29,20 @@ import org.bouncycastle.util.io.TeeOutputStream;
  * A simple example of usage.
  *
  * <pre>
- *      CMSAuthenticatedDataGenerator  fact = new CMSAuthenticatedDataGenerator();
+ *      CMSAuthenticatedDataGenerator  adGen = new CMSAuthenticatedDataGenerator();
  *
  *      adGen.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(recipientCert).setProvider("BC"));
  *
- *      CMSAuthenticatedData         data = fact.generate(new CMSProcessableByteArray(data),
- *                              new JceCMSMacCalculatorBuilder(CMSAlgorithm.DES_EDE3_CBC).setProvider(BC).build()));
+ *      CMSAuthenticatedData         authData = adGen.generate(new CMSProcessableByteArray(data),
+ *                              new JceCMSMacCalculatorBuilder(PKCSObjectIdentifiers.id_hmacWithSHA256).setProvider("BC").build(),
+ *                              new JcaDigestCalculatorProviderBuilder().setProvider("BC").build()
+ *                                  .get(new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256)));
  * </pre>
+ * <p>
+ * Passing a {@link DigestCalculator} adds authenticated attributes, which bind the content type and
+ * a digest of the content to the MAC (RFC 5652 sec. 9.2); without one the MAC is computed over the
+ * content alone. The CBC-MACs (des-ede3-cbc, rc2-cbc) are kept for compatibility only - see
+ * {@link org.bouncycastle.cms.jcajce.JceCMSMacCalculatorBuilder}.
  */
 public class CMSAuthenticatedDataGenerator
     extends CMSAuthenticatedGenerator
@@ -130,6 +137,8 @@ public class CMSAuthenticatedDataGenerator
         }
         else
         {
+            CMSUtils.checkUnauthenticatedMacIV(macCalculator.getAlgorithmIdentifier());
+
             try
             {
                 ByteArrayOutputStream bOut = new ByteArrayOutputStream();

@@ -69,6 +69,21 @@ import org.bouncycastle.operator.DigestCalculatorProvider;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaDigestCalculatorProviderBuilder;
 import org.bouncycastle.util.encoders.Hex;
+import org.bouncycastle.util.io.Streams;
+import org.bouncycastle.util.Strings;
+import org.bouncycastle.util.Properties;
+import org.bouncycastle.cms.CMSTypedStream;
+import org.bouncycastle.cms.CMSAuthenticatedDataParser;
+import org.bouncycastle.cms.CMSAttributeTableGenerator;
+import org.bouncycastle.asn1.pkcs.RC2CBCParameter;
+import org.bouncycastle.asn1.DERTaggedObject;
+import org.bouncycastle.asn1.DERSequence;
+import org.bouncycastle.asn1.ASN1OctetString;
+import org.bouncycastle.asn1.ASN1Encodable;
+import javax.crypto.spec.RC2ParameterSpec;
+import javax.crypto.spec.IvParameterSpec;
+import java.util.Map;
+import java.security.SecureRandom;
 
 public class NewAuthenticatedDataTest
     extends TestCase
@@ -225,8 +240,358 @@ public class NewAuthenticatedDataTest
     {
         tryKekAlgorithm(CMSTestUtil.makeDesede192Key(), new ASN1ObjectIdentifier("1.2.840.113549.1.9.16.3.6"));
 
+        DEROctetString zeroIV = new DEROctetString(new byte[8]);
+        tryKekAlgorithm(CMSTestUtil.makeDesede192Key(), new ASN1ObjectIdentifier("1.2.840.113549.1.9.16.3.6"), zeroIV.getEncoded());
+
+        // without authenticated attributes nothing covers a CBC-MAC IV, so a non-zero one is refused
         DEROctetString iv = new DEROctetString(Hex.decode("0001020304050607"));
-        tryKekAlgorithm(CMSTestUtil.makeDesede192Key(), new ASN1ObjectIdentifier("1.2.840.113549.1.9.16.3.6"), iv.getEncoded());
+        try
+        {
+            tryKekAlgorithm(CMSTestUtil.makeDesede192Key(), new ASN1ObjectIdentifier("1.2.840.113549.1.9.16.3.6"), iv.getEncoded());
+            fail("non-zero CBC-MAC IV accepted without authenticated attributes");
+        }
+        catch (CMSException e)
+        {
+            assertEquals(CBC_MAC_IV_REFUSED, e.getMessage());
+        }
+    }
+
+    private static final String CBC_MAC_IV_REFUSED = "CBC-MAC with a non-zero IV requires authenticated attributes";
+
+    private static final byte[] PAYMENT = Strings.toByteArray("PAY 100 EUR TO ALICE, ACCOUNT 42");
+
+    private static final ASN1ObjectIdentifier[] CBC_MACS = { CMSAlgorithm.DES_EDE3_CBC, CMSAlgorithm.RC2_CBC };
+
+    public void testCBCMacDefaultIVIsZero()
+        throws Exception
+    {
+        SecretKey kek = CMSTestUtil.makeAESKey(128);
+        for (int i = 0; i != CBC_MACS.length; i++)
+        {
+            byte[] enc = generateKek(kek, new JceCMSMacCalculatorBuilder(CBC_MACS[i]).setProvider(BC), false);
+
+            byte[] iv = getCBCMacIV(AuthenticatedData.getInstance(ContentInfo.getInstance(enc).getContent()).getMacAlgorithm());
+            assertTrue(org.bouncycastle.util.Arrays.areAllZeroes(iv, 0, iv.length));
+
+            assertTrue(verifyKek(enc, kek, false));
+            assertTrue(verifyKek(enc, kek, true));
+        }
+    }
+
+    /*
+     * Without authenticated attributes the MAC input is the content alone (RFC 5652 sec. 9.2). A CBC-MAC
+     * starting from the IV in macAlgorithm then verifies a message whose IV and first content block are
+     * changed by the same difference, so a non-zero IV is refused.
+     */
+    public void testCBCMacIVForgeryRejected()
+        throws Exception
+    {
+        SecretKey kek = CMSTestUtil.makeAESKey(128);
+        for (int i = 0; i != CBC_MACS.length; i++)
+        {
+            byte[] enc = generateKek(kek, new JceCMSMacCalculatorBuilder(CBC_MACS[i]).setProvider(BC), false);
+            byte[] forged = forgeFirstBlock(enc, Strings.toByteArray("PAY 999 "), false);
+
+            try
+            {
+                new CMSAuthenticatedData(forged, new JcaDigestCalculatorProviderBuilder().setProvider(BC).build());
+                fail("forged CBC-MAC IV accepted");
+            }
+            catch (CMSException e)
+            {
+                assertEquals(CBC_MAC_IV_REFUSED, e.getMessage());
+            }
+
+            try
+            {
+                new CMSAuthenticatedDataParser(forged, new JcaDigestCalculatorProviderBuilder().setProvider(BC).build());
+                fail("forged CBC-MAC IV accepted by parser");
+            }
+            catch (CMSException e)
+            {
+                assertEquals(CBC_MAC_IV_REFUSED, e.getMessage());
+            }
+        }
+    }
+
+    /*
+     * Adding a digestAlgorithm, without authenticated attributes, must not take the parser past the IV check.
+     */
+    public void testCBCMacIVForgeryWithDigestAlgorithmRejected()
+        throws Exception
+    {
+        SecretKey kek = CMSTestUtil.makeAESKey(128);
+        byte[] enc = generateKek(kek, new JceCMSMacCalculatorBuilder(CMSAlgorithm.DES_EDE3_CBC).setProvider(BC), false);
+        byte[] forged = forgeFirstBlock(enc, Strings.toByteArray("PAY 999 "), true);
+
+        // the in-memory class refuses the structure itself: digestAlgorithm and authAttrs go together
+        try
+        {
+            new CMSAuthenticatedData(forged, new JcaDigestCalculatorProviderBuilder().setProvider(BC).build());
+            fail("forged CBC-MAC IV accepted");
+        }
+        catch (CMSException e)
+        {
+            assertEquals("Malformed content.", e.getMessage());
+        }
+
+        // the parser refuses it when the message MAC is read first...
+        try
+        {
+            verifyKek(forged, kek, true);
+            fail("digestAlgorithm without authenticated attributes accepted by parser");
+        }
+        catch (IOException e)
+        {
+            assertEquals("authAttrs presence inconsistent with digestAlgorithm presence", e.getMessage());
+        }
+
+        // ...and the recipient MAC refuses it when asked for first
+        CMSAuthenticatedDataParser ad = new CMSAuthenticatedDataParser(forged, new JcaDigestCalculatorProviderBuilder().setProvider(BC).build());
+        RecipientInformation recipient = (RecipientInformation)ad.getRecipientInfos().getRecipients().iterator().next();
+        Streams.drain(recipient.getContentStream(new JceKEKAuthenticatedRecipient(kek).setProvider(BC)).getContentStream());
+        try
+        {
+            recipient.getMac();
+            fail("digestAlgorithm without authenticated attributes accepted by recipient");
+        }
+        catch (CMSRuntimeException e)
+        {
+            assertEquals("AuthenticatedData has a digestAlgorithm but no authenticated attributes", e.getMessage());
+        }
+    }
+
+    /*
+     * Messages BC wrote before the change carry a random IV: refused by default, readable with the property set.
+     */
+    public void testCBCMacLegacyIVProperty()
+        throws Exception
+    {
+        SecretKey kek = CMSTestUtil.makeAESKey(128);
+        for (int i = 0; i != CBC_MACS.length; i++)
+        {
+            byte[] enc;
+            Properties.setThreadOverride(Properties.CMS_ALLOW_UNAUTHENTICATED_CBC_MAC_IV, true);
+            try
+            {
+                enc = generateKek(kek, new JceCMSMacCalculatorBuilder(CBC_MACS[i]).setProvider(BC)
+                    .setAlgorithmParameters(randomIVParameters(CBC_MACS[i])), false);
+
+                assertTrue(verifyKek(enc, kek, false));
+                assertTrue(verifyKek(enc, kek, true));
+            }
+            finally
+            {
+                Properties.removeThreadOverride(Properties.CMS_ALLOW_UNAUTHENTICATED_CBC_MAC_IV);
+            }
+
+            try
+            {
+                verifyKek(enc, kek, false);
+                fail("legacy CBC-MAC IV accepted without the property");
+            }
+            catch (CMSException e)
+            {
+                assertEquals(CBC_MAC_IV_REFUSED, e.getMessage());
+            }
+        }
+    }
+
+    /*
+     * With authenticated attributes the content is bound through messageDigest, so a non-zero IV is still accepted.
+     */
+    public void testCBCMacIVWithAuthAttrs()
+        throws Exception
+    {
+        SecretKey kek = CMSTestUtil.makeAESKey(128);
+        for (int i = 0; i != CBC_MACS.length; i++)
+        {
+            byte[] enc = generateKek(kek, new JceCMSMacCalculatorBuilder(CBC_MACS[i]).setProvider(BC)
+                .setAlgorithmParameters(randomIVParameters(CBC_MACS[i])), true);
+
+            byte[] iv = getCBCMacIV(AuthenticatedData.getInstance(ContentInfo.getInstance(enc).getContent()).getMacAlgorithm());
+            assertFalse(org.bouncycastle.util.Arrays.areAllZeroes(iv, 0, iv.length));
+
+            assertTrue(verifyKek(enc, kek, false));
+            assertTrue(verifyKek(enc, kek, true));
+        }
+    }
+
+    /*
+     * RFC 5652 sec. 9.3: with authAttrs the content-type attribute MUST be present and match eContentType.
+     */
+    public void testContentTypeAttributeChecked()
+        throws Exception
+    {
+        SecretKey kek = CMSTestUtil.makeAESKey(128);
+        JceCMSMacCalculatorBuilder hmac = new JceCMSMacCalculatorBuilder(PKCSObjectIdentifiers.id_hmacWithSHA256).setProvider(BC);
+
+        byte[] enc = generateKek(kek, hmac, true);
+        assertTrue(verifyKek(enc, kek, false));
+        assertTrue(verifyKek(enc, kek, true));
+
+        byte[] relabelled = relabel(enc, PKCSObjectIdentifiers.id_ct_TSTInfo);
+        for (int stream = 0; stream != 2; stream++)
+        {
+            try
+            {
+                verifyKek(relabelled, kek, stream == 1);
+                fail("relabelled eContentType accepted");
+            }
+            catch (CMSRuntimeException e)
+            {
+                assertEquals("content-type attribute value does not match eContentType", e.getMessage());
+            }
+        }
+
+        CMSAuthenticatedDataGenerator adGen = new CMSAuthenticatedDataGenerator();
+        adGen.addRecipientInfoGenerator(new JceKEKRecipientInfoGenerator(new byte[]{ 1, 2, 3 }, kek).setProvider(BC));
+        adGen.setAuthenticatedAttributeGenerator(new CMSAttributeTableGenerator()
+        {
+            public AttributeTable getAttributes(Map parameters)
+            {
+                return new DefaultAuthenticatedAttributeTableGenerator().getAttributes(parameters).remove(CMSAttributes.contentType);
+            }
+        });
+        byte[] noContentType = adGen.generate(new CMSProcessableByteArray(PAYMENT), hmac.build(),
+            new JcaDigestCalculatorProviderBuilder().setProvider(BC).build().get(new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256))).getEncoded();
+        for (int stream = 0; stream != 2; stream++)
+        {
+            try
+            {
+                verifyKek(noContentType, kek, stream == 1);
+                fail("missing content-type attribute accepted");
+            }
+            catch (CMSRuntimeException e)
+            {
+                assertEquals("AuthenticatedData missing or malformed content-type authenticated attribute", e.getMessage());
+            }
+        }
+    }
+
+    private static byte[] generateKek(SecretKey kek, JceCMSMacCalculatorBuilder macBuilder, boolean withAuthAttrs)
+        throws Exception
+    {
+        CMSAuthenticatedDataGenerator adGen = new CMSAuthenticatedDataGenerator();
+        adGen.addRecipientInfoGenerator(new JceKEKRecipientInfoGenerator(new byte[]{ 1, 2, 3 }, kek).setProvider(BC));
+
+        if (withAuthAttrs)
+        {
+            return adGen.generate(new CMSProcessableByteArray(PAYMENT), macBuilder.build(),
+                new JcaDigestCalculatorProviderBuilder().setProvider(BC).build().get(new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256))).getEncoded();
+        }
+        return adGen.generate(new CMSProcessableByteArray(PAYMENT), macBuilder.build()).getEncoded();
+    }
+
+    /*
+     * Read the content through the KEK recipient and compare the recipient's MAC with the message's, in memory or streaming.
+     */
+    private static boolean verifyKek(byte[] enc, SecretKey kek, boolean stream)
+        throws Exception
+    {
+        DigestCalculatorProvider digProv = new JcaDigestCalculatorProviderBuilder().setProvider(BC).build();
+        if (stream)
+        {
+            CMSAuthenticatedDataParser ad = new CMSAuthenticatedDataParser(enc, digProv);
+            RecipientInformation recipient = (RecipientInformation)ad.getRecipientInfos().getRecipients().iterator().next();
+            CMSTypedStream content = recipient.getContentStream(new JceKEKAuthenticatedRecipient(kek).setProvider(BC));
+            Streams.drain(content.getContentStream());
+            byte[] mac = ad.getMac();
+            return Arrays.equals(mac, recipient.getMac());
+        }
+
+        CMSAuthenticatedData ad = new CMSAuthenticatedData(enc, digProv);
+        RecipientInformation recipient = (RecipientInformation)ad.getRecipientInfos().getRecipients().iterator().next();
+        recipient.getContent(new JceKEKAuthenticatedRecipient(kek).setProvider(BC));
+        return Arrays.equals(ad.getMac(), recipient.getMac());
+    }
+
+    private static AlgorithmParameters randomIVParameters(ASN1ObjectIdentifier macAlg)
+        throws Exception
+    {
+        byte[] iv = new byte[8];
+        new SecureRandom().nextBytes(iv);
+        iv[0] |= 0x01;
+
+        AlgorithmParameters params = AlgorithmParameters.getInstance(macAlg.getId(), BC);
+        if (CMSAlgorithm.RC2_CBC.equals(macAlg))
+        {
+            params.init(new RC2ParameterSpec(128, iv));
+        }
+        else
+        {
+            params.init(new IvParameterSpec(iv));
+        }
+        return params;
+    }
+
+    private static byte[] getCBCMacIV(AlgorithmIdentifier macAlg)
+    {
+        if (CMSAlgorithm.RC2_CBC.equals(macAlg.getAlgorithm()))
+        {
+            return RC2CBCParameter.getInstance(macAlg.getParameters()).getIV();
+        }
+        return ASN1OctetString.getInstance(macAlg.getParameters()).getOctets();
+    }
+
+    /*
+     * XOR the same difference into the CBC-MAC IV and the first content block, leaving the mac octets alone;
+     * optionally add a digestAlgorithm, without authenticated attributes.
+     */
+    private static byte[] forgeFirstBlock(byte[] enc, byte[] newFirstBlock, boolean addDigestAlgorithm)
+        throws Exception
+    {
+        AuthenticatedData ad = AuthenticatedData.getInstance(ContentInfo.getInstance(enc).getContent());
+        byte[] content = ASN1OctetString.getInstance(ad.getEncapsulatedContentInfo().getContent()).getOctets();
+
+        byte[] delta = new byte[8];
+        for (int i = 0; i != 8; i++)
+        {
+            delta[i] = (byte)(content[i] ^ newFirstBlock[i]);
+            content[i] ^= delta[i];
+        }
+
+        AlgorithmIdentifier macAlg = ad.getMacAlgorithm();
+        byte[] iv = getCBCMacIV(macAlg);
+        for (int i = 0; i != 8; i++)
+        {
+            iv[i] ^= delta[i];
+        }
+
+        ASN1Encodable params;
+        if (CMSAlgorithm.RC2_CBC.equals(macAlg.getAlgorithm()))
+        {
+            RC2CBCParameter rc2 = RC2CBCParameter.getInstance(macAlg.getParameters());
+            params = rc2.getRC2ParameterVersion() == null ? new RC2CBCParameter(iv) : new RC2CBCParameter(rc2.getRC2ParameterVersion().intValue(), iv);
+        }
+        else
+        {
+            params = new DEROctetString(iv);
+        }
+
+        ASN1EncodableVector v = new ASN1EncodableVector();
+        v.add(ad.getVersion());
+        v.add(ad.getRecipientInfos());
+        v.add(new AlgorithmIdentifier(macAlg.getAlgorithm(), params));
+        if (addDigestAlgorithm)
+        {
+            v.add(new DERTaggedObject(false, 1, new AlgorithmIdentifier(NISTObjectIdentifiers.id_sha256)));
+        }
+        v.add(new ContentInfo(ad.getEncapsulatedContentInfo().getContentType(), new DEROctetString(content)));
+        v.add(ad.getMac());
+
+        return new ContentInfo(CMSObjectIdentifiers.authenticatedData, new DERSequence(v)).getEncoded();
+    }
+
+    private static byte[] relabel(byte[] enc, ASN1ObjectIdentifier contentType)
+        throws Exception
+    {
+        AuthenticatedData ad = AuthenticatedData.getInstance(ContentInfo.getInstance(enc).getContent());
+        AuthenticatedData relabelled = new AuthenticatedData(ad.getOriginatorInfo(), ad.getRecipientInfos(), ad.getMacAlgorithm(),
+            ad.getDigestAlgorithm(), new ContentInfo(contentType, ad.getEncapsulatedContentInfo().getContent()),
+            ad.getAuthAttrs(), ad.getMac(), ad.getUnauthAttrs());
+
+        return new ContentInfo(CMSObjectIdentifiers.authenticatedData, relabelled).getEncoded();
     }
 
     public void testKEKDESedeWithDigest()

@@ -183,6 +183,8 @@ public class CMSAuthenticatedDataParser
                 //
                 // read the authenticated content info
                 //
+                CMSUtils.checkUnauthenticatedMacIV(this.macAlg);
+
                 ContentInfoParser data = authData.getEncapsulatedContentInfo();
                 CMSReadable readable = new CMSProcessableInputStream(getEncapsulatedContentStream(data));
 

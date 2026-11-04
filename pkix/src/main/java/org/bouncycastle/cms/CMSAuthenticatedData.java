@@ -23,7 +23,11 @@ import org.bouncycastle.util.Encodable;
 import org.bouncycastle.util.Exceptions;
 
 /**
- * containing class for an CMS Authenticated Data object
+ * Containing class for a CMS AuthenticatedData object.
+ * <p>
+ * The MAC is checked by comparing {@link #getMac()} with {@link RecipientInformation#getMac()} for the
+ * recipient whose content was recovered; the latter also checks the authenticated attributes, when
+ * present, against the content.
  */
 public class CMSAuthenticatedData
     implements Encodable
@@ -165,7 +169,7 @@ public class CMSAuthenticatedData
         // RFC 6211 Validate Algorithm Protection attribute if present
         verifyAlgorithmProtectionAttribute();
 
-        // TODO Verify other attributes; for message-digest need the calculated content-digest (if any) to compare
+        // the message-digest and content-type attributes are checked by RecipientInformation.getMac(), once the content digest is known
 
         //
         // build the RecipientInformationStore
@@ -173,6 +177,8 @@ public class CMSAuthenticatedData
         ASN1Set authAttrs = authData.getAuthAttrs();
         if (authAttrs == null)
         {
+            CMSUtils.checkUnauthenticatedMacIV(macAlg);
+
             CMSSecureReadable secureReadable = new CMSEnvelopedHelper.CMSAuthEnveSecureReadable(macAlg, encInfo.getContentType(), readable);
             this.recipientInfoStore = CMSEnvelopedHelper.buildRecipientInformationStore(recipientInfos, macAlg, secureReadable);
             return;
@@ -418,9 +424,9 @@ public class CMSAuthenticatedData
     }
 
     /**
-     * RFC 6211 Validate Algorithm Protection attribute if present
+     * Validate the RFC 6211 Algorithm Protection attribute, if present.
      *
-     * @throws CMSException when cmsAlgorithmProtect attribute was rejected
+     * @throws CMSException if the cmsAlgorithmProtect attribute is rejected.
      */
     private void verifyAlgorithmProtectionAttribute()
         throws CMSException

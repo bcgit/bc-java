@@ -19,6 +19,7 @@ import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1Null;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
@@ -47,6 +48,7 @@ import org.bouncycastle.asn1.iana.IANAObjectIdentifiers;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.asn1.pkcs.RC2CBCParameter;
 import org.bouncycastle.asn1.rosstandart.RosstandartObjectIdentifiers;
 import org.bouncycastle.asn1.sec.SECObjectIdentifiers;
 import org.bouncycastle.asn1.cms.CCMParameters;
@@ -64,6 +66,7 @@ import org.bouncycastle.operator.OutputAEADEncryptor;
 import org.bouncycastle.operator.OutputEncryptor;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Exceptions;
+import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.Store;
 import org.bouncycastle.util.io.Streams;
 import org.bouncycastle.util.io.TeeInputStream;
@@ -466,6 +469,55 @@ class CMSUtils
         }
 
         return -1;
+    }
+
+    /**
+     * Return true if the MAC algorithm is a CBC-MAC (des-ede3-cbc or rc2-cbc) whose parameters carry
+     * an IV that is not all zeroes. Without authenticated attributes nothing covers that IV, and a
+     * difference XORed into it and into the first content block leaves the MAC unchanged.
+     */
+    static boolean hasNonZeroCBCMacIV(AlgorithmIdentifier macAlg)
+    {
+        ASN1ObjectIdentifier algorithm = macAlg.getAlgorithm();
+        if (!CMSAlgorithm.DES_EDE3_CBC.equals(algorithm) && !CMSAlgorithm.RC2_CBC.equals(algorithm))
+        {
+            return false;
+        }
+
+        ASN1Encodable params = macAlg.getParameters();
+        if (params == null || params instanceof ASN1Null)
+        {
+            return false;
+        }
+
+        byte[] iv = CMSAlgorithm.RC2_CBC.equals(algorithm)
+            ? RC2CBCParameter.getInstance(params).getIV()
+            : ASN1OctetString.getInstance(params).getOctets();
+
+        return !Arrays.areAllZeroes(iv, 0, iv.length);
+    }
+
+    /**
+     * Refuse a CBC-MAC with a non-zero IV for a message without authenticated attributes, unless
+     * {@link Properties#CMS_ALLOW_UNAUTHENTICATED_CBC_MAC_IV} is set.
+     */
+    static void checkUnauthenticatedMacIV(AlgorithmIdentifier macAlg)
+        throws CMSException
+    {
+        boolean nonZeroIV;
+        try
+        {
+            nonZeroIV = hasNonZeroCBCMacIV(macAlg);
+        }
+        catch (IllegalArgumentException e)
+        {
+            throw new CMSException("malformed MAC algorithm parameters: " + e.getMessage(), e);
+        }
+
+        if (nonZeroIV && !Properties.isOverrideSet(Properties.CMS_ALLOW_UNAUTHENTICATED_CBC_MAC_IV))
+        {
+            throw new CMSException("CBC-MAC with a non-zero IV requires authenticated attributes");
+        }
     }
 
     /**

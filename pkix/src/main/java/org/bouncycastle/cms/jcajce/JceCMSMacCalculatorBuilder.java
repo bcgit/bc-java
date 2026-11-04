@@ -2,22 +2,38 @@ package org.bouncycastle.cms.jcajce;
 
 import java.io.OutputStream;
 import java.security.AlgorithmParameters;
+import java.security.GeneralSecurityException;
 import java.security.Provider;
 import java.security.SecureRandom;
 
 import javax.crypto.KeyGenerator;
 import javax.crypto.Mac;
 import javax.crypto.SecretKey;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.RC2ParameterSpec;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
+import org.bouncycastle.cms.CMSAlgorithm;
 import org.bouncycastle.cms.CMSException;
 import org.bouncycastle.jcajce.io.MacOutputStream;
 import org.bouncycastle.operator.GenericKey;
 import org.bouncycastle.operator.MacCalculator;
 import org.bouncycastle.operator.jcajce.JceGenericKey;
 
+/**
+ * Builder for the MAC calculator of a CMS AuthenticatedData message.
+ * <p>
+ * Prefer an HMAC, such as {@code PKCSObjectIdentifiers.id_hmacWithSHA256}, or KMAC. The CBC-MACs
+ * named by {@link org.bouncycastle.cms.CMSAlgorithm#DES_EDE3_CBC} and
+ * {@link org.bouncycastle.cms.CMSAlgorithm#RC2_CBC} are kept for compatibility: they produce a
+ * 4-byte MAC, and when the message has no authenticated attributes the MAC covers the content alone,
+ * so any IV in the macAlgorithm parameters is unprotected. Unless parameters are set with
+ * {@link #setAlgorithmParameters(AlgorithmParameters)} these are therefore written with a zero IV,
+ * and a non-zero IV is refused for a message without authenticated attributes, on generation and on
+ * receipt (see {@code org.bouncycastle.util.Properties.CMS_ALLOW_UNAUTHENTICATED_CBC_MAC_IV}).
+ */
 public class JceCMSMacCalculatorBuilder
 {
     private final ASN1ObjectIdentifier macOID;
@@ -79,6 +95,10 @@ public class JceCMSMacCalculatorBuilder
 
     /**
      * Provide a set of algorithm parameters for the content MAC calculator to use.
+     * <p>
+     * For a CBC-MAC (des-ede3-cbc or rc2-cbc) parameters carrying a non-zero IV can only be used for
+     * a message with authenticated attributes, which bind the content; without them the generator
+     * refuses the IV, as it is not covered by the MAC.
      *
      * @param algorithmParameters algorithmParameters for MAC initialisation.
      * @return the current builder instance.
@@ -126,7 +146,15 @@ public class JceCMSMacCalculatorBuilder
 
             if (params == null)
             {
-                params = helper.generateParameters(macOID, encKey, random);
+                if (CMSAlgorithm.DES_EDE3_CBC.equals(macOID) || CMSAlgorithm.RC2_CBC.equals(macOID))
+                {
+                    // a CBC-MAC IV is not covered by the MAC when authAttrs are absent (RFC 5652 sec. 9.2), so start from zero
+                    params = createZeroIVParameters(macOID, encKey);
+                }
+                else
+                {
+                    params = helper.generateParameters(macOID, encKey, random);
+                }
             }
 
             if (params == null && isKMACwithSHAKE(macOID))
@@ -146,6 +174,30 @@ public class JceCMSMacCalculatorBuilder
         public AlgorithmIdentifier getAlgorithmIdentifier()
         {
             return algorithmIdentifier;
+        }
+
+        private AlgorithmParameters createZeroIVParameters(ASN1ObjectIdentifier macOID, SecretKey encKey)
+            throws CMSException
+        {
+            try
+            {
+                AlgorithmParameters params = helper.createAlgorithmParameters(macOID);
+
+                if (CMSAlgorithm.RC2_CBC.equals(macOID))
+                {
+                    params.init(new RC2ParameterSpec(encKey.getEncoded().length * 8, new byte[8]));
+                }
+                else
+                {
+                    params.init(new IvParameterSpec(new byte[8]));
+                }
+
+                return params;
+            }
+            catch (GeneralSecurityException e)
+            {
+                throw new CMSException("unable to create MAC parameters: " + e.getMessage(), e);
+            }
         }
 
         public OutputStream getOutputStream()

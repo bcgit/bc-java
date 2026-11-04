@@ -3,6 +3,8 @@ package org.bouncycastle.cms;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 
+import org.bouncycastle.asn1.ASN1Encodable;
+import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1OctetString;
@@ -100,15 +102,40 @@ public abstract class RecipientInformation
     /**
      * Return the MAC calculated for the recipient. Note: this call is only meaningful once all
      * the content has been read.
+     * <p>
+     * For an AuthenticatedData message with authenticated attributes, the content is bound to the MAC
+     * through them, so the messageDigest attribute is first checked against the digest of the content
+     * read and the content-type attribute against the eContentType (RFC 5652 sec. 9.2 and 9.3). Without
+     * authenticated attributes a CBC-MAC (des-ede3-cbc, rc2-cbc) whose parameters carry a non-zero IV
+     * is refused, as nothing covers that IV. The caller compares the result with the MAC in the message.
      *
      * @return byte array containing the mac.
+     * @throws CMSRuntimeException if one of these checks fails.
      */
     public byte[] getMac()
     {
         if (resultMac == null)
         {
+            if (operator.isMacBased() && !secureReadable.hasAdditionalData())
+            {
+                // RFC 5652 sec. 9.2: without authAttrs the MAC covers the content alone, so a CBC-MAC IV is unprotected.
+                try
+                {
+                    CMSUtils.checkUnauthenticatedMacIV(messageAlgorithm);
+                }
+                catch (CMSException e)
+                {
+                    throw new CMSRuntimeException(e.getMessage(), e);
+                }
+            }
+
             if (operator.isMacBased() && secureReadable.hasAdditionalData())
             {
+                if (secureReadable.getAuthAttrSet() == null)
+                {
+                    throw new CMSRuntimeException("AuthenticatedData has a digestAlgorithm but no authenticated attributes");
+                }
+
                 // RFC 5652 sec. 9.3: with authenticated attributes present the MAC is computed over the
                 // attributes, not the content, so the content is bound to the MAC only through the
                 // messageDigest authenticated attribute. Verify that the digest computed over the
@@ -116,6 +143,7 @@ public abstract class RecipientInformation
                 // attacker could replace encapContentInfo.eContent while leaving authAttrs and the MAC
                 // untouched and a recipient comparing only getMac() values would accept the forgery.
                 checkContentDigestMatchesMessageDigestAttribute();
+                checkContentTypeAttribute();
 
                 try
                 {
@@ -129,6 +157,25 @@ public abstract class RecipientInformation
             resultMac = operator.getMac();
         }
         return resultMac;
+    }
+
+    /**
+     * RFC 5652 sec. 9.2 requires a content-type attribute whenever authAttrs are present, and sec. 9.3
+     * requires its value to match the eContentType of the AuthenticatedData.
+     */
+    private void checkContentTypeAttribute()
+    {
+        ASN1EncodableVector contentTypeAttrs = new AttributeTable(secureReadable.getAuthAttrSet()).getAll(CMSAttributes.contentType);
+        if (contentTypeAttrs.size() != 1 || ((Attribute)contentTypeAttrs.get(0)).getAttrValues().size() != 1)
+        {
+            throw new CMSRuntimeException("AuthenticatedData missing or malformed content-type authenticated attribute");
+        }
+
+        ASN1Encodable contentType = ((Attribute)contentTypeAttrs.get(0)).getAttrValues().getObjectAt(0);
+        if (!(contentType instanceof ASN1ObjectIdentifier) || !contentType.equals(secureReadable.getContentType()))
+        {
+            throw new CMSRuntimeException("content-type attribute value does not match eContentType");
+        }
     }
 
     private void checkContentDigestMatchesMessageDigestAttribute()
