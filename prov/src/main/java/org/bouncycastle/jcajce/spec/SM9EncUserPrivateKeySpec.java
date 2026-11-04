@@ -27,7 +27,11 @@ import org.bouncycastle.util.Arrays;
  * {@code exchangeKey} set - the encoding does not record which usage the KGC
  * derived the key for, so the flag is the importer's claim, and the consumers
  * enforce whichever usage the rebuilt key carries ({@code KeyAgreement.SM9}
- * accepts only exchange keys; the KEM and cipher only non-exchange keys).
+ * accepts only exchange keys; the KEM and cipher only non-exchange keys). The same
+ * goes for a key declared for the KEM or for decryption: the encoding does not record
+ * that either, so a key rebuilt from {@code getEncoded()} is declared for neither
+ * unless the spec is built with the usage again, and is then held only to the first
+ * of the two it is used for.
  * <p>
  * {@code KeyFactory.SM9} checks the point against the other three, by the KGC's own
  * relation e([H1(ID || hid, N)]P1 + P_pub-e, de) = e(P_pub-e, P2), and refuses the spec

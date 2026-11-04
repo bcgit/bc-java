@@ -21,7 +21,9 @@ import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.operator.ContentVerifier;
 import org.bouncycastle.operator.ContentVerifierProvider;
 import org.bouncycastle.operator.OperatorCreationException;
+import org.bouncycastle.operator.RuntimeOperatorException;
 import org.bouncycastle.util.Encodable;
+import org.bouncycastle.util.Exceptions;
 
 /**
  * This is designed to parse the SignedPublicKeyAndChallenge created by the
@@ -109,7 +111,16 @@ public class SignedPublicKeyAndChallenge
         spkacSeq.getPublicKeyAndChallenge().encodeTo(sOut, ASN1Encoding.DER);
         sOut.close();
 
-        return verifier.verify(spkacSeq.getSignature().getOctets());
+        try
+        {
+            return verifier.verify(spkacSeq.getSignature().getOctets());
+        }
+        catch (RuntimeOperatorException e)
+        {
+            // a verifier's verify() declares no checked exception, so one whose Signature refuses the
+            // signature bytes - a DSA or ECDSA signature that does not decode, say - reports it unchecked
+            throw Exceptions.ioException("unable to verify signature: " + e.getMessage(), e);
+        }
     }
 
     /**

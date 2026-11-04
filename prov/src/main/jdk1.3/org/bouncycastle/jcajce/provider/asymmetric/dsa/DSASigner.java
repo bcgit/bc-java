@@ -31,6 +31,7 @@ import org.bouncycastle.crypto.digests.SHA3Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.digests.RIPEMD160Digest;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
+import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 import org.bouncycastle.crypto.signers.HMacDSAKCalculator;
 import org.bouncycastle.util.Arrays;
 
@@ -84,7 +85,7 @@ public class DSASigner
         }
 
         digest.reset();
-        signer.init(false, param);
+        initSigner(false, param);
     }
 
     protected void engineInitSign(
@@ -101,7 +102,22 @@ public class DSASigner
         }
 
         digest.reset();
-        signer.init(true, param);
+        initSigner(true, param);
+    }
+
+    // the signer refuses a key it cannot use - one with no domain parameters, say - with
+    // IllegalArgumentException, which init reports as the InvalidKeyException it declares
+    private void initSigner(boolean forSigning, CipherParameters param)
+        throws InvalidKeyException
+    {
+        try
+        {
+            signer.init(forSigning, param);
+        }
+        catch (IllegalArgumentException e)
+        {
+            throw SecurityExceptions.invalidKeyException(e.getMessage(), e);
+        }
     }
 
     protected void engineUpdate(

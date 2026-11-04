@@ -24,6 +24,7 @@ import org.bouncycastle.cert.CertIOException;
 import org.bouncycastle.operator.ContentVerifier;
 import org.bouncycastle.operator.ContentVerifierProvider;
 import org.bouncycastle.operator.OperatorCreationException;
+import org.bouncycastle.operator.RuntimeOperatorException;
 import org.bouncycastle.util.Encodable;
 
 /**
@@ -332,7 +333,16 @@ public class CertificateRequestMessage
 
         CRMFUtil.derEncodeToStream(obj, verifier.getOutputStream());
 
-        return verifier.verify(popoSign.getSignature().getOctets());
+        try
+        {
+            return verifier.verify(popoSign.getSignature().getOctets());
+        }
+        catch (RuntimeOperatorException e)
+        {
+            // a verifier's verify() declares no checked exception, so one whose Signature refuses the
+            // signature bytes - a DSA or ECDSA signature that does not decode, say - reports it unchecked
+            throw new CRMFException("unable to verify signature: " + e.getMessage(), e);
+        }
     }
 
     /**

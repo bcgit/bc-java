@@ -29,6 +29,7 @@ import org.bouncycastle.asn1.x509.ExtensionsGenerator;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.operator.ContentVerifier;
 import org.bouncycastle.operator.ContentVerifierProvider;
+import org.bouncycastle.operator.RuntimeOperatorException;
 import org.bouncycastle.util.Exceptions;
 
 /**
@@ -296,7 +297,16 @@ public class PKCS10CertificationRequest
             throw new PKCSException("unable to process signature: " + e.getMessage(), e);
         }
 
-        return verifier.verify(this.getSignature());
+        try
+        {
+            return verifier.verify(this.getSignature());
+        }
+        catch (RuntimeOperatorException e)
+        {
+            // a verifier's verify() declares no checked exception, so one whose Signature refuses the
+            // signature bytes - a DSA or ECDSA signature that does not decode, say - reports it unchecked
+            throw new PKCSException("unable to process signature: " + e.getMessage(), e);
+        }
     }
 
     /**
@@ -358,7 +368,16 @@ public class PKCS10CertificationRequest
             throw new PKCSException("unable to process signature: " + e.getMessage(), e);
         }
 
-        return verifier.verify(this.altSignatureValue.getOctets());
+        try
+        {
+            return verifier.verify(this.altSignatureValue.getOctets());
+        }
+        catch (RuntimeOperatorException e)
+        {
+            // a verifier's verify() declares no checked exception, so one whose Signature refuses the
+            // signature bytes - a DSA or ECDSA signature that does not decode, say - reports it unchecked
+            throw new PKCSException("unable to process signature: " + e.getMessage(), e);
+        }
     }
 
     /**

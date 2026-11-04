@@ -37,6 +37,7 @@ import org.bouncycastle.asn1.x509.TBSCertList;
 import org.bouncycastle.asn1.x509.Time;
 import org.bouncycastle.operator.ContentVerifier;
 import org.bouncycastle.operator.ContentVerifierProvider;
+import org.bouncycastle.operator.RuntimeOperatorException;
 import org.bouncycastle.util.Encodable;
 import org.bouncycastle.util.Exceptions;
 
@@ -350,7 +351,16 @@ public class X509CRLHolder
             throw new CertException("unable to process signature: " + e.getMessage(), e);
         }
 
-        return verifier.verify(x509CRL.getSignature().getOctets());
+        try
+        {
+            return verifier.verify(x509CRL.getSignature().getOctets());
+        }
+        catch (RuntimeOperatorException e)
+        {
+            // a verifier's verify() declares no checked exception, so one whose Signature refuses the
+            // signature bytes - a DSA or ECDSA signature that does not decode, say - reports it unchecked
+            throw new CertException("unable to process signature: " + e.getMessage(), e);
+        }
     }
 
     public boolean isAlternativeSignatureValid(ContentVerifierProvider verifierProvider)
@@ -394,7 +404,16 @@ public class X509CRLHolder
             throw new CertException("unable to process signature: " + e.getMessage(), e);
         }
 
-        return verifier.verify(altSigValue.getSignature().getOctets());
+        try
+        {
+            return verifier.verify(altSigValue.getSignature().getOctets());
+        }
+        catch (RuntimeOperatorException e)
+        {
+            // a verifier's verify() declares no checked exception, so one whose Signature refuses the
+            // signature bytes - a DSA or ECDSA signature that does not decode, say - reports it unchecked
+            throw new CertException("unable to process signature: " + e.getMessage(), e);
+        }
     }
 
 

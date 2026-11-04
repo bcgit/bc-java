@@ -12,6 +12,7 @@ import org.bouncycastle.operator.ContentVerifier;
 import org.bouncycastle.operator.ContentVerifierProvider;
 import org.bouncycastle.operator.MacCalculator;
 import org.bouncycastle.operator.PBEMacCalculatorProvider;
+import org.bouncycastle.operator.RuntimeOperatorException;
 import org.bouncycastle.util.Arrays;
 
 /**
@@ -169,10 +170,20 @@ public class ProtectedPKIMessage
     }
 
     private boolean verifySignature(byte[] signature, ContentVerifier verifier)
+        throws CMPException
     {
         CMPUtil.derEncodeToStream(createProtected(), verifier.getOutputStream());
 
-        return verifier.verify(signature);
+        try
+        {
+            return verifier.verify(signature);
+        }
+        catch (RuntimeOperatorException e)
+        {
+            // a verifier's verify() declares no checked exception, so one whose Signature refuses the
+            // signature bytes - a DSA or ECDSA signature that does not decode, say - reports it unchecked
+            throw new CMPException("unable to verify signature: " + e.getMessage(), e);
+        }
     }
 
     private DERSequence createProtected()

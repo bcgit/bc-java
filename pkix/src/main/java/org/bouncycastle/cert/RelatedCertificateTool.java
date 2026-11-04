@@ -17,7 +17,9 @@ import org.bouncycastle.operator.ContentVerifier;
 import org.bouncycastle.operator.DigestCalculator;
 import org.bouncycastle.operator.DigestCalculatorProvider;
 import org.bouncycastle.operator.OperatorCreationException;
+import org.bouncycastle.operator.RuntimeOperatorException;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Exceptions;
 
 /**
  * Operator-style helpers for building and verifying the two wire-format
@@ -226,7 +228,16 @@ public class RelatedCertificateTool
         writeSignatureInput(vOut, value.getCertID(), value.getRequestTime());
         vOut.close();
 
-        return verifier.verify(value.getSignature().getOctets());
+        try
+        {
+            return verifier.verify(value.getSignature().getOctets());
+        }
+        catch (RuntimeOperatorException e)
+        {
+            // a verifier's verify() declares no checked exception, so one whose Signature refuses the
+            // signature bytes - a DSA or ECDSA signature that does not decode, say - reports it unchecked
+            throw Exceptions.ioException("unable to verify signature: " + e.getMessage(), e);
+        }
     }
 
     // =====================================================================

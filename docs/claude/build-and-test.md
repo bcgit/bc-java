@@ -212,3 +212,34 @@ Note also that both wrapper scripts post-process the provider jars *after* Ant t
 loops `jar uf` over a `bcprov*jdk15to18*.jar` glob (so it catches `bcprov-ext` and a debug build)
 while `build1-8+` uses a `tar` pipe and names the two jars explicitly. That is where to look when a
 provider jar loads from Gradle but not from an Ant build.
+
+## OSS-Fuzz builds `main` with its own script — keep two things compatible with it
+
+Google's OSS-Fuzz runs bc-java continuously as the `bc-java` project in the `google/oss-fuzz` repository
+(`projects/bc-java`: `project.yaml`, `Dockerfile`, `build.sh` and the `*Fuzzer.java` harnesses, which live
+there rather than in this tree). Its `Dockerfile` clones `main` at build time, so a change here can break the
+fuzzing build without anything in this repository failing. Two couplings have done so:
+
+- **It builds on JDK 17.** `build.sh` runs `gradle jar` with Error Prone disabled and every versioned
+  source set above 17 excluded by name (`-x compileJava23Java -x java23Classes -x compileJava25Java
+  -x java25Classes`). A new `src/main/jdkNN` source set compiled for a release above 17 fails the build
+  with `release version NN not supported` until a matching `-x` pair is added to their `build.sh`. The
+  jdk23 `Pack` overlay broke it this way in 2026-10, and the project went unfuzzed until it was noticed.
+- **Test helpers it compiles must not need JUnit.** A harness that reuses this tree's test code puts
+  `pkix/src/test/java` on its classpath without JUnit. `CMSTestUtil` once gained a `junit.framework.Assert`
+  import and that harness stopped compiling; it now throws `AssertionError` instead, and should stay that way.
+
+Build status is public: the `bc-java` entry in `https://oss-fuzz-build-logs.storage.googleapis.com/status.json`
+gives each day's result and a build id, and `log-<build id>.txt` in the same bucket is the full log. Check it
+after any build change of the kinds above. To reproduce a run locally, check out `google/oss-fuzz` and use
+`python3 infra/helper.py build_image bc-java`, `build_fuzzers` (with a local source path and
+`-e GIT_CONFIG_COUNT=1 -e GIT_CONFIG_KEY_0=safe.directory -e GIT_CONFIG_VALUE_0='*'`, since `core/build.gradle`
+runs `git` in a tree the container's root user does not own), `check_build`, then `run_fuzzer`; give the
+mounted source a real git clone rather than an export, for the same `git` call.
+
+The harnesses treat `IllegalArgumentException` and `IllegalStateException` (including
+`ASN1ParsingException`) as the library's normal report of a malformed structure; any other unchecked
+exception from parsing untrusted input — `NullPointerException`, `ClassCastException`, an index or
+arithmetic exception, or an unchecked exception escaping a method that declares a checked one — is filed as
+a crash. Malformed-input fixes should therefore land as `getInstance`/size checks that throw
+`IllegalArgumentException`, or as the checked exception the API already declares.

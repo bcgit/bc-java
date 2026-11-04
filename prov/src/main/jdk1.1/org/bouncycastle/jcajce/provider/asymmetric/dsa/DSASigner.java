@@ -86,7 +86,7 @@ public class DSASigner
         }
 
         digest.reset();
-        signer.init(false, param);
+        initSigner(false, param);
     }
 
     protected void engineInitSign(
@@ -119,7 +119,22 @@ public class DSASigner
         }
 
         digest.reset();
-        signer.init(true, param);
+        initSigner(true, param);
+    }
+
+    // the signer refuses a key it cannot use - one with no domain parameters, say - with
+    // IllegalArgumentException, which init reports as the InvalidKeyException it declares
+    private void initSigner(boolean forSigning, CipherParameters param)
+        throws InvalidKeyException
+    {
+        try
+        {
+            signer.init(forSigning, param);
+        }
+        catch (IllegalArgumentException e)
+        {
+            throw new InvalidKeyException(e.getMessage());
+        }
     }
 
     protected void engineUpdate(

@@ -34,7 +34,10 @@ import org.bouncycastle.util.Properties;
  * the KGC derives for the identity and hid under the master public key it is
  * imported with. Where the KGC derives an identity's exchange key and its KEM /
  * decryption key under one hid, the two are the same point, and the usage is the
- * one thing that check cannot tell.
+ * one thing that check cannot tell. A declaration for the KEM or for decryption is not
+ * recorded by the encoding either: {@link #getEncoded()} writes the point alone, so the
+ * importer declares the usage again when it rebuilds the key, or the rebuilt key is
+ * declared for neither.
  * <p>
  * <b>Usage warning:</b> one identity's key should be used for the KEM or for public-key
  * encryption, but not for both. A deployment needing both has its KGC publish a separate hid for
