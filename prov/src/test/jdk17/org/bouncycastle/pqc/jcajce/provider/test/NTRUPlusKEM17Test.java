@@ -267,6 +267,18 @@ public class NTRUPlusKEM17Test
         catch (DecapsulateException expected)
         {
         }
+        // NTRU+ rejects explicitly, so an encapsulation that does not re-encrypt has no secret
+        byte[] tampered = Arrays.clone(enc.encapsulation());
+        tampered[0] ^= 1;
+        try
+        {
+            d.decapsulate(tampered);
+            fail("decapsulator gave a secret for a tampered encapsulation");
+        }
+        catch (DecapsulateException expected)
+        {
+            assertEquals("invalid encapsulation", expected.getMessage());
+        }
     }
 
     /**

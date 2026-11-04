@@ -1,6 +1,7 @@
 package org.bouncycastle.pqc.crypto.ntruplus;
 
 import org.bouncycastle.crypto.EncapsulatedSecretExtractor;
+import org.bouncycastle.util.Arrays;
 
 /**
  * NTRU+ decapsulation.
@@ -29,6 +30,17 @@ public class NTRUPlusKEMExtractor
         this.engine = new NTRUPlusEngine(privateKey.getParameters());
     }
 
+    /**
+     * Extract the shared secret from an NTRU+ encapsulation.
+     * <p>
+     * NTRU+ rejects an invalid encapsulation explicitly rather than implicitly: there is no
+     * pseudorandom rejection secret, so an encapsulation that fails the re-encryption check, or is not
+     * a canonical encoding, is refused with an exception instead of yielding a secret.
+     *
+     * @param encapsulation the encapsulated secret.
+     * @return the shared secret.
+     * @throws IllegalArgumentException if the encapsulation is the wrong length or is rejected.
+     */
     @Override
     public byte[] extractSecret(byte[] encapsulation)
     {
@@ -37,7 +49,11 @@ public class NTRUPlusKEMExtractor
             throw new IllegalArgumentException("encapsulation wrong length");
         }
         byte[] ss = new byte[NTRUPlusEngine.SSBytes];
-        engine.crypto_kem_dec(ss, 0, encapsulation, 0, privateKey.getEncoded(), 0);
+        if (engine.crypto_kem_dec(ss, 0, encapsulation, 0, privateKey.getEncoded(), 0) != 0)
+        {
+            Arrays.clear(ss);
+            throw new IllegalArgumentException("invalid encapsulation");
+        }
         return ss;
     }
 

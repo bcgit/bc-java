@@ -485,15 +485,24 @@ class NTRUPlusEngine
     }
 
     /**
-     * Deserialization of a polynomial from bytes
+     * Deserialization of a polynomial from bytes.
+     *
+     * @return 0 if every coefficient is canonical (less than q), 1 otherwise, as the reference
+     * poly_frombytes returns.
      */
-    private void poly_frombytes(short[] r, byte[] a, int aPos)
+    private int poly_frombytes(short[] r, byte[] a, int aPos)
     {
+        int fail = 0;
         for (int i = 0, inOff = aPos, outOff = 0; i < halfN; i++, inOff += 3)
         {
-            r[outOff++] = (short)(((a[inOff] & 0xFF) | ((a[inOff + 1] & 0xFF) << 8)) & 0xFFF);
-            r[outOff++] = (short)(((a[inOff + 1] & 0xFF) >> 4 | ((a[inOff + 2] & 0xFF) << 4)) & 0xFFF);
+            int t0 = ((a[inOff] & 0xFF) | ((a[inOff + 1] & 0xFF) << 8)) & 0xFFF;
+            int t1 = ((a[inOff + 1] & 0xFF) >> 4 | ((a[inOff + 2] & 0xFF) << 4)) & 0xFFF;
+            r[outOff++] = (short)t0;
+            r[outOff++] = (short)t1;
+            fail |= (Q - 1) - t0;
+            fail |= (Q - 1) - t1;
         }
+        return fail >>> 31;
     }
 
     /**
@@ -634,9 +643,12 @@ class NTRUPlusEngine
     }
 
     /**
-     * Deterministic KEM encapsulation
+     * Deterministic KEM encapsulation.
+     *
+     * @return 0 on success, 1 if the public key is not a canonical encoding, in which case nothing
+     * is written to ct or ss.
      */
-    public void crypto_kem_enc_derand(byte[] ct, int ctPos, byte[] ss, int ssPos,
+    public int crypto_kem_enc_derand(byte[] ct, int ctPos, byte[] ss, int ssPos,
                                       byte[] pk, int pkPos, byte[] coins, int coinsPos)
     {
         byte[] msg = new byte[eighthN + SSBytes];
@@ -669,7 +681,10 @@ class NTRUPlusEngine
         poly_ntt(m);
 
         // Convert pk to polynomial h
-        poly_frombytes(h, pk, pkPos);
+        if (poly_frombytes(h, pk, pkPos) != 0)
+        {
+            return 1;
+        }
 
         // Compute c = h*r + m in NTT domain
         poly_basemul_add(c, h, r, m);
@@ -679,6 +694,8 @@ class NTRUPlusEngine
 
         // Copy first ssBytes of buf1 to ss
         System.arraycopy(buf1, 0, ss, ssPos, SSBytes);
+
+        return 0;
     }
 
     /**
@@ -829,8 +846,8 @@ class NTRUPlusEngine
 
             for (int j = 0; j < 8; j++)
             {
-                int t4 = t2 & 0x1;
-                t4 += a[8 * i + j];
+                // the reference's t2 is a uint16_t: keep 16 bits, so a coefficient of -1 sets the high bits
+                int t4 = ((t2 & 0x1) + a[8 * i + j]) & 0xFFFF;
                 r |= t4;
                 t4 = (t4 ^ t1) & 0x1;
                 t3 ^= (byte)(t4 << j);
@@ -842,8 +859,9 @@ class NTRUPlusEngine
             msg[i] = t3;
         }
 
-        r = r >> 1;
-        r = (-r) >> 31; // This is the C trick: -(uint32_t)r) >> 31
+        // the reference's fail is a uint32_t, so both shifts are unsigned: r becomes exactly 0 or 1
+        r = r >>> 1;
+        r = (-r) >>> 31;
 
         mask = (byte)(r - 1);
 
@@ -868,7 +886,7 @@ class NTRUPlusEngine
         }
 
         // Return 0 if equal, 1 otherwise, without branching on the (secret-derived) comparison
-        // result: the decapsulation fail flag feeds a constant-time cmov, so a branch here would
+        // result: the decapsulation fail flag feeds a constant-time select, so a branch here would
         // reintroduce a Fujisaki-Okamoto decryption-failure timing oracle. acc is in [0,255], so
         // -acc has its sign bit set iff acc != 0 (the 32-bit form of the C trick (-acc) >> 63).
         return (-acc) >>> 31;
@@ -877,7 +895,14 @@ class NTRUPlusEngine
     /**
      * Performs NTRU+ KEM decapsulation
      */
-    public void crypto_kem_dec(byte[] ss, int ssPos, byte[] ct, int ctPos, byte[] sk, int skPos)
+    /**
+     * KEM decapsulation. NTRU+ rejects explicitly: on failure ss is set to zero and 1 is returned,
+     * and the caller must not use ss - every rejected ciphertext gives the same zero value.
+     *
+     * @return 0 on success, 1 if the ciphertext or secret key is not a canonical encoding or the
+     * ciphertext does not re-encrypt.
+     */
+    public int crypto_kem_dec(byte[] ss, int ssPos, byte[] ct, int ctPos, byte[] sk, int skPos)
     {
         byte[] msg = new byte[eighthN + SSBytes];
         byte[] buf1 = new byte[polyBytes];
@@ -895,9 +920,12 @@ class NTRUPlusEngine
         short[] m2 = new short[n];
 
         // Load ciphertext and secret key components
-        poly_frombytes(c, ct, ctPos);
-        poly_frombytes(f, sk, skPos);
-        poly_frombytes(hinv, sk, skPos + polyBytes);
+        if ((poly_frombytes(c, ct, ctPos) | poly_frombytes(f, sk, skPos)
+            | poly_frombytes(hinv, sk, skPos + polyBytes)) != 0)
+        {
+            Arrays.fill(ss, ssPos, ssPos + SSBytes, (byte)0);
+            return 1;
+        }
 
         // m1 = c * f
         poly_basemul(m1, c, f);
@@ -935,19 +963,13 @@ class NTRUPlusEngine
         // Verify that buf1 (from r2) equals buf2 (from r1)
         fail |= verify(buf1, buf2, polyBytes);
 
-        // Copy shared secret, zeroing on failure
-        cmov(ss, buf3, ssPos, SSBytes, fail);
-    }
-
-    /* b = 0 means mov, b = 1 means don't mov*/
-    static void cmov(byte[] r, byte[] x, int x_offset, int len, int b)
-    {
-        int i;
-
-        b = (b - 1) & 0xff;
-        for (i = 0; i < len; i++)
+        // Copy shared secret, zeroing on failure, as the reference does (ss[i] = buf3[i] & ~(-fail))
+        byte mask = (byte)(fail - 1);
+        for (int i = 0; i < SSBytes; i++)
         {
-            r[i] ^= b & (x[i + x_offset] ^ r[i]);
+            ss[ssPos + i] = (byte)(buf3[i] & mask);
         }
+
+        return fail;
     }
 }

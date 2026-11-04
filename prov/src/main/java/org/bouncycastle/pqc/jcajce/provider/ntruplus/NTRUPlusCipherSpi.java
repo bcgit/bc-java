@@ -293,7 +293,16 @@ class NTRUPlusCipherSpi
         {
             NTRUPlusKEMExtractor kemExt = new NTRUPlusKEMExtractor(unwrapKey.getKeyParams());
 
-            byte[] secret = kemExt.extractSecret(Arrays.copyOfRange(wrappedKey, 0, kemExt.getEncapsulationLength()));
+            byte[] secret;
+            try
+            {
+                secret = kemExt.extractSecret(Arrays.copyOfRange(wrappedKey, 0, kemExt.getEncapsulationLength()));
+            }
+            catch (IllegalArgumentException e)
+            {
+                // NTRU+ rejects explicitly: a wrapped key whose encapsulation does not re-encrypt is invalid
+                throw SecurityExceptions.invalidKeyException("unable to extract KTS secret: " + e.getMessage(), e);
+            }
 
             Wrapper kWrap = WrapUtil.getWrapper(kemParameterSpec.getKeyAlgorithmName());
 

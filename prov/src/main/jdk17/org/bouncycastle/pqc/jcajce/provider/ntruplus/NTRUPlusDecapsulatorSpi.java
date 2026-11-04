@@ -34,7 +34,16 @@ class NTRUPlusDecapsulatorSpi
 
         // NTRUPlusEngine builds its SHAKE instance per call, so one extractor is safe to share
         // across the concurrent decapsulate calls javax.crypto.KEM requires.
-        byte[] kemSecret = kemExt.extractSecret(encapsulation);
+        byte[] kemSecret;
+        try
+        {
+            kemSecret = kemExt.extractSecret(encapsulation);
+        }
+        catch (IllegalArgumentException e)
+        {
+            // NTRU+ rejects explicitly: an encapsulation that does not re-encrypt has no secret
+            throw new DecapsulateException(e.getMessage(), e);
+        }
 
         return KdfUtil.makeSecretKey(parameterSpec, kemSecret, from, to, algorithm);
     }

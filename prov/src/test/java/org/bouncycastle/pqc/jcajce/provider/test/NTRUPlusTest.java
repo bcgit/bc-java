@@ -1,6 +1,7 @@
 package org.bouncycastle.pqc.jcajce.provider.test;
 
 import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.KeyFactory;
 import java.security.KeyPair;
@@ -160,6 +161,36 @@ public class NTRUPlusTest
         Key k = w2.unwrap(data, "AES", Cipher.SECRET_KEY);
 
         assertTrue(Arrays.areEqual(keyBytes, k.getEncoded()));
+    }
+
+    /**
+     * NTRU+ rejects explicitly, so a wrapped key whose encapsulation does not re-encrypt cannot be
+     * unwrapped. It used to unwrap under a secret of all zero bytes, which anyone can compute.
+     */
+    public void testUnwrapRejectedEncapsulation()
+        throws Exception
+    {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("NTRUPLUS", "BCPQC");
+        kpg.initialize(NTRUPlusParameterSpec.ntruplus_768, new SecureRandom());
+        KeyPair kp = kpg.generateKeyPair();
+        KEMParameterSpec ktsParameterSpec = new KEMParameterSpec("AES");
+
+        Cipher w1 = Cipher.getInstance("NTRUPLUS", "BCPQC");
+        w1.init(Cipher.WRAP_MODE, kp.getPublic(), ktsParameterSpec);
+        byte[] data = w1.wrap(new SecretKeySpec(Hex.decode("000102030405060708090a0b0c0d0e0f"), "AES"));
+        data[0] ^= 1;
+
+        Cipher w2 = Cipher.getInstance("NTRUPLUS", "BCPQC");
+        w2.init(Cipher.UNWRAP_MODE, kp.getPrivate(), ktsParameterSpec);
+        try
+        {
+            w2.unwrap(data, "AES", Cipher.SECRET_KEY);
+            fail("unwrap accepted a tampered encapsulation");
+        }
+        catch (InvalidKeyException e)
+        {
+            assertEquals("unable to extract KTS secret: invalid encapsulation", e.getMessage());
+        }
     }
 
     public void testGenerateAES()

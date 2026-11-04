@@ -28,7 +28,10 @@ public class NTRUPlusKEMGenerator
         NTRUPlusEngine engine = new NTRUPlusEngine(params);
         byte[] coins = new byte[params.getN() >> 3];
         sr.nextBytes(coins);
-        engine.crypto_kem_enc_derand(ct, 0, ss,0, key.getEncoded(), 0, coins, 0);
+        if (engine.crypto_kem_enc_derand(ct, 0, ss, 0, key.getEncoded(), 0, coins, 0) != 0)
+        {
+            throw new IllegalArgumentException("invalid public key");
+        }
         return new SecretWithEncapsulationImpl(ss, ct);
     }
 }
