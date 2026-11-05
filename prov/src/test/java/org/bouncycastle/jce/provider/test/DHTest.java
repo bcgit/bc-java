@@ -1587,9 +1587,50 @@ public class DHTest
         }
     }
 
+    /*
+     * github #2554: a private value length equal to the length of p, as Oracle JDBC Native Network Encryption passes it,
+     * is accepted, as SunJCE does, and the private value is kept below p - 1 (PKCS#3 sec. 7.1).
+     */
+    private void testFullLengthPrivateValue()
+        throws Exception
+    {
+        org.bouncycastle.crypto.params.DHParameters group = DHStandardGroups.rfc7919_ffdhe2048;
+        BigInteger p = group.getP();
+        DHParameterSpec spec = new DHParameterSpec(p, group.getG(), p.bitLength());
+
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("DH", "BC");
+        kpGen.initialize(spec);
+
+        KeyPair kp1 = kpGen.generateKeyPair();
+        KeyPair kp2 = kpGen.generateKeyPair();
+
+        BigInteger x = ((DHPrivateKey)kp1.getPrivate()).getX();
+        isTrue("private value not full length", x.bitLength() == p.bitLength());
+        isTrue("private value not below p - 1", x.compareTo(p.subtract(org.bouncycastle.util.BigIntegers.TWO)) <= 0);
+
+        KeyAgreement ka1 = KeyAgreement.getInstance("DH", "BC");
+        ka1.init(kp1.getPrivate());
+        ka1.doPhase(kp2.getPublic(), true);
+        KeyAgreement ka2 = KeyAgreement.getInstance("DH", "BC");
+        ka2.init(kp2.getPrivate());
+        ka2.doPhase(kp1.getPublic(), true);
+        isTrue("full length private value agreement failed", Arrays.areEqual(ka1.generateSecret(), ka2.generateSecret()));
+
+        try
+        {
+            kpGen.initialize(new DHParameterSpec(p, group.getG(), p.bitLength() + 1));
+            fail("l greater than bitLength(p) accepted");
+        }
+        catch (InvalidAlgorithmParameterException e)
+        {
+            isEquals("when l value specified, it must not be greater than bitlength(p)", e.getMessage());
+        }
+    }
+
     public void performTest()
         throws Exception
     {
+        testFullLengthPrivateValue();
         generalKeyTest();
         testDefault(64, g512, p512);
         mqvTest();

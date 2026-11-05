@@ -18,6 +18,7 @@ import org.bouncycastle.crypto.agreement.DHUnifiedAgreement;
 import org.bouncycastle.crypto.generators.DHBasicKeyPairGenerator;
 import org.bouncycastle.crypto.generators.DHKeyPairGenerator;
 import org.bouncycastle.crypto.generators.DHParametersGenerator;
+import org.bouncycastle.crypto.generators.ElGamalKeyPairGenerator;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.DHKeyGenerationParameters;
 import org.bouncycastle.crypto.agreement.DHStandardGroups;
@@ -30,6 +31,9 @@ import org.bouncycastle.crypto.params.DHPublicKeyParameters;
 import org.bouncycastle.crypto.params.DHUPrivateParameters;
 import org.bouncycastle.crypto.params.DHUPublicParameters;
 import org.bouncycastle.crypto.params.DHValidationParameters;
+import org.bouncycastle.crypto.params.ElGamalKeyGenerationParameters;
+import org.bouncycastle.crypto.params.ElGamalParameters;
+import org.bouncycastle.crypto.params.ElGamalPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.util.BigIntegers;
@@ -305,14 +309,38 @@ public class DHTest
         BigInteger g2 = new BigInteger("2592F5A99FE46313650CCE66C94C15DBED9F4A45BD05C329986CF5D3E12139F0405A47C6385FEA27BFFEDC4CBABC5BB151F3BEE7CC3D51567F1E2B12A975AA9F48A70BDAAE7F5B87E70ADCF902490A3CBEFEDA41EBA8E12E02B56120B5FDEFBED07F5EAD3AE020DF3C8233216F8F0D35E13A7AE4DA5CBCC0D91EADBF20C281C6", 16);
         int l2 = 1024;
 
+        /*
+         * PKCS#3 sec. 7.1 allows l up to the length of p (github #2554); x must then also be below p - 1. This p is about
+         * 0.7 * 2^1024, so an l-bit x with its top bit set is at or above p - 1 about 60% of the time.
+         */
+        kpGen.init(new DHKeyGenerationParameters(random, new DHParameters(p2, g2, null, l2)));
+        BigInteger min = BigIntegers.ONE.shiftLeft(l2 - 1);
+        BigInteger max = p2.subtract(BigIntegers.TWO);
+        for (int i = 0; i != 200; i++)
+        {
+            BigInteger x = ((DHPrivateKeyParameters)kpGen.generateKeyPair().getPrivate()).getX();
+            if (x.compareTo(min) < 0 || x.compareTo(max) > 0)
+            {
+                fail("DH private value out of range for l == bitLength(p): " + x.toString(16));
+            }
+        }
+
+        ElGamalKeyPairGenerator egGen = new ElGamalKeyPairGenerator();
+        egGen.init(new ElGamalKeyGenerationParameters(random, new ElGamalParameters(p2, g2, l2)));
+        BigInteger egX = ((ElGamalPrivateKeyParameters)egGen.generateKeyPair().getPrivate()).getX();
+        if (egX.compareTo(min) < 0 || egX.compareTo(max) > 0)
+        {
+            fail("ElGamal private value out of range for l == bitLength(p)");
+        }
+
         try
         {
-            new DHKeyGenerationParameters(random, new DHParameters(p2, g2, null, l2));
+            new DHKeyGenerationParameters(random, new DHParameters(p2, g2, null, l2 + 1));
             fail("oversized DH 'l' value accepted");
         }
         catch (IllegalArgumentException e)
         {
-            // expected
+            isEquals("when l value specified, it must not be greater than bitlength(p)", e.getMessage());
         }
     }
 
