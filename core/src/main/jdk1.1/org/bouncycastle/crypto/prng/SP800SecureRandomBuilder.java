@@ -16,6 +16,32 @@ import org.bouncycastle.util.Arrays;
 
 /**
  * Builder class for making SecureRandom objects based on SP 800-90A Deterministic Random Bit Generators (DRBG).
+ * <p>
+ * A typical use, building a SecureRandom on a Hash DRBG at the default 256-bit security strength:
+ * </p>
+ * <pre>
+ *     SecureRandom entropySource = new SecureRandom();
+ *
+ *     // SP 800-90A sec. 8.6.7: at least (security strength / 2) bits of entropy, or a value that does not repeat
+ *     byte[] nonce = new byte[16];
+ *     entropySource.nextBytes(nonce);
+ *
+ *     SecureRandom random = new SP800SecureRandomBuilder(entropySource, false)
+ *         .setPersonalizationString(Strings.toByteArray("example application, instance 1"))
+ *         .buildHash(new SHA512Digest(), nonce, false);
+ * </pre>
+ * <p>
+ * An HMAC DRBG is built the same way with <code>buildHMAC(new HMac(new SHA512Digest()), nonce, false)</code>, and a
+ * CTR DRBG with <code>buildCTR(AESEngine.newInstance(), 256, nonce, false)</code>.
+ * </p>
+ * <p>
+ * For full SP 800-90A compliance a nonce is required for all three: the Hash and HMAC DRBGs, and the CTR DRBG,
+ * which always uses the derivation function. As above, the nonce may be taken from the same source, and at the
+ * same time, as the entropy input; it may also be a value guaranteed not to repeat, such as a counter or a
+ * timestamp (SP 800-90A sec. 8.6.7). The personalization string is optional but recommended: something that
+ * distinguishes this instantiation, such as an application and instance name. Setting predictionResistant to true
+ * reseeds from the entropy source on every request for bytes, at the cost of reading entropy each time.
+ * </p>
  */
 public class SP800SecureRandomBuilder
 {
@@ -110,7 +136,10 @@ public class SP800SecureRandomBuilder
      * Build a SecureRandom based on a SP 800-90A Hash DRBG.
      *
      * @param digest digest algorithm to use in the DRBG underneath the SecureRandom.
-     * @param nonce  nonce value to use in DRBG construction.
+     * @param nonce  nonce value to use in DRBG construction. For full SP 800-90A compliance a nonce is required:
+     * either a value with at least (security strength / 2) bits of entropy, or a value expected to repeat no
+     * more often than a random string of that length would (SP 800-90A sec. 8.6.7). A null nonce is still
+     * accepted, but the resulting DRBG is not compliant.
      * @param predictionResistant specify whether the underlying DRBG in the resulting SecureRandom should reseed on each request for bytes.
      * @return a SecureRandom supported by a Hash DRBG.
      */
@@ -124,7 +153,10 @@ public class SP800SecureRandomBuilder
      *
      * @param cipher the block cipher to base the DRBG on.
      * @param keySizeInBits key size in bits to be used with the block cipher.
-     * @param nonce nonce value to use in DRBG construction.
+     * @param nonce nonce value to use in DRBG construction. For full SP 800-90A compliance a nonce is required:
+     * either a value with at least (security strength / 2) bits of entropy, or a value expected to repeat no
+     * more often than a random string of that length would (SP 800-90A sec. 8.6.7). A null nonce is still
+     * accepted, but the resulting DRBG is not compliant.
      * @param predictionResistant  specify whether the underlying DRBG in the resulting SecureRandom should reseed on each request for bytes.
      * @return  a SecureRandom supported by a CTR DRBG.
      */
@@ -137,7 +169,10 @@ public class SP800SecureRandomBuilder
      * Build a SecureRandom based on a SP 800-90A HMAC DRBG.
      *
      * @param hMac HMAC algorithm to use in the DRBG underneath the SecureRandom.
-     * @param nonce  nonce value to use in DRBG construction.
+     * @param nonce  nonce value to use in DRBG construction. For full SP 800-90A compliance a nonce is required:
+     * either a value with at least (security strength / 2) bits of entropy, or a value expected to repeat no
+     * more often than a random string of that length would (SP 800-90A sec. 8.6.7). A null nonce is still
+     * accepted, but the resulting DRBG is not compliant.
      * @param predictionResistant specify whether the underlying DRBG in the resulting SecureRandom should reseed on each request for bytes.
      * @return a SecureRandom supported by a HMAC DRBG.
      */

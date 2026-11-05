@@ -30,7 +30,10 @@ public class HMacSP800DRBG
      * @param securityStrength security strength required (in bits)
      * @param entropySource source of entropy to use for seeding/reseeding.
      * @param personalizationString personalization string to distinguish this DRBG (may be null).
-     * @param nonce nonce to further distinguish this DRBG (may be null).
+     * @param nonce nonce to further distinguish this DRBG. For full SP 800-90A compliance a nonce is
+     * required: either a value with at least (securityStrength / 2) bits of entropy, or a value expected to
+     * repeat no more often than a random string of that length would (SP 800-90A sec. 8.6.7). A null nonce
+     * is still accepted, but a DRBG instantiated without one is not compliant.
      */
     public HMacSP800DRBG(Mac hMac, int securityStrength, EntropySource entropySource, byte[] personalizationString, byte[] nonce)
     {
