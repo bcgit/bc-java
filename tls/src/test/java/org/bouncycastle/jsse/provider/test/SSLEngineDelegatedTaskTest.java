@@ -26,6 +26,7 @@ import javax.net.ssl.X509ExtendedTrustManager;
 
 import junit.framework.TestCase;
 
+import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.Strings;
 
 /**
@@ -38,8 +39,8 @@ public class SSLEngineDelegatedTaskTest
 {
     private static final char[] PASSWORD = "password".toCharArray();
 
-    private static final String[] PROPERTY_NAMES = { "org.bouncycastle.jsse.client.enableDelegatedTasks",
-        "org.bouncycastle.jsse.server.enableDelegatedTasks" };
+    private static final String[] PROPERTY_NAMES = { Properties.JSSE_CLIENT_ENABLE_DELEGATED_TASKS,
+        Properties.JSSE_SERVER_ENABLE_DELEGATED_TASKS };
 
     private final String[] savedProperties = new String[PROPERTY_NAMES.length];
 

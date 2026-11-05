@@ -93,9 +93,9 @@ final class ContextData
          * them inside wrap/unwrap, per role.
          */
         this.clientEnableDelegatedTasks = PropertyUtils.getBooleanSystemProperty(
-            "org.bouncycastle.jsse.client.enableDelegatedTasks", false);
+            Properties.JSSE_CLIENT_ENABLE_DELEGATED_TASKS, false);
         this.serverEnableDelegatedTasks = PropertyUtils.getBooleanSystemProperty(
-            "org.bouncycastle.jsse.server.enableDelegatedTasks", false);
+            Properties.JSSE_SERVER_ENABLE_DELEGATED_TASKS, false);
     }
 
     int[] getActiveCipherSuites(JcaTlsCrypto crypto, ProvSSLParameters sslParameters,

@@ -236,6 +236,22 @@ public class Properties
     public static final String JSSE_USE_NAMED_GROUPS_ORDER = "org.bouncycastle.jsse.useNamedGroupsOrder";
 
     /**
+     * Boolean system property, read per SSLContext initialisation: set to "true", a BCJSSE SSLEngine of that
+     * context in client mode hands out its handshake work through getDelegatedTask() - one task for the
+     * initial ClientHello and one for each inbound handshake message, each performing that message's
+     * processing and any response flight - rather than doing it inside wrap() and unwrap(). Default false.
+     */
+    public static final String JSSE_CLIENT_ENABLE_DELEGATED_TASKS = "org.bouncycastle.jsse.client.enableDelegatedTasks";
+
+    /**
+     * Boolean system property, read per SSLContext initialisation: set to "true", a BCJSSE SSLEngine of that
+     * context in server mode hands out the work for each inbound handshake message through
+     * getDelegatedTask() rather than doing it inside wrap() and unwrap(). Default false. See
+     * {@link #JSSE_CLIENT_ENABLE_DELEGATED_TASKS}.
+     */
+    public static final String JSSE_SERVER_ENABLE_DELEGATED_TASKS = "org.bouncycastle.jsse.server.enableDelegatedTasks";
+
+    /**
      * Effective bits-of-entropy assumed per real bit when the BC DRBG provider seeds for
      * a 256-bit security level — used to compute the byte-oriented samples requested from
      * the underlying entropy source. Defaults to 282 bits (about 0.9 effective bits per
