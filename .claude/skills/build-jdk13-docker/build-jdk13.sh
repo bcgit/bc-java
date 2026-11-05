@@ -134,7 +134,12 @@ fi
 #     because jvm.cfg already EXISTS in the ro JDK mount; docker cannot create a
 #     NEW mountpoint inside a ro mount (that is why oro goes to its own dir and
 #     is added with ant -lib, not dropped into the ro /opt/ant/lib).
-exec docker run --rm $TTY --platform linux/386 \
+#
+# The bc-test-data mount needs a mountpoint inside the bind-mounted repo, which docker creates as an empty,
+# root-owned bc-test-data directory and leaves behind. The host test runs' walk-up search would then find that
+# empty directory before the real sibling checkout, so it is removed again once the container has exited.
+status=0
+docker run --rm $TTY --platform linux/386 \
     --user "$(id -u):$(id -g)" \
     -e HOME=/tmp \
     -e JAVA_MAIL_HOME=/opt/javamail-1.3.1 \
@@ -155,4 +160,9 @@ exec docker run --rm $TTY --platform linux/386 \
     -v "$MAIL_HOST":/opt/javamail-1.3.1:ro \
     -v "$JAF_HOST":/opt/jaf-1.0.2:ro \
     $BC_TEST_DATA_MOUNT \
-    "$IMAGE" /bin/sh -c "$RUNCMD"
+    "$IMAGE" /bin/sh -c "$RUNCMD" || status=$?
+
+if [ -n "$BC_TEST_DATA_MOUNT" ]; then
+    rmdir "$BC_JAVA/bc-test-data" 2>/dev/null || true
+fi
+exit $status
