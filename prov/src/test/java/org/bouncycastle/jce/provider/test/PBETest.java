@@ -735,10 +735,28 @@ public class PBETest
         isTrue(Arrays.areEqual(input, decryptedBytes));
     }
 
+    /*
+     * BCPBEKey.getEncoded() returned the key's own array, so writing to the result changed the key.
+     */
+    private void testEncodedIsCopy()
+        throws Exception
+    {
+        SecretKey key = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256", "BC").generateSecret(
+            new PBEKeySpec("password".toCharArray(), Hex.decode("0001020304050607"), 1000, 256));
+
+        byte[] enc = key.getEncoded();
+        byte[] expected = Arrays.clone(enc);
+        Arrays.fill(enc, (byte)0);
+
+        isTrue("BCPBEKey.getEncoded() exposes the key's own array", Arrays.areEqual(expected, key.getEncoded()));
+    }
+
     public void performTest()
         throws Exception
     {
         byte[] input = Hex.decode("1234567890abcdefabcdef1234567890fedbca098765");
+
+        testEncodedIsCopy();
 
         //
         // DES

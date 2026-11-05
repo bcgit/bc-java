@@ -7,6 +7,7 @@ import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 import org.bouncycastle.crypto.params.KeyParameter;
+import org.bouncycastle.util.Arrays;
 
 /**
  * a class that provides a basic DESede (or Triple DES) engine.
@@ -65,22 +66,35 @@ public class DESedeEngine
 
         byte[] key1 = new byte[8];
         System.arraycopy(keyMaster, 0, key1, 0, key1.length);
-        workingKey1 = generateWorkingKey(encrypting, key1);
+        int[] newWorkingKey1 = generateWorkingKey(encrypting, key1);
+        Arrays.clear(key1);
 
         byte[] key2 = new byte[8];
         System.arraycopy(keyMaster, 8, key2, 0, key2.length);
-        workingKey2 = generateWorkingKey(!encrypting, key2);
+        int[] newWorkingKey2 = generateWorkingKey(!encrypting, key2);
+        Arrays.clear(key2);
 
+        int[] newWorkingKey3;
         if (keyMaster.length == 24)
         {
             byte[] key3 = new byte[8];
             System.arraycopy(keyMaster, 16, key3, 0, key3.length);
-            workingKey3 = generateWorkingKey(encrypting, key3);
+            newWorkingKey3 = generateWorkingKey(encrypting, key3);
+            Arrays.clear(key3);
         }
         else    // 16 byte key
         {
-            workingKey3 = workingKey1;
+            newWorkingKey3 = newWorkingKey1;
         }
+
+        // clear the previous key schedules when re-keyed, rather than leaving them for the collector
+        Arrays.clear(workingKey1);
+        Arrays.clear(workingKey2);
+        Arrays.clear(workingKey3);
+
+        workingKey1 = newWorkingKey1;
+        workingKey2 = newWorkingKey2;
+        workingKey3 = newWorkingKey3;
 
         CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(getAlgorithmName(), bitsOfSecurity(), params, Utils.getPurpose(forEncryption)));
     }

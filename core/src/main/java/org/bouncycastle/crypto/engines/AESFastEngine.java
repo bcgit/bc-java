@@ -8,6 +8,7 @@ import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.util.Pack;
+import org.bouncycastle.util.Arrays;
 
 /**
  * an implementation of the AES (Rijndael), from FIPS-197.
@@ -755,6 +756,18 @@ public class AESFastEngine
         CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(getAlgorithmName(), 256));
     }
 
+    // clear a previous key schedule when the engine is re-keyed, rather than leaving it for the collector
+    private static void clearWorkingKey(int[][] workingKey)
+    {
+        if (workingKey != null)
+        {
+            for (int i = 0; i != workingKey.length; i++)
+            {
+                Arrays.clear(workingKey[i]);
+            }
+        }
+    }
+
     /**
      * initialise an AES cipher.
      *
@@ -769,7 +782,9 @@ public class AESFastEngine
     {
         if (params instanceof KeyParameter)
         {
-            WorkingKey = generateWorkingKey(((KeyParameter)params).getKey(), forEncryption);
+            int[][] newWorkingKey = generateWorkingKey(((KeyParameter)params).getKey(), forEncryption);
+            clearWorkingKey(WorkingKey);
+            WorkingKey = newWorkingKey;
             this.forEncryption = forEncryption;
             CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(getAlgorithmName(), bitsOfSecurity(), params, Utils.getPurpose(forEncryption)));
             return;

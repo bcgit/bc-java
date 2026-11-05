@@ -441,6 +441,18 @@ private static final int[] Tinv0 =
         CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties(getAlgorithmName(), 256));
     }
 
+    // clear a previous key schedule when the engine is re-keyed, rather than leaving it for the collector
+    private static void clearWorkingKey(int[][] workingKey)
+    {
+        if (workingKey != null)
+        {
+            for (int i = 0; i != workingKey.length; i++)
+            {
+                Arrays.clear(workingKey[i]);
+            }
+        }
+    }
+
     /**
      * initialise an AES cipher.
      *
@@ -455,7 +467,9 @@ private static final int[] Tinv0 =
     {
         if (params instanceof KeyParameter)
         {
-            WorkingKey = generateWorkingKey(((KeyParameter)params).getKey(), forEncryption);
+            int[][] newWorkingKey = generateWorkingKey(((KeyParameter)params).getKey(), forEncryption);
+            clearWorkingKey(WorkingKey);
+            WorkingKey = newWorkingKey;
             this.forEncryption = forEncryption;
             // Note: The use of the clone of the S array slows down the cipher by about 10% but has
             // been shown to introduce sufficient noise in local monitoring to make the local

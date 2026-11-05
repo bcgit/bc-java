@@ -1185,11 +1185,14 @@ public class BCFKSStoreTest
 
         isTrue("not a PBEKey", pbeKey instanceof javax.crypto.interfaces.PBEKey);
         String origAlg = pbeKey.getAlgorithm();
-        byte[] origEncoded = pbeKey.getEncoded();
+        byte[] origEncoded = Arrays.clone(pbeKey.getEncoded());
 
         KeyStore store1 = KeyStore.getInstance("BCFKS", "BC");
         store1.load(null, null);
         store1.setKeyEntry("pbeKey", pbeKey, testPassword, null);
+
+        // storing must leave the caller's key intact: BCPBEKey.getEncoded() hands out the key's own array
+        isTrue("stored PBE key damaged", Arrays.areEqual(origEncoded, pbeKey.getEncoded()));
 
         isTrue("size != 1", 1 == store1.size());
 
@@ -1208,6 +1211,27 @@ public class BCFKSStoreTest
         isEquals(iterations, rPbe.getIterationCount());
         isTrue("algorithm mismatch: " + rPbe.getAlgorithm(), origAlg.equals(rPbe.getAlgorithm()));
         isTrue("encoded mismatch", Arrays.areEqual(origEncoded, rPbe.getEncoded()));
+
+        // the recovered key can be destroyed, which clears it and makes its accessors refuse
+        isTrue("recovered PBE key not Destroyable", recovered instanceof javax.security.auth.Destroyable);
+        javax.security.auth.Destroyable dRecovered = (javax.security.auth.Destroyable)recovered;
+        isTrue("recovered PBE key destroyed early", !dRecovered.isDestroyed());
+        dRecovered.destroy();
+        isTrue("recovered PBE key not destroyed", dRecovered.isDestroyed());
+        try
+        {
+            rPbe.getPassword();
+            fail("destroyed PBE key returned its password");
+        }
+        catch (IllegalStateException e)
+        {
+            isEquals("key has been destroyed", e.getMessage());
+        }
+
+        // destroying one recovered copy leaves the stored entry intact
+        javax.crypto.interfaces.PBEKey again = (javax.crypto.interfaces.PBEKey)store2.getKey("pbeKey", testPassword);
+        isTrue("password mismatch after destroy", Arrays.areEqual(pwd, again.getPassword()));
+        isTrue("encoded mismatch after destroy", Arrays.areEqual(origEncoded, again.getEncoded()));
 
         // a PBE key entry is a key entry, so getEntry() must return it as a SecretKeyEntry
         isTrue("PBE key not a key entry", store2.isKeyEntry("pbeKey"));

@@ -54,6 +54,66 @@ public class CCMTest
     private byte[] C5 = Hex.decode("49b17d8d3ea4e6174a48e2b65e6d8b417ac0dd3f8ee46ce4a4a2a509661cef52528c1cd9805333a5cfd482fa3f095a3c2fdd1cc47771c5e55fddd60b5c8d6d3fa5c8dd79d08b16242b6642106e7c0c28bd1064b31e6d7c9800c8397dbc3fa8071e6a38278b386c18d65d39c6ad1ef9501a5c8f68d38eb6474799f3cc898b4b9b97e87f9c95ce5c51bc9d758f17119586663a5684e0a0daf6520ec572b87473eb141d10471e4799ded9e607655402eca5176bbf792ef39dd135ac8d710da8e9e854fd3b95c681023f36b5ebe2fb213d0b62dd6e9e3cfe190b792ccb20c53423b2dca128f861a61d306910e1af418839467e466f0ec361d2539eedd99d4724f1b51c07beb40e875a87491ec8b27cd1");
     private byte[] T5 = Hex.decode("5c768856796b627b13ec8641581b");
 
+    /*
+     * CCM buffers the whole message before processing it: once doFinal() has run, the buffered message
+     * and associated data must not be left in the cipher's internal buffers, and the cipher must remain usable.
+     */
+    private void bufferClearingTest()
+        throws Exception
+    {
+        byte[] key = Hex.decode("404142434445464748494a4b4c4d4e4f");
+        byte[] nonce = Hex.decode("10111213141516");
+        byte[] msg = new byte[45];
+        for (int i = 0; i != msg.length; i++)
+        {
+            msg[i] = (byte)(i + 1);
+        }
+
+        CCMBlockCipher enc = new CCMBlockCipher(AESEngine.newInstance());
+        enc.init(true, new AEADParameters(new KeyParameter(key), 128, nonce));
+        enc.processAADBytes(msg, 0, 13);
+        enc.processBytes(msg, 0, msg.length, null, 0);
+        byte[] ct = new byte[enc.getOutputSize(0)];
+        int ctLen = enc.doFinal(ct, 0);
+
+        checkCleared(enc, "data", msg.length);
+        checkCleared(enc, "associatedText", 13);
+
+        // the cipher still works after the clearing reset: the same message gives the same ciphertext
+        enc.processAADBytes(msg, 0, 13);
+        enc.processBytes(msg, 0, msg.length, null, 0);
+        byte[] ct2 = new byte[enc.getOutputSize(0)];
+        isEquals(ctLen, enc.doFinal(ct2, 0));
+        isTrue("ciphertext changed after reset", Arrays.areEqual(ct, ct2));
+
+        CCMBlockCipher dec = new CCMBlockCipher(AESEngine.newInstance());
+        dec.init(false, new AEADParameters(new KeyParameter(key), 128, nonce));
+        dec.processAADBytes(msg, 0, 13);
+        dec.processBytes(ct, 0, ctLen, null, 0);
+        byte[] pt = new byte[dec.getOutputSize(0)];
+        isEquals(msg.length, dec.doFinal(pt, 0));
+        isTrue("decryption failed after buffer clearing", Arrays.areEqual(msg, pt));
+
+        checkCleared(dec, "data", ctLen);
+        checkCleared(dec, "associatedText", 13);
+    }
+
+    private void checkCleared(CCMBlockCipher cipher, String fieldName, int len)
+        throws Exception
+    {
+        java.lang.reflect.Field f = CCMBlockCipher.class.getDeclaredField(fieldName);
+        f.setAccessible(true);
+        java.io.ByteArrayOutputStream bOut = (java.io.ByteArrayOutputStream)f.get(cipher);
+
+        isEquals(fieldName + " not reset", 0, bOut.size());
+
+        java.lang.reflect.Method getBuffer = bOut.getClass().getDeclaredMethod("getBuffer", new Class[0]);
+        getBuffer.setAccessible(true);
+        byte[] buf = (byte[])getBuffer.invoke(bOut, new Object[0]);
+
+        isTrue(fieldName + " not cleared", Arrays.areAllZeroes(buf, 0, len));
+    }
+
     public void performTest()
         throws Exception
     {
@@ -66,6 +126,8 @@ public class CCMTest
         checkVectors(2, K3, 64, N3, A3, P3, T3, C3);
 
         ivParamTest(0, ccm, K1, N1);
+
+        bufferClearingTest();
 
         //
         // 4 has a reduced associated text which needs to be replicated

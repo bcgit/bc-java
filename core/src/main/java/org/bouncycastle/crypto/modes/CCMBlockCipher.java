@@ -193,7 +193,10 @@ public class CCMBlockCipher
     public void reset()
     {
         cipher.reset();
+        // the buffered message is plaintext when encrypting, so clear it rather than only rewinding the stream
+        Arrays.fill(associatedText.getBuffer(), 0, associatedText.size(), (byte)0);
         associatedText.reset();
+        Arrays.fill(data.getBuffer(), 0, data.size(), (byte)0);
         data.reset();
     }
 
@@ -399,10 +402,14 @@ public class CCMBlockCipher
             if (!Arrays.constantTimeAreEqual(macBlock, calculatedMacBlock))
             {
                 Arrays.clear(plain);
+                Arrays.clear(block);
                 throw new InvalidCipherTextException("mac check in CCM failed");
             }
 
             System.arraycopy(plain, 0, output, outOff, outputLen);
+
+            Arrays.clear(plain);
+            Arrays.clear(block);
         }
 
         return outputLen;

@@ -100,7 +100,7 @@ public class BCPBEKey
                 kParam = (KeyParameter)param;
             }
             
-            enc = kParam.getKey();
+            enc = Arrays.clone(kParam.getKey());   // a copy: the caller must not be able to change the key
         }
         else
         {

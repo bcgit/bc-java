@@ -95,6 +95,7 @@ public class RegressionTest
             new NISTCTSTest(),
             new NISTECCTest(),
             new CCMTest(),
+            new EngineRekeyClearTest(),
             new PKCS5Test(),
             new PKCS12Test(),
             new KDF1GeneratorTest(),
