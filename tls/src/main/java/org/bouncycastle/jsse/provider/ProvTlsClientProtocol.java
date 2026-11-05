@@ -22,24 +22,65 @@ class ProvTlsClientProtocol extends TlsClientProtocol
         "org.bouncycastle.jsse.client.acceptRenegotiation", false);
 
     private final Closeable closeable;
+    private final int renegotiationPolicy;
+    private final boolean deferHandshake;
 
+    /**
+     * Blocking mode (for the {@link ProvSSLSocketBase SSLSocket} implementations).
+     */
     ProvTlsClientProtocol(InputStream input, OutputStream output, Closeable closeable)
     {
         super(input, output);
 
         this.closeable = closeable;
+        this.renegotiationPolicy = provAcceptRenegotiation ? RenegotiationPolicy.ACCEPT : RenegotiationPolicy.DENY;
+        this.deferHandshake = false;
+    }
+
+    /**
+     * Non-blocking mode (for {@link ProvSSLEngine}, which does not support renegotiation).
+     *
+     * @param deferHandshake whether handshake steps are deferred for the engine to hand out as delegated tasks.
+     */
+    ProvTlsClientProtocol(boolean deferHandshake)
+    {
+        super();
+
+        this.closeable = null;
+        this.renegotiationPolicy = RenegotiationPolicy.DENY;
+        this.deferHandshake = deferHandshake;
     }
 
     @Override
     protected void closeConnection() throws IOException
     {
-        closeable.close();
+        if (null == closeable)
+        {
+            super.closeConnection();
+        }
+        else
+        {
+            closeable.close();
+        }
+    }
+
+    @Override
+    protected boolean shouldDeferClientHello()
+    {
+        return deferHandshake;
+    }
+
+    @Override
+    protected boolean shouldDeferHandshakeMessage(short handshakeType)
+    {
+        // Post-handshake messages (KeyUpdate, NewSessionTicket, HelloRequest) are cheap and handled inline
+        return deferHandshake && isHandshaking();
     }
 
     @Override
     protected int getRenegotiationPolicy()
     {
-        return provAcceptRenegotiation ? RenegotiationPolicy.ACCEPT : RenegotiationPolicy.DENY;
+        return renegotiationPolicy;
     }
 
     @Override

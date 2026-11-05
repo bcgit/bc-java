@@ -45,6 +45,8 @@ final class ContextData
     private final boolean serverEnableStatusRequest;
     private final OcspStapleCache ocspStapleCache;
     private final boolean defaultUseNamedGroupsOrder;
+    private final boolean clientEnableDelegatedTasks;
+    private final boolean serverEnableDelegatedTasks;
 
     ContextData(boolean fipsMode, JcaTlsCrypto crypto, BCX509ExtendedKeyManager x509KeyManager,
         BCX509ExtendedTrustManager x509TrustManager, Map<String, CipherSuiteInfo> supportedCipherSuites,
@@ -85,6 +87,15 @@ final class ContextData
          */
         this.defaultUseNamedGroupsOrder = PropertyUtils.getBooleanSystemProperty(
             Properties.JSSE_USE_NAMED_GROUPS_ORDER, false);
+        /*
+         * NOTE: also read per context (see above). Whether an SSLEngine from this context hands out
+         * handshake steps as delegated tasks (see ProvSSLEngine.getDelegatedTask) rather than running
+         * them inside wrap/unwrap, per role.
+         */
+        this.clientEnableDelegatedTasks = PropertyUtils.getBooleanSystemProperty(
+            "org.bouncycastle.jsse.client.enableDelegatedTasks", false);
+        this.serverEnableDelegatedTasks = PropertyUtils.getBooleanSystemProperty(
+            "org.bouncycastle.jsse.server.enableDelegatedTasks", false);
     }
 
     int[] getActiveCipherSuites(JcaTlsCrypto crypto, ProvSSLParameters sslParameters,
@@ -265,6 +276,11 @@ final class ContextData
     boolean getDefaultUseNamedGroupsOrder()
     {
         return defaultUseNamedGroupsOrder;
+    }
+
+    boolean getEnableDelegatedTasks(boolean isClient)
+    {
+        return isClient ? clientEnableDelegatedTasks : serverEnableDelegatedTasks;
     }
 
     NamedGroupInfo.PerConnection getNamedGroupsClient(ProvSSLParameters sslParameters,

@@ -34,9 +34,10 @@ import org.bouncycastle.tls.TlsServerProtocol;
 
 /*
  * TODO[jsse] Known limitations (relative to SSLEngine javadoc): 1. The wrap() and unwrap() methods
- * are synchronized, so will not execute concurrently with each other. 2. Never delegates tasks i.e.
- * getDelegatedTasks() will always return null; CPU-intensive parts of the handshake will execute
- * during wrap/unwrap calls.
+ * are synchronized, so will not execute concurrently with each other (nor with a delegated task).
+ * 2. Delegated tasks are handed out per inbound handshake message (plus the initial ClientHello),
+ * each running that message's handling and any response flight; record protection itself always
+ * executes during wrap/unwrap calls.
  */
 class ProvSSLEngine
     extends SSLEngine
@@ -54,6 +55,7 @@ class ProvSSLEngine
     protected boolean closedEarly = false;
     protected boolean initialHandshakeBegun = false;
     protected boolean returnedFinished = false;
+    protected boolean taskDelegated = false;
     protected TlsProtocol protocol = null;
     protected ProvTlsPeer protocolPeer = null;
     protected ProvSSLConnection connection = null;
@@ -103,7 +105,8 @@ class ProvSSLEngine
         {
             if (this.useClientMode)
             {
-                TlsClientProtocol clientProtocol = new TlsClientProtocol();
+                TlsClientProtocol clientProtocol = new ProvTlsClientProtocol(
+                    contextData.getEnableDelegatedTasks(true));
                 this.protocol = clientProtocol;
 
                 ProvTlsClient client = new ProvTlsClient(this, sslParameters);
@@ -113,7 +116,8 @@ class ProvSSLEngine
             }
             else
             {
-                TlsServerProtocol serverProtocol = new TlsServerProtocol();
+                TlsServerProtocol serverProtocol = new ProvTlsServerProtocol(
+                    contextData.getEnableDelegatedTasks(false));
                 this.protocol = serverProtocol;
 
                 ProvTlsServer server = new ProvTlsServer(this, sslParameters);
@@ -249,6 +253,12 @@ class ProvSSLEngine
     @Override
     public synchronized Runnable getDelegatedTask()
     {
+        // At most one task is outstanding at a time; each runs a single deferred step (see DelegatedTask)
+        if (null != protocol && !taskDelegated && protocol.hasDeferredHandshake())
+        {
+            this.taskDelegated = true;
+            return new DelegatedTask();
+        }
         return null;
     }
 
@@ -285,11 +295,30 @@ class ProvSSLEngine
     @Override
     public synchronized SSLEngineResult.HandshakeStatus getHandshakeStatus()
     {
+        HandshakeStatus handshakeStatus = getPendingHandshakeStatus();
+        if (handshakeStatus == HandshakeStatus.NOT_HANDSHAKING && isFinishedPending())
+        {
+            /*
+             * Once a handshake has begun, FINISHED must be returned (from wrap/unwrap only) before
+             * NOT_HANDSHAKING. A delegated task can complete the handshake with no output pending, so
+             * request a wrap, which will produce nothing and return FINISHED.
+             */
+            return HandshakeStatus.NEED_WRAP;
+        }
+        return handshakeStatus;
+    }
+
+    private HandshakeStatus getPendingHandshakeStatus()
+    {
         if (protocol != null)
         {
             if (protocol.getAvailableOutputBytes() > 0 || deferredException != null)
             {
                 return HandshakeStatus.NEED_WRAP;
+            }
+            if (protocol.hasDeferredHandshake())
+            {
+                return HandshakeStatus.NEED_TASK;
             }
             if (protocol.isHandshaking())
             {
@@ -297,6 +326,11 @@ class ProvSSLEngine
             }
         }
         return HandshakeStatus.NOT_HANDSHAKING;
+    }
+
+    private boolean isFinishedPending()
+    {
+        return !returnedFinished && protocolPeer != null && protocolPeer.isHandshakeComplete();
     }
 
     @Override
@@ -528,14 +562,11 @@ class ProvSSLEngine
             }
         }
 
-        HandshakeStatus resultHandshakeStatus = getHandshakeStatus();
-        if (resultHandshakeStatus == HandshakeStatus.NOT_HANDSHAKING)
+        HandshakeStatus resultHandshakeStatus = getPendingHandshakeStatus();
+        if (resultHandshakeStatus == HandshakeStatus.NOT_HANDSHAKING && isFinishedPending())
         {
-            if (!returnedFinished && protocolPeer.isHandshakeComplete())
-            {
-                returnedFinished = true;
-                resultHandshakeStatus = HandshakeStatus.FINISHED;
-            }
+            returnedFinished = true;
+            resultHandshakeStatus = HandshakeStatus.FINISHED;
         }
 
         return new SSLEngineResult(getStatus(), resultHandshakeStatus, bytesConsumed, bytesProduced);
@@ -598,8 +629,9 @@ class ProvSSLEngine
 
             // NB: Fall through intentional
         }
-        else if (protocol.isConnected())
+        else if (protocol.isConnected() && !isFinishedPending())
         {
+            // NB: While FINISHED is still to be returned (see getHandshakeStatus), fall through to return it
             try
             {
                 int bytesConsumed = 0;
@@ -655,11 +687,14 @@ class ProvSSLEngine
 
         if (protocol.isHandshaking())
         {
-            return new SSLEngineResult(Status.OK, HandshakeStatus.NEED_UNWRAP, 0, bytesProduced);
+            HandshakeStatus handshakeStatus = protocol.hasDeferredHandshake() ? HandshakeStatus.NEED_TASK
+                : HandshakeStatus.NEED_UNWRAP;
+
+            return new SSLEngineResult(Status.OK, handshakeStatus, 0, bytesProduced);
         }
 
         HandshakeStatus resultHandshakeStatus = HandshakeStatus.NOT_HANDSHAKING;
-        if (!returnedFinished && protocolPeer.isHandshakeComplete())
+        if (isFinishedPending())
         {
             returnedFinished = true;
             resultHandshakeStatus = HandshakeStatus.FINISHED;
@@ -774,6 +809,57 @@ class ProvSSLEngine
             result += next;
         }
         return result;
+    }
+
+    /**
+     * Runs one deferred handshake step under the engine's monitor, so it cannot overlap wrap/unwrap. If that
+     * step leaves another pending (further messages from the same record), the engine reports NEED_TASK
+     * again and getDelegatedTask() hands out the next task. A failure is reported from the next wrap() call
+     * (see 'deferredException'), by which time any alert the failure raised has been queued for output.
+     * Running a task more than once is a no-op after the first run.
+     */
+    private class DelegatedTask
+        implements Runnable
+    {
+        private boolean done = false;
+
+        public void run()
+        {
+            synchronized (ProvSSLEngine.this)
+            {
+                if (done)
+                {
+                    return;
+                }
+                done = true;
+
+                try
+                {
+                    if (protocol.hasDeferredHandshake())
+                    {
+                        protocol.processDeferredHandshake();
+                    }
+                }
+                catch (IOException e)
+                {
+                    if (null == deferredException)
+                    {
+                        deferredException = new SSLException(e);
+                    }
+                }
+                catch (RuntimeException e)
+                {
+                    if (null == deferredException)
+                    {
+                        deferredException = new SSLException(e);
+                    }
+                }
+                finally
+                {
+                    taskDelegated = false;
+                }
+            }
+        }
     }
 
     private boolean hasInsufficientSpace(ByteBuffer[] dsts, int off, int len, int amount)
