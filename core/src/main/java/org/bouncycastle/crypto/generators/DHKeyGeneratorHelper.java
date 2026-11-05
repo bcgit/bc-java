@@ -27,23 +27,10 @@ class DHKeyGeneratorHelper
             int minWeight = limit >>> 2;
 
             /*
-             * PKCS#3 sec. 7.1: 2^(l-1) <= x < 2^l, and 0 < x < p - 1. Below the length of p an l-bit x is always
-             * below p - 1; at the length of p it may not be, so x is drawn from [2^(l-1), p - 2] instead.
+             * PKCS#3 sec. 7.1: when l is given, x is an l-bit integer, 2^(l-1) <= x < 2^l. At l == bitLength(p) that
+             * can be at or above p - 1, which is harmless: only x mod ord(g) matters, and the values reducing below
+             * 2^(l-1) are disjoint from those that do not, so a single draw still carries l - 1 bits.
              */
-            if (limit == dhParams.getP().bitLength())
-            {
-                BigInteger min = ONE.shiftLeft(limit - 1);
-                BigInteger max = dhParams.getP().subtract(TWO);
-                for (;;)
-                {
-                    BigInteger x = BigIntegers.createRandomInRange(min, max, random);
-                    if (WNafUtil.getNafWeight(x) >= minWeight)
-                    {
-                        return x;
-                    }
-                }
-            }
-
             for (;;)
             {
                 BigInteger x = BigIntegers.createRandomBigInteger(limit, random).setBit(limit - 1);

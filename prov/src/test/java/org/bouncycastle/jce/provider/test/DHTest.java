@@ -1589,7 +1589,7 @@ public class DHTest
 
     /*
      * github #2554: a private value length equal to the length of p, as Oracle JDBC Native Network Encryption passes it,
-     * is accepted, as SunJCE does, and the private value is kept below p - 1 (PKCS#3 sec. 7.1).
+     * is accepted, as SunJCE does, and the private value is an l-bit integer (PKCS#3 sec. 6 and 7.1).
      */
     private void testFullLengthPrivateValue()
         throws Exception
@@ -1606,7 +1606,9 @@ public class DHTest
 
         BigInteger x = ((DHPrivateKey)kp1.getPrivate()).getX();
         isTrue("private value not full length", x.bitLength() == p.bitLength());
-        isTrue("private value not below p - 1", x.compareTo(p.subtract(org.bouncycastle.util.BigIntegers.TWO)) <= 0);
+        BigInteger y = ((DHPublicKey)kp1.getPublic()).getY();
+        isTrue("public value outside [2, p - 2]", y.compareTo(org.bouncycastle.util.BigIntegers.TWO) >= 0
+            && y.compareTo(p.subtract(org.bouncycastle.util.BigIntegers.TWO)) <= 0);
 
         KeyAgreement ka1 = KeyAgreement.getInstance("DH", "BC");
         ka1.init(kp1.getPrivate());

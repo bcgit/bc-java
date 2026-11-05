@@ -85,7 +85,7 @@ public class DHParameters
     {
         if (l != 0)
         {
-            // PKCS#3 sec. 7.1 allows l up to the length of p: the private value then also has to be below p - 1, see DHKeyGeneratorHelper
+            // PKCS#3 sec. 6: 2^(l-1) <= p, so l may be up to the length of p
             if (l > p.bitLength())
             {
                 throw new IllegalArgumentException("when l value specified, it must not be greater than bitlength(p)");

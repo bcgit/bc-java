@@ -15,6 +15,7 @@ import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.agreement.DHAgreement;
 import org.bouncycastle.crypto.agreement.DHBasicAgreement;
 import org.bouncycastle.crypto.agreement.DHUnifiedAgreement;
+import org.bouncycastle.crypto.engines.ElGamalEngine;
 import org.bouncycastle.crypto.generators.DHBasicKeyPairGenerator;
 import org.bouncycastle.crypto.generators.DHKeyPairGenerator;
 import org.bouncycastle.crypto.generators.DHParametersGenerator;
@@ -34,8 +35,10 @@ import org.bouncycastle.crypto.params.DHValidationParameters;
 import org.bouncycastle.crypto.params.ElGamalKeyGenerationParameters;
 import org.bouncycastle.crypto.params.ElGamalParameters;
 import org.bouncycastle.crypto.params.ElGamalPrivateKeyParameters;
+import org.bouncycastle.crypto.params.ElGamalPublicKeyParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
@@ -310,28 +313,18 @@ public class DHTest
         int l2 = 1024;
 
         /*
-         * PKCS#3 sec. 7.1 allows l up to the length of p (github #2554); x must then also be below p - 1. This p is about
-         * 0.7 * 2^1024, so an l-bit x with its top bit set is at or above p - 1 about 60% of the time.
+         * PKCS#3 sec. 6 allows l up to the length of p (github #2554), and sec. 7.1 then makes x an l-bit integer. This p
+         * is about 0.7 * 2^1024, so x is at or above p - 1 about 60% of the time, which is harmless.
          */
         kpGen.init(new DHKeyGenerationParameters(random, new DHParameters(p2, g2, null, l2)));
-        BigInteger min = BigIntegers.ONE.shiftLeft(l2 - 1);
-        BigInteger max = p2.subtract(BigIntegers.TWO);
         for (int i = 0; i != 200; i++)
         {
-            BigInteger x = ((DHPrivateKeyParameters)kpGen.generateKeyPair().getPrivate()).getX();
-            if (x.compareTo(min) < 0 || x.compareTo(max) > 0)
-            {
-                fail("DH private value out of range for l == bitLength(p): " + x.toString(16));
-            }
+            checkFullLengthKeyPair("DH", p2, l2, kpGen.generateKeyPair());
         }
 
         ElGamalKeyPairGenerator egGen = new ElGamalKeyPairGenerator();
         egGen.init(new ElGamalKeyGenerationParameters(random, new ElGamalParameters(p2, g2, l2)));
-        BigInteger egX = ((ElGamalPrivateKeyParameters)egGen.generateKeyPair().getPrivate()).getX();
-        if (egX.compareTo(min) < 0 || egX.compareTo(max) > 0)
-        {
-            fail("ElGamal private value out of range for l == bitLength(p)");
-        }
+        checkFullLengthKeyPair("ElGamal", p2, l2, egGen.generateKeyPair());
 
         try
         {
@@ -341,6 +334,123 @@ public class DHTest
         catch (IllegalArgumentException e)
         {
             isEquals("when l value specified, it must not be greater than bitlength(p)", e.getMessage());
+        }
+    }
+
+    private void checkFullLengthKeyPair(String alg, BigInteger p, int l, AsymmetricCipherKeyPair kp)
+    {
+        BigInteger x, y;
+        if (kp.getPrivate() instanceof DHPrivateKeyParameters)
+        {
+            x = ((DHPrivateKeyParameters)kp.getPrivate()).getX();
+            y = ((DHPublicKeyParameters)kp.getPublic()).getY();
+        }
+        else
+        {
+            x = ((ElGamalPrivateKeyParameters)kp.getPrivate()).getX();
+            y = ((ElGamalPublicKeyParameters)kp.getPublic()).getY();
+        }
+
+        if (x.bitLength() != l)
+        {
+            fail(alg + " private value not " + l + " bits: " + x.toString(16));
+        }
+        if (y.compareTo(BigIntegers.TWO) < 0 || y.compareTo(p.subtract(BigIntegers.TWO)) > 0)
+        {
+            fail(alg + " public value outside [2, p - 2]: " + y.toString(16));
+        }
+    }
+
+    /*
+     * github #2554: with l == bitLength(p) and p just above 2^(l-1), drawing x from [2^(l-1), p - 2] left too few
+     * candidates to pass the NAF weight floor, so key generation never returned. p = 2^1023 + 1155 is prime.
+     */
+    private void testNearPowerOfTwoPrime()
+        throws Exception
+    {
+        final BigInteger p = BigIntegers.ONE.shiftLeft(1023).add(BigInteger.valueOf(1155));
+        final BigInteger g = BigIntegers.TWO;
+        final int l = 1024;
+
+        isTrue("p not prime", p.isProbablePrime(100));
+
+        final Exception[] error = new Exception[1];
+        Thread worker = new Thread()
+        {
+            public void run()
+            {
+                try
+                {
+                    nearPowerOfTwoChecks(p, g, l);
+                }
+                catch (Exception e)
+                {
+                    error[0] = e;
+                }
+            }
+        };
+        worker.setDaemon(true);
+        worker.start();
+        worker.join(60000);
+
+        if (worker.isAlive())
+        {
+            fail("key generation with l == bitLength(p) and p near 2^(l-1) did not complete");
+        }
+        if (error[0] != null)
+        {
+            throw error[0];
+        }
+    }
+
+    private void nearPowerOfTwoChecks(BigInteger p, BigInteger g, int l)
+        throws Exception
+    {
+        SecureRandom random = new SecureRandom();
+        DHParameters dhParams = new DHParameters(p, g, null, l);
+
+        DHBasicKeyPairGenerator kpGen = new DHBasicKeyPairGenerator();
+        kpGen.init(new DHKeyGenerationParameters(random, dhParams));
+
+        AsymmetricCipherKeyPair kp1 = kpGen.generateKeyPair();
+        AsymmetricCipherKeyPair kp2 = kpGen.generateKeyPair();
+        checkFullLengthKeyPair("DH", p, l, kp1);
+        checkFullLengthKeyPair("DH", p, l, kp2);
+
+        DHBasicAgreement a1 = new DHBasicAgreement();
+        DHBasicAgreement a2 = new DHBasicAgreement();
+        a1.init(new ParametersWithRandom(kp1.getPrivate(), random));
+        a2.init(new ParametersWithRandom(kp2.getPrivate(), random));
+        if (!a1.calculateAgreement(kp2.getPublic()).equals(a2.calculateAgreement(kp1.getPublic())))
+        {
+            fail("near power of two DH agreement failed");
+        }
+
+        DHKeyPairGenerator dhGen = new DHKeyPairGenerator();
+        dhGen.init(new DHKeyGenerationParameters(random, dhParams));
+        checkFullLengthKeyPair("DH", p, l, dhGen.generateKeyPair());
+
+        ElGamalParameters egParams = new ElGamalParameters(p, g, l);
+        ElGamalKeyPairGenerator egGen = new ElGamalKeyPairGenerator();
+        egGen.init(new ElGamalKeyGenerationParameters(random, egParams));
+        for (int i = 0; i != 10; i++)
+        {
+            AsymmetricCipherKeyPair kp = egGen.generateKeyPair();
+            checkFullLengthKeyPair("ElGamal", p, l, kp);
+
+            // exercises the negative (p - 1) - x decryption exponent when x >= p - 1
+            ElGamalEngine eng = new ElGamalEngine();
+            byte[] msg = new byte[64];
+            random.nextBytes(msg);
+            msg[0] |= 0x01;
+            eng.init(true, new ParametersWithRandom(kp.getPublic(), random));
+            byte[] ct = eng.processBlock(msg, 0, msg.length);
+            eng.init(false, kp.getPrivate());
+            byte[] pt = eng.processBlock(ct, 0, ct.length);
+            if (!Arrays.areEqual(msg, pt))
+            {
+                fail("near power of two ElGamal round trip failed");
+            }
         }
     }
 
@@ -601,6 +711,7 @@ public class DHTest
     }
 
     public void performTest()
+        throws Exception
     {
         testDHBasic(512, 0, g512, p512);
         testDHBasic(768, 0, g768, p768);
@@ -615,6 +726,8 @@ public class DHTest
         testDH(1024, g1024, p1024);
 
         testBounds();
+
+        testNearPowerOfTwoPrime();
 
         testModulusSizeBound();
 
