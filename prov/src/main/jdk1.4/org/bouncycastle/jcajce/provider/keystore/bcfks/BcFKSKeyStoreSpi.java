@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.math.BigInteger;
 import java.security.AlgorithmParameters;
+import java.security.GeneralSecurityException;
 import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.KeyFactory;
@@ -39,6 +40,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.SecretKeyFactory;
 import javax.crypto.interfaces.PBEKey;
 import javax.crypto.spec.SecretKeySpec;
+import javax.security.auth.Destroyable;
 import javax.security.auth.callback.Callback;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.callback.PasswordCallback;
@@ -198,9 +200,12 @@ class BcFKSKeyStoreSpi
                 EncryptedPrivateKeyData encPrivData = EncryptedPrivateKeyData.getInstance(ent.getData());
                 EncryptedPrivateKeyInfo encInfo = EncryptedPrivateKeyInfo.getInstance(encPrivData.getEncryptedPrivateKeyInfo());
 
+                byte[] data = null;
+                byte[] pkcs8 = null;
                 try
                 {
-                    PrivateKeyInfo pInfo = PrivateKeyInfo.getInstance(decryptData("PRIVATE_KEY_ENCRYPTION", encInfo.getEncryptionAlgorithm(), password, encInfo.getEncryptedData()));
+                    data = decryptData("PRIVATE_KEY_ENCRYPTION", encInfo.getEncryptionAlgorithm(), password, encInfo.getEncryptedData());
+                    PrivateKeyInfo pInfo = PrivateKeyInfo.getInstance(data);
 
                     KeyFactory kFact;
                     if (provider != null)
@@ -212,7 +217,8 @@ class BcFKSKeyStoreSpi
                         kFact = KeyFactory.getInstance(getPublicKeyAlg(pInfo.getPrivateKeyAlgorithm().getAlgorithm()));
                     }
 
-                    PrivateKey privateKey = kFact.generatePrivate(new PKCS8EncodedKeySpec(pInfo.getEncoded()));
+                    pkcs8 = pInfo.getEncoded();
+                    PrivateKey privateKey = kFact.generatePrivate(new PKCS8EncodedKeySpec(pkcs8));
 
                     // check that the key pair and the certificate public key are consistent
                     // TODO: new ConsistentKeyPair(engineGetCertificate(alias).getPublicKey(), privateKey);
@@ -225,14 +231,22 @@ class BcFKSKeyStoreSpi
                 {
                     throw new UnrecoverableKeyException("BCFKS KeyStore unable to recover private key (" + alias + "): " + e.getMessage());
                 }
+                finally
+                {
+                    Arrays.clear(data);
+                    Arrays.clear(pkcs8);
+                }
             }
             else if (ent.getType().equals(SECRET_KEY) || ent.getType().equals(PROTECTED_SECRET_KEY))
             {
                 EncryptedSecretKeyData encKeyData = EncryptedSecretKeyData.getInstance(ent.getData());
 
+                byte[] data = null;
+                byte[] keyBytes = null;
                 try
                 {
-                    SecretKeyData keyData = SecretKeyData.getInstance(decryptData("SECRET_KEY_ENCRYPTION", encKeyData.getKeyEncryptionAlgorithm(), password, encKeyData.getEncryptedKeyData()));
+                    data = decryptData("SECRET_KEY_ENCRYPTION", encKeyData.getKeyEncryptionAlgorithm(), password, encKeyData.getEncryptedKeyData());
+                    SecretKeyData keyData = SecretKeyData.getInstance(data);
                     SecretKeyFactory kFact;
                     if (provider != null)
                     {
@@ -243,31 +257,51 @@ class BcFKSKeyStoreSpi
                         kFact = SecretKeyFactory.getInstance(keyData.getKeyAlgorithm().getId());
                     }
 
-                    return kFact.generateSecret(new SecretKeySpec(keyData.getKeyBytes(), keyData.getKeyAlgorithm().getId()));
+                    keyBytes = keyData.getKeyBytes();
+                    return kFact.generateSecret(new SecretKeySpec(keyBytes, keyData.getKeyAlgorithm().getId()));
                 }
                 catch (Exception e)
                 {
                     throw new UnrecoverableKeyException("BCFKS KeyStore unable to recover secret key (" + alias + "): " + e.getMessage());
+                }
+                finally
+                {
+                    Arrays.clear(data);
+                    Arrays.clear(keyBytes);
                 }
             }
             else if (ent.getType().equals(PBKDF_KEY))
             {
                 EncryptedSecretKeyData encKeyData = EncryptedSecretKeyData.getInstance(ent.getData());
 
+                byte[] data = null;
+                byte[] pbePassword = null;
+                byte[] pbeEncoding = null;
                 try
                 {
-                    PbkdKeyData keyData = PbkdKeyData.getInstance(decryptData("SECRET_KEY_ENCRYPTION", encKeyData.getKeyEncryptionAlgorithm(), password, encKeyData.getEncryptedKeyData()));
+                    data = decryptData("SECRET_KEY_ENCRYPTION", encKeyData.getKeyEncryptionAlgorithm(), password, encKeyData.getEncryptedKeyData());
+                    PbkdKeyData keyData = PbkdKeyData.getInstance(data);
 
+                    pbePassword = keyData.getPassword();
+                    pbeEncoding = keyData.getKeyEncoding();
+
+                    // RecoveredPBEKey keeps the password characters and clones the encoding
                     return new RecoveredPBEKey(
                         keyData.getKeyAlgorithm(),
-                        bytesToChars(keyData.getPassword()),
+                        bytesToChars(pbePassword),
                         keyData.getSalt(),
                         keyData.getIterationCount(),
-                        keyData.getKeyEncoding());
+                        pbeEncoding);
                 }
                 catch (Exception e)
                 {
                     throw new UnrecoverableKeyException("BCFKS KeyStore unable to recover PBE key (" + alias + "): " + e.getMessage());
+                }
+                finally
+                {
+                    Arrays.clear(data);
+                    Arrays.clear(pbePassword);
+                    Arrays.clear(pbeEncoding);
                 }
             }
             else
@@ -404,8 +438,6 @@ class BcFKSKeyStoreSpi
                 byte[] encodedKey = key.getEncoded();
 
                 KeyDerivationFunc pbkdAlgId = generatePkbdAlgorithmIdentifier(PKCSObjectIdentifiers.id_PBKDF2, 256 / 8);
-                byte[] keyBytes = generateKey(pbkdAlgId, "PRIVATE_KEY_ENCRYPTION", ((password != null) ? password : new char[0]), false);
-
                 Cipher c;
                 if (provider == null)
                 {
@@ -416,7 +448,15 @@ class BcFKSKeyStoreSpi
                     c = Cipher.getInstance("AES/CCM/NoPadding", provider);
                 }
 
-                c.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(keyBytes, "AES"));
+                byte[] keyBytes = generateKey(pbkdAlgId, "PRIVATE_KEY_ENCRYPTION", ((password != null) ? password : new char[0]), false);
+                try
+                {
+                    c.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(keyBytes, "AES"));
+                }
+                finally
+                {
+                    Arrays.clear(keyBytes);
+                }
 
                 byte[] encryptedKey = c.doFinal(encodedKey);
 
@@ -445,16 +485,16 @@ class BcFKSKeyStoreSpi
             try
             {
                 PBEKey pbeKey = (PBEKey)key;
-                PbkdKeyData pbeData = new PbkdKeyData(
+                byte[] pbePassword = charsToBytes(pbeKey.getPassword());
+                byte[] plaintext = new PbkdKeyData(
                     pbeKey.getAlgorithm(),
-                    charsToBytes(pbeKey.getPassword()),
+                    pbePassword,
                     pbeKey.getSalt(),
                     pbeKey.getIterationCount(),
-                    pbeKey.getEncoded());
+                    pbeKey.getEncoded()).getEncoded();     // not cleared: it may be the caller's key's own array
+                Arrays.clear(pbePassword);
 
                 KeyDerivationFunc pbkdAlgId = generatePkbdAlgorithmIdentifier(PKCSObjectIdentifiers.id_PBKDF2, 256 / 8);
-                byte[] keyBytes = generateKey(pbkdAlgId, "SECRET_KEY_ENCRYPTION", ((password != null) ? password : new char[0]), false);
-
                 Cipher c;
                 if (provider == null)
                 {
@@ -465,9 +505,25 @@ class BcFKSKeyStoreSpi
                     c = Cipher.getInstance("AES/CCM/NoPadding", provider);
                 }
 
-                c.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(keyBytes, "AES"));
+                byte[] keyBytes = generateKey(pbkdAlgId, "SECRET_KEY_ENCRYPTION", ((password != null) ? password : new char[0]), false);
+                try
+                {
+                    c.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(keyBytes, "AES"));
+                }
+                finally
+                {
+                    Arrays.clear(keyBytes);
+                }
 
-                byte[] encryptedKey = c.doFinal(pbeData.getEncoded());
+                byte[] encryptedKey;
+                try
+                {
+                    encryptedKey = c.doFinal(plaintext);
+                }
+                finally
+                {
+                    Arrays.clear(plaintext);
+                }
 
                 AlgorithmParameters algParams = c.getParameters();
 
@@ -494,8 +550,6 @@ class BcFKSKeyStoreSpi
                 byte[] encodedKey = key.getEncoded();
 
                 KeyDerivationFunc pbkdAlgId = generatePkbdAlgorithmIdentifier(PKCSObjectIdentifiers.id_PBKDF2, 256 / 8);
-                byte[] keyBytes = generateKey(pbkdAlgId, "SECRET_KEY_ENCRYPTION", ((password != null) ? password : new char[0]), false);
-
                 Cipher c;
                 if (provider == null)
                 {
@@ -506,7 +560,15 @@ class BcFKSKeyStoreSpi
                     c = Cipher.getInstance("AES/CCM/NoPadding", provider);
                 }
 
-                c.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(keyBytes, "AES"));
+                byte[] keyBytes = generateKey(pbkdAlgId, "SECRET_KEY_ENCRYPTION", ((password != null) ? password : new char[0]), false);
+                try
+                {
+                    c.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(keyBytes, "AES"));
+                }
+                finally
+                {
+                    Arrays.clear(keyBytes);
+                }
 
 
                 String keyAlg = Strings.toUpperCase(key.getAlgorithm());
@@ -514,14 +576,14 @@ class BcFKSKeyStoreSpi
 
                 if (keyAlg.indexOf("AES") > -1)
                 {
-                    encryptedKey = c.doFinal(new SecretKeyData(NISTObjectIdentifiers.aes, encodedKey).getEncoded());
+                    encryptedKey = encryptAndClear(c, new SecretKeyData(NISTObjectIdentifiers.aes, encodedKey).getEncoded());
                 }
                 else
                 {
                     ASN1ObjectIdentifier algOid = (ASN1ObjectIdentifier)oidMap.get(keyAlg);
                     if (algOid != null)
                     {
-                        encryptedKey = c.doFinal(new SecretKeyData(algOid, encodedKey).getEncoded());
+                        encryptedKey = encryptAndClear(c, new SecretKeyData(algOid, encodedKey).getEncoded());
                     }
                     else
                     {
@@ -549,6 +611,20 @@ class BcFKSKeyStoreSpi
         }
 
         lastModifiedDate = lastEditDate;
+    }
+
+    // encrypt a plaintext key encoding built here, then clear it
+    private static byte[] encryptAndClear(Cipher c, byte[] plaintext)
+        throws GeneralSecurityException
+    {
+        try
+        {
+            return c.doFinal(plaintext);
+        }
+        finally
+        {
+            Arrays.clear(plaintext);
+        }
     }
 
     private SecureRandom getDefaultSecureRandom()
@@ -790,7 +866,22 @@ class BcFKSKeyStoreSpi
     {
         byte[] encPassword = PBEParametersGenerator.PKCS12PasswordToBytes(password);
         byte[] differentiator = PBEParametersGenerator.PKCS12PasswordToBytes(purpose.toCharArray());
+        byte[] kdfPassword = Arrays.concatenate(encPassword, differentiator);
+        Arrays.clear(encPassword);
 
+        try
+        {
+            return generateKey(pbkdAlgorithm, kdfPassword, legacyScryptParallelization);
+        }
+        finally
+        {
+            Arrays.clear(kdfPassword);
+        }
+    }
+
+    private byte[] generateKey(KeyDerivationFunc pbkdAlgorithm, byte[] kdfPassword, boolean legacyScryptParallelization)
+        throws IOException
+    {
         int keySizeInBytes;
 
         if (MiscObjectIdentifiers.id_scrypt.equals(pbkdAlgorithm.getAlgorithm()))
@@ -804,7 +895,7 @@ class BcFKSKeyStoreSpi
             // them before the (memory/CPU intensive) derivation to avoid a pre-verification DoS.
             validateScryptParams(params, p);
 
-            return SCrypt.generate(Arrays.concatenate(encPassword, differentiator), params.getSalt(),
+            return SCrypt.generate(kdfPassword, params.getSalt(),
                 params.getCostParameter().intValue(), params.getBlockSize().intValue(),
                 p.intValue(), params.getKeyLength().intValue());
         }
@@ -819,7 +910,7 @@ class BcFKSKeyStoreSpi
             {
                 PKCS5S2ParametersGenerator pGen = new PKCS5S2ParametersGenerator(new SHA512Digest());
 
-                pGen.init(Arrays.concatenate(encPassword, differentiator), pbkdf2Params.getSalt(), iterationCount);
+                pGen.init(kdfPassword, pbkdf2Params.getSalt(), iterationCount);
 
                 keySizeInBytes = pbkdf2Params.getKeyLength().intValue();
 
@@ -829,7 +920,7 @@ class BcFKSKeyStoreSpi
             {
                 PKCS5S2ParametersGenerator pGen = new PKCS5S2ParametersGenerator(new SHA3Digest(512));
 
-                pGen.init(Arrays.concatenate(encPassword, differentiator), pbkdf2Params.getSalt(), iterationCount);
+                pGen.init(kdfPassword, pbkdf2Params.getSalt(), iterationCount);
 
                 keySizeInBytes = pbkdf2Params.getKeyLength().intValue();
 
@@ -950,13 +1041,18 @@ class BcFKSKeyStoreSpi
             mac = Mac.getInstance(algorithmId);
         }
 
+        byte[] macKey = generateKey(pbkdAlgorithm, "INTEGRITY_CHECK", ((password != null) ? password : new char[0]), legacyScryptParallelization);
         try
         {
-            mac.init(new SecretKeySpec(generateKey(pbkdAlgorithm, "INTEGRITY_CHECK", ((password != null) ? password : new char[0]), legacyScryptParallelization), algorithmId));
+            mac.init(new SecretKeySpec(macKey, algorithmId));
         }
         catch (InvalidKeyException e)
         {
             throw new IOException("Cannot set up MAC calculation: " + e.getMessage());
+        }
+        finally
+        {
+            Arrays.clear(macKey);
         }
 
         return mac.doFinal(content);
@@ -968,7 +1064,6 @@ class BcFKSKeyStoreSpi
         ObjectData[] dataArray = (ObjectData[])entries.values().toArray(new ObjectData[entries.size()]);
 
         KeyDerivationFunc pbkdAlgId = generatePkbdAlgorithmIdentifier(hmacPkbdAlgorithm, 256 / 8);
-        byte[] keyBytes = generateKey(pbkdAlgId, "STORE_ENCRYPTION", ((password != null) ? password : new char[0]), false);
 
         ObjectStoreData storeData = new ObjectStoreData(hmacAlgorithm, creationDate, lastModifiedDate, new ObjectDataSequence(dataArray), null);
         EncryptedObjectStoreData encStoreData;
@@ -985,7 +1080,15 @@ class BcFKSKeyStoreSpi
                 c = Cipher.getInstance("AES/CCM/NoPadding", provider);
             }
 
-            c.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(keyBytes, "AES"));
+            byte[] keyBytes = generateKey(pbkdAlgId, "STORE_ENCRYPTION", ((password != null) ? password : new char[0]), false);
+            try
+            {
+                c.init(Cipher.ENCRYPT_MODE, new SecretKeySpec(keyBytes, "AES"));
+            }
+            finally
+            {
+                Arrays.clear(keyBytes);
+            }
 
             byte[] encOut = c.doFinal(storeData.getEncoded());
 
@@ -1213,8 +1316,14 @@ class BcFKSKeyStoreSpi
             algParams.init(ccmParameters.getEncoded());
 
             byte[] keyBytes = generateKey(pbes2Parameters.getKeyDerivationFunc(), purpose, ((password != null) ? password : new char[0]), legacyScryptParallelization);
-
-            c.init(Cipher.DECRYPT_MODE, new SecretKeySpec(keyBytes, "AES"), algParams);
+            try
+            {
+                c.init(Cipher.DECRYPT_MODE, new SecretKeySpec(keyBytes, "AES"), algParams);
+            }
+            finally
+            {
+                Arrays.clear(keyBytes);
+            }
 
             byte[] rv = c.doFinal(encryptedData);
             return rv;
@@ -1391,13 +1500,14 @@ class BcFKSKeyStoreSpi
     }
 
     private static class RecoveredPBEKey
-        implements PBEKey
+        implements PBEKey, Destroyable
     {
         private final String algorithm;
         private final char[] password;
         private final byte[] salt;
         private final int iterationCount;
         private final byte[] encoded;
+        private boolean hasBeenDestroyed = false;
 
         RecoveredPBEKey(String algorithm, char[] password, byte[] salt, int iterationCount, byte[] encoded)
         {
@@ -1410,32 +1520,66 @@ class BcFKSKeyStoreSpi
 
         public String getAlgorithm()
         {
+            checkDestroyed();
             return algorithm;
         }
 
         public String getFormat()
         {
+            checkDestroyed();
             return (encoded != null) ? "RAW" : null;
         }
 
         public byte[] getEncoded()
         {
+            checkDestroyed();
             return (encoded != null) ? (byte[])encoded.clone() : null;
         }
 
         public char[] getPassword()
         {
+            checkDestroyed();
             return (char[])password.clone();
         }
 
         public byte[] getSalt()
         {
+            checkDestroyed();
             return (salt != null) ? (byte[])salt.clone() : null;
         }
 
         public int getIterationCount()
         {
+            checkDestroyed();
             return iterationCount;
+        }
+
+        /**
+         * Zeroize the password, salt and key encoding; every accessor then throws IllegalStateException,
+         * as BCPBEKey does.
+         */
+        public synchronized void destroy()
+        {
+            if (!hasBeenDestroyed)
+            {
+                hasBeenDestroyed = true;
+                Arrays.fill(password, (char)0);
+                Arrays.clear(salt);
+                Arrays.clear(encoded);
+            }
+        }
+
+        public synchronized boolean isDestroyed()
+        {
+            return hasBeenDestroyed;
+        }
+
+        private void checkDestroyed()
+        {
+            if (isDestroyed())
+            {
+                throw new IllegalStateException("key has been destroyed");
+            }
         }
     }
 }

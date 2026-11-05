@@ -20,10 +20,14 @@ import java.security.cert.CertificateException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.security.spec.RSAPrivateCrtKeySpec;
+import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
+import java.util.List;
 
 import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -101,6 +105,9 @@ public class BCFKSStoreTest
     private void checkInvalidLoadForPassword(KeyStore store, char[] password, byte[] data)
         throws NoSuchAlgorithmException, CertificateException, KeyStoreException
     {
+        int sizeBefore = store.size();
+        List aliasesBefore = Collections.list(store.aliases());
+
         try
         {
             store.load(new ByteArrayInputStream(data), password);
@@ -108,6 +115,11 @@ public class BCFKSStoreTest
         catch (IOException e)
         {
             isTrue("wrong message", "BCFKS KeyStore corrupted: MAC calculation failed.".equals(e.getMessage()));
+
+            // a load that fails leaves the store as it was
+            isTrue("failed load changed the store size", sizeBefore == store.size());
+            isTrue("failed load changed the store aliases", aliasesBefore.equals(Collections.list(store.aliases())));
+            return;
         }
 
         isTrue("", 0 == store.size());
@@ -710,6 +722,63 @@ public class BCFKSStoreTest
         return "BCFKS";
     }
 
+    public void shouldStoreOnePBEKey()
+        throws Exception
+    {
+        char[] pwd = "secretPassword".toCharArray();
+        byte[] salt = Hex.decode("0001020304050607");
+        int iterations = 4096;
+
+        SecretKeyFactory kFact = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256", "BC");
+        SecretKey pbeKey = kFact.generateSecret(new PBEKeySpec(pwd, salt, iterations, 256));
+
+        isTrue("not a PBEKey", pbeKey instanceof javax.crypto.interfaces.PBEKey);
+        byte[] origEncoded = Arrays.clone(pbeKey.getEncoded());
+
+        KeyStore store1 = KeyStore.getInstance("BCFKS", "BC");
+        store1.load(null, null);
+        store1.setKeyEntry("pbeKey", pbeKey, testPassword, null);
+
+        // storing must leave the caller's key intact
+        isTrue("stored PBE key damaged", Arrays.areEqual(origEncoded, pbeKey.getEncoded()));
+
+        ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+        store1.store(bOut, testPassword);
+
+        KeyStore store2 = KeyStore.getInstance("BCFKS", "BC");
+        store2.load(new ByteArrayInputStream(bOut.toByteArray()), testPassword);
+
+        Key recovered = store2.getKey("pbeKey", testPassword);
+        isTrue("recovered key not a PBEKey", recovered instanceof javax.crypto.interfaces.PBEKey);
+
+        javax.crypto.interfaces.PBEKey rPbe = (javax.crypto.interfaces.PBEKey)recovered;
+        isTrue("password mismatch", Arrays.areEqual(pwd, rPbe.getPassword()));
+        isTrue("salt mismatch", Arrays.areEqual(salt, rPbe.getSalt()));
+        isEquals(iterations, rPbe.getIterationCount());
+        isTrue("encoded mismatch", Arrays.areEqual(origEncoded, rPbe.getEncoded()));
+
+        // the recovered key can be destroyed, which clears it and makes its accessors refuse
+        isTrue("recovered PBE key not Destroyable", recovered instanceof javax.security.auth.Destroyable);
+        javax.security.auth.Destroyable dRecovered = (javax.security.auth.Destroyable)recovered;
+        isTrue("recovered PBE key destroyed early", !dRecovered.isDestroyed());
+        dRecovered.destroy();
+        isTrue("recovered PBE key not destroyed", dRecovered.isDestroyed());
+        try
+        {
+            rPbe.getPassword();
+            fail("destroyed PBE key returned its password");
+        }
+        catch (IllegalStateException e)
+        {
+            isTrue("key has been destroyed".equals(e.getMessage()));
+        }
+
+        // destroying one recovered copy leaves the stored entry intact
+        javax.crypto.interfaces.PBEKey again = (javax.crypto.interfaces.PBEKey)store2.getKey("pbeKey", testPassword);
+        isTrue("password mismatch after destroy", Arrays.areEqual(pwd, again.getPassword()));
+        isTrue("encoded mismatch after destroy", Arrays.areEqual(origEncoded, again.getEncoded()));
+    }
+
     public void performTest()
         throws Exception
     {
@@ -720,6 +789,7 @@ public class BCFKSStoreTest
         shouldStoreOneECKeyWithChain();
         shouldStoreOnePrivateKey();
         shouldStoreOnePrivateKeyWithChain();
+        shouldStoreOnePBEKey();
     }
 
     public static void main(
