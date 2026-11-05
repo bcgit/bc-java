@@ -9,6 +9,7 @@ import java.security.AlgorithmParameterGenerator;
 import java.security.AlgorithmParameters;
 import java.security.GeneralSecurityException;
 import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
 import java.security.Key;
 import java.security.KeyFactory;
 import java.security.KeyPair;
@@ -28,6 +29,7 @@ import java.security.spec.EllipticCurve;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 
+import javax.crypto.Cipher;
 import javax.crypto.KeyAgreement;
 import javax.crypto.SecretKey;
 import javax.crypto.interfaces.DHPrivateKey;
@@ -1629,10 +1631,67 @@ public class DHTest
         }
     }
 
+    /*
+     * A private value length l below twice the security strength of p is refused when generating a key, including
+     * the DHIES ephemeral key generated on a recipient's parameters; keys that carry one can still be used.
+     */
+    private void testShortPrivateValueLength()
+        throws Exception
+    {
+        org.bouncycastle.crypto.params.DHParameters group = DHStandardGroups.rfc7919_ffdhe2048;
+        DHParameterSpec shortSpec = new DHParameterSpec(group.getP(), group.getG(), 64);
+        String msg = "when l value specified, it must not be less than 224 for a 2048 bit p";
+
+        String[] algs = { "DH", "ElGamal" };
+        for (int i = 0; i != algs.length; i++)
+        {
+            try
+            {
+                KeyPairGenerator.getInstance(algs[i], "BC").initialize(shortSpec);
+                fail(algs[i] + " short l accepted");
+            }
+            catch (InvalidAlgorithmParameterException e)
+            {
+                isEquals(msg, e.getMessage());
+            }
+        }
+
+        KeyPair recipient;
+        System.setProperty(org.bouncycastle.util.Properties.DH_ALLOW_SHORT_PRIVATE_VALUE, "true");
+        try
+        {
+            KeyPairGenerator kpGen = KeyPairGenerator.getInstance("DH", "BC");
+            kpGen.initialize(shortSpec);
+            recipient = kpGen.generateKeyPair();
+        }
+        finally
+        {
+            System.getProperties().remove(org.bouncycastle.util.Properties.DH_ALLOW_SHORT_PRIVATE_VALUE);
+        }
+
+        isTrue("recipient l not kept", ((DHPublicKey)recipient.getPublic()).getParams().getL() == 64);
+
+        try
+        {
+            Cipher.getInstance("DHIES", "BC").init(Cipher.ENCRYPT_MODE, recipient.getPublic(), new SecureRandom());
+            fail("DHIES short l accepted");
+        }
+        catch (InvalidKeyException e)
+        {
+            isEquals(msg, e.getMessage());
+        }
+
+        KeyAgreement ka = KeyAgreement.getInstance("DH", "BC");
+        ka.init(recipient.getPrivate());
+        ka.doPhase(recipient.getPublic(), true);
+        ka.generateSecret();
+    }
+
     public void performTest()
         throws Exception
     {
         testFullLengthPrivateValue();
+        testShortPrivateValueLength();
         generalKeyTest();
         testDefault(64, g512, p512);
         mqvTest();

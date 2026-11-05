@@ -364,6 +364,14 @@ public class Properties
     public static final String DH_MAX_SIZE = "org.bouncycastle.dh.max_size";
 
     /**
+     * When set to "true", DH and ElGamal key pair generation accepts a private value length l below twice the
+     * security strength of p (the 2s floor of SP 800-56A Rev3 sec. 5.6.1.1). l can arrive with parameters taken
+     * from someone else, such as a recipient's public key, and a short l makes the generated private value easy to
+     * recover. Default false; keys that carry a short l can always be read and used.
+     */
+    public static final String DH_ALLOW_SHORT_PRIVATE_VALUE = "org.bouncycastle.dh.allow_short_private_value";
+
+    /**
      * Upper bound (in bits) on the prime modulus p accepted when validating an imported DSA
      * public key. As with {@link #DH_MAX_SIZE}, validation runs a modular exponentiation whose
      * cost grows super-linearly in the size of p, so an unbounded p from a crafted encoding is an

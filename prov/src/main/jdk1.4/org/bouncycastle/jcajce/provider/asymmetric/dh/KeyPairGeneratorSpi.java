@@ -60,13 +60,13 @@ public class KeyPairGeneratorSpi
         try
         {
             param = new DHKeyGenerationParameters(random, new DHParameters(dhParams.getP(), dhParams.getG(), null, dhParams.getL()));
+            engine.init(param);
         }
         catch (IllegalArgumentException e)
         {
             throw new InvalidAlgorithmParameterException(e.getMessage());
         }
-        
-        engine.init(param);
+
         initialised = true;
     }
 

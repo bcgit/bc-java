@@ -61,13 +61,13 @@ public class KeyPairGeneratorSpi
         try
         {
             param = convertParams(random, dhParams);
+            engine.init(param);
         }
         catch (IllegalArgumentException e)
         {
             throw new InvalidAlgorithmParameterException(e.getMessage(), e);
         }
-        
-        engine.init(param);
+
         initialised = true;
     }
 

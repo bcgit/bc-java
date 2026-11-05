@@ -30,6 +30,8 @@ public class DHBasicKeyPairGenerator
     {
         this.param = (DHKeyGenerationParameters)param;
 
+        DHKeyGeneratorHelper.checkPrivateValueLength(this.param.getParameters().getP(), this.param.getParameters().getL());
+
         CryptoServicesRegistrar.checkConstraints(new DefaultServiceProperties("DHBasicKeyGen", ConstraintUtils.bitsOfSecurityFor(this.param.getParameters().getP()), this.param.getParameters(), CryptoServicePurpose.KEYGEN));
     }
 

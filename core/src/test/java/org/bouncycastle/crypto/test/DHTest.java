@@ -40,6 +40,7 @@ import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.FixedSecureRandom;
 import org.bouncycastle.util.test.SimpleTest;
@@ -480,6 +481,66 @@ public class DHTest
         }
     }
 
+    /*
+     * A private value length l can come with parameters chosen by someone else, so key generation refuses one below
+     * twice the security strength of p (SP 800-56A Rev3 sec. 5.6.1.1), unless the override property is set.
+     */
+    private void testShortPrivateValueLength()
+    {
+        SecureRandom random = new SecureRandom();
+        BigInteger p = BigIntegers.ONE.shiftLeft(1023).add(BigInteger.valueOf(1155));
+        BigInteger g = BigIntegers.TWO;
+        String msg = "when l value specified, it must not be less than 160 for a 1024 bit p";
+
+        // parameters and keys carrying a short l can still be built and read
+        DHParameters shortL = new DHParameters(p, g, null, 159);
+
+        try
+        {
+            new DHBasicKeyPairGenerator().init(new DHKeyGenerationParameters(random, shortL));
+            fail("short l accepted by DHBasicKeyPairGenerator");
+        }
+        catch (IllegalArgumentException e)
+        {
+            isEquals(msg, e.getMessage());
+        }
+
+        try
+        {
+            new DHKeyPairGenerator().init(new DHKeyGenerationParameters(random, shortL));
+            fail("short l accepted by DHKeyPairGenerator");
+        }
+        catch (IllegalArgumentException e)
+        {
+            isEquals(msg, e.getMessage());
+        }
+
+        try
+        {
+            new ElGamalKeyPairGenerator().init(new ElGamalKeyGenerationParameters(random, new ElGamalParameters(p, g, 159)));
+            fail("short l accepted by ElGamalKeyPairGenerator");
+        }
+        catch (IllegalArgumentException e)
+        {
+            isEquals(msg, e.getMessage());
+        }
+
+        DHBasicKeyPairGenerator kpGen = new DHBasicKeyPairGenerator();
+        kpGen.init(new DHKeyGenerationParameters(random, new DHParameters(p, g, null, 160)));
+        isTrue("l = 2s not 160 bits", ((DHPrivateKeyParameters)kpGen.generateKeyPair().getPrivate()).getX().bitLength() == 160);
+
+        System.setProperty(Properties.DH_ALLOW_SHORT_PRIVATE_VALUE, "true");
+        try
+        {
+            kpGen.init(new DHKeyGenerationParameters(random, new DHParameters(p, g, null, 64)));
+            isTrue("overridden short l not honoured", ((DHPrivateKeyParameters)kpGen.generateKeyPair().getPrivate()).getX().bitLength() == 64);
+        }
+        finally
+        {
+            System.getProperties().remove(Properties.DH_ALLOW_SHORT_PRIVATE_VALUE);
+        }
+    }
+
     private void testCombinedTestVector1()
     {
         // Test Vector from NIST sample data
@@ -754,6 +815,8 @@ public class DHTest
         testBounds();
 
         testNearPowerOfTwoPrime();
+
+        testShortPrivateValueLength();
 
         testModulusSizeBound();
 

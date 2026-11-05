@@ -47,6 +47,7 @@ import org.bouncycastle.jcajce.provider.asymmetric.util.BaseCipherSpi;
 import org.bouncycastle.jcajce.provider.asymmetric.util.DHUtil;
 import org.bouncycastle.jcajce.provider.asymmetric.util.IESUtil;
 import org.bouncycastle.jcajce.provider.util.BadBlockException;
+import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 import org.bouncycastle.jcajce.util.BCJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 import org.bouncycastle.jce.interfaces.IESKey;
@@ -294,6 +295,16 @@ public class IESCipher
             else
             {
                 throw new InvalidKeyException("must be passed recipient's public DH key for encryption");
+            }
+
+            // the ephemeral key is generated on the recipient's parameters, so refuse them here rather than in doFinal
+            try
+            {
+                new DHKeyPairGenerator().init(new DHKeyGenerationParameters(random, ((DHKeyParameters)this.key).getParameters()));
+            }
+            catch (IllegalArgumentException e)
+            {
+                throw SecurityExceptions.invalidKeyException(e.getMessage(), e);
             }
         }
         else if (opmode == Cipher.DECRYPT_MODE || opmode == Cipher.UNWRAP_MODE)

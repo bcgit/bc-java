@@ -3,9 +3,11 @@ package org.bouncycastle.crypto.generators;
 import java.math.BigInteger;
 import java.security.SecureRandom;
 
+import org.bouncycastle.crypto.constraints.ConstraintUtils;
 import org.bouncycastle.crypto.params.DHParameters;
 import org.bouncycastle.math.ec.WNafUtil;
 import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.Properties;
 
 class DHKeyGeneratorHelper
 {
@@ -16,6 +18,23 @@ class DHKeyGeneratorHelper
 
     private DHKeyGeneratorHelper()
     {
+    }
+
+    /**
+     * Refuse a private value length l below twice the security strength of p (SP 800-56A Rev3 sec. 5.6.1.1's 2s
+     * floor), unless {@link Properties#DH_ALLOW_SHORT_PRIVATE_VALUE} is set. l may come with parameters chosen by
+     * someone else, and an l-bit private value can be recovered with about 2^(l/2) work.
+     */
+    static void checkPrivateValueLength(BigInteger p, int l)
+    {
+        if (l != 0)
+        {
+            int minL = 2 * ConstraintUtils.bitsOfSecurityFor(p);
+            if (l < minL && !Properties.isOverrideSet(Properties.DH_ALLOW_SHORT_PRIVATE_VALUE))
+            {
+                throw new IllegalArgumentException("when l value specified, it must not be less than " + minL + " for a " + p.bitLength() + " bit p");
+            }
+        }
     }
 
     BigInteger calculatePrivate(DHParameters dhParams, SecureRandom random)

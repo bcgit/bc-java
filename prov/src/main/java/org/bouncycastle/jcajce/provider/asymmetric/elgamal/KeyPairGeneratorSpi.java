@@ -64,7 +64,14 @@ public class KeyPairGeneratorSpi
             param = new ElGamalKeyGenerationParameters(random, new ElGamalParameters(dhParams.getP(), dhParams.getG(), dhParams.getL()));
         }
 
-        engine.init(param);
+        try
+        {
+            engine.init(param);
+        }
+        catch (IllegalArgumentException e)
+        {
+            throw new InvalidAlgorithmParameterException(e.getMessage(), e);
+        }
         initialised = true;
     }
 
