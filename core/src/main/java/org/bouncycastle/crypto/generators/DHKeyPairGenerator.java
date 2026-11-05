@@ -38,8 +38,9 @@ public class DHKeyPairGenerator
         DHKeyGeneratorHelper helper = DHKeyGeneratorHelper.INSTANCE;
         DHParameters dhp = param.getParameters();
 
-        BigInteger x = helper.calculatePrivate(dhp, param.getRandom()); 
-        BigInteger y = helper.calculatePublic(dhp, x);
+        BigInteger[] xy = helper.calculateKeyPair(dhp, param.getRandom());
+        BigInteger x = xy[0];
+        BigInteger y = xy[1];
 
         return new AsymmetricCipherKeyPair(
             new DHPublicKeyParameters(y, dhp),

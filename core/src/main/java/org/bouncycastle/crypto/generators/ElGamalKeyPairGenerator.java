@@ -40,8 +40,9 @@ public class ElGamalKeyPairGenerator
         ElGamalParameters egp = param.getParameters();
         DHParameters dhp = new DHParameters(egp.getP(), egp.getG(), null, egp.getL());  
 
-        BigInteger x = helper.calculatePrivate(dhp, param.getRandom()); 
-        BigInteger y = helper.calculatePublic(dhp, x);
+        BigInteger[] xy = helper.calculateKeyPair(dhp, param.getRandom());
+        BigInteger x = xy[0];
+        BigInteger y = xy[1];
 
         return new AsymmetricCipherKeyPair(
             new ElGamalPublicKeyParameters(y, egp),

@@ -41,6 +41,7 @@ import org.bouncycastle.crypto.util.PublicKeyFactory;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
 import org.bouncycastle.util.encoders.Hex;
+import org.bouncycastle.util.test.FixedSecureRandom;
 import org.bouncycastle.util.test.SimpleTest;
 
 public class DHTest
@@ -325,6 +326,31 @@ public class DHTest
         ElGamalKeyPairGenerator egGen = new ElGamalKeyPairGenerator();
         egGen.init(new ElGamalKeyGenerationParameters(random, new ElGamalParameters(p2, g2, l2)));
         checkFullLengthKeyPair("ElGamal", p2, l2, egGen.generateKeyPair());
+
+        /*
+         * x = p - 1 is a valid l-bit value here, but gives y = 1: the generators must redraw rather than fail (DH) or
+         * hand out the degenerate key (ElGamal).
+         */
+        byte[] pSub1 = BigIntegers.asUnsignedByteArray(128, p2.subtract(BigIntegers.ONE));
+        byte[] next = new byte[128];
+        random.nextBytes(next);
+        AsymmetricCipherKeyPair forced;
+
+        kpGen.init(new DHKeyGenerationParameters(new FixedSecureRandom(Arrays.concatenate(pSub1, next)), new DHParameters(p2, g2, null, l2)));
+        forced = kpGen.generateKeyPair();
+        checkFullLengthKeyPair("DH", p2, l2, forced);
+        isTrue("DH x = p - 1 not redrawn", !((DHPrivateKeyParameters)forced.getPrivate()).getX().equals(p2.subtract(BigIntegers.ONE)));
+
+        DHKeyPairGenerator dhGen = new DHKeyPairGenerator();
+        dhGen.init(new DHKeyGenerationParameters(new FixedSecureRandom(Arrays.concatenate(pSub1, next)), new DHParameters(p2, g2, null, l2)));
+        forced = dhGen.generateKeyPair();
+        checkFullLengthKeyPair("DH", p2, l2, forced);
+        isTrue("DH x = p - 1 not redrawn", !((DHPrivateKeyParameters)forced.getPrivate()).getX().equals(p2.subtract(BigIntegers.ONE)));
+
+        egGen.init(new ElGamalKeyGenerationParameters(new FixedSecureRandom(Arrays.concatenate(pSub1, next)), new ElGamalParameters(p2, g2, l2)));
+        forced = egGen.generateKeyPair();
+        checkFullLengthKeyPair("ElGamal", p2, l2, forced);
+        isTrue("ElGamal x = p - 1 not redrawn", !((ElGamalPrivateKeyParameters)forced.getPrivate()).getX().equals(p2.subtract(BigIntegers.ONE)));
 
         try
         {

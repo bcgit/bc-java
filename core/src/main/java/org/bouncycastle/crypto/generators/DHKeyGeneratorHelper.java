@@ -66,6 +66,34 @@ class DHKeyGeneratorHelper
         }
     }
 
+    /**
+     * Generate a private value x and public value y, redrawing x while y falls outside [2, p - 2] (an x that is a
+     * multiple of ord(g), or ord(g)/2). The redraw is skipped for a g itself outside [2, p - 2], where no x helps.
+     *
+     * @return {x, y}
+     */
+    BigInteger[] calculateKeyPair(DHParameters dhParams, SecureRandom random)
+    {
+        BigInteger p = dhParams.getP();
+        BigInteger pSub2 = p.subtract(TWO);
+        boolean checkY = isInRange(dhParams.getG(), pSub2);
+
+        for (;;)
+        {
+            BigInteger x = calculatePrivate(dhParams, random);
+            BigInteger y = calculatePublic(dhParams, x);
+            if (!checkY || isInRange(y, pSub2))
+            {
+                return new BigInteger[]{ x, y };
+            }
+        }
+    }
+
+    private static boolean isInRange(BigInteger v, BigInteger pSub2)
+    {
+        return v.compareTo(TWO) >= 0 && v.compareTo(pSub2) <= 0;
+    }
+
     BigInteger calculatePublic(DHParameters dhParams, BigInteger x)
     {
         return dhParams.getG().modPow(x, dhParams.getP());
