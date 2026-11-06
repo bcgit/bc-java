@@ -15,6 +15,7 @@ module org.bouncycastle.provider
     opens org.bouncycastle.jcajce.provider.asymmetric.slhdsa to java.base;
     opens org.bouncycastle.jcajce.provider.asymmetric.xmss to java.base;
     opens org.bouncycastle.jcajce.provider.asymmetric.sm9 to java.base;
+    opens org.bouncycastle.jcajce.provider.asymmetric.xwing to java.base;
     opens org.bouncycastle.pqc.jcajce.provider.mqom to java.base;
     opens org.bouncycastle.pqc.jcajce.provider.uov to java.base;
     opens org.bouncycastle.pqc.jcajce.provider.lms to java.base;
@@ -121,11 +122,15 @@ module org.bouncycastle.provider
     exports org.bouncycastle.jcajce.provider.asymmetric.sm9;
     exports org.bouncycastle.jcajce.provider.asymmetric.util;
     exports org.bouncycastle.jcajce.provider.asymmetric.x509;
+    exports org.bouncycastle.jcajce.provider.asymmetric.xwing;
     exports org.bouncycastle.jcajce.provider.config;
     exports org.bouncycastle.jcajce.provider.digest;
     exports org.bouncycastle.jcajce.provider.drbg;
     exports org.bouncycastle.jcajce.provider.kdf;
     exports org.bouncycastle.jcajce.provider.kdf.hkdf;
+    exports org.bouncycastle.jcajce.provider.kdf.kbkdf;
+    exports org.bouncycastle.jcajce.provider.kdf.kmac;
+    exports org.bouncycastle.jcajce.provider.kdf.onestep;
     exports org.bouncycastle.jcajce.provider.kdf.pbkdf2;
     exports org.bouncycastle.jcajce.provider.kdf.scrypt;
     exports org.bouncycastle.jcajce.provider.keystore;
