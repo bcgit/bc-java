@@ -35,8 +35,8 @@ public class SLHDSAPrivateKeyParameters
         checkLength(pkSeed, n, "pkSeed");
         checkLength(pkRoot, n, "pkRoot");
 
-        this.sk = new SK(skSeed, prf);
-        this.pk = new PK(pkSeed, pkRoot);
+        this.sk = new SK(Arrays.clone(skSeed), Arrays.clone(prf));
+        this.pk = new PK(Arrays.clone(pkSeed), Arrays.clone(pkRoot));
     }
 
     SLHDSAPrivateKeyParameters(SLHDSAParameters parameters, SK sk, PK pk)

@@ -11,6 +11,7 @@ import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 import org.bouncycastle.crypto.params.SLHDSAKeyGenerationParameters;
 import org.bouncycastle.crypto.params.SLHDSAParameters;
 import org.bouncycastle.crypto.signers.slhdsa.SLHDSAEngine;
+import org.bouncycastle.util.Arrays;
 
 public class SLHDSAKeyPairGenerator
     implements AsymmetricCipherKeyPairGenerator
@@ -38,7 +39,11 @@ public class SLHDSAKeyPairGenerator
         byte[] skPrf = sec_rand(parameters.getN());
         byte[] pkSeed = sec_rand(parameters.getN());
 
-        return SLHDSAEngine.implGenerateKeyPair(parameters, skSeed, skPrf, pkSeed);
+        // the private key holds its own copies of the seeds
+        AsymmetricCipherKeyPair kp = SLHDSAEngine.implGenerateKeyPair(parameters, skSeed, skPrf, pkSeed);
+        Arrays.clear(skSeed);
+        Arrays.clear(skPrf);
+        return kp;
     }
 
     private byte[] sec_rand(int n)

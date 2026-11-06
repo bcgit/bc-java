@@ -70,6 +70,44 @@ public class SLHDSATest
             SLHDSAParameters.shake_256s,
         };
 
+    /*
+     * The array constructor keeps its own copies: neither later writes to the caller's arrays nor destroying the key
+     * may reach the other side.
+     */
+    public void testArrayConstructorCopies()
+    {
+        SLHDSAParameters params = SLHDSAParameters.sha2_128f;
+        int n = params.getN();
+        byte[][] parts = new byte[4][];
+        byte[][] saved = new byte[4][];
+        for (int i = 0; i != 4; i++)
+        {
+            parts[i] = new byte[n];
+            Arrays.fill(parts[i], (byte)(i + 1));
+            saved[i] = Arrays.clone(parts[i]);
+        }
+
+        SLHDSAPrivateKeyParameters priv = new SLHDSAPrivateKeyParameters(params, parts[0], parts[1], parts[2], parts[3]);
+        byte[] encoding = priv.getEncoded();
+
+        for (int i = 0; i != 4; i++)
+        {
+            Arrays.fill(parts[i], (byte)0x55);
+        }
+        assertTrue(Arrays.areEqual(encoding, priv.getEncoded()));
+
+        for (int i = 0; i != 4; i++)
+        {
+            parts[i] = Arrays.clone(saved[i]);
+        }
+        priv = new SLHDSAPrivateKeyParameters(params, parts[0], parts[1], parts[2], parts[3]);
+        priv.destroy();
+        for (int i = 0; i != 4; i++)
+        {
+            assertTrue(Arrays.areEqual(saved[i], parts[i]));
+        }
+    }
+
     public void testConsistency()
     {
         SecureRandom random = new SecureRandom();
