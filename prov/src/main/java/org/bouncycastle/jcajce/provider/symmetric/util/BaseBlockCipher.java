@@ -775,7 +775,7 @@ public class BaseBlockCipher
                 pbeSpec = new PBEParameterSpec(((PBKDF2KeyWithParameters)k).getSalt(), ((PBKDF2KeyWithParameters)k).getIterationCount());
             }
 
-            param = PBE.Util.makePBEParameters(k.getEncoded(), PKCS5S2, PBE.SHA512, keySizeInBits, 0, pbeSpec, cipher.getAlgorithmName());
+            param = PBE.Util.makePBEParameters(k.getEncoded(), PKCS5S2, PBE.Util.getPBKDF2CipherDigest(k), keySizeInBits, 0, pbeSpec, cipher.getAlgorithmName());
             if (param instanceof ParametersWithIV)
             {
                 ivParam = (ParametersWithIV)param;

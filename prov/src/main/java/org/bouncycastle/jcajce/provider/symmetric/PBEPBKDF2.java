@@ -6,8 +6,6 @@ import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.InvalidParameterSpecException;
 import java.security.spec.KeySpec;
-import java.util.HashMap;
-import java.util.Map;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.PBEKeySpec;
@@ -16,14 +14,11 @@ import javax.crypto.spec.PBEParameterSpec;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Primitive;
-import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
-import org.bouncycastle.asn1.gm.GMObjectIdentifiers;
-import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.PBKDF2Params;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.PasswordConverter;
-import org.bouncycastle.asn1.iana.IANAObjectIdentifiers;
 import org.bouncycastle.jcajce.PBKDF2Key;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.symmetric.util.BCPBEKey;
@@ -32,31 +27,10 @@ import org.bouncycastle.jcajce.provider.symmetric.util.BaseSecretKeyFactory;
 import org.bouncycastle.jcajce.provider.symmetric.util.PBE;
 import org.bouncycastle.jcajce.provider.util.AlgorithmProvider;
 import org.bouncycastle.jcajce.spec.PBKDF2KeySpec;
-import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Properties;
 
 public class PBEPBKDF2
 {
-    private static final Map prfCodes = new HashMap();
-
-    static
-    {
-        prfCodes.put(CryptoProObjectIdentifiers.gostR3411Hmac, Integers.valueOf(PBE.GOST3411));
-        prfCodes.put(PKCSObjectIdentifiers.id_hmacWithSHA1, Integers.valueOf(PBE.SHA1));
-        prfCodes.put(PKCSObjectIdentifiers.id_hmacWithSHA256, Integers.valueOf(PBE.SHA256));
-        prfCodes.put(PKCSObjectIdentifiers.id_hmacWithSHA224, Integers.valueOf(PBE.SHA224));
-        prfCodes.put(PKCSObjectIdentifiers.id_hmacWithSHA384, Integers.valueOf(PBE.SHA384));
-        prfCodes.put(PKCSObjectIdentifiers.id_hmacWithSHA512, Integers.valueOf(PBE.SHA512));
-        prfCodes.put(PKCSObjectIdentifiers.id_hmacWithSHA512_224, Integers.valueOf(PBE.SHA512_224));
-        prfCodes.put(PKCSObjectIdentifiers.id_hmacWithSHA512_256, Integers.valueOf(PBE.SHA512_256));
-        prfCodes.put(NISTObjectIdentifiers.id_hmacWithSHA3_256, Integers.valueOf(PBE.SHA3_256));
-        prfCodes.put(NISTObjectIdentifiers.id_hmacWithSHA3_224, Integers.valueOf(PBE.SHA3_224));
-        prfCodes.put(NISTObjectIdentifiers.id_hmacWithSHA3_384, Integers.valueOf(PBE.SHA3_384));
-        prfCodes.put(NISTObjectIdentifiers.id_hmacWithSHA3_512, Integers.valueOf(PBE.SHA3_512));
-        prfCodes.put(IANAObjectIdentifiers.hmacRIPEMD160, Integers.valueOf(PBE.RIPEMD160));
-        prfCodes.put(GMObjectIdentifiers.hmac_sm3, Integers.valueOf(PBE.SM3));
-    }
-
     private PBEPBKDF2()
     {
 
@@ -188,8 +162,20 @@ public class PBEPBKDF2
 
                 if (pbeSpec.getSalt() == null)
                 {
+                    // record the PRF, so a cipher deriving from this key later uses the one asked for
+                    AlgorithmIdentifier prf;
+                    if (pbeSpec instanceof PBKDF2KeySpec && ((PBKDF2KeySpec)pbeSpec).getPrf() != null)
+                    {
+                        prf = new AlgorithmIdentifier(((PBKDF2KeySpec)pbeSpec).getPrf().getAlgorithm());
+                        getDigestCode(prf.getAlgorithm());
+                    }
+                    else
+                    {
+                        prf = PBE.Util.getPRF(defaultDigest);
+                    }
+
                     return new PBKDF2Key(((PBEKeySpec)keySpec).getPassword(),
-                        scheme == PKCS5S2 ? PasswordConverter.ASCII : PasswordConverter.UTF8);
+                        scheme == PKCS5S2 ? PasswordConverter.ASCII : PasswordConverter.UTF8, prf);
                 }
 
                 if (pbeSpec.getIterationCount() <= 0)
@@ -249,10 +235,10 @@ public class PBEPBKDF2
         private int getDigestCode(ASN1ObjectIdentifier algorithm)
             throws InvalidKeySpecException
         {
-            Integer code = (Integer)prfCodes.get(algorithm);
-            if (code != null)
+            int code = PBE.Util.getPRFDigest(algorithm);
+            if (code >= 0)
             {
-                return code.intValue();
+                return code;
             }
             
             throw new InvalidKeySpecException("Invalid KeySpec: unknown PRF algorithm " + algorithm);

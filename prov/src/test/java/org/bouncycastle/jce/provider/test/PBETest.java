@@ -46,6 +46,7 @@ import org.bouncycastle.jcajce.PKCS12KeyWithParameters;
 import org.bouncycastle.jcajce.provider.symmetric.util.BCPBEKey;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.FixedSecureRandom;
@@ -698,6 +699,73 @@ public class PBETest
         isTrue(Arrays.areEqual(input, decryptedBytes));
     }
 
+    /*
+     * A password-only key from a PBKDF2 SecretKeyFactory used with a Cipher and a PBEParameterSpec is derived with the
+     * factory's own PRF. 1.80 to 1.86 always used HMAC-SHA512, which Properties.PBKDF2_LEGACY_CIPHER_PRF restores.
+     */
+    private void testPasswordOnlyKeyPRF()
+        throws Exception
+    {
+        String cipherAlgo = "2.16.840.1.101.3.4.1.2";
+        char[] password = "abcdefghijklmnop".toCharArray();
+        byte[] salt = Hex.decode("000102030405060708090a0b0c0d0e0f");
+        byte[] iv = Hex.decode("a0a1a2a3a4a5a6a7a8a9aaabacadaeaf");
+        PBEParameterSpec pbeParamSpec = new PBEParameterSpec(salt, 1000, new IvParameterSpec(iv));
+        byte[] input = Strings.toByteArray("testing");
+
+        String[] factories = { "PBKDF2", "PBKDF2WITHHMACSHA256", "PBKDF2WITHHMACGOST3411", "PBKDF2WITHHMACSHA512" };
+        Digest[] digests = { new SHA1Digest(), new SHA256Digest(), new GOST3411Digest(), new SHA512Digest() };
+
+        for (int i = 0; i != factories.length; i++)
+        {
+            SecretKey key = SecretKeyFactory.getInstance(factories[i], "BC").generateSecret(new PBEKeySpec(password));
+
+            Cipher encryptCipher = Cipher.getInstance(cipherAlgo, "BC");
+            encryptCipher.init(Cipher.ENCRYPT_MODE, key, pbeParamSpec);
+            byte[] encryptedBytes = encryptCipher.doFinal(input);
+
+            isTrue(factories[i] + " not derived with its own PRF",
+                Arrays.areEqual(input, decryptWith(cipherAlgo, pbkdf2(digests[i], password, salt), iv, encryptedBytes)));
+
+            System.setProperty(Properties.PBKDF2_LEGACY_CIPHER_PRF, "true");
+            try
+            {
+                encryptCipher = Cipher.getInstance(cipherAlgo, "BC");
+                encryptCipher.init(Cipher.ENCRYPT_MODE, key, pbeParamSpec);
+                encryptedBytes = encryptCipher.doFinal(input);
+            }
+            finally
+            {
+                System.getProperties().remove(Properties.PBKDF2_LEGACY_CIPHER_PRF);
+            }
+
+            isTrue(factories[i] + " legacy PRF not HMAC-SHA512",
+                Arrays.areEqual(input, decryptWith(cipherAlgo, pbkdf2(new SHA512Digest(), password, salt), iv, encryptedBytes)));
+        }
+    }
+
+    private static byte[] pbkdf2(Digest digest, char[] password, byte[] salt)
+    {
+        PKCS5S2ParametersGenerator gen = new PKCS5S2ParametersGenerator(digest);
+        gen.init(PBEParametersGenerator.PKCS5PasswordToUTF8Bytes(password), salt, 1000);
+        return ((KeyParameter)gen.generateDerivedParameters(128)).getKey();
+    }
+
+    private static byte[] decryptWith(String cipherAlgo, byte[] key, byte[] iv, byte[] encrypted)
+        throws Exception
+    {
+        Cipher c = Cipher.getInstance(cipherAlgo, "BC");
+        c.init(Cipher.DECRYPT_MODE, new SecretKeySpec(key, "AES"), new IvParameterSpec(iv));
+        try
+        {
+            return c.doFinal(encrypted);
+        }
+        catch (javax.crypto.BadPaddingException e)
+        {
+            return null;
+        }
+    }
+
     private void testNoIvPBEParameterSpec()
         throws Exception
     {
@@ -903,6 +971,7 @@ public class PBETest
         }
 
         testExtendedPBEParameterSpec();
+        testPasswordOnlyKeyPRF();
         testNoIvPBEParameterSpec();
         testPKCS12Interop();
         testIterationCountLimit();

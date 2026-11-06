@@ -1,12 +1,22 @@
 package org.bouncycastle.jcajce.provider.symmetric.util;
 
 import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
 import java.security.spec.AlgorithmParameterSpec;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.PBEKeySpec;
 import javax.crypto.spec.PBEParameterSpec;
 
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.cryptopro.CryptoProObjectIdentifiers;
+import org.bouncycastle.asn1.gm.GMObjectIdentifiers;
+import org.bouncycastle.asn1.iana.IANAObjectIdentifiers;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
+import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
+import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoServicePurpose;
 import org.bouncycastle.crypto.PBEParametersGenerator;
@@ -23,6 +33,8 @@ import org.bouncycastle.crypto.params.DESParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
 import org.bouncycastle.crypto.util.DigestFactory;
+import org.bouncycastle.jcajce.PBKDF2Key;
+import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Properties;
 
 public interface PBE
@@ -60,6 +72,74 @@ public interface PBE
      */
     static class Util
     {
+        private static final Map prfCodes = new HashMap();
+        private static final Map prfOids = new HashMap();
+
+        static
+        {
+            addPRF(CryptoProObjectIdentifiers.gostR3411Hmac, GOST3411);
+            addPRF(PKCSObjectIdentifiers.id_hmacWithSHA1, SHA1);
+            addPRF(PKCSObjectIdentifiers.id_hmacWithSHA256, SHA256);
+            addPRF(PKCSObjectIdentifiers.id_hmacWithSHA224, SHA224);
+            addPRF(PKCSObjectIdentifiers.id_hmacWithSHA384, SHA384);
+            addPRF(PKCSObjectIdentifiers.id_hmacWithSHA512, SHA512);
+            addPRF(PKCSObjectIdentifiers.id_hmacWithSHA512_224, SHA512_224);
+            addPRF(PKCSObjectIdentifiers.id_hmacWithSHA512_256, SHA512_256);
+            addPRF(NISTObjectIdentifiers.id_hmacWithSHA3_256, SHA3_256);
+            addPRF(NISTObjectIdentifiers.id_hmacWithSHA3_224, SHA3_224);
+            addPRF(NISTObjectIdentifiers.id_hmacWithSHA3_384, SHA3_384);
+            addPRF(NISTObjectIdentifiers.id_hmacWithSHA3_512, SHA3_512);
+            addPRF(IANAObjectIdentifiers.hmacRIPEMD160, RIPEMD160);
+            addPRF(GMObjectIdentifiers.hmac_sm3, SM3);
+        }
+
+        private static void addPRF(ASN1ObjectIdentifier oid, int digest)
+        {
+            prfCodes.put(oid, Integers.valueOf(digest));
+            prfOids.put(Integers.valueOf(digest), oid);
+        }
+
+        /**
+         * Return the digest code for a PBKDF2 PRF, or -1 if the PRF is not supported.
+         */
+        public static int getPRFDigest(ASN1ObjectIdentifier prf)
+        {
+            Integer code = (Integer)prfCodes.get(prf);
+
+            return (code == null) ? -1 : code.intValue();
+        }
+
+        /**
+         * Return the digest code to derive a cipher key from a password-only PBKDF2 key with: the key's own PRF, or
+         * SHA-512 when the key names none or {@link Properties#PBKDF2_LEGACY_CIPHER_PRF} is set.
+         */
+        static int getPBKDF2CipherDigest(PBKDF2Key key)
+            throws InvalidKeyException
+        {
+            AlgorithmIdentifier prf = key.getPrf();
+            if (prf == null || Properties.isOverrideSet(Properties.PBKDF2_LEGACY_CIPHER_PRF))
+            {
+                return SHA512;
+            }
+
+            int digest = getPRFDigest(prf.getAlgorithm());
+            if (digest < 0)
+            {
+                throw new InvalidKeyException("unsupported PBKDF2 PRF: " + prf.getAlgorithm());
+            }
+            return digest;
+        }
+
+        /**
+         * Return the PBKDF2 PRF for a digest code, or null if there is none.
+         */
+        public static AlgorithmIdentifier getPRF(int digest)
+        {
+            ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)prfOids.get(Integers.valueOf(digest));
+
+            return (oid == null) ? null : new AlgorithmIdentifier(oid);
+        }
+
         private static PBEParametersGenerator makePBEGenerator(int type, int hash)
         {
             PBEParametersGenerator  generator;

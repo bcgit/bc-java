@@ -458,6 +458,14 @@ public class Properties
     public static final String PBE_MAX_ITERATION_COUNT = "org.bouncycastle.pbe.max_iteration_count";
 
     /**
+     * When set to "true", a password-only PBKDF2 key from a SecretKeyFactory used with a Cipher and a
+     * PBEParameterSpec is derived with HMAC-SHA512 whatever PRF the factory was for, as releases 1.80 to 1.86
+     * did, so data encrypted that way by those releases can still be decrypted. Default false: the key's own
+     * PRF is used, for example HMAC-SHA256 for PBKDF2WITHHMACSHA256 and HMAC-SHA1 for PBKDF2.
+     */
+    public static final String PBKDF2_LEGACY_CIPHER_PRF = "org.bouncycastle.pbkdf2.legacy_cipher_prf";
+
+    /**
      * Upper bound, in bytes, on the scrypt working memory (~128 * N * r) honoured when decrypting
      * a PBES2-protected PKCS#8 / PEM private key. As with {@link #PBE_MAX_ITERATION_COUNT} the
      * scrypt cost travels in the unauthenticated container, so an unbounded cost is a
