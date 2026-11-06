@@ -15,6 +15,7 @@ import org.bouncycastle.crypto.params.ElGamalKeyGenerationParameters;
 import org.bouncycastle.crypto.params.ElGamalParameters;
 import org.bouncycastle.crypto.params.ElGamalPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ElGamalPublicKeyParameters;
+import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jce.spec.ElGamalParameterSpec;
 
@@ -70,7 +71,7 @@ public class KeyPairGeneratorSpi
         }
         catch (IllegalArgumentException e)
         {
-            throw new InvalidAlgorithmParameterException(e.getMessage(), e);
+            throw SecurityExceptions.invalidAlgorithmParameterException(e.getMessage(), e);
         }
         initialised = true;
     }
