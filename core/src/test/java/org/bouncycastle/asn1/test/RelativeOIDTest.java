@@ -7,12 +7,16 @@ import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1InputStream;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.ASN1RelativeOID;
+import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
 
 public class RelativeOIDTest
     extends SimpleTest
 {
+    private static final String ALLOW_WRONG_OID_ENC = "org.bouncycastle.asn1.allow_wrong_oid_enc";
+
     private static final byte[] req1 = Hex.decode("0D03813403");
     private static final byte[] req2 = Hex.decode("0D082A36FFFFFFDD6311");
 
@@ -136,6 +140,83 @@ public class RelativeOIDTest
         checkInvalid("1,2");
 
         branchCheck("1.1", "2.2");
+
+        wrongEncodingTest();
+    }
+
+    /**
+     * Under the "org.bouncycastle.asn1.allow_wrong_oid_enc" override an invalid encoding is read as the
+     * identifier it corrects to, but re-encodes exactly as received. Without the override it is refused.
+     */
+    private void wrongEncodingTest()
+        throws IOException
+    {
+        // 3 with one and two redundant octets, 42.1 unterminated, a lone continuation octet, only
+        // continuation octets, and no contents at all
+        byte[] oneRedundant = Hex.decode("0D028003");
+        byte[] twoRedundant = Hex.decode("0D03808003");
+        byte[] unterminated = Hex.decode("0D022A81");
+        byte[] loneOctet = Hex.decode("0D0180");
+        byte[] twoOctets = Hex.decode("0D028080");
+        byte[] empty = Hex.decode("0D00");
+
+        Properties.setThreadOverride(ALLOW_WRONG_OID_ENC, true);
+        try
+        {
+            checkWrongEncoding(oneRedundant, "3");
+            checkWrongEncoding(twoRedundant, "3");
+            checkWrongEncoding(unterminated, "42.1");
+            checkWrongEncoding(loneOctet, "0");
+            checkWrongEncoding(twoOctets, "0");
+
+            ASN1RelativeOID emptyOID = ASN1RelativeOID.getInstance(empty);
+            isEquals("empty: identifier", "", emptyOID.getId());
+            isTrue("empty: re-encoding", Arrays.areEqual(empty, emptyOID.getEncoded()));
+            isTrue("empty: single instance", ASN1RelativeOID.getInstance(empty) == emptyOID
+                && ASN1RelativeOID.fromContents(new byte[0]) == emptyOID);
+            isTrue("empty: not a valid identifier", !emptyOID.equals(new ASN1RelativeOID("0")));
+        }
+        finally
+        {
+            Properties.removeThreadOverride(ALLOW_WRONG_OID_ENC);
+        }
+
+        byte[][] invalid = { oneRedundant, twoRedundant, unterminated, loneOctet, twoOctets, empty };
+        for (int i = 0; i != invalid.length; i++)
+        {
+            try
+            {
+                ASN1RelativeOID.fromContents(Arrays.copyOfRange(invalid[i], 2, invalid[i].length));
+                fail("no exception without the override: " + Hex.toHexString(invalid[i]));
+            }
+            catch (IllegalArgumentException e)
+            {
+                isEquals("invalid relative OID contents", e.getMessage());
+            }
+        }
+    }
+
+    private void checkWrongEncoding(byte[] encoding, String expectedId)
+        throws IOException
+    {
+        String label = Hex.toHexString(encoding) + ": ";
+        ASN1RelativeOID valid = new ASN1RelativeOID(expectedId);
+        isTrue(label + "a valid encoding was given", !Arrays.areEqual(encoding, valid.getEncoded()));
+
+        ASN1RelativeOID oid = ASN1RelativeOID.getInstance(encoding);
+        isEquals(label + "identifier", expectedId, oid.getId());
+        isTrue(label + "re-encoding", Arrays.areEqual(encoding, oid.getEncoded()));
+        isTrue(label + "DER re-encoding", Arrays.areEqual(encoding, oid.getEncoded(ASN1Encoding.DER)));
+        isTrue(label + "equals", oid.equals(valid) && valid.equals(oid));
+        isTrue(label + "hashCode", oid.hashCode() == valid.hashCode());
+        isTrue(label + "branch", Arrays.areEqual(valid.branch("1").getEncoded(), oid.branch("1").getEncoded()));
+
+        byte[] contents = Arrays.copyOfRange(encoding, 2, encoding.length);
+        ASN1RelativeOID fromContents = ASN1RelativeOID.fromContents(contents);
+        isTrue(label + "fromContents", fromContents.equals(valid) && Arrays.areEqual(encoding, fromContents.getEncoded()));
+
+        ASN1RelativeOID again = ASN1RelativeOID.getInstance(encoding);
+        isTrue(label + "a fresh instance each time", again != oid && Arrays.areEqual(encoding, again.getEncoded()));
     }
 
     public static void main(String[] args)
