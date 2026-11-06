@@ -71,6 +71,44 @@ public class MLDSATest
         MLDSAParameters.ml_dsa_87_with_sha512,
     };
 
+    /*
+     * A key from withPreferredFormat() holds its own copy of the key material: destroying it, in the same or another
+     * format, must leave the original intact and not destroyed, and a destroyed key cannot be copied.
+     */
+    public void testPreferredFormatCopyIsIndependent()
+    {
+        MLDSAKeyPairGenerator kpGen = new MLDSAKeyPairGenerator();
+        kpGen.init(new MLDSAKeyGenerationParameters(new SecureRandom(), MLDSAParameters.ml_dsa_44));
+        MLDSAPrivateKeyParameters priv = (MLDSAPrivateKeyParameters)kpGen.generateKeyPair().getPrivate();
+        byte[] encoding = priv.getEncoded();
+        byte[] seed = priv.getSeed();
+
+        int[] formats = { MLDSAPrivateKeyParameters.SEED_ONLY, MLDSAPrivateKeyParameters.EXPANDED_KEY,
+            MLDSAPrivateKeyParameters.BOTH, priv.getPreferredFormat() };
+        for (int i = 0; i != formats.length; i++)
+        {
+            MLDSAPrivateKeyParameters copy = priv.withPreferredFormat(formats[i]);
+            assertNotSame(priv, copy);
+            copy.destroy();
+
+            assertTrue(copy.isDestroyed());
+            assertFalse(priv.isDestroyed());
+            assertTrue(Arrays.areEqual(encoding, priv.getEncoded()));
+            assertTrue(Arrays.areEqual(seed, priv.getSeed()));
+        }
+
+        priv.destroy();
+        try
+        {
+            priv.withPreferredFormat(MLDSAPrivateKeyParameters.EXPANDED_KEY);
+            fail("destroyed key copied");
+        }
+        catch (IllegalStateException e)
+        {
+            assertEquals("key destroyed", e.getMessage());
+        }
+    }
+
     public void testConsistency()
         throws Exception
     {

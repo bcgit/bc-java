@@ -105,12 +105,12 @@ public class MLKEMPrivateKeyParameters
     {
         super(true, params.getParameters());
 
-        this.s = params.s;
-        this.t = params.t;
-        this.rho = params.rho;
-        this.hpk = params.hpk;
-        this.nonce = params.nonce;
-        this.seed = params.seed;
+        this.s = Arrays.clone(params.s);
+        this.t = Arrays.clone(params.t);
+        this.rho = Arrays.clone(params.rho);
+        this.hpk = Arrays.clone(params.hpk);
+        this.nonce = Arrays.clone(params.nonce);
+        this.seed = Arrays.clone(params.seed);
         this.prefFormat = preferredFormat;
 
         validate();
@@ -131,11 +131,19 @@ public class MLKEMPrivateKeyParameters
         return withPreferredFormat(format); 
     }
 
+    /**
+     * Return a copy of this key with the given preferred encoding format. The copy holds its own copy of the
+     * key material, so destroying either object leaves the other usable.
+     *
+     * @param format the preferred format: {@link #BOTH}, {@link #SEED_ONLY} or {@link #EXPANDED_KEY}.
+     * @return a new key object with the given preferred format.
+     * @throws IllegalStateException if this key has been destroyed, or a seed format is asked for and there is no seed.
+     */
     public MLKEMPrivateKeyParameters withPreferredFormat(int format)
     {
-        if (this.prefFormat == format)
+        if (destroyed)
         {
-            return this;
+            throw new IllegalStateException("key destroyed");
         }
 
         switch (format)
@@ -209,11 +217,8 @@ public class MLKEMPrivateKeyParameters
     }
 
     /**
-     * Zeroize the secret key material held by this object.
-     * <p>
-     * Note: the internal arrays may be shared with other parameter objects derived from this one
-     * (for example via {@link #withPreferredFormat(int)}); destroying them here invalidates those
-     * objects too.
+     * Zeroize the secret key material held by this object. Objects derived from this one, for example
+     * through {@link #withPreferredFormat(int)}, hold their own copies and are not affected.
      */
     public synchronized void destroy()
     {

@@ -84,6 +84,44 @@ public class MLKEMTest
 
     // A private key encoding must be exactly the 64 byte (d, z) seed or the exact FIPS 203 expanded
     // dk length (1632/2400/3168) - mirroring the length check MLKEMPublicKeyParameters already has.
+    /*
+     * A key from withPreferredFormat() holds its own copy of the key material: destroying it, in the same or another
+     * format, must leave the original intact and not destroyed, and a destroyed key cannot be copied.
+     */
+    public void testPreferredFormatCopyIsIndependent()
+    {
+        MLKEMKeyPairGenerator kpGen = new MLKEMKeyPairGenerator();
+        kpGen.init(new MLKEMKeyGenerationParameters(new SecureRandom(), MLKEMParameters.ml_kem_512));
+        MLKEMPrivateKeyParameters priv = (MLKEMPrivateKeyParameters)kpGen.generateKeyPair().getPrivate();
+        byte[] encoding = priv.getEncoded();
+        byte[] seed = priv.getSeed();
+
+        int[] formats = { MLKEMPrivateKeyParameters.SEED_ONLY, MLKEMPrivateKeyParameters.EXPANDED_KEY,
+            MLKEMPrivateKeyParameters.BOTH, priv.getPreferredFormat() };
+        for (int i = 0; i != formats.length; i++)
+        {
+            MLKEMPrivateKeyParameters copy = priv.withPreferredFormat(formats[i]);
+            assertNotSame(priv, copy);
+            copy.destroy();
+
+            assertTrue(copy.isDestroyed());
+            assertFalse(priv.isDestroyed());
+            assertTrue(Arrays.areEqual(encoding, priv.getEncoded()));
+            assertTrue(Arrays.areEqual(seed, priv.getSeed()));
+        }
+
+        priv.destroy();
+        try
+        {
+            priv.withPreferredFormat(MLKEMPrivateKeyParameters.EXPANDED_KEY);
+            fail("destroyed key copied");
+        }
+        catch (IllegalStateException e)
+        {
+            assertEquals("key destroyed", e.getMessage());
+        }
+    }
+
     public void testPrivateKeyRejectsMalformedLength()
     {
         MLKEMKeyPairGenerator kpGen = new MLKEMKeyPairGenerator();
@@ -795,9 +833,8 @@ public class MLKEMTest
         assertTrue(Arrays.areEqual(originalSeed, updatedSeed));
         assertTrue(Arrays.areEqual(originalEncoding, updatedEncoding));
 
-        if (format == originalFormat)
-        {
-            assertSame(privateKey, updatedPrivateKey);
-        }
+        // always a copy, even in the same format, so destroying one cannot zeroize the other
+        assertNotSame(privateKey, updatedPrivateKey);
+        assertEquals(originalFormat, privateKey.getPreferredFormat());
     }
 }

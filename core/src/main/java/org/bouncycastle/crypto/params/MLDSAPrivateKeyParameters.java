@@ -139,14 +139,14 @@ public class MLDSAPrivateKeyParameters
     {
         super(true, params.getParameters());
 
-        this.rho = params.rho;
-        this.k = params.k;
-        this.tr = params.tr;
-        this.s1 = params.s1;
-        this.s2 = params.s2;
-        this.t0 = params.t0;
-        this.t1 = params.t1;
-        this.seed = params.seed;
+        this.rho = Arrays.clone(params.rho);
+        this.k = Arrays.clone(params.k);
+        this.tr = Arrays.clone(params.tr);
+        this.s1 = Arrays.clone(params.s1);
+        this.s2 = Arrays.clone(params.s2);
+        this.t0 = Arrays.clone(params.t0);
+        this.t1 = Arrays.clone(params.t1);
+        this.seed = Arrays.clone(params.seed);
         this.prefFormat = preferredFormat;
     }
 
@@ -156,11 +156,19 @@ public class MLDSAPrivateKeyParameters
         return withPreferredFormat(format);
     }
 
+    /**
+     * Return a copy of this key with the given preferred encoding format. The copy holds its own copy of the
+     * key material, so destroying either object leaves the other usable.
+     *
+     * @param format the preferred format: {@link #BOTH}, {@link #SEED_ONLY} or {@link #EXPANDED_KEY}.
+     * @return a new key object with the given preferred format.
+     * @throws IllegalStateException if this key has been destroyed, or a seed format is asked for and there is no seed.
+     */
     public MLDSAPrivateKeyParameters withPreferredFormat(int format)
     {
-        if (this.prefFormat == format)
+        if (destroyed)
         {
-            return this;
+            throw new IllegalStateException("key destroyed");
         }
 
         switch (format)
@@ -259,11 +267,8 @@ public class MLDSAPrivateKeyParameters
     }
 
     /**
-     * Zeroize the secret key material held by this object.
-     * <p>
-     * Note: the internal arrays may be shared with other parameter objects derived from this one
-     * (for example via {@link #withPreferredFormat(int)}); destroying them here invalidates
-     * those objects too.
+     * Zeroize the secret key material held by this object. Objects derived from this one, for example
+     * through {@link #withPreferredFormat(int)}, hold their own copies and are not affected.
      */
     public synchronized void destroy()
     {
