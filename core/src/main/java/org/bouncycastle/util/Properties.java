@@ -365,7 +365,8 @@ public class Properties
 
     /**
      * When set to "true", DH and ElGamal key pair generation accepts a private value length l below twice the
-     * security strength of p (the 2s floor of SP 800-56A Rev3 sec. 5.6.1.1). l can arrive with parameters taken
+     * security strength of p (the 2s floor of SP 800-56A Rev3 sec. 5.6.1.1, with the Appendix D strengths of 152,
+     * 176 and 200 bits from 4096, 6144 and 8192-bit p, and SP 800-57's below 4096 bits). l can arrive with parameters taken
      * from someone else, such as a recipient's public key, and a short l makes the generated private value easy to
      * recover. Default false; keys that carry a short l can always be read and used.
      */

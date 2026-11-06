@@ -529,6 +529,26 @@ public class DHTest
         kpGen.init(new DHKeyGenerationParameters(random, new DHParameters(p, g, null, 160)));
         isTrue("l = 2s not 160 bits", ((DHPrivateKeyParameters)kpGen.generateKeyPair().getPrivate()).getX().bitLength() == 160);
 
+        // the floor at each step: SP 800-57 strengths below 4096 bits, SP 800-56A Appendix D from 4096 bits up
+        DHParameters[] groups = { DHStandardGroups.rfc7919_ffdhe2048, DHStandardGroups.rfc7919_ffdhe3072,
+            DHStandardGroups.rfc3526_4096, DHStandardGroups.rfc3526_6144, DHStandardGroups.rfc3526_8192 };
+        int[] floors = { 224, 256, 304, 352, 400 };
+        for (int i = 0; i != groups.length; i++)
+        {
+            BigInteger gp = groups[i].getP();
+            try
+            {
+                new DHKeyPairGenerator().init(new DHKeyGenerationParameters(random, new DHParameters(gp, groups[i].getG(), null, floors[i] - 1)));
+                fail("l below floor accepted for " + gp.bitLength() + " bit p");
+            }
+            catch (IllegalArgumentException e)
+            {
+                isEquals("when l value specified, it must not be less than " + floors[i] + " for a " + gp.bitLength() + " bit p", e.getMessage());
+            }
+            new DHKeyPairGenerator().init(new DHKeyGenerationParameters(random, new DHParameters(gp, groups[i].getG(), null, floors[i])));
+            new DHKeyPairGenerator().init(new DHKeyGenerationParameters(random, groups[i]));
+        }
+
         System.setProperty(Properties.DH_ALLOW_SHORT_PRIVATE_VALUE, "true");
         try
         {

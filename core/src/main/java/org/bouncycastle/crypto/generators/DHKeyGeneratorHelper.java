@@ -23,18 +23,34 @@ class DHKeyGeneratorHelper
     /**
      * Refuse a private value length l below twice the security strength of p (SP 800-56A Rev3 sec. 5.6.1.1's 2s
      * floor), unless {@link Properties#DH_ALLOW_SHORT_PRIVATE_VALUE} is set. l may come with parameters chosen by
-     * someone else, and an l-bit private value can be recovered with about 2^(l/2) work.
+     * someone else, and an l-bit private value can be recovered with about 2^(l/2) work. See
+     * {@link #securityStrengthFor(BigInteger)} for the strength used.
      */
     static void checkPrivateValueLength(BigInteger p, int l)
     {
         if (l != 0)
         {
-            int minL = 2 * ConstraintUtils.bitsOfSecurityFor(p);
+            int minL = 2 * securityStrengthFor(p);
             if (l < minL && !Properties.isOverrideSet(Properties.DH_ALLOW_SHORT_PRIVATE_VALUE))
             {
                 throw new IllegalArgumentException("when l value specified, it must not be less than " + minL + " for a " + p.bitLength() + " bit p");
             }
         }
+    }
+
+    /**
+     * The security strength s of p, in bits. From 4096 bits up this follows the strengths SP 800-56A Rev3 Appendix D
+     * assigns the safe-prime groups (152, 176 and 200 bits for 4096, 6144 and 8192-bit p, the values DHStandardGroups
+     * uses for l), applied as steps to any p of at least that size, which is BC's extension of the table; otherwise,
+     * and where it is higher, the SP 800-57 strength.
+     */
+    static int securityStrengthFor(BigInteger p)
+    {
+        int pBits = p.bitLength();
+        int s = ConstraintUtils.bitsOfSecurityFor(p);
+        int appendixD = (pBits >= 8192) ? 200 : (pBits >= 6144) ? 176 : (pBits >= 4096) ? 152 : 0;
+
+        return Math.max(s, appendixD);
     }
 
     BigInteger calculatePrivate(DHParameters dhParams, SecureRandom random)
