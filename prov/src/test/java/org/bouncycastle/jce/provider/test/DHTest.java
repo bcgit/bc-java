@@ -1620,6 +1620,29 @@ public class DHTest
         ka2.doPhase(kp1.getPublic(), true);
         isTrue("full length private value agreement failed", Arrays.areEqual(ka1.generateSecret(), ka2.generateSecret()));
 
+        // keys carrying l == bitLength(p) encode and parse with l kept (1.86 refused them at parse)
+        KeyFactory keyFac = KeyFactory.getInstance("DH", "BC");
+        DHPublicKey pub = (DHPublicKey)keyFac.generatePublic(new X509EncodedKeySpec(kp1.getPublic().getEncoded()));
+        DHPrivateKey priv = (DHPrivateKey)keyFac.generatePrivate(new PKCS8EncodedKeySpec(kp1.getPrivate().getEncoded()));
+        isTrue("public key l not kept", pub.getParams().getL() == p.bitLength());
+        isTrue("private key l not kept", priv.getParams().getL() == p.bitLength());
+        isTrue("decoded public key differs", pub.equals(kp1.getPublic()));
+        isTrue("decoded private key differs", priv.equals(kp1.getPrivate()));
+
+        // DHIES generates its ephemeral key on the recipient's parameters, l included
+        byte[] msg = Hex.decode("1234567890abcdef");
+        Cipher enc = Cipher.getInstance("DHIES", "BC");
+        enc.init(Cipher.ENCRYPT_MODE, pub, new SecureRandom());
+        byte[] ct = enc.doFinal(msg);
+        Cipher dec = Cipher.getInstance("DHIES", "BC");
+        dec.init(Cipher.DECRYPT_MODE, priv);
+        isTrue("full length l DHIES round trip failed", Arrays.areEqual(msg, dec.doFinal(ct)));
+
+        KeyPairGenerator egGen = KeyPairGenerator.getInstance("ElGamal", "BC");
+        egGen.initialize(spec);
+        BigInteger egX = ((DHPrivateKey)egGen.generateKeyPair().getPrivate()).getX();
+        isTrue("ElGamal private value not full length", egX.bitLength() == p.bitLength());
+
         try
         {
             kpGen.initialize(new DHParameterSpec(p, group.getG(), p.bitLength() + 1));
