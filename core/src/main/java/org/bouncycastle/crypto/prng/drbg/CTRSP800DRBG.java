@@ -40,10 +40,12 @@ public class CTRSP800DRBG
      * @param securityStrength security strength required (in bits)
      * @param entropySource source of entropy to use for seeding/reseeding.
      * @param personalizationString personalization string to distinguish this DRBG (may be null).
-     * @param nonce nonce to further distinguish this DRBG. For full SP 800-90A compliance a nonce is
-     * required: either a value with at least (securityStrength / 2) bits of entropy, or a value expected to
-     * repeat no more often than a random string of that length would (SP 800-90A sec. 8.6.7). A null nonce
-     * is still accepted, but a DRBG instantiated without one is not compliant.
+     * @param nonce nonce to further distinguish this DRBG. SP 800-90A Rev. 1 sec. 8.6.7 requires either a
+     * value with at least (securityStrength / 2) bits of entropy, or a value expected to repeat no more often
+     * than a (securityStrength / 2)-bit random string would. The nonce may be null if the entropy source
+     * supplies the nonce's entropy along with the entropy input, that is, at least (3 * securityStrength / 2)
+     * bits on each request (SP 800-90A Rev. 1 sec. 8.6.7 and 9.1). A null nonce with an entropy source
+     * supplying less is still accepted, but the DRBG is then not compliant; this is not checked.
      */
     public CTRSP800DRBG(BlockCipher engine, int keySizeInBits, int securityStrength, EntropySource entropySource, byte[] personalizationString, byte[] nonce)
     {

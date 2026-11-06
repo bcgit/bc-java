@@ -38,7 +38,9 @@ import org.bouncycastle.util.Arrays;
  * For full SP 800-90A compliance a nonce is required for all three: the Hash and HMAC DRBGs, and the CTR DRBG,
  * which always uses the derivation function. As above, the nonce may be taken from the same source, and at the
  * same time, as the entropy input; it may also be a value guaranteed not to repeat, such as a counter or a
- * timestamp (SP 800-90A sec. 8.6.7). The personalization string is optional but recommended: something that
+ * timestamp (SP 800-90A Rev. 1 sec. 8.6.7). Alternatively the nonce may be null if each entropy request
+ * supplies at least 1.5 times the security strength in entropy, which {@link #setEntropyBitsRequired(int)}
+ * configures: the nonce's entropy then arrives as part of the entropy input (SP 800-90A Rev. 1 sec. 8.6.7 and 9.1). The personalization string is optional but recommended: something that
  * distinguishes this instantiation, such as an application and instance name. Setting predictionResistant to true
  * reseeds from the entropy source on every request for bytes, at the cost of reading entropy each time.
  * </p>
@@ -136,10 +138,13 @@ public class SP800SecureRandomBuilder
      * Build a SecureRandom based on a SP 800-90A Hash DRBG.
      *
      * @param digest digest algorithm to use in the DRBG underneath the SecureRandom.
-     * @param nonce  nonce value to use in DRBG construction. For full SP 800-90A compliance a nonce is required:
-     * either a value with at least (security strength / 2) bits of entropy, or a value expected to repeat no
-     * more often than a random string of that length would (SP 800-90A sec. 8.6.7). A null nonce is still
-     * accepted, but the resulting DRBG is not compliant.
+     * @param nonce  nonce value to use in DRBG construction. SP 800-90A Rev. 1 sec. 8.6.7 requires either a
+     * value with at least (security strength / 2) bits of entropy, or a value expected to repeat no more often
+     * than a (security strength / 2)-bit random string would. The nonce may be null if the entropy source
+     * supplies the nonce's entropy along with the entropy input, that is, if
+     * {@link #setEntropyBitsRequired(int)} is at least (3 * security strength / 2) and the source delivers that
+     * much entropy (SP 800-90A Rev. 1 sec. 8.6.7 and 9.1). A null nonce with less entropy than that is still
+     * accepted, but the resulting DRBG is then not compliant; this is not checked.
      * @param predictionResistant specify whether the underlying DRBG in the resulting SecureRandom should reseed on each request for bytes.
      * @return a SecureRandom supported by a Hash DRBG.
      */
@@ -153,10 +158,13 @@ public class SP800SecureRandomBuilder
      *
      * @param cipher the block cipher to base the DRBG on.
      * @param keySizeInBits key size in bits to be used with the block cipher.
-     * @param nonce nonce value to use in DRBG construction. For full SP 800-90A compliance a nonce is required:
-     * either a value with at least (security strength / 2) bits of entropy, or a value expected to repeat no
-     * more often than a random string of that length would (SP 800-90A sec. 8.6.7). A null nonce is still
-     * accepted, but the resulting DRBG is not compliant.
+     * @param nonce nonce value to use in DRBG construction. SP 800-90A Rev. 1 sec. 8.6.7 requires either a
+     * value with at least (security strength / 2) bits of entropy, or a value expected to repeat no more often
+     * than a (security strength / 2)-bit random string would. The nonce may be null if the entropy source
+     * supplies the nonce's entropy along with the entropy input, that is, if
+     * {@link #setEntropyBitsRequired(int)} is at least (3 * security strength / 2) and the source delivers that
+     * much entropy (SP 800-90A Rev. 1 sec. 8.6.7 and 9.1). A null nonce with less entropy than that is still
+     * accepted, but the resulting DRBG is then not compliant; this is not checked.
      * @param predictionResistant  specify whether the underlying DRBG in the resulting SecureRandom should reseed on each request for bytes.
      * @return  a SecureRandom supported by a CTR DRBG.
      */
@@ -169,10 +177,13 @@ public class SP800SecureRandomBuilder
      * Build a SecureRandom based on a SP 800-90A HMAC DRBG.
      *
      * @param hMac HMAC algorithm to use in the DRBG underneath the SecureRandom.
-     * @param nonce  nonce value to use in DRBG construction. For full SP 800-90A compliance a nonce is required:
-     * either a value with at least (security strength / 2) bits of entropy, or a value expected to repeat no
-     * more often than a random string of that length would (SP 800-90A sec. 8.6.7). A null nonce is still
-     * accepted, but the resulting DRBG is not compliant.
+     * @param nonce  nonce value to use in DRBG construction. SP 800-90A Rev. 1 sec. 8.6.7 requires either a
+     * value with at least (security strength / 2) bits of entropy, or a value expected to repeat no more often
+     * than a (security strength / 2)-bit random string would. The nonce may be null if the entropy source
+     * supplies the nonce's entropy along with the entropy input, that is, if
+     * {@link #setEntropyBitsRequired(int)} is at least (3 * security strength / 2) and the source delivers that
+     * much entropy (SP 800-90A Rev. 1 sec. 8.6.7 and 9.1). A null nonce with less entropy than that is still
+     * accepted, but the resulting DRBG is then not compliant; this is not checked.
      * @param predictionResistant specify whether the underlying DRBG in the resulting SecureRandom should reseed on each request for bytes.
      * @return a SecureRandom supported by a HMAC DRBG.
      */
