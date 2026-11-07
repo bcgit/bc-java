@@ -22,7 +22,6 @@ import javax.security.auth.DestroyFailedException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.crypto.Wrapper;
-import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.jcajce.provider.asymmetric.util.WrapUtil;
 import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 import org.bouncycastle.jcajce.spec.KEMParameterSpec;
@@ -249,11 +248,7 @@ class HQCCipherSpi
         {
             SecretWithEncapsulation secEnc = kemGen.generateEncapsulated(wrapKey.getKeyParams());
 
-            Wrapper kWrap = WrapUtil.getWrapper(kemParameterSpec.getKeyAlgorithmName());
-
-            KeyParameter keyParameter = new KeyParameter(WrapUtil.trimSecret(kemParameterSpec.getKeyAlgorithmName(), secEnc.getSecret()));
-
-            kWrap.init(true, keyParameter);
+            Wrapper kWrap = WrapUtil.getKeyWrapper(kemParameterSpec, secEnc.getSecret());
 
             byte[] encapsulation = secEnc.getEncapsulation();
 
@@ -294,19 +289,14 @@ class HQCCipherSpi
           
             byte[] secret = kemExt.extractSecret(Arrays.copyOfRange(wrappedKey, 0, kemExt.getEncapsulationLength()));
 
-            Wrapper kWrap = WrapUtil.getWrapper(kemParameterSpec.getKeyAlgorithmName());
-
-            KeyParameter keyParameter = new KeyParameter(WrapUtil.trimSecret(kemParameterSpec.getKeyAlgorithmName(), secret));
+            Wrapper kWrap = WrapUtil.getKeyUnwrapper(kemParameterSpec, secret);
 
             Arrays.clear(secret);
-
-            kWrap.init(false, keyParameter);
 
             byte[] keyEncBytes = Arrays.copyOfRange(wrappedKey, kemExt.getEncapsulationLength(), wrappedKey.length);
 
             SecretKey rv = new SecretKeySpec(kWrap.unwrap(keyEncBytes, 0, keyEncBytes.length), wrappedKeyAlgorithm);
 
-            Arrays.clear(keyParameter.getKey());
 
             return rv;
         }

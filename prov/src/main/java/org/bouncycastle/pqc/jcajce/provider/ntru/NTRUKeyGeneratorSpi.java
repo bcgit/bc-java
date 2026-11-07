@@ -11,10 +11,13 @@ import javax.security.auth.DestroyFailedException;
 
 import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.jcajce.SecretKeyWithEncapsulation;
+import org.bouncycastle.jcajce.provider.asymmetric.util.KdfUtil;
 import org.bouncycastle.jcajce.spec.KEMExtractSpec;
 import org.bouncycastle.jcajce.spec.KEMGenerateSpec;
+import org.bouncycastle.jcajce.spec.KEMKDFSpec;
 import org.bouncycastle.pqc.crypto.ntru.NTRUKEMExtractor;
 import org.bouncycastle.pqc.crypto.ntru.NTRUKEMGenerator;
+import org.bouncycastle.pqc.crypto.ntru.NTRUParameters;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Exceptions;
 
@@ -36,18 +39,39 @@ public class NTRUKeyGeneratorSpi
         this.random = secureRandom;
         if (algorithmParameterSpec instanceof KEMGenerateSpec)
         {
-            this.genSpec = (KEMGenerateSpec)algorithmParameterSpec;
+            KEMGenerateSpec spec = (KEMGenerateSpec)algorithmParameterSpec;
+            if (!(spec.getPublicKey() instanceof BCNTRUPublicKey))
+            {
+                throw new InvalidAlgorithmParameterException("unsupported public key: NTRU public key required");
+            }
+            checkSpec(spec, ((BCNTRUPublicKey)spec.getPublicKey()).getKeyParams().getParameters());
+
+            this.genSpec = spec;
             this.extSpec = null;
         }
         else if (algorithmParameterSpec instanceof KEMExtractSpec)
         {
+            KEMExtractSpec spec = (KEMExtractSpec)algorithmParameterSpec;
+            if (!(spec.getPrivateKey() instanceof BCNTRUPrivateKey))
+            {
+                throw new InvalidAlgorithmParameterException("unsupported private key: NTRU private key required");
+            }
+            checkSpec(spec, ((BCNTRUPrivateKey)spec.getPrivateKey()).getKeyParams().getParameters());
+
             this.genSpec = null;
-            this.extSpec = (KEMExtractSpec)algorithmParameterSpec;
+            this.extSpec = spec;
         }
         else
         {
             throw new InvalidAlgorithmParameterException("unknown spec");
         }
+    }
+
+    // with no KDF the key is taken from the front of the shared secret, so it cannot be longer than the secret
+    private static void checkSpec(KEMKDFSpec spec, NTRUParameters parameters)
+        throws InvalidAlgorithmParameterException
+    {
+        KdfUtil.checkKemKdfSpec(spec, parameters.getName(), parameters.getSessionKeySize());
     }
 
     protected void engineInit(int i, SecureRandom secureRandom)
@@ -64,12 +88,11 @@ public class NTRUKeyGeneratorSpi
 
             SecretWithEncapsulation secEnc = kemGen.generateEncapsulated(pubKey.getKeyParams());
 
-            byte[] sharedSecret = secEnc.getSecret();
-            byte[] secret = Arrays.copyOfRange(sharedSecret, 0, (genSpec.getKeySize() + 7) / 8);
+            byte[] keyBytes = KdfUtil.makeKeyBytes(genSpec, secEnc.getSecret());
 
-            Arrays.clear(sharedSecret);
+            SecretKey rv = new SecretKeyWithEncapsulation(new SecretKeySpec(keyBytes, genSpec.getKeyAlgorithmName()), secEnc.getEncapsulation());
 
-            SecretKey rv = new SecretKeyWithEncapsulation(new SecretKeySpec(secret, genSpec.getKeyAlgorithmName()), secEnc.getEncapsulation());
+            Arrays.clear(keyBytes);
 
             try
             {
@@ -88,14 +111,11 @@ public class NTRUKeyGeneratorSpi
             NTRUKEMExtractor kemExt = new NTRUKEMExtractor(privKey.getKeyParams());
 
             byte[] encapsulation = extSpec.getEncapsulation();
-            byte[] sharedSecret = kemExt.extractSecret(encapsulation);
-            byte[] secret = Arrays.copyOfRange(sharedSecret, 0, (extSpec.getKeySize() + 7) / 8);
+            byte[] keyBytes = KdfUtil.makeKeyBytes(extSpec, kemExt.extractSecret(encapsulation));
 
-            Arrays.clear(sharedSecret);
+            SecretKey rv = new SecretKeyWithEncapsulation(new SecretKeySpec(keyBytes, extSpec.getKeyAlgorithmName()), encapsulation);
 
-            SecretKey rv = new SecretKeyWithEncapsulation(new SecretKeySpec(secret, extSpec.getKeyAlgorithmName()), encapsulation);
-
-            Arrays.clear(secret);
+            Arrays.clear(keyBytes);
 
             return rv;
         }

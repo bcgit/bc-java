@@ -1,6 +1,7 @@
 package org.bouncycastle.pqc.jcajce.provider.ntruprime;
 
 import java.security.InvalidAlgorithmParameterException;
+import java.security.Key;
 import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 
@@ -11,10 +12,13 @@ import javax.security.auth.DestroyFailedException;
 
 import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.jcajce.SecretKeyWithEncapsulation;
+import org.bouncycastle.jcajce.provider.asymmetric.util.KdfUtil;
 import org.bouncycastle.jcajce.spec.KEMExtractSpec;
 import org.bouncycastle.jcajce.spec.KEMGenerateSpec;
+import org.bouncycastle.jcajce.spec.KEMKDFSpec;
 import org.bouncycastle.pqc.crypto.ntruprime.SNTRUPrimeKEMExtractor;
 import org.bouncycastle.pqc.crypto.ntruprime.SNTRUPrimeKEMGenerator;
+import org.bouncycastle.pqc.crypto.ntruprime.SNTRUPrimeParameters;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Exceptions;
 
@@ -36,12 +40,14 @@ public class SNTRUPrimeKeyGeneratorSpi
         this.random = secureRandom;
         if (algorithmParameterSpec instanceof KEMGenerateSpec)
         {
+            checkSpec((KEMGenerateSpec)algorithmParameterSpec, ((KEMGenerateSpec)algorithmParameterSpec).getPublicKey());
             this.genSpec = (KEMGenerateSpec)algorithmParameterSpec;
             this.extSpec = null;
         }
         else if (algorithmParameterSpec instanceof KEMExtractSpec)
         {
             this.genSpec = null;
+            checkSpec((KEMExtractSpec)algorithmParameterSpec, ((KEMExtractSpec)algorithmParameterSpec).getPrivateKey());
             this.extSpec = (KEMExtractSpec)algorithmParameterSpec;
         }
         else
@@ -55,6 +61,27 @@ public class SNTRUPrimeKeyGeneratorSpi
         throw new UnsupportedOperationException("Operation not supported");
     }
 
+    // the key's parameter set gives the size of the shared secret a spec with no KDF is limited to
+    private static void checkSpec(KEMKDFSpec spec, Key key)
+        throws InvalidAlgorithmParameterException
+    {
+        SNTRUPrimeParameters parameters;
+        if (key instanceof BCSNTRUPrimePublicKey)
+        {
+            parameters = ((BCSNTRUPrimePublicKey)key).getKeyParams().getParameters();
+        }
+        else if (key instanceof BCSNTRUPrimePrivateKey)
+        {
+            parameters = ((BCSNTRUPrimePrivateKey)key).getKeyParams().getParameters();
+        }
+        else
+        {
+            throw new InvalidAlgorithmParameterException("unsupported key: SNTRU Prime key required");
+        }
+
+        KdfUtil.checkKemKdfSpec(spec, parameters.getName(), parameters.getSessionKeySize());
+    }
+
     protected SecretKey engineGenerateKey()
     {
         if (genSpec != null)
@@ -64,7 +91,11 @@ public class SNTRUPrimeKeyGeneratorSpi
 
             SecretWithEncapsulation secEnc = kemGen.generateEncapsulated(pubKey.getKeyParams());
 
-            SecretKey rv = new SecretKeyWithEncapsulation(new SecretKeySpec(secEnc.getSecret(), genSpec.getKeyAlgorithmName()), secEnc.getEncapsulation());
+            byte[] keyBytes = KdfUtil.makeKeyBytes(genSpec, secEnc.getSecret());
+
+            SecretKey rv = new SecretKeyWithEncapsulation(new SecretKeySpec(keyBytes, genSpec.getKeyAlgorithmName()), secEnc.getEncapsulation());
+
+            Arrays.clear(keyBytes);
 
             try
             {
@@ -85,9 +116,11 @@ public class SNTRUPrimeKeyGeneratorSpi
             byte[] encapsulation = extSpec.getEncapsulation();
             byte[] secret = kemExt.extractSecret(encapsulation);
 
-            SecretKey rv = new SecretKeyWithEncapsulation(new SecretKeySpec(secret, extSpec.getKeyAlgorithmName()), encapsulation);
+            byte[] keyBytes = KdfUtil.makeKeyBytes(extSpec, secret);
 
-            Arrays.clear(secret);
+            SecretKey rv = new SecretKeyWithEncapsulation(new SecretKeySpec(keyBytes, extSpec.getKeyAlgorithmName()), encapsulation);
+
+            Arrays.clear(keyBytes);
 
             return rv;
         }

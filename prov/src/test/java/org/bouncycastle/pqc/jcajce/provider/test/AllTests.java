@@ -88,6 +88,7 @@ public class AllTests
         suite.addTestSuite(AIMerTest.class);
         suite.addTestSuite(ParameterSpecRoundTripTest.class);
         suite.addTestSuite(NTRUPlusTest.class);
+        suite.addTestSuite(KEMKdfTest.class);
         suite.addTestSuite(NTRUPlusKeyPairGeneratorTest.class);
         suite.addTestSuite(SmaugTTest.class);
         suite.addTestSuite(KeyStoreTest.class);

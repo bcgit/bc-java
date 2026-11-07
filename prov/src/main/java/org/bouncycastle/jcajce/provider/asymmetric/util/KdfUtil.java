@@ -121,6 +121,41 @@ public class KdfUtil
     }
 
     /**
+     * Check a KEMGenerateSpec or KEMExtractSpec before a KEM KeyGenerator uses it, on the same rules
+     * resolveKemSpec applies to a KTSParameterSpec: the key size must be a positive whole number of
+     * bytes, no larger than the shared secret when no KDF is given, and any KDF must be supported.
+     *
+     * @param spec             the spec passed to KeyGenerator.init().
+     * @param parameterSetName the KEM parameter set's name, for the exception message.
+     * @param sessionKeySize   the size of the KEM's shared secret in bits.
+     * @throws InvalidAlgorithmParameterException if the spec cannot be honoured.
+     */
+    public static void checkKemKdfSpec(KEMKDFSpec spec, String parameterSetName, int sessionKeySize)
+        throws InvalidAlgorithmParameterException
+    {
+        int keySize = spec.getKeySize();
+        if (keySize <= 0 || (keySize % 8) != 0)
+        {
+            throw new InvalidAlgorithmParameterException(
+                "key size must be a positive whole number of bytes: " + keySize);
+        }
+
+        if (spec.getKdfAlgorithm() == null)
+        {
+            if (keySize > sessionKeySize)
+            {
+                throw new InvalidAlgorithmParameterException("no KDF specified and " + parameterSetName
+                    + " produces a " + sessionKeySize + " bit secret, " + keySize + " requested");
+            }
+        }
+        else if (!isSupportedKdf(spec.getKdfAlgorithm()))
+        {
+            throw new InvalidAlgorithmParameterException("unsupported KDF: "
+                + spec.getKdfAlgorithm().getAlgorithm());
+        }
+    }
+
+    /**
      * Derive a secret key from a KEM's shared secret and return the requested slice of it.
      * <p>
      * <b>Note: the passed in secret will be erased</b>, as it is by

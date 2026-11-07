@@ -1,6 +1,7 @@
 package org.bouncycastle.pqc.jcajce.provider.ntruplus;
 
 import java.security.InvalidAlgorithmParameterException;
+import java.security.Key;
 import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 
@@ -11,8 +12,10 @@ import javax.security.auth.DestroyFailedException;
 
 import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.jcajce.SecretKeyWithEncapsulation;
+import org.bouncycastle.jcajce.provider.asymmetric.util.KdfUtil;
 import org.bouncycastle.jcajce.spec.KEMExtractSpec;
 import org.bouncycastle.jcajce.spec.KEMGenerateSpec;
+import org.bouncycastle.jcajce.spec.KEMKDFSpec;
 import org.bouncycastle.pqc.crypto.ntruplus.NTRUPlusKEMExtractor;
 import org.bouncycastle.pqc.crypto.ntruplus.NTRUPlusKEMGenerator;
 import org.bouncycastle.pqc.crypto.ntruplus.NTRUPlusParameters;
@@ -49,6 +52,7 @@ public class NTRUPlusKeyGeneratorSpi
         this.random = secureRandom;
         if (algorithmParameterSpec instanceof KEMGenerateSpec)
         {
+            checkSpec((KEMGenerateSpec)algorithmParameterSpec, ((KEMGenerateSpec)algorithmParameterSpec).getPublicKey());
             this.genSpec = (KEMGenerateSpec)algorithmParameterSpec;
             this.extSpec = null;
             if (ntruplusParameters != null)
@@ -63,6 +67,7 @@ public class NTRUPlusKeyGeneratorSpi
         else if (algorithmParameterSpec instanceof KEMExtractSpec)
         {
             this.genSpec = null;
+            checkSpec((KEMExtractSpec)algorithmParameterSpec, ((KEMExtractSpec)algorithmParameterSpec).getPrivateKey());
             this.extSpec = (KEMExtractSpec)algorithmParameterSpec;
             if (ntruplusParameters != null)
             {
@@ -84,6 +89,27 @@ public class NTRUPlusKeyGeneratorSpi
         throw new UnsupportedOperationException("Operation not supported");
     }
 
+    // the key's parameter set gives the size of the shared secret a spec with no KDF is limited to
+    private static void checkSpec(KEMKDFSpec spec, Key key)
+        throws InvalidAlgorithmParameterException
+    {
+        NTRUPlusParameters parameters;
+        if (key instanceof BCNTRUPlusPublicKey)
+        {
+            parameters = ((BCNTRUPlusPublicKey)key).getKeyParams().getParameters();
+        }
+        else if (key instanceof BCNTRUPlusPrivateKey)
+        {
+            parameters = ((BCNTRUPlusPrivateKey)key).getKeyParams().getParameters();
+        }
+        else
+        {
+            throw new InvalidAlgorithmParameterException("unsupported key: NTRU+ key required");
+        }
+
+        KdfUtil.checkKemKdfSpec(spec, parameters.getName(), parameters.getSsBytes() * 8);
+    }
+
     protected SecretKey engineGenerateKey()
     {
         if (genSpec != null)
@@ -93,7 +119,11 @@ public class NTRUPlusKeyGeneratorSpi
 
             SecretWithEncapsulation secEnc = kemGen.generateEncapsulated(pubKey.getKeyParams());
 
-            SecretKey rv = new SecretKeyWithEncapsulation(new SecretKeySpec(secEnc.getSecret(), genSpec.getKeyAlgorithmName()), secEnc.getEncapsulation());
+            byte[] keyBytes = KdfUtil.makeKeyBytes(genSpec, secEnc.getSecret());
+
+            SecretKey rv = new SecretKeyWithEncapsulation(new SecretKeySpec(keyBytes, genSpec.getKeyAlgorithmName()), secEnc.getEncapsulation());
+
+            Arrays.clear(keyBytes);
 
             try
             {
@@ -114,9 +144,11 @@ public class NTRUPlusKeyGeneratorSpi
             byte[] encapsulation = extSpec.getEncapsulation();
             byte[] secret = kemExt.extractSecret(encapsulation);
 
-            SecretKey rv = new SecretKeyWithEncapsulation(new SecretKeySpec(secret, extSpec.getKeyAlgorithmName()), encapsulation);
+            byte[] keyBytes = KdfUtil.makeKeyBytes(extSpec, secret);
 
-            Arrays.clear(secret);
+            SecretKey rv = new SecretKeyWithEncapsulation(new SecretKeySpec(keyBytes, extSpec.getKeyAlgorithmName()), encapsulation);
+
+            Arrays.clear(keyBytes);
 
             return rv;
         }

@@ -24,7 +24,8 @@ public class WrapUtil
         AlgorithmIdentifier kdfAlgorithm = ktsParameterSpec.getKdfAlgorithm();
         if (kdfAlgorithm == null)
         {
-            kWrap.init(true, new KeyParameter(Arrays.copyOfRange(secret, 0, kekLength(ktsParameterSpec, secret))));
+            byte[] kek = trimSecret(ktsParameterSpec.getKeyAlgorithmName(), secret);
+            kWrap.init(true, new KeyParameter(Arrays.copyOfRange(kek, 0, kekLength(ktsParameterSpec, kek))));
         }
         else
         {
@@ -42,7 +43,8 @@ public class WrapUtil
         AlgorithmIdentifier kdfAlgorithm = ktsParameterSpec.getKdfAlgorithm();
         if (kdfAlgorithm == null)
         {
-            kWrap.init(false, new KeyParameter(secret, 0, kekLength(ktsParameterSpec, secret)));
+            byte[] kek = trimSecret(ktsParameterSpec.getKeyAlgorithmName(), secret);
+            kWrap.init(false, new KeyParameter(kek, 0, kekLength(ktsParameterSpec, kek)));
         }
         else
         {

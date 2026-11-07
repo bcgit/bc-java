@@ -1,6 +1,7 @@
 package org.bouncycastle.pqc.jcajce.provider.hqc;
 
 import java.security.InvalidAlgorithmParameterException;
+import java.security.Key;
 import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
 
@@ -11,8 +12,10 @@ import javax.security.auth.DestroyFailedException;
 
 import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.jcajce.SecretKeyWithEncapsulation;
+import org.bouncycastle.jcajce.provider.asymmetric.util.KdfUtil;
 import org.bouncycastle.jcajce.spec.KEMExtractSpec;
 import org.bouncycastle.jcajce.spec.KEMGenerateSpec;
+import org.bouncycastle.jcajce.spec.KEMKDFSpec;
 import org.bouncycastle.pqc.crypto.hqc.HQCKEMExtractor;
 import org.bouncycastle.pqc.crypto.hqc.HQCKEMGenerator;
 import org.bouncycastle.pqc.crypto.hqc.HQCParameters;
@@ -49,6 +52,7 @@ public class HQCKeyGeneratorSpi
         this.random = secureRandom;
         if (algorithmParameterSpec instanceof KEMGenerateSpec)
         {
+            checkSpec((KEMGenerateSpec)algorithmParameterSpec, ((KEMGenerateSpec)algorithmParameterSpec).getPublicKey());
             this.genSpec = (KEMGenerateSpec)algorithmParameterSpec;
             this.extSpec = null;
             if (hqcParameters != null)
@@ -63,6 +67,7 @@ public class HQCKeyGeneratorSpi
         else if (algorithmParameterSpec instanceof KEMExtractSpec)
         {
             this.genSpec = null;
+            checkSpec((KEMExtractSpec)algorithmParameterSpec, ((KEMExtractSpec)algorithmParameterSpec).getPrivateKey());
             this.extSpec = (KEMExtractSpec)algorithmParameterSpec;
             if (hqcParameters != null)
             {
@@ -84,6 +89,27 @@ public class HQCKeyGeneratorSpi
         throw new UnsupportedOperationException("Operation not supported");
     }
 
+    // the key's parameter set gives the size of the shared secret a spec with no KDF is limited to
+    private static void checkSpec(KEMKDFSpec spec, Key key)
+        throws InvalidAlgorithmParameterException
+    {
+        HQCParameters parameters;
+        if (key instanceof BCHQCPublicKey)
+        {
+            parameters = ((BCHQCPublicKey)key).getKeyParams().getParameters();
+        }
+        else if (key instanceof BCHQCPrivateKey)
+        {
+            parameters = ((BCHQCPrivateKey)key).getKeyParams().getParameters();
+        }
+        else
+        {
+            throw new InvalidAlgorithmParameterException("unsupported key: HQC key required");
+        }
+
+        KdfUtil.checkKemKdfSpec(spec, parameters.getName(), parameters.getSessionKeySize());
+    }
+
     protected SecretKey engineGenerateKey()
     {
         if (genSpec != null)
@@ -93,7 +119,11 @@ public class HQCKeyGeneratorSpi
 
             SecretWithEncapsulation secEnc = kemGen.generateEncapsulated(pubKey.getKeyParams());
 
-            SecretKey rv = new SecretKeyWithEncapsulation(new SecretKeySpec(secEnc.getSecret(), genSpec.getKeyAlgorithmName()), secEnc.getEncapsulation());
+            byte[] keyBytes = KdfUtil.makeKeyBytes(genSpec, secEnc.getSecret());
+
+            SecretKey rv = new SecretKeyWithEncapsulation(new SecretKeySpec(keyBytes, genSpec.getKeyAlgorithmName()), secEnc.getEncapsulation());
+
+            Arrays.clear(keyBytes);
 
             try
             {
@@ -114,9 +144,11 @@ public class HQCKeyGeneratorSpi
             byte[] encapsulation = extSpec.getEncapsulation();
             byte[] secret = kemExt.extractSecret(encapsulation);
 
-            SecretKey rv = new SecretKeyWithEncapsulation(new SecretKeySpec(secret, extSpec.getKeyAlgorithmName()), encapsulation);
+            byte[] keyBytes = KdfUtil.makeKeyBytes(extSpec, secret);
 
-            Arrays.clear(secret);
+            SecretKey rv = new SecretKeyWithEncapsulation(new SecretKeySpec(keyBytes, extSpec.getKeyAlgorithmName()), encapsulation);
+
+            Arrays.clear(keyBytes);
 
             return rv;
         }

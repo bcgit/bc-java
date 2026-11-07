@@ -1,5 +1,6 @@
 package org.bouncycastle.pqc.jcajce.provider.test;
 
+import java.security.InvalidAlgorithmParameterException;
 import java.security.Key;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -161,5 +162,59 @@ public class NTRUTest
         assertEquals("AES", secEnc2.getAlgorithm());
 
         assertTrue(Arrays.areEqual(secEnc1.getEncoded(), secEnc2.getEncoded()));
+    }
+
+    /*
+     * With no KDF the key is taken from the front of the 256-bit shared secret, so a larger key size used to be padded
+     * with zero bytes; it is now refused, as is a key of the wrong type. KEMKdfTest covers the KDF path.
+     */
+    public void testGenerateKeySizeBound()
+        throws Exception
+    {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("NTRU", NTRU_PROV_NAME);
+        kpg.initialize(NTRUParameterSpec.ntruhps2048509, new SecureRandom());
+        KeyPair kp = kpg.generateKeyPair();
+
+        KeyGenerator keyGen = KeyGenerator.getInstance("NTRU", NTRU_PROV_NAME);
+
+        try
+        {
+            keyGen.init(new KEMGenerateSpec.Builder(kp.getPublic(), "AES", 384).withNoKdf().build(), new SecureRandom());
+            fail("oversize key accepted for generation");
+        }
+        catch (InvalidAlgorithmParameterException e)
+        {
+            assertEquals("no KDF specified and ntruhps2048509 produces a 256 bit secret, 384 requested", e.getMessage());
+        }
+
+        try
+        {
+            keyGen.init(new KEMExtractSpec.Builder(kp.getPrivate(), new byte[699], "AES", 512).withNoKdf().build(), new SecureRandom());
+            fail("oversize key accepted for extraction");
+        }
+        catch (InvalidAlgorithmParameterException e)
+        {
+            assertEquals("no KDF specified and ntruhps2048509 produces a 256 bit secret, 512 requested", e.getMessage());
+        }
+
+        KeyPairGenerator mlkemKpg = KeyPairGenerator.getInstance("ML-KEM", "BC");
+        KeyPair mlkemKp = mlkemKpg.generateKeyPair();
+        try
+        {
+            keyGen.init(new KEMGenerateSpec(mlkemKp.getPublic(), "AES", 256), new SecureRandom());
+            fail("non-NTRU key accepted");
+        }
+        catch (InvalidAlgorithmParameterException e)
+        {
+            assertEquals("unsupported public key: NTRU public key required", e.getMessage());
+        }
+
+        // the full 256 bits are still available
+        keyGen.init(new KEMGenerateSpec(kp.getPublic(), "AES", 256), new SecureRandom());
+        SecretKeyWithEncapsulation secEnc1 = (SecretKeyWithEncapsulation)keyGen.generateKey();
+        assertEquals(32, secEnc1.getEncoded().length);
+
+        keyGen.init(new KEMExtractSpec(kp.getPrivate(), secEnc1.getEncapsulation(), "AES", 256), new SecureRandom());
+        assertTrue(Arrays.areEqual(secEnc1.getEncoded(), keyGen.generateKey().getEncoded()));
     }
 }

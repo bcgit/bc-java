@@ -23,7 +23,6 @@ import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.crypto.Wrapper;
-import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.jcajce.provider.asymmetric.util.WrapUtil;
 import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 import org.bouncycastle.jcajce.spec.KEMParameterSpec;
@@ -232,11 +231,7 @@ class NTRULPRimeCipherSpi
         {
             SecretWithEncapsulation secEnc = kemGen.generateEncapsulated(wrapKey.getKeyParams());
 
-            Wrapper kWrap = WrapUtil.getWrapper(kemParameterSpec.getKeyAlgorithmName());
-
-            KeyParameter keyParameter = new KeyParameter(secEnc.getSecret(), 0, (kemParameterSpec.getKeySize() + 7) / 8);
-
-            kWrap.init(true, keyParameter);
+            Wrapper kWrap = WrapUtil.getKeyWrapper(kemParameterSpec, secEnc.getSecret());
 
             byte[] encapsulation = secEnc.getEncapsulation();
 
@@ -277,19 +272,14 @@ class NTRULPRimeCipherSpi
 
             byte[] secret = kemExt.extractSecret(Arrays.copyOfRange(wrappedKey, 0, kemExt.getEncapsulationLength()));
 
-            Wrapper kWrap = WrapUtil.getWrapper(kemParameterSpec.getKeyAlgorithmName());
-
-            KeyParameter keyParameter = new KeyParameter(secret, 0, (kemParameterSpec.getKeySize() + 7) / 8);
+            Wrapper kWrap = WrapUtil.getKeyUnwrapper(kemParameterSpec, secret);
 
             Arrays.clear(secret);
-
-            kWrap.init(false, keyParameter);
 
             byte[] keyEncBytes = Arrays.copyOfRange(wrappedKey, kemExt.getEncapsulationLength(), wrappedKey.length);
 
             SecretKey rv = new SecretKeySpec(kWrap.unwrap(keyEncBytes, 0, keyEncBytes.length), wrappedKeyAlgorithm);
 
-            Arrays.clear(keyParameter.getKey());
 
             return rv;
         }
