@@ -67,9 +67,22 @@ public final class X448PrivateKeyParameters
     {
         byte[] encoded = new byte[X448.POINT_SIZE];
         publicKey.encode(encoded, 0);
-        if (!X448.calculateAgreement(data, 0, encoded, 0, buf, off))
+
+        // computed aside and copied out only once checked, so a failed agreement leaves buf as it was rather than
+        // holding the all-zero result
+        byte[] secret = new byte[X448.POINT_SIZE];
+        try
         {
-            throw new IllegalStateException("X448 agreement failed");
+            if (!X448.calculateAgreement(data, 0, encoded, 0, secret, 0))
+            {
+                throw new IllegalStateException("X448 agreement failed");
+            }
+
+            System.arraycopy(secret, 0, buf, off, X448.POINT_SIZE);
+        }
+        finally
+        {
+            Arrays.clear(secret);
         }
     }
 

@@ -214,6 +214,7 @@ public class RegressionTest
             new OneStepKDFTest(),
             new GiftCofbTest(),
             new RomulusTest(),
+            new XDHAgreementFailureTest(),
             new SAKKEKEMSTest(),
             new LEATest(),
             new SHA3HMacTest()
