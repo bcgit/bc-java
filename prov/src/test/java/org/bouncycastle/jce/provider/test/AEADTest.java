@@ -214,12 +214,15 @@ public class AEADTest extends SimpleTest
             TestCase.fail("JCE encrypt with additional data and AEADParameterSpec failed.");
         }
 
-        // doFinal test
-        c = eax.doFinal(P);
-
-        if (!Arrays.areEqual(C, c))
+        // a second encryption under the same key and nonce is refused until a new init
+        try
         {
-            TestCase.fail("JCE encrypt with additional data and AEADParameterSpec failed after do final");
+            eax.doFinal(P);
+            TestCase.fail("JCE encrypt reuse after doFinal not refused");
+        }
+        catch (IllegalStateException e)
+        {
+            // expected
         }
 
         eax.init(Cipher.DECRYPT_MODE, key, spec);

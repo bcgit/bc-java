@@ -78,6 +78,10 @@ public class OCBBlockCipher
 
     // NOTE: The MAC value is preserved after doFinal
     private byte[] macBlock;
+    // Set once an encryption has used the current key and nonce - a doFinal, or a reset() after message data -
+    // and cleared only by init: a second message under them would reuse the nonce, so it is refused, as
+    // GCMBlockCipher and ChaCha20Poly1305 do.
+    private boolean nonceUsed;
 
     public OCBBlockCipher(BlockCipher hashCipher, BlockCipher mainCipher)
     {
@@ -254,6 +258,8 @@ public class OCBBlockCipher
         System.arraycopy(this.OffsetMAIN_0, 0, this.OffsetMAIN, 0, 16);
         this.Checksum = new byte[16];
 
+        this.nonceUsed = false;
+
         if (initialAssociatedText != null)
         {
             processAADBytes(initialAssociatedText, 0, initialAssociatedText.length);
@@ -345,6 +351,8 @@ public class OCBBlockCipher
     public int processByte(byte input, byte[] output, int outOff)
         throws DataLengthException
     {
+        checkNonceUnused();
+
         mainBlock[mainBlockPos] = input;
         if (++mainBlockPos == mainBlock.length)
         {
@@ -357,6 +365,8 @@ public class OCBBlockCipher
     public int processBytes(byte[] input, int inOff, int len, byte[] output, int outOff)
         throws DataLengthException
     {
+        checkNonceUnused();
+
         if (input.length < (inOff + len))
         {
             throw new DataLengthException("Input buffer too short");
@@ -385,6 +395,14 @@ public class OCBBlockCipher
         throws IllegalStateException,
         InvalidCipherTextException
     {
+        checkNonceUnused();
+
+        // the final block may be written out before the tag, so the nonce counts as used from here
+        if (forEncryption)
+        {
+            nonceUsed = true;
+        }
+
         /*
          * For decryption, get the tag from the end of the message
          */
@@ -482,7 +500,20 @@ public class OCBBlockCipher
 
     public void reset()
     {
+        if (forEncryption && (mainBlockCount > 0 || mainBlockPos > 0))
+        {
+            nonceUsed = true;
+        }
+
         reset(true);
+    }
+
+    private void checkNonceUnused()
+    {
+        if (nonceUsed)
+        {
+            throw new IllegalStateException("OCB cipher cannot be reused for encryption");
+        }
     }
 
     protected void clear(byte[] bs)

@@ -46,6 +46,9 @@ public class KCCMBlockCipher
     private byte[] nonce;
     // Previous key seen on init(true, ...) - used with nonce only to reject nonce reuse for encryption.
     private byte[] lastKey;
+    // Set once an encryption has used the current key and nonce, and cleared only by init: a second message
+    // under them would reuse the keystream, so it is refused, as GCMBlockCipher and ChaCha20Poly1305 do.
+    private boolean nonceUsed;
 
     private byte[] G1;
     private byte[] buffer;
@@ -200,6 +203,8 @@ public class KCCMBlockCipher
             engine.init(true, keyParameter);
         }
 
+        nonceUsed = false;
+
         reset();
     }
 
@@ -337,9 +342,19 @@ public class KCCMBlockCipher
         return 0;
     }
 
+    private void checkNonceUnused()
+    {
+        if (forEncryption && nonceUsed)
+        {
+            throw new IllegalStateException("KCCM cipher cannot be reused for encryption");
+        }
+    }
+
     public int processPacket(byte[] in, int inOff, int len, byte[] out, int outOff)
         throws IllegalStateException, InvalidCipherTextException
     {
+        checkNonceUnused();
+
         if (in.length - inOff < len)
         {
             throw new DataLengthException("input buffer too short");
@@ -360,6 +375,8 @@ public class KCCMBlockCipher
             {
                 throw new OutputLengthException("output buffer too short");
             }
+
+            nonceUsed = true;
 
             // Partial trailing block permitted: CalculateMac zero-pads it and the gamma
             // keystream is truncated below. See the interop caveat in the class javadoc (github #287).

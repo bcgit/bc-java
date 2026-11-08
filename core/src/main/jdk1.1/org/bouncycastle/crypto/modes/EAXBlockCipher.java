@@ -50,6 +50,9 @@ public class EAXBlockCipher
     private int bufOff;
 
     private boolean cipherInitialized;
+    // Set once an encryption has used the current key and nonce - a completed doFinal, or a reset() after message
+    // data - and cleared only by init: a second message under them would reuse the keystream, so it is refused.
+    private boolean nonceUsed;
     private byte[] initialAssociatedText;
 
     /**
@@ -129,6 +132,8 @@ public class EAXBlockCipher
         ((BlockCipher)cipher).init(true, new ParametersWithIV(keyParam, nonceMac));
 
         reset();
+
+        nonceUsed = false;
     }
 
     private void initCipher()
@@ -147,6 +152,14 @@ public class EAXBlockCipher
         mac.update(tag, 0, blockSize);
     }
 
+    private void checkNonceUnused()
+    {
+        if (nonceUsed)
+        {
+            throw new IllegalStateException("EAX cipher cannot be reused for encryption");
+        }
+    }
+
     private void calculateMac()
     {
         byte[] outC = new byte[blockSize];
@@ -160,6 +173,11 @@ public class EAXBlockCipher
 
     public void reset()
     {
+        if (forEncryption && cipherInitialized)
+        {
+            nonceUsed = true;
+        }
+
         reset(true);
     }
 
@@ -210,6 +228,7 @@ public class EAXBlockCipher
     public int processByte(byte in, byte[] out, int outOff)
         throws DataLengthException
     {
+        checkNonceUnused();
         initCipher();
 
         return process(in, out, outOff);
@@ -218,6 +237,7 @@ public class EAXBlockCipher
     public int processBytes(byte[] in, int inOff, int len, byte[] out, int outOff)
         throws DataLengthException
     {
+        checkNonceUnused();
         initCipher();
 
         if (in.length < (inOff + len))
@@ -238,6 +258,7 @@ public class EAXBlockCipher
     public int doFinal(byte[] out, int outOff)
         throws IllegalStateException, InvalidCipherTextException
     {
+        checkNonceUnused();
         initCipher();
 
         int extra = bufOff;
@@ -251,6 +272,8 @@ public class EAXBlockCipher
             {
                 throw new OutputLengthException("Output buffer too short");
             }
+
+            nonceUsed = true;
             cipher.processBlock(bufBlock, 0, tmp, 0);
 
             System.arraycopy(tmp, 0, out, outOff, extra);

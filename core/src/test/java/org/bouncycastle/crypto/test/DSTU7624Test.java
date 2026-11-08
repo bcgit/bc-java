@@ -2309,6 +2309,7 @@ public class DSTU7624Test
     {
         byte[] key = Hex.decode("000102030405060708090A0B0C0D0E0F");
         byte[] iv = Hex.decode("101112131415161718191A1B1C1D1E1F");
+        byte[] iv2 = Hex.decode("202122232425262728292A2B2C2D2E2F");
         ParametersWithIV param = new ParametersWithIV(new KeyParameter(key), iv);
 
         // 20 bytes against a 16-byte block: one full block plus a 4-byte partial block
@@ -2321,15 +2322,17 @@ public class DSTU7624Test
         byte[] freshMac = new byte[fresh.getMacSize()];
         fresh.doFinal(freshMac, 0);
 
-        // a reused instance: process a longer message, reset, then the same partial message
+        // a reused instance: process a longer message, then the same partial message. A second message under the
+        // same key and IV is refused, so the instance is re-initialised - with the fresh instance's IV, after a
+        // first message under another one - which keeps the backing buffer and its history.
         KGMac reused = new KGMac(new KGCMBlockCipher(new DSTU7624Engine(128)));
-        reused.init(param);
+        reused.init(new ParametersWithIV(new KeyParameter(key), iv2));
         byte[] filler = new byte[48];
         Arrays.fill(filler, (byte)0xFF);
         reused.update(filler, 0, filler.length);
         byte[] discard = new byte[reused.getMacSize()];
         reused.doFinal(discard, 0);
-        reused.reset();
+        reused.init(param);
         reused.update(message, 0, message.length);
         byte[] reusedMac = new byte[reused.getMacSize()];
         reused.doFinal(reusedMac, 0);
@@ -2344,8 +2347,9 @@ public class DSTU7624Test
 
     /*
      * Re-initialising for encryption with the same key and nonce is rejected (a repeated key+nonce
-     * is catastrophic for any GCM-family mode), matching GCMBlockCipher. reset()-based reuse,
-     * a fresh nonce, and re-init for decryption are all still allowed.
+     * is catastrophic for any GCM-family mode), matching GCMBlockCipher, and so is a second
+     * encryption on the same instance, with or without reset(). A fresh nonce and re-init for
+     * decryption are still allowed.
      */
     private void KGCMNonceReuseTests()
         throws Exception
@@ -2358,9 +2362,18 @@ public class DSTU7624Test
         c.init(true, new AEADParameters(new KeyParameter(key), 128, nonce));
         kgcmEncryptBlock(c);
 
-        // reset()-based reuse must still work (it does not re-init)
+        // a second encryption under the same key and nonce is refused, reset() or not
         c.reset();
-        kgcmEncryptBlock(c);
+        try
+        {
+            kgcmEncryptBlock(c);
+            fail("KGCM encryption reuse not detected after reset()");
+        }
+        catch (IllegalStateException e)
+        {
+            isTrue("wrong KGCM reuse message: " + e.getMessage(),
+                "KGCM cipher cannot be reused for encryption".equals(e.getMessage()));
+        }
 
         // re-init for encryption with the same key+nonce must be rejected
         try
@@ -2394,8 +2407,9 @@ public class DSTU7624Test
 
     /*
      * Re-initialising for encryption with the same key and nonce is rejected (a repeated key+nonce
-     * is catastrophic for the CCM construction), matching GCMBlockCipher / KGCMBlockCipher.
-     * reset()-based reuse, a fresh nonce, and re-init for decryption are all still allowed.
+     * is catastrophic for the CCM construction), matching GCMBlockCipher / KGCMBlockCipher, and so
+     * is a second encryption on the same instance, with or without reset(). A fresh nonce and
+     * re-init for decryption are still allowed.
      */
     private void KCCMNonceReuseTests()
         throws Exception
@@ -2408,9 +2422,18 @@ public class DSTU7624Test
         c.init(true, new AEADParameters(new KeyParameter(key), 128, nonce));
         kccmEncryptBlock(c);
 
-        // reset()-based reuse must still work (it does not re-init)
+        // a second encryption under the same key and nonce is refused, reset() or not
         c.reset();
-        kccmEncryptBlock(c);
+        try
+        {
+            kccmEncryptBlock(c);
+            fail("KCCM encryption reuse not detected after reset()");
+        }
+        catch (IllegalStateException e)
+        {
+            isTrue("wrong KCCM reuse message: " + e.getMessage(),
+                "KCCM cipher cannot be reused for encryption".equals(e.getMessage()));
+        }
 
         // re-init for encryption with the same key+nonce must be rejected
         try
@@ -2467,6 +2490,7 @@ public class DSTU7624Test
             fail("Failed doFinal test - init: " + cipher.getAlgorithmName());
         }
 
+        // a second message under the same key and nonce is refused
         cipher.processAADBytes(authText, 0, authText.length);
 
         off = 0;
@@ -2475,11 +2499,14 @@ public class DSTU7624Test
             off = cipher.processBytes(input, 0, input.length, output, 0);
         }
 
-        cipher.doFinal(output, off);
-
-        if (!Arrays.areEqual(output, expected))
+        try
         {
-            fail("Failed doFinal test - after: " + cipher.getAlgorithmName());
+            cipher.doFinal(output, off);
+            fail("Failed doFinal test - encryption reuse not detected: " + cipher.getAlgorithmName());
+        }
+        catch (IllegalStateException e)
+        {
+            // expected
         }
     }
 

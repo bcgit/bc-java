@@ -31,6 +31,9 @@ public class CCMBlockCipher
     private int                   macSize;
     private CipherParameters      keyParam;
     private byte[]                lastKey;
+    // Set once an encryption has used the current key and nonce, and cleared only by init: a second message
+    // under them would reuse the keystream, so it is refused, as GCMBlockCipher and ChaCha20Poly1305 do.
+    private boolean nonceUsed;
     private byte[]                macBlock;
     private ExposedByteArrayOutputStream associatedText = new ExposedByteArrayOutputStream();
     private ExposedByteArrayOutputStream data = new ExposedByteArrayOutputStream();
@@ -141,6 +144,8 @@ public class CCMBlockCipher
             throw new IllegalArgumentException("nonce must have length from 7 to 13 octets");
         }
 
+        nonceUsed = false;
+
         reset();
     }
 
@@ -242,6 +247,14 @@ public class CCMBlockCipher
      * @throws IllegalStateException if the cipher is not appropriately set up.
      * @throws InvalidCipherTextException if the input data is truncated or the mac check fails.
      */
+    private void checkNonceUnused()
+    {
+        if (forEncryption && nonceUsed)
+        {
+            throw new IllegalStateException("CCM cipher cannot be reused for encryption");
+        }
+    }
+
     public byte[] processPacket(byte[] in, int inOff, int inLen)
         throws IllegalStateException, InvalidCipherTextException
     {
@@ -287,6 +300,7 @@ public class CCMBlockCipher
         {
             throw new IllegalStateException("CCM cipher unitialized.");
         }
+        checkNonceUnused();
 
         int n = nonce.length;
         int q = 15 - n;
@@ -327,6 +341,8 @@ public class CCMBlockCipher
             {
                 throw new OutputLengthException("Output buffer too short.");
             }
+
+            nonceUsed = true;
 
             calculateMac(in, inOff, inLen, macBlock);
 

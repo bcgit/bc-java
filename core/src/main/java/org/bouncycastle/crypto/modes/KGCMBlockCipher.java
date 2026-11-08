@@ -62,6 +62,9 @@ public class KGCMBlockCipher
     private byte[] macBlock;
     private byte[] nonce;
     private byte[] lastKey;
+    // Set once an encryption has used the current key and nonce, and cleared only by init: a second message
+    // under them would reuse the keystream, so it is refused, as GCMBlockCipher and ChaCha20Poly1305 do.
+    private boolean nonceUsed;
 
     private KGCMMultiplier multiplier;
     private long[] b;
@@ -188,6 +191,8 @@ public class KGCMBlockCipher
         {
             engine.init(true, keyParameter);
         }
+
+        nonceUsed = false;
     }
 
     public String getAlgorithmName()
@@ -250,9 +255,19 @@ public class KGCMBlockCipher
         return 0;
     }
 
+    private void checkNonceUnused()
+    {
+        if (forEncryption && nonceUsed)
+        {
+            throw new IllegalStateException("KGCM cipher cannot be reused for encryption");
+        }
+    }
+
     public int doFinal(byte[] out, int outOff)
         throws IllegalStateException, InvalidCipherTextException
     {
+        checkNonceUnused();
+
         int len = data.size();
         if (!forEncryption && len < macSize)
         {
@@ -277,6 +292,11 @@ public class KGCMBlockCipher
         if (out.length - outOff < ctLen + (forEncryption ? macSize : 0))
         {
             throw new OutputLengthException("Output buffer too short");
+        }
+
+        if (forEncryption)
+        {
+            nonceUsed = true;
         }
 
         // TODO Total blocks restriction in GCM mode (extend limit naturally for larger block sizes?)
