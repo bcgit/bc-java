@@ -4,6 +4,7 @@ import junit.extensions.TestSetup;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import org.bouncycastle.crypto.threshold.ShamirSplitSecretTest;
 import org.bouncycastle.test.PrintTestResult;
 
 public class AllTests
@@ -18,6 +19,7 @@ public class AllTests
     {
         TestSuite suite = new TestSuite("Secret Sharing Tests");
         suite.addTestSuite(ShamirSecretSplitterTest.class);
+        suite.addTestSuite(ShamirSplitSecretTest.class);
         return new AllTests.BCTestSetup(suite);
     }
 

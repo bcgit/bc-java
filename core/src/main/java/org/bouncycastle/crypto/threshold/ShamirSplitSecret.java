@@ -82,9 +82,20 @@ public class ShamirSplitSecret
         for (int i = 0; i < secretShares.length; ++i)
         {
             ss = secretShares[i].getEncoded();
-            for (int j = 0; j < ss.length; ++j)
+            if (ss != null && ss.length >= 2 && poly != null && poly.getClass() == Polynomial.class)
             {
-                ss[j] = poly.gfDiv(ss[j] & 0xFF, div);
+                int inverse = poly.gfPow(div, (byte)254) & 0xff;
+                for (int j = 0; j < ss.length; ++j)
+                {
+                    ss[j] = poly.gfMul(ss[j] & 0xFF, inverse);
+                }
+            }
+            else
+            {
+                for (int j = 0; j < ss.length; ++j)
+                {
+                    ss[j] = poly.gfDiv(ss[j] & 0xFF, div);
+                }
             }
             secretShares[i] = new ShamirSplitSecretShare(ss, i + 1);
         }
@@ -108,18 +119,39 @@ public class ShamirSplitSecret
         {
             splits[i] = secretShares[i].getEncoded();
             int prdCount = 0;
-            for (int j = 0; j < n; j++)
+            if (products.length >= 2 && poly != null && poly.getClass() == Polynomial.class)
             {
-                if (j != i)
+                int numerator = 1;
+                int denominator = 1;
+                for (int j = 0; j < n; j++)
                 {
-                    products[prdCount++] = poly.gfDiv(secretShares[j].r, secretShares[i].r ^ secretShares[j].r);
+                    if (j != i)
+                    {
+                        int x = secretShares[j].r;
+                        int difference = secretShares[i].r ^ secretShares[j].r;
+                        numerator = poly.gfMul(numerator, x & 0xff) & 0xff;
+                        denominator = poly.gfMul(denominator, difference & 0xff) & 0xff;
+                    }
                 }
-            }
 
-            tmp = 1;
-            for (int prdI = 0; prdI != products.length; prdI++)
+                // Exponentiation by 254 distributes over products, including zero factors.
+                tmp = poly.gfMul(numerator, poly.gfPow(denominator, (byte)254) & 0xff);
+            }
+            else
             {
-                tmp = poly.gfMul(tmp & 0xff, products[prdI] & 0xff);
+                for (int j = 0; j < n; j++)
+                {
+                    if (j != i)
+                    {
+                        products[prdCount++] = poly.gfDiv(secretShares[j].r, secretShares[i].r ^ secretShares[j].r);
+                    }
+                }
+
+                tmp = 1;
+                for (int prdI = 0; prdI != products.length; prdI++)
+                {
+                    tmp = poly.gfMul(tmp & 0xff, products[prdI] & 0xff);
+                }
             }
             r[i] = tmp;
         }
