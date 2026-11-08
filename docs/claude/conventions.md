@@ -244,7 +244,11 @@ records at every step:
 - XMSS^MT needed one allowance: when a layer's expected leaf index is 0 its state legitimately
   still holds the previous subtree's final index (`2^h - 1`), because `updateState` skips the
   advance on a subtree's last leaf and the signer rebuilds the state when it next signs there.
-  Absent layers are skipped - they are built lazily.
+  Absent layers are skipped - they are built lazily. An allowance is itself a hole unless it is
+  tied to the one case it exists for: "on a last leaf" also matched the last leaf of the
+  *expected* subtree, so a key saved there and moved back to that subtree's first leaf passed and
+  reused its first one-time key. The carried-over state must be shown to be the *previous*
+  subtree's (the leaf before its last, recomputed from the seeds, is its first auth path node).
 
 So **every such test needs a compatibility half, and it matters more than the rejection half**:
 walk every index a key can reach, encode/decode at each, and assert the decoded key still signs

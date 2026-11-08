@@ -772,6 +772,58 @@ public final class BDS
         return authenticationPath.isEmpty();
     }
 
+    /**
+     * Whether this state, standing on the last leaf of a tree, belongs to the tree at
+     * {@code treeAddress} of layer {@code layerAddress} of the key whose seeds are given.
+     * <p>
+     * The last leaf of a tree is a right node, so the first node of its authentication path is
+     * the leaf before it. That leaf is recomputed from the seeds at the address of the tree asked
+     * about and compared with the one the state carries: a state from any other tree, or from any
+     * other key, holds a different node there. One WOTS+ public key and one L-tree, the cost of a
+     * single leaf.
+     * </p>
+     *
+     * @param publicSeed    the public seed of the key holding this state.
+     * @param secretKeySeed the secret key seed of the key holding this state.
+     * @param layerAddress  the layer of the tree, zero for the bottom layer.
+     * @param treeAddress   the tree of that layer; a negative one names no tree.
+     * @return true if this state is on the last leaf of that tree, false otherwise.
+     */
+    boolean isLastLeafOfTree(byte[] publicSeed, byte[] secretKeySeed, int layerAddress, long treeAddress)
+    {
+        int lastLeaf = (1 << treeHeight) - 1;
+        if (treeAddress < 0 || index != lastLeaf || wotsPlus == null || authenticationPath.isEmpty())
+        {
+            return false;
+        }
+
+        // a WOTS+ instance of its own: importKeys() writes into the instance, and this state's
+        // is the one its next signature uses
+        WOTSPlus checker = new WOTSPlus(wotsPlus.getParams());
+        try
+        {
+            int leaf = lastLeaf - 1;
+            byte[] otsAddress = XMSSAddress.otsHashAddress(layerAddress, treeAddress, leaf);
+            byte[] lTreeAddress = XMSSAddress.subtreeAddressOf(otsAddress, XMSSAddress.LTREE_TYPE);
+            Pack.intToBigEndian(leaf, lTreeAddress, XMSSAddress.LTREE_ADDRESS_OFFSET);
+
+            byte[] wotsPlusSecretKey = checker.getWOTSPlusSecretKey(secretKeySeed, otsAddress);
+            checker.importKeys(wotsPlusSecretKey, publicSeed);
+            Arrays.clear(wotsPlusSecretKey);
+            WOTSPlusPublicKeyParameters wotsPlusPublicKey = checker.getPublicKey(otsAddress);
+
+            int n = checker.getParams().getTreeDigestSize();
+            XMSSNode node = XMSSNodeUtil.lTree(checker, wotsPlusPublicKey, lTreeAddress, new byte[n],
+                new byte[2 * n]);
+
+            return Arrays.constantTimeAreEqual(node.getValue(), authenticationPath.get(0).getValue());
+        }
+        finally
+        {
+            checker.clearSecretKeySeed();
+        }
+    }
+
     public int getIndex()
     {
         return index;

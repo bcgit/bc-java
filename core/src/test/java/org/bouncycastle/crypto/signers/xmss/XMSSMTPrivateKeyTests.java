@@ -5,7 +5,9 @@ import java.security.SecureRandom;
 
 import junit.framework.TestCase;
 import org.bouncycastle.crypto.digests.SHA256Digest;
+import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.crypto.util.PrivateKeyFactory;
+import org.bouncycastle.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.crypto.signers.xmss.XMSSHarnessTests.XMSS;
 import org.bouncycastle.crypto.signers.xmss.XMSSHarnessTests.XMSSMT;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
@@ -85,6 +87,95 @@ public class XMSSMTPrivateKeyTests
         XMSSMTSigner v = new XMSSMTSigner();
         v.init(false, kp.getPublic());
         assertTrue(XMSSHarnessTests.verify(v, Strings.toByteArray("message"), sig));
+    }
+
+    /**
+     * The rollback testIndexRollbackRejected covers, at the one position the index check makes an
+     * allowance for. A layer whose expected leaf is 0 may still hold the previous subtree's state on
+     * its last leaf, so a key saved on the last leaf of a subtree and then moved back to the first
+     * leaf of that same subtree used to pass: the check asked only that the state be on a last
+     * leaf, not on the previous subtree's. That key signed again under the first one-time key of
+     * the subtree, and both signatures verified. It is refused at decode, through the raw encoding
+     * and through PKCS#8, and the key saved there is unaffected.
+     */
+    public void testIndexRollbackToStartOfSubtreeRejected()
+        throws Exception
+    {
+        // each layer of h=4/d=2 is a tree of height 2, so 3 and 7 end the first two subtrees
+        int height = 4, layers = 2;
+        XMSSMTParameters params = new XMSSMTParameters(height, layers, new SHA256Digest());
+        XMSSMTKeyPairGenerator kpg = new XMSSMTKeyPairGenerator();
+        kpg.init(new XMSSMTKeyGenerationParameters(params, new SecureRandom()));
+        AsymmetricCipherKeyPair kp = kpg.generateKeyPair();
+
+        XMSSMTSigner signer = new XMSSMTSigner();
+        signer.init(true, kp.getPrivate());
+
+        long[][] savedAndRolled = { { 3, 0 }, { 7, 4 } };
+        long signed = 0;
+        for (int c = 0; c != savedAndRolled.length; c++)
+        {
+            long saved = savedAndRolled[c][0], rolled = savedAndRolled[c][1];
+            for (; signed != saved; signed++)
+            {
+                XMSSHarnessTests.sign(signer, Strings.toByteArray("message " + signed));
+            }
+            XMSSMTPrivateKeyParameters key = (XMSSMTPrivateKeyParameters)signer.getUpdatedPrivateKey();
+            assertEquals(saved, key.getIndex());
+
+            // raw encoding: the index opens it, in ceil(totalHeight / 8) octets - one here
+            byte[] enc = key.getEncoded();
+            assertEquals(saved, enc[0]);
+            enc[0] = (byte)rolled;
+            try
+            {
+                new XMSSMTPrivateKeyParameters.Builder(params).withPrivateKey(enc).build();
+                fail("no exception on index " + saved + " moved back to " + rolled);
+            }
+            catch (IllegalArgumentException e)
+            {
+                assertTrue(e.getMessage(), e.getMessage().startsWith("BDS state has wrong index for layer 0"));
+            }
+
+            // PKCS#8: h=4/d=2 has no parameter set OID, so this is the legacy form
+            PrivateKeyInfo info = PrivateKeyInfoFactory.createPrivateKeyInfo(key);
+            org.bouncycastle.pqc.asn1.XMSSMTPrivateKey asn1 =
+                org.bouncycastle.pqc.asn1.XMSSMTPrivateKey.getInstance(info.parsePrivateKey());
+            assertEquals(saved, asn1.getIndex());
+            byte[] pkcs8 = new PrivateKeyInfo(info.getPrivateKeyAlgorithm(),
+                new org.bouncycastle.pqc.asn1.XMSSMTPrivateKey(rolled, asn1.getSecretKeySeed(),
+                    asn1.getSecretKeyPRF(), asn1.getPublicSeed(), asn1.getRoot(), asn1.getBdsState()))
+                .getEncoded();
+            try
+            {
+                PrivateKeyFactory.createKey(pkcs8);
+                fail("no exception on PKCS#8 index " + saved + " moved back to " + rolled);
+            }
+            catch (IOException e)
+            {
+                assertTrue(e.getMessage(), e.getMessage().indexOf("BDS state has wrong index for layer 0") >= 0);
+            }
+
+            // and the key as saved still decodes both ways, and signs verifiably
+            XMSSMTPrivateKeyParameters decoded =
+                new XMSSMTPrivateKeyParameters.Builder(params).withPrivateKey(key.getEncoded()).build();
+            assertEquals(saved, decoded.getIndex());
+            XMSSMTPrivateKeyParameters fromPkcs8 = (XMSSMTPrivateKeyParameters)PrivateKeyFactory.createKey(
+                PrivateKeyInfoFactory.createPrivateKeyInfo(key).getEncoded());
+            assertEquals(saved, fromPkcs8.getIndex());
+
+            XMSSMTSigner s2 = new XMSSMTSigner();
+            s2.init(true, decoded);
+            byte[] sig = XMSSHarnessTests.sign(s2, Strings.toByteArray("message"));
+            XMSSMTSigner v = new XMSSMTSigner();
+            v.init(false, kp.getPublic());
+            assertTrue(XMSSHarnessTests.verify(v, Strings.toByteArray("message"), sig));
+
+            // carry on from the decoded key, which has just used index saved
+            signer = new XMSSMTSigner();
+            signer.init(true, s2.getUpdatedPrivateKey());
+            signed = saved + 1;
+        }
     }
 
     /**

@@ -391,7 +391,8 @@ public final class XMSSEngine
         // index being the BDS state's own. Ahead of the try below, as the checks above are: a
         // refused signature must not reach the roll.
         //
-        privateKey.getBDSState().validateIndex(params, privateKey.getIndex());
+        privateKey.getBDSState().validateIndex(params, privateKey.getIndex(), privateKey.getPublicSeed(),
+            privateKey.getSecretKeySeed());
 
         //
         // and here for the reason the single tree gives: the secret material the descent below
