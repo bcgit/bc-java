@@ -471,6 +471,8 @@ public class OCBBlockCipher
             // Compare the tag from the message with the calculated one
             if (!Arrays.constantTimeAreEqual(macBlock, tag))
             {
+                // getMac() must not return the expected tag: it is a valid tag for the rejected input
+                macBlock = null;
                 throw new InvalidCipherTextException("mac check in OCB failed");
             }
         }

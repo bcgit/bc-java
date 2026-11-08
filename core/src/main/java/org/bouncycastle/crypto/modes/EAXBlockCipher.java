@@ -324,6 +324,8 @@ public class EAXBlockCipher
 
             if (!verifyMac(bufBlock, extra - macSize))
             {
+                // getMac() must not return the expected tag: it is a valid tag for the rejected input
+                Arrays.clear(macBlock);
                 throw new InvalidCipherTextException("mac check in EAX failed");
             }
 
