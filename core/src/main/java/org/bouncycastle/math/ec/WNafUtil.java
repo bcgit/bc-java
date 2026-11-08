@@ -532,6 +532,26 @@ public abstract class WNafUtil
                                  */
                                 preComp[curPreCompLen++] = last = last.add(isoTwiceP);
                             }
+
+                            if (null != iso && containsInfinity(preComp, iniPreCompLen, reqPreCompLen))
+                            {
+                                /*
+                                 * P has small odd order, so the table met the Q +/- Q special cases the
+                                 * isomorphism does not handle (the doubling case would use the wrong A):
+                                 * rebuild it by plain addition on the curve itself.
+                                 */
+                                iso = null;
+                                if (iniPreCompLen == 0)
+                                {
+                                    preComp[0] = p;
+                                }
+                                curPreCompLen = Math.max(1, iniPreCompLen);
+                                last = preComp[curPreCompLen - 1];
+                                while (curPreCompLen < reqPreCompLen)
+                                {
+                                    preComp[curPreCompLen++] = last = last.add(twiceP);
+                                }
+                            }
                         }
 
                         /*
@@ -671,6 +691,18 @@ public abstract class WNafUtil
         int[] result = new int[length];
         System.arraycopy(a, 0, result, 0, result.length);
         return result;
+    }
+
+    private static boolean containsInfinity(ECPoint[] table, int from, int to)
+    {
+        for (int i = from; i < to; ++i)
+        {
+            if (table[i].isInfinity())
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     private static ECPoint[] resizeTable(ECPoint[] a, int length)

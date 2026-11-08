@@ -755,6 +755,62 @@ public class ECPointTest extends TestCase
      * ArrayIndexOutOfBoundsException from the {@code encoded[0]} read. Reachable via any untrusted
      * EC-point decode (EC key parse, ECDH / ECIES / TLS ephemeral points, ECIESKEMExtractor).
      */
+    /**
+     * Multiplying a point of small odd order used to throw NullPointerException from the WNAF
+     * precomputation: the odd-multiples table 1P, 3P, 5P, ... reaches the point at infinity, which
+     * the isomorphism-based normalisation of Fp Jacobian curves could not invert, and the table
+     * then meets the doubling case too. Only a point never checked for order gets here, but the
+     * answer should still be the right multiple. Uses BLS12-381's G1 curve, whose cofactor is
+     * 3 * 11^2 * ...: (0, 2) has order 3, and the 11-torsion comes from random curve points.
+     */
+    public void testMultiplySmallOrderPoint()
+    {
+        BigInteger p = new BigInteger(
+            "1a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaaab", 16);
+        BigInteger r = new BigInteger("73eda753299d7d483339d80809a1d80553bda402fffe5bfeffffffff00000001", 16);
+        BigInteger h = new BigInteger("396c8c005555e1568c00aaab0000aaab", 16);
+        ECCurve curve = new ECCurve.Fp(p, ECConstants.ZERO, ECConstants.FOUR, r, h);
+
+        List points = new ArrayList();
+        ECPoint order3 = curve.createPoint(ECConstants.ZERO, ECConstants.TWO);
+        assertTrue(order3.twice().equals(order3.negate()));
+        points.add(order3);
+
+        BigInteger sqrtExp = p.add(ECConstants.ONE).shiftRight(2);
+        while (points.size() < 4)
+        {
+            BigInteger x = BigIntegers.createRandomBigInteger(p.bitLength(), secRand).mod(p);
+            BigInteger rhs = x.multiply(x).multiply(x).add(ECConstants.FOUR).mod(p);
+            BigInteger y = rhs.modPow(sqrtExp, p);
+            if (!y.multiply(y).mod(p).equals(rhs))
+            {
+                continue;
+            }
+            ECPoint torsion = ECAlgorithms.referenceMultiply(curve.createPoint(x, y), r);
+            ECPoint order11 = ECAlgorithms.referenceMultiply(torsion, h.divide(BigInteger.valueOf(121))).normalize();
+            if (!order11.isInfinity())
+            {
+                points.add(order11);
+                points.add(ECAlgorithms.referenceMultiply(torsion, h.divide(BigInteger.valueOf(11))).normalize());
+                points.add(torsion.normalize());
+            }
+        }
+
+        BigInteger[] scalars = { ECConstants.ONE, ECConstants.TWO, ECConstants.THREE, BigInteger.valueOf(11),
+            BigInteger.valueOf(0x12345), new BigInteger("1234567890abcdef1234567890abcdef", 16), r, r.add(ECConstants.TWO),
+            h, BigIntegers.createRandomBigInteger(255, secRand), BigIntegers.createRandomBigInteger(400, secRand) };
+        for (int i = 0; i < points.size(); ++i)
+        {
+            ECPoint q = (ECPoint)points.get(i);
+            for (int j = 0; j < scalars.length; ++j)
+            {
+                ECPoint expected = ECAlgorithms.referenceMultiply(q, scalars[j]).normalize();
+                assertEquals("point " + i + " scalar " + j, expected, q.multiply(scalars[j]).normalize());
+                assertEquals("point " + i + " scalar -" + j, expected.negate(), q.multiply(scalars[j].negate()).normalize());
+            }
+        }
+    }
+
     public void testDecodePointRejectsEmptyEncoding()
     {
         ECCurve curve = ECNamedCurveTable.getByName("secp256r1").getCurve();

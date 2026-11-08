@@ -310,7 +310,8 @@ public abstract class ECCurve
         for (int i = 0; i < len; ++i)
         {
             ECPoint p = points[off + i];
-            if (null != p && (iso != null || !p.isNormalized()))
+            // Infinity has no Z coordinate to invert; with an iso it would otherwise be included.
+            if (null != p && !p.isInfinity() && (iso != null || !p.isNormalized()))
             {
                 zs[count] = p.getZCoord(0);
                 indices[count++] = off + i;
