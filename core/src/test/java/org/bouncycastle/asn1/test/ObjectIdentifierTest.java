@@ -146,6 +146,17 @@ public class ObjectIdentifierTest
                 && ASN1ObjectIdentifier.fromContents(new byte[0]) == emptyOID);
             isTrue("empty: intern", emptyOID.intern() == emptyOID);
             isTrue("empty: not a valid identifier", !emptyOID.equals(new ASN1ObjectIdentifier("0.0")));
+            isTrue("empty: on nothing, nothing on it", !emptyOID.on(new ASN1ObjectIdentifier("0.0"))
+                && !new ASN1ObjectIdentifier("0.0").on(emptyOID) && !emptyOID.on(emptyOID));
+            try
+            {
+                emptyOID.branch("1");
+                fail("empty: branch accepted");
+            }
+            catch (IllegalStateException e)
+            {
+                isEquals("empty identifier has no branches", e.getMessage());
+            }
         }
         finally
         {

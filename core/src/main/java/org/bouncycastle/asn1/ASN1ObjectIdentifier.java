@@ -195,6 +195,11 @@ public class ASN1ObjectIdentifier
     {
         ASN1RelativeOID.checkIdentifier(branchID);
 
+        if (this.contents.length == 0)
+        {
+            throw new IllegalStateException("empty identifier has no branches");
+        }
+
         byte[] contents;
         if (branchID.length() <= 2)
         {
@@ -248,7 +253,8 @@ public class ASN1ObjectIdentifier
         byte[] contents = this.contents, stemContents = stem.contents;
         int stemLength = stemContents.length;
 
-        return contents.length > stemLength
+        // The empty identifier (read only under allow_wrong_oid_enc) is on nothing's path, and nothing is on its.
+        return stemLength > 0 && contents.length > stemLength
             && Arrays.areEqual(contents, 0, stemLength, stemContents, 0, stemLength);
     }
 

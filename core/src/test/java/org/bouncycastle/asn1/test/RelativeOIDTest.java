@@ -175,6 +175,15 @@ public class RelativeOIDTest
             isTrue("empty: single instance", ASN1RelativeOID.getInstance(empty) == emptyOID
                 && ASN1RelativeOID.fromContents(new byte[0]) == emptyOID);
             isTrue("empty: not a valid identifier", !emptyOID.equals(new ASN1RelativeOID("0")));
+            try
+            {
+                emptyOID.branch("1");
+                fail("empty: branch accepted");
+            }
+            catch (IllegalStateException e)
+            {
+                isEquals("empty identifier has no branches", e.getMessage());
+            }
         }
         finally
         {

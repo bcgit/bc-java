@@ -151,6 +151,11 @@ public class ASN1RelativeOID
     {
         checkIdentifier(branchID);
 
+        if (this.contents.length == 0)
+        {
+            throw new IllegalStateException("empty identifier has no branches");
+        }
+
         byte[] contents;
         if (branchID.length() <= 2)
         {
