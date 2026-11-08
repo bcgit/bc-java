@@ -4838,12 +4838,41 @@ public class NewSignedDataTest
         assertTrue(newSignerInfoGen.getSignedAttributeTableGenerator() == signedAttrGen);
     }
 
+    /**
+     * github #1639: the contentHint signed attribute names an empty OBJECT IDENTIFIER as its content type.
+     * Under the org.bouncycastle.asn1.allow_wrong_oid_enc property the message parses, the identifier is
+     * read as the one empty identifier and re-encodes as received, so the signed attributes re-encode as
+     * signed and the signature verifies.
+     */
     public void testEU()
         throws Exception
     {
         System.setProperty("org.bouncycastle.asn1.allow_wrong_oid_enc", "true");
-        CMSSignedData cmsSignedData = new CMSSignedData(this.getInput("bc1639test.p7m"));
-        System.setProperty("org.bouncycastle.asn1.allow_wrong_oid_enc", "false");
+        try
+        {
+            CMSSignedData cmsSignedData = new CMSSignedData(this.getInput("bc1639test.p7m"));
+            Store certs = cmsSignedData.getCertificates();
+            Collection signers = cmsSignedData.getSignerInfos().getSigners();
+
+            assertEquals(1, signers.size());
+
+            SignerInformation signer = (SignerInformation)signers.iterator().next();
+
+            Attribute hint = signer.getSignedAttributes().get(PKCSObjectIdentifiers.id_aa_contentHint);
+            ASN1Sequence hints = ASN1Sequence.getInstance(hint.getAttrValues().getObjectAt(0));
+            ASN1ObjectIdentifier contentType = ASN1ObjectIdentifier.getInstance(hints.getObjectAt(hints.size() - 1));
+
+            assertEquals("", contentType.getId());
+            assertTrue(Arrays.areEqual(Hex.decode("0600"), contentType.getEncoded()));
+
+            X509CertificateHolder cert = (X509CertificateHolder)certs.getMatches(signer.getSID()).iterator().next();
+
+            assertTrue(signer.verify(new JcaSimpleSignerInfoVerifierBuilder().setProvider(BC).build(cert)));
+        }
+        finally
+        {
+            System.setProperty("org.bouncycastle.asn1.allow_wrong_oid_enc", "false");
+        }
     }
     public void testMSPKCS7()
         throws Exception

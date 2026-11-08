@@ -137,7 +137,23 @@ public class ASN1ObjectIdentifier
 
     private static final Map pool = new HashMap();
 
+    /**
+     * The identifier read from empty contents under the "org.bouncycastle.asn1.allow_wrong_oid_enc"
+     * override. Empty contents are not valid, and no valid contents could stand for them, so they are
+     * taken as they are: this is the one instance with empty contents, and it lives outside the pool.
+     */
+    private static final ASN1ObjectIdentifier EMPTY = new ASN1ObjectIdentifier(new byte[0], null, "");
+
+    /*
+     * contents is the value, which equals, hashCode, getId, on and branch work on: valid contents octets,
+     * or, for EMPTY only, empty contents. When the "org.bouncycastle.asn1.allow_wrong_oid_enc" override
+     * admitted an invalid encoding, contents holds what it was read as (see
+     * ASN1RelativeOID.correctedContents), malformedContents holds the octets as received, and the encoding
+     * writes those, so that the input round-trips; otherwise malformedContents is null and the encoding
+     * writes contents. The pool only ever holds instances without malformedContents, and never EMPTY.
+     */
     private final byte[] contents;
+    private final byte[] malformedContents;
     private String identifier;
 
     /**
@@ -153,12 +169,19 @@ public class ASN1ObjectIdentifier
         checkContentsLength(contents.length);
 
         this.contents = contents;
+        this.malformedContents = null;
         this.identifier = identifier;
     }
 
     private ASN1ObjectIdentifier(byte[] contents, String identifier)
     {
+        this(contents, null, identifier);
+    }
+
+    private ASN1ObjectIdentifier(byte[] contents, byte[] malformedContents, String identifier)
+    {
         this.contents = contents;
+        this.malformedContents = malformedContents;
         this.identifier = identifier;
     }
 
@@ -236,12 +259,16 @@ public class ASN1ObjectIdentifier
 
     int encodedLength(boolean withTag)
     {
-        return ASN1OutputStream.getLengthOfEncodingDL(withTag, contents.length);
+        byte[] encodingContents = malformedContents != null ? malformedContents : contents;
+
+        return ASN1OutputStream.getLengthOfEncodingDL(withTag, encodingContents.length);
     }
 
     void encode(ASN1OutputStream out, boolean withTag) throws IOException
     {
-        out.writeEncodingDL(withTag, BERTags.OBJECT_IDENTIFIER, contents);
+        byte[] encodingContents = malformedContents != null ? malformedContents : contents;
+
+        out.writeEncodingDL(withTag, BERTags.OBJECT_IDENTIFIER, encodingContents);
     }
 
     public int hashCode()
@@ -334,7 +361,19 @@ public class ASN1ObjectIdentifier
 
         if (!ASN1RelativeOID.isValidContents(contents, contentsLength))
         {
-            throw new IllegalArgumentException("invalid OID contents");
+            if (!ASN1RelativeOID.allowWrongEncoding())
+            {
+                throw new IllegalArgumentException("invalid OID contents");
+            }
+            if (contentsLength == 0)
+            {
+                return EMPTY;
+            }
+
+            byte[] corrected = ASN1RelativeOID.correctedContents(contents, contentsLength);
+            byte[] malformed = clone ? Arrays.copyOfRange(contents, 0, contentsLength) : contents;
+
+            return new ASN1ObjectIdentifier(corrected, malformed, null);
         }
 
         byte[] newContents = clone ? Arrays.copyOfRange(contents, 0, contentsLength) : contents;
@@ -498,21 +537,37 @@ public class ASN1ObjectIdentifier
      * The pool is also used by the ASN.1 parsers to limit the number of duplicated OID
      * objects in circulation.
      * </p>
+     * <p>
+     * The pool holds valid encodings only. An identifier parsed from an invalid encoding under the
+     * "org.bouncycastle.asn1.allow_wrong_oid_enc" override is pooled, and returned, as the identifier it
+     * was read as: an equal identifier with the valid encoding, and so never this one. The result does not
+     * carry the encoding as received, so an identifier that is to be re-encoded as it came should not be
+     * interned. The identifier read from empty contents is a single instance already, and is returned as
+     * it is.
+     * </p>
      *
      * @return a reference to the identifier in the pool.
      */
     public ASN1ObjectIdentifier intern()
     {
+        if (contents.length == 0)
+        {
+            return EMPTY;
+        }
+
+        ASN1ObjectIdentifier valid = malformedContents == null ? this
+            : new ASN1ObjectIdentifier(contents, identifier);
+
         final OidHandle hdl = new OidHandle(contents, contents.length);
         synchronized (pool)
         {
             ASN1ObjectIdentifier oid = (ASN1ObjectIdentifier)pool.get(hdl);
             if (oid == null)
             {
-                oid = (ASN1ObjectIdentifier)pool.put(hdl, this);
+                oid = (ASN1ObjectIdentifier)pool.put(hdl, valid);
                 if (oid == null)
                 {
-                    oid = this;
+                    oid = valid;
                 }
             }
             return oid;

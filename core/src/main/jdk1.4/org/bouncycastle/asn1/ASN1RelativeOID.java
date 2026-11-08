@@ -104,7 +104,22 @@ public class ASN1RelativeOID
 
     private static final Map pool = new HashMap();
 
+    /**
+     * The identifier read from empty contents under the "org.bouncycastle.asn1.allow_wrong_oid_enc"
+     * override. Empty contents are not valid, and no valid contents could stand for them, so they are
+     * taken as they are: this is the one instance with empty contents, and it lives outside the pool.
+     */
+    private static final ASN1RelativeOID EMPTY = new ASN1RelativeOID(new byte[0], null, "");
+
+    /*
+     * contents is the value, which equals, hashCode and getId work on: valid contents octets, or, for
+     * EMPTY only, empty contents. When the "org.bouncycastle.asn1.allow_wrong_oid_enc" override admitted
+     * an invalid encoding, contents holds what it was read as (see correctedContents), malformedContents
+     * holds the octets as received, and the encoding writes those, so that the input round-trips;
+     * otherwise malformedContents is null and the encoding writes contents.
+     */
     private final byte[] contents;
+    private final byte[] malformedContents;
     private String identifier;
 
     public ASN1RelativeOID(String identifier)
@@ -115,12 +130,19 @@ public class ASN1RelativeOID
         checkContentsLength(contents.length);
 
         this.contents = contents;
+        this.malformedContents = null;
         this.identifier = identifier;
     }
 
     private ASN1RelativeOID(byte[] contents, String identifier)
     {
+        this(contents, null, identifier);
+    }
+
+    private ASN1RelativeOID(byte[] contents, byte[] malformedContents, String identifier)
+    {
         this.contents = contents;
+        this.malformedContents = malformedContents;
         this.identifier = identifier;
     }
 
@@ -193,12 +215,16 @@ public class ASN1RelativeOID
 
     int encodedLength(boolean withTag)
     {
-        return ASN1OutputStream.getLengthOfEncodingDL(withTag, contents.length);
+        byte[] encodingContents = malformedContents != null ? malformedContents : contents;
+
+        return ASN1OutputStream.getLengthOfEncodingDL(withTag, encodingContents.length);
     }
 
     void encode(ASN1OutputStream out, boolean withTag) throws IOException
     {
-        out.writeEncodingDL(withTag, BERTags.RELATIVE_OID, contents);
+        byte[] encodingContents = malformedContents != null ? malformedContents : contents;
+
+        out.writeEncodingDL(withTag, BERTags.RELATIVE_OID, encodingContents);
     }
 
     boolean encodeConstructed()
@@ -269,7 +295,19 @@ public class ASN1RelativeOID
 
         if (!isValidContents(contents, contentsLength))
         {
-            throw new IllegalArgumentException("invalid relative OID contents");
+            if (!allowWrongEncoding())
+            {
+                throw new IllegalArgumentException("invalid relative OID contents");
+            }
+            if (contentsLength == 0)
+            {
+                return EMPTY;
+            }
+
+            byte[] corrected = correctedContents(contents, contentsLength);
+            byte[] malformed = clone ? Arrays.copyOfRange(contents, 0, contentsLength) : contents;
+
+            return new ASN1RelativeOID(corrected, malformed, null);
         }
 
         byte[] newContents = clone ? Arrays.copyOfRange(contents, 0, contentsLength) : contents;
@@ -277,13 +315,51 @@ public class ASN1RelativeOID
         return new ASN1RelativeOID(newContents, null);
     }
 
-    static boolean isValidContents(byte[] contents, int contentsLength)
+    /**
+     * Whether contents octets that fail {@link #isValidContents} are to be accepted, read as their
+     * {@link #correctedContents corrected contents}. Consulted only once the check has failed, so a valid
+     * encoding never pays for the property lookup.
+     */
+    static boolean allowWrongEncoding()
     {
-        if (Properties.isOverrideSet("org.bouncycastle.asn1.allow_wrong_oid_enc"))
+        return Properties.isOverrideSet("org.bouncycastle.asn1.allow_wrong_oid_enc");
+    }
+
+    /**
+     * The valid contents octets that non-empty contents failing {@link #isValidContents} are read as: an
+     * unterminated final subidentifier is taken to end with the contents (the continuation bit of the last
+     * octet cleared), and each subidentifier's redundant leading 0x80 octets are dropped. Non-empty
+     * contents fail the check by having a redundant octet or by being unterminated, so the result always
+     * differs from the input. Empty contents, which no valid contents could stand for, are not corrected:
+     * the callers read them as their EMPTY instance instead.
+     */
+    static byte[] correctedContents(byte[] contents, int contentsLength)
+    {
+        byte[] corrected = new byte[contentsLength];
+        int count = 0;
+        boolean subIDStart = true;
+
+        for (int i = 0; i < contentsLength; ++i)
         {
-            return true;
+            int b = contents[i] & 0xFF;
+            if (i == contentsLength - 1)
+            {
+                b &= 0x7F;
+            }
+            else if (subIDStart && b == 0x80)
+            {
+                continue;
+            }
+
+            corrected[count++] = (byte)b;
+            subIDStart = (b & 0x80) == 0;
         }
 
+        return count == contentsLength ? corrected : Arrays.copyOfRange(corrected, 0, count);
+    }
+
+    static boolean isValidContents(byte[] contents, int contentsLength)
+    {
         if (contentsLength < 1)
         {
             return false;
