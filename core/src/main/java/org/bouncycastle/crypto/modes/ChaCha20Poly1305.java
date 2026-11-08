@@ -503,6 +503,8 @@ public class ChaCha20Poly1305
 
             if (!Arrays.constantTimeAreEqual(MAC_SIZE, mac, 0, buf, resultLen))
             {
+                // getMac() must not return the expected tag: it is a valid tag for the rejected input
+                Arrays.clear(mac);
                 throw new InvalidCipherTextException("mac check in " + getAlgorithmName() + " failed");
             }
 

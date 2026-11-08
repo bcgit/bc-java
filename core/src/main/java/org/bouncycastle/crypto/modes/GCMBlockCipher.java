@@ -630,6 +630,8 @@ public class GCMBlockCipher
             System.arraycopy(bufBlock, extra, msgMac, 0, macSize);
             if (!Arrays.constantTimeAreEqual(this.macBlock, msgMac))
             {
+                // getMac() must not return the expected tag: it is a valid tag for the rejected input
+                this.macBlock = null;
                 throw new InvalidCipherTextException("mac check in GCM failed");
             }
         }

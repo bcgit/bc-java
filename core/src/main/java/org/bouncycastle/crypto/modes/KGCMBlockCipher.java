@@ -338,6 +338,8 @@ public class KGCMBlockCipher
 
             if (!Arrays.constantTimeAreEqual(mac, calculatedMac))
             {
+                // getMac() must not return the expected tag: it is a valid tag for the rejected input
+                Arrays.clear(macBlock);
                 reset();
                 throw new InvalidCipherTextException("mac verification failed");
             }

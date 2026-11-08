@@ -215,6 +215,7 @@ public class RegressionTest
             new GiftCofbTest(),
             new RomulusTest(),
             new XDHAgreementFailureTest(),
+            new AEADFailedDecryptionMacTest(),
             new SAKKEKEMSTest(),
             new LEATest(),
             new SHA3HMacTest()
