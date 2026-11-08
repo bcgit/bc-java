@@ -562,3 +562,4 @@ We also wish to acknowledge financial and collaborative support from [CISCO](htt
 - bright-k \<https://github.com/bright-k\> - reuse of a single counter block buffer in GCMBlockCipher in place of a per-block allocation, with the streaming, overlap, partial-block and buffer-cleanup regression tests for it (PR #2540).
 - hidingmyname \<https://github.com/hidingmyname\> - corrections to the CMS parser, CRL generator, ISO 7816-4 padding and DH agreement documentation and exception messages (PR #2537).
 - guptas6est \<https://github.com/guptas6est\> - initial implementation of the Gradle build update from Checkstyle 9.0 to 14.0.0 (PR #2423).
+- Alexandre Laroche \<https://github.com/AlexLaroche\> - X25519 and X448 agreement now leave the caller's buffer unchanged when a low-order peer key is refused, rather than holding the all-zero result, with the regression test behind it (PR #2563).
