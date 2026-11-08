@@ -7,22 +7,18 @@ import org.bouncycastle.math.ec.ECPoint;
 /**
  * Optimal ate pairing on BLS12-381: a bilinear, non-degenerate map
  * {@code e: G1 x G2 -> GT} where GT is the order-r subgroup of Fp^12 ^*.
- * <p>
- * This implementation favours obvious correctness over performance:
  * <ul>
- *   <li>G2 is lifted into {@code E(Fp^12)} via the D-twist isomorphism
- *       {@code (x', y') -> (x'/w^2, y'/w^3)}.</li>
- *   <li>The Miller loop runs the textbook affine doubling / addition
- *       formulas on {@code E(Fp^12)} and computes the line evaluations as
- *       full (non-sparse) Fp^12 elements.</li>
- *   <li>The final exponentiation is performed as a single Fp^12 modPow with
- *       exponent {@code (p^12 - 1) / r}, sidestepping the
- *       Frobenius-coefficient infrastructure that the spec-recommended
- *       easy/hard-part split would need.</li>
+ *   <li>The Miller loop keeps {@code T} on the twist {@code E'(Fp^2)} in
+ *       homogeneous projective coordinates, so no step inverts, and
+ *       evaluates each line at {@code P} directly as a sparse Fp^12 element
+ *       with three non-zero Fp^2 coefficients, multiplied into the accumulator by
+ *       {@link Fp12Element#mulBy014}. The lines are scaled by Fp^2 and Fp^4
+ *       factors (the twist's {@code w^3} and the projective denominators); every
+ *       such factor lies in a proper subfield of Fp^12, which the final
+ *       exponentiation maps to 1, so the pairing value is unchanged.</li>
+ *   <li>The final exponentiation splits into the Frobenius-based easy part and
+ *       the hard part described at {@code finalExponentiation}.</li>
  * </ul>
- * Sparse line evaluation, Frobenius-based final exponentiation, and a
- * Jacobian-coord G2 in pairing context are all natural follow-on
- * optimisations that preserve the public surface here.
  */
 public class BLS12_381Pairing
 {
@@ -36,7 +32,8 @@ public class BLS12_381Pairing
      * {@code (p^6 - 1) * (p^2 + 1) * (p^4 - p^2 + 1) / r}; the easy part
      * computes {@code f^((p^6 - 1)(p^2 + 1))} essentially for free using
      * conjugation and one Frobenius&sup2; application, leaving only this
-     * shorter exponent for {@link Fp12Element#modPow}.
+     * shorter exponent, which {@link #hardPart} applies by an addition chain
+     * in x (kept for the tests that check that chain against a direct power).
      */
     public static final BigInteger HARD_EXPONENT = Fp2Element.P.pow(4)
         .subtract(Fp2Element.P.pow(2))
@@ -47,52 +44,20 @@ public class BLS12_381Pairing
     private static final BigInteger X = ABS_X.negate();
 
     /**
-     * {@code (x - 1)^2 / 3}, ~126 bits, used by the cube-factor-free hard
-     * part. The division is exact for the BLS12 family by construction.
+     * {@code (1 - x) / 3 = (|x| + 1) / 3}, 63 bits: the cube-factor-free hard
+     * part raises to {@code (x - 1)^2 / 3 = ((1 - x) / 3) * (|x| + 1)}. The
+     * division is exact for the BLS12 family by construction.
      */
-    private static final BigInteger X_MINUS_1_SQ_OVER_3;
+    private static final BigInteger ONE_MINUS_X_OVER_3;
 
     static
     {
-        BigInteger xMinus1Sq = X.subtract(BigInteger.ONE).pow(2);
-        BigInteger[] divRem = xMinus1Sq.divideAndRemainder(BigInteger.valueOf(3));
+        BigInteger[] divRem = BigInteger.ONE.subtract(X).divideAndRemainder(BigInteger.valueOf(3));
         if (divRem[1].signum() != 0)
         {
-            throw new IllegalStateException("(x - 1)^2 must be divisible by 3 for BLS12 family");
+            throw new IllegalStateException("1 - x must be divisible by 3 for BLS12 family");
         }
-        X_MINUS_1_SQ_OVER_3 = divRem[0];
-    }
-
-    /** Fp^12 lift of the constant 2, hoisted out of the Miller loop. */
-    private static final Fp12Element TWO;
-
-    /** Fp^12 lift of the constant 3, hoisted out of the Miller loop. */
-    private static final Fp12Element THREE;
-
-    /** {@code w^{-2}} in Fp^12, used to lift G2 via the D-twist. */
-    private static final Fp12Element W_INV_SQUARED;
-
-    /** {@code w^{-3}} in Fp^12, used to lift G2 via the D-twist. */
-    private static final Fp12Element W_INV_CUBED;
-
-    static
-    {
-        // (1 - I) / 2 in Fp^2: numerator components are (1, -1), divided by 2.
-        BigInteger half = BigInteger.valueOf(2).modInverse(Fp2Element.P);
-        Fp2Element oneMinusIOverTwo = Fp2Element.of(half, Fp2Element.P.subtract(half));
-
-        // w^-2 = 1/v in Fp^6 = v^2 / xi where xi = 1 + I.
-        // v^2 has Fp^6 representation (0, 0, 1) so w^-2 = (0, 0, (1-I)/2) in Fp^6.
-        W_INV_SQUARED = Fp12Element.fromFp6(Fp6Element.of(
-            Fp2Element.ZERO, Fp2Element.ZERO, oneMinusIOverTwo));
-
-        // w^-3 = w * w^-4 = w * v^-2. v^-2 has Fp^6 representation (0, (1-I)/2, 0).
-        // In Fp^12 = Fp^6 + Fp^6 * w, w^-3 has c0 = 0, c1 = v^-2.
-        W_INV_CUBED = Fp12Element.of(Fp6Element.ZERO, Fp6Element.of(
-            Fp2Element.ZERO, oneMinusIOverTwo, Fp2Element.ZERO));
-
-        TWO = liftFp(BigInteger.valueOf(2));
-        THREE = liftFp(BigInteger.valueOf(3));
+        ONE_MINUS_X_OVER_3 = divRem[0];
     }
 
     private BLS12_381Pairing()
@@ -139,7 +104,7 @@ public class BLS12_381Pairing
             throw new IllegalArgumentException("g1 / g2 arrays must be the same length");
         }
 
-        // Filter out infinities and lift to Fp^12 once up front.
+        // Skip pairs with a point at infinity: their pairing value is 1.
         int n = 0;
         for (int i = 0; i < g1Points.length; ++i)
         {
@@ -153,12 +118,11 @@ public class BLS12_381Pairing
             return Fp12Element.ONE;
         }
 
-        Fp12Element[] xP = new Fp12Element[n];
-        Fp12Element[] yP = new Fp12Element[n];
-        Fp12Element[] xT = new Fp12Element[n];
-        Fp12Element[] yT = new Fp12Element[n];
-        Fp12Element[] xQ = new Fp12Element[n];
-        Fp12Element[] yQ = new Fp12Element[n];
+        BigInteger[] negXP = new BigInteger[n];
+        BigInteger[] yP = new BigInteger[n];
+        Fp2Element[] xQ = new Fp2Element[n];
+        Fp2Element[] yQ = new Fp2Element[n];
+        Fp2Element[][] t = new Fp2Element[n][];
 
         int k = 0;
         for (int i = 0; i < g1Points.length; ++i)
@@ -168,15 +132,11 @@ public class BLS12_381Pairing
                 continue;
             }
             ECPoint normalised = g1Points[i].normalize();
-            xP[k] = liftFp(normalised.getAffineXCoord().toBigInteger());
-            yP[k] = liftFp(normalised.getAffineYCoord().toBigInteger());
-
-            Fp12Element qx = liftFp2(g2Points[i].x()).mul(W_INV_SQUARED);
-            Fp12Element qy = liftFp2(g2Points[i].y()).mul(W_INV_CUBED);
-            xQ[k] = qx;
-            yQ[k] = qy;
-            xT[k] = qx;
-            yT[k] = qy;
+            negXP[k] = normalised.getAffineXCoord().toBigInteger().negate().mod(Fp2Element.P);
+            yP[k] = normalised.getAffineYCoord().toBigInteger();
+            xQ[k] = g2Points[i].x();
+            yQ[k] = g2Points[i].y();
+            t[k] = new Fp2Element[]{ xQ[k], yQ[k], Fp2Element.ONE };
             k++;
         }
 
@@ -187,19 +147,13 @@ public class BLS12_381Pairing
             f = f.square();
             for (int j = 0; j < n; ++j)
             {
-                Fp12Element[] doubled = doubleAndLine(xT[j], yT[j], xP[j], yP[j]);
-                xT[j] = doubled[0];
-                yT[j] = doubled[1];
-                f = f.mul(doubled[2]);
+                f = doublingStep(f, t[j], negXP[j], yP[j]);
             }
             if (ABS_X.testBit(i))
             {
                 for (int j = 0; j < n; ++j)
                 {
-                    Fp12Element[] added = addAndLine(xT[j], yT[j], xQ[j], yQ[j], xP[j], yP[j]);
-                    xT[j] = added[0];
-                    yT[j] = added[1];
-                    f = f.mul(added[2]);
+                    f = additionStep(f, t[j], xQ[j], yQ[j], negXP[j], yP[j]);
                 }
             }
         }
@@ -229,12 +183,12 @@ public class BLS12_381Pairing
      * For the BLS12 family, {@code (x - 1)^2} is divisible by 3 by
      * construction (the curve parameterisation requires it for
      * {@code p(x)} to have integer coefficients), so the {@code /3}
-     * collapses into a precomputable ~126-bit integer that is applied
-     * via a single {@link Fp12Element#modPow} on {@link #X_MINUS_1_SQ_OVER_3}.
+     * collapses into a precomputable ~126-bit integer, applied as a power
+     * by {@link #ONE_MINUS_X_OVER_3} followed by one by {@code |x| + 1}.
      * The remaining structure is the same as before, but the final
      * {@code +3} becomes {@code +1}, so we multiply by {@code f} rather
      * than {@code f^3}. Net cost is slightly higher than the cube-factored
-     * variant (~126-bit modPow replaces three exp-by-|x| ops + a square)
+     * variant (a ~126-bit power replaces three exp-by-|x| ops + a square)
      * but produces a pairing value byte-comparable against any other
      * BLS12-381 implementation (blst, mcl, zkcrypto, …).
      */
@@ -252,13 +206,20 @@ public class BLS12_381Pairing
      * to the easy/hard split for KAT comparison against reference outputs).
      * Not part of the intended public API of this class — production callers
      * should use {@link #pair} / {@link #multiPair}.
+     * <p>
+     * {@code f} must lie in the cyclotomic subgroup, as the output of the easy
+     * part does: every power here squares with the Granger-Scott or the
+     * compressed Karabina squaring of {@code Fp12Element}, both wrong outside it.
      */
     public static Fp12Element hardPart(Fp12Element f)
     {
-        // g0 = f^((x - 1)^2 / 3), via a direct ~126-bit modPow. This is
-        // the only step that differs from the 3*hard variant; it replaces
-        // f^((x - 1)^2) and absorbs the /3.
-        Fp12Element g0 = f.modPow(X_MINUS_1_SQ_OVER_3);
+        // g0 = f^((x - 1)^2 / 3) = h^(|x| + 1) with h = f^((1 - x) / 3). This
+        // is the only step that differs from the 3*hard variant; it replaces
+        // f^((x - 1)^2) and absorbs the /3. The 63-bit (1 - x) / 3 is dense
+        // (28 set bits), so h uses the Granger-Scott power over a width-4 NAF;
+        // the power by the sparse |x| uses compressed squaring like expByX.
+        Fp12Element h = f.cyclotomicPow(ONE_MINUS_X_OVER_3);
+        Fp12Element g0 = h.cyclotomicPowCompressed(ABS_X).mul(h);
 
         // g1 = g0^(x + p) = g0^x * g0^p.
         Fp12Element g1 = expByX(g0).mul(g0.frobenius());
@@ -274,53 +235,112 @@ public class BLS12_381Pairing
     /**
      * In the cyclotomic subgroup of Fp&sup12;, inversion is conjugation. So
      * {@code f^x = f^(-|x|) = conjugate(f^|x|)} for our negative parameter x.
+     * The power uses Karabina's compressed squaring.
      */
     private static Fp12Element expByX(Fp12Element f)
     {
-        return f.modPow(ABS_X).conjugate();
+        return f.cyclotomicPowCompressed(ABS_X).conjugate();
     }
 
     /**
-     * Affine doubling of {@code T = (xT, yT)} with line evaluation at
-     * {@code P = (xP, yP)}. All coordinates are in Fp^12.
-     *
-     * @return {@code {x_2T, y_2T, line_T(P)}}.
+     * Doubles {@code T = (X, Y, Z)} in place and returns {@code f} times the
+     * tangent line at {@code T} evaluated at {@code P = (xP, yP)}. T is in
+     * homogeneous projective coordinates ({@code x = X/Z}, {@code y = Y/Z}),
+     * where the doubling and its line cost 3 Fp&sup2; multiplications and 6
+     * squarings (Costello, Lange and Naehrig, "Faster pairing computations on
+     * curves with high-degree twists", PKC 2010, as written out by Aranha et
+     * al., ePrint 2010/354, sec. 4), against 5 and 6 in Jacobian coordinates.
+     * <p>
+     * On the twist {@code y^2 = x^3 + b'}, {@code b' = 4(1 + I)}, the doubled
+     * point is {@code X3 = XY/2 (Y^2 - 9b'Z^2)},
+     * {@code Y3 = ((Y^2 + 9b'Z^2)/2)^2 - 27b'^2 Z^4}, {@code Z3 = 2Y^3 Z}, here
+     * all multiplied by 4 to avoid the halvings. The tangent has slope
+     * {@code 3x^2 / 2y}; after untwisting and multiplying by {@code w^3} its
+     * value at {@code P} is {@code (lambda*x - y) - lambda*xP*v + yP*v*w}.
+     * Scaled by {@code 2YZ} and reduced with the curve equation
+     * {@code Y^2 Z = X^3 + b'Z^3}, the three coefficients are
+     * {@code Y^2 - 3b'Z^2}, {@code -3X^2*xP} and {@code 2YZ*yP}. Any Fp&sup2;
+     * factor on a line is removed by the final exponentiation.
      */
-    private static Fp12Element[] doubleAndLine(Fp12Element xT, Fp12Element yT,
-        Fp12Element xP, Fp12Element yP)
+    private static Fp12Element doublingStep(Fp12Element f, Fp2Element[] t, BigInteger negXP, BigInteger yP)
     {
-        // slope lambda = 3 * xT^2 / (2 * yT) since the curve has A = 0.
-        Fp12Element lambda = xT.square().mul(THREE).mul(TWO.mul(yT).inverse());
-        Fp12Element xNew = lambda.square().sub(xT).sub(xT);
-        Fp12Element yNew = lambda.mul(xT.sub(xNew)).sub(yT);
-        // line(X, Y) = Y - yT - lambda * (X - xT)
-        Fp12Element line = yP.sub(yT).sub(lambda.mul(xP.sub(xT)));
-        return new Fp12Element[]{xNew, yNew, line};
+        Fp2Element x1 = t[0], y1 = t[1], z1 = t[2];
+        if (y1.isZero())
+        {
+            throw new ArithmeticException("Miller loop doubled a point of order 2: G2 input not in the subgroup");
+        }
+        Fp2Element b = y1.square();
+        Fp2Element c = z1.square();
+        Fp2Element e = c.add(c).add(c).mulByNonResidue();
+        e = e.add(e);
+        e = e.add(e);                                       // 3b'Z^2
+        Fp2Element f3 = e.add(e).add(e);                    // 9b'Z^2
+        Fp2Element h = y1.add(z1).square().sub(b).sub(c);   // 2YZ
+        Fp2Element j = x1.square();
+        Fp2Element ee = e.square();
+        Fp2Element xy = x1.mul(y1);
+
+        Fp2Element x3 = xy.add(xy).mul(b.sub(f3));
+        Fp2Element ee12 = ee.add(ee).add(ee);
+        ee12 = ee12.add(ee12);
+        ee12 = ee12.add(ee12);
+        Fp2Element y3 = b.add(f3).square().sub(ee12);
+        Fp2Element z3 = b.mul(h);
+        z3 = z3.add(z3);
+        z3 = z3.add(z3);
+
+        Fp2Element l0 = b.sub(e);
+        Fp2Element l1 = j.add(j).add(j).mulFp(negXP);
+        Fp2Element l4 = h.mulFp(yP);
+
+        t[0] = x3;
+        t[1] = y3;
+        t[2] = z3;
+        return f.mulBy014(l0, l1, l4);
     }
 
     /**
-     * Affine addition of {@code T = (xT, yT)} and {@code Q = (xQ, yQ)} with
-     * line evaluation at {@code P = (xP, yP)}.
-     *
-     * @return {@code {x_T+Q, y_T+Q, line_TQ(P)}}.
+     * Adds the affine {@code Q = (xQ, yQ)} to {@code T = (X, Y, Z)} in place
+     * (homogeneous projective, mixed) and returns {@code f} times the line
+     * through {@code T} and {@code Q} evaluated at {@code P}.
+     * <p>
+     * With {@code theta = Y - yQ*Z}, {@code lambda = X - xQ*Z}, so that the
+     * slope is {@code theta / lambda}, the sum is {@code X3 = lambda*H},
+     * {@code Y3 = theta*(G - H) - E*Y}, {@code Z3 = Z*E}, where
+     * {@code E = lambda^3}, {@code G = X*lambda^2} and
+     * {@code H = E + Z*theta^2 - 2G}. The untwisted line, multiplied by
+     * {@code w^3}, is {@code (slope*xQ - yQ) - slope*xP*v + yP*v*w}; scaled by
+     * {@code lambda} its coefficients are {@code theta*xQ - lambda*yQ},
+     * {@code -theta*xP} and {@code lambda*yP}.
      */
-    private static Fp12Element[] addAndLine(Fp12Element xT, Fp12Element yT,
-        Fp12Element xQ, Fp12Element yQ, Fp12Element xP, Fp12Element yP)
+    private static Fp12Element additionStep(Fp12Element f, Fp2Element[] t, Fp2Element xQ, Fp2Element yQ,
+        BigInteger negXP, BigInteger yP)
     {
-        Fp12Element lambda = yQ.sub(yT).mul(xQ.sub(xT).inverse());
-        Fp12Element xNew = lambda.square().sub(xT).sub(xQ);
-        Fp12Element yNew = lambda.mul(xT.sub(xNew)).sub(yT);
-        Fp12Element line = yP.sub(yT).sub(lambda.mul(xP.sub(xT)));
-        return new Fp12Element[]{xNew, yNew, line};
-    }
+        Fp2Element x1 = t[0], y1 = t[1], z1 = t[2];
+        Fp2Element theta = y1.sub(yQ.mul(z1));
+        Fp2Element lambda = x1.sub(xQ.mul(z1));
+        if (lambda.isZero())
+        {
+            // T = +-Q: impossible for Q of prime order r, since T = [k]Q with 1 < k < r.
+            throw new ArithmeticException("Miller loop reached T = +-Q: G2 input not in the subgroup");
+        }
+        Fp2Element c = theta.square();
+        Fp2Element d = lambda.square();
+        Fp2Element e = lambda.mul(d);
+        Fp2Element g = x1.mul(d);
+        Fp2Element h = e.add(z1.mul(c)).sub(g.add(g));
 
-    private static Fp12Element liftFp(BigInteger v)
-    {
-        return Fp12Element.fromFp6(Fp6Element.fromFp2(Fp2Element.fromFp(v)));
-    }
+        Fp2Element x3 = lambda.mul(h);
+        Fp2Element y3 = theta.mul(g.sub(h)).sub(e.mul(y1));
+        Fp2Element z3 = z1.mul(e);
 
-    private static Fp12Element liftFp2(Fp2Element v)
-    {
-        return Fp12Element.fromFp6(Fp6Element.fromFp2(v));
+        Fp2Element l0 = theta.mul(xQ).sub(lambda.mul(yQ));
+        Fp2Element l1 = theta.mulFp(negXP);
+        Fp2Element l4 = lambda.mulFp(yP);
+
+        t[0] = x3;
+        t[1] = y3;
+        t[2] = z3;
+        return f.mulBy014(l0, l1, l4);
     }
 }

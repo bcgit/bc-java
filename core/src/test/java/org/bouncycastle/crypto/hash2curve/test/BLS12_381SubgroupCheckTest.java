@@ -9,6 +9,7 @@ import org.bouncycastle.crypto.bls.BLS12_381G2;
 import org.bouncycastle.crypto.bls.BLS12_381G2Point;
 import org.bouncycastle.crypto.bls.BLS12_381SubgroupCheck;
 import org.bouncycastle.crypto.bls.Fp2Element;
+import org.bouncycastle.math.ec.ECAlgorithms;
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
 
@@ -49,7 +50,7 @@ public class BLS12_381SubgroupCheckTest
 
     public void testG1FastCheckAgreesWithSlow()
     {
-        // Fast check (sigma(P) == [lambda] P) must agree with [r] P == 0
+        // Fast check (sigma(P) == [-x^2] P) must agree with [r] P == 0
         // on the canonical generator and small multiples thereof.
         ECCurve curve = BLS12_381G1.createCurve();
         ECPoint g = BLS12_381G1.getGenerator(curve);
@@ -60,6 +61,57 @@ public class BLS12_381SubgroupCheckTest
             boolean slow = p.multiply(BLS12_381G1.ORDER).isInfinity();
             assertEquals("k=" + k + ": fast and slow checks must agree", slow, fast);
         }
+    }
+
+    /**
+     * The fast G1 check against {@code [r] P == 0} on points outside the
+     * subgroup: random curve points, their components of small order
+     * dividing the cofactor h = 3 * 11^2 * 10177^2 * 859267^2 * 52437899^2
+     * (orders 3 and 11 make the double-and-add by |x| meet its doubling and
+     * inverse cases), and the same points with the cofactor cleared.
+     */
+    public void testG1FastCheckAgreesWithSlowOffSubgroup()
+    {
+        ECCurve curve = BLS12_381G1.createCurve();
+        BigInteger p = Fp2Element.P;
+        BigInteger r = BLS12_381G1.ORDER;
+        BigInteger h = curve.getCofactor();
+        BigInteger four = BigInteger.valueOf(4);
+        int found = 0, rejected = 0;
+        while (found < 6)
+        {
+            BigInteger x = new BigInteger(p.bitLength(), RNG).mod(p);
+            BigInteger rhs = x.multiply(x).multiply(x).add(four).mod(p);
+            BigInteger y = rhs.modPow(p.add(BigInteger.ONE).shiftRight(2), p);
+            if (!y.multiply(y).mod(p).equals(rhs))
+            {
+                continue;
+            }
+            ++found;
+            ECPoint pt = curve.createPoint(x, y);
+            ECPoint small = ECAlgorithms.referenceMultiply(pt, r);
+            ECPoint order3 = ECAlgorithms.referenceMultiply(small, h.divide(BigInteger.valueOf(3)));
+            ECPoint inG1 = ECAlgorithms.referenceMultiply(pt, h);
+            ECPoint[] points = { pt, pt.negate(), small, order3,
+                ECAlgorithms.referenceMultiply(small, h.divide(BigInteger.valueOf(11))),
+                ECAlgorithms.referenceMultiply(small, h.divide(BigInteger.valueOf(121))), inG1, inG1.add(order3) };
+            for (int i = 0; i < points.length; ++i)
+            {
+                ECPoint q = points[i].normalize();
+                boolean slow = ECAlgorithms.referenceMultiply(q, r).isInfinity();
+                assertEquals("point " + found + "/" + i + ": fast and slow checks must agree", slow,
+                    BLS12_381SubgroupCheck.isInG1Subgroup(q));
+                if (!slow)
+                {
+                    ++rejected;
+                }
+            }
+        }
+        // pt, -pt and [r]pt are always outside G1. The order-3 multiple vanishes
+        // when [r]pt has no 3-part (about a third of points), and the h/11
+        // multiple always vanishes, because the 11-torsion of E(Fp) is
+        // Z/11 x Z/11, so only these three per point are guaranteed.
+        assertTrue(rejected >= 6 * 3);
     }
 
     public void testG2GeneratorIsInSubgroup()

@@ -4,6 +4,8 @@ import junit.extensions.TestSetup;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
+import org.bouncycastle.crypto.bls.BLS12_381G2HashToCurveTest;
+import org.bouncycastle.crypto.bls.Fp12CyclotomicPowTest;
 import org.bouncycastle.crypto.hash2curve.test.impl.GenericSqrtRatioCalculatorTest;
 import org.bouncycastle.crypto.hash2curve.test.impl.GenericSqrtRatioConstantsTest;
 import org.bouncycastle.crypto.hash2curve.test.impl.SimplifiedShallueVanDeWoestijneMapToCurveTest;
@@ -32,6 +34,7 @@ public class AllTests
         suite.addTestSuite(BLS12_381G1HashToCurveTest.class);
         suite.addTestSuite(BLS12_381G2HashToCurveTest.class);
         suite.addTestSuite(Fp6Fp12Test.class);
+        suite.addTestSuite(Fp12CyclotomicPowTest.class);
         suite.addTestSuite(BLS12_381PairingTest.class);
         suite.addTestSuite(BLS12_381BasicSchemeTest.class);
         suite.addTestSuite(BLS12_381SuitesTest.class);
@@ -39,6 +42,7 @@ public class AllTests
         suite.addTestSuite(BLS12_381SubgroupCheckTest.class);
         suite.addTestSuite(BLS12_381Eth2KatTest.class);
         suite.addTestSuite(BLS12_381ConstantTimeMulTest.class);
+        suite.addTestSuite(BLS12_381G2ScalarMulTest.class);
         suite.addTestSuite(BLSKeyPairGeneratorTest.class);
         suite.addTestSuite(BLSSignerTest.class);
 

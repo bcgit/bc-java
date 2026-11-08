@@ -7,12 +7,27 @@ import java.math.BigInteger;
  * field of BLS12-381 G2.
  * <p>
  * All operations reduce modulo p eagerly. Internally the two Fp components
- * are stored as plain {@link BigInteger} values.
+ * are stored as plain {@link BigInteger} values in {@code [0, p)}. Sums and
+ * differences are brought back into range with one conditional subtraction or
+ * addition, and products with a Barrett reduction rather than
+ * {@link BigInteger#mod}, whose long division costs several multiplications.
  */
 public final class Fp2Element
 {
     /** Field characteristic, identical to the BLS12-381 base field p. */
     public static final BigInteger P = BLS12_381G1.Q;
+
+    /** Bit length of p. */
+    private static final int K = P.bitLength();
+
+    /** Barrett exponent: {@link #reduce} accepts inputs below {@code 2^BARRETT_BITS}. */
+    private static final int BARRETT_BITS = 2 * K + 2;
+
+    /** Barrett constant {@code floor(2^BARRETT_BITS / p)}. */
+    private static final BigInteger MU = BigInteger.ONE.shiftLeft(BARRETT_BITS).divide(P);
+
+    /** p^2, added to bring a negative difference of two products into range. */
+    private static final BigInteger P_SQUARED = P.multiply(P);
 
     /** The Fp^2 zero element. */
     public static final Fp2Element ZERO = new Fp2Element(BigInteger.ZERO, BigInteger.ZERO);
@@ -32,6 +47,12 @@ public final class Fp2Element
     public static Fp2Element of(BigInteger c0, BigInteger c1)
     {
         return new Fp2Element(c0.mod(P), c1.mod(P));
+    }
+
+    /** Wraps components already in {@code [0, p)}, without reducing them. */
+    static Fp2Element ofReduced(BigInteger c0, BigInteger c1)
+    {
+        return new Fp2Element(c0, c1);
     }
 
     public static Fp2Element of(long c0, long c1)
@@ -67,29 +88,39 @@ public final class Fp2Element
 
     public Fp2Element add(Fp2Element other)
     {
-        return new Fp2Element(c0.add(other.c0).mod(P), c1.add(other.c1).mod(P));
+        return new Fp2Element(addFp(c0, other.c0), addFp(c1, other.c1));
     }
 
     public Fp2Element sub(Fp2Element other)
     {
-        return new Fp2Element(c0.subtract(other.c0).mod(P), c1.subtract(other.c1).mod(P));
+        return new Fp2Element(subFp(c0, other.c0), subFp(c1, other.c1));
     }
 
     public Fp2Element neg()
     {
-        return new Fp2Element(P.subtract(c0).mod(P), P.subtract(c1).mod(P));
+        return new Fp2Element(negFp(c0), negFp(c1));
     }
 
     /**
-     * (a + b*I)(c + d*I) = (ac - bd) + (ad + bc)*I.
+     * (a + b*I)(c + d*I) = (ac - bd) + (ad + bc)*I, with Karatsuba's
+     * {@code ad + bc = (a + b)(c + d) - ac - bd}: three Fp multiplications
+     * instead of four.
      */
     public Fp2Element mul(Fp2Element other)
     {
         BigInteger ac = c0.multiply(other.c0);
         BigInteger bd = c1.multiply(other.c1);
-        BigInteger ad = c0.multiply(other.c1);
-        BigInteger bc = c1.multiply(other.c0);
-        return new Fp2Element(ac.subtract(bd).mod(P), ad.add(bc).mod(P));
+        BigInteger sum = c0.add(c1).multiply(other.c0.add(other.c1));
+        return new Fp2Element(reduceSigned(ac.subtract(bd)), reduce(sum.subtract(ac).subtract(bd)));
+    }
+
+    /**
+     * Multiply by {@code 1 + I}, the cubic non-residue defining Fp^6:
+     * (a + b*I)(1 + I) = (a - b) + (a + b)*I, with no Fp multiplication.
+     */
+    Fp2Element mulByNonResidue()
+    {
+        return new Fp2Element(subFp(c0, c1), addFp(c0, c1));
     }
 
     /**
@@ -98,7 +129,7 @@ public final class Fp2Element
     public Fp2Element mulFp(BigInteger fp)
     {
         BigInteger r = fp.mod(P);
-        return new Fp2Element(c0.multiply(r).mod(P), c1.multiply(r).mod(P));
+        return new Fp2Element(reduce(c0.multiply(r)), reduce(c1.multiply(r)));
     }
 
     /**
@@ -107,9 +138,9 @@ public final class Fp2Element
     public Fp2Element square()
     {
         BigInteger sum = c0.add(c1);
-        BigInteger diff = c0.subtract(c1);
-        BigInteger newC0 = sum.multiply(diff).mod(P);
-        BigInteger newC1 = c0.multiply(c1).shiftLeft(1).mod(P);
+        BigInteger diff = subFp(c0, c1);
+        BigInteger newC0 = reduce(sum.multiply(diff));
+        BigInteger newC1 = reduce(c0.multiply(c1).shiftLeft(1));
         return new Fp2Element(newC0, newC1);
     }
 
@@ -119,7 +150,7 @@ public final class Fp2Element
      */
     public Fp2Element frobenius()
     {
-        return new Fp2Element(c0, P.subtract(c1).mod(P));
+        return new Fp2Element(c0, negFp(c1));
     }
 
     /**
@@ -131,11 +162,11 @@ public final class Fp2Element
         {
             throw new ArithmeticException("Fp2Element zero is not invertible");
         }
-        BigInteger norm = c0.multiply(c0).add(c1.multiply(c1)).mod(P);
+        BigInteger norm = reduce(c0.multiply(c0).add(c1.multiply(c1)));
         BigInteger normInv = norm.modInverse(P);
         return new Fp2Element(
-            c0.multiply(normInv).mod(P),
-            P.subtract(c1).multiply(normInv).mod(P));
+            reduce(c0.multiply(normInv)),
+            reduce(negFp(c1).multiply(normInv)));
     }
 
     /**
@@ -205,7 +236,7 @@ public final class Fp2Element
         if (alpha.equals(ONE.neg()))
         {
             // multiply by I
-            return new Fp2Element(P.subtract(x0.c1).mod(P), x0.c0);
+            return new Fp2Element(negFp(x0.c1), x0.c0);
         }
         BigInteger pMinus1Over2 = P.subtract(BigInteger.ONE).shiftRight(1);
         Fp2Element b = ONE.add(alpha).modPow(pMinus1Over2);
@@ -217,6 +248,52 @@ public final class Fp2Element
         // a is a square in Fp^2 iff a^((p^2 - 1) / 2) = 1.
         BigInteger qMinus1Over2 = P.multiply(P).subtract(BigInteger.ONE).shiftRight(1);
         return modPow(qMinus1Over2).equals(ONE);
+    }
+
+    /** {@code (a + b) mod p} for {@code a, b} in {@code [0, p)}. */
+    static BigInteger addFp(BigInteger a, BigInteger b)
+    {
+        BigInteger s = a.add(b);
+        return s.compareTo(P) >= 0 ? s.subtract(P) : s;
+    }
+
+    /** {@code (a - b) mod p} for {@code a, b} in {@code [0, p)}. */
+    static BigInteger subFp(BigInteger a, BigInteger b)
+    {
+        BigInteger d = a.subtract(b);
+        return d.signum() < 0 ? d.add(P) : d;
+    }
+
+    /** {@code -a mod p} for {@code a} in {@code [0, p)}. */
+    static BigInteger negFp(BigInteger a)
+    {
+        return a.signum() == 0 ? a : P.subtract(a);
+    }
+
+    /**
+     * {@code x mod p} for {@code 0 <= x < 2^BARRETT_BITS}, by Barrett reduction.
+     * The quotient estimate {@code floor(floor(x / 2^(K-1)) * MU / 2^(BARRETT_BITS-K+1))}
+     * never exceeds {@code floor(x / p)}, as every step rounds down, and falls
+     * short of it by less than {@code x / 2^BARRETT_BITS + 2^(K-1) / p + 1}. Every
+     * caller passes a sum of at most two products of reduced values,
+     * {@code x < 2p^2}, where that is below 2, so one corrective subtraction is
+     * the most that can follow; the loop is for completeness.
+     */
+    static BigInteger reduce(BigInteger x)
+    {
+        BigInteger q = x.shiftRight(K - 1).multiply(MU).shiftRight(BARRETT_BITS - K + 1);
+        BigInteger r = x.subtract(q.multiply(P));
+        while (r.compareTo(P) >= 0)
+        {
+            r = r.subtract(P);
+        }
+        return r;
+    }
+
+    /** {@code x mod p} for {@code -p^2 <= x < 2^BARRETT_BITS - p^2}. */
+    private static BigInteger reduceSigned(BigInteger x)
+    {
+        return reduce(x.signum() < 0 ? x.add(P_SQUARED) : x);
     }
 
     public boolean equals(Object other)

@@ -1,12 +1,8 @@
-package org.bouncycastle.crypto.hash2curve.test;
+package org.bouncycastle.crypto.bls;
 
 import java.math.BigInteger;
 
 import junit.framework.TestCase;
-import org.bouncycastle.crypto.bls.BLS12_381G2;
-import org.bouncycastle.crypto.bls.BLS12_381G2HashToCurve;
-import org.bouncycastle.crypto.bls.BLS12_381G2Point;
-import org.bouncycastle.crypto.bls.Fp2Element;
 import org.bouncycastle.util.Strings;
 
 /**
@@ -167,6 +163,26 @@ public class BLS12_381G2HashToCurveTest
         }
     }
 
+    /**
+     * The endomorphism-based cofactor clearing used by hash-to-curve must equal
+     * the plain multiplication by h_eff it replaces, for points outside and
+     * inside the subgroup and for infinity. The points outside come from
+     * map-to-curve itself, before its cofactor is cleared.
+     */
+    public void testClearCofactorMatchesHEff()
+    {
+        BLS12_381G2HashToCurve h2c = new BLS12_381G2HashToCurve(Strings.toUTF8ByteArray(DST));
+        java.security.SecureRandom rng = new java.security.SecureRandom(new byte[]{ 11 });
+        for (int i = 0; i < 4; ++i)
+        {
+            BLS12_381G2Point p = h2c.mapToCurveAndIso3(Fp2Element.of(new BigInteger(380, rng), new BigInteger(380, rng)));
+            assertEquals(p.multiply(BLS12_381G2.H_EFF), BLS12_381G2HashToCurve.clearCofactor(p));
+        }
+        BLS12_381G2Point g = BLS12_381G2.getGenerator();
+        assertEquals(g.multiply(BLS12_381G2.H_EFF), BLS12_381G2HashToCurve.clearCofactor(g));
+        assertTrue(BLS12_381G2HashToCurve.clearCofactor(BLS12_381G2Point.INFINITY).isInfinity());
+    }
+
     public void testGenerator()
     {
         BLS12_381G2Point g = BLS12_381G2.getGenerator();
@@ -255,5 +271,45 @@ public class BLS12_381G2HashToCurveTest
         assertEquals(0, Fp2Element.of(4, 3).sgn0());
         // (2, 1): sign_0=0, zero_0=0, sign_1=1 -> 0
         assertEquals(0, Fp2Element.of(2, 1).sgn0());
+    }
+
+    /**
+     * The Fp-based square root used by map-to-curve: for squares it returns a
+     * root of w, otherwise a root of Z*w, and its verdict agrees with the
+     * independent {@link Fp2Element#isSquare}. Covers the purely real inputs
+     * (square and non-square in Fp, so the root may be purely imaginary), zero,
+     * purely imaginary inputs and random ones.
+     */
+    public void testSqrtOrSqrtZ()
+    {
+        BigInteger p = Fp2Element.P;
+        Fp2Element z = Fp2Element.of(-2, -1);
+        java.security.SecureRandom rng = new java.security.SecureRandom(new byte[]{ 5 });
+        Fp2Element[] inputs = new Fp2Element[48];
+        inputs[0] = Fp2Element.ZERO;
+        inputs[1] = Fp2Element.ONE;
+        inputs[2] = Fp2Element.of(4, 0);
+        inputs[3] = Fp2Element.of(-1, 0);
+        inputs[4] = Fp2Element.of(-4, 0);
+        inputs[5] = Fp2Element.of(0, 1);
+        inputs[6] = Fp2Element.of(0, 2);
+        inputs[7] = Fp2Element.of(p.subtract(BigInteger.ONE), p.subtract(BigInteger.ONE));
+        for (int i = 8; i < inputs.length; ++i)
+        {
+            BigInteger a = new BigInteger(p.bitLength(), rng).mod(p);
+            BigInteger b = i < 16 ? BigInteger.ZERO : new BigInteger(p.bitLength(), rng).mod(p);
+            inputs[i] = Fp2Element.of(a, b);
+        }
+        int squares = 0;
+        for (int i = 0; i < inputs.length; ++i)
+        {
+            Fp2Element w = inputs[i];
+            Fp2Element[] root = new Fp2Element[1];
+            boolean isSquare = BLS12_381G2HashToCurve.sqrtOrSqrtZ(w, root);
+            assertEquals("square verdict for " + w, w.isSquare() || w.isZero(), isSquare);
+            assertEquals("root for " + w, isSquare ? w : z.mul(w), root[0].square());
+            squares += isSquare ? 1 : 0;
+        }
+        assertTrue(squares > 0 && squares < inputs.length);
     }
 }

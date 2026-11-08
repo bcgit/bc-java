@@ -140,12 +140,8 @@ public class BLS12_381BasicSchemeTest
     // keyValidate negative-branch coverage (review gap G3).
     //
     // The existing testKeyValidateRejectsIdentity exercises the
-    // non-identity guard. keyValidate also rejects null and off-subgroup
-    // points; both should be pinned. (Off-curve rejection is harder to
-    // exercise without bypassing ECCurve.createPoint's on-curve check;
-    // skipped — the on-curve test path is implicitly covered by
-    // testVerifyRejectsTamperedSignature, which constructs sig + G2_gen
-    // and expects rejection.)
+    // non-identity guard. keyValidate also rejects null, off-curve and
+    // off-subgroup points; all three are pinned below.
     // ---------------------------------------------------------------------
 
     public void testKeyValidateRejectsNull()
@@ -184,6 +180,40 @@ public class BLS12_381BasicSchemeTest
             return;
         }
         fail("could not construct an off-subgroup G1 point in 16 attempts");
+    }
+
+    /** (0, 2) is on the curve and has order 3, so it is outside G1. */
+    public void testKeyValidateRejectsSmallOrder()
+    {
+        ECCurve curve = BLS12_381G1.createCurve();
+        ECPoint order3 = curve.createPoint(BigInteger.ZERO, BigInteger.valueOf(2));
+        assertTrue(order3.twice().equals(order3.negate()));
+        assertFalse("order-3 point must fail keyValidate", BLS12_381BasicScheme.keyValidate(order3));
+        assertFalse(BLS12_381SubgroupCheck.isInG1Subgroup(order3));
+    }
+
+    /**
+     * ECCurve.createPoint does not check the curve equation, and the G1 subgroup
+     * check never uses b, so it accepts the image (u^2 x, u^3 y) of a G1 point
+     * on the isomorphic curve y^2 = x^3 + 4u^6. keyValidate must reject it by
+     * the curve equation.
+     */
+    public void testKeyValidateRejectsOffCurve()
+    {
+        ECCurve curve = BLS12_381G1.createCurve();
+        ECPoint g = BLS12_381G1.getGenerator(curve);
+        BigInteger p = BLS12_381G1.Q;
+        BigInteger u = BigInteger.valueOf(2);
+        ECPoint image = curve.createPoint(g.getAffineXCoord().toBigInteger().multiply(u.pow(2)).mod(p),
+            g.getAffineYCoord().toBigInteger().multiply(u.pow(3)).mod(p));
+        assertFalse("image must be off the curve", image.isValid());
+        assertTrue("the subgroup check alone accepts the image",
+            BLS12_381SubgroupCheck.isInG1Subgroup(image));
+        assertFalse("off-curve point must fail keyValidate", BLS12_381BasicScheme.keyValidate(image));
+
+        ECPoint tampered = curve.createPoint(g.getAffineXCoord().toBigInteger(),
+            g.getAffineYCoord().toBigInteger().add(BigInteger.ONE));
+        assertFalse("off-curve point must fail keyValidate", BLS12_381BasicScheme.keyValidate(tampered));
     }
 
     // A point names its own ECCurve, and ECPoint.satisfiesOrder() trusts that curve's own

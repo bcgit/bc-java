@@ -41,6 +41,32 @@ public class BLS12_381G2HashToCurve
     /** SSWU Z parameter: -(2 + I). */
     private static final Fp2Element Z = Fp2Element.of(-2, -1);
 
+    /** (p + 1) / 4: in Fp, a^((p+1)/4) is a square root of a whenever a is a square (p = 3 mod 4). */
+    private static final BigInteger SQRT_EXP = Fp2Element.P.add(BigInteger.ONE).shiftRight(2);
+
+    /** 1/2 in Fp. */
+    private static final BigInteger HALF = BigInteger.valueOf(2).modInverse(Fp2Element.P);
+
+    /**
+     * A square root of -N(Z) = -5 in Fp. Z is not a square in Fp^2, so its norm 5
+     * is not a square in Fp; neither is -1 (p = 3 mod 4), so -5 is.
+     */
+    private static final BigInteger SQRT_MINUS_NORM_Z;
+
+    static
+    {
+        BigInteger p = Fp2Element.P;
+        BigInteger minusNormZ = p.subtract(Z.c0().multiply(Z.c0()).add(Z.c1().multiply(Z.c1())).mod(p));
+        SQRT_MINUS_NORM_Z = minusNormZ.modPow(SQRT_EXP, p);
+        if (!SQRT_MINUS_NORM_Z.multiply(SQRT_MINUS_NORM_Z).mod(p).equals(minusNormZ))
+        {
+            throw new IllegalStateException("-N(Z) must be a square in Fp");
+        }
+    }
+
+    /** The BLS12-381 parameter x = -0xd201000000010000 (RFC 9380 App. G.3 c1). */
+    private static final BigInteger X = new BigInteger("-d201000000010000", 16);
+
     /** iso_3 x_num coefficients k_(1,0..3). */
     private static final Fp2Element[] K1 = {
         Fp2Element.of(
@@ -111,7 +137,26 @@ public class BLS12_381G2HashToCurve
         BLS12_381G2Point q0 = mapToCurveAndIso3(u[0]);
         BLS12_381G2Point q1 = mapToCurveAndIso3(u[1]);
         BLS12_381G2Point r = q0.add(q1);
-        return r.multiply(BLS12_381G2.H_EFF);
+        return clearCofactor(r);
+    }
+
+    /**
+     * {@code h_eff * P} by the endomorphism method of Budroni and Pintore
+     * (RFC 9380 App. G.3, {@code clear_cofactor_bls12381_g2}):
+     * {@code [x^2 - x - 1]P + [x - 1]psi(P) + psi^2(2P)}, using two scalar
+     * multiplications by the 64-bit x instead of one by the 636-bit
+     * {@code h_eff}. Package-private so the test tree can check it against
+     * {@code P.multiply(BLS12_381G2.H_EFF)}.
+     */
+    static BLS12_381G2Point clearCofactor(BLS12_381G2Point p)
+    {
+        BLS12_381G2Point t1 = p.multiply(X);
+        BLS12_381G2Point t2 = BLS12_381SubgroupCheck.psiG2(p);
+        BLS12_381G2Point t3 = BLS12_381SubgroupCheck.psiG2(BLS12_381SubgroupCheck.psiG2(p.doublePoint()));
+        t3 = t3.add(t2.negate());
+        t2 = t1.add(t2).multiply(X);
+        t3 = t3.add(t2).add(t1.negate());
+        return t3.add(p.negate());
     }
 
     /**
@@ -133,11 +178,12 @@ public class BLS12_381G2HashToCurve
     }
 
     /**
-     * Stages 2-3: simplified SWU on E' followed by iso_3 to E. Exposed for
-     * layered testing; returns a point on E that has not yet had its
-     * cofactor cleared, so it is generally not in the prime-order subgroup.
+     * Stages 2-3: simplified SWU on E' followed by iso_3 to E. Package-private
+     * so the test tree can check the RFC 9380 Q0 / Q1 intermediate values;
+     * returns a point on E that has not yet had its cofactor cleared, so it is
+     * generally not in the prime-order subgroup.
      */
-    public BLS12_381G2Point mapToCurveAndIso3(Fp2Element u)
+    BLS12_381G2Point mapToCurveAndIso3(Fp2Element u)
     {
         // Simplified SWU on E' (RFC 9380 sec. F.2 / 6.6.3).
         Fp2Element tv1 = Z.mul(u.square());
@@ -148,36 +194,105 @@ public class BLS12_381G2HashToCurve
             .add(B_PRIME.mul(tv4.square().mul(tv4)));
         Fp2Element gx1Den = tv4.square().mul(tv4);
 
+        // gx1 = gx1Num / gx1Den = gx1Num * gx1Den / gx1Den^2, so sqrt(gx1) =
+        // sqrt(gx1Num * gx1Den) / gx1Den, and gx1Den = tv4^3: one inversion, of
+        // tv4, serves x' and y' (RFC 9380 App. F.2, sqrt_ratio).
+        Fp2Element tv4Inv = tv4.inverse();
+        Fp2Element denInv = tv4Inv.square().mul(tv4Inv);
+        Fp2Element[] root = new Fp2Element[1];
+        boolean isSquare = sqrtOrSqrtZ(gx1Num.mul(gx1Den), root);
+
         Fp2Element xPrime;
         Fp2Element yPrime;
-        Fp2Element ratio = gx1Num.mul(gx1Den.inverse());
-        if (ratio.isSquare())
+        if (isSquare)
         {
-            xPrime = tv3.mul(tv4.inverse());
-            yPrime = ratio.sqrtOrNull();
+            xPrime = tv3.mul(tv4Inv);
+            yPrime = root[0].mul(denInv);
         }
         else
         {
-            xPrime = tv1.mul(tv3).mul(tv4.inverse());
-            Fp2Element zRatio = Z.mul(ratio);
-            Fp2Element zRatioSqrt = zRatio.sqrtOrNull();
-            yPrime = tv1.mul(u).mul(zRatioSqrt);
+            xPrime = tv1.mul(tv3).mul(tv4Inv);
+            yPrime = tv1.mul(u).mul(root[0]).mul(denInv);
         }
+        // Any square root will do: the sign is fixed here, as RFC 9380 requires.
         if (u.sgn0() != yPrime.sgn0())
         {
             yPrime = yPrime.neg();
         }
 
-        // iso_3 evaluation (RFC 9380 App. E.3).
+        // iso_3 evaluation (RFC 9380 App. E.3), with one inversion for both denominators.
         Fp2Element xNum = horner(K1, xPrime);
         Fp2Element xDen = horner(K2, xPrime).add(xPrime.square());
         Fp2Element yNum = horner(K3, xPrime);
         Fp2Element yDen = horner(K4, xPrime).add(xPrime.square().mul(xPrime));
 
-        Fp2Element x = xNum.mul(xDen.inverse());
-        Fp2Element y = yPrime.mul(yNum).mul(yDen.inverse());
+        Fp2Element denProdInv = xDen.mul(yDen).inverse();
+        Fp2Element x = xNum.mul(denProdInv).mul(yDen);
+        Fp2Element y = yPrime.mul(yNum).mul(denProdInv).mul(xDen);
 
         return BLS12_381G2Point.ofUnchecked(x, y);
+    }
+
+    /**
+     * Sets {@code root[0]} to a square root of {@code w} and returns true when
+     * {@code w} is a square in Fp^2; otherwise sets it to a square root of
+     * {@code Z * w} (a square, as Z is not) and returns false. This is
+     * RFC 9380's {@code sqrt_ratio(w, 1)} up to the choice of root.
+     * <p>
+     * Works in Fp, as p = 3 (mod 4) allows: {@code a + b*I} is a square exactly
+     * when its norm {@code a^2 + b^2} is a square in Fp, and then, with
+     * {@code g = sqrt(a^2 + b^2)}, one of {@code (a + g)/2} and {@code (a - g)/2}
+     * is a square {@code x0^2} and {@code x0 + (b / 2x0)*I} is a root. That costs
+     * two or three exponentiations in Fp, against the two or three over Fp^2
+     * (one with a 762-bit exponent) of {@link Fp2Element#isSquare} and
+     * {@link Fp2Element#sqrtOrNull}. Variable time, like the rest of this class;
+     * the input is derived from the public message. Package-private for the
+     * test tree.
+     */
+    static boolean sqrtOrSqrtZ(Fp2Element w, Fp2Element[] root)
+    {
+        BigInteger p = Fp2Element.P;
+        BigInteger a = w.c0(), b = w.c1();
+        BigInteger norm = a.multiply(a).add(b.multiply(b)).mod(p);
+        BigInteger g = norm.modPow(SQRT_EXP, p);
+        boolean isSquare = g.multiply(g).mod(p).equals(norm);
+        if (!isSquare)
+        {
+            // g^2 = -norm, and N(Z * w) = 5 * norm = (-5) * (-norm), so its root is sqrt(-5) * g.
+            Fp2Element zw = Z.mul(w);
+            a = zw.c0();
+            b = zw.c1();
+            g = SQRT_MINUS_NORM_Z.multiply(g).mod(p);
+        }
+        root[0] = sqrtOfSquare(a, b, g);
+        return isSquare;
+    }
+
+    /** A square root of the square {@code a + b*I}, given a square root {@code g} of its norm. */
+    private static Fp2Element sqrtOfSquare(BigInteger a, BigInteger b, BigInteger g)
+    {
+        BigInteger p = Fp2Element.P;
+        if (b.signum() == 0)
+        {
+            // a in Fp. s = a^((p+1)/4) has s^2 = a * a^((p-1)/2) = a or -a; in the
+            // second case a is not a square in Fp and (s*I)^2 = -s^2 = a.
+            BigInteger s = a.modPow(SQRT_EXP, p);
+            if (s.multiply(s).mod(p).equals(a))
+            {
+                return Fp2Element.of(s, BigInteger.ZERO);
+            }
+            return Fp2Element.of(BigInteger.ZERO, s);
+        }
+        // b != 0: (a + g)/2 * (a - g)/2 = -b^2/4 is a non-square, so exactly one factor is a square.
+        BigInteger delta = a.add(g).multiply(HALF).mod(p);
+        BigInteger x0 = delta.modPow(SQRT_EXP, p);
+        if (!x0.multiply(x0).mod(p).equals(delta))
+        {
+            delta = a.subtract(g).multiply(HALF).mod(p);
+            x0 = delta.modPow(SQRT_EXP, p);
+        }
+        BigInteger x1 = b.multiply(x0.shiftLeft(1).modInverse(p)).mod(p);
+        return Fp2Element.of(x0, x1);
     }
 
     /**

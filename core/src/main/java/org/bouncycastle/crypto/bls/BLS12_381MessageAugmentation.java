@@ -43,7 +43,7 @@ public class BLS12_381MessageAugmentation
         byte[] augmented = augment(pk, message);
         BLS12_381G2HashToCurve h = new BLS12_381G2HashToCurve(DST);
         // Constant-time: sk is secret.
-        return h.hashToCurve(augmented).constantTimeMultiply(sk);
+        return h.hashToCurve(augmented).constantTimeMultiplyInG2(sk);
     }
 
     /**

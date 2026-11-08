@@ -131,7 +131,9 @@ public class BLS12_381BasicScheme
         {
             return false;
         }
-        if (!pk.isValid())
+        // Not pk.isValid(): besides the curve equation it checks [r] pk == 0 by a full
+        // 255-bit multiplication, which the subgroup check below decides exactly.
+        if (!BLS12_381G1.isOnCurve(pk))
         {
             return false;
         }
@@ -151,7 +153,7 @@ public class BLS12_381BasicScheme
         BLS12_381G2HashToCurve h = new BLS12_381G2HashToCurve(DST);
         BLS12_381G2Point q = h.hashToCurve(message);
         // Constant-time: sk is secret.
-        return q.constantTimeMultiply(sk);
+        return q.constantTimeMultiplyInG2(sk);
     }
 
     /**

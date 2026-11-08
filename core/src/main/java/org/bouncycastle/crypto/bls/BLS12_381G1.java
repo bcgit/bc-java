@@ -96,6 +96,18 @@ public class BLS12_381G1
     }
 
     /**
+     * @return true iff the finite point {@code p} satisfies {@code y^2 = x^3 + 4}
+     * over Fp. Only the curve equation: no curve-identity or subgroup check.
+     */
+    static boolean isOnCurve(ECPoint p)
+    {
+        ECPoint n = p.normalize();
+        BigInteger x = n.getAffineXCoord().toBigInteger();
+        BigInteger y = n.getAffineYCoord().toBigInteger();
+        return y.multiply(y).mod(Q).equals(x.multiply(x).multiply(x).add(B).mod(Q));
+    }
+
+    /**
      * Constant-time scalar multiplication on G1, suitable for secret
      * scalars (e.g. {@code sk * G1_gen} in {@code skToPk}).
      * <p>

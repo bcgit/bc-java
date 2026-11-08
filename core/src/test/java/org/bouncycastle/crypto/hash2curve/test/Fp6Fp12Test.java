@@ -242,4 +242,104 @@ public class Fp6Fp12Test
         assertEquals(Fp12Element.fromFp6(a.mul(b)), a12.mul(b12));
         assertEquals(Fp12Element.fromFp6(a.add(b)), a12.add(b12));
     }
+
+    /**
+     * Fp^2 multiplication against the four-product schoolbook formula, including
+     * components at the top of the range, where Karatsuba's sums are largest.
+     */
+    public void testFp2MulMatchesSchoolbook()
+    {
+        BigInteger[] edge = { BigInteger.ZERO, BigInteger.ONE, P.subtract(BigInteger.ONE),
+            P.subtract(BigInteger.valueOf(2)), P.shiftRight(1) };
+        for (int i = 0; i < 200; ++i)
+        {
+            BigInteger a = i < 25 ? edge[i % 5] : new BigInteger(P.bitLength(), RNG).mod(P);
+            BigInteger b = i < 25 ? edge[(i / 5) % 5] : new BigInteger(P.bitLength(), RNG).mod(P);
+            BigInteger c = i < 25 ? edge[(i + 2) % 5] : new BigInteger(P.bitLength(), RNG).mod(P);
+            BigInteger d = i < 25 ? edge[(i / 5 + 3) % 5] : new BigInteger(P.bitLength(), RNG).mod(P);
+
+            Fp2Element r = Fp2Element.of(a, b).mul(Fp2Element.of(c, d));
+            assertEquals(a.multiply(c).subtract(b.multiply(d)).mod(P), r.c0());
+            assertEquals(a.multiply(d).add(b.multiply(c)).mod(P), r.c1());
+        }
+    }
+
+    /**
+     * The other Fp^2 operations against plain {@code BigInteger.mod} arithmetic,
+     * with the same edge components: the reductions are Barrett and conditional
+     * add/subtract, whose boundaries sit at 0, p - 1 and products near 2p^2.
+     */
+    public void testFp2OpsMatchReference()
+    {
+        BigInteger[] edge = { BigInteger.ZERO, BigInteger.ONE, P.subtract(BigInteger.ONE),
+            P.subtract(BigInteger.valueOf(2)), P.shiftRight(1), P.shiftRight(1).add(BigInteger.ONE) };
+        for (int i = 0; i < 300; ++i)
+        {
+            BigInteger a = i < 36 ? edge[i % 6] : new BigInteger(P.bitLength(), RNG).mod(P);
+            BigInteger b = i < 36 ? edge[i / 6] : new BigInteger(P.bitLength(), RNG).mod(P);
+            BigInteger c = i < 36 ? edge[(i + 1) % 6] : new BigInteger(P.bitLength(), RNG).mod(P);
+            BigInteger d = i < 36 ? edge[(i / 6 + 2) % 6] : new BigInteger(P.bitLength(), RNG).mod(P);
+            Fp2Element x = Fp2Element.of(a, b), y = Fp2Element.of(c, d);
+
+            assertFp2(a.add(c), b.add(d), x.add(y));
+            assertFp2(a.subtract(c), b.subtract(d), x.sub(y));
+            assertFp2(a.negate(), b.negate(), x.neg());
+            assertFp2(a, b.negate(), x.frobenius());
+            assertFp2(a.multiply(a).subtract(b.multiply(b)), a.multiply(b).shiftLeft(1), x.square());
+            assertFp2(a.multiply(c), b.multiply(c), x.mulFp(c));
+            if (!x.isZero())
+            {
+                assertEquals(Fp2Element.ONE, x.mul(x.inverse()));
+            }
+        }
+    }
+
+    /**
+     * Products whose real part {@code ac - bd} is a large negative number that a
+     * Barrett estimate would overshoot unless it is first shifted into range
+     * (found by search; about 0.5% of negative values behave this way).
+     */
+    public void testFp2MulNegativeRealPart()
+    {
+        String[][] bd = {
+            { "1034b24754d7e95bcdc64abf059d4fb5e6d6692c7eddb801227b9144f035e9008e95662c19635ff5159c89bb7ac30d45",
+              "1586e31ba768ea288bf2215bdf272b542d1f5560d6335b88f6cc135a7ca53a0fb8e1cc86f1d8644b20c29ee7ffe56e91" },
+            { "e30fd7adc5a76fbc00ec8ee9670858f1acccfb1303466b305983da077e4239a1dd341a6cf061749444d56b804270533",
+              "ea8e355a1f1010caaa5610c9a3b8107475c43e9b30cac7adc61c0822dd58e270b2d8f0e969a8cf05df04f9981b8f055" } };
+        for (int i = 0; i < bd.length; ++i)
+        {
+            BigInteger b = new BigInteger(bd[i][0], 16), d = new BigInteger(bd[i][1], 16);
+            Fp2Element r = Fp2Element.of(BigInteger.ZERO, b).mul(Fp2Element.of(BigInteger.ONE, d));
+            assertFp2(b.multiply(d).negate(), b, r);
+        }
+    }
+
+    private static void assertFp2(BigInteger c0, BigInteger c1, Fp2Element actual)
+    {
+        assertEquals(c0.mod(P), actual.c0());
+        assertEquals(c1.mod(P), actual.c1());
+    }
+
+    /**
+     * Fp^6 multiplication against the nine-product schoolbook formula with the
+     * products by xi = 1 + I done as full Fp^2 multiplications.
+     */
+    public void testFp6MulMatchesSchoolbook()
+    {
+        Fp2Element xi = Fp2Element.of(1, 1);
+        Fp2Element top = Fp2Element.of(P.subtract(BigInteger.ONE), P.subtract(BigInteger.ONE));
+        for (int i = 0; i < 100; ++i)
+        {
+            Fp6Element a = i == 0 ? Fp6Element.of(top, top, top) : randomFp6();
+            Fp6Element b = i == 0 ? Fp6Element.of(top, top, top) : randomFp6();
+
+            Fp2Element r0 = a.c0().mul(b.c0()).add(a.c1().mul(b.c2()).add(a.c2().mul(b.c1())).mul(xi));
+            Fp2Element r1 = a.c0().mul(b.c1()).add(a.c1().mul(b.c0())).add(a.c2().mul(b.c2()).mul(xi));
+            Fp2Element r2 = a.c0().mul(b.c2()).add(a.c1().mul(b.c1())).add(a.c2().mul(b.c0()));
+
+            assertEquals(Fp6Element.of(r0, r1, r2), a.mul(b));
+            assertEquals(a.mul(a), a.square());
+            assertEquals(Fp6Element.of(a.c2().mul(xi), a.c0(), a.c1()), a.mulByV());
+        }
+    }
 }

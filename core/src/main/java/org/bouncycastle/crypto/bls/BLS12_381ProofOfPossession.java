@@ -45,7 +45,7 @@ public class BLS12_381ProofOfPossession
         }
         BLS12_381G2HashToCurve h = new BLS12_381G2HashToCurve(DST);
         // Constant-time: sk is secret.
-        return h.hashToCurve(message).constantTimeMultiply(sk);
+        return h.hashToCurve(message).constantTimeMultiplyInG2(sk);
     }
 
     public static boolean verify(ECPoint pk, byte[] message, BLS12_381G2Point signature)
@@ -66,7 +66,7 @@ public class BLS12_381ProofOfPossession
         byte[] pkBytes = BLS12_381Serialization.compressG1(pk);
         BLS12_381G2HashToCurve h = new BLS12_381G2HashToCurve(POP_DST);
         // Constant-time: sk is secret.
-        return h.hashToCurve(pkBytes).constantTimeMultiply(sk);
+        return h.hashToCurve(pkBytes).constantTimeMultiplyInG2(sk);
     }
 
     /**
