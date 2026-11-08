@@ -180,7 +180,7 @@ public class RIPEMD320Digest
         int y,
         int z)
     {
-        return (x & y) | (~x & z);
+        return (z ^ (x & (y ^ z)));
     }
 
     /*
@@ -202,7 +202,7 @@ public class RIPEMD320Digest
         int y,
         int z)
     {
-        return (x & z) | (y & ~z);
+        return (y ^ (z & (x ^ y)));
     }
 
     /*

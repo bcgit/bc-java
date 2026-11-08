@@ -167,7 +167,7 @@ public class MD4Digest
         int v,
         int w)
     {
-        return (u & v) | (~u & w);
+        return (w ^ (u & (v ^ w)));
     }
 
     private int G(
@@ -175,7 +175,7 @@ public class MD4Digest
         int v,
         int w)
     {
-        return (u & v) | (u & w) | (v & w);
+        return (((v | w) & u) | (v & w));
     }
 
     private int H(

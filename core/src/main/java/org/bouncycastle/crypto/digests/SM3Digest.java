@@ -234,7 +234,7 @@ ROLL 23 :  ((x << 23) | (x >>> (32-23)))
 
     private int FF1(final int x, final int y, final int z)
     {
-        return ((x & y) | (x & z) | (y & z));
+        return (((y | z) & x) | (y & z));
     }
 
     private int GG0(final int x, final int y, final int z)
@@ -244,7 +244,7 @@ ROLL 23 :  ((x << 23) | (x >>> (32-23)))
 
     private int GG1(final int x, final int y, final int z)
     {
-        return ((x & y) | ((~x) & z));
+        return (z ^ (x & (y ^ z)));
     }
 
 

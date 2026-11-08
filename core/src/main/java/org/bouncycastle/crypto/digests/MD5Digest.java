@@ -193,7 +193,7 @@ public class MD5Digest
         int v,
         int w)
     {
-        return (u & v) | (~u & w);
+        return (w ^ (u & (v ^ w)));
     }
 
     private int G(
@@ -201,7 +201,7 @@ public class MD5Digest
         int v,
         int w)
     {
-        return (u & w) | (v & ~w);
+        return (v ^ (w & (u ^ v)));
     }
 
     private int H(

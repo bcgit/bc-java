@@ -176,7 +176,7 @@ public class SHA1Digest
         int    v,
         int    w)
     {
-        return ((u & v) | ((~u) & w));
+        return (w ^ (u & (v ^ w)));
     }
 
     private int h(
@@ -192,7 +192,7 @@ public class SHA1Digest
         int    v,
         int    w)
     {
-        return ((u & v) | (u & w) | (v & w));
+        return (((v | w) & u) | (v & w));
     }
 
     protected void processBlock()
