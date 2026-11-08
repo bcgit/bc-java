@@ -71,7 +71,7 @@ public final class XMSSMTPrivateKeyParameters
 
                 bdsState = bdsImport.withMaxIndex(stateMaxIndex, xmss.getTreeDigestOID(),
                     xmss.getTreeDigestSize());
-                bdsState.validate(params, index);
+                bdsState.validate(params, index, publicSeed, secretKeySeed);
                 bdsState.validateRoot(params, root);
             }
             catch (IOException e)
@@ -114,7 +114,7 @@ public final class XMSSMTPrivateKeyParameters
             }
             try
             {
-                bdsState.validate(params, builder.index);
+                bdsState.validate(params, builder.index, publicSeed, secretKeySeed);
                 if (builder.bdsState != null)
                 {
                     // only a restored state carries a root worth comparing: one built here is
@@ -284,7 +284,7 @@ public final class XMSSMTPrivateKeyParameters
             // the two records of the position are about to be written out beside each other, and a
             // stored key that disagrees with itself is refused on the way back in, so say so here
             // rather than persisting one that cannot be read
-            bdsState.validateIndex(params, index);
+            bdsState.validateIndex(params, index, publicSeed, secretKeySeed);
 
             XMSSPrivateKeyCodec.State state = state();
 
@@ -374,7 +374,7 @@ public final class XMSSMTPrivateKeyParameters
             // a one-time key signing twice. It is the walk down the layers and d integer
             // comparisons, not the structural check the constructor also runs.
             //
-            bdsState.validateIndex(params, index);
+            bdsState.validateIndex(params, index, publicSeed, secretKeySeed);
 
             return this;
         }

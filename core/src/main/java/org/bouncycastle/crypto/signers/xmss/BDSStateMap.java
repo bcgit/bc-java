@@ -275,11 +275,29 @@ public class BDSStateMap
      *
      * @param params      the parameters of the enclosing key.
      * @param globalIndex the index the enclosing key declares.
+     * @deprecated use validate(XMSSMTParameters, long, byte[], byte[]): without the key's seeds the
+     * state carried over at the start of a tree cannot be tied to the tree it came from, see
+     * validateIndex(XMSSMTParameters, long, byte[], byte[]).
      */
     public void validate(XMSSMTParameters params, long globalIndex)
     {
         validate(params);
         validateIndex(params, globalIndex);
+    }
+
+    /**
+     * Validate as validate(XMSSMTParameters) and then as
+     * validateIndex(XMSSMTParameters, long, byte[], byte[]).
+     *
+     * @param params        the parameters of the enclosing key.
+     * @param globalIndex   the index the enclosing key declares.
+     * @param publicSeed    the public seed of the enclosing key.
+     * @param secretKeySeed the secret key seed of the enclosing key.
+     */
+    public void validate(XMSSMTParameters params, long globalIndex, byte[] publicSeed, byte[] secretKeySeed)
+    {
+        validate(params);
+        validateIndex(params, globalIndex, publicSeed, secretKeySeed);
     }
 
     /**
@@ -297,9 +315,42 @@ public class BDSStateMap
      *
      * @param params      the parameters of the enclosing key.
      * @param globalIndex the index the enclosing key declares.
+     * @deprecated use validateIndex(XMSSMTParameters, long, byte[], byte[]). This form accepts a
+     * state on the last leaf of any tree wherever a layer's expected leaf is 0, having no seeds to
+     * tell which tree the state came from, so a key saved on the last leaf of a tree and then moved
+     * back to the first leaf of that same tree passes it.
      */
     public void validateIndex(XMSSMTParameters params, long globalIndex)
     {
+        validateIndex(params, globalIndex, null, null);
+    }
+
+    /**
+     * The index half of validate(XMSSMTParameters, long, byte[], byte[]) on its own, as
+     * validateIndex(XMSSMTParameters, long) describes, but with the carried-over state tied to the
+     * tree it came from.
+     * <p>
+     * Where a layer's expected leaf is 0 its state may still stand on the last leaf of the
+     * previous tree of that layer - see below - and that allowance is only sound for that one
+     * tree. A state on the last leaf of the expected tree itself, or of any other, is a key whose
+     * index was moved back behind its state: accepting it would sign again under a one-time key
+     * already used. The previous tree is checked by recomputing the leaf before its last one from
+     * the seeds and comparing it with the first node of the state's authentication path, which
+     * costs one leaf, and only at those positions.
+     * </p>
+     *
+     * @param params        the parameters of the enclosing key.
+     * @param globalIndex   the index the enclosing key declares.
+     * @param publicSeed    the public seed of the enclosing key.
+     * @param secretKeySeed the secret key seed of the enclosing key.
+     */
+    public void validateIndex(XMSSMTParameters params, long globalIndex, byte[] publicSeed, byte[] secretKeySeed)
+    {
+        if ((publicSeed == null) != (secretKeySeed == null))
+        {
+            throw new IllegalArgumentException("publicSeed and secretKeySeed must both be given");
+        }
+
         // On this map's own monitor, for the whole walk, as validate(XMSSMTParameters) and
         // getStateMap() beside it are - taking it once per layer instead, which is what a bare
         // get(layer) does, would let a signature land in the middle and leave this comparing some
@@ -332,14 +383,16 @@ public class BDSStateMap
                 // not been advanced into it: updateState skips the advance on the last leaf of a
                 // subtree and the signer rebuilds the state when it next signs there, so the
                 // carried-over final index of the previous subtree is legitimate at that one
-                // position. Every other position must agree exactly. Enumerating every index of the
+                // position - and only if it is the previous subtree's, which the seeds, when
+                // given, establish: treeIndex is already the expected tree of this layer here.
+                // Every other position must agree exactly. Enumerating every index of the
                 // h=4/d=2, h=6/d=2, h=6/d=3, h=9/d=3 and h=8/d=4 parameter sets produces no other
                 // divergence.
                 //
                 int actual = state.getIndex();
-                boolean ok = (expectedLeaf == 0)
-                    ? (actual == 0 || actual == lastLeaf)
-                    : (actual == expectedLeaf);
+                boolean ok = (actual == expectedLeaf)
+                    || (expectedLeaf == 0 && actual == lastLeaf && (secretKeySeed == null
+                        || state.isLastLeafOfTree(publicSeed, secretKeySeed, layer, treeIndex - 1)));
 
                 if (!ok)
                 {

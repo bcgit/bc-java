@@ -589,9 +589,17 @@ class XmssKeyUtil
                 throw new IllegalArgumentException("index out of bounds");
             }
 
-            bdsState.validateIndex(params, index);
-
             byte[] publicSeed = keyParams.getPublicSeed();
+            byte[] secretKeySeed = keyParams.getSecretKeySeed();
+            try
+            {
+                bdsState.validateIndex(params, index, publicSeed, secretKeySeed);
+            }
+            finally
+            {
+                Arrays.clear(secretKeySeed);
+            }
+
             byte[] bdsStateBinary = XMSSEngine.getEncodedBDSState(bdsState, publicSeed);
             long maxIndex = bdsState.getMaxIndex();
 
