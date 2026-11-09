@@ -145,6 +145,11 @@
             <fileset dir="core/src/test/java">
                 <exclude name="**/speedy/*.java"/>
                 <exclude name="**/hash2curve/**/*.java"/>
+                <!-- package-private BLS tests; BLS is excluded from this build -->
+                <exclude name="**/crypto/bls/**/*.java"/>
+                <!-- drives the PhotonBeetle/ISAP/Elephant/Sparkle engines this build excludes;
+                     not referenced by the jdk1.4 crypto RegressionTest overlay -->
+                <exclude name="**/crypto/test/AEADFailedDecryptionMacTest.java"/>
                 <exclude name="**/cavp/*.java"/>
                 <exclude name="**/i18n/**/*.java"/>
                 <exclude name="**/GeMSS*.java"/>

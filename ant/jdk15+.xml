@@ -70,6 +70,9 @@
                 <!-- X509LDAPCertStoreTest depends on unboundid-ldapsdk (JDK 7 bytecode);
                      not referenced by the jdk1.5 RegressionTest overlay -->
                 <exclude name="**/jce/provider/test/X509LDAPCertStoreTest.java"/>
+                <!-- AsconTest drives AAD through javax.crypto.Cipher.updateAAD (JDK 7+); not
+                     referenced by the jdk1.5 RegressionTest overlay -->
+                <exclude name="**/jce/provider/test/AsconTest.java"/>
             </fileset>
             <fileset dir="prov/src/test/resources" includes="**/*.*" />
 
@@ -83,6 +86,12 @@
                      curated 1.5-safe subset that does not reference them. -->
                 <exclude name="**/jsse/provider/test/BCJSSEClientTest.java"/>
                 <exclude name="**/jsse/provider/test/RequestedServerNamesTest.java"/>
+                <!-- These use javax.net.ssl.SSLParameters / SSLContext.get*SSLParameters (JDK 1.6+),
+                     X509ExtendedTrustManager and ConcurrentHashMap.newKeySet (JDK 1.7+/1.8+); the
+                     jdk1.5 jsse/provider AllTests overlay does not reference them. -->
+                <exclude name="**/jsse/provider/test/DefaultParametersTest.java"/>
+                <exclude name="**/jsse/provider/test/SSLEngineDelegatedTaskTest.java"/>
+                <exclude name="**/jsse/provider/test/TlsFipsTest.java"/>
                 <!-- TlsClientRawKeysTest / TlsServerRawKeysTest call InetAddress.getLoopbackAddress()
                      (JDK 1.7+); they belong to no AllTests/RegressionTest suite (run standalone), so
                      a plain exclude removes them from the compile with no coverage impact. -->
@@ -103,11 +112,13 @@
                 <!-- pkix.jcajce tests reach the package-private ReasonsMask - same problem -->
                 <exclude name="**/pkix/jcajce/*.java"/>
                 <!-- Genuine post-1.5 API in test source (fails the real javac 1.5 test compile):
-                     PKIXRevocationTest / OCSPExceptionalSignatureRejectionTest use
+                     PKIXRevocationTest / OCSPExceptionalSignatureRejectionTest /
+                     PKIXOcspRevocationCheckerTest use
                      java.security.cert.PKIXRevocationChecker (JDK 1.8+); the jdk1.5 ocsp AllTests
                      overlay already omits them from the suite. -->
                 <exclude name="**/cert/ocsp/test/PKIXRevocationTest.java"/>
                 <exclude name="**/cert/ocsp/test/OCSPExceptionalSignatureRejectionTest.java"/>
+                <exclude name="**/cert/ocsp/test/PKIXOcspRevocationCheckerTest.java"/>
                 <!-- cert.plants (Merkle-tree certs) uses generic/varargs inference the 1.5 compiler
                      cannot resolve; excluded wholesale as in ant/jdk14.xml. -->
                 <exclude name="**/cert/plants/**/*.java"/>
