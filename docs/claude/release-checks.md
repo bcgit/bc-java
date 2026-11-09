@@ -77,6 +77,34 @@ Resolve every import statically against the set's own exports; nothing may be un
 - Controls: published bctls 1.86.1 with bcprov/bcutil 1.86 must stay `Installed` with
   `missing requirement … (version>=1.86.1)`. Published 1.86.2 must go `Active`.
 
-## 4. Signatures
+## 4. Module descriptors (JPMS)
+
+A missing `exports` line only hurts modular consumers, so no build or class-path test notices it.
+Check every jar against its own descriptor:
+
+- **Every distributed module has a descriptor.** Read `META-INF/versions/9/module-info.class` out of
+  each jar with `javap`. In 1.87, pgsc, a new module, had none and would have shipped as the
+  automatic module `bcpgsc.jdk18on`. (`jar --describe-module` won't take `--release` together with
+  `--file` here, so use `javap` for multi-release jars.)
+- **Exports match the jar.** Compare the `exports` with the packages that hold classes in the jar,
+  counting root and `META-INF/versions/*` entries. Nothing may be exported that is absent, and
+  nothing present may be unexported without a reason recorded in the descriptor or in
+  `architecture.md`. Today the only such packages are bcprov's `org.bouncycastle.internal.*`,
+  concealed by design. 1.87 found `org.bouncycastle.mls.TreeKEM` unexported since 2024, although 31
+  public members of exported classes used its types and the OSGi manifest exported it.
+- **The graph resolves.** Use `java -p <all jars + javax.mail/activation> --add-modules
+  ALL-MODULE-PATH --validate-modules`, and `--list-modules` on JDK 11 and 25. Every BC module must
+  appear by its `org.bouncycastle.*` name and none as `automatic`.
+  `jdeps --multi-release 25 --module-path <jars> --check <module>` must report no missing
+  dependencies other than documented optional ones (pgsc's YubiKit).
+- **The two prov descriptors agree.** `diff prov/src/main/jdk1.9/module-info.java
+  prov/src/main/ext-jdk1.9/module-info.java` must print nothing.
+- **pgsc's YubiKey backend works modularly.** From the module path, with YubiKit (Gradle's
+  resolution of `:pgsc:testRuntimeClasspath`, which includes its transitive jars) on the class
+  path, `YubikeyOpenPGPSmartCardBackend.createInstance()` must fail with `IllegalAccessError`
+  without `--add-reads org.bouncycastle.pgsc=ALL-UNNAMED` and succeed with it, as the descriptor's
+  NOTE says.
+
+## 5. Signatures
 
 `jarsigner -verify` every jar, legacy and Gradle alike.
