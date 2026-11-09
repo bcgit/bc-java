@@ -3,11 +3,26 @@ plugins {
     id "biz.aQute.bnd.builder" version "7.1.0"
 }
 
+sourceSets {
+    java9 {
+        java {
+            srcDirs = ['src/main/jdk1.9']
+        }
+    }
+}
+
 dependencies {
     implementation project(':core')
     implementation project(':prov')
     implementation project(':util')
     implementation project(':pg')
+
+    java9Implementation project(':prov')
+    java9Implementation project(':util')
+    java9Implementation project(':pg')
+    java9Implementation files(sourceSets.main.output.classesDirs) {
+        builtBy compileJava
+    }
 
     // The YubiKey backend (org.bouncycastle.openpgp.smartcard.yubikey.*) is compiled against the YubiKit
     // libraries but does NOT declare them as a runtime dependency: bcpgsc ships with no third-party
@@ -28,6 +43,29 @@ evaluationDependsOn(":prov")
 evaluationDependsOn(":util")
 evaluationDependsOn(":pg")
 
+compileJava {
+
+    options.release = 8
+}
+
+compileJava9Java {
+
+    options.release = 9
+
+    def prov_jar="${project(":prov").jar.outputs.files.getFiles().getAt(0)}"
+    def util_jar="${project(":util").jar.outputs.files.getFiles().getAt(0)}"
+    def pg_jar="${project(":pg").jar.outputs.files.getFiles().getAt(0)}"
+
+    options.compilerArgs += [
+            '--module-path', "${prov_jar}${File.pathSeparator}${util_jar}${File.pathSeparator}${pg_jar}"
+    ]
+
+    options.sourcepath = files(['src/main/java', 'src/main/jdk1.9'])
+    options.compilerArgs << '-implicit:none'  // avoid recompiling every baseline class implicitly loaded via sourcepath
+}
+
+compileJava9Java.dependsOn([":prov:jar", ":util:jar", ":pg:jar"])
+
 jar.archiveBaseName = "bcpgsc-$vmrange"
 
 task sourcesJar(type: Jar) {
@@ -35,11 +73,18 @@ task sourcesJar(type: Jar) {
     archiveBaseName = jar.archiveBaseName
     archiveClassifier = 'sources'
     from sourceSets.main.allSource
+    into('META-INF/versions/9') {
+        from sourceSets.java9.allSource
+    }
 }
 
 jar {
     from sourceSets.main.output
+    into('META-INF/versions/9') {
+        from sourceSets.java9.output
+    }
     String v = "${rootProject.extensions.ext.bundle_version}"
+    manifest.attributes('Multi-Release': 'true')
     manifest.attributes('Bundle-RequiredExecutionEnvironment': 'JavaSE-1.8')
     manifest.attributes('Bundle-Name': 'bcpgsc')
     manifest.attributes('Bundle-SymbolicName': 'bcpgsc')

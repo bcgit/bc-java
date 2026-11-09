@@ -30,6 +30,7 @@ module org.bouncycastle.provider
     opens org.bouncycastle.pqc.jcajce.provider.sqisign to java.base;
     opens org.bouncycastle.pqc.jcajce.provider.haetae to java.base;
     opens org.bouncycastle.pqc.jcajce.provider.aimer to java.base;
+    opens org.bouncycastle.pqc.jcajce.provider.smaugt to java.base;
 
     exports org.bouncycastle;
     exports org.bouncycastle.asn1;
@@ -212,6 +213,7 @@ module org.bouncycastle.provider
     exports org.bouncycastle.pqc.jcajce.provider.haetae;
     exports org.bouncycastle.pqc.jcajce.provider.aimer;
     exports org.bouncycastle.pqc.jcajce.provider.qruov;
+    exports org.bouncycastle.pqc.jcajce.provider.smaugt;
     exports org.bouncycastle.pqc.jcajce.provider.sphincs;
     exports org.bouncycastle.pqc.jcajce.provider.sqisign;
     exports org.bouncycastle.pqc.jcajce.provider.util;

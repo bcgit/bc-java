@@ -10,4 +10,5 @@ module org.bouncycastle.mls
     exports org.bouncycastle.mls.codec;
     exports org.bouncycastle.mls.crypto;
     exports org.bouncycastle.mls.crypto.bc;
+    exports org.bouncycastle.mls.TreeKEM;
 }
