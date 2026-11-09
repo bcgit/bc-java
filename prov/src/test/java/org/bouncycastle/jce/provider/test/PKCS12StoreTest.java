@@ -3293,6 +3293,75 @@ public class PKCS12StoreTest
             !Arrays.areEqual(callerSalt, pbkdf2ParamsOf(storeToBytes(caller, passwd)).getSalt()));
     }
 
+    /**
+     * org.bouncycastle.pkcs12.default names the store behind PKCS12 and BCPKCS12, and PKCS12-DEF
+     * follows it to the PKCS12-DEF-* counterpart. The property is read when the provider is
+     * constructed, so each case builds its own provider.
+     */
+    private void testDefaultTypeProperty()
+        throws Exception
+    {
+        String prefix = "org.bouncycastle.jcajce.provider.keystore.pkcs12.";
+        String bc = prefix + "PKCS12KeyStoreSpi$BCPKCS12KeyStore";
+        String def = prefix + "PKCS12KeyStoreSpi$DefPKCS12KeyStore";
+
+        checkDefaultType(null, bc, def);
+        checkDefaultType("PKCS12-AES256-AES128", bc + "AES256", def + "AES256");
+        checkDefaultType("PKCS12-AES256-AES128-GCM", bc + "AES256GCM", def + "AES256GCM");
+        checkDefaultType("pkcs12-3des-3des", bc + "3DES", def + "3DES");
+        // PBMAC1 has no PKCS12-DEF counterpart, so PKCS12-DEF stays the plain one
+        checkDefaultType("PKCS12-PBMAC1", prefix + "PKCS12PBMAC1KeyStoreSpi$BCPKCS12KeyStore", def);
+        // a value naming no store is ignored rather than leaving the names unresolvable
+        checkDefaultType("PKCS12-NONE", bc, def);
+        checkDefaultType("PKCS12", bc, def);
+    }
+
+    private void checkDefaultType(String value, String expected, String expectedDef)
+        throws Exception
+    {
+        String name = "org.bouncycastle.pkcs12.default";
+        String old = System.getProperty(name);
+        try
+        {
+            if (value == null)
+            {
+                System.getProperties().remove(name);
+            }
+            else
+            {
+                System.setProperty(name, value);
+            }
+
+            java.security.Provider provider = new BouncyCastleProvider();
+
+            checkKeyStoreType(provider, "PKCS12", expected, value);
+            checkKeyStoreType(provider, "BCPKCS12", expected, value);
+            checkKeyStoreType(provider, "PKCS12-DEF", expectedDef, value);
+        }
+        finally
+        {
+            if (old == null)
+            {
+                System.getProperties().remove(name);
+            }
+            else
+            {
+                System.setProperty(name, old);
+            }
+        }
+    }
+
+    private void checkKeyStoreType(java.security.Provider provider, String type, String expected, String value)
+        throws Exception
+    {
+        java.security.Provider.Service service = provider.getService("KeyStore", type);
+        isTrue(type + " missing with default " + value, service != null);
+        isEquals(type + " with default " + value, expected, service.getClassName());
+
+        KeyStore store = KeyStore.getInstance(type, provider);
+        store.load(null, null);
+    }
+
     private void testPbkdf2IterationCount()
         throws Exception
     {
@@ -3436,6 +3505,7 @@ public class PKCS12StoreTest
         testMacKdfParametersNotInherited();
         testMacParametersResetByUnprotectedLoad();
         testPbkdf2IterationCount();
+        testDefaultTypeProperty();
 
         // converter tests
 
