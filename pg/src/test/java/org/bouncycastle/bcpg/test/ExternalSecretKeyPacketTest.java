@@ -23,7 +23,7 @@ public class ExternalSecretKeyPacketTest
      * Example transferable secret key test vector. It includes unencrypted private key material for both
      * its primary and subkey.
      *
-     * @see <a href="https://www.ietf.org/archive/id/draft-dkg-openpgp-external-secrets-03.html#name-example-transferable-secret">
+     * @see <a href="https://www.ietf.org/archive/id/draft-ietf-openpgp-external-secrets-01.html#name-example-transferable-secret">
      *     Example Transferable Secret Key Test Vector</a>
      */
     private static final String V4_TSK = "-----BEGIN PGP PRIVATE KEY BLOCK-----\n" +
@@ -45,7 +45,7 @@ public class ExternalSecretKeyPacketTest
      * The same TSK as {@link #V4_TSK}, but with external secret keys for both the primary and subkey.
      * The keys are marked with "best-effort".
      *
-     * @see <a href="https://www.ietf.org/archive/id/draft-dkg-openpgp-external-secrets-03.html#name-as-an-external-secret-key">
+     * @see <a href="https://www.ietf.org/archive/id/draft-ietf-openpgp-external-secrets-01.html#name-as-an-external-secret-key-w">
      *     External Key Test Vector</a>
      */
     private static final String V4_TSK_AS_EXTERNAL_KEY_BEST_EFFORT = "-----BEGIN PGP PRIVATE KEY BLOCK-----\n" +
@@ -69,7 +69,7 @@ public class ExternalSecretKeyPacketTest
      * <p>
      * Added to the draft in revision 03 alongside the v6 external key.
      *
-     * @see <a href="https://www.ietf.org/archive/id/draft-dkg-openpgp-external-secrets-03.html#name-example-transferable-secret">
+     * @see <a href="https://www.ietf.org/archive/id/draft-ietf-openpgp-external-secrets-01.html#name-example-transferable-secret">
      *     Example Transferable Secret Key Test Vector</a>
      */
     private static final String V6_TSK = "-----BEGIN PGP PRIVATE KEY BLOCK-----\n" +
@@ -117,7 +117,7 @@ public class ExternalSecretKeyPacketTest
      * <p>
      * Added to the draft in revision 03.
      *
-     * @see <a href="https://www.ietf.org/archive/id/draft-dkg-openpgp-external-secrets-03.html#name-as-an-external-secret-key">
+     * @see <a href="https://www.ietf.org/archive/id/draft-ietf-openpgp-external-secrets-01.html#name-as-an-external-secret-key-w">
      *     External Key Test Vector</a>
      */
     private static final String V6_TSK_AS_EXTERNAL_KEY_BEST_EFFORT = "-----BEGIN PGP PRIVATE KEY BLOCK-----\n" +
@@ -134,8 +134,11 @@ public class ExternalSecretKeyPacketTest
             "-----END PGP PRIVATE KEY BLOCK-----\n";
 
     /**
-     * TSK with the primary key being marked as external and unavailable,
+     * V6 TSK with the primary key being marked as external and unavailable,
      * while the subkey is marked as external and "best effort".
+     *
+     * @see <a href="https://www.ietf.org/archive/id/draft-ietf-openpgp-external-secrets-01.html#name-as-an-external-secret-key-wi">
+     *     Unavailable primary key</a>
      */
     private static final String V6_TSK_AS_EXTERNAL_KEY_UNAVAILABLE = "-----BEGIN PGP PRIVATE KEY BLOCK-----\n" +
             "\n" +
@@ -150,6 +153,12 @@ public class ExternalSecretKeyPacketTest
             "scHDzTkjyRZWRdTq8U6L4da+/+Ktruh8m7Xo2ehSSFyWRSuTSZe5tm/KXgYG\n" +
             "-----END PGP PRIVATE KEY BLOCK-----\n";
 
+    /**
+     * V6 TSK with an experimental locator hint for both the primary key and subkey packets.
+     *
+     * @see <a href="https://www.ietf.org/archive/id/draft-ietf-openpgp-external-secrets-01.html#name-as-an-external-secret-key-wit">
+     *     Experimental locator hint</a>
+     */
     private static final String V6_TSK_AS_EXTERNAL_KEY_EXPERIMENTAL = "-----BEGIN PGP PRIVATE KEY BLOCK-----\n" +
             "\n" +
             "xTUGY4d/4xsAAAAg+U2nu0jWCmHlZ3BqZYfQMxmZu52JGggkLq2EVD34laP8CWAx\n" +

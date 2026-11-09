@@ -70,7 +70,7 @@ public class SecretKeyPacket
      * S2K-usage octet indicating that the secret key material is stored externally, e.g. on a hardware device.
      * The draft specification is an alternative to GnuPGs proprietary {@link S2K#GNU_DUMMY_S2K} mechanism.
      * <p>
-     * NOTE: this code point is <em>provisional</em>. draft-ietf-openpgp-external-secrets-00 sec. 2 records
+     * NOTE: this code point is <em>provisional</em>. draft-ietf-openpgp-external-secrets-01 sec. 2 records
      * it as "TBD (252?)" and IANA has not yet assigned it, so the value here tracks the draft's suggestion
      * and is subject to change if a different octet is allocated. Do not rely on it for long-term storage.
      *
