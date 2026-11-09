@@ -11,8 +11,9 @@ Bouncy Castle Java supports the following formats and standards.
 | Supported Standard | External Reference |
 |---|---|
 | X.509 and PKIX certificates and CRLs | [RFC 5280](https://www.rfc-editor.org/rfc/rfc5280), [RFC 9925](https://www.rfc-editor.org/rfc/rfc9925) (unsigned certificates) |
+| C509: CBOR Encoded X.509 Certificates | [draft-ietf-cose-cbor-encoded-cert](https://datatracker.ietf.org/doc/draft-ietf-cose-cbor-encoded-cert/) |
 | CMP: Certificate Management Protocol | [RFC 9810](https://www.rfc-editor.org/rfc/rfc9810), [RFC 4210](https://www.rfc-editor.org/rfc/rfc4210) |
-| CMS/PKCS#7: Cryptographic Message Syntax | [RFC 5652](https://www.rfc-editor.org/rfc/rfc5652), [RFC 9629](https://www.rfc-editor.org/rfc/rfc9629) (KEMs), [RFC 9690](https://www.rfc-editor.org/rfc/rfc9690) (RSA-KEM), [RFC 9709](https://www.rfc-editor.org/rfc/rfc9709) (HKDF key derivation), [RFC 9936](https://www.rfc-editor.org/rfc/rfc9936) (ML-KEM), [RFC 9882](https://www.rfc-editor.org/rfc/rfc9882) (ML-DSA), [RFC 9814](https://www.rfc-editor.org/rfc/rfc9814) (SLH-DSA), [RFC 5753](https://www.rfc-editor.org/rfc/rfc5753) (ECC) |
+| CMS/PKCS#7: Cryptographic Message Syntax | [RFC 5652](https://www.rfc-editor.org/rfc/rfc5652), [RFC 9629](https://www.rfc-editor.org/rfc/rfc9629) (KEMs), [RFC 9690](https://www.rfc-editor.org/rfc/rfc9690) (RSA-KEM), [RFC 9709](https://www.rfc-editor.org/rfc/rfc9709) (HKDF key derivation), [RFC 9936](https://www.rfc-editor.org/rfc/rfc9936) (ML-KEM), [RFC 9882](https://www.rfc-editor.org/rfc/rfc9882) (ML-DSA), [RFC 9814](https://www.rfc-editor.org/rfc/rfc9814) (SLH-DSA), [RFC 5753](https://www.rfc-editor.org/rfc/rfc5753) (ECC), [RFC 5035](https://www.rfc-editor.org/rfc/rfc5035) (ESS signing certificate) |
 | CRMF: Certificate Request Message Format | [RFC 4211](https://www.rfc-editor.org/rfc/rfc4211) |
 | DANE: DNS-Based Authentication of Named Entities, including SMIMEA records | [RFC 6698](https://www.rfc-editor.org/rfc/rfc6698), [RFC 7671](https://www.rfc-editor.org/rfc/rfc7671), [RFC 8162](https://www.rfc-editor.org/rfc/rfc8162) |
 | DVCS: Data Validation and Certification Server Protocols | [RFC 3029](https://www.rfc-editor.org/rfc/rfc3029) |
@@ -20,13 +21,14 @@ Bouncy Castle Java supports the following formats and standards.
 | EAC: Extended Access Control (EAC) Certificates | [BSI TR-03110](https://www.bsi.bund.de/SharedDocs/Downloads/EN/BSI/Publications/TechGuidelines/TR03110/BSI_TR-03110_Part-3-V2_2.pdf?__blob=publicationFile&v=1) |
 | ERS: Evidence Record Syntax | [RFC 4998](https://www.rfc-editor.org/rfc/rfc4998) |
 | EST: Enrollment over Secure Transport | [RFC 7030](https://www.rfc-editor.org/rfc/rfc7030) |
-| HPKE: Hybrid Public Key Encryption | [RFC 9180](https://www.rfc-editor.org/rfc/rfc9180) |
+| HPKE: Hybrid Public Key Encryption | [RFC 9180](https://www.rfc-editor.org/rfc/rfc9180), [draft-ietf-hpke-pq](https://datatracker.ietf.org/doc/draft-ietf-hpke-pq/) (post-quantum KEMs) |
 | ITS: Intelligent Transportation Systems | [ETSI ITS](https://www.etsi.org/technologies/automotive-intelligent-transport) |
-| MLS: Messaging Layer Security | [RFC 9420](https://www.rfc-editor.org/rfc/rfc9420) |
+| Merkle Tree Certificates | [draft-ietf-plants-merkle-tree-certs](https://datatracker.ietf.org/doc/draft-ietf-plants-merkle-tree-certs/) |
+| MLS: Messaging Layer Security | [RFC 9420](https://www.rfc-editor.org/rfc/rfc9420), [draft-ietf-mls-pq-ciphersuites](https://datatracker.ietf.org/doc/draft-ietf-mls-pq-ciphersuites/) (post-quantum cipher suites) |
 | OpenPGP | [RFC 9580](https://www.rfc-editor.org/rfc/rfc9580), [RFC 9980](https://www.rfc-editor.org/rfc/rfc9980) (post-quantum), [RFC 4880](https://www.rfc-editor.org/rfc/rfc4880), [RFC 6637](https://www.rfc-editor.org/rfc/rfc6637) |
 | PKCS#10: Certification Request Syntax | [RFC 2986](https://www.rfc-editor.org/rfc/rfc2986) |
 | PKCS#12: Personal Information Exchange Syntax | [RFC 7292](https://www.rfc-editor.org/rfc/rfc7292), [RFC 9879](https://www.rfc-editor.org/rfc/rfc9879) (PBMAC1) |
-| TLS: Transport Layer Security 1.2 and 1.3 | [RFC 5246](https://www.rfc-editor.org/rfc/rfc5246), [RFC 8446](https://www.rfc-editor.org/rfc/rfc8446), [RFC 5932](https://www.rfc-editor.org/rfc/rfc5932), [RFC 6209](https://www.rfc-editor.org/rfc/rfc6209), [NIST SP 800-52 Rev. 2](https://csrc.nist.gov/publications/detail/sp/800-52/rev-2/final) |
+| TLS: Transport Layer Security 1.2 and 1.3 | [RFC 5246](https://www.rfc-editor.org/rfc/rfc5246), [RFC 8446](https://www.rfc-editor.org/rfc/rfc8446), [RFC 5932](https://www.rfc-editor.org/rfc/rfc5932), [RFC 6209](https://www.rfc-editor.org/rfc/rfc6209), [RFC 10024](https://www.rfc-editor.org/rfc/rfc10024) (hybrid ML-KEM key exchange), [draft-ietf-tls-mlkem](https://datatracker.ietf.org/doc/draft-ietf-tls-mlkem/) (ML-KEM key exchange), [draft-ietf-tls-mldsa](https://datatracker.ietf.org/doc/draft-ietf-tls-mldsa/) (ML-DSA authentication), [NIST SP 800-52 Rev. 2](https://csrc.nist.gov/publications/detail/sp/800-52/rev-2/final) |
 | TSP: Time-Stamp Protocol | [RFC 3161](https://www.rfc-editor.org/rfc/rfc3161), [RFC 5544](https://www.rfc-editor.org/rfc/rfc5544) |
 | Algorithm Identifiers for EdDSA and XDH | [RFC 8410](https://www.rfc-editor.org/rfc/rfc8410) |
 | Algorithm Identifiers for HSS/LMS and XMSS | [RFC 9802](https://www.rfc-editor.org/rfc/rfc9802) |
@@ -40,15 +42,18 @@ Bouncy Castle supports the following public key algorithm types and key sizes/cu
 
 | Algorithm | External Reference |
 |---|---|
+| BLS12-381 signatures | [draft-irtf-cfrg-bls-signature](https://datatracker.ietf.org/doc/draft-irtf-cfrg-bls-signature/), [RFC 9380](https://www.rfc-editor.org/rfc/rfc9380) (hashing to the curve) |
 | Diffie-Hellman | [SP 800-56A](https://csrc.nist.gov/publications/detail/sp/800-56a/rev-3/final) |
 | DSA | FIPS PUB 186-4, [RFC 6979](https://www.rfc-editor.org/rfc/rfc6979) |
 | DSTU 4145 | DSTU 4145-2002 |
 | ECDSA/ECDH | X9.62, FIPS PUB 186-4, [RFC 5639](https://www.rfc-editor.org/rfc/rfc5639), [RFC 6979](https://www.rfc-editor.org/rfc/rfc6979), [SP 800-56A](https://csrc.nist.gov/publications/detail/sp/800-56a/rev-3/final) |
 | EdDSA/XDH | [RFC 8032](https://www.rfc-editor.org/rfc/rfc8032), [RFC 7748](https://www.rfc-editor.org/rfc/rfc7748), [RFC 8410](https://www.rfc-editor.org/rfc/rfc8410) |
 | ElGamal | [RFC 4880](https://www.rfc-editor.org/rfc/rfc4880) |
+| Hashing to elliptic curves (P-256, P-384, P-521, curve25519, BLS12-381) | [RFC 9380](https://www.rfc-editor.org/rfc/rfc9380), [RFC 9497](https://www.rfc-editor.org/rfc/rfc9497) (OPRF hash to scalar) |
 | GOST | [RFC 4490](https://www.rfc-editor.org/rfc/rfc4490), [RFC 7836](https://www.rfc-editor.org/rfc/rfc7836) |
 | RSA | [RFC 8017](https://www.rfc-editor.org/rfc/rfc8017), FIPS PUB 186-4, SP 800-56B, [RFC 9474](https://www.rfc-editor.org/rfc/rfc9474) (blind signatures) |
 | SM2 | [RFC 8998](https://www.rfc-editor.org/rfc/rfc8998) |
+| SM9 | GM/T 0044-2016, GB/T 38635-2020 |
 
 The post-quantum public key algorithms are listed [below](#post-quantum-algorithm-support).
 
@@ -125,7 +130,7 @@ The following post-quantum algorithms are standardized and implemented.
 
 | Algorithm | External Reference |
 |---|---|
-| Composite ML-DSA signatures | [draft-ietf-lamps-pq-composite-sigs](https://datatracker.ietf.org/doc/draft-ietf-lamps-pq-composite-sigs/) |
+| Composite ML-DSA signatures | [RFC 10073](https://www.rfc-editor.org/rfc/rfc10073) |
 | Composite ML-KEM | [draft-ietf-lamps-pq-composite-kem](https://datatracker.ietf.org/doc/draft-ietf-lamps-pq-composite-kem/) |
 | X-Wing | [draft-connolly-cfrg-xwing-kem](https://datatracker.ietf.org/doc/draft-connolly-cfrg-xwing-kem/) |
 

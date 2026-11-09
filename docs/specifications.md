@@ -40,10 +40,139 @@ We state, where EC MQV has not otherwise been disabled or removed: "The use of t
 
 ## 3.0 System Properties
 
-The Bouncy Castle provider can make use of the following two system properties:
+Bouncy Castle reads its configuration from properties named **org.bouncycastle.\***. Unless noted, each can be set either as a Java security property (in the java.security file, or with Security.setProperty()) or as a system property (-D on the command line, or System.setProperty()); a security property takes precedence. A boolean setting can also be changed for the current thread alone with org.bouncycastle.util.Properties.setThreadOverride(), which is checked after the security property and before the system property. The names of most of these properties are available as constants in **org.bouncycastle.util.Properties**. A setting is normally read when the object it affects is created, so change it before creating the object.
 
-- **org.bouncycastle.ec.disable_mqv** - setting this property to true will disable support for EC MQV in the provider.
-- **org.bouncycastle.pkcs1.not_strict** - some other providers of cryptography services fail to produce PKCS1 encoded block that are the correct length. Setting this property to true will relax the conformance check on the block length.
+Several properties bound the work done on parameters taken from untrusted input (iteration counts, key sizes, nesting depths); their defaults are well above any legitimate value, and need raising only for unusual data. Others re-enable legacy or non-standard behaviour that is off by default; set those only to read data you know to need them.
+
+#### General
+
+- **org.bouncycastle.emulate.oracle** - if set to true the provider attempts, where possible, to behave as the Oracle provider does.
+- **org.bouncycastle.constraints.quantum_vulnerable** - installs a crypto services constraint on the quantum-vulnerable public-key algorithms at start-up: "nist" for the NIST IR 8547 timetable (deprecated after 2030, disallowed after 2035 except for verification and decryption), "log" to log their use, "legacy" to refuse them for anything but verification and decryption, "reject" to refuse them outright, and "none" (the default) for no constraint. Read once, when CryptoServicesRegistrar is loaded; see section 5.7.
+- **org.bouncycastle.constraints.allow_override** - set to true to let CryptoServicesRegistrar.setServicesConstraints() replace a constraint installed from the property above.
+
+#### ASN.1 and encodings
+
+- **org.bouncycastle.asn1.max_cons_depth** - maximum nesting depth of constructed ASN.1 objects the parser will descend. Default 64.
+- **org.bouncycastle.asn1.max_limit** - maximum length of a single definite-length ASN.1 object read from a stream of unknown length, as a byte count with an optional k, m or g suffix. Default: the available heap.
+- **org.bouncycastle.asn1.allow_non_der_time** - default true. Set to false to make writing a UTCTime or GeneralizedTime whose contents are not valid DER (read leniently from the wire) through a DEROutputStream fail.
+- **org.bouncycastle.asn1.allow_zoneless_utctime** - set to true to accept the zone-less UTCTime "YYMMDDHHMMSS", which X.680 forbids, on read.
+- **org.bouncycastle.asn1.allow_unsafe_integer** - set to true to accept INTEGER encodings with redundant leading octets.
+- **org.bouncycastle.asn1.allow_wrong_oid_enc** - set to true to accept OBJECT IDENTIFIER and RELATIVE-OID encodings with a redundant leading 0x80 octet in a subidentifier, or with no contents.
+- **org.bouncycastle.pemreader.lax** - set to true to tolerate white space around the "-----END" line of a PEM object. Read as a system property only.
+- **org.bouncycastle.pkcs8.v1_info_only** - set to true to make the provider's Ed25519, Ed448, X25519 and X448 private keys encode as version 1 PKCS#8 PrivateKeyInfo, without the public key.
+
+#### Public keys and algorithms
+
+- **org.bouncycastle.rsa.max_size** - largest RSA modulus, in bits, accepted. Default 16384.
+- **org.bouncycastle.rsa.max_mr_tests** - number of Miller-Rabin rounds used to check that an RSA modulus is not prime. The default depends on the modulus size; 0 disables the test.
+- **org.bouncycastle.rsa.allow_unsafe_mod** - set to true to skip all checks on an RSA modulus (size, small factors and primality). Not recommended: talk to whoever generated the key instead.
+- **org.bouncycastle.rsa.no_lenstra_check** - set to true to let an RSA CRT private key without a public exponent use the CRT, without the check against Lenstra's fault attack that needs the exponent. By default such a key uses the slower non-CRT calculation.
+- **org.bouncycastle.pkcs1.not_strict** - some other providers produce PKCS#1 encoded blocks that are not the correct length. Setting this property to true relaxes the conformance check on the block length. (org.bouncycastle.pkcs1.strict is the deprecated inverse.)
+- **org.bouncycastle.pkcs1.strict_digestinfo** - set to true to make RSA PKCS#1 v1.5 signature verification reject a DigestInfo whose AlgorithmIdentifier omits the NULL parameters required by RFC 8017. By default the shorter encoding is also accepted.
+- **org.bouncycastle.dh.max_size** - largest Diffie-Hellman prime p, in bits, accepted when validating an imported public key. Default 16384.
+- **org.bouncycastle.dh.allow_short_private_value** - set to true to let DH and ElGamal key pair generation use a private value length l below twice the security strength of p (SP 800-56A Rev. 3 sec. 5.6.1.1).
+- **org.bouncycastle.dh.allow_unsafe_p_value** - set to true to accept DH parameters whose p is no longer than the minimum private value length (160 bits by default).
+- **org.bouncycastle.dsa.max_size** - largest DSA prime p, in bits, accepted when validating an imported public key. Default 16384.
+- **org.bouncycastle.ec.fp_max_size** - largest prime p, in bits, accepted for an elliptic curve over F(p) given by explicit parameters. Default 1042.
+- **org.bouncycastle.ec.fp_certainty** - certainty used when testing such a p for primality. Default 100.
+- **org.bouncycastle.ec.max_f2m_field_size** - largest field size m accepted for a characteristic-2 elliptic curve. Default 1142.
+- **org.bouncycastle.ec.disable_f2m** - set to true to disable characteristic-2 elliptic curves (org.bouncycastle.ec.disable does the same).
+- **org.bouncycastle.ec.disable_mqv** - set to true to disable EC MQV, in the light-weight API and the provider.
+- **org.bouncycastle.ec.enable_pc** - set to true to make the provider's EC public keys encode their point in compressed form.
+- **org.bouncycastle.gcm.allow_short_tags** - set to true to let GCMParameters accept tags down to the SP 800-38D minimum of 32 bits. By default RFC 5084's 96 to 128 bits apply.
+- **org.bouncycastle.lms.max_seed_length** - largest SEED, in bytes, accepted in an LMS or HSS private key encoding. Default 1024.
+- **org.bouncycastle.sm9.allow_multi_use** - set to true to allow one SM9 encryption user key to be used for both the SM9 KEM and SM9 decryption. By default a key is held to the first of the two it is used for.
+- **org.bouncycastle.fpe.disable** - set to true to disable the SP 800-38G format-preserving encryption engines; **org.bouncycastle.fpe.disable_ff1** disables FF1 only.
+
+#### Password-based key derivation
+
+- **org.bouncycastle.pbe.max_iteration_count** - largest PBE iteration count honoured when the count is taken from an untrusted encoding: PBES2 PKCS#8 and PEM keys, PKCS#12 bags, RFC 9579 PBMAC1, CMS password recipients, and the provider's PBKDF2, PBES1 and PKCS#12 PBE implementations. Default 10,000,000.
+- **org.bouncycastle.pbe.max_scrypt_memory** - largest scrypt working memory, in bytes, honoured when decrypting a PBES2 PKCS#8 or PEM key. Default 1 GiB.
+- **org.bouncycastle.pbkdf2.legacy_cipher_prf** - set to true to derive a password-only PBKDF2 key used with a Cipher and a PBEParameterSpec with HMAC-SHA512, whatever PRF the SecretKeyFactory was for, as releases 1.80 to 1.86 did, so that data they encrypted can be decrypted.
+- **org.bouncycastle.argon2.max_memory_exp**, **org.bouncycastle.argon2.max_passes**, **org.bouncycastle.argon2.max_parallelism** - largest Argon2 memory (as a power of two, in KiB), passes and lanes accepted from untrusted cost parameters, such as an OpenPGP Argon2 S2K. Defaults 24 (16 GiB, raisable to 30), 10 and 16.
+- **org.bouncycastle.pkmac.max_iteration_count** - largest RFC 4211 PKMAC (CMP password-based MAC) iteration count honoured when PKMACBuilder was given no limit. Default 10,000,000.
+- **org.bouncycastle.openssh.max_rounds** - largest bcrypt round count honoured when decrypting an encrypted OpenSSH private key. Default 1,048,576.
+
+#### Key stores
+
+- **org.bouncycastle.pkcs12.default** - names the keystore type returned for KeyStore.getInstance("PKCS12", "BC") and "BCPKCS12", for example "PKCS12-AES256-AES128" or "PKCS12-3DES-3DES"; "PKCS12-DEF" then returns the matching PKCS12-DEF-* type where there is one. A value naming no registered type is ignored.
+- **org.bouncycastle.pkcs12.max_it_count** - largest PBE iteration count accepted when loading a PKCS#12 file. Default 5,000,000.
+- **org.bouncycastle.pkcs12.store_it_count** - PBE iteration count used when writing a PKCS#12 file. Default 300,000 for the key and certificate encryption and twice that for the integrity MAC. Windows refuses an encryption count of 600,000 or more.
+- **org.bouncycastle.pkcs12.pbkdf2_it_count** - PBKDF2 iteration count used for an RFC 9579 PBMAC1 integrity MAC when writing a file. Default 65,536.
+- **org.bouncycastle.pkcs12.ignore_useless_passwd** - set to true to ignore a password supplied for a PKCS#12 file that needs none, rather than throwing an exception.
+- **org.bouncycastle.pkcs12.allow_sun_secret_keys** - set to true to read secret keys stored in SunJCE's non-standard encoding. The standard form is always written.
+- **org.bouncycastle.bcfks.max_it_count** - largest PBKDF2 iteration count honoured when loading a BCFKS keystore. Default 5,000,000.
+- **org.bouncycastle.bcfks.max_scrypt_memory** - largest scrypt working memory, in bytes, honoured when loading a BCFKS keystore. Default 1 GiB.
+- **org.bouncycastle.bcfks.store_it_count** - PBKDF2 iteration count used when writing a BCFKS keystore through KeyStore.store(OutputStream, char[]). Default 51,200.
+- **org.bouncycastle.bcfks.scrypt_p_eq_r** - default true: BCFKS scrypt parameters are written with p equal to r, so that releases up to 1.86 can read the store. Set to false to write the configured p.
+- **org.bouncycastle.bks.enable_v1** - set to true to read or create legacy version 0 and 1 BKS keystores, whose integrity key is weak, and to register the BKS-V1 keystore type.
+- **org.bouncycastle.bks.max_it_count** - largest iteration count honoured when loading a BKS keystore. Default 1,048,576.
+
+#### X.509 certificates, certification paths and revocation
+
+- **org.bouncycastle.x509.enableCRLDP** - set to true to let the provider's CertPathValidator, X509RevocationChecker and the PKIXCertPathReviewer classes download CRLs from the certificate's CRL Distribution Points when no CRL store supplied by the caller has one.
+- **org.bouncycastle.x509.CRLDP_protocols** - comma separated list of the protocols a CRL Distribution Point may use, for example "http,https,ldap". Default: unrestricted.
+- **org.bouncycastle.x509.crl_cache_ttl** - longest time, in seconds, a downloaded CRL is cached. Default 0: until its nextUpdate.
+- **org.bouncycastle.ocsp.max_response_size** - largest OCSP response, in bytes, read from a responder, by the CertPathValidator or for BCJSSE server stapling. Default 65,536.
+- **org.bouncycastle.ocsp.max_response_age** - oldest, in seconds before the validation date, that an OCSP response stating no nextUpdate may be for the CertPathValidator to accept it. Default 3600.
+- **org.bouncycastle.x509.max_policy_nodes** - largest number of valid-policy-tree nodes kept during certification path validation. Default 8192.
+- **org.bouncycastle.x509.max_cert_path_build_nodes** - largest number of nodes the CertPathBuilder visits searching for a path. Default 262,144.
+- **org.bouncycastle.x509.allow_ca_without_crl_sign** - default true: a CRL issuer certificate without a key usage extension may sign CRLs. Set to false to require the extension.
+- **org.bouncycastle.x509.allow_empty_issuer_cert** - set to true to accept a certificate with an empty issuer name, as some non-PKIX profiles produce.
+- **org.bouncycastle.x509.allow_absent_equiv_NULL** - set to true to treat absent and NULL signature algorithm parameters as equivalent when comparing a certificate's two signature algorithm fields.
+- **org.bouncycastle.x509.ignore_repeated_extensions** - set to true to accept an extensions block (Extensions or X509Extensions) that repeats an extension, which RFC 5280 forbids.
+- **org.bouncycastle.x509.allow_lenient_rfc822_name** - set to true to restore the legacy lenient parsing of rfc822Name values in name constraint checks.
+- **org.bouncycastle.x509.sgp22_name_constraints** - set to true to apply the relaxed directoryName name constraint matching of GSMA SGP.22 (Remote SIM Provisioning) in place of RFC 5280's.
+
+#### CMS, S/MIME, time-stamping and EST
+
+- **org.bouncycastle.cms.allow_legacy_keyagree_kdf** - default true: a CMS key agreement recipient that fails with the RFC 5753 key derivation retries with the user keying material used directly as the KDF's SharedInfo, as some senders (and BC's ECMQV until 1.86) produce. Set to false to accept only the RFC 5753 form.
+- **org.bouncycastle.cms.max_digest_algorithms** - largest number of distinct digest algorithms computed over the content of one SignedData. Default 0, unlimited.
+- **org.bouncycastle.cms.allow_unauthenticated_cbc_mac_iv** - set to true to accept a CMS AuthenticatedData without authenticated attributes whose CBC-MAC uses a non-zero IV, as BC wrote before 1.87.
+- **org.bouncycastle.mime.max_depth** - largest depth of nested multipart content the S/MIME classes will process. Default 64.
+- **org.bouncycastle.tsp.allow_inconsistent_signing_time** - set to true to accept a time-stamp token whose signing-time attribute disagrees with its genTime.
+- **org.bouncycastle.tsp.allowed_imprint_algorithms** - comma separated list of the digest names or OIDs TimeStampToken.validate() accepts for a message imprint. Default: TSPAlgorithms.ALLOWED.
+- **org.bouncycastle.debug.est** - comma separated list of "input", "output" or "all" to print the EST traffic in that direction, for debugging.
+
+#### OpenPGP
+
+- **org.bouncycastle.openpgp.max_armor_header_length** - longest ASCII armor header line, in bytes, accepted. Default 4096.
+- **org.bouncycastle.openpgp.max_armor_headers** - largest number of ASCII armor header lines accepted. Default 64.
+- **org.bouncycastle.openpgp.strict_partial_body_length** - set to true to reject a first partial body length below 512 octets, which RFC 9580 forbids but earlier BC releases could write.
+- **org.bouncycastle.openpgp.text_sig_allow_legacy_cr** - default true: a text signature over data containing a bare CR is also accepted in the form releases before 1.87 (and Sequoia 2.x) hashed. Set to false to accept only the current form.
+- **org.bouncycastle.openpgp.csf_bare_cr_line_ending** - set to true to treat a bare CR as a line ending in cleartext signed messages, as releases before 1.87 did.
+- **org.bouncycastle.openpgp.session_key_obfuscation** - default true: the size of an ECDH session key is obscured with padding. Set to false to disable.
+
+#### DRBG and entropy
+
+- **org.bouncycastle.drbg.entropysource** - class name of an EntropySourceProvider to seed the provider's DRBG from.
+- **org.bouncycastle.drbg.entropy_thread** - set to true to gather entropy for the provider's DRBG on a background thread.
+- **org.bouncycastle.drbg.gather_pause_secs** - pause, in seconds, between samples taken by that thread.
+- **org.bouncycastle.drbg.effective_256bits_entropy** - number of bits of raw entropy taken as providing 256 bits of security when seeding. Default 282.
+
+#### BCJSSE
+
+BCJSSE also supports the SunJSSE jdk.tls.\* system properties, several of which are described in section 5.4. Its own properties are read as system properties only, apart from org.bouncycastle.jsse.config and org.bouncycastle.jsse.hostname_check_cn_fallback.
+
+- **org.bouncycastle.jsse.config** - configuration string for a BouncyCastleJsseProvider created with no arguments, as for its String constructor. Default "default".
+- **org.bouncycastle.jsse.hostname_check_cn_fallback** - set to true to let hostname verification fall back to the subject common name when a server certificate has no DNS subject alternative names, as SunJSSE does. By default RFC 9525 applies.
+- **org.bouncycastle.jsse.handshakeTimeoutMillis** - handshake timeout in milliseconds. Default 0, none.
+- **org.bouncycastle.jsse.useNamedGroupsOrder** - set to true to make a TLS 1.3 server choose the key share group by its own preference order rather than the client's.
+- **org.bouncycastle.jsse.client.earlyKeyShares** - the named groups a client sends key shares for in its first ClientHello; see section 5.4.
+- **org.bouncycastle.jsse.client.enableDelegatedTasks**, **org.bouncycastle.jsse.server.enableDelegatedTasks** - set to true to make an SSLEngine hand out its handshake work through getDelegatedTask(). Read per SSLContext.
+- **org.bouncycastle.jsse.client.enableSessionResumption**, **org.bouncycastle.jsse.server.enableSessionResumption** - default true; set to false to disable session resumption.
+- **org.bouncycastle.jsse.client.acceptRenegotiation** - set to true to let a client accept a server's request to renegotiate.
+- **org.bouncycastle.jsse.client.assumeOriginalHostName** - set to true to make a client socket connected by address use the address's host name as the peer host and SNI name.
+- **org.bouncycastle.jsse.client.dh.minimumPrimeBits** - smallest DH prime, in bits, a client accepts from a server. Default 2048 (range 1024 to 16384).
+- **org.bouncycastle.jsse.client.dh.unrestrictedGroups** - set to true to let a client accept DH groups other than the known safe ones.
+- **org.bouncycastle.jsse.client.dh.disableDefaultSuites**, **org.bouncycastle.jsse.server.dh.disableDefaultSuites** - set to true to remove the finite field DH cipher suites from the defaults.
+- **org.bouncycastle.jsse.client.enableTrustedCAKeysExtension**, **org.bouncycastle.jsse.server.enableTrustedCAKeysExtension** - set to true to enable the trusted_ca_keys extension.
+- **org.bouncycastle.jsse.client.omitSigAlgsCertExtension**, **org.bouncycastle.jsse.server.omitSigAlgsCertExtension** - default true: the signature_algorithms_cert extension is sent only when signature schemes have been configured for it (see the next entry). Set to false to always send it.
+- **org.bouncycastle.jsse.client.SignatureSchemesCert**, **org.bouncycastle.jsse.server.SignatureSchemesCert** - the signature schemes offered in signature_algorithms_cert, in the format of jdk.tls.client.SignatureSchemes.
+- **org.bouncycastle.jsse.ec.disableChar2** - set to true to disable the characteristic-2 curves in TLS (also implied by org.bouncycastle.ec.disable_f2m).
+- **org.bouncycastle.jsse.fips.allowRSAKeyExchange** - set to true to allow RSA key exchange in FIPS mode.
+- **org.bouncycastle.jsse.keyManager.checkEKU**, **org.bouncycastle.jsse.trustManager.checkEKU** - default true: the key and trust managers check a certificate's extended key usage. Set to false to disable.
+- **org.bouncycastle.jsse.server.stapling.failureLifetime** - time, in seconds, a failed OCSP fetch for server stapling is remembered before it is retried. Default 60.
 
 ## 4.0 Specifications
 
@@ -75,7 +204,7 @@ NIST IR 8547, *Transition to Post-Quantum Cryptography Standards* (October 2026,
 - **Signing randomness.** FIPS 204 (Section 3.4) and FIPS 205 (Section 9.2) make the "hedged" form of ML-DSA and SLH-DSA signing the default and recommend it wherever side-channel or fault attacks are a concern; the deterministic form is permitted for platforms without a random bit generator. In the **BC** provider `Signature.initSign(key)` signs deterministically and `Signature.initSign(key, secureRandom)` signs in the hedged form, so pass a SecureRandom to meet the NIST preference; in the light-weight API wrap the private key in a **ParametersWithRandom** when initialising **MLDSASigner** or **SLHDSASigner**.
 - **Pre-hash variants.** The digest used with HASH-ML-DSA or HASH-SLH-DSA must provide at least the classical security strength of the parameter set; the pre-hash variants in this library are fixed to SHA-512 (ML-DSA) and to SHA-256, SHA-512, SHAKE128 or SHAKE256 to match the set (SLH-DSA), so a weaker digest cannot be selected.
 - **Context strings.** FIPS 204 and FIPS 205 let a context string of up to 255 bytes be bound into a signature, for domain separation between uses of one key. In the **BC** provider it is set with `Signature.setParameter(new ContextParameterSpec(ctx))`, and in the PKIX operators by passing the **ContextParameterSpec** to **JcaContentSignerBuilder** and to `JcaContentVerifierProviderBuilder.setContext()`. The context does not appear in the signature algorithm identifier, so the two sides must agree on it out of band. The IETF profiles for certificates and CMS (RFC 9881, RFC 9882, RFC 9814) require the empty context, which is what both builders use when given none.
-- **Hybrids.** NIST allows a classical scheme to be combined with a post-quantum one, with the result secure while either component is, and expects such hybrids to be a transitional measure. In TLS 1.3 and DTLS 1.3 the **BCJSSE** provider offers X25519MLKEM768 first by default and sends a key share for it, so a peer that supports it negotiates a hybrid key exchange without a round trip; the pure ML-KEM groups are available but not offered unless configured (see 5.5 for the TLS settings). Post-quantum authentication in TLS is a later step: the ML-DSA and SLH-DSA signature schemes are implemented but not enabled by default in **BCJSSE**, as the IETF code points for the stand-alone schemes are still drafts and no composite scheme has been assigned yet. For a key agreement the SP 800-56C Rev. 2 hybrid shared secret Z' = Z || T is available through **HybridValueParameterSpec** (see the Key Agreement section of 6.2), and the HPKE implementation in **org.bouncycastle.crypto.hpke** has the MLKEM768-X25519 (X-Wing), MLKEM768-P256 and MLKEM1024-P384 hybrid KEMs of draft-irtf-cfrg-concrete-hybrid-kems as well as ML-KEM alone, per draft-ietf-hpke-pq. For signatures the composite ML-DSA algorithms (draft-ietf-lamps-pq-composite-sigs) are in the **BC** provider, CMS and X.509 support.
+- **Hybrids.** NIST allows a classical scheme to be combined with a post-quantum one, with the result secure while either component is, and expects such hybrids to be a transitional measure. In TLS 1.3 and DTLS 1.3 the **BCJSSE** provider offers X25519MLKEM768 first by default and sends a key share for it, so a peer that supports it negotiates a hybrid key exchange without a round trip; the pure ML-KEM groups are available but not offered unless configured (see 5.5 for the TLS settings). Post-quantum authentication in TLS is a later step: the ML-DSA and SLH-DSA signature schemes are implemented but not enabled by default in **BCJSSE**, as the IETF code points for the stand-alone schemes are still drafts and no composite scheme has been assigned yet. For a key agreement the SP 800-56C Rev. 2 hybrid shared secret Z' = Z || T is available through **HybridValueParameterSpec** (see the Key Agreement section of 6.2), and the HPKE implementation in **org.bouncycastle.crypto.hpke** has the MLKEM768-X25519 (X-Wing), MLKEM768-P256 and MLKEM1024-P384 hybrid KEMs of draft-irtf-cfrg-concrete-hybrid-kems as well as ML-KEM alone, per draft-ietf-hpke-pq. For signatures the composite ML-DSA algorithms (RFC 10073) are in the **BC** provider, CMS and X.509 support.
 - **Other protocols.** CMS (and so S/MIME) carries ML-KEM in the RFC 9629 KEMRecipientInfo and ML-DSA, SLH-DSA and the composites as signers; X.509, CRLs, OCSP, time-stamps and CMP sign with the same algorithms. MLS (RFC 9420, the bcmls jar) offers the post-quantum cipher suites of draft-ietf-mls-pq-ciphersuites - ML-KEM alone or with X25519, P-256 or P-384 for TreeKEM, and Ed25519, ECDSA or ML-DSA signatures - under placeholder code points in **MlsCipherSuite** until IANA assigns them, built on the ML-KEM and hybrid KEMs of draft-ietf-hpke-pq in **org.bouncycastle.crypto.hpke**. OpenPGP (the bcpg jar) implements RFC 9980: the ML-DSA-65+Ed25519 and ML-DSA-87+Ed448 composite signature algorithms, the SLH-DSA-SHAKE-128s, -128f and -256s signature algorithms and the ML-KEM-768+X25519 and ML-KEM-1024+X448 composite encryption algorithms, on v6 keys. SSH key exchange (mlkem768x25519-sha256) and IKEv2 are also on NIST's list of protocols to move; this library provides only key-format support for SSH and no IKE.
 - **Stateful hash-based signatures** (LMS/HSS, XMSS/XMSS^MT) are approved for uses such as software and firmware signing where the one-time keys can be managed, not for general use; the private key must never sign twice with the same index, and the library's key types record and check their position.
 - **Dates.** NIST deprecates the quantum-vulnerable public-key algorithms (RSA, DSA, DH, ECDSA, ECDH, EdDSA and the KEMs and key agreements built on them) after 2030 and disallows them after 2035, except for "legacy use" - verifying signatures and decrypting data protected earlier. These are NIST dates and bind the approval status of an algorithm in NIST guidance, including FIPS 140 validation; they are not a legal deadline for an application. The US federal deadlines are separate and come from Executive Order 14412 (22 June 2026, <https://www.whitehouse.gov/presidential-actions/2026/06/securing-the-nation-against-advanced-cryptographic-attacks/>), which requires federal high value assets and high impact systems (national security systems excepted) to move key establishment to post-quantum cryptography by 31 December 2030 and digital signatures by 31 December 2031, with OMB M-26-15 setting out the migration schedule; OMB M-26-15 also requires US federal systems to support TLS 1.3 by 2 January 2030. Key establishment moves first because recorded traffic can be decrypted later. **org.bouncycastle.crypto.constraints.QuantumVulnerableConstraint** applies the NIST timetable in the light-weight API and the **BC** provider, or refuses the algorithms now for new protection or altogether, and the org.bouncycastle.constraints.quantum_vulnerable property installs it without code (see 5.8); a **BitsOfSecurityConstraint** of 192 or 256 refuses the weaker parameter sets of the post-quantum algorithms along with the weaker classical ones.
@@ -272,6 +401,7 @@ The following asymmetric ciphers are also supported and allow variable block siz
 
 - IESEngine
 - SM2Engine
+- SM9Engine (SM9 identity-based encryption, GM/T 0044-2016)
 
 #### Digest
 
@@ -390,7 +520,7 @@ The base class is **Committer** and has the following sub-classes
 
 Two versions of Diffie-Hellman key agreement are supported, the basic version, and one for use with long term public keys. Two versions of key agreement using Elliptic Curve cryptography are also supported, standard Diffie-Hellman key agreement and standard key agreement with co-factors.
 
-Agreement using the RFC 7748 Montgomery curve functions is provided by **X25519Agreement** and **X448Agreement**, MQV and unified-model variants are available for both Diffie-Hellman and EC, and SM2 key exchange is supported by **SM2KeyExchange**. Password-authenticated key establishment is provided by the J-PAKE, EC-J-PAKE, SRP-6a, and Owl protocols in subpackages of **org.bouncycastle.crypto.agreement**.
+Agreement using the RFC 7748 Montgomery curve functions is provided by **X25519Agreement** and **X448Agreement**, MQV and unified-model variants are available for both Diffie-Hellman and EC, SM2 key exchange is supported by **SM2KeyExchange**, and the identity-based SM9 key exchange (GM/T 0044-2016) by **SM9KeyExchange**. Password-authenticated key establishment is provided by the J-PAKE, EC-J-PAKE, SRP-6a, and Owl protocols in subpackages of **org.bouncycastle.crypto.agreement**.
 
 The agreement APIs are in the **org.bouncycastle.crypto.agreement** package. Classes for generating Diffie-Hellman parameters can be found in the **org.bouncycastle.crypto.params** and **org.bouncycastle.crypto.generators** packages.
 
@@ -403,6 +533,7 @@ The first non-post-quantum set use the **EncapsulatedSecretGenerator** and **Enc
 | **RSA**   | RSA-KEM from ISO 18033-2, implemented in **RSAKEMExtractor** and **RSAKEMGenerator**              |
 | **ECIES** | ECIES-KEM from ISO 18033-2, implemented in **ECIESKEMExtractor** and **ECIESKEMGenerator**        |
 | **SAKKE** | Sakai-Kasahara KEM from RFC 6508, implemented in **SAKKEKEMSGenerator** and **SAKKEKEMExtractor** |
+| **SM9**   | SM9 identity-based KEM from GM/T 0044-2016, implemented in **SM9KEMGenerator** and **SM9KEMExtractor** |
 
 The second, post-quantum set also use **EncapsulatedSecretGenerator** and **EncapsulatedSecretExtractor**.
 
@@ -418,17 +549,20 @@ The second, post-quantum set also use **EncapsulatedSecretGenerator** and **Enca
 | **NTRU+**            | 128-256.                    | **NTRUPlusKEMGenerator**, **NTRUPlusKEMExtractor**                                                                 | KpqC competition                                                |
 | **NTRU Prime**       | 128-256.                    | **NTRULPRimeKEMGenerator**, **NTRULPRimeKEMExtractor**<br>**SNTRUPrimeKEMGenerator**, **SNTRUPrimeKEMExtractor** |                                                                 |
 | **SABER**            | 128-256.                    | **SABERKEMGenerator**, **SABERKEMExtractor**                                                                       |                                                                 |
+| **SMAUG-T**          | 128-256.                    | **SmaugTKEMGenerator**, **SmaugTKEMExtractor**                                                                     | KpqC competition                                                |
 | **X-Wing**           | 128\.                       | **XWingKEMGenerator**, **XWingKEMExtractor**                                                                       | Hybrid of X25519 and ML-KEM-768 (draft-connolly-cfrg-xwing-kem-11) |
 
 The standardised versions of Classic McEliece, FrodoKEM, and ML-KEM are implemented under **org.bouncycastle.crypto.kems**; the Classic McEliece implementation there covers the parameter sets standardised in ISO/IEC 18033-2:2006/Amd 2 (including the pc/pcf plaintext-confirmation variants).
 
 #### Signers
 
-DSA, ECDSA, Ed25519 and Ed448 (RFC 8032), BIP-340 Schnorr, SM2, ISO-9796-2, GOST-3410-94, GOST-3410-2001, GOST-3410-2012, DSTU-4145-2002, RSA-PSS, and BLS12-381 signatures (draft-irtf-cfrg-bls-signature, with the scheme classes in **org.bouncycastle.crypto.bls**) are supported by the **org.bouncycastle.crypto.signers** package. Note: as these are light weight classes, if you need to use SHA1 or GOST-3411 (as defined in the relevant standards) you'll also need to make use of the appropriate digest class in conjunction with these. Classes for generating DSA and ECDSA parameters can be found in the **org.bouncycastle.crypto.params** and **org.bouncycastle.crypto.generators** packages. The standardised post-quantum signature algorithms - ML-DSA (FIPS 204), SLH-DSA (FIPS 205) and the stateful hash-based LMS/HSS and XMSS/XMSS^MT (SP 800-208) - are provided under **org.bouncycastle.crypto.signers** with their parameters under **org.bouncycastle.crypto.params**; the candidates still in NIST's processes (Falcon, Mayo, Snova and the additional-signatures round candidates) are provided under **org.bouncycastle.pqc.crypto**. See the post-quantum transition section (4.1) for which of these NIST recommends and for what.
+DSA, ECDSA, Ed25519 and Ed448 (RFC 8032), BIP-340 Schnorr, SM2, SM9 (identity-based, GM/T 0044-2016, **SM9Signer**), ISO-9796-2, GOST-3410-94, GOST-3410-2001, GOST-3410-2012, DSTU-4145-2002, RSA-PSS, and BLS12-381 signatures (draft-irtf-cfrg-bls-signature, with the scheme classes in **org.bouncycastle.crypto.bls**) are supported by the **org.bouncycastle.crypto.signers** package. Note: as these are light weight classes, if you need to use SHA1 or GOST-3411 (as defined in the relevant standards) you'll also need to make use of the appropriate digest class in conjunction with these. Classes for generating DSA and ECDSA parameters can be found in the **org.bouncycastle.crypto.params** and **org.bouncycastle.crypto.generators** packages. The standardised post-quantum signature algorithms - ML-DSA (FIPS 204), SLH-DSA (FIPS 205) and the stateful hash-based LMS/HSS and XMSS/XMSS^MT (SP 800-208) - are provided under **org.bouncycastle.crypto.signers** with their parameters under **org.bouncycastle.crypto.params**; the candidates still in NIST's processes (Falcon, and the additional-signatures round candidates FAEST, Mayo, MQOM, QR-UOV, SDitH, Snova, SQIsign and UOV) and the KpqC competition signatures AIMer and HAETAE are provided under **org.bouncycastle.pqc.crypto**. See the post-quantum transition section (4.1) for which of these NIST recommends and for what.
 
 ### 5.3 Elliptic Curve Transforms.
 
 The org.bouncycastle.crypto.ec package contains implementations for a variety of EC cryptographic transforms such as EC ElGamal.
+
+Hashing to elliptic curves (RFC 9380) is provided by the **org.bouncycastle.crypto.hash2curve** package: **HashToEllipticCurve** for the hash_to_curve and encode_to_curve operations, **HashToField** and the expand_message functions, and **OPRFHashToScalar** for the RFC 9497 HashToScalar. **HashToCurveProfile** names the supported suites: P256_XMD:SHA-256_SSWU, P384_XMD:SHA-384_SSWU, P521_XMD:SHA-512_SSWU, curve25519_XMD:SHA-512_ELL2 and BLS12381G1_XMD:SHA-256_SSWU (the BLS12-381 G2 suite used by the BLS signature scheme is in **org.bouncycastle.crypto.bls**).
 
 ### 5.4 TLS/DTLS
 
@@ -444,6 +578,8 @@ Post-quantum key exchange in TLS:
 ### 5.5 Deterministic Random Bit Generators (DRBG) and SecureRandom wrappers
 
 The org.bouncycastle.crypto.prng package contains implementations for a variety of bit generators including those from SP 800-90A and X9.31, as well as builders for SecureRandom objects based around them.
+
+In the provider, the "DEFAULT" and "NONCEANDIV" SecureRandom implementations accept java.security.DrbgParameters on Java 9 and later: SecureRandom.getInstance() given a DrbgParameters.Instantiation creates a DRBG of its own with the requested security strength, capability and personalization string, nextBytes() and reseed() take DrbgParameters.NextBytes and DrbgParameters.Reseed for additional input and prediction resistance, and "DEFAULT" is also registered as "DRBG". An instance created without parameters uses the shared DRBG as before.
 
 ### 5.6 ASN.1 package
 
@@ -677,6 +813,7 @@ When placed together with RSA this gives a specification for an algorithm as;
 |---------|------------------------------------------------------------------|-------|
 | RSA     | any multiple of 8 bits large enough for the encryption**(2048)** |       |
 | ElGamal | any multiple of 8 bits large enough for the encryption**(1024)** |       |
+| SM9     | fixed (the SM9 BN256 pairing curve)                              | Identity-based encryption of GM/T 0044-2016, Cipher "SM9" with keys from KeyPairGenerator "SM9-ENC" |
 
 #### Key Agreement
 
@@ -686,6 +823,8 @@ Support is provided for the standard SEC algorithm set for EC. Names appear in t
 
 - "ECCDHwithSHA256KDF" which represents EC cofactor DH using the X9.63 KDF with SHA256 as the PRF
 - "ECMQVwithSHA1CKDF" which represents EC MQV using the concetantion KDF with SHA1 as the PRF
+
+ECDH followed by HKDF (RFC 5869) is available as "ECDHwithSHA256HKDF", "ECDHwithSHA384HKDF" and "ECDHwithSHA512HKDF", the elliptic curve counterparts of the "XDHwithSHA256HKDF" family ("X25519withSHA256HKDF", "X448withSHA512HKDF" and so on). The SM9 identity-based key exchange of GM/T 0044-2016 is available as KeyAgreement "SM9".
 
 Note: with basic "DH" only the basic algorithm fits in with the JCE API, if you're using long-term public keys you may want to look at the light-weight API, there are also additional JCE support classes for UserKeyingMaterial and MQVParameters in the **org.bouncycastle.jcajce.spec** package.
 
@@ -714,6 +853,8 @@ SecretKey key = agreement.generateSecret("AES[256]");
 | **NTRU**                    | NTRUParameterSpec                                 | (BCPQC)                                                                                                                              |
 | **NTRULPRime / SNTRUPrime** | NTRULPRimeParameterSpec / SNTRUPrimeParameterSpec | NTRU Prime (BCPQC)                                                                                                                   |
 | **NTRU+**                   | NTRUPlusParameterSpec                             | KpqC competition (BCPQC)                                                                                                             |
+| **SMAUGT**                  | SmaugTParameterSpec                               | SMAUG-T, KpqC competition (BCPQC)                                                                                                    |
+| **SM9-KEM**                 | (none, single parameter set)                      | SM9 identity-based KEM of GM/T 0044-2016 (BC provider); KeyGenerator and, on Java 21 and later, KEM services, with keys from KeyPairGenerator "SM9-ENC" |
 | **Composite ML-KEM**        |                                                   | ML-KEM-768/1024 combined with RSA-OAEP, ECDH, X25519 or X448 per draft-ietf-lamps-pq-composite-kem (BC provider; KeyPairGenerator, KeyFactory, KeyGenerator, Cipher and, on Java 21 and later, KEM services by algorithm name and OID)                     |
 
 If used for key wrapping via the Cipher class, you will also need to make use of the KEMParameterSpec class to specify a symmetric wrapping algorithm.
@@ -952,6 +1093,7 @@ Schemes:
 - SHA3-512withSPHINCS256 (BCPQC)
 - SHA256withSM2
 - SM3withSM2
+- SM9 (identity-based signatures of GM/T 0044-2016, with keys from KeyPairGenerator "SM9-SIGN")
 - LMS
 - ML-DSA
 - HASH-ML-DSA (pre-hash ML-DSA, also available as SHA512withMLDSA)
@@ -1018,6 +1160,21 @@ Schemes:
 - SLH-DSA-SHAKE-192S-WITH-SHAKE256
 - SLH-DSA-SHAKE-256F-WITH-SHAKE256
 - SLH-DSA-SHAKE-256S-WITH-SHAKE256
+
+The BCPQC provider also offers the signature candidates still in standardisation processes. Each is registered under its family name, which accepts any of its parameter sets, and under the name of each parameter set (for example "MAYO-1" or "UOV-III"); the parameter spec class in **org.bouncycastle.pqc.jcajce.spec** lists the sets:
+
+| Name    | ParameterSpec Class  | Notes                                                    |
+|---------|----------------------|----------------------------------------------------------|
+| AIMer   | AIMerParameterSpec   | KpqC competition (AIMer-128f ... AIMer-256s)             |
+| Faest   | FaestParameterSpec   | NIST additional signatures round                         |
+| Haetae  | HaetaeParameterSpec  | KpqC competition (HAETAE-2, HAETAE-3, HAETAE-5)          |
+| Mayo    | MayoParameterSpec    | NIST additional signatures round (MAYO-1, -2, -3, -5)    |
+| MQOM    | MQOMParameterSpec    | NIST additional signatures round                         |
+| QRUOV   | QRUOVParameterSpec   | QR-UOV, NIST additional signatures round                 |
+| SDitH   | SDitHParameterSpec   | NIST additional signatures round                         |
+| Snova   | SnovaParameterSpec   | NIST additional signatures round                         |
+| SQIsign | SQIsignParameterSpec | NIST additional signatures round                         |
+| UOV     | UOVParameterSpec     | NIST additional signatures round                         |
 
 #### Password Hashing and PBE
 
