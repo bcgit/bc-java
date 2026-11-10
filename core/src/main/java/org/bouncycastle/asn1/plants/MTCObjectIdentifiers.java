@@ -6,9 +6,12 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
  * OID constants for Merkle Tree Certificates (draft-ietf-plants-merkle-tree-certs).
  *
  * <p>These are the production values allocated in draft-07 under the PKIX
- * arcs (Section 13.1 of the draft). The interim placeholders under Cloudflare's
- * IANA PEN that earlier drafts used for experimentation have been removed and
- * are not aliased.</p>
+ * arcs and unchanged in draft-08: id-alg-mtcProof and
+ * id-pe-mtcCertificationAuthority-SHA256 are registered by Section 13.1 of the
+ * draft, while draft-08 moved the definition of id-rdna-trustAnchorID, with the
+ * same value, to Section 4.1 of draft-ietf-tls-trust-anchor-ids. The interim
+ * placeholders under Cloudflare's IANA PEN that earlier drafts used for
+ * experimentation have been removed and are not aliased.</p>
  */
 public interface MTCObjectIdentifiers
 {
@@ -24,7 +27,8 @@ public interface MTCObjectIdentifiers
     /**
      * id-rdna-trustAnchorID, the RDN attribute carrying a CA ID as a
      * RELATIVE-OID in the issuer and subject fields (Section 5.1 of the
-     * draft): 1.3.6.1.5.5.7.25.3.
+     * draft; the attribute is defined by Section 4.1 of
+     * draft-ietf-tls-trust-anchor-ids): 1.3.6.1.5.5.7.25.3.
      */
     ASN1ObjectIdentifier id_rdna_trustAnchorID = id_pkix.branch("25.3");
 

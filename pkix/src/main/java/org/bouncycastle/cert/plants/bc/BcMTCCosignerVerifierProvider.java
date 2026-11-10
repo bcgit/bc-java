@@ -108,7 +108,7 @@ public class BcMTCCosignerVerifierProvider
 
     /**
      * Builder for {@link BcMTCCosignerVerifierProvider}. Cosigner trust anchor
-     * IDs are the binary form per Section 3 of draft-ietf-tls-trust-anchor-ids
+     * IDs are the binary form per Section 4 of draft-ietf-tls-trust-anchor-ids
      * (the base-128 OID-component bytes, without the ASN.1 RELATIVE-OID tag).
      */
     public static class Builder

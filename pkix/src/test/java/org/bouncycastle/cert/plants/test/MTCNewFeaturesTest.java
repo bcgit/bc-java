@@ -111,7 +111,7 @@ public class MTCNewFeaturesTest
             }
         });
 
-        // Section 4 of draft-ietf-tls-trust-anchor-ids-06: a trust anchor ID's
+        // Section 4 of draft-ietf-tls-trust-anchor-ids-07: a trust anchor ID's
         // binary form is opaque<1..32>, i.e. 1..32 bytes. Reject an empty caId,
         // an ID whose encoding would exceed 32 bytes, and an over-long fromDottedDecimal.
         testException("binary length must be 1..32", "IllegalArgumentException", new TestExceptionOperation()

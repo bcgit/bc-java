@@ -22,7 +22,7 @@ import org.bouncycastle.util.Exceptions;
  * </ul>
  *
  * <p>The binary representation is the base-128 OID-component encoding used
- * inside ASN.1 RELATIVE-OID contents (Section 3 of draft-ietf-tls-trust-anchor-ids);
+ * inside ASN.1 RELATIVE-OID contents (Section 4 of draft-ietf-tls-trust-anchor-ids);
  * it has no ASN.1 tag or length prefix.</p>
  */
 public final class TrustAnchorIDs
@@ -36,7 +36,7 @@ public final class TrustAnchorIDs
 
     /**
      * Maximum length, in bytes, of a trust anchor ID's binary representation.
-     * Section 4 of draft-ietf-tls-trust-anchor-ids-06 states that it "MUST NOT
+     * Section 4 of draft-ietf-tls-trust-anchor-ids-07 states that it "MUST NOT
      * exceed 32 bytes" and transmits it as {@code opaque TrustAnchorID<1..32>},
      * so a valid trust anchor ID is 1..32 bytes. This bounds the IDs this class
      * builds and parses; the {@link MTCProof} wire structures still carry the
@@ -163,7 +163,8 @@ public final class TrustAnchorIDs
      * Builds the issuer {@link X500Name} for a Merkle Tree certificate: a
      * single RDN whose {@code id-rdna-trustAnchorID} attribute carries the
      * CA's trust anchor ID as a RELATIVE-OID (Section 5.1 of
-     * draft-ietf-plants-merkle-tree-certs). The validator concatenates this
+     * draft-ietf-plants-merkle-tree-certs, which takes the construction from
+     * Section 4.1 of draft-ietf-tls-trust-anchor-ids). The validator concatenates this
      * with the cert serial's {@code log_number} to recover the issuance log's
      * full trust anchor ID.
      *
@@ -195,7 +196,7 @@ public final class TrustAnchorIDs
     /**
      * Converts a dotted-decimal trust anchor ID (e.g. {@code "32473.1.0.1"})
      * into its binary form: the base-128 encoded OID-component bytes with no
-     * ASN.1 tag or length prefix (Section 3 of draft-ietf-tls-trust-anchor-ids).
+     * ASN.1 tag or length prefix (Section 4 of draft-ietf-tls-trust-anchor-ids).
      */
     public static byte[] fromDottedDecimal(String dotted)
     {
@@ -251,8 +252,8 @@ public final class TrustAnchorIDs
     }
 
     /**
-     * Enforces the {@code opaque TrustAnchorID<1..2^8-1>} length bound of
-     * Section 3 / Section 4.1 of draft-ietf-tls-trust-anchor-ids: a trust anchor
+     * Enforces the {@code opaque TrustAnchorID<1..32>} length bound of
+     * Section 4 of draft-ietf-tls-trust-anchor-ids: a trust anchor
      * ID's binary representation must be 1..{@link #MAX_ID_LENGTH} bytes.
      *
      * @return {@code id}, when valid, to allow chaining at a return site

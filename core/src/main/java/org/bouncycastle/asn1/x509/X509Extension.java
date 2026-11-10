@@ -160,7 +160,8 @@ public class X509Extension
     public static final ASN1ObjectIdentifier auditIdentity = new ASN1ObjectIdentifier("1.3.6.1.5.5.7.1.4");
 
     /**
-     * id-rdna-trustAnchorID, the RDN attribute carrying a trust anchor ID for
+     * id-rdna-trustAnchorID, the RDN attribute carrying a trust anchor ID, defined by Section 4.1 of
+     * <a href="https://datatracker.ietf.org/doc/draft-ietf-tls-trust-anchor-ids/">draft-ietf-tls-trust-anchor-ids</a> and used by
      * <a href="https://datatracker.ietf.org/doc/draft-ietf-plants-merkle-tree-certs/">Merkle Tree Certificates</a>:
      * 1.3.6.1.5.5.7.25.3
      */

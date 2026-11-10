@@ -63,7 +63,7 @@ public final class MTCCertificationAuthorityCertificate
      * Builds the {@code subject} (or {@code issuer}) distinguished name for a
      * CA whose binary trust anchor ID is {@code caId}: a single RDN whose
      * {@code id-rdna-trustAnchorID} attribute carries the ID as a RELATIVE-OID
-     * (Section 5.1).
+     * (Section 5.1, and Section 4.1 of draft-ietf-tls-trust-anchor-ids).
      */
     public static X500Name subjectName(byte[] caId)
     {

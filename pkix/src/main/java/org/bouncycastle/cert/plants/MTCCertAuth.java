@@ -103,7 +103,8 @@ public class MTCCertAuth
     /**
      * @return the issuer {@link X500Name} for certs issued by this CA, carrying
      *         the trust anchor ID as a RELATIVE-OID in the
-     *         {@code id-rdna-trustAnchorID} attribute (Section 5.1)
+     *         {@code id-rdna-trustAnchorID} attribute (Section 5.1, and Section 4.1
+     *         of draft-ietf-tls-trust-anchor-ids)
      */
     public X500Name issuerName()
     {

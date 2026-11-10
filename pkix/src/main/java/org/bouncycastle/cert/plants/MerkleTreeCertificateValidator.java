@@ -834,7 +834,8 @@ public class MerkleTreeCertificateValidator
 
     /**
      * Extracts the binary CA trust anchor ID from the issuer field of a Merkle
-     * Tree certificate. Per Section 5.1 of the draft the issuer name has a single
+     * Tree certificate. Per Section 5.1 of the draft, and the construction of Section 4.1 of
+     * draft-ietf-tls-trust-anchor-ids it refers to, the issuer name has a single
      * RDN with a single attribute of type {@code id-rdna-trustAnchorID}
      * ({@code 1.3.6.1.5.5.7.25.3}) whose value is a RELATIVE-OID carrying the
      * trust anchor ID. The UTF8String dotted-decimal form that earlier drafts
