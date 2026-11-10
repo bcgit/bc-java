@@ -18,6 +18,17 @@ test target (see `build-jdk14.md` and the `build-jdk15to18` skill). Run each in 
 `git worktree` beside `bc-java`, never in this clone and never two in one `build/`. Remember
 `mkdir -p core/src/main/resources` in a fresh tree.
 
+- **jdk15to18 gets its OSGi manifests from `bnd.sh`, before signing.** Nothing in `build1-5to1-8`
+  or the Ant files writes a bundle manifest for this line: the root `bnd.sh` wraps each jar with
+  `biz.aQute.bnd` and has to be run by hand, over all nine jars
+  (`sh ./bnd.sh build/artifacts/jdk1.5/jars/*.jar`, from the tree root, with `BND_HOME` naming the
+  directory that holds `biz.aQute.bnd-2.2.0.jar`). It rewrites the manifest, so the order is build,
+  `build-test`, `bnd.sh`, `bcsign`, `test-signed` - wrapping a signed jar invalidates its signature,
+  and a jar signed without it ships with no `Bundle-SymbolicName` at all. The first 1.87 pass
+  skipped the step and nothing failed, because the jar still loads and every test still passes;
+  check 3 below is what notices. `bnd.sh` prints nothing on success. The jdk1.4 jars are **not**
+  wrapped: that line ships without OSGi manifests, so `build1-4` stays build, sign, test.
+
 - **Don't trust the exit status.** The wrapper scripts exit 0 after a failed `build` (see
   `build-and-test.md`). Grep each log for `BUILD FAILED` and count the jars: 8 for jdk1.4 (it has
   no bcjmail), 9 each for jdk15to18 and jdk18on. In the 1.87 cycle a failed jdk1.4 `build-lw`
@@ -77,6 +88,19 @@ Resolve every import statically against the set's own exports; nothing may be un
 - Controls: published bctls 1.86.1 with bcprov/bcutil 1.86 must stay `Installed` with
   `missing requirement … (version>=1.86.1)`. Published 1.86.2 must go `Active`.
 
+**The jdk15to18 bundles.** Repeat both halves over the wrapped, signed jars from check 1: these
+manifests come from `bnd.sh`, not from the Gradle bnd plugin, so the Gradle result says nothing
+about them. Each jar must carry `Bundle-SymbolicName`, `Bundle-Version: <ver>`,
+`Bundle-RequiredExecutionEnvironment: J2SE-1.5`, exports at `<ver>` and `org.bouncycastle` imports
+ranged `[<ver>,<next>)`, with nothing unresolved against the set. In Karaf, bcprov, bcutil, bcpkix,
+bcpg, bctls, bcmail, bcjmail and bcprov-ext must all go `Active` and wire to each other. Two things
+differ from the Gradle bundles by construction, and are expected rather than findings: `bcprov`
+exports the `org.bouncycastle.internal.*` packages (the `bnd.sh` export is `org.bouncycastle.*`),
+and `bctest` is wrapped like the rest but is not a usable bundle - it imports `junit` and exports
+main-namespace packages that hold its package-private tests (`org.bouncycastle.est`,
+`org.bouncycastle.tls`, ...), so it stays `Installed` with a uses constraint violation against
+bcpkix.
+
 ## 4. Module descriptors (JPMS)
 
 A missing `exports` line only hurts modular consumers, so no build or class-path test notices it.
@@ -105,6 +129,33 @@ Check every jar against its own descriptor:
   without `--add-reads org.bouncycastle.pgsc=ALL-UNNAMED` and succeed with it, as the descriptor's
   NOTE says.
 
-## 5. Signatures
+## 5. Duplicate classes across the binary jars
+
+List the classes in every binary jar of each set - the Gradle `*/build/libs/*.jar` (not the
+`-sources` / `-javadoc` jars) and each Ant `build/artifacts/<jdkdir>/jars/*.jar` - and check that no
+jar holds an entry twice and that no class turns up in two jars meant to sit on one class path.
+Count a `META-INF/versions/N` copy as the same class as its root copy. The overlaps that are
+expected, and so the whole of what the check should report:
+
+- `bccore` is contained in `bcprov` (the `core`-into-`prov` build), and nothing in `bccore` is
+  missing from `bcprov`.
+- `bctls` and `bctls-klog` are alternative builds of one module; klog adds only the key-log classes.
+- Ant `bcprov` and `bcprov-ext` have the same class list.
+- Ant `bctest` repeats the `org.bouncycastle.util.test` support classes that `bcprov` ships
+  (`SimpleTest`, `FixedSecureRandom`, ...); the copies must be byte-identical.
+- `bcmail` and `bcjmail` carry the same class names by construction, as the javax and jakarta builds
+  of one source tree. Check the pair makes sense rather than that it is disjoint: no `bcmail` class
+  may reference `jakarta/mail` and no `bcjmail` class `javax/mail`, the classes that differ in bytes
+  are the ones that touch the mail API, and neither jar shares a class with any other jar.
+
+Anything else is a finding: `bcutil`, `bcpkix`, `bcpg`, `bcpgsc` and `bcmls` share no class with any
+other jar. Compare the Ant and Gradle builds of the same module while the lists are to hand. The six
+`handlers` classes of `bcjmail` come from `jmail/src/main/java` in both builds, but Ant excludes
+mail's `handlers` directory outright while Gradle overlays it, so a class added to
+`mail/.../smime/handlers` with no jmail counterpart reaches the Gradle `bcjmail` only; in 1.87 that
+left an unreferenced `HandlerUtil` there. `jdeps -verbose:class` over the Ant jar, with its
+dependencies on the class path, says whether the Ant jar needs what it lacks.
+
+## 6. Signatures
 
 `jarsigner -verify` every jar, legacy and Gradle alike.
