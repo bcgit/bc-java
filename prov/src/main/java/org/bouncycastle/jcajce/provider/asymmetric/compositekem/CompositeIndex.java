@@ -1,5 +1,7 @@
 package org.bouncycastle.jcajce.provider.asymmetric.compositekem;
 
+import java.security.Key;
+import java.security.interfaces.RSAKey;
 import java.security.spec.AlgorithmParameterSpec;
 import java.security.spec.RSAKeyGenParameterSpec;
 import java.util.HashMap;
@@ -11,6 +13,7 @@ import org.bouncycastle.asn1.iana.IANAObjectIdentifiers;
 import org.bouncycastle.jcajce.spec.MLKEMParameterSpec;
 import org.bouncycastle.jcajce.spec.XDHParameterSpec;
 import org.bouncycastle.jce.spec.ECNamedCurveGenParameterSpec;
+import org.bouncycastle.util.Integers;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -28,6 +31,7 @@ public class CompositeIndex
     private static final Map<ASN1ObjectIdentifier, byte[]> kemLabels = new HashMap<ASN1ObjectIdentifier, byte[]>();
     private static final Map<ASN1ObjectIdentifier, AlgorithmParameterSpec[]> kpgInitSpecs = new HashMap<ASN1ObjectIdentifier, AlgorithmParameterSpec[]>();
     private static final Map<ASN1ObjectIdentifier, String[]> algorithmAliases = new HashMap<ASN1ObjectIdentifier, String[]>();
+    private static final Map<ASN1ObjectIdentifier, Integer> rsaKeySizes = new HashMap<ASN1ObjectIdentifier, Integer>();
 
     static
     {
@@ -126,6 +130,12 @@ public class CompositeIndex
         // BP384; those names are kept as aliases of the draft's spelling.
         algorithmAliases.put(IANAObjectIdentifiers.id_MLKEM768_ECDH_brainpoolP256r1_SHA3_256, new String[]{"MLKEM768-ECDH-BP256-SHA3-256"});
         algorithmAliases.put(IANAObjectIdentifiers.id_MLKEM1024_ECDH_brainpoolP384r1_SHA3_256, new String[]{"MLKEM1024-ECDH-BP384-SHA3-256"});
+
+        // The RSA modulus size, in bits, each RSA composite fixes (section 6.1).
+        rsaKeySizes.put(IANAObjectIdentifiers.id_MLKEM768_RSA2048_SHA3_256, Integers.valueOf(2048));
+        rsaKeySizes.put(IANAObjectIdentifiers.id_MLKEM768_RSA3072_SHA3_256, Integers.valueOf(3072));
+        rsaKeySizes.put(IANAObjectIdentifiers.id_MLKEM768_RSA4096_SHA3_256, Integers.valueOf(4096));
+        rsaKeySizes.put(IANAObjectIdentifiers.id_MLKEM1024_RSA3072_SHA3_256, Integers.valueOf(3072));
 
         // Per-component KeyPairGenerator init specs, in pairing order: ML-KEM first, traditional
         // second. Every component carries one, including those whose parameter set the component's
@@ -236,6 +246,43 @@ public class CompositeIndex
         else if (compositeName.indexOf("X448") >= 0)
         {
             return "X448";
+        }
+
+        return null;
+    }
+
+    /**
+     * The RSA modulus size in bits that a Composite KEM OID fixes for its traditional component
+     * (section 6.1 of draft-ietf-lamps-pq-composite-kem), or -1 if the traditional component is not RSA.
+     */
+    public static int getRSAKeySize(ASN1ObjectIdentifier oid)
+    {
+        Integer keySize = rsaKeySizes.get(oid);
+
+        return (keySize != null) ? keySize.intValue() : -1;
+    }
+
+    /**
+     * Checks that the traditional component of a composite key is acceptable for the Composite KEM
+     * OID it is used under: section 6.1 of draft-ietf-lamps-pq-composite-kem fixes the modulus size
+     * of an RSA component, and section 3.3 requires it to be checked.
+     *
+     * @return null if the component is acceptable, otherwise a message describing why it is not.
+     */
+    static String checkTraditionalKey(ASN1ObjectIdentifier oid, Key tradKey)
+    {
+        int keySize = getRSAKeySize(oid);
+
+        if (keySize > 0)
+        {
+            if (!(tradKey instanceof RSAKey))
+            {
+                return "RSA component is not an RSA key";
+            }
+            if (((RSAKey)tradKey).getModulus().bitLength() != keySize)
+            {
+                return "RSA component must be a " + keySize + "-bit key";
+            }
         }
 
         return null;

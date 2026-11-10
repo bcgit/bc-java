@@ -14,6 +14,7 @@ import java.security.SecureRandom;
 import java.security.Security;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
+import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
@@ -28,6 +29,7 @@ import javax.crypto.spec.SecretKeySpec;
 import junit.framework.TestCase;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
@@ -306,6 +308,163 @@ public class CompositeMLKEMTest
         {
             assertEquals("malformed composite KEM ciphertext: shorter than the encapsulation", e.getMessage());
         }
+    }
+
+    /**
+     * Decapsulation through a KeyGenerator with a KEMExtractSpec only required the ciphertext to be
+     * at least as long as the ML-KEM part, so a traditional part in a second encoding decapsulated,
+     * to a key the sender did not hold: an X25519 or X448 value wrapped in a SubjectPublicKeyInfo
+     * under any algorithm identifier, and an RSA-OAEP value with its leading zero octet dropped.
+     * Sections 3.3 and 4 of draft-ietf-lamps-pq-composite-kem give each component ciphertext one
+     * encoding, of fixed length.
+     */
+    public void testNonCanonicalCiphertextRejected()
+        throws Exception
+    {
+        Provider bc = Security.getProvider("BC");
+        ASN1ObjectIdentifier x25519 = new ASN1ObjectIdentifier("1.3.101.110");
+        ASN1ObjectIdentifier x448 = new ASN1ObjectIdentifier("1.3.101.111");
+        AlgorithmIdentifier rsaEncryption = new AlgorithmIdentifier(new ASN1ObjectIdentifier("1.2.840.113549.1.1.1"), DERNull.INSTANCE);
+
+        String[] names = {"MLKEM768-X25519-SHA3-256", "MLKEM1024-X448-SHA3-256", "MLKEM768-RSA2048-SHA3-256", "MLKEM768-ECDH-P256-SHA3-256"};
+
+        for (int i = 0; i != names.length; i++)
+        {
+            String name = names[i];
+            int m = name.startsWith("MLKEM768") ? 1088 : 1568;
+            boolean isRSA = name.indexOf("RSA") > 0;
+
+            KeyPair kp = KeyPairGenerator.getInstance(name, bc).generateKeyPair();
+
+            // for RSA, encapsulate until the RSA-OAEP part has a leading zero octet (about 1 in 256)
+            byte[] ct;
+            byte[] ss;
+            int tries = 0;
+            do
+            {
+                KeyGenerator gen = KeyGenerator.getInstance(name, bc);
+                gen.init(new KEMGenerateSpec.Builder(kp.getPublic(), "AES", 256).withKdfAlgorithm(null).build(), new SecureRandom());
+                SecretKeyWithEncapsulation k = (SecretKeyWithEncapsulation)gen.generateKey();
+                ct = k.getEncapsulation();
+                ss = k.getEncoded();
+            }
+            while (isRSA && ct[m] != 0 && ++tries < 20000);
+
+            byte[] mlkemCT = Arrays.copyOfRange(ct, 0, m);
+            byte[] tradCT = Arrays.copyOfRange(ct, m, ct.length);
+
+            assertTrue(name + ": the unmodified ciphertext must still decapsulate", Arrays.areEqual(ss, extract(name, kp.getPrivate(), ct)));
+
+            List<byte[]> malformed = new ArrayList<byte[]>();
+
+            if (isRSA)
+            {
+                assertEquals(name + ": no RSA-OAEP ciphertext with a leading zero found", 0, tradCT[0]);
+                malformed.add(Arrays.copyOfRange(tradCT, 1, tradCT.length));
+            }
+            else if (name.indexOf("ECDH") < 0)
+            {
+                malformed.add(new SubjectPublicKeyInfo(new AlgorithmIdentifier(x25519), tradCT).getEncoded("DER"));
+                malformed.add(new SubjectPublicKeyInfo(new AlgorithmIdentifier(x448), tradCT).getEncoded("DER"));
+                malformed.add(new SubjectPublicKeyInfo(rsaEncryption, tradCT).getEncoded("DER"));
+            }
+            // these were rejected before the length was checked, but each for a different reason
+            malformed.add(Arrays.append(tradCT, (byte)0));
+            malformed.add(Arrays.copyOfRange(tradCT, 0, tradCT.length - 1));
+            malformed.add(Arrays.prepend(tradCT, (byte)0));
+
+            for (int j = 0; j != malformed.size(); j++)
+            {
+                byte[] t = (byte[])malformed.get(j);
+
+                try
+                {
+                    extract(name, kp.getPrivate(), Arrays.concatenate(mlkemCT, t));
+                    fail(name + ": traditional ciphertext of " + t.length + " octets accepted (case " + j + ")");
+                }
+                catch (IllegalStateException e)
+                {
+                    assertEquals("Decapsulation failed: malformed composite ciphertext: wrong length", e.getMessage());
+                }
+            }
+        }
+    }
+
+    /**
+     * Section 6.1 of draft-ietf-lamps-pq-composite-kem fixes the RSA modulus size of each RSA
+     * composite and section 3.3 requires it to be checked, but nothing did: an RSA-1024 or RSA-3072
+     * key under the MLKEM768-RSA2048 OID decoded, encapsulated and decapsulated. The KeyFactory now
+     * rejects such a key, and so do encapsulation and decapsulation for a key built without it.
+     */
+    public void testRSAComponentSizeEnforced()
+        throws Exception
+    {
+        String name = "MLKEM768-RSA2048-SHA3-256";
+        ASN1ObjectIdentifier oid = new ASN1ObjectIdentifier("1.3.6.1.5.5.7.6.55");
+        KeyPair mlkem = KeyPairGenerator.getInstance("ML-KEM-768", "BC").generateKeyPair();
+        int[] sizes = {1024, 3072};
+
+        for (int i = 0; i != sizes.length; i++)
+        {
+            KeyPairGenerator rsaGen = KeyPairGenerator.getInstance("RSA", "BC");
+            rsaGen.initialize(sizes[i]);
+            KeyPair rsa = rsaGen.generateKeyPair();
+
+            CompositePublicKey pub = new CompositePublicKey(oid, mlkem.getPublic(), rsa.getPublic());
+            CompositePrivateKey priv = new CompositePrivateKey(oid, mlkem.getPrivate(), rsa.getPrivate());
+
+            KeyFactory kf = KeyFactory.getInstance(name, "BC");
+            try
+            {
+                kf.generatePublic(new X509EncodedKeySpec(pub.getEncoded()));
+                fail("public key with an RSA-" + sizes[i] + " component decoded");
+            }
+            catch (InvalidKeySpecException e)
+            {
+                assertTrue(e.getMessage(), e.getMessage().endsWith("malformed composite public key: RSA component must be a 2048-bit key"));
+            }
+            try
+            {
+                kf.generatePrivate(new PKCS8EncodedKeySpec(priv.getEncoded()));
+                fail("private key with an RSA-" + sizes[i] + " component decoded");
+            }
+            catch (InvalidKeySpecException e)
+            {
+                assertTrue(e.getMessage(), e.getMessage().endsWith("malformed composite private key: RSA component must be a 2048-bit key"));
+            }
+
+            try
+            {
+                KeyGenerator gen = KeyGenerator.getInstance(name, "BC");
+                gen.init(new KEMGenerateSpec.Builder(pub, "AES", 256).withKdfAlgorithm(null).build(), new SecureRandom());
+                gen.generateKey();
+                fail("encapsulated to an RSA-" + sizes[i] + " component");
+            }
+            catch (IllegalStateException e)
+            {
+                assertEquals("Encapsulation failed: Traditional encapsulation failed: RSA component must be a 2048-bit key", e.getMessage());
+            }
+
+            try
+            {
+                extract(name, priv, new byte[1088 + sizes[i] / 8]);
+                fail("decapsulated with an RSA-" + sizes[i] + " component");
+            }
+            catch (IllegalStateException e)
+            {
+                assertEquals("Decapsulation failed: RSA component must be a 2048-bit key", e.getMessage());
+            }
+        }
+    }
+
+    private static byte[] extract(String name, PrivateKey priv, byte[] encapsulation)
+        throws Exception
+    {
+        KeyGenerator gen = KeyGenerator.getInstance(name, "BC");
+
+        gen.init(new KEMExtractSpec.Builder(priv, encapsulation, "AES", 256).withKdfAlgorithm(null).build());
+
+        return gen.generateKey().getEncoded();
     }
 
     /**

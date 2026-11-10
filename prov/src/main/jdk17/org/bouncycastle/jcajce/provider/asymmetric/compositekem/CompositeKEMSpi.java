@@ -2,10 +2,12 @@ package org.bouncycastle.jcajce.provider.asymmetric.compositekem;
 
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
+import java.security.Key;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.spec.AlgorithmParameterSpec;
+import java.util.List;
 
 import javax.crypto.KEMSpi;
 
@@ -50,6 +52,7 @@ public class CompositeKEMSpi
         {
             throw new InvalidKeyException("key is not a " + algorithmName + " key");
         }
+        checkTraditionalKey(compositeKey.getPublicKeys());
 
         return new CompositeKEMEncapsulatorSpi(compositeOID, compositeKey, resolveSpec(spec), secureRandom);
     }
@@ -66,8 +69,26 @@ public class CompositeKEMSpi
         {
             throw new InvalidKeyException("key is not a " + algorithmName + " key");
         }
+        checkTraditionalKey(compositeKey.getPrivateKeys());
 
         return new CompositeKEMDecapsulatorSpi(compositeOID, compositeKey, resolveSpec(spec));
+    }
+
+    // draft sec. 3.3 / 6.1: an RSA component must have the modulus size the OID fixes.
+    private void checkTraditionalKey(List<? extends Key> components)
+        throws InvalidKeyException
+    {
+        if (components.size() != 2)
+        {
+            throw new InvalidKeyException("Composite key must have exactly 2 components");
+        }
+
+        String problem = CompositeIndex.checkTraditionalKey(compositeOID, components.get(1));
+
+        if (problem != null)
+        {
+            throw new InvalidKeyException(problem);
+        }
     }
 
     private KTSParameterSpec resolveSpec(AlgorithmParameterSpec spec)

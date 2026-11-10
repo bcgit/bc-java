@@ -257,7 +257,12 @@ public class KeyFactorySpi
                     // and use the component key factory to decode the component key from PrivateKeyInfo.
                     keySpec = new PKCS8EncodedKeySpec(PrivateKeyInfo.getInstance(keySeq).getEncoded());
                 }
-                builder.addPrivateKey(factories.get(i).generatePrivate(keySpec), factories.get(i).getProvider());
+                PrivateKey componentKey = factories.get(i).generatePrivate(keySpec);
+                if (i == 1)
+                {
+                    checkTraditionalKey(keyIdentifier, componentKey, "private");
+                }
+                builder.addPrivateKey(componentKey, factories.get(i).getProvider());
             }
             return builder.build();
         }
@@ -305,13 +310,29 @@ public class KeyFactorySpi
             CompositePublicKey.Builder builder = CompositePublicKey.builder(keyIdentifier);
             for (int i = 0; i < numKeys; i++)
             {
-                builder.addPublicKey(factories.get(i).generatePublic(x509EncodedKeySpecs[i]), factories.get(i).getProvider());
+                PublicKey componentKey = factories.get(i).generatePublic(x509EncodedKeySpecs[i]);
+                if (i == 1)
+                {
+                    checkTraditionalKey(keyIdentifier, componentKey, "public");
+                }
+                builder.addPublicKey(componentKey, factories.get(i).getProvider());
             }
             return builder.build();
         }
         catch (GeneralSecurityException e)
         {
             throw Exceptions.ioException(e.getMessage(), e);
+        }
+    }
+
+    private static void checkTraditionalKey(ASN1ObjectIdentifier keyIdentifier, Key componentKey, String keyType)
+        throws IOException
+    {
+        String problem = CompositeIndex.checkTraditionalKey(keyIdentifier, componentKey);
+
+        if (problem != null)
+        {
+            throw new IOException("malformed composite " + keyType + " key: " + problem);
         }
     }
 

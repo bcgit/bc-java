@@ -20,6 +20,8 @@ import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.iana.IANAObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.jcajce.CompositePrivateKey;
+import org.bouncycastle.jcajce.CompositePublicKey;
 import org.bouncycastle.jcajce.provider.asymmetric.compositekem.CompositeIndex;
 import org.bouncycastle.jcajce.spec.KTSParameterSpec;
 import org.bouncycastle.jcajce.spec.MLKEMParameterSpec;
@@ -171,6 +173,45 @@ public class CompositeMLKEM17Test
         catch (InvalidKeyException e)
         {
             assertEquals("key is not a " + name + " key", e.getMessage());
+        }
+    }
+
+    /**
+     * Section 6.1 of draft-ietf-lamps-pq-composite-kem fixes the RSA modulus size of each RSA
+     * composite; a composite key carrying an RSA component of another size was accepted, and both
+     * encapsulated and decapsulated.
+     */
+    public void testRSAComponentSizeEnforced()
+        throws Exception
+    {
+        ASN1ObjectIdentifier oid = IANAObjectIdentifiers.id_MLKEM768_RSA2048_SHA3_256;
+        KEM kem = KEM.getInstance(CompositeIndex.getAlgorithmName(oid), "BC");
+        KeyPair mlkem = KeyPairGenerator.getInstance("ML-KEM-768", "BC").generateKeyPair();
+
+        for (int bits : new int[]{1024, 3072})
+        {
+            KeyPairGenerator rsaGen = KeyPairGenerator.getInstance("RSA", "BC");
+            rsaGen.initialize(bits);
+            KeyPair rsa = rsaGen.generateKeyPair();
+
+            try
+            {
+                kem.newEncapsulator(new CompositePublicKey(oid, mlkem.getPublic(), rsa.getPublic()), null, null);
+                fail("RSA-" + bits + " component accepted for encapsulation");
+            }
+            catch (InvalidKeyException e)
+            {
+                assertEquals("RSA component must be a 2048-bit key", e.getMessage());
+            }
+            try
+            {
+                kem.newDecapsulator(new CompositePrivateKey(oid, mlkem.getPrivate(), rsa.getPrivate()), null);
+                fail("RSA-" + bits + " component accepted for decapsulation");
+            }
+            catch (InvalidKeyException e)
+            {
+                assertEquals("RSA component must be a 2048-bit key", e.getMessage());
+            }
         }
     }
 

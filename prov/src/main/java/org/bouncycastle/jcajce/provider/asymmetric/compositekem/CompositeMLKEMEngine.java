@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.math.BigInteger;
 import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
+import java.security.Key;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -144,6 +145,17 @@ class CompositeMLKEMEngine
         return mlkemCTSize + getTraditionalCiphertextLength(null);
     }
 
+    private void checkTraditionalKey(Key tradKey)
+        throws InvalidKeyException
+    {
+        String problem = CompositeIndex.checkTraditionalKey(compositeOID, tradKey);
+
+        if (problem != null)
+        {
+            throw new InvalidKeyException(problem);
+        }
+    }
+
     private int getTraditionalCiphertextLength(PrivateKey tradSK)
     {
         String tradAlg = CompositeIndex.getTraditionalAlgorithmName(compositeOID);
@@ -241,6 +253,7 @@ class CompositeMLKEMEngine
 
             if ("RSA".equals(tradAlg))
             {
+                checkTraditionalKey(tradPK);
                 Cipher rsaCipher = (tradProv == null) ? Cipher.getInstance("RSA/NONE/OAEPPadding")
                     : Cipher.getInstance("RSA/NONE/OAEPPadding", tradProv);
 
@@ -337,17 +350,24 @@ class CompositeMLKEMEngine
             throw new IllegalArgumentException("Ciphertext too short for ML-KEM component");
         }
 
-        byte[] mlkemCT = new byte[mlkemCTSize];
-        byte[] tradCT = new byte[ciphertext.length - mlkemCTSize];
-        System.arraycopy(ciphertext, 0, mlkemCT, 0, mlkemCTSize);
-        System.arraycopy(ciphertext, mlkemCTSize, tradCT, 0, tradCT.length);
-
         List<PrivateKey> compKeys = privateKey.getPrivateKeys();
         List<Provider> providers = privateKey.getProviders(); // assume similar getter exists
         if (compKeys.size() != 2)
         {
             throw new InvalidKeyException("Composite key must have exactly 2 components");
         }
+
+        // draft sec. 3.3 / 6.1: an RSA component has the modulus size its OID fixes, and every component ciphertext has one encoding of fixed length.
+        checkTraditionalKey(compKeys.get(1));
+        if (ciphertext.length != getEncapsulationLength(privateKey))
+        {
+            throw new IllegalArgumentException("malformed composite ciphertext: wrong length");
+        }
+
+        byte[] mlkemCT = new byte[mlkemCTSize];
+        byte[] tradCT = new byte[ciphertext.length - mlkemCTSize];
+        System.arraycopy(ciphertext, 0, mlkemCT, 0, mlkemCTSize);
+        System.arraycopy(ciphertext, mlkemCTSize, tradCT, 0, tradCT.length);
 
         PrivateKey mlkemSK = compKeys.get(0);
         PrivateKey tradSK = compKeys.get(1);
@@ -525,14 +545,10 @@ class CompositeMLKEMEngine
                              int keySize, PrivateKey ephemPriv)
         throws NoSuchAlgorithmException, InvalidKeyException, IOException, InvalidKeySpecException
     {
+        // draft sec. 4: the value is the raw RFC 7748 public key and nothing else.
         if (tradPKBytes.length != keySize)
         {
-            SubjectPublicKeyInfo spki = SubjectPublicKeyInfo.getInstance(tradPKBytes);
-            tradPKBytes = spki.getPublicKeyData().getOctets();
-            if (tradPKBytes.length != keySize)
-            {
-                throw new IllegalArgumentException("Invalid public key encoding");
-            }
+            throw new IllegalArgumentException("Invalid public key encoding");
         }
         PublicKey receiverPub = getPublicKey(algorithm, tradProv, new X509EncodedKeySpec(new SubjectPublicKeyInfo(new AlgorithmIdentifier(identifier),
             tradPKBytes).getEncoded(ASN1Encoding.DER)));
