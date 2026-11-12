@@ -49,8 +49,13 @@ evaluationDependsOn(":pkix")
 
 task copyTask(type: Copy) {
     duplicatesStrategy = 'include'
-    from '../mail/src/main'
-    from 'src/main'
+    from('../mail/src/main') {
+        // HandlerUtil has no jmail counterpart and nothing in the jmail handlers uses it; the Ant build leaves it out too
+        exclude '**/handlers/HandlerUtil.java'
+    }
+    // a child spec as well, so that it is still copied after the mail tree and its handlers win
+    from('src/main') {
+    }
     into 'build/src/main'
     filter { String line -> (line.contains('javax.mail') ||  line.contains('javax.activation')) ? line.replace('javax.mail', 'jakarta.mail').replace('javax.activation', 'jakarta.activation') : line }
 }
