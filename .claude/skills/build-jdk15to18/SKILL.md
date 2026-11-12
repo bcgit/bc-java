@@ -109,6 +109,14 @@ $JAVA_HOME/bin/java     -cp "$CP" <SimpleTest fqcn>   # JDK 21       -> if it PA
 
 If `-Xint` passes but JIT fails, it's a JVM defect — don't "fix" the BC code; guard the affected assertion on `java.version` 1.5 (see exclusion note above) and document it.
 
+## The debug variant
+
+The release also ships `<module>-debug-jdk15to18-<ver>` jars. Put `release.debug: true` in a
+git-ignored `bc-build.user.properties` at the tree root and run the same build, `build-test`, `bnd.sh`,
+`bcsign`, `test-signed` sequence, in a fresh worktree of its own. The traps and the entry-name
+comparison against the non-debug jars are the same as for jdk1.4: see `docs/claude/build-jdk14.md`,
+"The debug variant".
+
 ## Quick reference
 
 | Need | Command |

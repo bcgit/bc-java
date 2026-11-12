@@ -133,6 +133,32 @@ ANT_HOME=/opt/apache-ant-1.6.5 JAVA_HOME=/opt/jdk1.4.2 /opt/apache-ant-1.6.5/bin
   `/opt/jdk1.4.2/bin/java -Xmx1536m -cp <jars> <test class>` (SimpleTests print
   `<Name>: Okay`); the full pipeline is ~25 minutes, this loop is ~2.
 
+## The debug variant (`<module>-debug-jdk14`)
+
+Each release also ships the jdk1.4 jars compiled with debug information, as `<module>-debug-jdk14-<ver>`.
+The switch is the Ant property `release.debug`: put `release.debug: true` in a `bc-build.user.properties`
+file at the tree root (git-ignored, read before `bc-build.properties`, so it wins) and run the same
+build → `build-test` → `bcsign4` → `test-signed` sequence. `ant/jdk14.xml` then sets `target.prefix` to
+`debug-jdk14`, so the jars, the per-module `<module>-debug-jdk14-<ver>/` directories and the
+`lcrypto-debug-jdk14-<ver>` tree all carry the name. `ant/jdk15+.xml` has the same switch
+(`debug-jdk15to18`); `ant/jdk18+.xml` does not.
+
+- **Build it in a worktree of its own, fresh.** The staging tree `build/jdk1.4` is never cleaned and
+  `build-test` copies test resources into it, so a debug build run in a tree that has already run the
+  tests can absorb them: in 1.86 `bcprov-debug-jdk14` came out carrying six
+  `org/bouncycastle/i18n/test/*.properties`. A second worktree beside the non-debug one costs about
+  750M and a minute of build.
+- **Compare each debug jar with its non-debug twin before signing anything off.** The entry *names* must
+  be identical (`diff <(unzip -Z1 debug.jar | sort) <(unzip -Z1 plain.jar | sort)`, both signed or both
+  unsigned - signing adds the two `META-INF` signature entries), and
+  `unzip -Z1 bcprov-debug-jdk14-*.jar | grep -c i18n/test` must be 0. That the debug flag took is
+  visible in the classes: `javap -v -cp <jar> org.bouncycastle.crypto.engines.AESEngine | grep -c
+  LocalVariableTable` is non-zero for the debug jar and 0 for the plain one.
+- The test totals should equal the non-debug run's (1.87: 39 suites, 1251 tests, about 21 minutes).
+- The test class path takes every jar in `build/artifacts/jdk1.4/jars`, so do not write the
+  `-sources` / `-javadoc` jars (the `legacy-source-javadoc-jars` skill) into that directory while
+  `test-signed` is running; make them afterwards.
+
 Worth knowing before chasing a legacy-build risk: **LMS/HSS and XMSS/XMSS^MT are both excluded
 from this build** (`**/lms/**`, `**/xmss/**` plus the individual `crypto/params/LMS*` and
 `crypto/signers/LMS*` excludes in `ant/jdk14.xml`), and so from jdk1.3, so changes confined to

@@ -77,14 +77,26 @@ ls -la "$OUT"/*-sources.jar "$OUT"/*-javadoc.jar
 
 ## Verify
 
-- Sources jar: `jar tf X-sources.jar | grep -c '\.java$'` (bcprov jdk1.4 ≈ 2891), and a spot file like
+- Sources jar: `jar tf X-sources.jar | grep -c '\.java$'` (bcprov jdk1.4: 2843 in 1.87), and a spot file like
   `org/bouncycastle/crypto/engines/AESEngine.java`.
 - Javadoc jar: `jar tf X-javadoc.jar` shows `index.html` and `overview-summary.html` at the root.
 - Expect one sources jar per binary jar, and one javadoc jar per binary jar **except bctest**
   (jdk1.4: 8 sources + 7 javadoc; jdk15to18: 9 sources + 8 javadoc, with bcjmail).
 
+## Debug variants
+
+A `release.debug` build (see `docs/claude/build-jdk14.md`, "The debug variant") names everything
+`<module>-debug-<VMRANGE>-<ver>` - jars and per-module directories alike - so the script above works
+on it unchanged and writes `<module>-debug-<VMRANGE>-<ver>-sources.jar` / `-javadoc.jar`. Each should
+have exactly the entry names of its non-debug twin; compare them
+(`diff <(unzip -Z1 a.jar | sort) <(unzip -Z1 b.jar | sort)`) rather than copying the non-debug jars
+across under the debug name.
+
 ## Notes
 
+- **Run this after `test-signed`, not during it.** The script writes into `jars/`, and the Ant test
+  class path takes every jar in that directory.
+- The `-sources` / `-javadoc` jars are not jar-signed; only the binary jars go through `bcsign4` / `bcsign`.
 - `build/artifacts/` is build output — untracked, nothing to commit.
 - These are byte-reproducible from the same Ant build; the `src.zip` is the authoritative source
   (already preprocessed for the target JDK), so never regenerate sources from `*/src/main/java`.

@@ -29,6 +29,11 @@ test target (see `build-jdk14.md` and the `build-jdk15to18` skill). Run each in 
   check 3 below is what notices. `bnd.sh` prints nothing on success. The jdk1.4 jars are **not**
   wrapped: that line ships without OSGi manifests, so `build1-4` stays build, sign, test.
 
+- **The debug variants are part of the release.** jdk1.4 and jdk15to18 each ship a second set of jars,
+  `<module>-debug-<vmrange>-<ver>`, built with `release.debug: true` (see `build-jdk14.md`, "The debug
+  variant"). Build each in its own fresh worktree, sign and run `test-signed` as for the plain jars,
+  and check every debug jar has exactly the entry names of its plain twin.
+
 - **Don't trust the exit status.** The wrapper scripts exit 0 after a failed `build` (see
   `build-and-test.md`). Grep each log for `BUILD FAILED` and count the jars: 8 for jdk1.4 (it has
   no bcjmail), 9 each for jdk15to18 and jdk18on. In the 1.87 cycle a failed jdk1.4 `build-lw`
@@ -158,4 +163,22 @@ dependencies on the class path, says whether the Ant jar needs what it lacks.
 
 ## 6. Signatures
 
-`jarsigner -verify` every jar, legacy and Gradle alike.
+`jarsigner -verify` every jar, legacy and Gradle alike. Verify the jdk1.4 jars with the 1.4 tool
+(`/opt/jdk1.4.2/bin/jarsigner -verify`, which prints `jar verified.`): they are signed with the
+1024-bit key a 1.4 JRE needs, and a current JDK's `jarsigner` reports "The jar will be treated as
+unsigned, because it is signed with a weak algorithm that is now disabled" for a jar that is
+correctly signed.
+
+## 7. Tagging
+
+Once the checks pass and the release notes carry the release date, tag both repositories with the same
+lightweight tag, `r1rv<NN>` (`r1rv87`; patch releases are `r1rv86v1`, `r1rv86v2`):
+
+- `bc-java`: the commit the release was built from, including any last documentation commit.
+- `bc-test-data`: the commit the release tests ran against. `git fetch` first and look at
+  `git status -sb` - the local checkout is often a commit behind `origin/main`, and vectors a test of
+  this release reads (the HQC Reed-Solomon vectors, for 1.87) may be in the commit it lacks.
+
+Tags are created locally and pushed by the maintainer. Note where the legacy jars were built relative
+to the tag: `git diff --stat <build-commit> <tag> -- . ':!docs' ':!CONTRIBUTORS.md'` should show nothing
+that reaches a jar.
