@@ -1107,8 +1107,11 @@
                 <path refid="project.classpath" /> 
                 <fileset dir="${artifacts.jars.dir}">
                     <include name="**/*.jar" />
+                    <!-- a release.debug build names its jars <module>-debug-jdk..., so each exclude is given in both forms -->
                     <exclude name="**/bcprov-jdk*.jar" />
+                    <exclude name="**/bcprov-debug-jdk*.jar" />
                     <exclude name="**/bcjmail-jdk*.jar" />
+                    <exclude name="**/bcjmail-debug-jdk*.jar" />
                 </fileset>
             </classpath>
             <sysproperty key="test.java.version.prefix" value="${env.JAVA_VERSION_PREFIX}" />
@@ -1143,6 +1146,7 @@
                 <fileset dir="${artifacts.jars.dir}">
                     <include name="**/*.jar" />
                     <exclude name="**/bcprov-jdk*.jar" />
+                    <exclude name="**/bcprov-debug-jdk*.jar" />
                 </fileset>
             </classpath>
 
