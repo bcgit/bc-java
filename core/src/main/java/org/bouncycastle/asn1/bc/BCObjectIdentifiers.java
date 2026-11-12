@@ -1025,6 +1025,33 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier smaugt_modet = pqc_kem_smaugt.branch("4");
 
     /**
+     * Composite FrodoKEM test OIDs for draft-song-lamps-pq-composite-frodokem and
+     * draft-song-lamps-cms-composite-frodokem, for interoperability testing until IANA assigns the drafts'
+     * TBD1 to TBD8 under id-alg (1.3.6.1.5.5.7.6). Branch N stands for TBDN.
+     * <p>
+     * The names follow the -02 revisions of the drafts, which add SHAKE to the names of TBD1 to TBD4; the -01
+     * name is given beside each of those. The names may change again as the drafts are revised, but these
+     * OIDs will not.
+     */
+    ASN1ObjectIdentifier pqc_kem_composite_frodokem = bc_kem.branch("12");
+    /** TBD1 id-FrodoKEM976-SHAKE-RSA3072-SHA3-256 (-01: id-FrodoKEM976-RSA3072-SHA3-256) */
+    ASN1ObjectIdentifier id_FrodoKEM976_SHAKE_RSA3072_SHA3_256 = pqc_kem_composite_frodokem.branch("1");
+    /** TBD2 id-FrodoKEM976-SHAKE-X25519-SHA3-256 (-01: id-FrodoKEM976-X25519-SHA3-256) */
+    ASN1ObjectIdentifier id_FrodoKEM976_SHAKE_X25519_SHA3_256 = pqc_kem_composite_frodokem.branch("2");
+    /** TBD3 id-FrodoKEM1344-SHAKE-RSA4096-SHA3-256 (-01: id-FrodoKEM1344-RSA4096-SHA3-256) */
+    ASN1ObjectIdentifier id_FrodoKEM1344_SHAKE_RSA4096_SHA3_256 = pqc_kem_composite_frodokem.branch("3");
+    /** TBD4 id-FrodoKEM1344-SHAKE-X448-SHA3-256 (-01: id-FrodoKEM1344-X448-SHA3-256) */
+    ASN1ObjectIdentifier id_FrodoKEM1344_SHAKE_X448_SHA3_256 = pqc_kem_composite_frodokem.branch("4");
+    /** TBD5 id-FrodoKEM976-AES-RSA3072-SHA3-256 */
+    ASN1ObjectIdentifier id_FrodoKEM976_AES_RSA3072_SHA3_256 = pqc_kem_composite_frodokem.branch("5");
+    /** TBD6 id-FrodoKEM976-AES-X25519-SHA3-256 */
+    ASN1ObjectIdentifier id_FrodoKEM976_AES_X25519_SHA3_256 = pqc_kem_composite_frodokem.branch("6");
+    /** TBD7 id-FrodoKEM1344-AES-RSA4096-SHA3-256 */
+    ASN1ObjectIdentifier id_FrodoKEM1344_AES_RSA4096_SHA3_256 = pqc_kem_composite_frodokem.branch("7");
+    /** TBD8 id-FrodoKEM1344-AES-X448-SHA3-256 */
+    ASN1ObjectIdentifier id_FrodoKEM1344_AES_X448_SHA3_256 = pqc_kem_composite_frodokem.branch("8");
+
+    /**
      * X-Wing, the X25519 and ML-KEM-768 hybrid KEM of draft-connolly-cfrg-xwing-kem-11. The value is the
      * draft's id-XWing (Section 5.8), assigned in its authors' private enterprise arc rather than in the
      * Bouncy Castle arc: { 1 3 6 1 4 1 62253 25722 }. The subjectPublicKey is the raw 1216-byte
