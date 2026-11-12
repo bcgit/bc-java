@@ -7,9 +7,12 @@ import org.bouncycastle.asn1.ASN1Encodable;
 import org.bouncycastle.asn1.ASN1EncodableVector;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1Integer;
+import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Primitive;
 import org.bouncycastle.asn1.BERBitString;
+import org.bouncycastle.asn1.BEROctetString;
 import org.bouncycastle.asn1.BERSequence;
+import org.bouncycastle.asn1.BERTags;
 import org.bouncycastle.asn1.DERBitString;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSequence;
@@ -29,6 +32,71 @@ public class BitStringTest
     {
         ASN1BitString s1 = new BERBitString(new byte[1500], 1);
         ASN1BitString s2 = ASN1BitString.getInstance(s1.getEncoded());
+    }
+
+    private void testSegmentLimit()
+        throws Exception
+    {
+        byte[] data = new byte[10];
+        for (int i = 0; i != data.length; i++)
+        {
+            data[i] = (byte)(i + 1);
+        }
+
+        // the smallest limits there are: one octet of data to a segment
+        ASN1BitString bits = new BERBitString(data, 3, 2);
+        ASN1BitString bitsBack = ASN1BitString.getInstance(bits.getEncoded());
+        isTrue("bit string segments", Arrays.areEqual(bits.getBytes(), bitsBack.getBytes()) && bitsBack.getPadBits() == 3);
+        isTrue("bit string constructed", (bits.getEncoded()[0] & BERTags.CONSTRUCTED) != 0);
+
+        ASN1OctetString octets = new BEROctetString(data, 1);
+        isTrue("octet string segments", Arrays.areEqual(data, ASN1OctetString.getInstance(octets.getEncoded()).getOctets()));
+
+        int[] badBitLimits = new int[]{ 1, 0, -1, Integer.MIN_VALUE };
+        for (int i = 0; i != badBitLimits.length; i++)
+        {
+            try
+            {
+                new BERBitString(data, 0, badBitLimits[i]);
+                fail("no exception for bit string segment limit " + badBitLimits[i]);
+            }
+            catch (IllegalArgumentException e)
+            {
+                isEquals("'segmentLimit' must be at least 2", e.getMessage());
+            }
+            try
+            {
+                new BERBitString(new ASN1BitString[]{ new DERBitString(data, 0) }, badBitLimits[i]);
+                fail("no exception for bit string element segment limit " + badBitLimits[i]);
+            }
+            catch (IllegalArgumentException e)
+            {
+                isEquals("'segmentLimit' must be at least 2", e.getMessage());
+            }
+        }
+
+        int[] badOctetLimits = new int[]{ 0, -1, Integer.MIN_VALUE };
+        for (int i = 0; i != badOctetLimits.length; i++)
+        {
+            try
+            {
+                new BEROctetString(data, badOctetLimits[i]);
+                fail("no exception for octet string segment limit " + badOctetLimits[i]);
+            }
+            catch (IllegalArgumentException e)
+            {
+                isEquals("'segmentLimit' must be at least 1", e.getMessage());
+            }
+            try
+            {
+                new BEROctetString(new ASN1OctetString[]{ new DEROctetString(data) }, badOctetLimits[i]);
+                fail("no exception for octet string element segment limit " + badOctetLimits[i]);
+            }
+            catch (IllegalArgumentException e)
+            {
+                isEquals("'segmentLimit' must be at least 1", e.getMessage());
+            }
+        }
     }
 
     private void testZeroLengthStrings()
@@ -220,6 +288,7 @@ public class BitStringTest
         }
 
         testConstructed();
+        testSegmentLimit();
         testRandomPadBits();
         testZeroLengthStrings();
         testEncodableConstructor();

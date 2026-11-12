@@ -60,6 +60,16 @@ public class BERBitString
         }
     }
     
+    // each segment carries segmentLimit - 1 octets of data after its pad bits octet
+    private static int checkSegmentLimit(int segmentLimit)
+    {
+        if (segmentLimit < 2)
+        {
+            throw new IllegalArgumentException("'segmentLimit' must be at least 2");
+        }
+        return segmentLimit;
+    }
+
     public BERBitString(byte[] data)
     {
         this(data, 0);
@@ -81,7 +91,7 @@ public class BERBitString
     {
         super(data, padBits);
         this.elements = null;
-        this.segmentLimit = segmentLimit;
+        this.segmentLimit = checkSegmentLimit(segmentLimit);
     }
 
     public BERBitString(int namedBits)
@@ -105,7 +115,7 @@ public class BERBitString
     {
         super(flattenBitStrings(elements), false);
         this.elements = elements;
-        this.segmentLimit = segmentLimit;
+        this.segmentLimit = checkSegmentLimit(segmentLimit);
     }    
 
     BERBitString(byte[] contents, boolean check)

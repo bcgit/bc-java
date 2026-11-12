@@ -15,6 +15,7 @@ Date: 2026, TBD
 
 ### 2.1.2 Defects Fixed
 
+- The BERBitString and BEROctetString constructors taking a segment limit accepted one too small to carry any data - below 2 for a BIT STRING, below 1 for an OCTET STRING - and encoding such an object then ran until memory was exhausted or failed with an unchecked exception. Such a limit is now rejected with an IllegalArgumentException.
 - The Gradle-built bcjmail jar carried an unused org.bouncycastle.mail.smime.handlers.HandlerUtil class, which refers to java.awt.datatransfer, a package the bcjmail module descriptor does not require. It is no longer included, as it never was in the Ant-built jar.
 
 ### 2.1.3 Additional Features and Functionality

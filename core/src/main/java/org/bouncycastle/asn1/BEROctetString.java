@@ -147,6 +147,10 @@ public class BEROctetString
     private BEROctetString(byte[] string, ASN1OctetString[] elements, int segmentLimit)
     {
         super(string);
+        if (segmentLimit < 1)
+        {
+            throw new IllegalArgumentException("'segmentLimit' must be at least 1");
+        }
         this.elements = elements;
         this.segmentLimit = segmentLimit;
     }
