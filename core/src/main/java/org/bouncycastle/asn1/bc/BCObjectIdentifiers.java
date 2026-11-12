@@ -1028,15 +1028,19 @@ public interface BCObjectIdentifiers
      * Composite FrodoKEM test OIDs for draft-song-lamps-pq-composite-frodokem and
      * draft-song-lamps-cms-composite-frodokem, for interoperability testing until IANA assigns the drafts'
      * TBD1 to TBD8 under id-alg (1.3.6.1.5.5.7.6). Branch N stands for TBDN.
+     * <p>
+     * The names follow the -02 revisions of the drafts, which add SHAKE to the names of TBD1 to TBD4; the -01
+     * name is given beside each of those. The names may change again as the drafts are revised, but these
+     * OIDs will not.
      */
     ASN1ObjectIdentifier pqc_kem_composite_frodokem = bc_kem.branch("12");
-    /** TBD1 id-FrodoKEM976-SHAKE-RSA3072-SHA3-256 */
+    /** TBD1 id-FrodoKEM976-SHAKE-RSA3072-SHA3-256 (-01: id-FrodoKEM976-RSA3072-SHA3-256) */
     ASN1ObjectIdentifier id_FrodoKEM976_SHAKE_RSA3072_SHA3_256 = pqc_kem_composite_frodokem.branch("1");
-    /** TBD2 id-FrodoKEM976-SHAKE-X25519-SHA3-256 */
+    /** TBD2 id-FrodoKEM976-SHAKE-X25519-SHA3-256 (-01: id-FrodoKEM976-X25519-SHA3-256) */
     ASN1ObjectIdentifier id_FrodoKEM976_SHAKE_X25519_SHA3_256 = pqc_kem_composite_frodokem.branch("2");
-    /** TBD3 id-FrodoKEM1344-SHAKE-RSA4096-SHA3-256 */
+    /** TBD3 id-FrodoKEM1344-SHAKE-RSA4096-SHA3-256 (-01: id-FrodoKEM1344-RSA4096-SHA3-256) */
     ASN1ObjectIdentifier id_FrodoKEM1344_SHAKE_RSA4096_SHA3_256 = pqc_kem_composite_frodokem.branch("3");
-    /** TBD4 id-FrodoKEM1344-SHAKE-X448-SHA3-256 */
+    /** TBD4 id-FrodoKEM1344-SHAKE-X448-SHA3-256 (-01: id-FrodoKEM1344-X448-SHA3-256) */
     ASN1ObjectIdentifier id_FrodoKEM1344_SHAKE_X448_SHA3_256 = pqc_kem_composite_frodokem.branch("4");
     /** TBD5 id-FrodoKEM976-AES-RSA3072-SHA3-256 */
     ASN1ObjectIdentifier id_FrodoKEM976_AES_RSA3072_SHA3_256 = pqc_kem_composite_frodokem.branch("5");
