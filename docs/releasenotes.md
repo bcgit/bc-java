@@ -1,36 +1,36 @@
 # Bouncy Castle Crypto Package - Release Notes
 
-## 1.0 Introduction
+## Introduction
 
 The Bouncy Castle Crypto package is a Java implementation of cryptographic algorithms. The package is organised so that it contains a light-weight API suitable for use in any environment (including the J2ME) with the additional infrastructure to conform the algorithms to the JCE framework.
 
-## 2.0 Release History
+## Release History
 
 <a id="r1rv88"></a>
 
-### 2.1.1 Version
+### Version 1.88
 
 Release: 1.88\
 Date: 2026, TBD
 
-### 2.1.2 Defects Fixed
+#### Defects Fixed
 
 - The BERBitString and BEROctetString constructors taking a segment limit accepted one too small to carry any data - below 2 for a BIT STRING, below 1 for an OCTET STRING - and encoding such an object then ran until memory was exhausted or failed with an unchecked exception. Such a limit is now rejected with an IllegalArgumentException.
 - The Gradle-built bcjmail jar carried an unused org.bouncycastle.mail.smime.handlers.HandlerUtil class, which refers to java.awt.datatransfer, a package the bcjmail module descriptor does not require. It is no longer included, as it never was in the Ant-built jar.
 - The PKIX CertPathValidator did not fall back to CRLs when OCSP left a certificate's status undetermined: a response status other than successful, from a responder or supplied by the caller, or a certificate status of unknown, failed validation outright. Each now falls back to CRLs unless NO_FALLBACK is set, and if they do not settle the status either the OCSP failure is reported with the CRL failure suppressed (github bc-lts-java #12).
 
-### 2.1.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
-### 2.1.4 Additional Notes
+#### Additional Notes
 
 <a id="r1rv87"></a>
 
-### 2.2.1 Version
+### Version 1.87
 
 Release: 1.87\
 Date: 2026, 11th November.
 
-### 2.2.2 Defects Fixed
+#### Defects Fixed
 
 - PrivateKeyFactory, and so the ML-DSA and ML-KEM KeyFactory services, ignored the tag of the RFC 9881 / RFC 9935 private key CHOICE and applied no length checks, so mislabelled or inconsistent seed, expandedKey and both forms were accepted. Each form is now checked for its tag, exact lengths and consistency; the pre-RFC draft forms are still read.
 - X500Name.equals was quadratic in the number of RDNs for names that are equal but not byte-identical, and is reached from unverified CMS, TSP and S/MIME messages; the CMS signer and recipient stores could also be slowed with colliding ids. Name comparison is now n log n and the stores no longer hash their entries (CVE-2026-103611).
@@ -254,7 +254,7 @@ Date: 2026, 11th November.
 - With org.bouncycastle.pkcs12.default set, KeyStore.getInstance("PKCS12-DEF", "BC") failed through a misspelt name. Releases 1.78 to 1.86 are affected.
 - Composite ML-KEM decapsulation through a KeyGenerator accepted ciphertexts of the wrong length and alternative encodings of the traditional part, and RSA components of the wrong modulus size were accepted. Both are now rejected, as draft-ietf-lamps-pq-composite-kem requires.
 
-### 2.2.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - The OpenPGP API now implements RFC 9980 (Post-Quantum Cryptography in OpenPGP): the ML-DSA+EdDSA composite signatures, the SLH-DSA-SHAKE signatures and the ML-KEM+ECDH composite encryption algorithms, in the Bc and JCA operators and the high-level API.
 - Composite ML-KEM (draft-ietf-lamps-pq-composite-kem) is now available through javax.crypto.KEM on Java 21 and later.
@@ -319,7 +319,7 @@ Date: 2026, 11th November.
 - The BCJSSE SSLEngine can now delegate handshake work through getDelegatedTask(), enabled with org.bouncycastle.jsse.client.enableDelegatedTasks and org.bouncycastle.jsse.server.enableDelegatedTasks (default false).
 - BLS12-381 signing is about 12 to 18 times and verification about 5 to 7 times faster, with outputs unchanged, relates to github #2556.
 
-### 2.2.4 Additional Notes
+#### Additional Notes
 
 - DualECSP800DRBG and DualECPoints are deprecated and will be removed in a future release.
 - The javadoc of SHA-224, SHA-512/224, SHA3-224 and two-key Triple DES now notes they provide 112 bits of security and are disallowed under SP 800-131A after 2030.
@@ -332,7 +332,7 @@ Date: 2026, 11th November.
 - As flagged in the 1.86 release notes, legacy generic composite (id_alg_composite) signatures are no longer verified by JcaContentVerifierProviderBuilder or the provider's X509Certificate.verify() and X509CRL.verify().
 - ParametersWithUKM now nests outside ParametersWithRandom in the lightweight API; the GOST wrap engines still accept the earlier nesting.
 
-### 2.2.5 Security Advisories.
+#### Security Advisories.
 
 Release 1.87 deals with the following CVEs:
 
@@ -351,12 +351,12 @@ Release 1.87 deals with the following CVEs:
 
 <a id="r1rv86"></a>
 
-### 2.3.1 Version
+### Version 1.86, 1.86.1, 1.86.2
 
 Release: 1.86, 1.86.1, 1.86.2\
 Date: 2026, 11th September.
 
-### 2.3.2 Defects Fixed
+#### Defects Fixed
 
 - Release 1.86.1 generated for bctls and bctls-klog (Java 8 and later, standard and debug) to fix SSLContext.createSSLEngine() failing with NoSuchMethodError on every JDK from 9 up when the 1.86 bctls jar was used: the jdk1.9 copy of the package-private SSLEngineUtil declared create(ContextData) with a different return type from the root copy that the root ProvSSLContextSpi was compiled against, a mismatch exposed by the -implicit:none added to the java9 compile in 1.86. The jdk1.9 copy now declares the same return type. The other 1.86 jars are unchanged and the 1.86.1 BOM pins them at 1.86 (github #2448).
 - Release 1.86.2 generated for bctls and bctls-klog (Java 8 and later, standard and debug) because the 1.86.1 jars could not be resolved in an OSGi container: their Import-Package ranges for every org.bouncycastle package they use from bcprov and bcutil started at 1.86.1, the bundle's own version, but those bundles are only published at 1.86. The import floor is now the major.minor release, [1.86,1.87), and the 1.86.1 fix for SSLContext.createSSLEngine() is otherwise unchanged. The 1.86.2 BOM pins the other jars at 1.86 (github #2493).
@@ -559,7 +559,7 @@ Date: 2026, 11th September.
 
 - The jdk1.3 and jdk1.4 legacy overlays of PKCS12KeyStoreSpi, and the jdk1.4 overlay of PKCS12PBMAC1KeyStoreSpi, wrote to System.out when KeyStore.load() met a PKCS#12 bag or content type they do not process, printing the bag's object identifier and then an ASN1Dump of its contents. The base implementation reports the same condition through java.util.logging, so bcprov-jdk14 and bcprov-jdk13 were the only builds in which loading a PFX could write the contents of an unrecognised bag to the console, with no way to route or suppress it. The jdk1.4 PKCS12KeyStoreSpi overlay now mirrors base; the jdk1.3 overlay and the shared PBMAC1 one, which the jdk1.3 build also compiles and so cannot use java.util.logging, drop the diagnostic. The jdk18on artifacts were never affected.
 
-### 2.3.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - BIP340Signer can now be initialised from an AsymmetricCipherKeyPair, through the new init(boolean, AsymmetricCipherKeyPair) overloads. BIP-340 signing needs the public point twice and derived it with a d'\*G multiplication every time; a caller that already holds the public key can now supply it and skip that, which measures about twice as fast since the two fixed-base multiplications are very nearly the whole cost of a signature. The public key is not checked against the private one, as checking it means performing the multiplication being avoided. The point is also now derived once per init() rather than on every signature. Signatures are unchanged (github #2420).
 
@@ -623,7 +623,7 @@ Date: 2026, 11th September.
 - org.bouncycastle.cert.plants.MerkleTreePrimitives now generates Merkle Tree Certificate proofs as well as verifying them: computeMerkleTreeHash() computes the RFC 9162 Merkle Tree Hash over a range of entry hashes, generateSubtreeInclusionProof() the RFC 9162 PATH inclusion proof of an entry within a subtree, and generateSubtreeConsistencyProof() the SUBTREE_PROOF algorithm of draft-ietf-plants-merkle-tree-certs Section 4.4.1 - the one Section 4 algorithm the class did not previously cover. Their output is accepted by the existing verification methods, so an issuer or log no longer has to bring its own tree code. Each generator comes in two forms: one over an in-memory List of entry hashes, and one over the new MerkleTreeNodeSource interface, through which a production log whose tree lives in storage supplies the full-subtree node hashes it already keeps - at most one per tree level per proof element - so proofs can be generated over a tree of any size without holding it in memory.
 - SM2Signer.getZ(byte[]) is now protected rather than private, so a subclass can substitute or suppress the Z value - H(ENTL || ID || a || b || xG || yG || xA || yA), 5.1.4.4 of the draft RFC "SM2 Public Key Algorithms" - that the signer prepends to the message before e is calculated. Returning a zero-length array leaves the message unprefixed, so a signer constructed with a NullDigest signs and verifies a caller-supplied pre-hashed e exactly as it is passed in, which is what a remote signing service needs when Z and the message hash are computed on the client side. The signatures such a signer produces are the same ones the standard signer produces for the same message, and each verifies what the other signed; the default Z computation and every exception message are unchanged (github #2429).
 
-### 2.3.4 Additional Notes
+#### Additional Notes
 
 - The Rainbow implementation under org.bouncycastle.pqc.legacy.rainbow has been removed, together with its pqc.crypto.util key-factory entries and the "Rainbow" name in the BCPQC provider's algorithm list, which had had no Mappings class behind it for some time and so registered nothing. Rainbow was a NIST round-three finalist that was not selected for standardisation, following Beullens' 2022 key-recovery attack against its SL 1 parameter set; the JCE-side registrations, parameter spec and key classes were removed earlier. Keys carrying the BCObjectIdentifiers.rainbow\* object identifiers no longer decode, though the object identifiers themselves are retained, as is org.bouncycastle.math.raw.GF256AES, which is shared with UOV, MQOM and SDitH.
 - The OpenSSH key vectors in the test sources carried the user and host name of whoever generated them in the key comment field - invisible in the source, but recoverable by anyone decoding the blob, and flagged as leaked credentials by secret scanners when the published source artifacts are ingested. All fifteen affected keys across OpenSSHKeyParsingTests and OpenSSHSpecTests have been regenerated with the comment "bc-test-vector", keeping each key's original type and size, and both classes now carry a header marking them as deliberately published test vectors. The keys were never used to protect anything and there is nothing to rotate; this removes the personal identifiers and gives anyone triaging a scanner alert something to find (github #2376).
@@ -644,7 +644,7 @@ Date: 2026, 11th September.
 - Unreachable classes for RFC 3281 cert-path services have been removed.
 - The MLS gRPC interop test harness has moved out of the published bcmls jar, where it was org.bouncycastle.mls.client, into the non-publishing misc module as org.bouncycastle.mls.examples.client, and its gRPC and protobuf dependencies are now taken by Maven coordinate at versions clear of CVE-2024-7246, CVE-2024-7254 and CVE-2025-55163.
 
-### 2.3.5 Security Advisories.
+#### Security Advisories.
 
 Release 1.86 deals with the following CVEs:
 
@@ -664,12 +664,12 @@ Release 1.86 deals with the following CVEs:
 
 <a id="r1rv85v2"></a>
 
-### 2.4.1 Version
+### Version 1.85.2
 
 Release: 1.85.2\
 Date: 2026, 7th August.
 
-### 2.4.2 Defects Fixed
+#### Defects Fixed
 
 - The AES-256/CBC Cipher registered against the id_aes256_CBC OID (org.bouncycastle.jcajce.provider.symmetric.AES\$CBC256) passed 192 rather than 256 as its key size, so a Cipher obtained via that OID and initialised with a password-based key (PKCS12Key, PBKDF1Key, PBKDF2Key or a plain PBEKey), rather than the dedicated PBEWITHSHAAND256BITAES-CBC-BC alias, silently derived only a 192 bit key - an unannounced downgrade to AES-192. Ordinary use with a raw SecretKeySpec was unaffected (github #2390).
 - Constructing BouncyCastleProvider built the AlgorithmParameters.EC SupportedCurves attribute by calling ECNamedCurveTable.getParameterSpec for every registered curve and discarding the result, forcing every lazy curve holder in the table and making provider construction markedly slower than in earlier releases. The attribute is now built with a presence check that does not materialise the parameters (github #2382).
@@ -694,12 +694,12 @@ Date: 2026, 7th August.
 
 <a id="r1rv85"></a>
 
-### 2.5.1 Version
+### Version 1.85, 1.85.1
 
 Release: 1.85, 1.85.1\
 Date: 2026, July 12th
 
-### 2.5.2 Defects Fixed
+#### Defects Fixed
 
 - Release 1.85.1 generated for Java 5 to Java 8 and Java 4 to deal with a packaging issue that occured with the bcprov and bcutil jars - the Maven SBOMs for both have been uploaded as well.
 - The streaming S/MIME writers SMIMEEnvelopedWriter.Builder and SMIMESignedWriter.Builder (org.bouncycastle.mime.smime) emitted a caller-supplied withHeader(name, value) verbatim, each terminated by CRLF, so a name or value carrying an embedded CRLF - the natural case when an application populates a header such as Subject from user input - was folded into the message as extra header lines and, with a trailing CRLFCRLF, a forged body: MIME header injection (CWE-93). withHeader now rejects a name or value containing CR or LF with an IllegalArgumentException; the internally generated headers and well-formed caller headers are unaffected (github #2348).
@@ -889,7 +889,7 @@ Date: 2026, July 12th
 - Parsing a malformed HTTP authentication challenge in an EST response (org.bouncycastle.est) could throw a StringIndexOutOfBoundsException from the challenge splitter; the parser now handles truncated and delimiter-less challenges and reports them cleanly.
 - On the CMS AuthEnvelopedData generate side the content-encryption AlgorithmParameters were instantiated from the AES base-cipher name rather than the content-encryption OID, so AES-GCM content emitted a bare IV OCTET STRING where RFC 5084 requires GCMParameters (the CCM and ChaCha20-Poly1305 paths were similarly name-driven). The org.bouncycastle.cms.jcajce layer now resolves the parameters by OID, producing the RFC 5084 GCMParameters / CCMParameters encodings; the decode side already accepted both forms, so interop with BC's own earlier output is preserved.
 
-### 2.5.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - KCCMBlockCipher (DSTU 7624 CCM mode) now accepts associated data whose length is not a multiple of the underlying block size and a nonce shorter than the block size, instead of throwing "padding not supported" or mis-constructing the MAC. init() zero-extends a short nonce to the block size, and processAssociatedText zero-pads the trailing partial associated-data block into the CBC-MAC. Multi-block associated data whose length is a multiple of the block size (the only variable-length case the previous code accepted) authenticates exactly as before (github PR #2350).
 - As announced in the 1.84 release notes, the JCE wrappers for the pre-standardisation round-3 algorithms Dilithium, SPHINCS+ and Kyber have been removed: the BC provider no longer registers the "Dilithium" and "SPHINCSPlus" algorithm families or the SubjectPublicKeyInfo/PrivateKeyInfo key-info converters for their OIDs, and the BCPQC provider no longer registers "Dilithium", "SPHINCSPlus" or "Kyber" (which was just ML-KEM). The algorithm implementations themselves have not been deleted and remain accessible via the low-level org.bouncycastle.pqc.crypto APIs; they will be deleted in a later release. Applications should move to the standardised forms - ML-DSA, SLH-DSA and ML-KEM.
@@ -1006,7 +1006,7 @@ Date: 2026, July 12th
 - The ASN.1 stream-safety limits are now publicly addressable: the maximum nested-construction depth and the maximum declared object length are controlled by the org.bouncycastle.asn1.max_cons_depth and org.bouncycastle.asn1.max_limit system properties, exposed as the Properties.ASN1_MAX_CONS_DEPTH and Properties.ASN1_MAX_LIMIT constants (values and defaults unchanged).
 - The EST client's TLS channel authorizer (org.bouncycastle.est.jcajce) has been hardened in line with RFC 9525 (which obsoletes RFC 6125): a wildcard is accepted only when the single '\*' is the complete content of the left-most label and it must match exactly one non-empty label, so partial wildcards ("f\*o.example"), wildcards in inner labels, and wildcards spanning label boundaries or a known public suffix are rejected (issue #1495).
 
-### 2.5.4 Security Fixes
+#### Security Fixes
 
 - CVE-2026-8763 - Name Constraints bypass via trailing dot in rfc822Name and URI.
 - CVE-2026-12185 - BKS/UBER keystore allocates from untrusted lengths before integrity check.
@@ -1041,18 +1041,18 @@ Date: 2026, July 12th
 - CVE-2026-59651 - BKS keystore accepts legacy version with 16-bit integrity MAC key.
 - CVE-2026-59652 - LDAP filter injection in legacy jdk1.4 LDAPStoreHelper.
 
-### 2.5.5 Additional Notes
+#### Additional Notes
 
 - The standardised PQC algorithms ML-KEM, ML-DSA, SLH-DSA, FrodoKEM, and CMCE have been repackaged under org.bouncycastle.crypto and the versions under org.bouncycastle.crypto.pqc have been deprecated. These deprecated versions will be removed in BC 1.86.
 
 <a id="r1rv84"></a>
 
-### 2.6.1 Version
+### Version 1.84
 
 Release: 1.84\
 Date: 2026, April 14th
 
-### 2.6.2 Defects Fixed
+#### Defects Fixed
 
 - Random numbers being generated for DSTU4145 signature calculations were 1 bit shorter than they could be. The code has been corrected to allow the generated numbers to occupy the full numeric range available.
 - HKDF implementation has been corrected to use multiple IKMs if available.
@@ -1067,7 +1067,7 @@ Date: 2026, April 14th
 - OpenPGP: Fixed an issue where a custom signature creation time was ignored when generating message signatures.
 - OpenPGP: Fixed SKESK encoding for direct-S2K-encrypted messages.
 
-### 2.6.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - In line with JVM changes, KEM support has been backported to Java 17.
 - BCJSSE: Configurable (client) early key_share groups via BCSSLParameters.earlyKeyShares or "org.bouncycastle.jsse.client.earlyKeyShares" system property.
@@ -1088,7 +1088,7 @@ Date: 2026, April 14th
 - CMSSignedDataStreamGenerator can now support the generation of DER/DL encoded SignedData objects (note memory restrictions still apply).
 - It is now possible to add extra digest alorithm IDs to CMSSignedDataStreamGenerator when required.
 
-### 2.6.4 Security Fixes
+#### Security Fixes
 
 - CVE-2025-14813 - GOSTCTR implementation unable to process more than 255 blocks correctly.
 - CVE-2026-0636 - LDAP Injection Vulnerability in LDAPStoreHelper.java.
@@ -1096,26 +1096,26 @@ Date: 2026, April 14th
 - CVE-2026-5588 - PKIX draft CompositeVerifier accepts empty signature sequence as valid.
 - CVE-2026-5598 - Non-constant time comparisons risk private key leakage in FrodoKEM.
 
-### 2.6.5 Additional Notes
+#### Additional Notes
 
 - DSA was recently deprecated by NIST and several users have requested that we move to an RSA signing certificate for provider signing instead of our current DSA one. We are grateful to report that Oracle have been very supportive of this and issued us a second RSA certificate based on a new RSA key for signing providers. Providers signed with the previous DSA key will continue to work as before.
 - This will be the last release which will recognise Dilithium and SphincsPlus in the BC provider, the Kyber wrapper (which is just ML-KEM) will also be removed. The algorithms won't be deleted in 1.85, but will only be accessible via the low-level APIs and deleted in a later release.
 
 <a id="r1rv83"></a>
 
-### 2.7.1 Version
+### Version 1.83
 
 Release: 1.83\
 Date: 2025, November 27th.
 
-### 2.7.2 Defects Fixed
+#### Defects Fixed
 
 - Attempting to check a password on a stripped PGP key would throw an exception. Checking the password on such a key will now always return false.
 - Fixed an issue in KangarooTwelve where premature absorption caused erroneous 168-byte padding; absorption is now delayed so correct final-byte padding is applied.
 - BCJSSE: Fix supported_versions creation for renegotiation handshake.
 - (D)TLS: Reneg info now only offered with pre-1.3.
 
-### 2.7.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - A generic "COMPOSITE" algorithm name has been added as a JCA Signature algorithm. The algorithm will identify the composite signature to use from the composite key passed in.
 - The composite signatures implementation has been updated to the final draft and now follows the submitted standard.
@@ -1129,12 +1129,12 @@ Date: 2025, November 27th.
 
 <a id="r1rv82"></a>
 
-### 2.8.1 Version
+### Version 1.82
 
 Release: 1.82\
 Date: 2025, 17th September.
 
-### 2.8.2 Defects Fixed
+#### Defects Fixed
 
 - SNOVA and MAYO are now correctly added to the JCA provider module-info file.
 - TLS: Avoid nonce reuse error in JCE AEAD workaround for pre-Java7.
@@ -1148,7 +1148,7 @@ Date: 2025, 17th September.
 - A typo in a constant name in the HPKE class has been fixed and the old constant deprecated.
 - Fuzzing analysis has been done on the OpenPGP API and additional code has been added to prevent escaping exceptions.
 
-### 2.8.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - SHA3Digest, CSHAKE, TupleHash, KMAC now provide support for Memoable and EncodableService.
 - BCJSSE: Added support for integrity-only cipher suites in TLS 1.3 per RFC 9150.
@@ -1168,18 +1168,18 @@ Date: 2025, 17th September.
 - OpenPGPKeyGenerator now allows for the use of empty UserIDs (version 4 compatibility).
 - The HQC KEM has been updated with the latest draft updates.
 
-### 2.8.4 Additional Notes
+#### Additional Notes
 
 - The legacy post-quantum package has now been removed.
 
 <a id="r1rv81"></a>
 
-### 2.9.1 Version
+### Version 1.81
 
 Release: 1.81\
 Date: 2025, 4th June.
 
-### 2.9.2 Defects Fixed
+#### Defects Fixed
 
 - A potention NullPointerException in the KEM KDF KemUtil class has been removed.
 - Overlapping input/output buffers in doFinal could result in data corruption. This has been fixed.
@@ -1189,7 +1189,7 @@ Date: 2025, 4th June.
 - The PRF from the PBKDF2 function was been lost when PBMAC1 was initialized from protectionAlgorithm. This has been fixed.
 - The lowlevel DigestFactory was cloning MD5 when being asked to clone SHA1. This has been fixed.
 
-### 2.9.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - XWing implementation updated to draft-connolly-cfrg-xwing-kem/07/
 - Further support has been added for generation and use of PGP V6 keys
@@ -1212,12 +1212,12 @@ Date: 2025, 4th June.
 
 <a id="r1rv80"></a>
 
-### 2.10.1 Version
+### Version 1.80
 
 Release: 1.80\
 Date: 2025, 14th January.
 
-### 2.10.2 Defects Fixed
+#### Defects Fixed
 
 - A splitting issue for ML-KEM lead to an incorrect size for kemct in KEMRecipientInfos. This has been fixed.
 - The PKCS12 KeyStore has been adjusted to prevent accidental doubling of the Oracle trusted certificate attribute (results in an IOException when used with the JVM PKCS12 implementation).
@@ -1232,7 +1232,7 @@ Date: 2025, 14th January.
 - EtsiTs1029411TypesAuthorization was missing an extension field. This has been added.
 - Interoperability issues with single depth LMS keys have been addressed.
 
-### 2.10.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - CompositeSignatures now updated to draft-ietf-lamps-pq-composite-sigs-03.
 - ML-KEM, ML-DSA, SLH-DSA, and Composite private keys now use raw encodings as per the latest drafts from IETF 121: draft-ietf-lamps-kyber-certificates-06, draft-ietf-lamps-dilithium-certificates-05, and draft-ietf-lamps-x509-slhdsa.
@@ -1251,12 +1251,12 @@ Date: 2025, 14th January.
 
 <a id="r1rv79"></a>
 
-### 2.11.1 Version
+### Version 1.79
 
 Release: 1.79\
 Date: 2024, 30th October.
 
-### 2.11.2 Defects Fixed
+#### Defects Fixed
 
 - Leading zeroes were sometimes dropped from Ed25519 signatures leading to verification errors in the PGP API. This has been fixed.
 - Default version string for Armored Output is now set correctly in 18on build.
@@ -1273,7 +1273,7 @@ Date: 2024, 30th October.
 - The default version header for PGP armored output did not carry the correct version string. This has been fixed.
 - In some situations the algorithm lookup for creating PGPDigestCalculators would fail due to truncation of the algorithm name. This has been fixed.
 
-### 2.11.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - Object Identifiers have been added for ML-KEM, ML-DSA, and SLH-DSA.
 - The PQC algorithms, ML-KEM, ML-DSA (including pre-hash), and SLH-DSA (including pre-hash) have been added to the BC provider and the lightweight API.
@@ -1296,12 +1296,12 @@ Date: 2024, 30th October.
 
 <a id="r1rv78d1"></a>
 
-### 2.12.1 Version
+### Version 1.78.1
 
 Release: 1.78.1\
 Date: 2024, 18th April.
 
-### 2.12.2 Defects Fixed
+#### Defects Fixed
 
 - The new dependency of the the PGP API on the bcutil jar was missing from the module jar, the OSGi manifest, and the Maven POM. This has been fixed.
 - Missing exports and duplicate imports have been added/removed from the OSGi manifests.
@@ -1310,12 +1310,12 @@ Date: 2024, 18th April.
 
 <a id="r1rv78"></a>
 
-### 2.13.1 Version
+### Version 1.78
 
 Release: 1.78\
 Date: 2024, 7th April.
 
-### 2.13.2 Defects Fixed
+#### Defects Fixed
 
 - Issues with a dangling weak reference causing intermittent NullPointerExceptions in the OcspCache have been fixed.
 - Issues with non-constant time RSA operations in TLS handshakes have been fixed (CVE-2024-30171).
@@ -1334,7 +1334,7 @@ Date: 2024, 7th April.
 - An off-by-one error in the encoding for EccP256CurvePoint for ITS has been fixed.
 - PEM Parser now enforces PEM headers to start at the beginning of the line to be meaningful.
 
-### 2.13.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - An implementation of MLS ([RFC 9420 - The Messaging Layer Security Protocol](https://datatracker.ietf.org/doc/rfc9420/)) has been added as a new module.
 - NTRU now supports NTRU-HPS4096-1229 and NTRU-HRSS-1373.
@@ -1353,7 +1353,7 @@ Date: 2024, 7th April.
 - The Composite post-quantum signatures implementation has been updated to the latest draft [draft-ounsworth-pq-composite-sigs](https://datatracker.ietf.org/doc/html/draft-ounsworth-pq-composite-sigs/).
 - X509v2CRLBuilder now exposes setThisUpdate(Date), setThisUpdate(Date, Locale) and setThisUpdate(Time) overloads, mirroring the existing setNextUpdate methods so the thisUpdate field can be reset after the builder has been constructed (issue #1545).
 
-### 2.13.4 Notes.
+#### Notes.
 
 - Both versions of NTRUPrime have been updated to produce 256 bit secrets in line with Kyber. This should also bring them into line with other implementations such as those used in OpenSSH now.
 - BCJSSE: The boolean system property 'org.bouncycastle.jsse.fips.allowRSAKeyExchange" now defaults to false. All RSA key exchange cipher suites will therefore be disabled when the BCJSSE provider is used in FIPS mode, unless this system property is explicitly set to true.
@@ -1362,7 +1362,7 @@ Date: 2024, 7th April.
 - The PKCS12 store using GCM does not include the PKCS#12 MAC so no longer includes use of the PKCS#12 PBE scheme and only uses PBKDF2.
 - In keeping with the current set of experimental OIDs for PQC algorithms, OIDs may have changed to reflect updated versions of the algorithms.
 
-### 2.13.5 Security Advisories.
+#### Security Advisories.
 
 Release 1.78 deals with the following CVEs:
 
@@ -1374,12 +1374,12 @@ Release 1.78 deals with the following CVEs:
 
 <a id="r1rv77"></a>
 
-### 2.14.1 Version
+### Version 1.77
 
 Release: 1.77\
 Date: 2023, November 13th
 
-### 2.14.2 Defects Fixed
+#### Defects Fixed
 
 - Using an unescaped '=' in an X.500 RDN would result in the RDN being truncated silently. The issue is now detected and an exception is thrown.
 - asn1.eac.CertificateBody was returning certificateEffectiveDate from getCertificateExpirationDate(). This has been fixed to return certificateExpirationDate.
@@ -1393,7 +1393,7 @@ Date: 2023, November 13th
 - An internal method in Arrays was failing to construct its failure message correctly on an error. This has been fixed.
 - HSSKeyPublicParameters.generateLMSContext() would fail for a unit depth key. This has been fixed.
 
-### 2.14.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - BCJSSE: Added org.bouncycastle.jsse.client.omitSigAlgsCertExtension and org.bouncycastle.jsse.server.omitSigAlgsCertExtension boolean system properties to control (for client and server resp.) whether the signature_algorithms_cert extension should be omitted if it would be identical to signature_algorithms. Defaults to true, the historical behaviour.
 - The low-level HPKE API now allows the sender to specify an ephemeral key pair.
@@ -1403,7 +1403,7 @@ Date: 2023, November 13th
 - TLS: RSA key exchange cipher suites are now disabled by default.
 - Support has been added for PKCS#10 requests to allow certificates using the altSignature/altPublicKey extensions.
 
-### 2.14.4 Notes.
+#### Notes.
 
 - Kyber and Dilithium have been updated according to the latest draft of the standard. Dilithium-AES and Kyber-AES have now been removed. Kyber now produces 256 bit secrets for all parameter sets (in line with the draft standard).
 - NTRU has been updated to produce 256 bit secrets in line with Kyber.
@@ -1413,12 +1413,12 @@ Date: 2023, November 13th
 
 <a id="r1rv76"></a>
 
-### 2.15.1 Version
+### Version 1.76
 
 Release: 1.76\
 Date: 2023, July 29th
 
-### 2.15.2 Defects Fixed
+#### Defects Fixed
 
 - Service allocation in the provider could fail due to the lack of a permission block. This has been fixed.
 - JceKeyFingerPrintCalculator has been generalised for different providers by using "SHA-256" for the algorithm string.
@@ -1427,7 +1427,7 @@ Date: 2023, July 29th
 - Cipher.unwrap() for HQC could fail due to a miscalculation of the length of the KEM packet. This has been fixed.
 - There was exposure to a Java 7 method in the Java 5 to Java 8 BCTLS jar which could cause issues with some TLS 1.2 cipher suites running on older JVMs. This is now fixed.
 
-### 2.15.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - BCJSSE: Following OpenJDK, finalizers have been removed from SSLSocket subclasses. Applications should close sockets and not rely on garbage collection.
 - BCJSSE: Added support for boolean system property "jdk.tls.client.useCompatibilityMode" (default "true").
@@ -1441,28 +1441,28 @@ Date: 2023, July 29th
 
 <a id="r1rv75"></a>
 
-### 2.16.1 Version
+### Version 1.75
 
 Release: 1.75\
 Date: 2023, June 21st
 
-### 2.16.2 Defects Fixed
+#### Defects Fixed
 
 - Several Java 8 method calls were accidentally introduced in the Java 5 to Java 8 build. The affected classes have been refactored to remove this.
 - (D)TLS: renegotiation after resumption now fixed to avoid breaking connection.
 
-### 2.16.3 Notes.
+#### Notes.
 
 - The ASN.1 core package has had some dead and retired methods cleaned up and removed.
 
 <a id="r1rv74"></a>
 
-### 2.17.1 Version
+### Version 1.74
 
 Release: 1.74\
 Date: 2023, June 12th
 
-### 2.17.2 Defects Fixed
+#### Defects Fixed
 
 - AsconEngine: Fixed a buffering bug when decrypting across multiple processBytes calls (ascon128a unaffected).
 - Following the change to the wrapping of a single 64 bit block in 1.73, RFC3394WrapEngine.unwrap would reject 16 byte input produced by 1.72 or earlier with "checksum failed", as it applied only the single block decryption. The unwrap now falls back to the previous 6 pass form when the single block decryption does not yield the expected IV, so both the 1.73 and the pre-1.73 wrapped forms of an 8 byte key can be read. Wrapping continues to produce the single block form (issue #2079).
@@ -1470,7 +1470,7 @@ Date: 2023, June 12th
 - The ParallelHash clone constructor was not copying all fields. This is now fixed.
 - The maximimum number of blocks for CTR/SIC modes was 1 block less than it should have been. This is now fixed.
 
-### 2.17.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - The PGP API now supports wildcard key IDs for public key based data encryption.
 - LMS now supports SHA256/192, SHAKE256/192, and SHAKE256/256 (the additional SP 8000-208 parameter sets).
@@ -1489,25 +1489,25 @@ Date: 2023, June 12th
 - The number of keys/sub-keys in a PGPKeyRing can now be found by calling PGPKeyRing.size().
 - The PQC algorithms LMS/HSS, SPHINCS+, Dilithium, Falcon, and NTRU are now supported directly by the BC provider.
 
-### 2.17.4 Notes.
+#### Notes.
 
 - The now defunct PQC SIKE algorithm has been removed, this has also meant the removal of its resource files so the provider is now quite a bit smaller.
 - As a precaution, HC128 now enforces a 128 bit IV, previous behaviour for shorter IVs can be supported where required by padding the IV to the 128 bits with zero.
 - PGP encrypted data generation now uses integrity protection by default. Previous behaviour for encrypted data can be supported where required by calling PGPDataEncryptorBuilder.setWithIntegrityPacket(false) when data encryption is set up.
 - There are now additional sanity checks in place to prevent accidental mis-use of PGPSignature objects. If this change causes any issues, you might want to check what your code is up to as there is probably a bug.
 
-### 2.17.5 Security Advisories.
+#### Security Advisories.
 
 - CVE-2023-33201 - this release fixes an issue with the X509LDAPCertStoreSpi where a specially crafted certificate subject could be used to try and extract extra information out of an LDAP server with wild-card matching enabled.
 
 <a id="r1rv73"></a>
 
-### 2.18.1 Version
+### Version 1.73
 
 Release: 1.73\
 Date: 2023, April 8th
 
-### 2.18.2 Defects Fixed
+#### Defects Fixed
 
 - BCJSSE: Instantiating a JSSE provider in some contexts could cause an AccessControl exception. This has been fixed.
 - The EC key pair generator can generate out of range private keys when used with SM2. A specific SM2KeyPairGenerator has been added to the low-level API and is used by KeyPairGenerator.getInstance("SM2", "BC"). The SM2 signer has been updated to check for out of range keys as well..
@@ -1528,7 +1528,7 @@ Date: 2023, April 8th
 - IPAddress has been written to provide stricter checking and avoid the use of Integer.parseInt().
 - A Java 7 class snuck into the Java 5 to Java 8 build. This has been addressed.
 
-### 2.18.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - The Rainbow NIST Post Quantum Round-3 Candidate has been added to the low-level API and the BCPQC provider (level 3 and level 5 parameter sets only).
 - The GeMSS NIST Post Quantum Round-3 Candidate has been added to the low-level API.
@@ -1552,46 +1552,46 @@ Date: 2023, April 8th
 - A general purpose PQCOtherInfoGenerator has been added which supports all Kyber and NTRU.
 - An implementation of HPKE (RFC 9180 - Hybrid Public Key Encryption) has been added to the light-weight cryptography API.
 
-### 2.18.4 Security Advisories.
+#### Security Advisories.
 
 - The PQC implementations have now been subject to formal review for secret leakage and side channels, there were issues in BIKE, Falcon, Frodo, HQC which have now been fixed. Some weak positives also showed up in Rainbow, Picnic, SIKE, and GeMSS - for now this last set has been ignored as the algorithms will either be updated if they reappear in the Signature Round, or deleted, as is already the case for SIKE (it is now in the legacy package). Details on the group responsible for the testing can be found in the [CONTRIBUTORS](../CONTRIBUTORS.md) file.
 - For at least some ECIES variants (e.g. when using CBC) there is an issue with potential malleability of a nonce (implying silent malleability of the plaintext) that must be sent alongside the ciphertext but is outside the IES integrity check. For this reason the automatic generation of nonces with IED is now disabled and they have to be passed in using an IESParameterSpec. The current advice is to agree on a nonce between parties and then rely on the use of the ephemeral key component to allow the nonce (rather the so called nonce) usage to be extended.
 
-### 2.18.5 Notes.
+#### Notes.
 
 - Most test data files have now been migrated to a separate project bc-test-data which is also available on github. If you clone bc-test-data at the same level as the bc-java project the tests will find the test data they require.
 - There has been further work to make entropy collection more friendly in container environments. See [DRBG.java](https://github.com/bcgit/bc-java/blob/main/prov/src/main/java/org/bouncycastle/jcajce/provider/drbg/DRBG.java) for details. We would welcome any further feedback on this as we clearly cannot try all situations first hand.
 
 <a id="r1rv72.3"></a>
 
-### 2.19.1 Version
+### Version 1.72.2, 1.72.3
 
 Release: <a id="r1rv72.2">1.72.2</a>, 1.72.3\
 Date: 2022, November 20th
 
-### 2.19.2 Defects Fixed
+#### Defects Fixed
 
 - PGP patch release - fix for OSGI and version header in 1.72.1 jar file.
 
 <a id="r1rv72.1"></a>
 
-### 2.20.1 Version
+### Version 1.72.1
 
 Release: 1.72.1\
 Date: 2022, October 25th
 
-### 2.20.2 Defects Fixed
+#### Defects Fixed
 
 - PGP patch release - fix for regression in OpenPGP PGPEncryptedData.java which could result in checksum failures on correct files.
 
 <a id="r1rv72"></a>
 
-### 2.21.1 Version
+### Version 1.72
 
 Release: 1.72\
 Date: 2022, September 25th
 
-### 2.21.2 Defects Fixed
+#### Defects Fixed
 
 - There were parameter errors in XMSS^MT OIDs for XMSSMT_SHA2_40/4_256 and XMSSMT_SHA2_60/3_256. These have been fixed.
 - There was an error in Merkle tree construction for the Evidence Records (ERS) implementation which could result in invalid roots been timestamped. ERS now produces an ArchiveTimeStamp for each data object/group with an associated reduced hash tree. The reduced hash tree is now calculated as a simple path to the root of the tree for each record.
@@ -1599,7 +1599,7 @@ Date: 2022, September 25th
 - A tagging calculation error in GCMSIV which could result in incorrect tags has been fixed.
 - Issues around Java 17 which could result in failing tests have been addressed.
 
-### 2.21.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - BCJSSE: TLS 1.3 is now enabled by default where no explicit protocols are supplied (e.g. "TLS" or "Default" SSLContext algorithms, or SSLContext.getDefault() method).
 - BCJSSE: Rewrite SSLEngine implementation to improve compatibility with SunJSSE.
@@ -1629,24 +1629,24 @@ Date: 2022, September 25th
 - Support has been added to the PKCS#12 implementation for the Oracle trusted certificate attribute.
 - Performance of our BZIP2 classes has been improved.
 
-### 2.21.4 Notes
+#### Notes
 
 Keep in mind the PQC algorithms are still under development and we are still at least a year and a half away from published standards. This means the algorithms may still change so by all means experiment, but do not use the PQC algoritms for anything long term.
 
 The legacy "Rainbow" and "McEliece" implementations have been removed from the BCPQC provider. The underlying classes are still present if required. Other legacy algorithm implementations can be found under the org.bouncycastle.pqc.legacy package.
 
-### 2.21.5 Security Notes
+#### Security Notes
 
 The PQC SIKE algorithm is provided for research purposes only. It should now be regarded as broken. The SIKE implementation will be withdrawn in BC 1.73.
 
 <a id="r1rv71"></a>
 
-### 2.22.1 Version
+### Version 1.71
 
 Release: 1.71\
 Date: 2022, March 31st.
 
-### 2.22.2 Defects Fixed
+#### Defects Fixed
 
 - In line with GPG the PGP API now attempts to preserve comments containing non-ascii UTF-8 characters.
 - An accidental partial dependency on Java 1.7 has been removed from the TLS API.
@@ -1660,7 +1660,7 @@ Date: 2022, March 31st.
 - An accidental regression introduced by a fix for another issue in PKIXCertPathReviewer around use of the AuthorityKeyIdentifier extension and it failing to match a certificate uniquely when the serial number field is missing has been fixed.
 - An error was found in the creation of TLS 1.3 Export Keying Material which could cause compatibility issues. This has been fixed.
 
-### 2.22.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - Support has been added for OpenPGP regular expression signature packets.
 - Support has been added for OpenPGP PolicyURI signature packets.
@@ -1689,19 +1689,19 @@ Date: 2022, March 31st.
 - ASN.1 object support has been added for the Lightweight Certificate Management Protocol (CMP), currently in draft.
 - A HybridValueParamterSpec class has been added for use with KeyAgreement to support SP 800-56C hybrid (so classical/post-quantum) key agreement.
 
-### 2.22.4 Notes
+#### Notes
 
 - The deprecated QTESLA implementation has been removed from the BCPQC provider.
 - The [submission update to SPHINCS+](https://groups.google.com/u/1/a/list.nist.gov/g/pqc-forum/c/F9ZUtWCij54) has been added. This changes the generation of signatures - particularly deterministic ones.
 
 <a id="r1rv70"></a>
 
-### 2.23.1 Version
+### Version 1.70
 
 Release: 1.70\
 Date: 2021, November 29th.
 
-### 2.23.2 Defects Fixed
+#### Defects Fixed
 
 - Blake 3 output limit is enforced.
 - The PKCS12 KeyStore was relying on default precedence for its key Cipher implementation so was sometimes failing if used from the keytool. The KeyStore class now makes sure it uses the correct Cipher implementation.
@@ -1715,7 +1715,7 @@ Date: 2021, November 29th.
 - The lack of close() in the ASN.1 Dump command line utility was triggering false positives in some code analysis tools. A close() call has been added.
 - PGPPublicKey.getBitStrength() now properly recognises EdDSA keys.
 
-### 2.23.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - Missing PGP CRC checksums can now be optionally ignored using setDetectMissingCRC() (default false) on ArmoredInputStream.
 - PGPSecretKey.copyWithNewPassword() now has a variant which uses USAGE_SHA1 for key protection if a PGPDigestCalculator is passed in.
@@ -1753,18 +1753,18 @@ Date: 2021, November 29th.
 - The JcePKCSPBEOutputEncryptorBuilder now supports SCRYPT with ciphers that do not have algorithm parameters (e.g. AESKWP).
 - Support is now added for certificates using ETSI TS 103 097, "Intelligent Transport Systems (ITS)" in the bcpkix package.
 
-### 2.23.4 Notes.
+#### Notes.
 
 - While this release should maintain source code compatibility, developers making use of some parts of the ASN.1 library will find that some classes need recompiling. Apologies for the inconvenience.
 
 <a id="r1rv69"></a>
 
-### 2.24.1 Version
+### Version 1.69
 
 Release: 1.69\
 Date: 2021, June 7th.
 
-### 2.24.2 Defects Fixed
+#### Defects Fixed
 
 - Lightweight and JCA conversion of Ed25519 keys in the PGP API could drop the leading byte as it was zero. This has been fixed.
 - Marker packets appearing at the start of PGP public key rings could cause parsing failure. This has been fixed.
@@ -1784,7 +1784,7 @@ Date: 2021, June 7th.
 - Fix various conversions and interoperability for XDH and EdDSA between BC and SunEC providers.
 - TLS: Prevent attempts to use KeyUpdate mechanism in versions before TLS 1.3.
 
-### 2.24.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - GCM-SIV has been added to the lightweight API and the provider.
 
@@ -1856,7 +1856,7 @@ Date: 2021, June 7th.
 
 - TLS: Add TLS 1.3 support for brainpool curves per RFC 8734.
 
-### 2.24.4 Notes
+#### Notes
 
 - There is a small API change in the PKIX package to the DigestAlgorithmIdentifierFinder interface as a find() method that takes an ASN1ObjectIdentifier has been added to it. For people wishing to extend their own implementations, see DefaultDigestAlgorithmIdentifierFinder for a sample implementation.
 - A version of the bcmail API supporting Jakarta Mail has now been added (see bcjmail jar).
@@ -1864,19 +1864,19 @@ Date: 2021, June 7th.
 
 <a id="r1rv68"></a>
 
-### 2.25.1 Version
+### Version 1.68
 
 Release: 1.68\
 Date: 2020, December 21st.
 
-### 2.25.2 Defects Fixed
+#### Defects Fixed
 
 - Some BigIntegers utility methods would fail for BigInteger.ZERO. This has been fixed.
 - PGPUtil.isKeyRing() was not detecting secret sub-keys in its input. This has been fixed.
 - The ASN.1 class, ArchiveTimeStamp was insisting on a value for the optional reducedHashTree field. This has been fixed.
 - BCJSSE: Lock against multiple writers - a possible synchronization issue has been removed.
 
-### 2.25.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - BCJSSE: Added support for system property com.sun.net.ssl.requireCloseNotify. Note that we are using a default value of 'true'.
 - BCJSSE: 'TLSv1.3' is now a supported protocol for both client and server. For this release it is only enabled by default for the 'TLSv1.3' SSLContext, but can be explicitly enabled using 'setEnabledProtocols' on an SSLSocket or SSLEngine, or via SSLParameters.
@@ -1887,12 +1887,12 @@ Date: 2020, December 21st.
 
 <a id="r1rv67"></a>
 
-### 2.26.1 Version
+### Version 1.67
 
 Release: 1.67\
 Date: 2020, November 1st.
 
-### 2.26.2 Defects Fixed
+#### Defects Fixed
 
 - BCJSSE: SunJSSE compatibility fix - override of getChannel() removed and 'urgent data' behaviour should now conform to what the SunJSSE expects.
 - Nested BER data could sometimes cause issues in octet strings. This has been fixed.
@@ -1904,7 +1904,7 @@ Date: 2020, November 1st.
 - Zero length data would cause an unexpected exception from RFC5649WrapEngine. This has been fixed.
 - OpenBSDBcrypt was failing to handle some valid prefixes. This has been fixed.
 
-### 2.26.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - Performance of Argon2 has been improved.
 - Performance of Noekeon has been improved.
@@ -1922,18 +1922,18 @@ Date: 2020, November 1st.
 - Mode name checks in Cipher strings should now make sure an improper mode name always results in a NoSuchAlgorithmException.
 - In line with changes in OpenSSL, the OpenSSLPBKDF now uses UTF-8 encoding.
 
-### 2.26.4 Security Advisory
+#### Security Advisory
 
 - As described in CVE-2020-28052, the OpenBSDBCrypt.checkPassword() method had a flaw in it due to a change for BC 1.65. BC 1.66 is also affected. The issue is fixed in BC 1.67. If you are using OpenBSDBCrypt.checkPassword() and you are using BC 1.65 or BC 1.66 we strongly advise moving to BC 1.67 or later.
 
 <a id="r1rv66"></a>
 
-### 2.27.1 Version
+### Version 1.66
 
 Release: 1.66\
 Date: 2020, July 4th.
 
-### 2.27.2 Defects Fixed
+#### Defects Fixed
 
 - EdDSA verifiers now reset correctly after rejecting overly long signatures.
 - BCJSSE: SSLSession.getPeerCertificateChain could throw NullPointerException. This has been fixed.
@@ -1950,7 +1950,7 @@ Date: 2020, July 4th.
 - For a few values the cSHAKE implementation would add unnecessary pad bytes where the N and S strings produced encoded data that was block aligned. This has been fixed.
 - There were a few circumstances where Argon2BytesGenerator might hit an unexpected null. These have been removed.
 
-### 2.27.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - The qTESLA signature algorithm has been updated to v2.8 (20191108).
 - BCJSSE: Client-side OCSP stapling now supports status_request_v2 extension.
@@ -1969,18 +1969,18 @@ Date: 2020, July 4th.
 - Performance of the Base64 encoder has been improved.
 - The PGPPublicKey class will now include direct key sigantures when checking for key expiry times.
 
-### 2.27.4 Notes
+#### Notes
 
 The qTESLA update breaks compatibility with previous versions. Private keys now include a hash of the public key at the end, and signatures are no longer interoperable with previous versions.
 
 <a id="r1rv65"></a>
 
-### 2.28.1 Version
+### Version 1.65
 
 Release: 1.65\
 Date: 2020, March 31st.
 
-### 2.28.2 Defects Fixed
+#### Defects Fixed
 
 - DLExternal would encode using DER encoding for tagged SETs. This has been fixed.
 - ChaCha20Poly1305 could fail for large (\>~2GB) files. This has been fixed.
@@ -1992,7 +1992,7 @@ Date: 2020, March 31st.
 - BCJSSE: Choice of credentials and signing algorithm now respect the peer's signature_algorithms extension properly.
 - BCJSSE: KeyManager for KeyStoreBuilderParameters no longer leaks memory.
 
-### 2.28.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - LMS and HSS (RFC 8554) support has been added to the low level library and the PQC provider.
 - SipHash128 support has been added to the low level library and the JCE provider.
@@ -2007,12 +2007,12 @@ Date: 2020, March 31st.
 
 <a id="r1rv64"></a>
 
-### 2.29.1 Version
+### Version 1.64
 
 Release: 1.64\
 Date: 2019, October 7th.
 
-### 2.29.2 Defects Fixed
+#### Defects Fixed
 
 - OpenSSH: Fixed padding in generated Ed25519 private keys.
 - Validation of headers in PemReader now looks for tailing dashes in header.
@@ -2020,7 +2020,7 @@ Date: 2019, October 7th.
 - Some compatibility issues around the signature encryption algorithm field in CMS SignedData and the GOST algorithms have been addressed.
 - GOST3410-2012-512 now uses the GOST3411-2012-256 as its KDF digest.
 
-### 2.29.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - PKCS12: key stores containing only certificates can now be created without the need to provide passwords.
 - BCJSSE: Initial support for AlgorithmConstraints; protocol versions and cipher suites.
@@ -2032,22 +2032,22 @@ Date: 2019, October 7th.
 - XMSS/XMSS^MT key management now allows for allocating subsets of the private key space using the extraKeyShard() method. Use of StateAwareSignature is now deprecated.
 - Support for Java 11's NamedParameterSpec class has been added (using reflection) to the EC and EdEC KeyPairGenerator implementations.
 
-### 2.29.4 Removed Features and Functionality
+#### Removed Features and Functionality
 
 - Deprecated ECPoint 'withCompression' tracking has been removed.
 
-### 2.29.5 Security Advisory
+#### Security Advisory
 
 - A change to the ASN.1 parser in 1.63 introduced a regression that can cause an OutOfMemoryError to occur on parsing ASN.1 data. We recommend upgrading to 1.64, particularly where an application might be parsing untrusted ASN.1 data from third parties.
 
 <a id="r1rv63"></a>
 
-### 2.30.1 Version
+### Version 1.63
 
 Release: 1.63\
 Date: 2019, September 10th.
 
-### 2.30.2 Defects Fixed
+#### Defects Fixed
 
 - The ASN.1 parser would throw a large object exception for some objects which could be safely parsed. This has been fixed.
 - GOST3412-2015 CTR mode was unusable at the JCE level. This has been fixed.
@@ -2065,7 +2065,7 @@ Date: 2019, September 10th.
 - Param-Z in the GOST-28147 algorithm was not resolving correctly. This has been fixed.
 - It is now possible to specify different S-Box parameters for the GOST 28147-89 MAC.
 
-### 2.30.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - QTESLA is now updated with the round 2 changes. Note: the security catergories, and in some cases key generation and signatures, have changed. For people interested in comparison, the round 1 version is now moved to org.bouncycastle.pqc.crypto.qteslarnd1 - this package will be deleted in 1.64. Please keep in mind that QTESLA may continue to evolve.
 - Support has been added for generating Ed25519/Ed448 signed certificates.
@@ -2079,12 +2079,12 @@ Date: 2019, September 10th.
 
 <a id="r1rv62"></a>
 
-### 2.31.1 Version
+### Version 1.62
 
 Release: 1.62\
 Date: 2019, June 3rd.
 
-### 2.31.2 Defects Fixed
+#### Defects Fixed
 
 - DTLS: Fixed infinite loop on IO exceptions.
 - DTLS: Retransmission timers now properly apply to flights monolithically.
@@ -2101,7 +2101,7 @@ Date: 2019, June 3rd.
 - CertificateFactory now enforces presence of PEM headers when required.
 - A performance issue with RSA key pair generation that was introduced in 1.61 has been mostly eliminated.
 
-### 2.31.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - Builders for X509 certificates and CRLs now support replace and remove extension methods.
 - DTLS: Added server-side support for HelloVerifyRequest.
@@ -2123,12 +2123,12 @@ Date: 2019, June 3rd.
 
 <a id="r1rv61"></a>
 
-### 2.32.1 Version
+### Version 1.61
 
 Release: 1.61\
 Date: 2019, February 4th.
 
-### 2.32.2 Defects Fixed
+#### Defects Fixed
 
 - Use of EC named curves could be lost if keys were constructed via a key factory and algorithm parameters. This has been fixed.
 - RFC3211WrapEngine would not properly handle messages longer than 127 bytes. This has been fixed.
@@ -2149,7 +2149,7 @@ Date: 2019, February 4th.
 - Several parsing issues related to the processing of CMP PKIPublicationInfo have been fixed.
 - The ECGOST curves for id-tc26-gost-3410-12-256-paramSetA and id-tc26-gost-3410-12-512-paramSetC had incorrect co-factors. These have been fixed.
 
-### 2.32.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - The qTESLA signature algorithm has been added to PQC light-weight API and the PQC provider.
 - The password hashing function, Argon2 has been added to the lightweight API.
@@ -2173,18 +2173,18 @@ Date: 2019, February 4th.
 - SM2 in public key cipher mode has been added to the provider API.
 - The BCFKSLoadStoreParameter has been extended to allow the use of certificates and digital signatures for verifying the integrity of BCFKS key stores.
 
-### 2.32.4 Removed Features and Functionality
+#### Removed Features and Functionality
 
 - Deprecated methods for EC point construction independent of curves have been removed.
 
 <a id="r1rv60"></a>
 
-### 2.33.1 Version
+### Version 1.60
 
 Release: 1.60\
 Date: 2018, June 30
 
-### 2.33.2 Defects Fixed
+#### Defects Fixed
 
 - Base64/UrlBase64 would throw an exception on a zero length string. This has been fixed.
 - Base64/UrlBase64 would throw an exception if there was whitespace in the last 4 characters. This has been fixed.
@@ -2205,7 +2205,7 @@ Date: 2018, June 30
 - In some situations the use of sm2p256v1 would result in "unknown curve name". This has been fixed.
 - CMP PollReqContent now supports multiple certificate request IDs.
 
-### 2.33.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - TLS: Extended CBC padding is now optional (and disabled by default).
 - TLS: Now supports channel binding 'tls-server-end-point'.
@@ -2233,19 +2233,19 @@ Date: 2018, June 30
 - Support has been added for the German BSI KAEG Elliptic Curve key agreement algorithm with X9.63 as the KDF to the JCE.
 - Support has been added for the German BSI KAEG Elliptic Curve session key KDF to the lightweight API.
 
-### 2.33.4 Security Related Changes and CVE's Addressed by this Release
+#### Security Related Changes and CVE's Addressed by this Release
 
 - CVE-2018-1000180: issue around primality tests for RSA key pair generation if done using only the low-level API.
 - CVE-2018-1000613: lack of class checking in deserialization of XMSS/XMSS^MT private keys with BDS state information.
 
 <a id="r1rv59"></a>
 
-### 2.34.1 Version
+### Version 1.59
 
 Release: 1.59\
 Date: 2017, December 28
 
-### 2.34.2 Defects Fixed
+#### Defects Fixed
 
 - Issues with using PQC based keys with the provided BC KeyStores have now been fixed.
 - ECGOST-2012 public keys were being encoded with the wrong OID for the digest parameter in the algorithm parameter set. This has been fixed.
@@ -2259,7 +2259,7 @@ Date: 2017, December 28
 - An off-by-one error for the max N check for SCRYPT has been fixed. SCRYPT should now be compliant with RFC 7914.
 - ASN1GeneralizedTime will now accept a broader range of input strings.
 
-### 2.34.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - GOST3410-94 private keys encoded using ASN.1 INTEGER are now accepted in private key info objects.
 - SCRYPT is now supported as a SecretKeyFactory in the provider and in the PKCS8 APIs
@@ -2278,18 +2278,18 @@ Date: 2017, December 28
 - A DEROtherInfo generator for key agreement using NewHope as the source of the shared private info has been added that can be used in conjunction with regular key agreement algorithms.
 - RFC 7748: Added low-level implementations of X25519 and X448.
 
-### 2.34.4 Security Related Changes and CVE's Addressed by this Release
+#### Security Related Changes and CVE's Addressed by this Release
 
 - CVE-2017-13098 ("ROBOT"), a Bleichenbacher oracle in TLS when RSA key exchange is negotiated. This potentially affected BCJSSE servers and any other TLS servers configured to use JCE for the underlying crypto - note the two TLS implementations using the BC lightweight APIs are not affected by this.
 
 <a id="r1rv58"></a>
 
-### 2.35.1 Version
+### Version 1.58
 
 Release: 1.58\
 Date: 2017, August 18
 
-### 2.35.2 Defects Fixed
+#### Defects Fixed
 
 - NewHope and SPHINCS keys are now correctly created off certificates by the BC provider.
 - Use of the seeded constructor with SecureRandom() and the BC provider in first position could cause a stack overflow error. This has been fixed.
@@ -2303,7 +2303,7 @@ Date: 2017, August 18
 - A race condition that could occur inside the HybridSecureRandom on reseed and result in an exception has been fixed.
 - DTLS now supports records containing multiple handshake messages.
 
-### 2.35.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - An implementation of GOST3410-2012 has been added to light weight API and the JCA provider.
 - Support for ECDH GOST3410-2012 and GOST3410-2001 have been added. The CMS API can also handle reading ECDH GOST3410 key transport messages.
@@ -2323,19 +2323,19 @@ Date: 2017, August 18
 - The new TLS API now supports RFC 7633 - X.509v3 TLS Feature Extension (e.g. "must staple"), enabled in default clients.
 - TLS exceptions have been made more directly informative.
 
-### 2.35.4 Removed Features and Functionality
+#### Removed Features and Functionality
 
 - Per RFC 7465, removed support for RC4 in the new TLS API.
 - Per RFC 7568, removed support for SSLv3 in the new TLS API.
 
 <a id="r1rv57"></a>
 
-### 2.36.1 Version
+### Version 1.57
 
 Release: 1.57\
 Date: 2017, May 11
 
-### 2.36.2 Defects Fixed
+#### Defects Fixed
 
 - A class cast exception for master certification removal in PGPPublicKey.removeCertification() by certification has been fixed.
 - GOST GOFB 28147-89 mode had an edge condition concerning the incorrect calculation of N4 (see section 6.1 of RFC 5830) affecting about 1% of IVs. This has been fixed.
@@ -2352,7 +2352,7 @@ Date: 2017, May 11
 - EC FixedPointCombMultiplier avoids 'infinity' point in lookup tables, reducing timing side-channels.
 - Reuse of a Blake2b digest with a call to reset() rather than doFinal() could result in incorrect padding being introduced and the wrong digest result produced. This has been fixed.
 
-### 2.36.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - ARIA (RFC 5794) is now supported by the provider and the lightweight API.
 - ARIA Key Wrapping (RFC 5649 style) is now supported by the provider and the lightweight API.
@@ -2362,26 +2362,26 @@ Date: 2017, May 11
 - A test client for EST which will interop with the 7030 test server at http://testrfc7030.com/ has been added to the general test module in the current source tree.
 - The BCJSSE provider now supports SSLContext.getDefault(), with very similar behaviour to the SunJSSE provider, including checks of the relevant javax.net.ssl.\* system properties and auto-loading of jssecacerts or cacerts as the default trust store.
 
-### 2.36.4 Security Related Changes
+#### Security Related Changes
 
 - The default parameter sizes for DH and DSA are now 2048. If you have been relying on key pair generation without passing in parameters generated keys will now be larger.
 - Further work has been done on preventing accidental re-use of a GCM cipher without first changing its key or iv.
 
 <a id="r1rv56"></a>
 
-### 2.37.1 Version
+### Version 1.56
 
 Release: 1.56\
 Date: 2016, December 23
 
-### 2.37.2 Defects Fixed
+#### Defects Fixed
 
 - See section [2.35.4](#CVE156) for Security Defects.
 - Using unknown status with the ASN.1 CertStatus primitive could result in an IllegalArgumentException on construction. This has been fixed.
 - A potentional NullPointerException in a precomputation in WNafUtil has been removed.
 - PGPUtil.getDecoderStream() would throw something other than an IOException for empty and very small data. This has been fixed.
 
-### 2.37.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - Support for the explicit setting of AlgorithmParameters has been added to the JceCMSContentEncryptorBuilder and the JceCMSMacCaculatorBuilder classes to allow configuration of the session cipher/MAC used.
 - EC, ECGOST3410, and DSTU4145 Public keys are now validated on construction in the JCA/JCE and the light weight API.
@@ -2399,7 +2399,7 @@ Date: 2016, December 23
 
 <a id="CVE156"></a>
 
-### 2.37.4 Security Related Changes and CVE's Addressed by this Release
+#### Security Related Changes and CVE's Addressed by this Release
 
 - It is now possible to configure the provider to only import keys for specific named curves.
 - Work has been done to improve the "constant time" behaviour of the RSA padding mechanisms.
@@ -2417,18 +2417,18 @@ Date: 2016, December 23
 - CVE-2016-1000346: Other party DH public key not fully validated. This can cause issues as invalid keys can be used to reveal details about the other party's private key where static Diffie-Hellman is in use. As of this release the key parameters are checked on agreement calculation.
 - CVE-2016-1000352: ECIES allows the use of unsafe ECB mode. This algorithm is now removed from the provider.
 
-### 2.37.5 Security Advisory
+#### Security Advisory
 
 - We consider the carry propagation bugs fixed in this release to have been exploitable in previous releases (1.51-1.55), for static ECDH, to reveal the long-term key, per ["Practical realisation and elimination of an ECC-related software bug attack", Brumley et.al.](https://eprint.iacr.org/2011/633). The most common case of this would be the non-ephemeral ECDH ciphersuites in TLS. These are not enabled by default in our TLS implementations, but they can be enabled explicitly by users. We recommend that users DO NOT enable static ECDH ciphersuites for TLS.
 
 <a id="r1rv55"></a>
 
-### 2.38.1 Version
+### Version 1.55
 
 Release: 1.55\
 Date: 2016, August 18
 
-### 2.38.2 Defects Fixed
+#### Defects Fixed
 
 - Issues with cloning of blake digests with salts and personalisation strings have been fixed.
 - The JceAsymmetricValueDecryptor in the CRMF package now attempts to recognise a wider range of parameters for the key wrapping algorithm, rather than relying on a default.
@@ -2449,7 +2449,7 @@ Date: 2016, August 18
 - Trying to use of non-default parameters for OAEP in CRMF would resort to the default parameter set. This has been fixed.
 - If the BC provider was not registered, creating a CertificateFactory would cause a new provider object to be created. This has been fixed.
 
-### 2.38.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - The DANE API has been updated to reflect the latest standard changes.
 - The signature algorithm SPHINCS-256 has been added to the post-quantum provider (BCPQC). Support is in place for SHA-512 and SHA3-512 (using trees based around SHA512_256 and SHA3_256 respectively).
@@ -2468,12 +2468,12 @@ Date: 2016, August 18
 
 <a id="r1rv54"></a>
 
-### 2.39.1 Version
+### Version 1.54
 
 Release: 1.54\
 Date: 2015, December 29
 
-### 2.39.2 Defects Fixed
+#### Defects Fixed
 
 - Blake2b-160, Blake2b-256, Blake2b-384, and Blake2b-512 are now actually in the provider and an issue with cloning Blake2b digests has been fixed.
 - PKCS#5 Scheme 2 using DESede CBC is now supported by the PKCS#12 implementation.
@@ -2482,7 +2482,7 @@ Date: 2015, December 29
 - It turns out, after advice one way and another that the NESSIE test vectors for Serpent are now what should be followed and that the vectors in the AES submission are regarded as an algorithm called Tnepres. The Serpent version now follows the NESSIE vectors, and the Tnepres cipher has been added to the provider and the lightweight API for compatibility.
 - Problems with DTLS record-layer version handling were resolved, making version negotiation work properly.
 
-### 2.39.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - Camellia and SEED key wrapping are now supported for CMS key agreement
 - The BC TLS/DTLS code now includes a non-blocking API.
@@ -2492,22 +2492,22 @@ Date: 2015, December 29
 - Support has been added to the CMS API for PKCS#7 ANY type encapsulated content where the encapsulated content is not an OCTET STRING.
 - PSSSigner in the lightweight API now supports fixed salts.
 
-### 2.39.4 Security Advisory
+#### Security Advisory
 
 - (D)TLS 1.2: Motivated by [CVE-2015-7575](https://www.google.com/search?q=CVE-2015-7575), we have added validation that the signature algorithm received in DigitallySigned structures is actually one of those offered (in signature_algorithms extension or CertificateRequest). With our default TLS configuration, we do not believe there is an exploitable vulnerability in any earlier releases. Users that are customizing the signature_algorithms extension, or running a server supporting client authentication, are advised to double-check that they are not offering any signature algorithms involving MD5.
 
-### 2.39.5 Notes
+#### Notes
 
 If you have been using Serpent, you will need to either change to Tnepres, or take into account the fact that Serpent is now byte-swapped compared to what it was before.
 
 <a id="r1rv53"></a>
 
-### 2.40.1 Version
+### Version 1.53
 
 Release: 1.53\
 Date: 2015, October 10
 
-### 2.40.2 Defects Fixed
+#### Defects Fixed
 
 - The BC JCE cipher implementations could sometimes fail when used in conjunction with the JSSE and NIO. This has been fixed.
 - PGPPublicKey.getBitStrength() always returned 0 for EC keys. This has been fixed.
@@ -2532,7 +2532,7 @@ Date: 2015, October 10
 - Some decidedly odd argument casting in the PKIXCertPathValidator has been fixed to throw an InvalidAlgorithmParameterException.
 - Presenting an empty array of certificates to the PKIXCertPathValidator would cause an IndexOutOfRangeException instead of a CertPathValidatorException. This has been fixed.
 
-### 2.40.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - It is now possible to specify that an unwrapped key must be usable by a software provider in the asymmetric unwrappers for CMS.
 - A Blake2b implementation has been added to the provider and lightweight API.
@@ -2548,18 +2548,18 @@ Date: 2015, October 10
 - The PKCS#12 key store will now garbage collect orphaned certificates on saving.
 - Caching for ASN.1 ObjectIdentifiers has been rewritten to make use of an intern method. The "usual suspects" are now interned automatically, and the cache is used by the parser. Other OIDs can be added to the cache by calling ASN1ObjectIdentifier.intern().
 
-### 2.40.4 Notes
+#### Notes
 
 It turns out there was a similar, but different, issue in Crypto++ to the BC issue with ECIES. Crypto++ 6.0 now offers a corrected version of ECIES which is compatible with that which is now in BC.
 
 <a id="r1rv52"></a>
 
-### 2.41.1 Version
+### Version 1.52
 
 Release: 1.52\
 Date: 2015, March 2
 
-### 2.41.2 Defects Fixed
+#### Defects Fixed
 
 - GenericSigner in the lightweight API would fail if the digest started with a zero byte, occasionally causing a TLS negotiation to fail. This has been fixed.
 - Some BC internal classes expected the BC provider to be accessible within the provider. This has been fixed.
@@ -2576,7 +2576,7 @@ Date: 2015, March 2
 - A badly formed issuer in a X.509 certificate could cause a null pointer exception in X509CertificateHolder.toString(). This has been fixed.
 - CMSSignedData.verifySignatures() could fail on a correct counter signature due to a mismatch of the SID. This has been fixed.
 
-### 2.41.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - The CMP support class CMPCertificate restricted the types of certificates that could be added. A more flexible method has been introduced to allow for other certificate types.
 - Support classes have be added for DNS-based Authentication of Named Entities (DANE) to the PKIX distribution.
@@ -2604,18 +2604,18 @@ Date: 2015, March 2
 - Support for some JDK1.5+ language features has finally made its way into the repository.
 - A load store parameter, PKCS12StoreParameter, has been added to support DER only encoding of PKCS12 key stores.
 
-### 2.41.4 Security Advisory
+#### Security Advisory
 
 - The CTR DRBGs would not populate some bytes in the requested block of random bytes if the size of the block requested was not an exact multiple of the block size of the underlying cipher being used in the DRBG. If you are using the CTR DRBGs with "odd" keysizes, we strongly advise upgrading to this release, or contacting us for a work around.
 
 <a id="r1rv51"></a>
 
-### 2.42.1 Version
+### Version 1.51
 
 Release: 1.51\
 Date: 2014, July 28
 
-### 2.42.2 Defects Fixed
+#### Defects Fixed
 
 - The AEAD GCM AlgorithmParameters object was unable to return a GCMParameterSpec object. This has been fixed.
 - Cipher.getIV() was returning null for AEAD mode ciphers. This has been fixed.
@@ -2630,7 +2630,7 @@ Date: 2014, July 28
 - PKCS#12 files containing keys/certificates with empty attribute sets attached to them no longer cause an ArrayIndexOutOfBoundsException to be thrown.
 - Issues with certificate verification and server side DTLS/TLS 1.2 have now been fixed.
 
-### 2.42.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - The range of key algorithm names that will be interpreted by KeyAgreement.generateSecret() has been expanded for ECDH derived algorithms in the provider. A KeyAgreement of ECDHwithSHA1KDF can now be explicitly created.
 - ECIES now supports the use of IVs with the underlying block cipher and CBC mode in both the lightweight and the JCE APIs.
@@ -2657,7 +2657,7 @@ Date: 2014, July 28
 - Full support is now provided for client-side auth in the D/TLS server code.
 - Compatibility issues with some OSGI containers have been addressed.
 
-### 2.42.4 Notes
+#### Notes
 
 - Support for NTRUSigner has been deprecated as the algorithm has been withdrawn.
 - Some changes have affected the return values of some methods. If you are migrating from an earlier release, it is recommended to recompile before using this release.
@@ -2665,12 +2665,12 @@ Date: 2014, July 28
 
 <a id="r1rv50"></a>
 
-### 2.43.1 Version
+### Version 1.50
 
 Release: 1.50\
 Date: 2013, December 3
 
-### 2.43.2 Defects Fixed
+#### Defects Fixed
 
 - The DualECSP800DRBG sometimes truncated the last block in the generated stream incorrectly. This has been fixed.
 - Keys produced from RSA certificates with specialised parameters would lose the parameter settings. This has been fixed.
@@ -2684,7 +2684,7 @@ Date: 2013, December 3
 - Default RC2 parameters for 40 bit RC2 keys in CMSEnvelopedData were encoding incorrectly. This has been fixed.
 - In case of a long hash the DSTU4145 implementation would sometimes remove one bit too much during truncation. This has been fixed.
 
-### 2.43.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - Additional work has been done on CMS recipient generation to simplify the generation of OAEP encrypted messages and allow for non-default parameters.
 - OCB implementation updated to account for changes in draft-irtf-cfrg-ocb-03.
@@ -2704,7 +2704,7 @@ Date: 2013, December 3
 - The JDK 1.5+ provider will now recognise and use GCMParameterSpec if it is run in a 1.7 JVM.
 - Client side support and some server side support has been added for TLS/DTLS 1.2.
 
-### 2.43.4 Notes
+#### Notes
 
 - org.bouncycastle.crypto.DerivationFunction is now a base interface, the getDigest() method appears on DigestDerivationFunction.
 - Recent developments at NIST indicate the SHA-3 may be changed before final standardisation. Please bare this in mind if you are using it.
@@ -2715,12 +2715,12 @@ Date: 2013, December 3
 
 <a id="r1rv49"></a>
 
-### 2.44.1 Version
+### Version 1.49
 
 Release: 1.49\
 Date: 2013, May 31
 
-### 2.44.2 Defects Fixed
+#### Defects Fixed
 
 - Occasional ArrayOutOfBounds exception in DSTU-4145 signature generation has been fixed.
 - The handling of escaped characters in X500 names is much improved.
@@ -2731,7 +2731,7 @@ Date: 2013, May 31
 - PEMParser would throw a NullPointerException if it ran into explicit EC curve parameters, it would also throw an Exception if the named curve was not already defined. The parser now returns X9ECParmameters for explicit parameters and returns an ASN1ObjectIdentifier for a named curve.
 - The V2TBSCertListGenerator was adding the wrong date type for CRL invalidity date extensions. This has been fixed.
 
-### 2.44.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - A SecretKeyFactory has been added that enables use of PBKDF2WithHmacSHA.
 - Support has been added to PKCS12 KeyStores and PfxPdu to handle PKCS#5 encrypted private keys.
@@ -2759,19 +2759,19 @@ Date: 2013, May 31
 - A basic commitment package has been introduced into the lightweight API containing a digest based commitment scheme.
 - It is now possible to set the NotAfter and NotBefore date in the CRMF CertificateRequestMessageBuilder class.
 
-### 2.44.4 Notes
+#### Notes
 
 - The NTRU implementation has been moved into the org.bouncycastle.pqc package hierarchy.
 - The change to PEMParser to support explicit EC curves is not backward compatible. If you run into a named curve you need to use org.bouncycastle.asn1.x9.ECNamedCurveTable.getByOID() to look the curve up if required.
 
 <a id="r1rv48"></a>
 
-### 2.45.1 Version
+### Version 1.48
 
 Release: 1.48\
 Date: 2013, February 10
 
-### 2.45.2 Defects Fixed
+#### Defects Fixed
 
 - Occasional key compatibility issues in IES due to variable length keys have been fixed.
 - PEMWriter now recognises the new PKCS10CertificationRequest object.
@@ -2782,7 +2782,7 @@ Date: 2013, February 10
 - The BC SSL implementation has been modified to deal with the "Lucky Thirteen" attack.
 - A regression in 1.47 which prevented key wrapping with regular symmetric PBE algorihtms has been fixed.
 
-### 2.45.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - IES now supports auto generation of ephemeral keys in both the JCE and the lightweight APIs.
 - A new class PEMParser has been added to return the new CertificateHolder and Request objects introduced recently.
@@ -2798,12 +2798,12 @@ Date: 2013, February 10
 
 <a id="r1rv47"></a>
 
-### 2.46.1 Version
+### Version 1.47
 
 Release: 1.47\
 Date: 2012, March 30
 
-### 2.46.2 Defects Fixed
+#### Defects Fixed
 
 - OpenPGP ID based certifications now support UTF-8. Note: this may mean that some old certifications no longer validate - if this happens a retry can be added using by converting the ID using Strings.fromByteArray(Strings.toByteArray(id)) - this will strip out the top byte in each character.
 - IPv4/IPv6 parsing in CIDR no longer assumes octet boundaries on a mask.
@@ -2819,7 +2819,7 @@ Date: 2012, March 30
 - CMS secret key generation now attempts to stop use of invalid lengths with OIDs that predefine a key length.
 - Check of DH parameter L could reject some valid keys. This is now fixed.
 
-### 2.46.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - Support is now provided via the RepeatedKey class to enable IV only re-initialisation in the JCE layer. The same effect can be acheived in the light weight API by using null as the key parameter when creating a ParametersWithIV object.
 - CRMF now supports empty poposkInput.
@@ -2838,18 +2838,18 @@ Date: 2012, March 30
 - An operator based framework has been added for processing PKCS#8 and PKCS#12 files.
 - The J2ME lcrypto release now includes higher level classes for handling PKCS, CMS, CRMF, CMP, EAC, OpenPGP, and certificate generation.
 
-### 2.46.4 Other notes
+#### Other notes
 
 Okay, so we have had to do another release. The issue we have run into is that we probably didn't go far enough in 1.46, but we are now confident that moving from this release to 2.0 should be largely just getting rid of deprecated methods. While this release does change a lot it is relatively straight forward to do a port and we have a [porting guide](https://github.com/bcgit/bc-java/wiki/Porting-From-Earlier-BC-Releases-to-1.47-and-Later) which explains the important ones. The area there has been the most change in is the ASN.1 library which was in bad need of a rewrite after 10 years of patching. On the bright side the rewrite did allow us to eliminate a few problems and bugs in the ASN.1 library, so we have some hope anyone porting to it will also have similar benefits. As with 1.46 the other point of emphasis has been making sure interface support is available for operations across the major APIs, so the lightweight API or some local role your own methods can be used instead for doing encryption and signing.
 
 <a id="r1rv46"></a>
 
-### 2.47.1 Version
+### Version 1.46
 
 Release: 1.46\
 Date: 2011, February 23
 
-### 2.47.2 Defects Fixed
+#### Defects Fixed
 
 - An edge condition in ECDSA which could result in an invalid signature has been fixed.
 - Exhaustive testing has been performed on the ASN.1 parser, eliminating another potential OutOfMemoryException and several escaping run time exceptions.
@@ -2858,7 +2858,7 @@ Date: 2011, February 23
 - DERGeneralizedTime.getDate() would produce incorrect results for fractional seconds. This has been fixed.
 - PSSSigner would produce incorrect results if the MGF digest and content digest were not the same. This has been fixed.
 
-### 2.47.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - A null genTime can be passed to TimeStampResponseGenerator.generate() to generate timeNotAvailable error responses.
 - Support has been added for reading and writing of openssl PKCS#8 encrypted keys.
@@ -2875,7 +2875,7 @@ Date: 2011, February 23
 - PGP public subkeys can now be separately decoded and encoded.
 - An IV can now be passed to an ISO9797Alg3Mac.
 
-### 2.47.4 Other notes
+#### Other notes
 
 Baring security patches we expect 1.46 will be the last of the 1.\* releases. The next release of BC will be version 2.0. For this reason a lot of things in 1.46 that relate to CMS have been deprecated and new methods have been added to the CMS and certificate handling APIs which provide greater flexibility in how digest and signature algorithms get used. It is now possible to use the lightweight API or a simple custom API with CMS and for certificate generation. In addition a lot of methods and some classes that were deprecated for reasons of been confusing, or in some cases just plan wrong, have been removed.
 
@@ -2888,34 +2888,34 @@ So there are four things useful to know about this release:
 
 <a id="r1rv45"></a>
 
-### 2.48.1 Version
+### Version 1.45
 
 Release: 1.45\
 Date: 2010, January 12
 
-### 2.48.2 Defects Fixed
+#### Defects Fixed
 
 - OpenPGP now supports UTF-8 in file names for literal data.
 - The ASN.1 library was losing track of the stream limit in a couple of places, leading to the potential of an OutOfMemoryError on a badly corrupted stream. This has been fixed.
 - The provider now uses a privileged block for initialisation.
 - JCE/JCA EC keys are now serialisable.
 
-### 2.48.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - Support for EC MQV has been added to the light weight API, provider, and the CMS/SMIME library.
 
-### 2.48.4 Security Advisory
+#### Security Advisory
 
 - This version of the provider has been specifically reviewed to eliminate possible timing attacks on algorithms such as GCM and CCM mode.
 
 <a id="r1rv44"></a>
 
-### 2.49.1 Version
+### Version 1.44
 
 Release: 1.44\
 Date: 2009, October 9
 
-### 2.49.2 Defects Fixed
+#### Defects Fixed
 
 - The reset() method in BufferedAsymmetricBlockCipher is now fully clearing the buffer.
 - Use of ImplicitlyCA with KeyFactory and Sun keyspec no longer causes NullPointerException.
@@ -2931,7 +2931,7 @@ Date: 2009, October 9
 - PKIXCertPathReviewer.getTrustAnchor() could occasionally cause a null pointer exception or an exception due to conflicting trust anchors. This has been fixed.
 - Handling of explicit CommandMap objects with the generation of S/MIME messages has been improved.
 
-### 2.49.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - PEMReader/PEMWriter now support encrypted EC keys.
 - BC generated EC private keys now include optional fields required by OpenSSL.
@@ -2948,29 +2948,29 @@ Date: 2009, October 9
 
 <a id="r1rv43"></a>
 
-### 2.50.1 Version
+### Version 1.43
 
 Release: 1.43\
 Date: 2009, April 13
 
-### 2.50.2 Defects Fixed
+#### Defects Fixed
 
 - Multiple countersignature attributes are now correctly collected.
 - Two bugs in HC-128 and HC-256 related to sign extension and byte swapping have been fixed. The implementations now pass the latest ecrypt vector tests.
 - X509Name.hashCode() is now consistent with equals.
 
-### 2.50.3 Security Advisory
+#### Security Advisory
 
 - The effect of the sign extension bug was to decrease the key space the HC-128 and HC-256 ciphers were operating in and the byte swapping inverted every 32 bits of the generated stream. If you are using either HC-128 or HC-256 you must upgrade to this release.
 
 <a id="r1rv42"></a>
 
-### 2.51.1 Version
+### Version 1.42
 
 Release: 1.42\
 Date: 2009, March 16
 
-### 2.51.2 Defects Fixed
+#### Defects Fixed
 
 - A NullPointer exception which could be result from generating a diffie-hellman key has been fixed.
 - CertPath validation could occasionally mistakenly identify a delta CRL. This has been fixed.
@@ -2983,7 +2983,7 @@ Date: 2009, March 16
 - Multiplication by negative powers of two is fixed in BigInteger.
 - OptionalValidity now encodes correctly.
 
-### 2.51.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - Support for NONEwithECDSA has been added.
 - Support for Grainv1 and Grain128 has been added.
@@ -2995,12 +2995,12 @@ Date: 2009, March 16
 
 <a id="r1rv41"></a>
 
-### 2.52.1 Version
+### Version 1.41
 
 Release: 1.41\
 Date: 2008, October 1
 
-### 2.52.2 Defects Fixed
+#### Defects Fixed
 
 - The GeneralName String constructor now supports IPv4 and IPv6 address parsing.
 - An issue with nested-multiparts with postamble for S/MIME that was causing signatures to fail verification has been fixed.
@@ -3011,7 +3011,7 @@ Date: 2008, October 1
 - Standard name "DiffieHellman" is now supported in the provider.
 - Better support for equality tests for '#' encoded entries has been added to X509Name.
 
-### 2.52.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - Camellia is now 12.5% faster than previously.
 - A smaller version (around 8k compiled) of Camellia, CamelliaLightEngine has also been added.
@@ -3023,12 +3023,12 @@ Date: 2008, October 1
 
 <a id="r1rv40"></a>
 
-### 2.53.1 Version
+### Version 1.40
 
 Release: 1.40\
 Date: 2008, July 12
 
-### 2.53.2 Defects Fixed
+#### Defects Fixed
 
 - EAX mode ciphers were not resetting correctly after a doFinal/reset. This has been fixed.
 - The SMIME API was failing to verify doubly nested multipart objects in signatures correctly. This has been fixed.
@@ -3044,7 +3044,7 @@ Date: 2008, July 12
 - The '+' character can now be escaped or quoted in the constructor for X509Name, X509Prinicipal.
 - Fix to regression from 1.38: PKIXCertPathValidatorResult.getPublicKey was returning the wrong public key when the BC certificate path validator was used.
 
-### 2.53.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - Galois/Counter Mode (GCM) has been added to the lightweight API and the JCE provider.
 - SignedPublicKeyAndChallenge and PKCS10CertificationRequest can now take null providers if you need to fall back to the default provider mechanism.
@@ -3052,18 +3052,18 @@ Date: 2008, July 12
 - Unnecessary local ID attributes on certificates in PKCS12 files are now automatically removed.
 - The PKCS12 store types PKCS12-3DES-3DES and PKCS12-DEF-3DES-3DES have been added to support generation of PKCS12 files with both certificates and keys protected by 3DES.
 
-### 2.53.4 Additional Notes
+#### Additional Notes
 
 - Due to problems for some users caused by the presence of the IDEA algorithm, an implementation is no longer included in the default signed jars. Only the providers of the form bcprov-ext-\*-\*.jar now include IDEA.
 
 <a id="r1rv39"></a>
 
-### 2.54.1 Version
+### Version 1.39
 
 Release: 1.39\
 Date: 2008, March 29
 
-### 2.54.2 Defects Fixed
+#### Defects Fixed
 
 - A bug causing the odd NullPointerException has been removed from the LocalizedMessage class.
 - IV handling in CMS for the SEED and Camellia was incorrect. This has been fixed.
@@ -3077,7 +3077,7 @@ Date: 2008, March 29
 - A decoding issue with a mis-identified tagged object in CertRepMessage has been fixed.
 - \\# is now properly recognised in the X509Name class.
 
-### 2.54.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - Certifications associated with user attributes can now be created, verified and removed in OpenPGP.
 - API support now exists for CMS countersignature reading and production.
@@ -3093,12 +3093,12 @@ Date: 2008, March 29
 
 <a id="r1rv38"></a>
 
-### 2.55.1 Version
+### Version 1.38
 
 Release: 1.38\
 Date: 2007, November 7
 
-### 2.55.2 Defects Fixed
+#### Defects Fixed
 
 - SMIME signatures containing non-standard quote-printable data could be altered by SMIME encryption. This has been fixed.
 - CMS signatures that do not use signed attributes were vulnerable to one of Bleichenbacher's RSA signature forgery attacks. This has been fixed.
@@ -3112,7 +3112,7 @@ Date: 2007, November 7
 - Overwriting entities in a PKCS#12 file was not fully compliant with the JavaDoc for KeyStore. This has been fixed.
 - TlsInputStream.read() could appear to return end of file when end of file had not been reached. This has been fixed.
 
-### 2.55.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - Buffering in the streaming CMS has been reworked. Throughput is now usually higher and the behaviour is more predictable.
 - It's now possible to pass a table of hashes to a CMS detached signature rather than having to always pass the data.
@@ -3125,12 +3125,12 @@ Date: 2007, November 7
 
 <a id="r1rv37"></a>
 
-### 2.56.1 Version
+### Version 1.37
 
 Release: 1.37\
 Date: 2007, June 15
 
-### 2.56.2 Defects Fixed
+#### Defects Fixed
 
 - The ClearSignedFileProcessor example for OpenPGP did not take into account trailing white space in the file to be signed. This has been fixed.
 - A possible infinite loop in the CertPathBuilder and SignedMailValidator have been removed.
@@ -3143,7 +3143,7 @@ Date: 2007, June 15
 - The default private key length in the lightweght API for generated DiffieHellman parameters was absurdly small, this has been fixed.
 - Cipher.getParameters() for PBEwithSHAAndTwofish-CBC was returning null after intialisation. This has been fixed.
 
-### 2.56.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - The block cipher mode CCM has been added to the provider and light weight API.
 - The block cipher mode EAX has been added to the provider and light weight API.
@@ -3163,12 +3163,12 @@ Date: 2007, June 15
 
 <a id="r1rv36"></a>
 
-### 2.57.1 Version
+### Version 1.36
 
 Release: 1.36\
 Date: 2007, March 16
 
-### 2.57.2 Defects Fixed
+#### Defects Fixed
 
 - DSA key generator now checks range and keysize.
 - Class loader issues with i18n classes should now be fixed.
@@ -3181,7 +3181,7 @@ Date: 2007, March 16
 - Some surrogate pairs were not assembled correctly by the UTF-8 decoder. This has been fixed.
 - Alias resolution in PKCS#12 is now case insensitive.
 
-### 2.57.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - CMS/SMIME now supports basic EC KeyAgreement with X9.63.
 - CMS/SMIME now supports RFC 3211 password based encryption.
@@ -3198,12 +3198,12 @@ Date: 2007, March 16
 
 <a id="r1rv35"></a>
 
-### 2.58.1 Version
+### Version 1.35
 
 Release: 1.35\
 Date: 2006, December 16
 
-### 2.58.2 Defects Fixed
+#### Defects Fixed
 
 - Test data files are no longer in the provider jars.
 - SMIMESignedParser now handles indefinite length data in SignerInfos.
@@ -3218,7 +3218,7 @@ Date: 2006, December 16
 - The IESEngine could incorrectly encrypt data when used in block cipher mode. This has been fixed.
 - An error in the encoding of the KEKRecipientInfo has been fixed. Compatability warning: this may mean that versions of BC mail prior to 1.35 will have trouble processing KEK messages produced by 1.35 or later.
 
-### 2.58.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - Further optimisations to elliptic curve math libraries.
 - API now incorporates a CertStore which should be suitable for use with LDAP.
@@ -3241,12 +3241,12 @@ Date: 2006, December 16
 
 <a id="r1rv34"></a>
 
-### 2.59.1 Version
+### Version 1.34
 
 Release: 1.34\
 Date: 2006, October 2
 
-### 2.59.2 Defects Fixed
+#### Defects Fixed
 
 - Endianess of integer conversion in KDF2BytesGenerator was incorrect. This has been fixed.
 - Generating critical signature subpackets in OpenPGP would result in a zero packet tag. This has been fixed.
@@ -3257,7 +3257,7 @@ Date: 2006, October 2
 - PGP Identity strings were only being interpreted as ASCII rather than UTF-8. This has been fixed.
 - CertificateFactory.generateCRLs now returns a Collection rather than null.
 
-### 2.59.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - An ISO18033KDFParameters class had been added to support ISO18033 KDF generators.
 - An implemention of the KDF1 bytes generator algorithm has been added.
@@ -3276,18 +3276,18 @@ Date: 2006, October 2
 - Performance of the prime number generation in the BigInteger library has been further improved.
 - In line with RFC 3280 section 4.1.2.4 DN's are now encoded using UTF8String by default rather than PrintableString.
 
-### 2.59.4 Security Advisory
+#### Security Advisory
 
 - If you are using public exponents with the value three you \*must\* upgrade to this release, otherwise it will be possible for attackers to exploit some of Bleichenbacher's RSA signature forgery attacks on your applications.
 
 <a id="r1rv33"></a>
 
-### 2.60.1 Version
+### Version 1.33
 
 Release: 1.33\
 Date: 2006, May 3
 
-### 2.60.2 Defects Fixed
+#### Defects Fixed
 
 - OCSPResponseData was including the default version in its encoding. This has been fixed.
 - BasicOCSPResp.getVersion() would throw a NullPointer exception if called on a default version response. This has been fixed.
@@ -3296,7 +3296,7 @@ Date: 2006, May 3
 - ArmoredInputStream was not closing the underlying stream on close. This has been fixed.
 - Small base64 encoded strings with embedded white space could decode incorrectly using the Base64 class. This has been fixed.
 
-### 2.60.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - The X509V2CRLGenerator now supports adding general extensions to CRL entries.
 - A RoleSyntax implementation has been added to the x509 ASN.1 package, and the AttributeCertificateHolder class now support the IssuerSerial option.
@@ -3305,12 +3305,12 @@ Date: 2006, May 3
 
 <a id="r1rv32"></a>
 
-### 2.61.1 Version
+### Version 1.32
 
 Release: 1.32\
 Date: 2006, March 27
 
-### 2.61.2 Defects Fixed
+#### Defects Fixed
 
 - Further work has been done on RFC 3280 compliance.
 - The ASN1Sequence constructor for SemanticsInformation would sometimes throw a ClassCastException on reconstruction an object from a byte stream. This has been fixed.
@@ -3325,7 +3325,7 @@ Date: 2006, March 27
 - An occasional bug that could result in invalid clear text signatures has been fixed.
 - OpenPGP clear text signatures containing '\r' as line separators were not being correctly canonicalized. This has been fixed.
 
-### 2.61.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - The ASN.1 library now includes classes for the ICAO Electronic Passport.
 - Support has been added to CMS and S/MIME for ECDSA.
@@ -3334,18 +3334,18 @@ Date: 2006, March 27
 - Support has been added for repeated attributes in CMS and S/MIME messages.
 - A wider range of RSA-PSS signature types is now supported for CRL and Certificate verification.
 
-### 2.61.4 Possible compatibility issue
+#### Possible compatibility issue
 
 - Previously elliptic curve keys and points were generated with point compression enabled by default. Owing to patent issues in some jurisdictions, they are now generated with point compression disabled by default.
 
 <a id="r1rv31"></a>
 
-### 2.62.1 Version
+### Version 1.31
 
 Release: 1.31\
 Date: 2005, December 29
 
-### 2.62.2 Defects Fixed
+#### Defects Fixed
 
 - getCriticalExtensionOIDs on an X.509 attribute certificate was returning the non-critical set. This has been fixed.
 - Encoding uncompressed ECDSA keys could occasionally introduce an extra leading zero byte. This has been fixed.
@@ -3357,7 +3357,7 @@ Date: 2005, December 29
 - In some cases AttributeCertificateHolder.getIssuer() would return an empty array for attribute certificates using the BaseCertificateID. This has been fixed.
 - OIDs with extremely large components would sometimes reencode with unnecessary bytes in their encoding. The optimal DER encoding will now be produced instead.
 
-### 2.62.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - The SMIME package now supports the large file streaming model as well.
 - Additional ASN.1 message support has been added for RFC 3739 in the org.bouncycastle.x509.qualified package.
@@ -3367,12 +3367,12 @@ Date: 2005, December 29
 
 <a id="r1rv30"></a>
 
-### 2.63.1 Version
+### Version 1.30
 
 Release: 1.30\
 Date: 2005, September 18
 
-### 2.63.2 Defects Fixed
+#### Defects Fixed
 
 - Whirlpool was calculating the wrong digest for 31 byte data and could throw an exception for some other data lengths. This has been fixed.
 - AlgorithmParameters for IVs were returning a default of RAW encoding of the parameters when they should have been returning an ASN.1 encoding. This has been fixed.
@@ -3383,7 +3383,7 @@ Date: 2005, September 18
 - KEKIdentifier would not handle OtherKeyAttribute objects correctly. This has been fixed.
 - GetCertificateChain on a PKCS12 keystore would return a single certificate chain rather than null if the alias passed in represented a certificate not a key. This has been fixed.
 
-### 2.63.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - RSAEngine no longer assumes keys are byte aligned when checking for out of range input.
 - PGPSecretKeyRing.removeSecretKey and PGPSecretKeyRing.insertSecretKey have been added.
@@ -3395,12 +3395,12 @@ Date: 2005, September 18
 
 <a id="r1rv29"></a>
 
-### 2.64.1 Version
+### Version 1.29
 
 Release: 1.29\
 Date: 2005, June 27
 
-### 2.64.2 Defects Fixed
+#### Defects Fixed
 
 - HMac-SHA384 and HMac-SHA512 were not IETF compliant. This has been fixed.
 - The equals() method on ElGamalKeyParameters and DHKeyParameters in the lightweight API would sometimes return false when it should return true. This has been fixed.
@@ -3409,25 +3409,25 @@ Date: 2005, June 27
 - ISO9796 signatures for full recovered messsages could incorrectly verify for similar messages in some circumstances. This has been fixed.
 - The occasional problem with decrypting PGP messages containing compressed streams now appears to be fixed.
 
-### 2.64.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - Support has been added for the OIDs and key generation required for HMac-SHA224, HMac-SHA256, HMac-SHA384, and HMac-SHA512.
 - SignerInformation will used default implementation of message digest if signature provider doesn't support it.
 - The provider and the lightweight API now support the GOST-28147-94 MAC algorithm.
 - Headers are now settable for PGP armored output streams.
 
-### 2.64.4 Notes
+#### Notes
 
 - The old versions of HMac-SHA384 and HMac-SHA512 can be invoked as OldHMacSHA384 and OldHMacSHA512, or by using the OldHMac class in the lightweight API.
 
 <a id="r1rv28"></a>
 
-### 2.65.1 Version
+### Version 1.28
 
 Release: 1.28\
 Date: 2005, April 20
 
-### 2.65.2 Defects Fixed
+#### Defects Fixed
 
 - Signatures on binary encoded S/MIME messages could fail to validate when correct. This has been fixed.
 - getExtensionValue() on CRL Entries were returning the encoding of the inner object, rather than the octet string. This has been fixed.
@@ -3441,7 +3441,7 @@ Date: 2005, April 20
 - Filetype for S/MIME compressed messages was incorrect. This has been fixed.
 - BigInteger class can now create negative numbers from byte arrays.
 
-### 2.65.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - S/MIME now does canonicalization on non-binary input for signatures.
 - Micalgs for the new SHA schemes are now supported.
@@ -3452,19 +3452,19 @@ Date: 2005, April 20
 - Support has been added for the creation of ECDSA certificate requests.
 - The provider and the light weight API now support the WHIRLPOOL message digest.
 
-### 2.65.4 Notes
+#### Notes
 
 - Patches for S/MIME binary signatures and canonicalization were actually applied in 1.27, but a couple of days after the release - if the class CMSProcessableBodyPartOutbound is present in the package org.bouncycastle.mail.smime you have the patched 1.27. We would recommend upgrading to 1.28 in any case as some S/MIME 3.1 recommendations have also been introduced for header creation.
 - GOST private keys are probably not encoding correctly and can be expected to change.
 
 <a id="r1rv27"></a>
 
-### 2.66.1 Version
+### Version 1.27
 
 Release: 1.27\
 Date: 2005, February 20
 
-### 2.66.2 Defects Fixed
+#### Defects Fixed
 
 - Typos in the provider which pointed Signature algorithms SHA256WithRSA, SHA256WithRSAEncryption, SHA384WithRSA, SHA384WithRSAEncryption, SHA512WithRSA, and SHA512WithRSAEncryption at the PSS versions of the algorithms have been fixed. The correct names for the PSS algorithms are SHA256withRSAandMGF1, SHA384withRSAandMGF1, and SHA512withRSAandMGF1.
 - X509CertificateFactory failed under some circumstances to reset properly if the input stream being passed to generateCertificate(s)() changed, This has been fixed.
@@ -3477,7 +3477,7 @@ Date: 2005, February 20
 - TSP TimeStampToken was failing to validate time stamp tokens with the issuerSerial field set in the ESSCertID structure. This has been fixed.
 - Path validation in environments with frequently updated CRLs could occasionally reject a valid path. This has been fixed.
 
-### 2.66.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - Full support has been added for the OAEPParameterSpec class to the JDK 1.5 povider.
 - Full support has been added for the PSSParameterSpec class to the JDK 1.4 and JDK 1.5 providers.
@@ -3487,7 +3487,7 @@ Date: 2005, February 20
 - The CertPath support classes now support PKCS #7 encoding.
 - Point compression can now be turned off when encoding elliptic curve keys.
 
-### 2.66.4 Changes that may affect compatibility
+#### Changes that may affect compatibility
 
 - org.bouncycastle.jce.interfaces.ElGamalKey.getParams() has been changed to getParameters() to avoid clashes with a JCE interface with the same method signature.
 - org.bouncycastle.jce.interfaces.ECKey.getParams() has been changed in JDK 1.5 to getParameters() to avoid clashes with a JCE interface with the same method signature. The getParams() method in pre-1.5 has been deprecated.
@@ -3495,12 +3495,12 @@ Date: 2005, February 20
 
 <a id="r1rv26"></a>
 
-### 2.67.1 Version
+### Version 1.26
 
 Release: 1.26\
 Date: 2005, January 15
 
-### 2.67.2 Defects Fixed
+#### Defects Fixed
 
 - The X.509 class UserNotice assumed some of the optional fields were not optional. This has been fixed.
 - BCPGInputStream would break on input packets of 8274 bytes in length. This has been fixed.
@@ -3509,7 +3509,7 @@ Date: 2005, January 15
 - ASN1Sets now properly sort their contents when created from scratch.
 - A bug introduced in the CertPath validation in the last release which meant some certificate paths would validate if they were invalid has been fixed.
 
-### 2.67.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - Support for JDK 1.5 naming conventions for OAEP encryption and PSS signing has been added.
 - Support for Time Stamp Protocol (RFC 3161) has been added.
@@ -3519,18 +3519,18 @@ Date: 2005, January 15
 - PBEWithMD5AndRC2, PBEWithSHA1AndRC2 now generate keys rather than exceptions.
 - The BigInteger implementation has been further optimised to take more advantage of the Montgomery number capabilities.
 
-### 2.67.4 JDK 1.5 Changes
+#### JDK 1.5 Changes
 
 - The JDK 1.5 version of the provider now supports the new Elliptic Curve classes found in the java.security packages. Note: while we have tried to preserve some backwards compatibility people using Elliptic curve are likely to find some minor code changes are required when moving code from JDK 1.4 to JDK 1.5 as the java.security APIs have changed.
 
 <a id="r1rv25"></a>
 
-### 2.68.1 Version
+### Version 1.25
 
 Release: 1.25\
 Date: 2004, October 1
 
-### 2.68.2 Defects Fixed
+#### Defects Fixed
 
 - In some situations OpenPGP would overread when a stream had been broken up into partial blocks. This has been fixed.
 - Explicitly setting a key size for RC4 in the CMS library would cause an exception. This has been fixed.
@@ -3549,7 +3549,7 @@ Date: 2004, October 1
 - Parsing a message with a zero length body with SMIMESigned would cause an exception. This has been fixed.
 - Some versions of PGP use zeros in the data stream rather than a replication of the last two bytes of the iv as specified in the RFC to determine if the correct decryption key has been found. The decryption classes will now cope with both.
 
-### 2.68.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - Support for extracting signatures based on PGP user attributes has been added to PGPPublicKey.
 - BCPGArmoredInputStream should cope with plain text files better.
@@ -3566,12 +3566,12 @@ Date: 2004, October 1
 
 <a id="r1rv24"></a>
 
-### 2.69.1 Version
+### Version 1.24
 
 Release: 1.24\
 Date: 2004, June 12
 
-### 2.69.2 Defects Fixed
+#### Defects Fixed
 
 - OpenPGP Secret key rings now parse key rings with user attribute packets in them correctly.
 - OpenPGP Secret key rings now parse key rings with GPG comment packets in them.
@@ -3585,7 +3585,7 @@ Date: 2004, June 12
 - Signatures were occasionally produced with incorrect padding in their associated bit strings, this has been fixed.
 - An encoding error introduced in 1.23 which affected generation of the KeyUsage extension has been fixed.
 
-### 2.69.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - PKCS12 keystore now handles single key/certificate files without any attributes present.
 - Support for creation of PGPKeyRings incorporating sub keys has been added.
@@ -3593,12 +3593,12 @@ Date: 2004, June 12
 
 <a id="r1rv23"></a>
 
-### 2.70.1 Version
+### Version 1.23
 
 Release: 1.23\
 Date: 2004, April 10
 
-### 2.70.2 Defects Fixed
+#### Defects Fixed
 
 - Reading a PGP Secret key file would sometimes cause a class cast exception. This has been fixed.
 - PGP will now read SecretKeys which are encrypted with the null algorithm.
@@ -3612,7 +3612,7 @@ Date: 2004, April 10
 - X509Name class will now print names with nested pairs in component sets correctly.
 - RC4 now resets correctly on doFinal.
 
-### 2.70.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - PGP V3 keys and V3 signature generation is now supported.
 - Collection classes have been added for representing files of PGP public and secret keys.
@@ -3630,12 +3630,12 @@ Date: 2004, April 10
 
 <a id="r1rv22"></a>
 
-### 2.71.1 Version
+### Version 1.22
 
 Release: 1.22\
 Date: 2004, February 7
 
-### 2.71.2 Defects Fixed
+#### Defects Fixed
 
 - Generating DSA signatures with PGP would cause a class cast exception, this has been fixed.
 - PGP Data in the 192 to 8383 byte length would sometimes be written with the wrong length header. This has been fixed.
@@ -3644,7 +3644,7 @@ Date: 2004, February 7
 - PSS signature verification would fail approximately 0.5 % of the time on correct signatures. This has been fixed.
 - Encoding of CRL Distribution Points now always works.
 
-### 2.71.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - Additional methods for getting public key information have been added to the PGP package.
 - Some support for user attributes and the image attribute tag has been added.
@@ -3653,12 +3653,12 @@ Date: 2004, February 7
 
 <a id="r1rv21"></a>
 
-### 2.72.1 Version
+### Version 1.21
 
 Release: 1.21\
 Date: 2003, December 6
 
-### 2.72.2 Defects Fixed
+#### Defects Fixed
 
 - The CertPath validator would fail for some valid CRLs. This has been fixed.
 - AES OIDS for S/MIME were still incorrect, this has been fixed.
@@ -3666,7 +3666,7 @@ Date: 2003, December 6
 - The J2ME BigInteger class would sometimes go into an infinite loop generating prime numbers. This has been fixed.
 - DERBMPString.equals() would throw a class cast exception. This has been fixed.
 
-### 2.72.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - PEMReader now handles public keys.
 - OpenPGP/BCPG should now handle partial input streams. Additional methods for reading subpackets off signatures.
@@ -3674,12 +3674,12 @@ Date: 2003, December 6
 
 <a id="r1rv20"></a>
 
-### 2.73.1 Version
+### Version 1.20
 
 Release: 1.20\
 Date: 2003, October 8
 
-### 2.73.2 Defects Fixed
+#### Defects Fixed
 
 - BigInteger toString() in J2ME/JDK1.0 now produces same output as the Sun one.
 - RSA would throw a NullPointer exception with doFinal without arguments. This has been fixed.
@@ -3689,7 +3689,7 @@ Date: 2003, October 8
 - AES OIDS were incorrect, this has been fixed.
 - In some cases BC generated private keys would not work with the JSSE. This has been fixed.
 
-### 2.73.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - Support for reading/writing OpenPGP public/private keys and OpenPGP signatures has been added.
 - Support for generating OpenPGP PBE messages and public key encrypted messages has been added.
@@ -3698,19 +3698,19 @@ Date: 2003, October 8
 
 <a id="r1rv19"></a>
 
-### 2.74.1 Version
+### Version 1.19
 
 Release: 1.19\
 Date: 2003, June 7
 
-### 2.74.2 Defects Fixed
+#### Defects Fixed
 
 - The PKCS12 store would throw an exception reading PFX files that had attributes with no values. This has been fixed.
 - RSA Private Keys would not serialise if they had PKCS12 bag attributes attached to them, this has been fixed.
 - GeneralName was encoding OtherName as explicitly tagged, rather than implicitly tagged. This has been fixed.
 - ASN1 parser would sometimes mistake an implicit null for an implicit empty sequence. This has been fixed.
 
-### 2.74.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - S/MIME and CMS now support the draft standard for AES encryption.
 - S/MIME and CMS now support setable key sizes for the standard algorithms.
@@ -3721,19 +3721,19 @@ Date: 2003, June 7
 
 <a id="r1rv18"></a>
 
-### 2.75.1 Version
+### Version 1.18
 
 Release: 1.18\
 Date: 2003, February 8
 
-### 2.75.2 Defects Fixed
+#### Defects Fixed
 
 - DESKeySpec.isParityAdjusted in the clean room JCE could go into an infinite loop. This has been fixed.
 - The SMIME API would end up throwing a class cast exception if a MimeBodyPart was passed in containing a MimeMultipart. This is now fixed.
 - ASN1InputStream could go into an infinite loop reading a truncated input stream. This has been fixed.
 - Seeding with longs in the SecureRandom for the J2ME and JDK 1.0, only used 4 bytes of the seed value. This has been fixed.
 
-### 2.75.3 Additional Features and Functionality
+#### Additional Features and Functionality
 
 - The X.509 OID for RSA is now recognised by the provider as is the OID for RSA/OAEP.
 - Default iv's for DES are now handled correctly in CMS.
@@ -3743,19 +3743,19 @@ Date: 2003, February 8
 
 <a id="r1rv17"></a>
 
-### 2.76.1 Version
+### Version 1.17
 
 Release: 1.17\
 Date: 2003, January 8
 
-### 2.76.2 Defects Fixed
+#### Defects Fixed
 
 - Reuse of an CMSSignedObject could occasionally result in a class cast exception. This has been fixed.
 - The X.509 DistributionPointName occasionally encoded incorrectly. This has been fixed.
 - BasicConstraints construction would break if an ASN.1 sequence was used with only the required parameter. This has been fixed.
 - The DERObject constructor in OriginatorIdentifierOrKey was leaving the id field as null. This has been fixed.
 
-### 2.76.3 Additional Functionality and Features
+#### Additional Functionality and Features
 
 - RC2 now supports the full range of parameter versions and effective key sizes.
 - CompressedData handling has been added to CMS/SMIME.
@@ -3766,12 +3766,12 @@ Date: 2003, January 8
 
 <a id="r1rv16"></a>
 
-### 2.77.1 Version
+### Version 1.16
 
 Release: 1.16\
 Date: 2002, November 30
 
-### 2.77.2 Defects Fixed
+#### Defects Fixed
 
 - CRLS were only working for UTC time constructed Time objects, this has been fixed.
 - KeyUsage and ReasonFlags sometimes encoded longer than necessary. This has been fixed.
@@ -3781,7 +3781,7 @@ Date: 2002, November 30
 - The X509CertSelector in the clean room CertPath API is now less likely to throw a NullPointerException at the wrong time.
 - Macs now clone correctly in the clean room JCE.
 
-### 2.77.3 Additional Functionality and Features
+#### Additional Functionality and Features
 
 - PGPCFB support has been added to the provider and the lightweight API.
 - There are now three versions of the AESEngine, all faster than before, with the largest footprint one being the fastest. The JCE AES now refers to the fastest.
@@ -3793,12 +3793,12 @@ Date: 2002, November 30
 
 <a id="r1rv15"></a>
 
-### 2.78.1 Version
+### Version 1.15
 
 Release: 1.15\
 Date: 2002, September 6
 
-### 2.78.2 Defects Fixed
+#### Defects Fixed
 
 - The base string for the oids in asn1.x509.KeyPurposeId was incorrect. This has been fixed.
 - MimeBodyParts in the SMIME Generator did not have their Content-Type properly set up after decryption. This has been fixed.
@@ -3811,7 +3811,7 @@ Date: 2002, September 6
 - If a key had PKCS9 attributes associated with it on storage they took precedence over the local alias used to add the key to the PKCS12 key store. The local name now takes precedence.
 - ReasonFlags now correctly encodes.
 
-### 2.78.3 Additional Functionality and Features
+#### Additional Functionality and Features
 
 - The PKCS12 key store now handles key bags in encryptedData bags.
 - The X509NameTokenizer now handles for '\\' and '"' characters.
@@ -3821,12 +3821,12 @@ Date: 2002, September 6
 
 <a id="r1rv14"></a>
 
-### 2.79.1 Version
+### Version 1.14
 
 Release: 1.14\
 Date: 2002, June 17
 
-### 2.79.2 Defects Fixed
+#### Defects Fixed
 
 - there was a bug in the BigInteger right shifting for \> 31 bit shifts. This has been fixed.
 - x509 name had it's equality test based on the order of the directory elements, this has been fixed.
@@ -3838,7 +3838,7 @@ Date: 2002, June 17
 - The Tiger implementation was producing results in reverse byte order for each of the 3 words making up the digest. This has been fixed.
 - asn1.x509.ExtendedKeyUsage used to throw a null pointer exception on construction. This has been fixed.
 
-### 2.79.3 Additional Functionality and Features
+#### Additional Functionality and Features
 
 - The BigInteger library now uses Montgomery numbers for modPow and is substantially faster.
 - SMIMECapabilities, and SMIMEEncryptionKeyPreference attributes added to S/MIME.
@@ -3850,19 +3850,19 @@ Date: 2002, June 17
 
 <a id="r1rv13"></a>
 
-### 2.80.1 Version
+### Version 1.13
 
 Release: 1.13\
 Date: 2002, April 19
 
-### 2.80.2 Defects Fixed
+#### Defects Fixed
 
 - The TBSCertificate object in the ASN.1 library now properly implements the Time object, rather returning UTC time.
 - The DESedeKeyGenerator now supports 112 and 168 bit key generation.
 - Certificates with the keyId set to null in the AuthorityKeyIdentifier extensions would sometimes cause the PKCS12 store to throw a NullPointer exception. This has been fixed.
 - toByteArray in the big integer class was not always producing correct results for negative numbers. This has been Fixed.
 
-### 2.80.3 Additional Functionality and Features
+#### Additional Functionality and Features
 
 - The key to keySpec handling of the secret key factories has been improved.
 - There is now a SMIME implementation and a more complete CMS implementation (see CONTRIBUTORS.md for additional details).
@@ -3871,12 +3871,12 @@ Date: 2002, April 19
 
 <a id="r1rv12"></a>
 
-### 2.81.1 Version
+### Version 1.12
 
 Release: 1.12\
 Date: 2002, February 8
 
-### 2.81.2 Defects Fixed
+#### Defects Fixed
 
 - The ASN.1 library was unable to read an empty set object. This has been fixed.
 - Returning sets of critical and non-critical extensions on X.509 certificates could result in a null pointer exception if the certificate had no extensions. This has been fixed.
@@ -3888,7 +3888,7 @@ Date: 2002, February 8
 - getExtensionValue for X.509 CRLs was returning the value of the DER-Encoded octet string not the DER-Encoded octet string as required. This has been fixed.
 - the IV algorithm parameters class would improperly throw an exception on initialisation. This has been fixed.
 
-### 2.81.3 Additional Functionality and Features
+#### Additional Functionality and Features
 
 - The AESWrap ciphers will now take IV's.
 - The DES-EDEWrap algorithm described in https://www.ietf.org/internet-drafts/draft-ietf-smime-key-wrap-01.txt is now supported.
@@ -3902,12 +3902,12 @@ Date: 2002, February 8
 
 <a id="r1rv11"></a>
 
-### 2.82.1 Version
+### Version 1.11
 
 Release: 1.11\
 Date: 2001, December 10
 
-### 2.82.2 Defects Fixed
+#### Defects Fixed
 
 - X9.23 padding of MACs now works correctly with block size aligned data.
 - Loading a corrupted "UBER" key store would occasionally cause the appearance of hanging. This has been fixed.
@@ -3922,7 +3922,7 @@ Date: 2001, December 10
 - reset on the version 3 X.509 certificate generator was not flushing the extensions. This has been fixed.
 - The NetscapeCert type bits were reversed! This has been fixed.
 
-### 2.82.3 Additional Functionality and Features
+#### Additional Functionality and Features
 
 - The lightweight API and the JCE provider now support ElGamal.
 - X509Principal, and X509Name now supports the "DC" attribute and the creation of directory names from vectors.
@@ -3932,24 +3932,24 @@ Date: 2001, December 10
 - A cut down version of the Rijndael has been added that provides the functionality required to conform the the AES. It is designed to fully support FIPS-197. A fips AES wrapper (AESWrap in the JCE, AESWrapEngine in the lightweight library has also been added).
 - Elliptic curve routines now handle uncompressed points as well as the compressed ones.
 
-### 2.82.4 Other changes
+#### Other changes
 
 - As the range of public key types supported has expanded the getPublicKey method on the SubjectPublicKeyInfo class is not always going to work. The more generic method getPublicKeyData has been added and getPublicKey now throws an IOException if there is a problem.
 
 <a id="r1rv10"></a>
 
-### 2.83.1 Version
+### Version 1.10
 
 Release: 1.10\
 Date: 2001, October 20
 
-### 2.83.2 Defects Fixed
+#### Defects Fixed
 
 - The PKCS12 Key Store now interoperates with the JDK key tool. **Note:** this does mean the the key name passed to the setKeyEntry calls has become significant.
 - The "int" constructor for DERInteger only supported ints up to 128. This has been fixed.
 - The ASN.1 input streams now handle zero-tagged zero length objects correctly.
 
-### 2.83.3 Additional Functionality and Features
+#### Additional Functionality and Features
 
 - The JCE Provider and the lightweight API now support Serpent, CAST5, and CAST6.
 - The JCE provider and the lightweight API now has an implementation of ECIES. **Note:** this is based on a draft, don't use it for anything that needs to be kept long term as it may be adjusted.
@@ -3958,12 +3958,12 @@ Date: 2001, October 20
 
 <a id="r1rv09"></a>
 
-### 2.84.1 Version
+### Version 1.09
 
 Release: 1.09\
 Date: 2001, October 6
 
-### 2.84.2 Defects Fixed
+#### Defects Fixed
 
 - failure to pass in an RC5 parameters object now results in an exception at the upper level of the JCE, rather than falling over in the lightweight library.
 - ISO10126Padding now incorporates the correct amount of random data.
@@ -3971,7 +3971,7 @@ Date: 2001, October 6
 - The Twofish engine would call System.exit if the key was too large. This has been fixed.
 - In some cases the ASN.1 library wouldn't handle implicit tagging properly. This has been fixed.
 
-### 2.84.3 Additional Functionality and Features
+#### Additional Functionality and Features
 
 - Support for RC5-64 has been added to the JCE.
 - ISO9796-2 signatures have been added to the JCE and lightweight API.
@@ -3986,19 +3986,19 @@ Date: 2001, October 6
 
 <a id="r1rv08"></a>
 
-### 2.85.1 Version
+### Version 1.08
 
 Release: 1.08\
 Date: 2001, September 9
 
-### 2.85.2 Defects Fixed
+#### Defects Fixed
 
 - It wasn't possible to specify an ordering for distinguished names in X509 certificates. This is now supported.
 - In some circumstances stream Ciphers in the JCE would cause null pointer exceptions on doFinal. This has been fixed.
 - Unpadded ciphers would sometimes buffer the last block of input, even if it could be processed. This has been fixed.
 - The netscape certificate request class wouldn't compile under JDK 1.1. This has been fixed.
 
-### 2.85.3 Additional Functionality and Features
+#### Additional Functionality and Features
 
 - ISO 9796-1 padding is now supported with RSA in the lightweight API and the JCE.
 - support classes have been added for reading and writing PKCS 12 files, including a keystore for the JCA.
@@ -4007,23 +4007,23 @@ Date: 2001, September 9
 
 <a id="r1rv07"></a>
 
-### 2.86.1 Version
+### Version 1.07
 
 Release: 1.07\
 Date: 2001, July 9
 
-### 2.86.2 Defects Fixed
+#### Defects Fixed
 
 - It turned out that the setOddParity method in the DESParameter class was indeed doing something odd but not what was intended. This is now fixed. **Note:**This will affect some PBE encryptions that were carried out with DES, equivalent PBE ciphers to the old PBE DES cipher can be accessed by prepending the work "Broken" in front of the original PBE cipher call. If you want an example of how to deal with this as a migration issue have a look in org.bouncycastle.jce.provider.JDKKeyStore lines 201-291.
 
 <a id="r1rv06"></a>
 
-### 2.87.1 Version
+### Version 1.06
 
 Release: 1.06\
 Date: 2001, July 2
 
-### 2.87.2 Defects Fixed
+#### Defects Fixed
 
 - Diffie-Hellman keys are now properly serialisable as well as encodable.
 - Three of the semi-weak keys in the DESParameters, and the DESKeySpec look up table, were incorrect. This has been fixed.
@@ -4035,41 +4035,41 @@ Date: 2001, July 2
 - RSA key generator in JCE now recognises RSAKeyGenerationParameterSpec.
 - Resetting and resusing HMacs in the lightweight and heavyweight libraries caused a NullPointer exception. This has been fixed.
 
-### 2.87.3 Additional Functionality
+#### Additional Functionality
 
 - ISO10126Padding is now recognised explicitly for block ciphers as well.
 - The Blowfish implementation is now somewhat faster.
 
 <a id="r1rv05"></a>
 
-### 2.88.1 Version
+### Version 1.05
 
 Release: 1.05\
 Date: 2001, April 17
 
-### 2.88.2 Defects Fixed
+#### Defects Fixed
 
 - The DESEDE key generator can now be used to generate 2-Key-DESEDE keys as well as 3-Key-DESEDE keys.
 - One of the weak keys in the DESParameters, and the DESKeySpec look up table, was incorrect. This has been fixed.
 - The PKCS12 generator was only generating the first 128-160 bits of the key correctly (depending on the digest used). This has been fixed.
 - The ASN.1 library was skipping explicitly tagged objects of zero length. This has been fixed.
 
-### 2.88.3 Additional Functionality
+#### Additional Functionality
 
 - There is now an org.bouncycastle.jce.netscape package which has a class in for dealing with Netscape Certificate Request objects.
 
-### 2.88.4 Additional Notes
+#### Additional Notes
 
 Concerning the PKCS12 fix: in a few cases this may cause some backward compatibility issues - if this happens to you, drop us a line at <feedback-crypto@bouncycastle.org> and we will help you get it sorted out.
 
 <a id="r1rv04"></a>
 
-### 2.89.1 Version
+### Version 1.04
 
 Release: 1.04\
 Date: 2001, March 11
 
-### 2.89.2 Defects Fixed
+#### Defects Fixed
 
 - Signatures generated by other providers that include optional null parameters in the AlgorithmIdentifier are now handled correctly by the provider.
 - The JCE 1.2.1 states that the names of algorithms associated with the JCE are case insensitive. The class that matches algorithms to names now tries to match the name given with it's equivalent in upper case, before trying to match it as given. If you write a provider and include versions of your algorithm names in uppercase only, this JCE implementation will always match a getInstance regardless of the case of the algorithm passed into the getInstance method.
@@ -4082,7 +4082,7 @@ Date: 2001, March 11
 - PBEWithSHAAndIDEA-CBC was throwing an exception on initialisation. This has been fixed.
 - The X509Name class in the asn1.x509 package wasn't initialising its local hash table when the hash table constructor was called. This has been fixed.
 
-### 2.89.3 Additional Functionality
+#### Additional Functionality
 
 - Added Elliptic Curve DSA (X9.62) - ECDSA - to provider and lightweight library.
 - Added Elliptic Curve basic Diffie-Hellman to provider and lightweight library.
@@ -4092,45 +4092,45 @@ Date: 2001, March 11
 
 <a id="r1rv03"></a>
 
-### 2.90.1 Version
+### Version 1.03
 
 Release: 1.03\
 Date: 2001, January 7
 
-### 2.90.2 Defects Fixed
+#### Defects Fixed
 
 - CFB and OFB modes when specified without padding would insist on input being block aligned. When specified without padding CFB and OFB now behave in a compatible fashion (a doFinal on a partial block will yield just the data that could be processed). In short, it provides another way of generating cipher text the same length as the plain text.
 
 <a id="r1rv02"></a>
 
-### 2.91.1 Version
+### Version 1.02
 
 Release: 1.02\
 Date: 2000, November 7
 
-### 2.91.2 Defects Fixed
+#### Defects Fixed
 
 - The RSA key pair generator occasionally produced keys 1 bit under the requested size. This is now fixed.
 
 <a id="r1rv01"></a>
 
-### 2.92.1 Version
+### Version 1.01
 
 Release: 1.01\
 Date: 2000, October 15
 
-### 2.92.2 Defects Fixed
+#### Defects Fixed
 
 - Buffered ciphers in lightweight library were not resetting correctly on a doFinal. This has been fixed.
 
 <a id="r1rv00"></a>
 
-### 2.93.1 Version
+### Version 1.00
 
 Release: 1.00\
 Date: 2000, October 13
 
-### 2.93.2 Defects Fixed
+#### Defects Fixed
 
 - JDK1.2 version now works with keytool for certificate generation.
 - Certificate toString method no longer throws a null pointer exception if a group [3] extension has not been added.
@@ -4140,13 +4140,13 @@ Date: 2000, October 13
 - The Cipher class always used the default provider even when one was specified, this has been fixed.
 - Some DES PBE algorithms did not set the parity correctly in generated keys, this has been fixed.
 
-### 2.93.3 Additional functionality
+#### Additional functionality
 
 - Argument validation is much improved.
 - An X509KeyUsage class has been added to the JCE class to make it easier to specify the KeyUsage extension on X.509 certificates.
 - The library now allows creation of version 1 certificates as well.
 
-### 3.0 Notes
+## Notes
 
 The J2ME is only supported under Windows.
 
