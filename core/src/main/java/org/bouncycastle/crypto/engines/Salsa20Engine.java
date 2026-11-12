@@ -278,6 +278,13 @@ public class Salsa20Engine
             throw new MaxBytesExceededException("2^70 byte limit per IV would be exceeded; Change IV");
         }
 
+        // output overlapping the input from ahead of it would overwrite input not yet read, so the input is first moved to where the output goes
+        if (in == out && inOff < outOff && outOff - inOff < len)
+        {
+            System.arraycopy(in, inOff, out, outOff, len);
+            inOff = outOff;
+        }
+
         int i = 0;
 
         /* The rest of a partly used block */
@@ -295,8 +302,8 @@ public class Salsa20Engine
 
         /*
          * Whole blocks, from the block boundary that leaves - or from i == len, where this does nothing - with no
-         * per-byte index arithmetic. Byte by byte and in order, as the other loops, so in and out may still overlap;
-         * and like them, the next block's keystream is generated as soon as one block is used up.
+         * per-byte index arithmetic. Byte by byte and in order, as the other loops, so in and out may still overlap
+         * (output ahead of the input having been dealt with above); and like them, the next block's keystream is generated as soon as one block is used up.
          */
         for (; len - i >= 64; i += 64)
         {

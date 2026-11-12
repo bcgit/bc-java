@@ -134,6 +134,7 @@ public class RegressionTest
         new CipherStreamTest(),
         new BlockCipherResetTest(),
         new StreamCipherResetTest(),
+        new StreamCipherOverlapTest(),
         new SICPositionTest(),
         new SM3DigestTest(),
         new PQCParametersTest(),

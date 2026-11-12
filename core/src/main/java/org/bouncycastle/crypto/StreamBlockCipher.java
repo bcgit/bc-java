@@ -42,6 +42,13 @@ public abstract class StreamBlockCipher
             throw new OutputLengthException("output buffer too short");
         }
 
+        // output overlapping the input from ahead of it would overwrite input not yet read, so the input is first moved to where the output goes
+        if (in == out && inOff < outOff && outOff - inOff < len)
+        {
+            System.arraycopy(in, inOff, out, outOff, len);
+            inOff = outOff;
+        }
+
         int inStart = inOff;
         int inEnd = inOff + len;
         int outStart = outOff;

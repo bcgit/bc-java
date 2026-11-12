@@ -145,6 +145,7 @@ public class RegressionTest
             new BlockCipherResetTest(),
             new ModeReinitTest(),
             new StreamCipherResetTest(),
+            new StreamCipherOverlapTest(),
             new SM3DigestTest(),
             new Shacal2Test(),
             new KDFCounterGeneratorTest(),

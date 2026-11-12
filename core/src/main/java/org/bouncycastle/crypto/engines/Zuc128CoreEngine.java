@@ -180,7 +180,7 @@ public class Zuc128CoreEngine
      * @return the number of bytes returned in the output buffer
      */
     public int processBytes(final byte[] in,
-                            final int inOff,
+                            int inOff,
                             final int len,
                             final byte[] out,
                             final int outOff)
@@ -197,6 +197,13 @@ public class Zuc128CoreEngine
         if ((outOff + len) > out.length)
         {
             throw new OutputLengthException("output buffer too short");
+        }
+
+        // output overlapping the input from ahead of it would overwrite input not yet read, so the input is first moved to where the output goes
+        if (in == out && inOff < outOff && outOff - inOff < len)
+        {
+            System.arraycopy(in, inOff, out, outOff, len);
+            inOff = outOff;
         }
 
         /* Loop through the input bytes */
