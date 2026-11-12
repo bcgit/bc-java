@@ -328,9 +328,10 @@ class ProvOcspRevocationChecker
                                                 null, parameters.getCertPath(), parameters.getIndex(),
                                                 CertPathValidatorException.BasicReason.REVOKED);
                                         }
-                                        throw new CertPathValidatorException(
-                                            "certificate revoked, details unknown",
-                                            null, parameters.getCertPath(), parameters.getIndex());
+                                        // "unknown": the responder does not know of the certificate (RFC 6960 sec. 2.2), which says nothing of its status, so CRLs may settle it.
+                                        throw new RecoverableCertPathValidatorException(
+                                            "certificate status unknown",
+                                            null, parameters.getCertPath(), parameters.getIndex(), true);
                                     }
                                 }
                             }
@@ -352,9 +353,10 @@ class ProvOcspRevocationChecker
                 }
                 else
                 {
-                    throw new CertPathValidatorException(
+                    // as for a responder's own failure in OcspCache: the status is undetermined, so CRLs may settle it.
+                    throw new RecoverableCertPathValidatorException(
                         "OCSP response failed: " + ocspResponse.getResponseStatus().getValue(),
-                        null, parameters.getCertPath(), parameters.getIndex());
+                        null, parameters.getCertPath(), parameters.getIndex(), true);
                 }
             }
             else

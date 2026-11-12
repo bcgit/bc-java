@@ -17,6 +17,7 @@ Date: 2026, TBD
 
 - The BERBitString and BEROctetString constructors taking a segment limit accepted one too small to carry any data - below 2 for a BIT STRING, below 1 for an OCTET STRING - and encoding such an object then ran until memory was exhausted or failed with an unchecked exception. Such a limit is now rejected with an IllegalArgumentException.
 - The Gradle-built bcjmail jar carried an unused org.bouncycastle.mail.smime.handlers.HandlerUtil class, which refers to java.awt.datatransfer, a package the bcjmail module descriptor does not require. It is no longer included, as it never was in the Ant-built jar.
+- The PKIX CertPathValidator did not fall back to CRLs when OCSP left a certificate's status undetermined: a response status other than successful, from a responder or supplied by the caller, or a certificate status of unknown, failed validation outright. Each now falls back to CRLs unless NO_FALLBACK is set, and if they do not settle the status either the OCSP failure is reported with the CRL failure suppressed (github bc-lts-java #12).
 
 ### 2.1.3 Additional Features and Functionality
 

@@ -219,9 +219,10 @@ class OcspCache
             }
             else
             {
-                throw new CertPathValidatorException(
+                // malformedRequest, internalError, tryLater, sigRequired and unauthorized (RFC 6960 sec. 4.2.1) all leave the status undetermined, so CRLs may settle it.
+                throw new RecoverableCertPathValidatorException(
                     "OCSP responder failed: " + response.getResponseStatus().getValue(),
-                    null, parameters.getCertPath(), parameters.getIndex());
+                    null, parameters.getCertPath(), parameters.getIndex(), true);
             }
         }
         catch (IOException e)
@@ -229,7 +230,7 @@ class OcspCache
             // an unreachable or failing responder must surface as recoverable so
             // ProvRevocationChecker can fall back to CRL-based checking.
             throw new RecoverableCertPathValidatorException("unable to get OCSP response from " + ocspUrl + ": " + e.getMessage(),
-                     e, parameters.getCertPath(), parameters.getIndex());
+                     e, parameters.getCertPath(), parameters.getIndex(), true);
         }
     }
 

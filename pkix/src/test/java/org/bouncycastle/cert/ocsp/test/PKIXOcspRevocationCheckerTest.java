@@ -8,8 +8,12 @@ import java.net.Socket;
 import java.security.KeyPair;
 import java.security.Security;
 import java.security.cert.CertPath;
+import java.security.cert.CertStore;
+import java.security.cert.CollectionCertStoreParameters;
+import java.security.cert.X509CRL;
 import java.security.cert.CertPathValidator;
 import java.security.cert.CertPathValidatorException;
+import java.security.cert.CertPathValidatorException.BasicReason;
 import java.security.cert.CertificateFactory;
 import java.security.cert.PKIXParameters;
 import java.security.cert.PKIXRevocationChecker;
@@ -38,6 +42,9 @@ import org.bouncycastle.cert.ocsp.CertificateStatus;
 import org.bouncycastle.cert.ocsp.OCSPRespBuilder;
 import org.bouncycastle.cert.ocsp.RespID;
 import org.bouncycastle.cert.ocsp.RevokedStatus;
+import org.bouncycastle.cert.ocsp.UnknownStatus;
+import org.bouncycastle.cert.jcajce.JcaX509CRLConverter;
+import org.bouncycastle.cert.jcajce.JcaX509v2CRLBuilder;
 import org.bouncycastle.cert.ocsp.jcajce.JcaBasicOCSPRespBuilder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
@@ -215,6 +222,185 @@ public class PKIXOcspRevocationCheckerTest
         responses = new HashMap();
         responses.put(ee, getOcspResponse(ocspKp, digCalcProv, ca, ee, new Date(now.getTime() - 365 * day), new Date(now.getTime() + day)));
         validate(certPath, trust, responses, ocsp, true);
+
+        checkUndeterminedStatusFallsBackToCRLs(certPath, trust, ocspKp, digCalcProv, caKp, ca, ee, ocsp);
+        checkFetchedFailureFallsBackToCRLs(caKp, ca, trust, ocsp);
+    }
+
+    private static final int[] FAILED_STATUSES = new int[]{ OCSPRespBuilder.MALFORMED_REQUEST, OCSPRespBuilder.INTERNAL_ERROR,
+        OCSPRespBuilder.TRY_LATER, OCSPRespBuilder.SIG_REQUIRED, OCSPRespBuilder.UNAUTHORIZED };
+
+    /**
+     * A response that does not determine the certificate's status - any responseStatus other than
+     * successful, or a certificate status of unknown - leaves CRLs to settle it (github bc-lts-java
+     * #12): a CRL that clears the certificate validates it, one that revokes it is reported as a
+     * revocation, and with no CRL, or with NO_FALLBACK, the OCSP failure is what is reported.
+     */
+    private void checkUndeterminedStatusFallsBackToCRLs(CertPath certPath, Set trust, KeyPair ocspKp, DigestCalculatorProvider digCalcProv,
+        KeyPair caKp, X509Certificate ca, X509Certificate ee, X509Certificate ocsp)
+        throws Exception
+    {
+        X509CRL cleanCrl = makeCrl(caKp, ca, null);
+        X509CRL revokingCrl = makeCrl(caKp, ca, ee);
+
+        for (int i = 0; i <= FAILED_STATUSES.length; i++)
+        {
+            byte[] response;
+            String message;
+            if (i < FAILED_STATUSES.length)
+            {
+                response = new OCSPRespBuilder().build(FAILED_STATUSES[i], null).getEncoded();
+                message = "OCSP response failed: " + FAILED_STATUSES[i];
+            }
+            else
+            {
+                response = getUnknownOcspResponse(ocspKp, digCalcProv, ca, ee);
+                message = "certificate status unknown";
+            }
+            Map responses = new HashMap();
+            responses.put(ee, response);
+
+            validate(certPath, trust, responses, ocsp, cleanCrl, false);
+
+            try
+            {
+                validate(certPath, trust, responses, ocsp, revokingCrl, false);
+                fail(message + ": revoking CRL not consulted");
+            }
+            catch (CertPathValidatorException e)
+            {
+                isTrue(message + ": expected a revocation, got: " + e.getMessage(), e.getReason() == BasicReason.REVOKED);
+            }
+
+            try
+            {
+                validate(certPath, trust, responses, ocsp, null, false);
+                fail(message + ": accepted with no CRL");
+            }
+            catch (CertPathValidatorException e)
+            {
+                isEquals(message, e.getMessage());
+                isEquals(0, e.getIndex());
+                isEquals(1, e.getSuppressed().length);
+                isTrue(message + ": suppressed: " + e.getSuppressed()[0].getMessage(), e.getSuppressed()[0].getMessage().startsWith("No CRLs found for issuer"));
+            }
+
+            try
+            {
+                validate(certPath, trust, responses, ocsp, cleanCrl, true);
+                fail(message + ": fell back despite NO_FALLBACK");
+            }
+            catch (CertPathValidatorException e)
+            {
+                isEquals(message, e.getMessage());
+                isEquals(0, e.getSuppressed().length);
+            }
+        }
+    }
+
+    /**
+     * The same for a responder's own reply: a non-successful responseStatus falls back to CRLs.
+     */
+    private void checkFetchedFailureFallsBackToCRLs(KeyPair caKp, X509Certificate ca, Set trust, X509Certificate ocsp)
+        throws Exception
+    {
+        final ServerSocket server = new ServerSocket(0, 5, InetAddress.getByName("127.0.0.1"));
+        try
+        {
+            String uri = "http://127.0.0.1:" + server.getLocalPort() + "/";
+            X509Certificate ee = OCSPTestUtil.makeCertificateWithOCSP(OCSPTestUtil.makeKeyPair(), "CN=Fetched Failure EE", caKp, ca, false, uri);
+            X509CRL cleanCrl = makeCrl(caKp, ca, null);
+
+            List list = new ArrayList();
+            list.add(ee);
+            list.add(ca);
+            CertPath certPath = CertificateFactory.getInstance("X.509", BC).generateCertPath(list);
+
+            String prevOcspEnable = Security.getProperty("ocsp.enable");
+            Security.setProperty("ocsp.enable", "true");
+            try
+            {
+                for (int i = 0; i != FAILED_STATUSES.length; i++)
+                {
+                    byte[] body = new OCSPRespBuilder().build(FAILED_STATUSES[i], null).getEncoded();
+
+                    Thread responder = respondOnce(server, body);
+                    validate(certPath, trust, null, ocsp, cleanCrl, false);
+                    responder.join(10000);
+
+                    responder = respondOnce(server, body);
+                    try
+                    {
+                        validate(certPath, trust, null, ocsp, null, false);
+                        fail("responder status " + FAILED_STATUSES[i] + " accepted with no CRL");
+                    }
+                    catch (CertPathValidatorException e)
+                    {
+                        isEquals("OCSP responder failed: " + FAILED_STATUSES[i], e.getMessage());
+                        isEquals(1, e.getSuppressed().length);
+                    }
+                    responder.join(10000);
+                }
+            }
+            finally
+            {
+                Security.setProperty("ocsp.enable", prevOcspEnable == null ? "false" : prevOcspEnable);
+            }
+        }
+        finally
+        {
+            server.close();
+        }
+    }
+
+    private static X509CRL makeCrl(KeyPair caKp, X509Certificate ca, X509Certificate revoked)
+        throws Exception
+    {
+        Date now = new Date();
+        JcaX509v2CRLBuilder crlGen = new JcaX509v2CRLBuilder(ca, new Date(now.getTime() - 60 * 1000L));
+        crlGen.setNextUpdate(new Date(now.getTime() + 24 * 60 * 60 * 1000L));
+        if (revoked != null)
+        {
+            crlGen.addCRLEntry(revoked.getSerialNumber(), new Date(now.getTime() - 60 * 1000L), CRLReason.keyCompromise);
+        }
+        return new JcaX509CRLConverter().setProvider(BC).getCRL(
+            crlGen.build(new JcaContentSignerBuilder("SHA256withRSA").setProvider(BC).build(caKp.getPrivate())));
+    }
+
+    private void validate(CertPath certPath, Set trust, Map responses, X509Certificate ocspCert, X509CRL crl, boolean noFallback)
+        throws Exception
+    {
+        CertPathValidator cpv = CertPathValidator.getInstance("PKIX", BC);
+        PKIXRevocationChecker rv = (PKIXRevocationChecker)cpv.getRevocationChecker();
+        if (responses != null)
+        {
+            rv.setOcspResponses(responses);
+        }
+        rv.setOcspResponderCert(ocspCert);
+        Set options = new HashSet();
+        options.add(PKIXRevocationChecker.Option.ONLY_END_ENTITY);
+        if (noFallback)
+        {
+            options.add(PKIXRevocationChecker.Option.NO_FALLBACK);
+        }
+        rv.setOptions(options);
+        PKIXParameters param = new PKIXParameters(trust);
+        if (crl != null)
+        {
+            param.addCertStore(CertStore.getInstance("Collection", new CollectionCertStoreParameters(Collections.singleton(crl)), BC));
+        }
+        param.addCertPathChecker(rv);
+        cpv.validate(certPath, param);
+    }
+
+    private byte[] getUnknownOcspResponse(KeyPair ocspKp, DigestCalculatorProvider digCalcProv, X509Certificate issuerCert, X509Certificate cert)
+        throws Exception
+    {
+        BasicOCSPRespBuilder respGen = new JcaBasicOCSPRespBuilder(ocspKp.getPublic(), digCalcProv.get(RespID.HASH_SHA1));
+        CertificateID eeID = new CertificateID(digCalcProv.get(CertificateID.HASH_SHA1), new JcaX509CertificateHolder(issuerCert), cert.getSerialNumber());
+        respGen.addResponse(eeID, new UnknownStatus());
+        BasicOCSPResp resp = respGen.build(new JcaContentSignerBuilder("SHA1withRSA").setProvider(BC).build(ocspKp.getPrivate()), null, new Date());
+        return new OCSPRespBuilder().build(OCSPRespBuilder.SUCCESSFUL, resp).getEncoded();
     }
 
     /**

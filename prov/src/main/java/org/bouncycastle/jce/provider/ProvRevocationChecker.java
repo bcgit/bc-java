@@ -157,13 +157,30 @@ class ProvRevocationChecker
             }
             catch (RecoverableCertPathValidatorException e)
             {
-                if (!hasOption(Option.NO_FALLBACK))
+                if (hasOption(Option.NO_FALLBACK))
+                {
+                    throw e;
+                }
+                if (!e.isReportedOverFallback())
                 {
                     checkCRLs(certificate);
                 }
                 else
                 {
-                    throw e;
+                    try
+                    {
+                        checkCRLs(certificate);
+                    }
+                    catch (CertPathValidatorException x)
+                    {
+                        // a revocation is an answer; anything else leaves the OCSP failure as what went wrong
+                        if (x.getReason() == CertPathValidatorException.BasicReason.REVOKED)
+                        {
+                            throw x;
+                        }
+                        e.addSuppressed(x);
+                        throw e;
+                    }
                 }
             }
         }
