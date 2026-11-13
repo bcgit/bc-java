@@ -411,7 +411,7 @@ public class SmartCardMessageSigningTest
 
         // Upload keys to card
         OpenPGPKey.OpenPGPSecretKey signingKey = softwareKey.getSecretKey(softwareKey.getSigningKeys().get(0));
-        card.uploadSigningKey(signingKey.unlock(), adminPin);
+        card.uploadSigningKey(signingKey.unlock(), k -> adminPin);
         KeyPassphraseProvider userPinProvider = new KeyPassphraseProvider.DefaultKeyPassphraseProvider()
                 .addPassphrase(externalKey, properties.getUserPin());
 

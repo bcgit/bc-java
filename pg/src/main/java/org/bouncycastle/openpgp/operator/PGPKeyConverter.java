@@ -87,7 +87,8 @@ public abstract class PGPKeyConverter
         if (null == algorithmParameters)
         {
             if (curveID.equals(SECObjectIdentifiers.secp256r1) || curveID.equals(TeleTrusTObjectIdentifiers.brainpoolP256r1)
-                || curveID.equals(CryptlibObjectIdentifiers.curvey25519) || curveID.equals(EdECObjectIdentifiers.id_X25519))
+                || curveID.equals(CryptlibObjectIdentifiers.curvey25519) || curveID.equals(EdECObjectIdentifiers.id_X25519)
+                || curveID.equals(SECObjectIdentifiers.secp256k1))
             {
                 return new PGPKdfParameters(HashAlgorithmTags.SHA256, SymmetricKeyAlgorithmTags.AES_128);
             }

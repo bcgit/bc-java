@@ -221,7 +221,8 @@ public class OpenPGPSmartCardBackendTest
     }
 
     private void testNistP521ECDHKeyConversion(OpenPGPSmartCardBackend<?> backend)
-            throws PGPException {
+            throws PGPException
+    {
         // -DM System.out.println
         System.out.println("Test conversion of Nist-P521 ECDH key");
         OpenPGPKey k = api.generateKey(4)
@@ -232,7 +233,8 @@ public class OpenPGPSmartCardBackendTest
     }
 
     private void testConversionOfKey(OpenPGPSmartCardBackend<?> backend, PGPPublicKey originalPGPPublicKey)
-            throws PGPException {
+            throws PGPException
+    {
         BCPGKey originalBCPGKey = originalPGPPublicKey.getPublicKeyPacket().getKey();
         PublicKey convertedPublicKeyValues = backend.convertPublicKey(originalPGPPublicKey);
         PGPPublicKey convertedPGPPublicKey = backend.convertPublicKey(convertedPublicKeyValues, originalPGPPublicKey.getFingerprint(), originalPGPPublicKey.getCreationTime());

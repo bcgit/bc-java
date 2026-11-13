@@ -5,6 +5,14 @@ import com.yubico.yubikit.core.keys.PrivateKeyValues;
 import com.yubico.yubikit.core.keys.PublicKeyValues;
 import com.yubico.yubikit.desktop.YubiKitManager;
 import com.yubico.yubikit.management.DeviceInfo;
+import com.yubico.yubikit.openpgp.OpenPgpCurve;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.cryptlib.CryptlibObjectIdentifiers;
+import org.bouncycastle.asn1.edec.EdECObjectIdentifiers;
+import org.bouncycastle.asn1.gnu.GNUObjectIdentifiers;
+import org.bouncycastle.asn1.sec.SECObjectIdentifiers;
+import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
+import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.bcpg.PublicKeyUtils;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.openpgp.PGPException;
@@ -232,4 +240,56 @@ public class YubikeyOpenPGPSmartCardBackend
         return convertPublicKey(pk, storedFingerprint, creationTime);
     }
 
+    public PGPPublicKey convertPublicKey(PublicKeyValues pkVals,
+                                 int keyVersion,
+                                 int publicKeyAlgorithmTag,
+                                 Date creationTime,
+                                 boolean subkey)
+            throws NoSuchAlgorithmException, InvalidKeySpecException, PGPException
+    {
+        PublicKey pk = pkVals.toPublicKey();
+        return convertPublicKey(pk, keyVersion, publicKeyAlgorithmTag, creationTime, subkey);
+    }
+
+    OpenPgpCurve curveFromOID(ASN1ObjectIdentifier oid)
+    {
+        // Again, since OpenPgpCurve members are private or package-private, we need to manually map known entries.
+        if (oid.equals(X9ObjectIdentifiers.prime256v1) || oid.equals(SECObjectIdentifiers.secp256r1))
+        {
+            return OpenPgpCurve.SECP256R1;
+        }
+        if (oid.equals(SECObjectIdentifiers.secp384r1))
+        {
+            return OpenPgpCurve.SECP384R1;
+        }
+        if (oid.equals(SECObjectIdentifiers.secp521r1))
+        {
+            return OpenPgpCurve.SECP521R1;
+        }
+        if (oid.equals(SECObjectIdentifiers.secp256k1))
+        {
+            return OpenPgpCurve.SECP256K1;
+        }
+        if (oid.equals(TeleTrusTObjectIdentifiers.brainpoolP256r1))
+        {
+            return OpenPgpCurve.BrainpoolP256R1;
+        }
+        if (oid.equals(TeleTrusTObjectIdentifiers.brainpoolP384r1))
+        {
+            return OpenPgpCurve.BrainpoolP384R1;
+        }
+        if (oid.equals(TeleTrusTObjectIdentifiers.brainpoolP512r1))
+        {
+            return OpenPgpCurve.BrainpoolP512R1;
+        }
+        if (oid.equals(GNUObjectIdentifiers.Ed25519) || oid.equals(EdECObjectIdentifiers.id_Ed25519))
+        {
+            return OpenPgpCurve.Ed25519;
+        }
+        if (oid.equals(CryptlibObjectIdentifiers.curvey25519) || oid.equals(EdECObjectIdentifiers.id_X25519))
+        {
+            return OpenPgpCurve.X25519;
+        }
+        throw new IllegalArgumentException("Unknown OID: " + oid);
+    }
 }

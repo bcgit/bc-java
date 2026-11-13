@@ -7,9 +7,12 @@ import org.bouncycastle.asn1.gnu.GNUObjectIdentifiers;
 import org.bouncycastle.bcpg.BCPGKey;
 import org.bouncycastle.bcpg.ECPublicBCPGKey;
 import org.bouncycastle.bcpg.Ed25519PublicBCPGKey;
+import org.bouncycastle.bcpg.Ed448PublicBCPGKey;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.X25519PublicBCPGKey;
+import org.bouncycastle.bcpg.X448PublicBCPGKey;
 import org.bouncycastle.openpgp.api.OpenPGPCertificate;
+import org.bouncycastle.openpgp.smartcard.OpenPGPHardwareKey;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,6 +28,34 @@ public class SupportedAlgorithms
     public SupportedAlgorithms(List<Algorithm> algorithms)
     {
         this.algorithms.addAll(algorithms);
+    }
+
+    public SupportedAlgorithms filter(byte keyRef)
+    {
+        List<Algorithm> filtered = new ArrayList<>();
+        for (Algorithm algorithm : algorithms)
+        {
+            if (algorithm.keyRef == keyRef)
+            {
+                filtered.add(algorithm);
+            }
+        }
+        return new SupportedAlgorithms(filtered);
+    }
+
+    public SupportedAlgorithms signingKey()
+    {
+        return filter(OpenPGPHardwareKey.KEY_REF_SIGNATURE);
+    }
+
+    public SupportedAlgorithms decryptionKey()
+    {
+        return filter(OpenPGPHardwareKey.KEY_REF_DECRYPTION);
+    }
+
+    public SupportedAlgorithms authenticationKey()
+    {
+        return filter(OpenPGPHardwareKey.KEY_REF_AUTHENTICATION);
     }
 
     public List<Algorithm> getAlgorithms()
@@ -215,6 +246,14 @@ public class SupportedAlgorithms
             else if (pubKey instanceof Ed25519PublicBCPGKey)
             {
                 return EdECObjectIdentifiers.id_Ed25519;
+            }
+            else if (pubKey instanceof X448PublicBCPGKey)
+            {
+                return EdECObjectIdentifiers.id_X448;
+            }
+            else if (pubKey instanceof Ed448PublicBCPGKey)
+            {
+                return EdECObjectIdentifiers.id_Ed448;
             }
             return null;
         }
