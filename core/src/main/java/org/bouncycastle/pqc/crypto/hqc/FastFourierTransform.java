@@ -194,22 +194,27 @@ class FastFourierTransform
             return;
         }
 
-        if (betaSet[noOfBetas - 1] != 1)
+        int betaM = betaSet[noOfBetas - 1];
+        if (betaM != 1)
         {
             int betaMPow = 1;
             int x = 1 << noCoeffsPlus;
             for (int i = 1; i < x; i++)
             {
-                betaMPow = GF.mul(betaMPow, betaSet[noOfBetas - 1]);
+                betaMPow = GF.mul(betaMPow, betaM);
                 func[i] = GF.mul(betaMPow, func[i]);
             }
         }
 
         computeRadix(fx0, fx1, func, noCoeffsPlus, fft);
 
+        // TODO betaSet derives only from the FFT basis (public, fixed by m and fft), so the gamma,
+        // delta and gamma-sum sets of every recursion level could be precomputed once into static
+        // tables.
+        int betaMInv = GF.inv(betaM);
         for (int i = 0; i < noOfBetas - 1; i++)
         {
-            int gamma_i = GF.div(betaSet[i], betaSet[noOfBetas - 1]);
+            int gamma_i = GF.mul(betaSet[i], betaMInv);
             gammaSet[i] = gamma_i;
             deltaSet[i] = GF.sqr(gamma_i) ^ gamma_i;
         }

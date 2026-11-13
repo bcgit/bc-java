@@ -211,26 +211,28 @@ class ReedSolomon
         int[] eSet = new int[delta];
         for (int i = 0; i < delta; i++)
         {
-            int inv = GF.inv(betaSet[i]);
+            // With b = betaSet[i], the error value is Z(1/b) / prod_{j != i} (1 + betaSet[j]/b),
+            // where Z(x) = 1 + sum_j zx[j] x^j. Scaling both by b^delta leaves a single inversion:
+            // num = b^delta + sum_j zx[j] b^(delta-j), den = b * prod_{j != i} (b + betaSet[j]).
+            int b = betaSet[i];
 
-            int temp1 = 0;
-            for (int j = delta; j > 0; --j)
+            // Two independent chains in one loop: Horner over zx[1..delta] (order matters), and the
+            // product over betaSet[j] for j != i (order doesn't), with its index offset by one to
+            // match.
+            int num = 1, den = b;
+            for (int j = 1; j <= delta; ++j)
             {
-                temp1 = GF.mul(temp1 ^ zx[j], inv);
-            }
-            temp1 ^= 1;
+                num = GF.mul(num, b) ^ zx[j];
 
-            int temp2 = 1;
-            for (int j = 0; j < delta; ++j)
-            {
-                if (i != j)
+                if (i != j - 1)
                 {
-                    temp2 ^= GF.mul3(temp2, inv, betaSet[j]);
+                    den = GF.mul(den, b ^ betaSet[j - 1]);
                 }
             }
 
+            // Unused slots (b = 0) give den = 0 and so a zero quotient, which the mask clears anyway.
             int mask1 = (i - deltaCount1) >> 31;
-            eSet[i] = mask1 & GF.div(temp1, temp2);
+            eSet[i] = mask1 & GF.div(num, den);
         }
 
         int deltaCount2 = 0;
