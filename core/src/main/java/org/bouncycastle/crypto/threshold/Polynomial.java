@@ -10,7 +10,7 @@ package org.bouncycastle.crypto.threshold;
  * an operand leaks it through cache-timing, and a loop whose trip count is an operand's bit length
  * leaks it through timing.
  */
-class Polynomial
+final class Polynomial
 {
     private final int irreducible;
 
@@ -29,7 +29,7 @@ class Polynomial
         }
     }
 
-    protected byte gfMul(int x, int y)
+    byte gfMul(int x, int y)
     {
         int result = 0;
 
@@ -53,7 +53,7 @@ class Polynomial
      * by Fermat, and maps 0 to 0, so a zero needs no branch of its own), or a share/coefficient index - so
      * branching on its bits is safe. The base may be secret, and reaches only gfMul.
      */
-    protected byte gfPow(int n, byte k)
+    byte gfPow(int n, byte k)
     {
         int result = 1;
         for (int i = 0; i < 8; i++)
@@ -67,7 +67,7 @@ class Polynomial
         return (byte)result;
     }
 
-    public byte[] gfVecMul(byte[] xs, byte[][] yss)
+    byte[] gfVecMul(byte[] xs, byte[][] yss)
     {
         byte[] result = new byte[yss[0].length];
         int sum;
