@@ -85,8 +85,9 @@ public class ShamirSecretSplitter
         }
         for (i = 0; i < p.length; i++)
         {
-            secretShares[i] = new ShamirSplitSecretShare(poly.gfVecMul(p[i], sr), i + 1);
+            secretShares[i] = createShare(p[i], sr, i + 1);
         }
+        clear(sr);
         return new ShamirSplitSecret(poly, secretShares);
     }
 
@@ -122,7 +123,13 @@ public class ShamirSecretSplitter
         }
         for (i = 1; i < p.length; i++)
         {
-            secretShares[i] = new ShamirSplitSecretShare(poly.gfVecMul(p[i], sr), i + 1);
+            secretShares[i] = createShare(p[i], sr, i + 1);
+        }
+        clear(sr);
+        // only where the encoding is known to be a copy: another SecretShare may hand out its own array
+        if (s instanceof ShamirSplitSecretShare)
+        {
+            Arrays.clear(ss0);
         }
 
         return new ShamirSplitSecret(poly, secretShares);
@@ -147,9 +154,28 @@ public class ShamirSecretSplitter
         }
         for (i = 0; i < p.length; i++)
         {
-            secretShares[i] = new ShamirSplitSecretShare(poly.gfVecMul(p[i], sr), i + 1);
+            secretShares[i] = createShare(p[i], sr, i + 1);
         }
+        clear(sr);
         return new ShamirSplitSecret(poly, secretShares);
+    }
+
+    // a share holds its own copy, so the bytes it was made from are cleared once it has them
+    private ShamirSplitSecretShare createShare(byte[] p, byte[][] sr, int r)
+    {
+        byte[] share = poly.gfVecMul(p, sr);
+        ShamirSplitSecretShare secretShare = new ShamirSplitSecretShare(share, r);
+        Arrays.clear(share);
+        return secretShare;
+    }
+
+    // the coefficient rows: the secret, or the share being split around, and the random rows that would recover it
+    private static void clear(byte[][] sr)
+    {
+        for (int i = 0; i != sr.length; i++)
+        {
+            Arrays.clear(sr[i]);
+        }
     }
 
     private byte[][] initP(int m, int n)

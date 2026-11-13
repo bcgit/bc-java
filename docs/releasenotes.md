@@ -22,6 +22,9 @@ Date: 2026, TBD
 
 #### Additional Features and Functionality
 
+- ShamirSplitSecret now inverts once per share in getSecret() and once per call in divide(), rather than once per pair of shares and once per byte, making division about 17 to 20 times faster and recovery 1.3 times (3 shares) to 8 times (128 shares) faster. Results are unchanged (github #2558).
+- The Shamir secret splitting classes now clear the temporary copies of shares and polynomial coefficients they make when splitting, recovering, multiplying and dividing.
+
 #### Additional Notes
 
 <a id="r1rv87"></a>

@@ -4,7 +4,7 @@ package org.bouncycastle.crypto.threshold;
  * GF(256) arithmetic for Shamir secret splitting, over the AES (0x11b) or RSA (0x11d) reduction
  * polynomial.
  * <p>
- * Every operand reaching gfMul / gfDiv is secret: the secret being split, the random polynomial
+ * Every operand reaching gfMul is secret: the secret being split, the random polynomial
  * coefficients, the share bytes, and the Lagrange products derived from them. Both operations are
  * therefore computed rather than looked up, and neither branches on an operand - a table indexed by
  * an operand leaks it through cache-timing, and a loop whose trip count is an operand's bit length
@@ -48,15 +48,9 @@ class Polynomial
         return (byte)result;
     }
 
-    protected byte gfDiv(int x, int y)
-    {
-        // y^254 is y's multiplicative inverse (Fermat) and maps 0 to 0, so a zero divisor needs no
-        // branch of its own - the result is 0, as it is for a zero dividend.
-        return gfMul(x, gfPow(y, (byte)254) & 0xff);
-    }
-
     /**
-     * The exponent is always public - the fixed 254 of gfDiv, or a share/coefficient index - so
+     * The exponent is always public - the fixed 254 of an inversion (n^254 is n's multiplicative inverse,
+     * by Fermat, and maps 0 to 0, so a zero needs no branch of its own), or a share/coefficient index - so
      * branching on its bits is safe. The base may be secret, and reaches only gfMul.
      */
     protected byte gfPow(int n, byte k)

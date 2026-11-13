@@ -2,6 +2,8 @@ package org.bouncycastle.crypto.threshold;
 
 import java.io.IOException;
 
+import org.bouncycastle.util.Arrays;
+
 public class ShamirSplitSecret
     implements SplitSecret
 {
@@ -61,6 +63,7 @@ public class ShamirSplitSecret
                 ss[j] = poly.gfMul(ss[j] & 0xFF, mul);
             }
             secretShares[i] = new ShamirSplitSecretShare(ss, i + 1);
+            Arrays.clear(ss);
         }
         return this;
     }
@@ -68,7 +71,7 @@ public class ShamirSplitSecret
     public ShamirSplitSecret divide(int div)
         throws IOException
     {
-        // gfDiv/gfMul reduce the operand modulo 256, so any divisor with (div & 0xFF) == 0 - zero, or
+        // gfPow/gfMul reduce the operand modulo 256, so any divisor with (div & 0xFF) == 0 - zero, or
         // a multiple of 256 - is the field's zero element. Division by zero is undefined, and every
         // share is rewritten in place, so accepting it would silently overwrite the whole set with
         // zeroes. The divisor is a caller parameter rather than secret material, so rejecting it up
@@ -78,15 +81,19 @@ public class ShamirSplitSecret
             throw new IllegalArgumentException("Invalid input: the divisor cannot be zero.");
         }
 
+        // one inversion for the whole set, rather than one for every byte of every share
+        int inverse = poly.gfPow(div, (byte)254) & 0xFF;
+
         byte[] ss;
         for (int i = 0; i < secretShares.length; ++i)
         {
             ss = secretShares[i].getEncoded();
             for (int j = 0; j < ss.length; ++j)
             {
-                ss[j] = poly.gfDiv(ss[j] & 0xFF, div);
+                ss[j] = poly.gfMul(ss[j] & 0xFF, inverse);
             }
             secretShares[i] = new ShamirSplitSecretShare(ss, i + 1);
+            Arrays.clear(ss);
         }
         return this;
     }
@@ -101,29 +108,38 @@ public class ShamirSplitSecret
             throw new IllegalArgumentException("Invalid input: at least one secret share is required.");
         }
         byte[] r = new byte[n];
-        byte tmp;
-        byte[] products = new byte[n - 1];
-        byte[][] splits = new byte[n][secretShares[0].getEncoded().length];
-        for (int i = 0; i < n; i++)
+        byte[][] splits = new byte[n][];
+        try
         {
-            splits[i] = secretShares[i].getEncoded();
-            int prdCount = 0;
-            for (int j = 0; j < n; j++)
+            for (int i = 0; i < n; i++)
             {
-                if (j != i)
+                splits[i] = secretShares[i].getEncoded();
+
+                // the Lagrange coefficient is the product over j != i of x_j / (x_i - x_j): the numerators and
+                // denominators are multiplied up separately and inverted once, as x^254 distributes over a
+                // product, zero factors included.
+                int numerator = 1;
+                int denominator = 1;
+                for (int j = 0; j < n; j++)
                 {
-                    products[prdCount++] = poly.gfDiv(secretShares[j].r, secretShares[i].r ^ secretShares[j].r);
+                    if (j != i)
+                    {
+                        numerator = poly.gfMul(numerator, secretShares[j].r & 0xff) & 0xff;
+                        denominator = poly.gfMul(denominator, (secretShares[i].r ^ secretShares[j].r) & 0xff) & 0xff;
+                    }
                 }
+                r[i] = poly.gfMul(numerator, poly.gfPow(denominator, (byte)254) & 0xff);
             }
 
-            tmp = 1;
-            for (int prdI = 0; prdI != products.length; prdI++)
-            {
-                tmp = poly.gfMul(tmp & 0xff, products[prdI] & 0xff);
-            }
-            r[i] = tmp;
+            return poly.gfVecMul(r, splits);
         }
-
-        return poly.gfVecMul(r, splits);
+        finally
+        {
+            // the copies of the shares taken above
+            for (int i = 0; i < n; i++)
+            {
+                Arrays.clear(splits[i]);
+            }
+        }
     }
 }
