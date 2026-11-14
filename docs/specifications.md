@@ -1238,7 +1238,7 @@ The second, **Keystore.BouncyCastle**, or **Keystore.UBER** will only work with 
 
 In the first case, the keys are encrypted with 3-Key-TripleDES.
 
-The third is a PKCS12 compatible keystore. PKCS12 provides a slightly different situation from the regular key store, the keystore password is currently the only password used for storing keys. Otherwise it supports all the functionality required for it to be used with the keytool. In some situations other libraries always expect to be dealing with Sun certificates, if this is the case use PKCS12-DEF, and the certificates produced by the key store will be made using the default provider. In the default case PKCS12 uses 3DES for key protection and 40 bit RC2 for protecting the certificates. It is also possible to use 3DES for both by using PKCS12-3DES-3DES or PKCS12-DEF-3DES-3DES as the KeyStore type.
+The third is a PKCS12 compatible keystore. PKCS12 provides a slightly different situation from the regular key store, the keystore password is currently the only password used for storing keys. Otherwise it supports all the functionality required for it to be used with the keytool. In some situations other libraries always expect to be dealing with Sun certificates, if this is the case use PKCS12-DEF, and the certificates produced by the key store will be made using the default provider. In the default case PKCS12 uses 3DES for protecting private and secret keys and 40 bit RC2 for protecting the certificates. It is also possible to use 3DES for both by using PKCS12-3DES-3DES or PKCS12-DEF-3DES-3DES as the KeyStore type.
 
 There is an example program that produces PKCS12 files suitable for loading into browsers. It is in the package org.bouncycastle.jce.examples.
 

@@ -18,6 +18,9 @@ import javax.crypto.spec.PBEParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.asn1.ASN1Encoding;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
+import org.bouncycastle.asn1.ASN1OctetString;
+import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.asn1.DERBMPString;
 import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.DEROctetString;
@@ -27,7 +30,9 @@ import org.bouncycastle.asn1.pkcs.AuthenticatedSafe;
 import org.bouncycastle.asn1.pkcs.ContentInfo;
 import org.bouncycastle.asn1.pkcs.EncryptedData;
 import org.bouncycastle.asn1.pkcs.EncryptedPrivateKeyInfo;
+import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.MacData;
+import org.bouncycastle.asn1.pkcs.PBES2Parameters;
 import org.bouncycastle.asn1.pkcs.PKCS12PBEParams;
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.pkcs.Pfx;
@@ -79,6 +84,7 @@ public class PKCS12SecretKeyStoreTest
         roundTripWithKnownOidAsAlgorithmName();
         roundTripWithUnknownOidAsAlgorithmName();
         mixedEntriesRoundTrip();
+        secretKeyBlockCipher();
         unsupportedAlgorithmRejected();
         deleteSecretKeyEntry();
         roundTripPbmac1();
@@ -629,6 +635,120 @@ public class PKCS12SecretKeyStoreTest
         {
             fail(alias + ": encoded key bytes differ after round-trip");
         }
+    }
+
+    /**
+     * Secret keys are written in an encrypted SafeContents block of their own, under the private
+     * keys' algorithm. They used to share the certificates' block, which on the default types is
+     * 40-bit RC2; a store with no secret keys keeps its two ContentInfos.
+     */
+    private void secretKeyBlockCipher()
+        throws Exception
+    {
+        java.security.KeyPair caKp = TestUtils.generateRSAKeyPair();
+        java.security.KeyPair eeKp = TestUtils.generateRSAKeyPair();
+        X509Certificate caCert = TestUtils.generateRootCert(caKp);
+        X509Certificate eeCert = TestUtils.generateEndEntityCert(eeKp.getPublic(), caKp.getPrivate(), caCert);
+        Certificate[] chain = new Certificate[]{eeCert, caCert};
+        SecretKey aes = new SecretKeySpec(Arrays.concatenate(new byte[16], new byte[]{ 1, 2, 3, 4, 5, 6, 7, 8,
+            9, 10, 11, 12, 13, 14, 15, 16 }), "AES");
+
+        Object[][] types = new Object[][]{
+            { "PKCS12", PKCSObjectIdentifiers.pbeWithSHAAnd40BitRC2_CBC, PKCSObjectIdentifiers.pbeWithSHAAnd3_KeyTripleDES_CBC },
+            { "PKCS12-DEF", PKCSObjectIdentifiers.pbeWithSHAAnd40BitRC2_CBC, PKCSObjectIdentifiers.pbeWithSHAAnd3_KeyTripleDES_CBC },
+            { "PKCS12-3DES-3DES", PKCSObjectIdentifiers.pbeWithSHAAnd3_KeyTripleDES_CBC, PKCSObjectIdentifiers.pbeWithSHAAnd3_KeyTripleDES_CBC },
+            { "PKCS12-AES256-AES128", NISTObjectIdentifiers.id_aes128_CBC, NISTObjectIdentifiers.id_aes256_CBC },
+            { "PKCS12-AES256-AES128-GCM", NISTObjectIdentifiers.id_aes128_GCM, NISTObjectIdentifiers.id_aes256_GCM },
+            { "PKCS12-PBMAC1", NISTObjectIdentifiers.id_aes128_CBC, NISTObjectIdentifiers.id_aes256_CBC }
+        };
+
+        for (int i = 0; i != types.length; i++)
+        {
+            String type = (String)types[i][0];
+
+            KeyStore writer = KeyStore.getInstance(type, "BC");
+            writer.load(null, null);
+            writer.setKeyEntry("ee", eeKp.getPrivate(), PASSWD, chain);
+            writer.setCertificateEntry("ca", caCert);
+            writer.setKeyEntry("aes", aes, PASSWD, null);
+            ByteArrayOutputStream buf = new ByteArrayOutputStream();
+            writer.store(buf, PASSWD);
+
+            ContentInfo[] infos = getContentInfos(buf.toByteArray());
+            isTrue(type + ": expected 3 ContentInfos, found " + infos.length, infos.length == 3);
+            isTrue(type + ": certificate block cipher changed",
+                types[i][1].equals(getBlockCipher(infos[1])));
+            isTrue(type + ": secret key block not under the private key cipher",
+                types[i][2].equals(getBlockCipher(infos[2])));
+
+            KeyStore reader = KeyStore.getInstance(type, "BC");
+            reader.load(new ByteArrayInputStream(buf.toByteArray()), PASSWD);
+            isTrue(type + ": secret key not read back", Arrays.areEqual(aes.getEncoded(), reader.getKey("aes", PASSWD).getEncoded()));
+            isTrue(type + ": private key not read back", reader.getKey("ee", PASSWD) != null);
+
+            // without a secret key the file layout is as before
+            writer.deleteEntry("aes");
+            buf = new ByteArrayOutputStream();
+            writer.store(buf, PASSWD);
+            isTrue(type + ": store without secret keys changed layout", getContentInfos(buf.toByteArray()).length == 2);
+        }
+
+        // on the default type, open both blocks: the secret bag is in the 3DES block and not the RC2-40 one
+        KeyStore writer = KeyStore.getInstance("PKCS12", "BC");
+        writer.load(null, null);
+        writer.setKeyEntry("ee", eeKp.getPrivate(), PASSWD, chain);
+        writer.setKeyEntry("aes", aes, PASSWD, null);
+        ByteArrayOutputStream buf = new ByteArrayOutputStream();
+        writer.store(buf, PASSWD);
+
+        ContentInfo[] infos = getContentInfos(buf.toByteArray());
+        isTrue("RC2-40 block holds a secret bag", countBags(decryptPkcs12PbeBlock(infos[1]), PKCSObjectIdentifiers.secretBag) == 0);
+        isTrue("RC2-40 block lost its certificates", countBags(decryptPkcs12PbeBlock(infos[1]), PKCSObjectIdentifiers.certBag) == 2);
+        isTrue("3DES block does not hold the secret bag", countBags(decryptPkcs12PbeBlock(infos[2]), PKCSObjectIdentifiers.secretBag) == 1);
+    }
+
+    private static ContentInfo[] getContentInfos(byte[] pfxBytes)
+    {
+        Pfx pfx = Pfx.getInstance(pfxBytes);
+        byte[] authSafe = ASN1OctetString.getInstance(pfx.getAuthSafe().getContent()).getOctets();
+        return AuthenticatedSafe.getInstance(authSafe).getContentInfo();
+    }
+
+    private static ASN1ObjectIdentifier getBlockCipher(ContentInfo info)
+    {
+        AlgorithmIdentifier algId = EncryptedData.getInstance(info.getContent()).getEncryptionAlgorithm();
+        if (PKCSObjectIdentifiers.id_PBES2.equals(algId.getAlgorithm()))
+        {
+            return PBES2Parameters.getInstance(algId.getParameters()).getEncryptionScheme().getAlgorithm();
+        }
+        return algId.getAlgorithm();
+    }
+
+    private static ASN1Sequence decryptPkcs12PbeBlock(ContentInfo info)
+        throws Exception
+    {
+        EncryptedData encData = EncryptedData.getInstance(info.getContent());
+        AlgorithmIdentifier algId = encData.getEncryptionAlgorithm();
+        PKCS12PBEParams params = PKCS12PBEParams.getInstance(algId.getParameters());
+
+        Cipher cipher = Cipher.getInstance(algId.getAlgorithm().getId(), "BC");
+        cipher.init(Cipher.DECRYPT_MODE, new PKCS12Key(PASSWD),
+            new PBEParameterSpec(params.getIV(), params.getIterations().intValue()));
+
+        return ASN1Sequence.getInstance(cipher.doFinal(encData.getContent().getOctets()));
+    }
+
+    private static int countBags(ASN1Sequence safeContents, ASN1ObjectIdentifier bagType)
+    {
+        int count = 0;
+        for (int i = 0; i != safeContents.size(); i++)
+        {
+            if (bagType.equals(SafeBag.getInstance(safeContents.getObjectAt(i)).getBagId()))
+            {
+                count++;
+            }
+        }
+        return count;
     }
 
     private void mixedEntriesRoundTrip()

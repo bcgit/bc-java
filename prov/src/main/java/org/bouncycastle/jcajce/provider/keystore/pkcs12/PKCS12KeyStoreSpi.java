@@ -1650,6 +1650,27 @@ public class PKCS12KeyStoreSpi
 
          throw new IllegalStateException("unknown encryption OID in getAlgParams()");
     }
+
+    /**
+     * The AlgorithmIdentifier for an encrypted SafeContents block: a fresh salt with the given
+     * iteration count, under PBES2 for the AES algorithms or the PKCS#12 PBE scheme otherwise.
+     */
+    private AlgorithmIdentifier createContentAlgId(ASN1ObjectIdentifier algorithm, int itCount)
+    {
+        byte[] salt = new byte[SALT_SIZE];
+
+        random.nextBytes(salt);
+
+        if (isPBKDF2(algorithm))
+        {
+            PBKDF2Params params = new PBKDF2Params(salt, itCount, getKeyLength(algorithm), new AlgorithmIdentifier(PKCSObjectIdentifiers.id_hmacWithSHA256, DERNull.INSTANCE));
+            return new AlgorithmIdentifier(PKCSObjectIdentifiers.id_PBES2, new PBES2Parameters(
+                new KeyDerivationFunc(PKCSObjectIdentifiers.id_PBKDF2, params), new EncryptionScheme(algorithm, getAlgParams(algorithm))));
+        }
+
+        PKCS12PBEParams params = new PKCS12PBEParams(salt, itCount);
+        return new AlgorithmIdentifier(algorithm, params.toASN1Primitive());
+    }
     
     public void engineStore(LoadStoreParameter param)
         throws IOException,
@@ -1837,8 +1858,8 @@ public class PKCS12KeyStoreSpi
             String name = (String)ks.nextElement();
             Key entryKey = (Key)keys.get(name);
             // SecretKey entries (RFC 7292 sec. 4.2.5 secretBag) are emitted
-            // alongside the certBag entries below, inside the encrypted
-            // SafeContents block. Skip them in this private-key pass.
+            // below, in an encrypted SafeContents block of their own. Skip
+            // them in this private-key pass.
             if (!(entryKey instanceof PrivateKey))
             {
                 continue;
@@ -1942,23 +1963,8 @@ public class PKCS12KeyStoreSpi
         //
         // certificate processing
         //
-        byte[] cSalt = new byte[SALT_SIZE];
-
-        random.nextBytes(cSalt);
-
         ASN1EncodableVector certSeq = new ASN1EncodableVector();
-        AlgorithmIdentifier cAlgId;
-        if (isPBKDF2(certAlgorithm))
-        {
-            PBKDF2Params cParams = new PBKDF2Params(cSalt, storeItCount, getKeyLength(certAlgorithm), new AlgorithmIdentifier(PKCSObjectIdentifiers.id_hmacWithSHA256, DERNull.INSTANCE));
-            cAlgId = new AlgorithmIdentifier(PKCSObjectIdentifiers.id_PBES2, new PBES2Parameters(
-                new KeyDerivationFunc(PKCSObjectIdentifiers.id_PBKDF2, cParams), new EncryptionScheme(certAlgorithm, getAlgParams(certAlgorithm))));
-        }
-        else
-        {
-            PKCS12PBEParams cParams = new PKCS12PBEParams(cSalt, storeItCount);
-            cAlgId = new AlgorithmIdentifier(certAlgorithm, cParams.toASN1Primitive());
-        }
+        AlgorithmIdentifier cAlgId = createContentAlgId(certAlgorithm, storeItCount);
         Hashtable doneCerts = new Hashtable();
 
         Enumeration cs = keys.keys();
@@ -1969,7 +1975,7 @@ public class PKCS12KeyStoreSpi
                 String name = (String)cs.nextElement();
                 // SecretKey entries have no associated certificate; skip
                 // them here, they're written as SafeBags of type secretBag
-                // alongside the certBag entries below.
+                // in a block of their own below.
                 if (keys.get(name) instanceof SecretKey)
                 {
                     continue;
@@ -2133,11 +2139,11 @@ public class PKCS12KeyStoreSpi
             }
         }
 
-        // SecretKey entries: emit RFC 7292 sec. 4.2.5 secretBag SafeBags
-        // into the same encrypted SafeContents block as the certBags. The
-        // PFX-level PBE on this block provides confidentiality for the
-        // raw key bytes; the bagValue itself carries the algorithm OID
-        // (resolveSecretKeyOid) and the encoded key as a DER OCTET STRING.
+        // SecretKey entries: emit RFC 7292 sec. 4.2.5 secretBag SafeBags into a SafeContents block of
+        // their own, encrypted with the private keys' algorithm rather than the certificates' (by
+        // default 40-bit RC2). The bagValue carries the algorithm OID (resolveSecretKeyOid) and the
+        // encoded key as a DER OCTET STRING.
+        ASN1EncodableVector secretSeq = new ASN1EncodableVector();
         Enumeration sks = keys.keys();
         while (sks.hasMoreElements())
         {
@@ -2166,18 +2172,36 @@ public class PKCS12KeyStoreSpi
             skName.add(new DERSequence(fSeq));
 
             SafeBag sBag = new SafeBag(secretBag, innerBag.toASN1Primitive(), new DERSet(skName));
-            certSeq.add(sBag);
+            secretSeq.add(sBag);
         }
 
         byte[] certSeqEncoded = new DERSequence(certSeq).getEncoded(ASN1Encoding.DER);
         byte[] certBytes = cryptData(true, cAlgId, password, false, certSeqEncoded);
         EncryptedData cInfo = new EncryptedData(data, cAlgId, new BEROctetString(certBytes));
 
-        ContentInfo[] info = new ContentInfo[]
-            {
-                new ContentInfo(data, keyString),
-                new ContentInfo(encryptedData, cInfo.toASN1Primitive())
-            };
+        ContentInfo[] info;
+        if (secretSeq.size() == 0)
+        {
+            info = new ContentInfo[]
+                {
+                    new ContentInfo(data, keyString),
+                    new ContentInfo(encryptedData, cInfo.toASN1Primitive())
+                };
+        }
+        else
+        {
+            AlgorithmIdentifier sAlgId = createContentAlgId(keyAlgorithm, storeItCount);
+            byte[] secretSeqEncoded = new DERSequence(secretSeq).getEncoded(ASN1Encoding.DER);
+            byte[] secretBytes = cryptData(true, sAlgId, password, false, secretSeqEncoded);
+            EncryptedData sInfo = new EncryptedData(data, sAlgId, new BEROctetString(secretBytes));
+
+            info = new ContentInfo[]
+                {
+                    new ContentInfo(data, keyString),
+                    new ContentInfo(encryptedData, cInfo.toASN1Primitive()),
+                    new ContentInfo(encryptedData, sInfo.toASN1Primitive())
+                };
+        }
 
         AuthenticatedSafe auth = new AuthenticatedSafe(info);
 
