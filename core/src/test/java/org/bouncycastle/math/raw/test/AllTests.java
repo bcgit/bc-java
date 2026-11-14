@@ -20,6 +20,7 @@ public class AllTests
     {   
         TestSuite suite = new TestSuite("Raw math tests");
 
+        suite.addTest(GF256AESTest.suite());
         suite.addTest(InterleaveTest.suite());
 
         return new BCTestSetup(suite);
