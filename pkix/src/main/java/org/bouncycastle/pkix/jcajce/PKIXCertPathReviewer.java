@@ -2475,6 +2475,7 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                 }
 
                 String reason = null;
+                Integer reasonCodeValue = null;
 
                 if (crl_entry.hasExtensions())
                 {
@@ -2494,6 +2495,10 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                         // out-of-range or out-of-int value falls through to the crlReasons[7] "unknown"
                         // below rather than throwing AIOOBE / ArithmeticException from intValueExact().
                         BigInteger rc = reasonCode.getValue();
+                        if (rc.bitLength() <= 31)
+                        {
+                            reasonCodeValue = Integers.valueOf(rc.intValue());
+                        }
                         if (rc.signum() >= 0 && rc.compareTo(BigInteger.valueOf(CertStatus.crlReasons.length)) < 0)
                         {
                             reason = CertStatus.crlReasons[rc.intValue()];
@@ -2509,7 +2514,9 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
                 // i18n reason
                 LocaleString ls = new LocaleString(RESOURCE_NAME, reason);
                 
-                if (!validDate.before(crl_entry.getRevocationDate()))
+                // as in the CertPathValidator, a compromise or unspecified reason revokes whatever the revocation date
+                if (PKIXCRLValidator.isRevocationEffective(validDate, crl_entry.getRevocationDate(),
+                    CertStatus.getReason(reasonCodeValue)))
                 {
                     ErrorBundle msg = createErrorBundle("CertPathReviewer.certRevoked",
                             new Object[] {new TrustedInput(crl_entry.getRevocationDate()),ls});

@@ -51,7 +51,8 @@ import org.bouncycastle.pkix.jcajce.PKIXCertPathReviewer;
  * <li>a CRL with a critical extension that cannot be processed is not used (RFC 5280 sec. 5.2), and
  * nor is a CRL entry with one (sec. 5.3);</li>
  * <li>an entry of an indirect CRL is matched on the certificate issuer as well as the serial number
- * (RFC 5280 sec. 5.3.3).</li>
+ * (RFC 5280 sec. 5.3.3);</li>
+ * <li>a compromise or unspecified revocation revokes whatever its date.</li>
  * </ul>
  */
 public class PKIXCertPathReviewerCrlSelectionTest
@@ -230,6 +231,68 @@ public class PKIXCertPathReviewerCrlSelectionTest
     }
 
     /**
+     * A key compromise revocation dated after the validation date still revokes, as in the
+     * CertPathValidator: the key may have been compromised before the revocation was published, so a
+     * signature dated before it, as an S/MIME signer's own signingTime can be, proves nothing.
+     */
+    public void testCompromiseRevocationAfterValidationDateRevokes()
+        throws Exception
+    {
+        int[] reasons = new int[]{ CRLReason.keyCompromise, CRLReason.cACompromise, CRLReason.aACompromise,
+            CRLReason.unspecified };
+        for (int i = 0; i != reasons.length; i++)
+        {
+            ExtensionsGenerator entryExts = new ExtensionsGenerator();
+            entryExts.addExtension(Extension.reasonCode, false, CRLReason.lookup(reasons[i]));
+
+            X509CRL[] crls = new X509CRL[]{ createCRLWithEntry(false, at(2 * DAY), entryExts) };
+
+            assertEngineRejects(crls);
+            assertReviewersReject(crls, "CertPathReviewer.certRevoked");
+        }
+    }
+
+    /**
+     * An entry with no reason code is treated as unspecified, and so also revokes whatever its date.
+     */
+    public void testRevocationWithoutReasonAfterValidationDateRevokes()
+        throws Exception
+    {
+        X509CRL[] crls = new X509CRL[]{ createCRLWithEntry(false, at(2 * DAY), null) };
+
+        assertEngineRejects(crls);
+        assertReviewersReject(crls, "CertPathReviewer.certRevoked");
+    }
+
+    /**
+     * Compatibility: a revocation for a reason that does not reach back, dated after the validation
+     * date, leaves the certificate valid at that date.
+     */
+    public void testNonCompromiseRevocationAfterValidationDateDoesNotRevoke()
+        throws Exception
+    {
+        int[] reasons = new int[]{ CRLReason.affiliationChanged, CRLReason.superseded,
+            CRLReason.cessationOfOperation, CRLReason.privilegeWithdrawn };
+        for (int i = 0; i != reasons.length; i++)
+        {
+            ExtensionsGenerator entryExts = new ExtensionsGenerator();
+            entryExts.addExtension(Extension.reasonCode, false, CRLReason.lookup(reasons[i]));
+
+            X509CRL[] crls = new X509CRL[]{ createCRLWithEntry(false, at(2 * DAY), entryExts) };
+
+            CertPathValidator.getInstance("PKIX", "BC").validate(certPath(), params(crls));
+
+            PKIXCertPathReviewer reviewer = review(crls);
+            assertTrue("pkix reviewer revoked for reason " + reasons[i], reviewer.isValidCertPath());
+            assertTrue(hasId(reviewer.getNotifications(0), "CertPathReviewer.revokedAfterValidation"));
+
+            org.bouncycastle.x509.PKIXCertPathReviewer legacy = legacyReview(crls);
+            assertTrue("legacy reviewer revoked for reason " + reasons[i], legacy.isValidCertPath());
+            assertTrue(hasId(legacy.getNotifications(0), "CertPathReviewer.revokedAfterValidation"));
+        }
+    }
+
+    /**
      * An indirect CRL listing another issuer's certificate with the same serial number first: the
      * entry for this certificate's issuer, which revokes it, is the one that applies.
      */
@@ -370,7 +433,14 @@ public class PKIXCertPathReviewerCrlSelectionTest
             crlBldr.addExtension(Extension.issuingDistributionPoint, true,
                 new IssuingDistributionPoint(null, false, false, null, true, false));
         }
-        crlBldr.addCRLEntry(EE_SERIAL, revocationDate, entryExts.generate());
+        if (entryExts == null)
+        {
+            crlBldr.addCRLEntry(EE_SERIAL, revocationDate, 0); // no reason code
+        }
+        else
+        {
+            crlBldr.addCRLEntry(EE_SERIAL, revocationDate, entryExts.generate());
+        }
 
         return new JcaX509CRLConverter().setProvider("BC").getCRL(crlBldr.build(caSigner));
     }

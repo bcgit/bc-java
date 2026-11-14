@@ -22,6 +22,7 @@ Date: 2026, TBD
 - CCM, KCCM, KGCM, EAX and OCB encrypted a further message under the same key and nonce when used again without a new init, including through Cipher.doFinal(); a second encryption now throws IllegalStateException, as GCM already did, and KGMac, like GMac, now needs a fresh IV per message (PR #2562).
 - A legacy generic composite (id_composite_key) public key accepted a plain signature from any one of its component keys in X509Certificate.verify() and JcaContentVerifierProviderBuilder, so one broken component was enough. With legacy composite signatures no longer verified, such a key now verifies nothing.
 - Both PKIXCertPathReviewer copies used a certificate's CRL entry even when it carried a critical extension they cannot process, where RFC 5280 sec. 5.3 and the CertPathValidator refuse it; such an entry is now reported as crlEntryUnsupportedCriticalExt.
+- Both PKIXCertPathReviewer copies, and so SignedMailValidator at the signer's signingTime, treated a key compromise, CA compromise, AA compromise or unspecified revocation dated after the validation date as not yet in effect; as in the CertPathValidator, it now revokes whatever its date.
 
 #### Additional Features and Functionality
 
