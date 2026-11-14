@@ -2205,6 +2205,29 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
         return false;
     }
 
+    /**
+     * RFC 5280 sec. 5.3: true if the CRL entry carries a critical extension other than the certificate
+     * issuer and the reason code, the two the reviewer processes.
+     */
+    private static boolean hasUnsupportedCriticalExtension(X509CRLEntry crlEntry)
+    {
+        Set criticalExtensions = crlEntry.getCriticalExtensionOIDs();
+        if (criticalExtensions == null)
+        {
+            return false;
+        }
+
+        for (Iterator it = criticalExtensions.iterator(); it.hasNext();)
+        {
+            String oid = (String)it.next();
+            if (!Extension.certificateIssuer.getId().equals(oid) && !Extension.reasonCode.getId().equals(oid))
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
     protected void checkCRLs(
             PKIXParameters paramsPKIX,
             X509Certificate cert,
@@ -2438,8 +2461,15 @@ public class PKIXCertPathReviewer extends CertPathValidatorUtilities
             }
             if (crl_entry != null)
             {
+                // RFC 5280 sec. 5.3: an entry with a critical extension that cannot be processed must not be used
+                if (hasUnsupportedCriticalExtension(crl_entry))
+                {
+                    ErrorBundle msg = new ErrorBundle(RESOURCE_NAME, "CertPathReviewer.crlEntryUnsupportedCriticalExt");
+                    throw new CertPathReviewerException(msg);
+                }
+
                 String reason = null;
-                
+
                 if (crl_entry.hasExtensions())
                 {
                     ASN1Enumerated reasonCode;

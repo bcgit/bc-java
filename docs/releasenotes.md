@@ -21,6 +21,7 @@ Date: 2026, TBD
 - The lightweight stream ciphers and stream modes (CTR/SIC, CFB, OFB, GOFB, GCFB, KCTR, the GOST R 34.13 CTR, CFB and OFB modes, Salsa20, ChaCha, RC4, HC-128, HC-256, ISAAC, VMPC, Grain and ZUC) gave wrong output from processBytes() when the output was in the same array as the input and started after it while overlapping it, as the output overwrote input not yet read. The input is now moved first; output at or before the input, the buffered ciphers and the AEAD modes were unaffected.
 - CCM, KCCM, KGCM, EAX and OCB encrypted a further message under the same key and nonce when used again without a new init, including through Cipher.doFinal(); a second encryption now throws IllegalStateException, as GCM already did, and KGMac, like GMac, now needs a fresh IV per message (PR #2562).
 - A legacy generic composite (id_composite_key) public key accepted a plain signature from any one of its component keys in X509Certificate.verify() and JcaContentVerifierProviderBuilder, so one broken component was enough. With legacy composite signatures no longer verified, such a key now verifies nothing.
+- Both PKIXCertPathReviewer copies used a certificate's CRL entry even when it carried a critical extension they cannot process, where RFC 5280 sec. 5.3 and the CertPathValidator refuse it; such an entry is now reported as crlEntryUnsupportedCriticalExt.
 
 #### Additional Features and Functionality
 

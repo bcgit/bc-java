@@ -48,7 +48,8 @@ import org.bouncycastle.pkix.jcajce.PKIXCertPathReviewer;
  * <li>only a complete CRL decides: a delta CRL lists only the changes since its base (RFC 5280 sec.
  * 5.2.4), so taking a current delta as the answer reported a certificate revoked on an expired base
  * as not revoked;</li>
- * <li>a CRL with a critical extension that cannot be processed is not used (RFC 5280 sec. 5.2);</li>
+ * <li>a CRL with a critical extension that cannot be processed is not used (RFC 5280 sec. 5.2), and
+ * nor is a CRL entry with one (sec. 5.3);</li>
  * <li>an entry of an indirect CRL is matched on the certificate issuer as well as the serial number
  * (RFC 5280 sec. 5.3.3).</li>
  * </ul>
@@ -167,6 +168,65 @@ public class PKIXCertPathReviewerCrlSelectionTest
 
         assertEngineRejects(crls);
         assertReviewersReject(crls, "CertPathReviewer.crlUnsupportedCriticalExt");
+    }
+
+    /**
+     * RFC 5280 sec. 5.3: the certificate's own entry carries a critical extension that cannot be
+     * processed, so it must not be used. The entry is dated after the validation date with a reason
+     * that does not apply retroactively, where reading it would otherwise report the certificate as
+     * valid.
+     */
+    public void testUnknownCriticalCrlEntryExtensionIsRefused()
+        throws Exception
+    {
+        ExtensionsGenerator entryExts = new ExtensionsGenerator();
+        entryExts.addExtension(Extension.reasonCode, false, CRLReason.lookup(CRLReason.superseded));
+        entryExts.addExtension(new ASN1ObjectIdentifier("1.3.6.1.4.1.22554.99.2"), true, DERNull.INSTANCE);
+
+        X509CRL[] crls = new X509CRL[]{ createCRLWithEntry(false, at(2 * DAY), entryExts) };
+
+        assertEngineRejects(crls);
+        assertReviewersReject(crls, "CertPathReviewer.crlEntryUnsupportedCriticalExt");
+    }
+
+    /**
+     * Compatibility: the same entry with the unknown extension non-critical is read as before, a
+     * revocation after the validation date leaving the certificate valid.
+     */
+    public void testUnknownNonCriticalCrlEntryExtensionIsIgnored()
+        throws Exception
+    {
+        ExtensionsGenerator entryExts = new ExtensionsGenerator();
+        entryExts.addExtension(Extension.reasonCode, false, CRLReason.lookup(CRLReason.superseded));
+        entryExts.addExtension(new ASN1ObjectIdentifier("1.3.6.1.4.1.22554.99.2"), false, DERNull.INSTANCE);
+
+        X509CRL[] crls = new X509CRL[]{ createCRLWithEntry(false, at(2 * DAY), entryExts) };
+
+        CertPathValidator.getInstance("PKIX", "BC").validate(certPath(), params(crls));
+
+        PKIXCertPathReviewer reviewer = review(crls);
+        assertTrue("pkix reviewer refused a non-critical entry extension", reviewer.isValidCertPath());
+        assertTrue(hasId(reviewer.getNotifications(0), "CertPathReviewer.revokedAfterValidation"));
+
+        org.bouncycastle.x509.PKIXCertPathReviewer legacy = legacyReview(crls);
+        assertTrue("legacy reviewer refused a non-critical entry extension", legacy.isValidCertPath());
+        assertTrue(hasId(legacy.getNotifications(0), "CertPathReviewer.revokedAfterValidation"));
+    }
+
+    /**
+     * Compatibility: an indirect CRL entry carrying the certificate issuer extension, which RFC 5280
+     * sec. 5.3.3 requires to be critical, is processed by the reviewers and still revokes.
+     */
+    public void testCriticalCertificateIssuerEntryExtensionIsProcessed()
+        throws Exception
+    {
+        ExtensionsGenerator entryExts = new ExtensionsGenerator();
+        entryExts.addExtension(Extension.reasonCode, false, CRLReason.lookup(CRLReason.keyCompromise));
+        entryExts.addExtension(Extension.certificateIssuer, true, new GeneralNames(new GeneralName(caDn)));
+
+        X509CRL[] crls = new X509CRL[]{ createCRLWithEntry(true, at(-3 * DAY), entryExts) };
+
+        assertReviewersReject(crls, "CertPathReviewer.certRevoked");
     }
 
     /**
@@ -294,6 +354,23 @@ public class PKIXCertPathReviewerCrlSelectionTest
         {
             crlBldr.addCRLEntry(EE_SERIAL, at(-5 * DAY), CRLReason.keyCompromise);
         }
+
+        return new JcaX509CRLConverter().setProvider("BC").getCRL(crlBldr.build(caSigner));
+    }
+
+    private X509CRL createCRLWithEntry(boolean indirect, Date revocationDate, ExtensionsGenerator entryExts)
+        throws Exception
+    {
+        X509v2CRLBuilder crlBldr = new X509v2CRLBuilder(caDn, at(-2 * DAY));
+
+        crlBldr.setNextUpdate(at(2 * DAY));
+        crlBldr.addExtension(Extension.cRLNumber, false, new CRLNumber(BigInteger.valueOf(10)));
+        if (indirect)
+        {
+            crlBldr.addExtension(Extension.issuingDistributionPoint, true,
+                new IssuingDistributionPoint(null, false, false, null, true, false));
+        }
+        crlBldr.addCRLEntry(EE_SERIAL, revocationDate, entryExts.generate());
 
         return new JcaX509CRLConverter().setProvider("BC").getCRL(crlBldr.build(caSigner));
     }
