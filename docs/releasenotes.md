@@ -23,6 +23,7 @@ Date: 2026, TBD
 - A legacy generic composite (id_composite_key) public key accepted a plain signature from any one of its component keys in X509Certificate.verify() and JcaContentVerifierProviderBuilder, so one broken component was enough. With legacy composite signatures no longer verified, such a key now verifies nothing.
 - Both PKIXCertPathReviewer copies used a certificate's CRL entry even when it carried a critical extension they cannot process, where RFC 5280 sec. 5.3 and the CertPathValidator refuse it; such an entry is now reported as crlEntryUnsupportedCriticalExt.
 - Both PKIXCertPathReviewer copies, and so SignedMailValidator at the signer's signingTime, treated a key compromise, CA compromise, AA compromise or unspecified revocation dated after the validation date as not yet in effect; as in the CertPathValidator, it now revokes whatever its date.
+- ECCSIKeyPairGenerator drew v as a 256-bit value on every curve, so on curves with an order above 256 bits a few SSKs issued under one KSAK revealed the KSAK. v is now drawn from all of [1, q-1]; a KMS that issued SSKs on such a curve needs a new KSAK. Affected 1.81 to 1.87.
 
 #### Additional Features and Functionality
 

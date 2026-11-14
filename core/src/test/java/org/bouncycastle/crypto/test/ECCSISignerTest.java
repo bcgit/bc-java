@@ -23,6 +23,7 @@ import org.bouncycastle.crypto.signers.ECCSISigner;
 import org.bouncycastle.math.ec.ECPoint;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.FixedSecureRandom;
 import org.bouncycastle.util.test.SimpleTest;
@@ -98,6 +99,9 @@ public class ECCSISignerTest
         testSSKRange();
         testNoRandom();
         testUnreducedR();
+        testFullWidthV("secp384r1", new SHA512Digest());
+        testFullWidthV("secp521r1", new SHA512Digest());
+        testFullWidthV("sect571k1", new SHA512Digest());
         for (int i = 0; i < curveNames.length; ++i)
         {
             for (int j = 0; j < digests.length; ++j)
@@ -105,6 +109,57 @@ public class ECCSISignerTest
                 testRandom(curveNames[i], digests[j]);
             }
         }
+    }
+
+    /**
+     * RFC 6507 sec. 5.1.1 draws v from all of F_q. Each SSK is KSAK + HS * v mod q, so v confined
+     * to a subrange makes every SSK a short-v sample of the KSAK, and a few of them recover it. The
+     * generator drew v as a 256-bit value on every curve; on an order above 256 bits v must, over a
+     * handful of key pairs, exceed 256 bits.
+     */
+    private void testFullWidthV(String curveName, Digest digest)
+        throws Exception
+    {
+        X9ECParameters params = CustomNamedCurves.getByName(curveName);
+        byte[] id = Strings.toByteArray("2011-02\0tel:+447700900123\0");
+        ECCSIKeyGenerationParameters keyGenerationParameters = new ECCSIKeyGenerationParameters(new SecureRandom(),
+            params, digest, id);
+        BigInteger q = keyGenerationParameters.getQ();
+        ECPoint G = keyGenerationParameters.getG();
+        ECPoint kpak = keyGenerationParameters.getKPAK();
+        BigInteger ksak = keyGenerationParameters.computeSSK(BigIntegers.ZERO);
+
+        ECCSIKeyPairGenerator generator = new ECCSIKeyPairGenerator();
+        generator.init(keyGenerationParameters);
+
+        int maxBits = 0;
+        for (int i = 0; i != 8; i++)
+        {
+            AsymmetricCipherKeyPair kp = generator.generateKeyPair();
+            ECPoint pvt = ((ECCSIPublicKeyParameters)kp.getPublic()).getPVT();
+            BigInteger ssk = ((ECCSIPrivateKeyParameters)kp.getPrivate()).getSSK();
+
+            // HS = hash(G || KPAK || ID || PVT) mod q, then v = (SSK - KSAK) / HS mod q
+            digest.reset();
+            byte[] tmp = G.getEncoded(false);
+            digest.update(tmp, 0, tmp.length);
+            tmp = kpak.getEncoded(false);
+            digest.update(tmp, 0, tmp.length);
+            digest.update(id, 0, id.length);
+            tmp = pvt.getEncoded(false);
+            digest.update(tmp, 0, tmp.length);
+            tmp = new byte[digest.getDigestSize()];
+            digest.doFinal(tmp, 0);
+            BigInteger hs = new BigInteger(1, tmp).mod(q);
+            BigInteger v = ssk.subtract(ksak).multiply(hs.modInverse(q)).mod(q);
+
+            isTrue(curveName + ": PVT != [v]G", G.multiply(v).normalize().equals(pvt));
+            isTrue(curveName + ": v == 0", v.signum() > 0);
+            maxBits = Math.max(maxBits, v.bitLength());
+        }
+
+        // a uniform v in [1, q-1] stays below 2^256 with probability about 2^(256 - |q|) per draw
+        isTrue(curveName + ": v confined to " + maxBits + " bits", maxBits > 256);
     }
 
     /**

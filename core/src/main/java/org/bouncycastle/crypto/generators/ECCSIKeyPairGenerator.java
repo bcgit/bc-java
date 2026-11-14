@@ -58,8 +58,8 @@ public class ECCSIKeyPairGenerator
         this.digest.reset();
         byte[] id = parameters.getId();
         ECPoint kpak = parameters.getKPAK();
-        // 1) Choose v, a random (ephemeral) non-zero element of F_q;
-        BigInteger v = BigIntegers.createRandomBigInteger(256, random).mod(q);
+        // 1) Choose v, a random (ephemeral) non-zero element of F_q - over all of [1, q-1], whatever the order's size
+        BigInteger v = BigIntegers.createRandomInRange(BigIntegers.ONE, q.subtract(BigIntegers.ONE), random);
         // 2) Compute PVT = [v]G; v is secret (the SSK derives from it), so use the
         // cache-safe fixed-point comb, not the curve's default wNAF multiplier
         ECPoint pvt = new FixedPointCombMultiplier().multiply(G, v).normalize();
