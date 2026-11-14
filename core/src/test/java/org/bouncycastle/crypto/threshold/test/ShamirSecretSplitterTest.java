@@ -507,17 +507,17 @@ public class ShamirSecretSplitterTest
         throws IOException
     {
         byte[] secret = Hex.decode("0080ff53");
-        ShamirSecretSplitter.Algorithm[] algorithms = ShamirSecretSplitter.Algorithm.values();
+        ShamirSecretSplitter.Algorithm[] algorithms = { ShamirSecretSplitter.Algorithm.AES, ShamirSecretSplitter.Algorithm.RSA };
         for (int i = 0; i != algorithms.length; i++)
         {
             ShamirSecretSplitter.Algorithm algorithm = algorithms[i];
             SecureRandom random = new FixedSecureRandom(Hex.decode("0167a92e23be459c"));
             ShamirSecretSplitter splitter = ShamirSecretSplitter.getInstance(algorithm, secret.length, random);
-            ShamirSplitSecret split = splitter.resplit(secret, 3, 5);
+            ShamirSplitSecret split = (ShamirSplitSecret)splitter.resplit(secret, 3, 5);
 
             split.multiple(0x53).divide(0x153);
 
-            ShamirSplitSecretShare[] shares = split.getSecretShares();
+            ShamirSplitSecretShare[] shares = (ShamirSplitSecretShare[])split.getSecretShares();
             ShamirSplitSecretShare[] quorum = { shares[4], shares[0], shares[2] };
             assertTrue(Arrays.areEqual(secret, ShamirSplitSecret.getInstance(algorithm, quorum).getSecret()));
         }
