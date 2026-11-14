@@ -37,12 +37,15 @@ public class AllTests
             new IndirectCRLSignerTest(),
             new IndirectCRLSerialCollisionTest(),
             new MLDSACredentialsTest(),
+            new MLKEMCredentialsTest(),
             new PKCS10Test(),
             new RelatedCertificateDescriptorTest(),
             new SLHDSACredentialsTest(),
             new X509ExtensionUtilsTest(),
         };
 
+        // run every test before failing, so one failure does not hide the others
+        StringBuffer failures = new StringBuffer();
         for (int i = 0; i != tests.length; i++)
         {
             SimpleTestResult  result = (SimpleTestResult)tests[i].perform();
@@ -53,8 +56,13 @@ public class AllTests
                 {
                     result.getException().printStackTrace();
                 }
-                fail(result.toString());
+                failures.append(result.toString()).append('\n');
             }
+        }
+
+        if (failures.length() != 0)
+        {
+            fail(failures.toString());
         }
     }
 
@@ -74,10 +82,10 @@ public class AllTests
 
         suite.addTestSuite(AllTests.class);
         suite.addTestSuite(BcAttrCertSelectorTest.class);
-        suite.addTestSuite(BcAttrCertSelectorTest.class);
         suite.addTestSuite(BcAttrCertTest.class);
         suite.addTestSuite(BcCertTest.class);
         suite.addTestSuite(BcPKCS10Test.class);
+        suite.addTestSuite(DeltaCertTest.class);
         suite.addTestSuite(PQCPKCS10Test.class);
         suite.addTestSuite(PQCCertTest.class);
         suite.addTestSuite(UndecodableSignatureTest.class);

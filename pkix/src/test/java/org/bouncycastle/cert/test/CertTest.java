@@ -4453,12 +4453,18 @@ public class CertTest
 
         X509CertificateHolder ecCertHldr = certGen.build(sigGen);
 
-        ContentVerifierProvider vProv = new JcaContentVerifierProviderBuilder()
-            .build(compPub);
+        // a legacy composite key no longer accepts a signature made by one of its components
+        try
+        {
+            isTrue("ec multi accepted", !ecCertHldr.isSignatureValid(new JcaContentVerifierProviderBuilder()
+                .build(compPub)));
+        }
+        catch (CertException e)
+        {
+            // refusing the key outright is the expected response
+        }
 
-        isTrue("ec multi failed", ecCertHldr.isSignatureValid(vProv));
-
-        vProv = new JcaContentVerifierProviderBuilder().build(ecPub);
+        ContentVerifierProvider vProv = new JcaContentVerifierProviderBuilder().build(ecPub);
 
         isTrue("ec failed", ecCertHldr.isSignatureValid(vProv));
 
@@ -4469,7 +4475,7 @@ public class CertTest
         //
         // check verifies in general
         //
-        cert.verify(compPub);
+        checkCompositeKeyRefused(cert, compPub);
 
         cert.verify(ecPub);      // ec key only
 
@@ -4486,9 +4492,9 @@ public class CertTest
         }
 
         //
-        // check verifies with contained key
+        // the contained key is the legacy composite one, so it is refused too
         //
-        cert.verify(cert.getPublicKey());
+        checkCompositeKeyRefused(cert, cert.getPublicKey());
 
         ByteArrayInputStream bIn = new ByteArrayInputStream(cert.getEncoded());
         CertificateFactory fact = CertificateFactory.getInstance("X.509", BC);
@@ -4507,6 +4513,20 @@ public class CertTest
 
         isTrue(pubKey.equals(compPub));
         isTrue(privKey.equals(compPrivKey));
+    }
+
+    private void checkCompositeKeyRefused(X509Certificate cert, PublicKey compositeKey)
+        throws Exception
+    {
+        try
+        {
+            cert.verify(compositeKey);
+            fail("legacy composite key accepted a single component signature");
+        }
+        catch (InvalidKeyException e)
+        {
+            // expected
+        }
     }
 
     private void doGenSelfSignedCert(PrivateKey privKey, PublicKey pubKey, String[] algs, ASN1ObjectIdentifier[] oids)
