@@ -46,6 +46,8 @@ public class KCCMBlockCipher
     private byte[] nonce;
     // Previous key seen on init(true, ...) - used with nonce only to reject nonce reuse for encryption.
     private byte[] lastKey;
+    // set once an encryption has used the current key and nonce, cleared only by init
+    private boolean nonceUsed;
 
     private byte[] G1;
     private byte[] buffer;
@@ -169,7 +171,8 @@ public class KCCMBlockCipher
         // DSTU 7624 CCM construction inherits this CCM rule (cf. NIST SP 800-38C), and reuse is
         // catastrophic (CTR keystream reuse plus a forgeable CBC-MAC). That obligation is the
         // caller's, so this guard enforces it defensively, mirroring KGCMBlockCipher /
-        // GCMBlockCipher. A fresh nonce or key, reset(), or init for decryption are all unaffected.
+        // GCMBlockCipher. A fresh nonce or key, or init for decryption, are unaffected; reuse without
+        // a new init is refused separately (nonceUsed).
         if (forEncryption)
         {
             if (nonce != null && Arrays.areEqual(nonce, newNonce))
@@ -199,6 +202,8 @@ public class KCCMBlockCipher
         {
             engine.init(true, keyParameter);
         }
+
+        nonceUsed = false;
 
         reset();
     }
@@ -337,9 +342,19 @@ public class KCCMBlockCipher
         return 0;
     }
 
+    private void checkNonceUnused()
+    {
+        if (forEncryption && nonceUsed)
+        {
+            throw new IllegalStateException("KCCM cipher cannot be reused for encryption");
+        }
+    }
+
     public int processPacket(byte[] in, int inOff, int len, byte[] out, int outOff)
         throws IllegalStateException, InvalidCipherTextException
     {
+        checkNonceUnused();
+
         if (in.length - inOff < len)
         {
             throw new DataLengthException("input buffer too short");
@@ -360,6 +375,8 @@ public class KCCMBlockCipher
             {
                 throw new OutputLengthException("output buffer too short");
             }
+
+            nonceUsed = true;
 
             // Partial trailing block permitted: CalculateMac zero-pads it and the gamma
             // keystream is truncated below. See the interop caveat in the class javadoc (github #287).

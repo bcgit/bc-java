@@ -138,7 +138,8 @@ public class RegressionTest
         new SICPositionTest(),
         new SM3DigestTest(),
         new PQCParametersTest(),
-        new CryptoServicesRegistrarPropertyTest()
+        new CryptoServicesRegistrarPropertyTest(),
+        new AEADEncryptionReuseTest()
     };
 
     public static void main(String[] args)

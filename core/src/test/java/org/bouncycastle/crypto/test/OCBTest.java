@@ -190,7 +190,20 @@ public class OCBTest
         AEADBlockCipher decCipher = initOCBCipher(false, parameters);
 
         checkTestCase(encCipher, decCipher, testName, macLengthBytes, P, C);
-        checkTestCase(encCipher, decCipher, testName + " (reused)", macLengthBytes, P, C);
+
+        // a second encryption under the same key and nonce is refused (decryption stays reusable)
+        try
+        {
+            encCipher.processBytes(P, 0, P.length, new byte[encCipher.getOutputSize(P.length)], 0);
+            fail("OCB encryption reuse not detected: " + testName);
+        }
+        catch (IllegalStateException e)
+        {
+            isTrue("wrong OCB reuse message: " + e.getMessage(),
+                "OCB cipher cannot be reused for encryption".equals(e.getMessage()));
+        }
+
+        checkTestCase(initOCBCipher(true, parameters), decCipher, testName + " (reused)", macLengthBytes, P, C);
 
         // Key reuse: re-initialising for encryption with the same key+nonce is now rejected (nonce
         // reuse is catastrophic for OCB). Re-init for decryption with the reused key stays allowed.

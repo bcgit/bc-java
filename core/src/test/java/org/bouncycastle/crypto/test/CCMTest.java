@@ -79,11 +79,26 @@ public class CCMTest
         checkCleared(enc, "data", msg.length);
         checkCleared(enc, "associatedText", 13);
 
-        // the cipher still works after the clearing reset: the same message gives the same ciphertext
+        // a second message under the same key and nonce is refused after the clearing reset
         enc.processAADBytes(msg, 0, 13);
         enc.processBytes(msg, 0, msg.length, null, 0);
-        byte[] ct2 = new byte[enc.getOutputSize(0)];
-        isEquals(ctLen, enc.doFinal(ct2, 0));
+        try
+        {
+            enc.doFinal(new byte[enc.getOutputSize(0)], 0);
+            fail("CCM encryption reuse not detected");
+        }
+        catch (IllegalStateException e)
+        {
+            isEquals("CCM cipher cannot be reused for encryption", e.getMessage());
+        }
+
+        // and a fresh init gives the same ciphertext for the same message
+        CCMBlockCipher enc2 = new CCMBlockCipher(AESEngine.newInstance());
+        enc2.init(true, new AEADParameters(new KeyParameter(key), 128, nonce));
+        enc2.processAADBytes(msg, 0, 13);
+        enc2.processBytes(msg, 0, msg.length, null, 0);
+        byte[] ct2 = new byte[enc2.getOutputSize(0)];
+        isEquals(ctLen, enc2.doFinal(ct2, 0));
         isTrue("ciphertext changed after reset", Arrays.areEqual(ct, ct2));
 
         CCMBlockCipher dec = new CCMBlockCipher(AESEngine.newInstance());
@@ -173,6 +188,21 @@ public class CCMTest
         outBuf = new byte[encCcm.getOutputSize(inLen) + 10];
 
         len = encCcm.processPacket(inBuf, 10, inLen, outBuf, 10);
+
+        // a second packet under the same key and nonce is refused; compare the other overload on a fresh instance
+        try
+        {
+            encCcm.processPacket(inBuf, 10, inLen);
+            fail("CCM encryption reuse not detected");
+        }
+        catch (IllegalStateException e)
+        {
+            isTrue("wrong CCM reuse message: " + e.getMessage(),
+                "CCM cipher cannot be reused for encryption".equals(e.getMessage()));
+        }
+
+        encCcm = new CCMBlockCipher(AESEngine.newInstance());
+        encCcm.init(true, new AEADParameters(new KeyParameter(K2), 48, N2, A2));
         out = encCcm.processPacket(inBuf, 10, inLen);
 
         if (len != out.length || !isEqual(out, outBuf, 10))

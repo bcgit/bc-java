@@ -31,6 +31,8 @@ public class CCMBlockCipher
     private int                   macSize;
     private CipherParameters      keyParam;
     private byte[]                lastKey;
+    // set once an encryption has used the current key and nonce, cleared only by init
+    private boolean nonceUsed;
     private byte[]                macBlock;
     private ExposedByteArrayOutputStream associatedText = new ExposedByteArrayOutputStream();
     private ExposedByteArrayOutputStream data = new ExposedByteArrayOutputStream();
@@ -109,8 +111,8 @@ public class CCMBlockCipher
         // the messages processed" (here CTR keystream reuse plus a forgeable CBC-MAC; see also NIST
         // SP 800-38C / RFC 3610). That obligation is the caller's, so this guard enforces it
         // defensively, mirroring GCMBlockCipher. A null key parameter (explicit key re-use) with a
-        // repeated nonce is also caught. A fresh nonce or key, reset(), or init for decryption are
-        // all unaffected.
+        // repeated nonce is also caught. A fresh nonce or key, or init for decryption, are unaffected;
+        // reuse without a new init is refused separately (nonceUsed).
         if (forEncryption && nonce != null && Arrays.areEqual(nonce, newNonce))
         {
             if (cipherParameters == null)
@@ -140,6 +142,8 @@ public class CCMBlockCipher
         {
             throw new IllegalArgumentException("nonce must have length from 7 to 13 octets");
         }
+
+        nonceUsed = false;
 
         reset();
     }
@@ -232,6 +236,14 @@ public class CCMBlockCipher
         return totalData < macSize ? 0 : totalData - macSize;
     }
 
+    private void checkNonceUnused()
+    {
+        if (forEncryption && nonceUsed)
+        {
+            throw new IllegalStateException("CCM cipher cannot be reused for encryption");
+        }
+    }
+
     /**
      * Process a packet of data for either CCM decryption or encryption.
      *
@@ -287,6 +299,7 @@ public class CCMBlockCipher
         {
             throw new IllegalStateException("CCM cipher unitialized.");
         }
+        checkNonceUnused();
 
         int n = nonce.length;
         int q = 15 - n;
@@ -327,6 +340,8 @@ public class CCMBlockCipher
             {
                 throw new OutputLengthException("Output buffer too short.");
             }
+
+            nonceUsed = true;
 
             calculateMac(in, inOff, inLen, macBlock);
 

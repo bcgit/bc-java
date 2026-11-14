@@ -562,4 +562,4 @@ We also wish to acknowledge financial and collaborative support from [CISCO](htt
 - bright-k \<https://github.com/bright-k\> - reuse of a single counter block buffer in GCMBlockCipher in place of a per-block allocation, with the streaming, overlap, partial-block and buffer-cleanup regression tests for it (PR #2540).
 - hidingmyname \<https://github.com/hidingmyname\> - corrections to the CMS parser, CRL generator, ISO 7816-4 padding and DH agreement documentation and exception messages (PR #2537).
 - guptas6est \<https://github.com/guptas6est\> - initial implementation of the Gradle build update from Checkstyle 9.0 to 14.0.0 (PR #2423).
-- Alexandre Laroche \<https://github.com/AlexLaroche\> - X25519/X448 agreement leaving the caller's buffer unchanged on a refused low-order key (PR #2563), clearing the computed tag after a failed AEAD decryption (PR #2561).
+- Alexandre Laroche \<https://github.com/AlexLaroche\> - X25519/X448 agreement leaving the caller's buffer unchanged on a refused low-order key, clearing the tag after a failed AEAD decryption, and refusing AEAD encryption reuse without a new init (PRs #2561 to #2563).

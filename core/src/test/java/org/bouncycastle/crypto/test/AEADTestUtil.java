@@ -88,8 +88,28 @@ public class AEADTestUtil
         // Establish baseline answer
         crypt(cipher1, plaintext, ciphertext);
 
-        // Test encryption resets
-        checkReset(test, cipher1, params, true, plaintext, ciphertext);
+        // An encryption has used the key and nonce: a second message on the same instance, with or without
+        // reset(), would reuse them, so it must be refused until a new init
+        try
+        {
+            crypt(cipher1, plaintext, new byte[ciphertext.length]);
+            fail(test, "Encrypt reuse without init not refused.");
+        }
+        catch (IllegalStateException e)
+        {
+            // expected
+        }
+
+        cipher1.reset();
+        try
+        {
+            crypt(cipher1, plaintext, new byte[ciphertext.length]);
+            fail(test, "Encrypt reuse after reset not refused.");
+        }
+        catch (IllegalStateException e)
+        {
+            // expected
+        }
 
         // Test decryption resets with fresh instance
         cipher2.init(false, params);
@@ -320,6 +340,10 @@ public class AEADTestUtil
 
         cipher.init(true, params);
 
+        // a new message under the same key and nonce is refused once the nonce has been used, so each
+        // encryption below starts from init with a nonce of its own rather than from reset()
+        int nonceCounter = 0x10000;
+
         int expectedUpdateOutputSize = cipher.getUpdateOutputSize(plaintext.length);
         byte[] ciphertext = new byte[cipher.getOutputSize(plaintext.length)];
 
@@ -332,7 +356,7 @@ public class AEADTestUtil
         {
             // Expected
         }
-        cipher.reset();
+        cipher.init(true, varyNonce(params, ++nonceCounter));
 
         if (expectedUpdateOutputSize > 0)
         {
@@ -360,7 +384,7 @@ public class AEADTestUtil
             {
                 // Expected
             }
-            cipher.reset();
+            cipher.init(true, varyNonce(params, ++nonceCounter));
 
             // Repeat checking with entire input at once
             try
@@ -373,7 +397,7 @@ public class AEADTestUtil
             {
                 // Expected
             }
-            cipher.reset();
+            cipher.init(true, varyNonce(params, ++nonceCounter));
 
         }
 
@@ -382,7 +406,7 @@ public class AEADTestUtil
         actualOutputSize += cipher.doFinal(ciphertext, actualOutputSize);
         int macSize = cipher.getMac().length;
 
-        cipher.reset();
+        cipher.init(true, varyNonce(params, ++nonceCounter));
         try
         {
             cipher.processBytes(plaintext, 0, plaintext.length, ciphertext, 0);

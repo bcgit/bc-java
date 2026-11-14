@@ -207,7 +207,20 @@ public class EAXTest
         decEax.init(false, parameters);
 
         runCheckVectors(count, encEax, decEax, additionalDataType, sa, p, t, c);
-        runCheckVectors(count, encEax, decEax, additionalDataType, sa, p, t, c);
+
+        // a second encryption under the same key and nonce is refused (decryption stays reusable)
+        try
+        {
+            runCheckVectors(count, encEax, decEax, additionalDataType, sa, p, t, c);
+            fail("EAX encryption reuse not detected in test " + count);
+        }
+        catch (IllegalStateException e)
+        {
+            isTrue("wrong EAX reuse message: " + e.getMessage(),
+                "EAX cipher cannot be reused for encryption".equals(e.getMessage()));
+        }
+
+        runCheckVectors(count, newEncryptor(parameters), decEax, additionalDataType, sa, p, t, c);
 
         // Key reuse: re-initialising for encryption with the same key+nonce (here via a null key,
         // i.e. key re-use) is now rejected (nonce reuse is catastrophic for EAX). Re-init for
@@ -225,8 +238,16 @@ public class EAXTest
         }
         decEax.init(false, parameters);
 
-        runCheckVectors(count, encEax, decEax, additionalDataType, sa, p, t, c);
-        runCheckVectors(count, encEax, decEax, additionalDataType, sa, p, t, c);
+        AEADParameters fullParameters = new AEADParameters(new KeyParameter(k), macSize, n, a);
+        runCheckVectors(count, newEncryptor(fullParameters), decEax, additionalDataType, sa, p, t, c);
+        runCheckVectors(count, newEncryptor(fullParameters), decEax, additionalDataType, sa, p, t, c);
+    }
+
+    private static EAXBlockCipher newEncryptor(AEADParameters parameters)
+    {
+        EAXBlockCipher encEax = new EAXBlockCipher(AESEngine.newInstance());
+        encEax.init(true, parameters);
+        return encEax;
     }
 
     private void runCheckVectors(

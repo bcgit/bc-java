@@ -51,6 +51,8 @@ public class EAXBlockCipher
     private int bufOff;
 
     private boolean cipherInitialized;
+    // set by an encryption doFinal, or a reset() after message data; cleared only by init
+    private boolean nonceUsed;
     private byte[] initialAssociatedText;
 
     // Previous (nonce, key) seen on init(true, ...) - used only to reject nonce reuse for encryption.
@@ -123,7 +125,8 @@ public class EAXBlockCipher
         // OMAC). That standard places the obligation on the caller, so this guard enforces it
         // defensively, mirroring GCMBlockCipher / KGCMBlockCipher. A null key parameter (explicit
         // key re-use, supported by the underlying CMac) combined with a repeated nonce is also
-        // caught. A fresh nonce or key, reset(), or init for decryption are all unaffected.
+        // caught. A fresh nonce or key, or init for decryption, are unaffected; reuse without a new
+        // init is refused separately (nonceUsed).
         if (forEncryption && lastNonce != null && Arrays.areEqual(lastNonce, nonce))
         {
             if (keyParam == null)
@@ -159,6 +162,8 @@ public class EAXBlockCipher
         cipher.init(true, new ParametersWithIV(keyParam, nonceMac));
 
         reset();
+
+        nonceUsed = false;
     }
 
     private void initCipher()
@@ -177,6 +182,14 @@ public class EAXBlockCipher
         mac.update(tag, 0, blockSize);
     }
 
+    private void checkNonceUnused()
+    {
+        if (nonceUsed)
+        {
+            throw new IllegalStateException("EAX cipher cannot be reused for encryption");
+        }
+    }
+
     private void calculateMac()
     {
         byte[] outC = new byte[blockSize];
@@ -190,6 +203,11 @@ public class EAXBlockCipher
 
     public void reset()
     {
+        if (forEncryption && cipherInitialized)
+        {
+            nonceUsed = true;
+        }
+
         reset(true);
     }
 
@@ -240,6 +258,7 @@ public class EAXBlockCipher
     public int processByte(byte in, byte[] out, int outOff)
         throws DataLengthException
     {
+        checkNonceUnused();
         initCipher();
 
         return process(in, out, outOff);
@@ -248,6 +267,7 @@ public class EAXBlockCipher
     public int processBytes(byte[] in, int inOff, int len, byte[] out, int outOff)
         throws DataLengthException
     {
+        checkNonceUnused();
         initCipher();
 
         if (in.length < (inOff + len))
@@ -274,6 +294,7 @@ public class EAXBlockCipher
     public int doFinal(byte[] out, int outOff)
         throws IllegalStateException, InvalidCipherTextException
     {
+        checkNonceUnused();
         initCipher();
 
         int extra = bufOff;
@@ -287,6 +308,8 @@ public class EAXBlockCipher
             {
                 throw new OutputLengthException("Output buffer too short");
             }
+
+            nonceUsed = true;
             cipher.processBlock(bufBlock, 0, tmp, 0);
 
             System.arraycopy(tmp, 0, out, outOff, extra);

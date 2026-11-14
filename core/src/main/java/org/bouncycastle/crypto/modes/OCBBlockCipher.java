@@ -78,6 +78,8 @@ public class OCBBlockCipher
 
     // NOTE: The MAC value is preserved after doFinal
     private byte[] macBlock;
+    // set by an encryption doFinal, or a reset() after message data; cleared only by init
+    private boolean nonceUsed;
 
     public OCBBlockCipher(BlockCipher hashCipher, BlockCipher mainCipher)
     {
@@ -178,8 +180,8 @@ public class OCBBlockCipher
         // under a given key; reuse collapses OCB's security (offset and keystream reuse, and per
         // RFC 7253 makes forgery trivial). That obligation is the caller's, so this guard enforces
         // it defensively, mirroring GCMBlockCipher. A null key parameter (explicit key re-use) with
-        // a repeated nonce is also caught. A fresh nonce or key, reset(), or init for decryption are
-        // all unaffected.
+        // a repeated nonce is also caught. A fresh nonce or key, or init for decryption, are unaffected;
+        // reuse without a new init is refused separately (nonceUsed).
         if (forEncryption && lastN != null && Arrays.areEqual(lastN, N))
         {
             if (keyParameter == null)
@@ -253,6 +255,8 @@ public class OCBBlockCipher
         this.Sum = new byte[16];
         System.arraycopy(this.OffsetMAIN_0, 0, this.OffsetMAIN, 0, 16);
         this.Checksum = new byte[16];
+
+        this.nonceUsed = false;
 
         if (initialAssociatedText != null)
         {
@@ -345,6 +349,8 @@ public class OCBBlockCipher
     public int processByte(byte input, byte[] output, int outOff)
         throws DataLengthException
     {
+        checkNonceUnused();
+
         mainBlock[mainBlockPos] = input;
         if (++mainBlockPos == mainBlock.length)
         {
@@ -357,6 +363,8 @@ public class OCBBlockCipher
     public int processBytes(byte[] input, int inOff, int len, byte[] output, int outOff)
         throws DataLengthException
     {
+        checkNonceUnused();
+
         if (input.length < (inOff + len))
         {
             throw new DataLengthException("Input buffer too short");
@@ -385,6 +393,14 @@ public class OCBBlockCipher
         throws IllegalStateException,
         InvalidCipherTextException
     {
+        checkNonceUnused();
+
+        // the final block may be written out before the tag, so the nonce counts as used from here
+        if (forEncryption)
+        {
+            nonceUsed = true;
+        }
+
         /*
          * For decryption, get the tag from the end of the message
          */
@@ -484,7 +500,20 @@ public class OCBBlockCipher
 
     public void reset()
     {
+        if (forEncryption && (mainBlockCount > 0 || mainBlockPos > 0))
+        {
+            nonceUsed = true;
+        }
+
         reset(true);
+    }
+
+    private void checkNonceUnused()
+    {
+        if (nonceUsed)
+        {
+            throw new IllegalStateException("OCB cipher cannot be reused for encryption");
+        }
     }
 
     protected void clear(byte[] bs)

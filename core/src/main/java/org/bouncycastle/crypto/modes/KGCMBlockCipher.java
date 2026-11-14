@@ -62,6 +62,8 @@ public class KGCMBlockCipher
     private byte[] macBlock;
     private byte[] nonce;
     private byte[] lastKey;
+    // set once an encryption has used the current key and nonce, cleared only by init
+    private boolean nonceUsed;
 
     private KGCMMultiplier multiplier;
     private long[] b;
@@ -157,7 +159,7 @@ public class KGCMBlockCipher
 
         // Encrypting twice with the same key and nonce is catastrophic for any GCM-family mode
         // (it leaks the authentication key and the XOR of the plaintexts). Reject it on re-init,
-        // mirroring GCMBlockCipher. reset()-based reuse is unaffected (it does not re-init).
+        // mirroring GCMBlockCipher. Reuse without a new init is refused separately (nonceUsed).
         if (forEncryption)
         {
             // NOTE: Nonces compared _after_ zero-extension to blockSize
@@ -188,6 +190,8 @@ public class KGCMBlockCipher
         {
             engine.init(true, keyParameter);
         }
+
+        nonceUsed = false;
     }
 
     public String getAlgorithmName()
@@ -250,9 +254,19 @@ public class KGCMBlockCipher
         return 0;
     }
 
+    private void checkNonceUnused()
+    {
+        if (forEncryption && nonceUsed)
+        {
+            throw new IllegalStateException("KGCM cipher cannot be reused for encryption");
+        }
+    }
+
     public int doFinal(byte[] out, int outOff)
         throws IllegalStateException, InvalidCipherTextException
     {
+        checkNonceUnused();
+
         int len = data.size();
         if (!forEncryption && len < macSize)
         {
@@ -277,6 +291,11 @@ public class KGCMBlockCipher
         if (out.length - outOff < ctLen + (forEncryption ? macSize : 0))
         {
             throw new OutputLengthException("Output buffer too short");
+        }
+
+        if (forEncryption)
+        {
+            nonceUsed = true;
         }
 
         // TODO Total blocks restriction in GCM mode (extend limit naturally for larger block sizes?)

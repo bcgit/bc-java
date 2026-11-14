@@ -19,6 +19,7 @@ Date: 2026, TBD
 - The Gradle-built bcjmail jar carried an unused org.bouncycastle.mail.smime.handlers.HandlerUtil class, which refers to java.awt.datatransfer, a package the bcjmail module descriptor does not require. It is no longer included, as it never was in the Ant-built jar.
 - The PKIX CertPathValidator did not fall back to CRLs when OCSP left a certificate's status undetermined: a response status other than successful, from a responder or supplied by the caller, or a certificate status of unknown, failed validation outright. Each now falls back to CRLs unless NO_FALLBACK is set, and if they do not settle the status either the OCSP failure is reported with the CRL failure suppressed (github bc-lts-java #12).
 - The lightweight stream ciphers and stream modes (CTR/SIC, CFB, OFB, GOFB, GCFB, KCTR, the GOST R 34.13 CTR, CFB and OFB modes, Salsa20, ChaCha, RC4, HC-128, HC-256, ISAAC, VMPC, Grain and ZUC) gave wrong output from processBytes() when the output was in the same array as the input and started after it while overlapping it, as the output overwrote input not yet read. The input is now moved first; output at or before the input, the buffered ciphers and the AEAD modes were unaffected.
+- CCM, KCCM, KGCM, EAX and OCB encrypted a further message under the same key and nonce when used again without a new init, including through Cipher.doFinal(); a second encryption now throws IllegalStateException, as GCM already did, and KGMac, like GMac, now needs a fresh IV per message (PR #2562).
 
 #### Additional Features and Functionality
 

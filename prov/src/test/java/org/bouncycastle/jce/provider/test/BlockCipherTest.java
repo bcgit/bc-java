@@ -855,10 +855,9 @@ public class BlockCipherTest
         int len = 0;
         try
         {
-            if (algorithm.indexOf("GCM") > 0)
+            if (refusesEncryptionReuse(algorithm))
             {
-                out = Cipher.getInstance(algorithm, "BC");
-                out.init(Cipher.ENCRYPT_MODE, key, rand);
+                out = newEncryptor(algorithm, key, rand);
             }
 
             len = out.doFinal(data, 0, input.length, data, 0);
@@ -881,10 +880,9 @@ public class BlockCipherTest
         try
         {
 
-            if (algorithm.indexOf("GCM") > 0)
+            if (refusesEncryptionReuse(algorithm))
             {
-                out = Cipher.getInstance(algorithm, "BC");
-                out.init(Cipher.ENCRYPT_MODE, key, rand);
+                out = newEncryptor(algorithm, key, rand);
             }
 
             len = out.doFinal(data, 0, input.length, data, 1);
@@ -982,18 +980,16 @@ public class BlockCipherTest
                 System.arraycopy(input, 0, input2, input.length * 2, input.length);
                 System.arraycopy(input, 0, input2, input.length * 3, input.length);
 
-                if (algorithm.indexOf("GCM") > 0)
+                if (refusesEncryptionReuse(algorithm))
                 {
-                    out = Cipher.getInstance(algorithm, "BC");
-                    out.init(Cipher.ENCRYPT_MODE, key, rand);
+                    out = newEncryptor(algorithm, key, rand);
                 }
 
                 byte[] output2 = out.doFinal(input2);
 
-                if (algorithm.indexOf("GCM") > 0)
+                if (refusesEncryptionReuse(algorithm))
                 {
-                    out = Cipher.getInstance(algorithm, "BC");
-                    out.init(Cipher.ENCRYPT_MODE, key, rand);
+                    out = newEncryptor(algorithm, key, rand);
                 }
                 
                 byte[] out1 = new byte[input2.length / 2 - out.getBlockSize() * 2 - 1];
@@ -1757,6 +1753,37 @@ public class BlockCipherTest
                 fail(e.toString());
             }
         }
+    }
+
+    // a fresh encryptor for repeating an encryption, initialised as test() initialises the first one
+    private static Cipher newEncryptor(String algorithm, Key key, SecureRandom rand)
+        throws Exception
+    {
+        Cipher out = Cipher.getInstance(algorithm, "BC");
+        if (algorithm.startsWith("RC2"))
+        {
+            out.init(Cipher.ENCRYPT_MODE, key, rc2Spec, rand);
+        }
+        else if (algorithm.startsWith("RC5-64"))
+        {
+            out.init(Cipher.ENCRYPT_MODE, key, rc564Spec, rand);
+        }
+        else if (algorithm.startsWith("RC5"))
+        {
+            out.init(Cipher.ENCRYPT_MODE, key, rc5Spec, rand);
+        }
+        else
+        {
+            out.init(Cipher.ENCRYPT_MODE, key, rand);
+        }
+        return out;
+    }
+
+    // an AEAD encryption cannot be repeated under the same key and nonce without a new init
+    private static boolean refusesEncryptionReuse(String algorithm)
+    {
+        return algorithm.indexOf("GCM") > 0 || algorithm.indexOf("EAX") > 0 || algorithm.indexOf("OCB") > 0
+            || algorithm.indexOf("CCM") > 0;
     }
 
     public void performTest()
