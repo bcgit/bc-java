@@ -9,14 +9,12 @@ import java.security.SignatureException;
 import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
-import java.util.List;
 
 import org.bouncycastle.asn1.misc.MiscObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.cert.X509CertificateHolder;
 import org.bouncycastle.cert.jcajce.JcaX509CertificateHolder;
-import org.bouncycastle.jcajce.CompositePublicKey;
 import org.bouncycastle.jcajce.io.OutputStreamFactory;
 import org.bouncycastle.jcajce.spec.ContextParameterSpec;
 import org.bouncycastle.operator.ContentVerifier;
@@ -161,51 +159,17 @@ public class JcaContentVerifierProviderBuilder
             {
                 checkNotLegacyComposite(algorithm);
 
-                //Use this legacy method only for composite public keys (they have that identifier)
-                if (publicKey instanceof CompositePublicKey
-                    && ((CompositePublicKey)publicKey).getAlgorithmIdentifier().getAlgorithm().equals(MiscObjectIdentifiers.id_composite_key))
+                Signature sig = createSignature(algorithm, publicKey);
+
+                Signature rawSig = createRawSig(algorithm, publicKey);
+
+                if (rawSig != null)
                 {
-                    List<PublicKey> keys = ((CompositePublicKey)publicKey).getPublicKeys();
-
-                    for (int i = 0; i != keys.size(); i++)
-                    {
-                        try
-                        {
-                            Signature sig = createSignature(algorithm, (PublicKey)keys.get(i));
-
-                            Signature rawSig = createRawSig(algorithm, (PublicKey)keys.get(i));
-
-                            if (rawSig != null)
-                            {
-                                return new RawSigVerifier(algorithm, sig, rawSig);
-                            }
-                            else
-                            {
-                                return new SigVerifier(algorithm, sig);
-                            }
-                        }
-                        catch (OperatorCreationException e)
-                        {
-                            // skip incorrect keys
-                        }
-                    }
-
-                    throw new OperatorCreationException("no matching algorithm found for key");
+                    return new RawSigVerifier(algorithm, sig, rawSig);
                 }
                 else
                 {
-                    Signature sig = createSignature(algorithm, publicKey);
-
-                    Signature rawSig = createRawSig(algorithm, publicKey);
-
-                    if (rawSig != null)
-                    {
-                        return new RawSigVerifier(algorithm, sig, rawSig);
-                    }
-                    else
-                    {
-                        return new SigVerifier(algorithm, sig);
-                    }
+                    return new SigVerifier(algorithm, sig);
                 }
             }
         };

@@ -8,12 +8,14 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.math.BigInteger;
 import java.security.GeneralSecurityException;
+import java.security.InvalidKeyException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.Security;
 import java.security.Signature;
+import java.security.cert.X509Certificate;
 import java.security.spec.RSAKeyGenParameterSpec;
 import java.util.Date;
 
@@ -31,6 +33,7 @@ import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.cert.CertException;
 import org.bouncycastle.cert.X509CertificateHolder;
+import org.bouncycastle.cert.jcajce.JcaX509CertificateConverter;
 import org.bouncycastle.cert.jcajce.JcaX509v3CertificateBuilder;
 import org.bouncycastle.jcajce.CompositePrivateKey;
 import org.bouncycastle.jcajce.CompositePublicKey;
@@ -45,6 +48,7 @@ import org.bouncycastle.operator.ContentVerifier;
 import org.bouncycastle.operator.ContentVerifierProvider;
 import org.bouncycastle.operator.DefaultSignatureAlgorithmIdentifierFinder;
 import org.bouncycastle.operator.OperatorCreationException;
+import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
 import org.bouncycastle.operator.jcajce.JcaContentVerifierProviderBuilder;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
@@ -265,6 +269,63 @@ public class CompositeKeyTest
             catch (CertException e)
             {
                 assertEquals("legacy composite signature algorithm not supported", e.getCause().getMessage());
+            }
+        }
+    }
+
+    public void testLegacyCompositeKeyRefusesSingleComponentSignature()
+        throws Exception
+    {
+        // A legacy (id_composite_key) composite public key used to accept a plain, non-composite
+        // signature made by any one of its components, so a certificate needed only one of the
+        // keys broken to be forged. Now that legacy composite signatures are not verified at all,
+        // such a key verifies nothing.
+        KeyPairGenerator ecKpg = KeyPairGenerator.getInstance("EC", "BC");
+        ecKpg.initialize(new ECNamedCurveGenParameterSpec("P-256"));
+        KeyPair ecKp = ecKpg.generateKeyPair();
+
+        KeyPairGenerator mlDsaKpg = KeyPairGenerator.getInstance("ML-DSA", "BC");
+        mlDsaKpg.initialize(MLDSAParameterSpec.ml_dsa_44);
+        KeyPair mlDsaKp = mlDsaKpg.generateKeyPair();
+
+        CompositePublicKey legacyPub = new CompositePublicKey(mlDsaKp.getPublic(), ecKp.getPublic());
+        assertEquals(MiscObjectIdentifiers.id_composite_key, legacyPub.getAlgorithmIdentifier().getAlgorithm());
+
+        KeyPair[] signers = new KeyPair[]{ mlDsaKp, ecKp };
+        String[] sigAlgs = new String[]{ "ML-DSA-44", "SHA256withECDSA" };
+        for (int i = 0; i != signers.length; i++)
+        {
+            X500Name name = new X500Name("CN=Legacy Composite Key Test");
+            X509CertificateHolder certHldr = new JcaX509v3CertificateBuilder(
+                name, BigInteger.valueOf(1),
+                new Date(System.currentTimeMillis() - 50000), new Date(System.currentTimeMillis() + 50000),
+                name, signers[i].getPublic()).build(
+                    new JcaContentSignerBuilder(sigAlgs[i]).setProvider("BC").build(signers[i].getPrivate()));
+            X509Certificate cert = new JcaX509CertificateConverter().setProvider("BC").getCertificate(certHldr);
+
+            // the signature is genuine for the component key on its own
+            assertTrue(certHldr.isSignatureValid(
+                new JcaContentVerifierProviderBuilder().setProvider("BC").build(signers[i].getPublic())));
+            cert.verify(signers[i].getPublic());
+
+            try
+            {
+                assertFalse(sigAlgs[i] + " accepted for a legacy composite key", certHldr.isSignatureValid(
+                    new JcaContentVerifierProviderBuilder().setProvider("BC").build(legacyPub)));
+            }
+            catch (CertException e)
+            {
+                // refusing the key outright is the expected response
+            }
+
+            try
+            {
+                cert.verify(legacyPub);
+                fail(sigAlgs[i] + " accepted for a legacy composite key");
+            }
+            catch (InvalidKeyException e)
+            {
+                // expected
             }
         }
     }

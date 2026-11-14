@@ -55,7 +55,6 @@ import org.bouncycastle.internal.asn1.misc.MiscObjectIdentifiers;
 import org.bouncycastle.internal.asn1.misc.NetscapeCertType;
 import org.bouncycastle.internal.asn1.misc.NetscapeRevocationURL;
 import org.bouncycastle.internal.asn1.misc.VerisignCzagExtension;
-import org.bouncycastle.jcajce.CompositePublicKey;
 import org.bouncycastle.jcajce.interfaces.BCX509Certificate;
 import org.bouncycastle.jcajce.io.OutputStreamFactory;
 import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
@@ -612,33 +611,8 @@ abstract class X509CertificateImpl
 
         Signature signature = signatureCreator.createSignature(getSigAlgName());
 
-        //Use this only for legacy composite public keys (they have this identifier)
-        if (key instanceof CompositePublicKey
-            && MiscObjectIdentifiers.id_composite_key.equals(((CompositePublicKey)key).getAlgorithmIdentifier().getAlgorithm()))
-        {
-            List<PublicKey> keys = ((CompositePublicKey)key).getPublicKeys();
-
-            for (int i = 0; i != keys.size(); i++)
-            {
-                try
-                {
-                    checkSignature((PublicKey)keys.get(i), signature,
-                        c.getSignatureAlgorithm().getParameters(), this.getSignature());
-                    return;     // found the match!
-                }
-                catch (InvalidKeyException e)
-                {
-                    // continue;
-                }
-            }
-
-            throw new InvalidKeyException("no matching signature found");
-        }
-        else
-        {
-            checkSignature(key, signature,
-                c.getSignatureAlgorithm().getParameters(), this.getSignature());
-        }
+        checkSignature(key, signature,
+            c.getSignatureAlgorithm().getParameters(), this.getSignature());
     }
 
     private void checkSignature(PublicKey key, Signature signature, ASN1Encodable sigAlgParams, byte[] sigBytes)
