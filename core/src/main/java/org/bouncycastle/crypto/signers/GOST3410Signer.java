@@ -67,6 +67,11 @@ public class GOST3410Signer
             GOST3410Parameters   params = key.getParameters();
             // m is public, and the digest can exceed q, which modMult below rejects rather than reduces
             BigInteger      m = new BigInteger(1, mRev).mod(params.getQ());
+            // GOST R 34.10-94, as RFC 5832 for 2001: m = 0 becomes 1, otherwise s = x * r and the key is s * r^-1
+            if (m.signum() == 0)
+            {
+                m = BigIntegers.ONE;
+            }
             BigInteger      k;
 
             do
@@ -107,8 +112,13 @@ public class GOST3410Signer
             BigInteger  s)
         {
             byte[] mRev = Arrays.reverse(message); // conversion is little-endian
-            BigInteger           m = new BigInteger(1, mRev);
             GOST3410Parameters params = key.getParameters();
+            // as on signing, m is reduced and m = 0 becomes 1, so (r = 1, any s) no longer verifies over such a digest
+            BigInteger           m = new BigInteger(1, mRev).mod(params.getQ());
+            if (m.signum() == 0)
+            {
+                m = BigIntegers.ONE;
+            }
             BigInteger           zero = BigInteger.valueOf(0);
 
             if (zero.compareTo(r) >= 0 || params.getQ().compareTo(r) <= 0)

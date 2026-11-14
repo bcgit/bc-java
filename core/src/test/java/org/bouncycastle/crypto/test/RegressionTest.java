@@ -227,6 +227,7 @@ public class RegressionTest
         {
             new AESTest(),
             new GOST3410Test(),
+            new GOST3410ZeroDigestTest(),
             new DigestRandomNumberTest(),
             new RSATest(),
             new SCryptTest(),

@@ -74,6 +74,11 @@ public class ECGOST3410Signer
         BigInteger n = ec.getN();
         // e is public, and the digest can exceed n, which modMult below rejects rather than reduces
         BigInteger e = new BigInteger(1, mRev).mod(n);
+        // RFC 7091 / RFC 5832 sec. 6.1 step 2: e = 0 becomes 1, otherwise s = d * r and the key is s * r^-1
+        if (e.signum() == 0)
+        {
+            e = ECConstants.ONE;
+        }
         BigInteger d = ((ECPrivateKeyParameters)key).getD();
 
         BigInteger r, s;
@@ -116,8 +121,13 @@ public class ECGOST3410Signer
         BigInteger  s)
     {
         byte[] mRev = Arrays.reverse(message); // conversion is little-endian
-        BigInteger e = new BigInteger(1, mRev);
         BigInteger n = key.getParameters().getN();
+        // RFC 7091 / RFC 5832 sec. 6.2 step 3: as on signing, e is reduced and e = 0 becomes 1
+        BigInteger e = new BigInteger(1, mRev).mod(n);
+        if (e.signum() == 0)
+        {
+            e = ECConstants.ONE;
+        }
 
         // r in the range [1,n-1]
         if (r.compareTo(ECConstants.ONE) < 0 || r.compareTo(n) >= 0)
