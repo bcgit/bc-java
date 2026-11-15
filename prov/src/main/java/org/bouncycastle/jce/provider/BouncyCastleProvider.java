@@ -23,6 +23,7 @@ import org.bouncycastle.crypto.CryptoServiceProperties;
 import org.bouncycastle.crypto.CryptoServicePurpose;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.asn1.iana.IANAObjectIdentifiers;
+import org.bouncycastle.internal.asn1.bc.LegacyRoundOids;
 import org.bouncycastle.internal.asn1.isara.IsaraObjectIdentifiers;
 import org.bouncycastle.jcajce.provider.asymmetric.lms.LMSKeyFactorySpi;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
@@ -659,7 +660,8 @@ public final class BouncyCastleProvider extends Provider
     {
         synchronized (keyInfoConverters)
         {
-            return (AsymmetricKeyInfoConverter)keyInfoConverters.get(algorithm);
+            // keys from 1.81 to 1.87 may name their parameter set by a legacy OID
+            return (AsymmetricKeyInfoConverter)keyInfoConverters.get(LegacyRoundOids.normalise(algorithm));
         }
     }
 

@@ -785,7 +785,7 @@ public interface BCObjectIdentifiers
     /**
      * Snova. Each identifier is a parameter-set leaf with .2 appended for the NIST round-2 version
      * of the scheme, which the implementation follows. Bouncy Castle 1.81 to 1.87 used the bare
-     * leaves, which are no longer recognised.
+     * leaves, which are still read but no longer written.
      */
     ASN1ObjectIdentifier snova = bc_sig.branch("11");
     ASN1ObjectIdentifier snova_24_5_4_ssk = snova.branch("1").branch("2");
@@ -891,7 +891,7 @@ public interface BCObjectIdentifiers
      * <p>
      * Each identifier is a parameter-set leaf with .2 appended for FAEST v2.0, the NIST round-2
      * version, which the implementation follows; the round-3 identifiers below append .3 to the same
-     * leaves. Bouncy Castle 1.85 to 1.87 used the bare leaves, which are no longer recognised.
+     * leaves. Bouncy Castle 1.85 to 1.87 used the bare leaves, which are still read but no longer written.
      */
     ASN1ObjectIdentifier faest = bc_sig.branch("12");
 
@@ -939,7 +939,7 @@ public interface BCObjectIdentifiers
      * <p>
      * Each identifier is a parameter-set leaf with .2 appended for version 2.1, the NIST round-2
      * version; version 3.0 takes the Open Quantum Safe identifiers below. Bouncy Castle 1.85 to 1.87
-     * used the bare leaves, which are no longer recognised.
+     * used the bare leaves, which are still read but no longer written.
      */
     ASN1ObjectIdentifier mqom = bc_sig.branch("13");
     ASN1ObjectIdentifier mqom2_cat1_gf2_fast_r3      = mqom.branch("1").branch("2");
@@ -1034,7 +1034,7 @@ public interface BCObjectIdentifiers
      * <p>
      * Each identifier is a parameter-set leaf with .2 appended for the NIST round-2 version, which
      * the implementation follows; the round-3 identifiers below append .3 to the same leaves. Bouncy
-     * Castle 1.85 to 1.87 used the bare leaves, which are no longer recognised.
+     * Castle 1.85 to 1.87 used the bare leaves, which are still read but no longer written.
      */
     ASN1ObjectIdentifier uov = bc_sig.branch("14");
     ASN1ObjectIdentifier uov_Is_classic   = uov.branch("1").branch("2");
@@ -1078,7 +1078,7 @@ public interface BCObjectIdentifiers
      * <p>
      * Each identifier is a parameter-set leaf with .2 appended for SQIsign v2, the NIST round-2
      * version, which the implementation follows; the round-3 identifiers below append .3 to the same
-     * leaves. Bouncy Castle 1.85 to 1.87 used the bare leaves, which are no longer recognised.
+     * leaves. Bouncy Castle 1.85 to 1.87 used the bare leaves, which are still read but no longer written.
      */
     ASN1ObjectIdentifier sqisign       = bc_sig.branch("19");
     ASN1ObjectIdentifier sqisign_lvl1  = sqisign.branch("1").branch("2");
@@ -1134,7 +1134,7 @@ public interface BCObjectIdentifiers
      * hypercube cat1/3/5 gf256 = .1/.2/.3, hypercube cat1/3/5 p251 = .4/.5/.6,
      * threshold cat1/3/5 gf256 = .7/.8/.9, threshold cat1/3/5 p251 = .10/.11/.12,
      * and each identifier is its leaf with .1 appended for the round-1 version. Bouncy Castle 1.85
-     * to 1.87 used the bare leaves, which are no longer recognised.
+     * to 1.87 used the bare leaves, which are still read but no longer written.
      * Versions 2.0 (round 2) and 3.0 (round 3) replaced this MPC-in-the-Head scheme with a
      * VOLE-in-the-Head one over GF(2).
      */
@@ -1182,7 +1182,7 @@ public interface BCObjectIdentifiers
      * <p>
      * Each identifier is a parameter-set leaf with .2 appended for the NIST round-2 version, which
      * the implementation follows; the round-3 identifiers below append .3 to the same leaves. Bouncy
-     * Castle 1.85 to 1.87 used the bare leaves, which are no longer recognised.
+     * Castle 1.85 to 1.87 used the bare leaves, which are still read but no longer written.
      */
     ASN1ObjectIdentifier qruov = bc_sig.branch("17");
 

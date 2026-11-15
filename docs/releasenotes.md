@@ -34,7 +34,7 @@ Date: 2026, TBD
 
 #### Additional Notes
 
-- The Bouncy Castle OIDs of the NIST additional-signature candidates now end in the round whose version they identify. Those of SNOVA, FAEST, MQOM, UOV, QR-UOV and SQIsign, whose implementations follow round 2, have .2 appended to their parameter-set leaves, and those of SDitH, whose implementation follows round 1, have .1 appended. The previous OIDs, used by SNOVA since 1.81 and by the others since 1.85, are no longer recognised. The key encodings are unchanged, so a stored key can be carried over by replacing its algorithm identifier, but certificates and signed structures carrying the previous OIDs need to be issued again. BCObjectIdentifiers also declares the OIDs, ending in .3 or taken from Open Quantum Safe, that the round-3 implementations will use. MAYO keeps its Open Quantum Safe OIDs and HAWK, withdrawn from the process, keeps its OIDs.
+- The BC OIDs of SNOVA, FAEST, MQOM, UOV, QR-UOV and SQIsign now end in .2 and those of SDitH in .1, the round implemented; the previous OIDs are still read but no longer written.
 
 <a id="r1rv87"></a>
 

@@ -13,6 +13,7 @@ import java.util.Map;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.internal.asn1.bc.LegacyRoundOids;
 import org.bouncycastle.jcajce.provider.config.ConfigurableProvider;
 import org.bouncycastle.jcajce.provider.config.ProviderConfiguration;
 import org.bouncycastle.jcajce.provider.util.AlgorithmProvider;
@@ -67,6 +68,32 @@ public class BouncyCastlePQCProvider
     private void setup()
     {
         loadAlgorithms(ALGORITHM_PACKAGE, ALGORITHMS);
+        loadLegacyRoundOids();
+    }
+
+    /**
+     * Keys and signatures from 1.81 to 1.87 may name their parameter set by a legacy OID, so each
+     * legacy OID is an alias of whatever its current OID names.
+     */
+    private void loadLegacyRoundOids()
+    {
+        String[] types = new String[]{ "KeyFactory", "Signature" };
+
+        for (Iterator it = LegacyRoundOids.legacyOids(); it.hasNext();)
+        {
+            ASN1ObjectIdentifier legacy = (ASN1ObjectIdentifier)it.next();
+            ASN1ObjectIdentifier current = LegacyRoundOids.getCurrent(legacy);
+
+            for (int i = 0; i != types.length; i++)
+            {
+                String name = getProperty("Alg.Alias." + types[i] + "." + current);
+                if (name != null)
+                {
+                    addAlgorithm("Alg.Alias." + types[i] + "." + legacy, name);
+                    addAlgorithm("Alg.Alias." + types[i] + ".OID." + legacy, name);
+                }
+            }
+        }
     }
 
     private void loadAlgorithms(String packageName, String[] names)
@@ -172,7 +199,8 @@ public class BouncyCastlePQCProvider
     {
         synchronized (keyInfoConverters)
         {
-            return (AsymmetricKeyInfoConverter)keyInfoConverters.get(algorithm);
+            // keys from 1.81 to 1.87 may name their parameter set by a legacy OID
+            return (AsymmetricKeyInfoConverter)keyInfoConverters.get(LegacyRoundOids.normalise(algorithm));
         }
     }
 

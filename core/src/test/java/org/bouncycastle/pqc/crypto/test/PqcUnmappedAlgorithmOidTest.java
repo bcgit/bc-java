@@ -26,6 +26,33 @@ import org.bouncycastle.pqc.legacy.sphincsplus.SPHINCSPlusPrivateKeyParameters;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyFactory;
 import org.bouncycastle.pqc.crypto.util.PrivateKeyInfoFactory;
 import org.bouncycastle.pqc.crypto.util.PublicKeyFactory;
+import org.bouncycastle.asn1.ASN1EncodableVector;
+import org.bouncycastle.asn1.ASN1Sequence;
+import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
+import org.bouncycastle.crypto.KeyGenerationParameters;
+import org.bouncycastle.internal.asn1.bc.LegacyRoundOids;
+import org.bouncycastle.pqc.crypto.faest.FaestKeyGenerationParameters;
+import org.bouncycastle.pqc.crypto.faest.FaestKeyPairGenerator;
+import org.bouncycastle.pqc.crypto.faest.FaestParameters;
+import org.bouncycastle.pqc.crypto.mqom.MQOMKeyGenerationParameters;
+import org.bouncycastle.pqc.crypto.mqom.MQOMKeyPairGenerator;
+import org.bouncycastle.pqc.crypto.mqom.MQOMParameters;
+import org.bouncycastle.pqc.crypto.qruov.QRUOVKeyGenerationParameters;
+import org.bouncycastle.pqc.crypto.qruov.QRUOVKeyPairGenerator;
+import org.bouncycastle.pqc.crypto.qruov.QRUOVParameters;
+import org.bouncycastle.pqc.crypto.sdith.SDitHKeyGenerationParameters;
+import org.bouncycastle.pqc.crypto.sdith.SDitHKeyPairGenerator;
+import org.bouncycastle.pqc.crypto.sdith.SDitHParameters;
+import org.bouncycastle.pqc.crypto.snova.SnovaKeyGenerationParameters;
+import org.bouncycastle.pqc.crypto.snova.SnovaKeyPairGenerator;
+import org.bouncycastle.pqc.crypto.snova.SnovaParameters;
+import org.bouncycastle.pqc.crypto.sqisign.SQIsignKeyGenerationParameters;
+import org.bouncycastle.pqc.crypto.sqisign.SQIsignKeyPairGenerator;
+import org.bouncycastle.pqc.crypto.sqisign.SQIsignParameters;
+import org.bouncycastle.pqc.crypto.uov.UOVKeyGenerationParameters;
+import org.bouncycastle.pqc.crypto.uov.UOVKeyPairGenerator;
+import org.bouncycastle.pqc.crypto.uov.UOVParameters;
+import org.bouncycastle.pqc.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.util.Arrays;
 
 /**
@@ -293,11 +320,10 @@ public class PqcUnmappedAlgorithmOidTest
     /**
      * Bouncy Castle 1.81 to 1.87 identified the NIST round-2 versions of SNOVA, FAEST, MQOM, UOV,
      * QR-UOV and SQIsign, and the round-1 version of SDitH, by bare parameter-set leaves; each
-     * identifier now has its round appended. A key under a bare leaf must be turned away as an
-     * unrecognised algorithm identifier, on the private and the public side, rather than reach a
-     * branch.
+     * identifier now has its round appended. A key under a bare leaf is still read, as the parameter
+     * set the leaf names, and is written under the current identifier.
      */
-    public void testUnsuffixedRoundLeavesRejected()
+    public void testLegacyRoundLeavesRead()
         throws Exception
     {
         assertEquals(BCObjectIdentifiers.snova.branch("1").branch("2"), BCObjectIdentifiers.snova_24_5_4_ssk);
@@ -315,29 +341,77 @@ public class PqcUnmappedAlgorithmOidTest
             BCObjectIdentifiers.qruov, BCObjectIdentifiers.sqisign, BCObjectIdentifiers.sdith
         };
         int[] leafCounts = new int[]{ 44, 12, 36, 12, 12, 3, 12 };
+        String[] rounds = new String[]{ "2", "2", "2", "2", "2", "2", "1" };
 
         for (int a = 0; a != arcs.length; a++)
         {
             for (int leaf = 1; leaf <= leafCounts[a]; leaf++)
             {
-                ASN1ObjectIdentifier algOID = arcs[a].branch(Integer.toString(leaf));
+                ASN1ObjectIdentifier legacy = arcs[a].branch(Integer.toString(leaf));
 
-                assertTrue("private key under bare leaf " + algOID + " is not turned away as unrecognised",
-                    isRejectedAsUnrecognised(algOID));
-
-                SubjectPublicKeyInfo keyInfo = new SubjectPublicKeyInfo(new AlgorithmIdentifier(algOID), new byte[64]);
-                try
-                {
-                    PublicKeyFactory.createKey(keyInfo.getEncoded());
-                    fail("no exception for public key under bare leaf " + algOID);
-                }
-                catch (IOException e)
-                {
-                    assertTrue("public key under bare leaf " + algOID + " rejected for another reason: " + e,
-                        e.getMessage() != null && e.getMessage().indexOf("not recognised") >= 0);
-                }
+                assertEquals(legacy.branch(rounds[a]), LegacyRoundOids.getCurrent(legacy));
+                assertFalse("private key under legacy leaf " + legacy + " is not recognised",
+                    isRejectedAsUnrecognised(legacy));
             }
+            // the leaf after the last one was never a parameter set
+            assertNull(LegacyRoundOids.getCurrent(arcs[a].branch(Integer.toString(leafCounts[a] + 1))));
         }
+
+        SecureRandom random = new SecureRandom();
+        AsymmetricCipherKeyPairGenerator[] generators = new AsymmetricCipherKeyPairGenerator[]
+        {
+            new SnovaKeyPairGenerator(), new FaestKeyPairGenerator(), new MQOMKeyPairGenerator(),
+            new UOVKeyPairGenerator(), new QRUOVKeyPairGenerator(), new SQIsignKeyPairGenerator(),
+            new SDitHKeyPairGenerator()
+        };
+        KeyGenerationParameters[] genParams = new KeyGenerationParameters[]
+        {
+            new SnovaKeyGenerationParameters(random, SnovaParameters.SNOVA_24_5_4_SSK),
+            new FaestKeyGenerationParameters(random, FaestParameters.faest_128s),
+            new MQOMKeyGenerationParameters(random, MQOMParameters.mqom2_cat1_gf2_fast_r3),
+            new UOVKeyGenerationParameters(random, UOVParameters.uov_Is),
+            new QRUOVKeyGenerationParameters(random, QRUOVParameters.qruov_1_q127_L3_v156_m54_shake),
+            new SQIsignKeyGenerationParameters(random, SQIsignParameters.sqisign_lvl1),
+            new SDitHKeyGenerationParameters(random, SDitHParameters.sdith_hypercube_cat1_gf256)
+        };
+
+        for (int i = 0; i != generators.length; i++)
+        {
+            generators[i].init(genParams[i]);
+            AsymmetricCipherKeyPair kp = generators[i].generateKeyPair();
+
+            PrivateKeyInfo privInfo = PrivateKeyInfoFactory.createPrivateKeyInfo(kp.getPrivate());
+            SubjectPublicKeyInfo pubInfo = SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(kp.getPublic());
+            ASN1ObjectIdentifier current = privInfo.getPrivateKeyAlgorithm().getAlgorithm();
+            String id = current.getId();
+            ASN1ObjectIdentifier legacy = new ASN1ObjectIdentifier(id.substring(0, id.lastIndexOf('.')));
+
+            assertEquals(current, LegacyRoundOids.getCurrent(legacy));
+            assertEquals(current, pubInfo.getAlgorithm().getAlgorithm());
+
+            byte[] legacyPriv = withAlgorithm(privInfo, 1, legacy);
+            byte[] legacyPub = withAlgorithm(pubInfo, 0, legacy);
+
+            assertTrue(current + ": private key not written under the current OID", Arrays.areEqual(
+                privInfo.getEncoded(),
+                PrivateKeyInfoFactory.createPrivateKeyInfo(PrivateKeyFactory.createKey(legacyPriv)).getEncoded()));
+            assertTrue(current + ": public key not written under the current OID", Arrays.areEqual(
+                pubInfo.getEncoded(),
+                SubjectPublicKeyInfoFactory.createSubjectPublicKeyInfo(PublicKeyFactory.createKey(legacyPub))
+                    .getEncoded()));
+        }
+    }
+
+    private static byte[] withAlgorithm(ASN1Encodable keyInfo, int algIndex, ASN1ObjectIdentifier algOID)
+        throws IOException
+    {
+        ASN1Sequence seq = ASN1Sequence.getInstance(keyInfo);
+        ASN1EncodableVector v = new ASN1EncodableVector();
+        for (int i = 0; i != seq.size(); i++)
+        {
+            v.add(i == algIndex ? new AlgorithmIdentifier(algOID) : seq.getObjectAt(i));
+        }
+        return new DERSequence(v).getEncoded();
     }
 
     /**

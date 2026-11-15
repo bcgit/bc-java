@@ -2,6 +2,7 @@ package org.bouncycastle.pqc.crypto.util;
 
 import java.io.ByteArrayInputStream;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
@@ -21,6 +22,7 @@ import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.pqc.crypto.mqom.MQOMParameters;
 import org.bouncycastle.pqc.crypto.sdith.SDitHParameters;
 import org.bouncycastle.pqc.crypto.uov.UOVParameters;
+import org.bouncycastle.internal.asn1.bc.LegacyRoundOids;
 import org.bouncycastle.internal.asn1.oiw.OIWObjectIdentifiers;
 import org.bouncycastle.pqc.asn1.SPHINCS256KeyParams;
 import org.bouncycastle.pqc.crypto.aimer.AIMerParameters;
@@ -624,6 +626,25 @@ class Utils
         sdithParams.put(BCObjectIdentifiers.sdith_threshold_cat1_p251, SDitHParameters.sdith_threshold_cat1_p251);
         sdithParams.put(BCObjectIdentifiers.sdith_threshold_cat3_p251, SDitHParameters.sdith_threshold_cat3_p251);
         sdithParams.put(BCObjectIdentifiers.sdith_threshold_cat5_p251, SDitHParameters.sdith_threshold_cat5_p251);
+    }
+
+    static
+    {
+        // keys from 1.81 to 1.87 name their parameter set by a legacy OID: read it, but write the current one
+        Map[] roundParams = new Map[]{ snovaParams, faestParams, mqomParams, uovParams, qruovParams, sqisignParams,
+            sdithParams };
+        for (Iterator it = LegacyRoundOids.legacyOids(); it.hasNext();)
+        {
+            ASN1ObjectIdentifier legacy = (ASN1ObjectIdentifier)it.next();
+            ASN1ObjectIdentifier current = LegacyRoundOids.getCurrent(legacy);
+            for (int i = 0; i != roundParams.length; i++)
+            {
+                if (roundParams[i].containsKey(current))
+                {
+                    roundParams[i].put(legacy, roundParams[i].get(current));
+                }
+            }
+        }
     }
 
     static AlgorithmIdentifier sphincs256LookupTreeAlgID(String treeDigest)

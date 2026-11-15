@@ -12,6 +12,7 @@ import java.util.Set;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
+import org.bouncycastle.internal.asn1.bc.LegacyRoundOids;
 import org.bouncycastle.jcajce.provider.util.AsymmetricKeyInfoConverter;
 import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 
@@ -101,14 +102,17 @@ public abstract class BaseKeyFactorySpi
     private void checkAlgorithm(ASN1ObjectIdentifier algOid)
         throws InvalidKeySpecException
     {
+        // keys from 1.81 to 1.87 may name their parameter set by a legacy OID
+        ASN1ObjectIdentifier keyAlgOid = LegacyRoundOids.normalise(algOid);
+
         if (keyOid != null)
         {
-            if (!keyOid.equals(algOid))
+            if (!keyOid.equals(keyAlgOid))
             {
                 throw new InvalidKeySpecException("incorrect algorithm OID for key: " + algOid);
             }
         }
-        else if (!keyOids.contains(algOid))
+        else if (!keyOids.contains(keyAlgOid))
         {
             throw new InvalidKeySpecException("incorrect algorithm OID for key: " + algOid);
         }

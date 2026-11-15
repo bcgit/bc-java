@@ -3,6 +3,7 @@ package org.bouncycastle.pqc.crypto.util;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 import org.bouncycastle.asn1.ASN1BitString;
@@ -15,6 +16,7 @@ import org.bouncycastle.asn1.bc.BCObjectIdentifiers;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
+import org.bouncycastle.internal.asn1.bc.LegacyRoundOids;
 import org.bouncycastle.pqc.crypto.mqom.MQOMParameters;
 import org.bouncycastle.pqc.crypto.mqom.MQOMPublicKeyParameters;
 import org.bouncycastle.pqc.crypto.sdith.SDitHParameters;
@@ -333,6 +335,17 @@ public class PublicKeyFactory
         converters.put(BCObjectIdentifiers.sdith_threshold_cat1_p251, new SDitHConverter());
         converters.put(BCObjectIdentifiers.sdith_threshold_cat3_p251, new SDitHConverter());
         converters.put(BCObjectIdentifiers.sdith_threshold_cat5_p251, new SDitHConverter());
+
+        // keys from 1.81 to 1.87 name their parameter set by a legacy OID: read it as the current one
+        for (Iterator it = LegacyRoundOids.legacyOids(); it.hasNext();)
+        {
+            ASN1ObjectIdentifier legacy = (ASN1ObjectIdentifier)it.next();
+            Object converter = converters.get(LegacyRoundOids.getCurrent(legacy));
+            if (converter != null)
+            {
+                converters.put(legacy, converter);
+            }
+        }
     }
 
     /**
