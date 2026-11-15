@@ -58,7 +58,7 @@ import static org.bouncycastle.asn1.x9.X9ObjectIdentifiers.id_ecPublicKey;
 /**
  * Builder for a {@link PublicKeyDataDecryptorFactory} whose private key material is held outside
  * the OpenPGP key - typically on a hardware token - as described by
- * <a href="https://datatracker.ietf.org/doc/draft-dkg-openpgp-external-secrets/">OpenPGP External Secret
+ * <a href="https://datatracker.ietf.org/doc/draft-ietf-openpgp-external-secrets/">OpenPGP External Secret
  * Keys</a> and signalled by {@link org.bouncycastle.bcpg.SecretKeyPacket#USAGE_EXTERNAL}. This is the
  * JCA/JCE analogue of {@link org.bouncycastle.openpgp.api.operator.bc.BcExternalPublicKeyDataDecryptorFactory}.
  * <p>

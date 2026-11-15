@@ -18,23 +18,23 @@ public class ExternalPGPSecretKeyTest
         extends AbstractPgpKeyPairTest
 {
     /**
-     * TSK with external secret keys for both the primary and subkey.
+     * V4 TSK with external secret keys for both the primary and subkey.
      *
-     * @see <a href="https://www.ietf.org/archive/id/draft-dkg-openpgp-external-secrets-03.html#name-as-an-external-secret-key">
+     * @see <a href="https://www.ietf.org/archive/id/draft-ietf-openpgp-external-secrets-01.html#name-as-an-external-secret-key-w">
      *     External Key Test Vector</a>
      */
     private static final String V4_TSK_AS_EXTERNAL_KEY = "-----BEGIN PGP PRIVATE KEY BLOCK-----\n" +
             "\n" +
-            "xTQEZgWtcxYJKwYBBAHaRw8BAQdAlLK6UPQsVHR2ETk1SwVIG3tBmpiEtikYYlCy\n" +
-            "1TIiqzb8zR08aGFyZHdhcmUtc2VjcmV0QGV4YW1wbGUub3JnPsKNBBAWCAA1AhkB\n" +
-            "BQJmBa1zAhsDCAsJCAcKDQwLBRUKCQgLAhYCFiEEXlP8Tur0WZR+f0I33/i9Uh4O\n" +
-            "HEkACgkQ3/i9Uh4OHEnryAD8CzH2ajJvASp46ApfI4pLPY57rjBX++d/2FQPRyqG\n" +
-            "HJUA/RLsNNgxiFYmK5cjtQe2/DgzWQ7R6PxPC6oa3XM7xPcCxzkEZgWtcxIKKwYB\n" +
-            "BAGXVQEFAQEHQE1YXOKeaklwG01Yab4xopP9wbu1E+pCrP1xQpiFZW5KAwEIB/zC\n" +
-            "eAQYFggAIAUCZgWtcwIbDBYhBF5T/E7q9FmUfn9CN9/4vVIeDhxJAAoJEN/4vVIe\n" +
-            "DhxJVTgA/1WaFrKdP3AgL0Ffdooc5XXbjQsj0uHo6FZSHRI4pchMAQCyJnKQ3RvW\n" +
-            "/0gm41JCqImyg2fxWG4hY0N5Q7Rc6PyzDQ==\n" +
-            "=3w/O\n" +
+            "xTUEZgWtcxYJKwYBBAHaRw8BAQdAlLK6UPQsVHR2ETk1SwVIG3tBmpiEtikYYlCy\n" +
+            "1TIiqzb8AM0dPGhhcmR3YXJlLXNlY3JldEBleGFtcGxlLm9yZz7CjQQQFggANQIZ\n" +
+            "AQUCZgWtcwIbAwgLCQgHCg0MCwUVCgkICwIWAhYhBF5T/E7q9FmUfn9CN9/4vVIe\n" +
+            "DhxJAAoJEN/4vVIeDhxJ68gA/Asx9moybwEqeOgKXyOKSz2Oe64wV/vnf9hUD0cq\n" +
+            "hhyVAP0S7DTYMYhWJiuXI7UHtvw4M1kO0ej8TwuqGt1zO8T3Asc6BGYFrXMSCisG\n" +
+            "AQQBl1UBBQEBB0BNWFzinmpJcBtNWGm+MaKT/cG7tRPqQqz9cUKYhWVuSgMBCAf8\n" +
+            "AMJ4BBgWCAAgBQJmBa1zAhsMFiEEXlP8Tur0WZR+f0I33/i9Uh4OHEkACgkQ3/i9\n" +
+            "Uh4OHElVOAD/VZoWsp0/cCAvQV92ihzldduNCyPS4ejoVlIdEjilyEwBALImcpDd\n" +
+            "G9b/SCbjUkKoibKDZ/FYbiFjQ3lDtFzo/LMN\n" +
+            "=Qy7n\n" +
             "-----END PGP PRIVATE KEY BLOCK-----\n";
 
     @Override

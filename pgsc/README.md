@@ -39,7 +39,17 @@ OpenPGPSmartCard card = smartCardManager.findSmartCard(12345678);
 ```
 
 ### Change key PINs
-**TODO**: Implement
+You can change the card's user PIN by providing both the old and new PIN with a callback, e.g.:
+
+```java
+OpenPGPSmartCard card = ...
+CardPinProvider oldPinProvider = k -> "123456".toCharArray();
+CardPinProvider newPinProvider = k -> "676767".toCharArray();
+
+card = card.changeUserPIN(oldPinProvider, newPinProvider);
+```
+
+Similarly, you can also change the card's admin PIN with `changeAdminPIN()`.
 
 ### Key Upload
 You can either upload an existing `OpenPGPSecretKey` to the card, or generate one on the device itself.
@@ -60,7 +70,7 @@ OpenPGPSmartCard card = smartCardManager.findSmartCard(12345678); // get your ca
 OpenPGPKey.OpenPGPSecretKey signingKey = key.getSecretKey(key.getSigningKeys().get(0));
 // unlock the signing key, pass in passphrase if required
 OpenPGPKey.OpenPGPPrivateKey privSigningKey = signingKey.unlock(keyPassphrase);
-card.uploadSigningKey(privSigningKey, cardAdminPin);
+card.uploadSigningKey(privSigningKey, c -> cardAdminPin); // a CardPinProvider supplying the admin PIN
 ```
 
 Uploading decryption / authentication keys works analogous.
@@ -86,7 +96,38 @@ OpenPGPKey partiallyStrippedKey = keyUtils.toExternalKey(key, keyIdentifier);
 Note: Uploading a key to a card and stripping secret key material from a software key are two distinct operations.
 
 ### On-Device Key Generation
-**TODO**: Implement
+Most smart cards can be prompted to generate certain keys on the device itself.
+That way, sensitive private key information never leaves the card. Only the public key material is accessible.
+
+Cards advertise which key types they can generate through their supported algorithms.
+The workflow of generating a key on the card itself is therefore the following:
+* Query for supported algorithms
+* Select a supported algorithm type for the desired key slot
+* Prompt the card to generate that key type
+
+```java
+OpenPGPSmartCard card = ...;
+SupportedAlgorithms supportedAlgorithms = card.getSupportedAlgorithms()
+        .signingKey(); // or .decryptionKey() / .authenticationKey()
+
+SupportedAlgorithms.Algorithm algorithm = supportedAlgorithms.getAlgorithms()
+        .get(0); // Find an appropriate item of your choice, e.g. by filtering the list by algorithm ID
+
+boolean isSubkey = false; // here we generate a primary key, set to true if you want to generate a subkey instead.
+PGPPublicKey publicKey = card.generateKey(
+        algorithm,
+        4, // OpenPGP key version (4, 5 or 6)
+        PublicKeyAlgorithmTags.RSA_GENERAL, // alg-id matching the selected algorithm type, checked before the card is touched
+        isSubkey,
+        k -> "12345678".toCharArray());
+
+// Create an external secret key from the public key material, marked "best effort" so it is looked for on available cards.
+PGPSecretKey externalKey = ExternalOpenPGPKeyUtils.toExternalKey(publicKey, true);
+```
+Note: The generated key is a bare component key without any user-ids, subkeys etc., so you might need to bind its
+components manually to form an OpenPGP certificate.
+
+**TODO**: Implement higher-level key generation API.
 
 ### Signing
 To make use of OpenPGP keys on Smart Cards, you need access to an `OpenPGPKey` object that

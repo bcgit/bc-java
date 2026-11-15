@@ -7,9 +7,12 @@ import org.bouncycastle.asn1.gnu.GNUObjectIdentifiers;
 import org.bouncycastle.bcpg.BCPGKey;
 import org.bouncycastle.bcpg.ECPublicBCPGKey;
 import org.bouncycastle.bcpg.Ed25519PublicBCPGKey;
+import org.bouncycastle.bcpg.Ed448PublicBCPGKey;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
 import org.bouncycastle.bcpg.X25519PublicBCPGKey;
+import org.bouncycastle.bcpg.X448PublicBCPGKey;
 import org.bouncycastle.openpgp.api.OpenPGPCertificate;
+import org.bouncycastle.openpgp.smartcard.OpenPGPHardwareKey;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -25,6 +28,34 @@ public class SupportedAlgorithms
     public SupportedAlgorithms(List<Algorithm> algorithms)
     {
         this.algorithms.addAll(algorithms);
+    }
+
+    public SupportedAlgorithms filter(byte keyRef)
+    {
+        List<Algorithm> filtered = new ArrayList<>();
+        for (Algorithm algorithm : algorithms)
+        {
+            if (algorithm.keyRef == keyRef)
+            {
+                filtered.add(algorithm);
+            }
+        }
+        return new SupportedAlgorithms(filtered);
+    }
+
+    public SupportedAlgorithms signingKey()
+    {
+        return filter(OpenPGPHardwareKey.KEY_REF_SIGNATURE);
+    }
+
+    public SupportedAlgorithms decryptionKey()
+    {
+        return filter(OpenPGPHardwareKey.KEY_REF_DECRYPTION);
+    }
+
+    public SupportedAlgorithms authenticationKey()
+    {
+        return filter(OpenPGPHardwareKey.KEY_REF_AUTHENTICATION);
     }
 
     public List<Algorithm> getAlgorithms()
@@ -84,6 +115,14 @@ public class SupportedAlgorithms
 
         public abstract boolean matches(int keyAlgorithm, ASN1ObjectIdentifier curveOID);
 
+        /**
+         * Return true if a key of this algorithm may carry the given OpenPGP public key algorithm ID.
+         *
+         * @param publicKeyAlgorithmTag OpenPGP public key algorithm ID
+         * @return true if the ID can be assigned to a key of this algorithm
+         */
+        public abstract boolean isAssignableTo(int publicKeyAlgorithmTag);
+
         public abstract String toString();
     }
 
@@ -95,6 +134,14 @@ public class SupportedAlgorithms
         {
             super(keyRef, algorithmId);
             this.keySize = keySize;
+        }
+
+        @Override
+        public boolean isAssignableTo(int publicKeyAlgorithmTag)
+        {
+            return publicKeyAlgorithmTag == PublicKeyAlgorithmTags.RSA_GENERAL
+                || publicKeyAlgorithmTag == PublicKeyAlgorithmTags.RSA_ENCRYPT
+                || publicKeyAlgorithmTag == PublicKeyAlgorithmTags.RSA_SIGN;
         }
 
         @Override
@@ -129,6 +176,32 @@ public class SupportedAlgorithms
         {
             super(keyRef, algorithmId);
             this.curve = curve;
+        }
+
+        @Override
+        public boolean isAssignableTo(int publicKeyAlgorithmTag)
+        {
+            if (curve.equals(GNUObjectIdentifiers.Ed25519) || curve.equals(EdECObjectIdentifiers.id_Ed25519))
+            {
+                return publicKeyAlgorithmTag == PublicKeyAlgorithmTags.EDDSA_LEGACY
+                    || publicKeyAlgorithmTag == PublicKeyAlgorithmTags.Ed25519;
+            }
+            if (curve.equals(CryptlibObjectIdentifiers.curvey25519) || curve.equals(EdECObjectIdentifiers.id_X25519))
+            {
+                return publicKeyAlgorithmTag == PublicKeyAlgorithmTags.ECDH
+                    || publicKeyAlgorithmTag == PublicKeyAlgorithmTags.X25519;
+            }
+            if (curve.equals(EdECObjectIdentifiers.id_Ed448))
+            {
+                return publicKeyAlgorithmTag == PublicKeyAlgorithmTags.Ed448;
+            }
+            if (curve.equals(EdECObjectIdentifiers.id_X448))
+            {
+                return publicKeyAlgorithmTag == PublicKeyAlgorithmTags.X448;
+            }
+            // the NIST, Brainpool and secp256k1 curves
+            return publicKeyAlgorithmTag == PublicKeyAlgorithmTags.ECDSA
+                || publicKeyAlgorithmTag == PublicKeyAlgorithmTags.ECDH;
         }
 
         @Override
@@ -215,6 +288,14 @@ public class SupportedAlgorithms
             else if (pubKey instanceof Ed25519PublicBCPGKey)
             {
                 return EdECObjectIdentifiers.id_Ed25519;
+            }
+            else if (pubKey instanceof X448PublicBCPGKey)
+            {
+                return EdECObjectIdentifiers.id_X448;
+            }
+            else if (pubKey instanceof Ed448PublicBCPGKey)
+            {
+                return EdECObjectIdentifiers.id_Ed448;
             }
             return null;
         }

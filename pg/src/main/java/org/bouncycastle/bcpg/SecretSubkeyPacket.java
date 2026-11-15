@@ -32,7 +32,7 @@ public class SecretSubkeyPacket
     /**
      * Create a SecretSubkeyPacket which has external private key material.
      *
-     * @see <a href="https://datatracker.ietf.org/doc/draft-dkg-openpgp-external-secrets/">
+     * @see <a href="https://datatracker.ietf.org/doc/draft-ietf-openpgp-external-secrets/">
      *     OpenPGP External Secret Keys</a>
      *
      * @param publicKeyPacket public key material

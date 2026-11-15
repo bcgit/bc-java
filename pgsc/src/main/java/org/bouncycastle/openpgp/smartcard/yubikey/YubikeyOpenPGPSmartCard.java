@@ -13,6 +13,7 @@ import com.yubico.yubikit.openpgp.AlgorithmAttributes;
 import com.yubico.yubikit.openpgp.DiscretionaryDataObjects;
 import com.yubico.yubikit.openpgp.KeyRef;
 import com.yubico.yubikit.openpgp.KeyStatus;
+import com.yubico.yubikit.openpgp.OpenPgpCurve;
 import com.yubico.yubikit.openpgp.OpenPgpSession;
 import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.cryptlib.CryptlibObjectIdentifiers;
@@ -23,7 +24,6 @@ import org.bouncycastle.openpgp.PGPKeyPair;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPRuntimeOperationException;
 import org.bouncycastle.openpgp.api.KeyPassphraseProvider;
-import org.bouncycastle.openpgp.api.OpenPGPCertificate;
 import org.bouncycastle.openpgp.api.OpenPGPKey;
 import org.bouncycastle.openpgp.api.exception.KeyPassphraseException;
 import org.bouncycastle.openpgp.smartcard.OpenPGPHardwareKey;
@@ -38,9 +38,11 @@ import java.security.spec.InvalidKeySpecException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 
 public class YubikeyOpenPGPSmartCard
         extends OpenPGPSmartCard
@@ -48,6 +50,7 @@ public class YubikeyOpenPGPSmartCard
 
     private final DeviceInfo deviceInfo;
     private final YubiKeyDevice device;
+    private final Map<KeyRef, OpenPGPHardwareKey> hardwareKeys = new HashMap<>();
     private final Map<KeyRef, List<AlgorithmAttributes>> supportedAlgorithms;
 
     public YubikeyOpenPGPSmartCard(YubikeyOpenPGPSmartCardBackend backend,
@@ -73,7 +76,7 @@ public class YubikeyOpenPGPSmartCard
     private void readMetadata(OpenPgpSession session)
             throws CardException
     {
-        clearKeys();
+        hardwareKeys.clear();
         DiscretionaryDataObjects discretionary = getDiscretionary(session);
 
         for (KeyRef keyRef : KeyRef.values())
@@ -86,7 +89,7 @@ public class YubikeyOpenPGPSmartCard
 
             byte[] fingerprint = discretionary.getFingerprint(keyRef);
             Date generationTime = new Date(discretionary.getGenerationTime(keyRef) * 1000L);
-            putKey(new OpenPGPHardwareKey(
+            hardwareKeys.put(keyRef, new OpenPGPHardwareKey(
                     this,
                     keyRef.getValue(),
                     keyStatus.value,
@@ -121,15 +124,8 @@ public class YubikeyOpenPGPSmartCard
         return deviceInfo.getVersionName();
     }
 
-    @Override
-    public boolean isKeySupported(byte keyRef, OpenPGPCertificate.OpenPGPComponentKey key)
-            throws CardException
-    {
-        return getSupportedAlgorithms(keyRef).supports(key);
-    }
-
     /**
-     * Return all supported key algorithms of the slot identified by keyRef.
+     * Return all supported key algorithms for all key slots.
      * <p>
      * NOTE: yubikit's {@code AlgorithmAttributes.Rsa} / {@code .Ec} subclasses and their
      * {@code getAlgorithmId()} / {@code getNLen()} / {@code getCurve()} accessors are all package-private
@@ -139,46 +135,184 @@ public class YubikeyOpenPGPSmartCard
      * rather than allowed to throw, which degrades {@link #isKeySupported} to "not supported" instead of
      * failing the whole card. Replace this with the typed accessors if yubikit ever publishes them.
      *
-     * @param keyRef key reference
      * @return {@link SupportedAlgorithms}
      */
-    public SupportedAlgorithms getSupportedAlgorithms(byte keyRef)
+    @Override
+    public SupportedAlgorithms getSupportedAlgorithms()
     {
-        List<AlgorithmAttributes> attributes = supportedAlgorithms.get(from(keyRef));
-        if (attributes == null)
+        List<SupportedAlgorithms.Algorithm> algs = new ArrayList<SupportedAlgorithms.Algorithm>();
+        for (KeyRef keyRef : supportedAlgorithms.keySet())
         {
-            return new SupportedAlgorithms(new ArrayList<SupportedAlgorithms.Algorithm>());
-        }
-
-        List<SupportedAlgorithms.Algorithm> algs = new ArrayList<SupportedAlgorithms.Algorithm>(attributes.size());
-        for (Iterator<AlgorithmAttributes> it = attributes.iterator(); it.hasNext();)
-        {
-            String s = String.valueOf(it.next());
-
-            int algId = parseIntField(s, "algorithmId=");
-            if (algId < 0)
+            List<AlgorithmAttributes> attributes = supportedAlgorithms.get(keyRef);
+            if (attributes == null)
             {
                 continue;
             }
 
-            if (s.startsWith("Rsa{"))
+            for (Iterator<AlgorithmAttributes> it = attributes.iterator(); it.hasNext(); )
             {
-                int nLen = parseIntField(s, "nLen=");
-                if (nLen > 0)
+                String s = String.valueOf(it.next());
+
+                int algId = parseIntField(s, "algorithmId=");
+                if (algId < 0)
                 {
-                    algs.add(new SupportedAlgorithms.RSA(keyRef, algId, nLen));
+                    continue;
                 }
-            }
-            else if (s.startsWith("Ec{"))
-            {
-                ASN1ObjectIdentifier curve = toCurveOid(parseField(s, "curve="));
-                if (curve != null)
+
+                if (s.startsWith("Rsa{"))
                 {
-                    algs.add(new SupportedAlgorithms.EC(keyRef, algId, curve));
+                    int nLen = parseIntField(s, "nLen=");
+                    if (nLen > 0)
+                    {
+                        algs.add(new SupportedAlgorithms.RSA(keyRef.getValue(), algId, nLen));
+                    }
+                }
+                else if (s.startsWith("Ec{"))
+                {
+                    ASN1ObjectIdentifier curve = toCurveOid(parseField(s, "curve="));
+                    if (curve != null)
+                    {
+                        algs.add(new SupportedAlgorithms.EC(keyRef.getValue(), algId, curve));
+                    }
                 }
             }
         }
         return new SupportedAlgorithms(algs);
+    }
+
+    @Override
+    public OpenPGPHardwareKey getKeyByKeyRef(byte keyRef)
+    {
+        OpenPGPHardwareKey key = hardwareKeys.get(from(keyRef));
+        if (key == null)
+        {
+            throw new NoSuchElementException("No key with keyRef " + keyRef);
+        }
+        return key;
+    }
+
+    @Override
+    public List<OpenPGPHardwareKey> getKeys()
+    {
+        return new ArrayList<>(hardwareKeys.values());
+    }
+
+    @Override
+    public boolean checkUserPIN(CardPinProvider userPinProvider)
+            throws CardException
+    {
+        char[] pin = requirePin(userPinProvider, "user");
+        try (OpenPgpSession session = openSession())
+        {
+            if (session.getPinStatus().getAttemptsUser() == 0)
+            {
+                throw new CardException("No user PIN attempts left.");
+            }
+            session.verifyUserPin(pin, false);
+            return true;
+        }
+        catch (ApduException | IOException e)
+        {
+            throw new CardException("Cannot check user PIN", e);
+        }
+        catch (InvalidPinException e)
+        {
+            return false;
+        }
+        finally
+        {
+            Arrays.fill(pin, '\0');
+        }
+    }
+
+    @Override
+    public boolean checkAdminPIN(CardPinProvider adminPinProvider)
+            throws CardException
+    {
+        char[] pin = requirePin(adminPinProvider, "admin");
+        try (OpenPgpSession session = openSession())
+        {
+            if (session.getPinStatus().getAttemptsAdmin() == 0)
+            {
+                throw new CardException("No admin PIN attempts left.");
+            }
+            session.verifyAdminPin(pin);
+            return true;
+        }
+        catch (ApduException | IOException e)
+        {
+            throw new CardException("Cannot check admin PIN", e);
+        }
+        catch (InvalidPinException e)
+        {
+            return false;
+        }
+        finally
+        {
+            Arrays.fill(pin, '\0');
+        }
+    }
+
+    @Override
+    public OpenPGPSmartCard changeUserPIN(CardPinProvider oldPinProvider, CardPinProvider newPinProvider)
+            throws CardException
+    {
+        char[] oldPin = requirePin(oldPinProvider, "user");
+        char[] newPin = null;
+        try (OpenPgpSession session = openSession())
+        {
+            newPin = requirePin(newPinProvider, "user");
+            session.changeUserPin(oldPin, newPin);
+        }
+        catch (ApduException | IOException e)
+        {
+            throw new CardException("Cannot change user PIN on device " + getSerialNumber(), e);
+        }
+        catch (InvalidPinException e)
+        {
+            throw new CardException("Wrong user PIN provided for device " + getSerialNumber(), e);
+        }
+        finally
+        {
+            Arrays.fill(oldPin, '\0');
+            if (newPin != null)
+            {
+                Arrays.fill(newPin, '\0');
+            }
+        }
+        return this;
+    }
+
+    @Override
+    public OpenPGPSmartCard changeAdminPIN(CardPinProvider oldPinProvider, CardPinProvider newPinProvider)
+            throws CardException
+    {
+        char[] oldPin = requirePin(oldPinProvider, "admin");
+        char[] newPin = null;
+        try (OpenPgpSession session = openSession())
+        {
+            newPin = requirePin(newPinProvider, "admin");
+            session.changeAdminPin(oldPin, newPin);
+        }
+        catch (ApduException | IOException e)
+        {
+            throw new CardException("Cannot change admin PIN on device " + getSerialNumber(), e);
+        }
+        catch (InvalidPinException e)
+        {
+            // TODO: Dedicated Exception for PIN errors?
+            //  Cannot reuse KeyPassphraseException, as those are bound to OpenPGP keys, not cards.
+            throw new CardException("Wrong admin PIN provided for device " + getSerialNumber(), e);
+        }
+        finally
+        {
+            Arrays.fill(oldPin, '\0');
+            if (newPin != null)
+            {
+                Arrays.fill(newPin, '\0');
+            }
+        }
+        return this;
     }
 
     /**
@@ -281,6 +415,71 @@ public class YubikeyOpenPGPSmartCard
         }
 
         return uploadKey(keyRefByte, key.getKeyPair(), adminPin);
+    }
+
+    @Override
+    protected PGPPublicKey implGenerateKey(SupportedAlgorithms.Algorithm algorithm,
+                                           int keyVersion,
+                                           int publicKeyAlgorithmTag,
+                                           boolean subkey,
+                                           CardPinProvider adminPinProvider)
+            throws CardException
+    {
+        KeyRef keyRef = from(algorithm.keyRef);
+        // resolve the curve before the session, so an unknown one cannot cost the key in the slot
+        OpenPgpCurve curve = null;
+        if (algorithm instanceof SupportedAlgorithms.EC)
+        {
+            curve = getBackend().curveFromOID(((SupportedAlgorithms.EC)algorithm).curve);
+        }
+        else if (!(algorithm instanceof SupportedAlgorithms.RSA))
+        {
+            throw new IllegalArgumentException("Unknown algorithm " + algorithm);
+        }
+
+        char[] adminPin = requirePin(adminPinProvider, "admin");
+        try (OpenPgpSession session = openSession())
+        {
+            session.verifyAdminPin(adminPin);
+            PublicKeyValues pkVals;
+            if (curve != null)
+            {
+                pkVals = session.generateEcKey(keyRef, curve);
+            }
+            else
+            {
+                pkVals = session.generateRsaKey(keyRef, ((SupportedAlgorithms.RSA)algorithm).keySize);
+            }
+
+            // the creation time is part of the fingerprint, so it is held to whole seconds throughout
+            int time = (int)(System.currentTimeMillis() / 1000);
+            PGPPublicKey publicKey = getBackend().convertPublicKey(
+                pkVals, keyVersion, publicKeyAlgorithmTag, new Date(time * 1000L), subkey);
+
+            // as on upload, record the fingerprint and creation time the key is later reconstructed from
+            session.setFingerprint(keyRef, getBackend().toStoredFingerprint(publicKey));
+            session.setGenerationTime(keyRef, time);
+
+            readMetadata(session);
+
+            return publicKey;
+        }
+        catch (ApduException | IOException e)
+        {
+            throw new CardException("Cannot communicate with device " + getSerialNumber(), e);
+        }
+        catch (InvalidPinException e)
+        {
+            throw new CardException("Wrong admin PIN provided for device " + getSerialNumber(), e);
+        }
+        catch (BadResponseException | NoSuchAlgorithmException | InvalidKeySpecException | PGPException e)
+        {
+            throw new CardException("Cannot generate key on device " + getSerialNumber(), e);
+        }
+        finally
+        {
+            Arrays.fill(adminPin, '\0');
+        }
     }
 
     public YubikeyOpenPGPSmartCard uploadKey(byte keyRefByte,

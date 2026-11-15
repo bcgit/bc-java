@@ -342,7 +342,7 @@ public class SmartCardMessageDecryptionTest
 
         // Upload keys to card
         OpenPGPKey.OpenPGPSecretKey decryptionKey = softwareKey.getSecretKey(softwareKey.getEncryptionKeys().get(0));
-        card.uploadDecryptionKey(decryptionKey.unlock(), adminPin);
+        card.uploadDecryptionKey(decryptionKey.unlock(), k -> adminPin);
 
         // Generate encrypted message
         byte[] plaintext = "Hello, World!\n".getBytes(StandardCharsets.UTF_8);
@@ -362,12 +362,7 @@ public class SmartCardMessageDecryptionTest
         // Decrypt message using card
         ByteArrayInputStream bIn = new ByteArrayInputStream(bOut.toByteArray());
         OpenPGPMessageInputStream mIn = api.decryptAndOrVerifyMessage()
-                .setExceptionCallback(new OpenPGPMessageProcessor.PGPExceptionCallback() {
-                    @Override
-                    public void onException(PGPException e) {
-                        e.printStackTrace();
-                    }
-                })
+                .setExceptionCallback(Throwable::printStackTrace)
                 .addDecryptionKey(externalKey, properties.getUserPin())
                 .addPublicKeyDataDecryptorFactoryProvider(manager)
                 .process(bIn);
@@ -398,7 +393,7 @@ public class SmartCardMessageDecryptionTest
 
         // Upload keys to card
         OpenPGPKey.OpenPGPSecretKey decryptionKey = softwareKey.getSecretKey(softwareKey.getEncryptionKeys().get(0));
-        card.uploadDecryptionKey(decryptionKey.unlock(), adminPin);
+        card.uploadDecryptionKey(decryptionKey.unlock(), k -> adminPin);
 
         // Decrypt message using card
         ByteArrayInputStream bIn = new ByteArrayInputStream(message.getBytes(StandardCharsets.UTF_8));

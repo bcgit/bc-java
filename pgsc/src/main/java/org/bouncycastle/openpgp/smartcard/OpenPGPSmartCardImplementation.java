@@ -21,6 +21,16 @@ public abstract class OpenPGPSmartCardImplementation
     }
 
     /**
+     * Return the OpenPGP implementation the card operations are built on.
+     *
+     * @return OpenPGP implementation
+     */
+    public OpenPGPImplementation getOpenPGPImplementation()
+    {
+        return implementation;
+    }
+
+    /**
      * Provide a {@link PublicKeyDataDecryptorFactory} that decrypts messages by delegating public-key cryptography
      * to the given {@link OpenPGPSmartCard}.
      *

@@ -116,7 +116,7 @@ public class SmartCardUserPinOwnershipTest
         OpenPGPKey externalKey = cardUtils.toExternalKey(softwareKey);
 
         card.uploadDecryptionKey(softwareKey.getSecretKey(softwareKey.getEncryptionKeys().get(0)).unlock(),
-            properties.getAdminPin());
+            k -> properties.getAdminPin());
 
         char[] expectedPin = properties.getUserPin();
         char[] applicationPin = properties.getUserPin();

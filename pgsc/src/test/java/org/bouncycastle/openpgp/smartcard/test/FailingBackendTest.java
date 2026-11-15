@@ -11,7 +11,7 @@ import org.bouncycastle.openpgp.api.bc.BcOpenPGPApi;
 import org.bouncycastle.openpgp.operator.PGPContentSignerBuilderProvider;
 import org.bouncycastle.openpgp.operator.PGPKeyPairGenerator;
 import org.bouncycastle.openpgp.operator.PublicKeyDataDecryptorFactory;
-import org.bouncycastle.openpgp.smartcard.ExternalOpenPGPKeyUtils;
+import org.bouncycastle.openpgp.api.ExternalOpenPGPKeyUtils;
 import org.bouncycastle.openpgp.smartcard.OpenPGPSmartCardManager;
 import org.bouncycastle.openpgp.smartcard.simulator.SimulatorOpenPGPSmartCard;
 import org.bouncycastle.openpgp.smartcard.simulator.SimulatorOpenPGPSmartCardBackend;
@@ -46,7 +46,8 @@ public class FailingBackendTest
         OpenPGPKey externalKey = keyUtils.toExternalKey(key);
 
         OpenPGPSmartCardManager manager = new OpenPGPSmartCardManager();
-        SimulatorOpenPGPSmartCardBackend failingBackend = new SimulatorOpenPGPSmartCardBackend() {
+        SimulatorOpenPGPSmartCardBackend failingBackend = new SimulatorOpenPGPSmartCardBackend()
+        {
             @Override
             public String getName()
             {
@@ -73,7 +74,8 @@ public class FailingBackendTest
             }
         };
 
-        SimulatorOpenPGPSmartCardBackend workingBackend = new SimulatorOpenPGPSmartCardBackend() {
+        SimulatorOpenPGPSmartCardBackend workingBackend = new SimulatorOpenPGPSmartCardBackend()
+        {
             @Override
             public String getName()
             {
@@ -89,7 +91,7 @@ public class FailingBackendTest
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         OpenPGPMessageOutputStream mOut = api.signAndOrEncryptMessage()
                 .addCustomPGPContentSignerBuilderProviderFactory(manager)
-                .addSigningKey(externalKey)
+                .addSigningKey(externalKey, k -> SimulatorOpenPGPSmartCard.DEFAULT_USER_PIN)
                 .addEncryptionCertificate(key.toCertificate())
                 .open(bOut);
         mOut.write(message);
@@ -99,7 +101,7 @@ public class FailingBackendTest
         OpenPGPMessageInputStream mIn = api.decryptAndOrVerifyMessage()
                 .addPublicKeyDataDecryptorFactoryProvider(manager)
                 .addVerificationCertificate(key.toCertificate())
-                .addDecryptionKey(externalKey)
+                .addDecryptionKey(externalKey, SimulatorOpenPGPSmartCard.DEFAULT_USER_PIN)
                 .process(bIn);
         bOut = new ByteArrayOutputStream();
         Streams.pipeAll(mIn, bOut);

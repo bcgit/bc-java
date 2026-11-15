@@ -6,7 +6,6 @@ import org.bouncycastle.asn1.DERNull;
 import org.bouncycastle.asn1.x509.AlgorithmIdentifier;
 import org.bouncycastle.asn1.x509.DigestInfo;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
-import org.bouncycastle.jcajce.util.MessageDigestUtils;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPRuntimeOperationException;

@@ -10,7 +10,7 @@ import org.bouncycastle.openpgp.operator.bc.BcPublicKeyDataDecryptorFactory;
 /**
  * Base class for a {@link BcPublicKeyDataDecryptorFactory} whose private key material is held outside
  * the OpenPGP key - typically on a hardware token - as described by
- * <a href="https://datatracker.ietf.org/doc/draft-dkg-openpgp-external-secrets/">OpenPGP External Secret
+ * <a href="https://datatracker.ietf.org/doc/draft-ietf-openpgp-external-secrets/">OpenPGP External Secret
  * Keys</a> and signalled by {@link org.bouncycastle.bcpg.SecretKeyPacket#USAGE_EXTERNAL}.
  * <p>
  * All session-key recovery logic (packet parsing, length checks, the RFC 6637 / RFC 9580 KDF and key

@@ -56,7 +56,7 @@ public class SmartCardWithV6KeysTest
         OpenPGPSmartCard card = manager.findSmartCard(properties.getSerialNumber());
         card.reset();
 
-        card.uploadSigningKey(signingKey.unlock(), properties.getAdminPin());
+        card.uploadSigningKey(signingKey.unlock(), k -> properties.getAdminPin());
         isTrue(card.hasKeyWithFingerprint(V6_PRIMARY_FP));
         isTrue(card.hasKeyWithFingerprint(SHORTENED_V6_PRIMARY_FP));
         OpenPGPHardwareKey hwSignatureKey = card.getSignatureKey();
@@ -68,7 +68,7 @@ public class SmartCardWithV6KeysTest
         isTrue("Reconstructed signing key fingerprint mismatch",
                 Arrays.areEqual(V6_PRIMARY_FP, hwSignatureKey.getFullKeyIdentifier().getFingerprint()));
 
-        card.uploadDecryptionKey(encryptionKey.unlock(), properties.getAdminPin());
+        card.uploadDecryptionKey(encryptionKey.unlock(), k -> properties.getAdminPin());
         isTrue(card.hasKeyWithFingerprint(V6_ENCRYPTION_FP));
         isTrue(card.hasKeyWithFingerprint(SHORTENED_V6_ENCRYPTION_FP));
         OpenPGPHardwareKey hwDecryptionKey = card.getKeyByFingerprint(V6_ENCRYPTION_FP);

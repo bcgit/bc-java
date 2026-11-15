@@ -54,6 +54,25 @@ public class OpenPGPSmartCardManager
     }
 
     /**
+     * Add a {@link OpenPGPSmartCardBackend} at the given index to the manager.
+     *
+     * @param index desired index at which the backend shall be inserted.
+     * @param backend backend
+     * @return this
+     * @throws IndexOutOfBoundsException if the index is out of bounds.
+     */
+    public OpenPGPSmartCardManager addBackend(int index, OpenPGPSmartCardBackend<?> backend)
+    {
+        // Put all registered backends in a list, insert the backend at the given index, clear the original set
+        //  and re-insert all items from the list.
+        List<OpenPGPSmartCardBackend<?>> list = new ArrayList<>(backends);
+        list.add(index, backend);
+        this.backends.clear();
+        this.backends.addAll(list);
+        return this;
+    }
+
+    /**
      * List all available {@link OpenPGPSmartCard smart cards} across all backends.
      *
      * @return list of all smart cards
@@ -73,6 +92,10 @@ public class OpenPGPSmartCardManager
 
     /**
      * Return the smart card with the given serial number.
+     * Note: This method iterates over all registered {@link OpenPGPSmartCardBackend} instances in the order they were
+     * inserted, so if there are multiple backends managing the same smart card, backends with a lower index take
+     * precedence.
+     * If no matching smart card is found, throw a {@link NoSuchElementException}.
      *
      * @param serialNumber device serial number
      * @return matching smart card
