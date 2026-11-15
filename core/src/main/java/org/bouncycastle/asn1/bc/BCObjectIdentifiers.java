@@ -783,53 +783,55 @@ public interface BCObjectIdentifiers
 //    ASN1ObjectIdentifier p521_ov_v_pkc_skc = new ASN1ObjectIdentifier("1.3.9999.9.12.2");
 
     /**
-     * Snova
+     * Snova. Each identifier is a parameter-set leaf with .2 appended for the NIST round-2 version
+     * of the scheme, which the implementation follows. Bouncy Castle 1.81 to 1.87 used the bare
+     * leaves, which are no longer recognised.
      */
     ASN1ObjectIdentifier snova = bc_sig.branch("11");
-    ASN1ObjectIdentifier snova_24_5_4_ssk = snova.branch("1");
-    ASN1ObjectIdentifier snova_24_5_4_esk = snova.branch("2");
-    ASN1ObjectIdentifier snova_24_5_4_shake_ssk = snova.branch("3");
-    ASN1ObjectIdentifier snova_24_5_4_shake_esk = snova.branch("4");
-    ASN1ObjectIdentifier snova_24_5_5_ssk = snova.branch("5");
-    ASN1ObjectIdentifier snova_24_5_5_esk = snova.branch("6");
-    ASN1ObjectIdentifier snova_24_5_5_shake_ssk = snova.branch("7");
-    ASN1ObjectIdentifier snova_24_5_5_shake_esk = snova.branch("8");
-    ASN1ObjectIdentifier snova_25_8_3_ssk = snova.branch("9");
-    ASN1ObjectIdentifier snova_25_8_3_esk = snova.branch("10");
-    ASN1ObjectIdentifier snova_25_8_3_shake_ssk = snova.branch("11");
-    ASN1ObjectIdentifier snova_25_8_3_shake_esk = snova.branch("12");
-    ASN1ObjectIdentifier snova_29_6_5_ssk = snova.branch("13");
-    ASN1ObjectIdentifier snova_29_6_5_esk = snova.branch("14");
-    ASN1ObjectIdentifier snova_29_6_5_shake_ssk = snova.branch("15");
-    ASN1ObjectIdentifier snova_29_6_5_shake_esk = snova.branch("16");
-    ASN1ObjectIdentifier snova_37_8_4_ssk = snova.branch("17");
-    ASN1ObjectIdentifier snova_37_8_4_esk = snova.branch("18");
-    ASN1ObjectIdentifier snova_37_8_4_shake_ssk = snova.branch("19");
-    ASN1ObjectIdentifier snova_37_8_4_shake_esk = snova.branch("20");
-    ASN1ObjectIdentifier snova_37_17_2_ssk = snova.branch("21");
-    ASN1ObjectIdentifier snova_37_17_2_esk = snova.branch("22");
-    ASN1ObjectIdentifier snova_37_17_2_shake_ssk = snova.branch("23");
-    ASN1ObjectIdentifier snova_37_17_2_shake_esk = snova.branch("24");
-    ASN1ObjectIdentifier snova_49_11_3_ssk = snova.branch("25");
-    ASN1ObjectIdentifier snova_49_11_3_esk = snova.branch("26");
-    ASN1ObjectIdentifier snova_49_11_3_shake_ssk = snova.branch("27");
-    ASN1ObjectIdentifier snova_49_11_3_shake_esk = snova.branch("28");
-    ASN1ObjectIdentifier snova_56_25_2_ssk = snova.branch("29");
-    ASN1ObjectIdentifier snova_56_25_2_esk = snova.branch("30");
-    ASN1ObjectIdentifier snova_56_25_2_shake_ssk = snova.branch("31");
-    ASN1ObjectIdentifier snova_56_25_2_shake_esk = snova.branch("32");
-    ASN1ObjectIdentifier snova_60_10_4_ssk = snova.branch("33");
-    ASN1ObjectIdentifier snova_60_10_4_esk = snova.branch("34");
-    ASN1ObjectIdentifier snova_60_10_4_shake_ssk = snova.branch("35");
-    ASN1ObjectIdentifier snova_60_10_4_shake_esk = snova.branch("36");
-    ASN1ObjectIdentifier snova_66_15_3_ssk = snova.branch("37");
-    ASN1ObjectIdentifier snova_66_15_3_esk = snova.branch("38");
-    ASN1ObjectIdentifier snova_66_15_3_shake_ssk = snova.branch("39");
-    ASN1ObjectIdentifier snova_66_15_3_shake_esk = snova.branch("40");
-    ASN1ObjectIdentifier snova_75_33_2_ssk = snova.branch("41");
-    ASN1ObjectIdentifier snova_75_33_2_esk = snova.branch("42");
-    ASN1ObjectIdentifier snova_75_33_2_shake_ssk = snova.branch("43");
-    ASN1ObjectIdentifier snova_75_33_2_shake_esk = snova.branch("44");
+    ASN1ObjectIdentifier snova_24_5_4_ssk = snova.branch("1").branch("2");
+    ASN1ObjectIdentifier snova_24_5_4_esk = snova.branch("2").branch("2");
+    ASN1ObjectIdentifier snova_24_5_4_shake_ssk = snova.branch("3").branch("2");
+    ASN1ObjectIdentifier snova_24_5_4_shake_esk = snova.branch("4").branch("2");
+    ASN1ObjectIdentifier snova_24_5_5_ssk = snova.branch("5").branch("2");
+    ASN1ObjectIdentifier snova_24_5_5_esk = snova.branch("6").branch("2");
+    ASN1ObjectIdentifier snova_24_5_5_shake_ssk = snova.branch("7").branch("2");
+    ASN1ObjectIdentifier snova_24_5_5_shake_esk = snova.branch("8").branch("2");
+    ASN1ObjectIdentifier snova_25_8_3_ssk = snova.branch("9").branch("2");
+    ASN1ObjectIdentifier snova_25_8_3_esk = snova.branch("10").branch("2");
+    ASN1ObjectIdentifier snova_25_8_3_shake_ssk = snova.branch("11").branch("2");
+    ASN1ObjectIdentifier snova_25_8_3_shake_esk = snova.branch("12").branch("2");
+    ASN1ObjectIdentifier snova_29_6_5_ssk = snova.branch("13").branch("2");
+    ASN1ObjectIdentifier snova_29_6_5_esk = snova.branch("14").branch("2");
+    ASN1ObjectIdentifier snova_29_6_5_shake_ssk = snova.branch("15").branch("2");
+    ASN1ObjectIdentifier snova_29_6_5_shake_esk = snova.branch("16").branch("2");
+    ASN1ObjectIdentifier snova_37_8_4_ssk = snova.branch("17").branch("2");
+    ASN1ObjectIdentifier snova_37_8_4_esk = snova.branch("18").branch("2");
+    ASN1ObjectIdentifier snova_37_8_4_shake_ssk = snova.branch("19").branch("2");
+    ASN1ObjectIdentifier snova_37_8_4_shake_esk = snova.branch("20").branch("2");
+    ASN1ObjectIdentifier snova_37_17_2_ssk = snova.branch("21").branch("2");
+    ASN1ObjectIdentifier snova_37_17_2_esk = snova.branch("22").branch("2");
+    ASN1ObjectIdentifier snova_37_17_2_shake_ssk = snova.branch("23").branch("2");
+    ASN1ObjectIdentifier snova_37_17_2_shake_esk = snova.branch("24").branch("2");
+    ASN1ObjectIdentifier snova_49_11_3_ssk = snova.branch("25").branch("2");
+    ASN1ObjectIdentifier snova_49_11_3_esk = snova.branch("26").branch("2");
+    ASN1ObjectIdentifier snova_49_11_3_shake_ssk = snova.branch("27").branch("2");
+    ASN1ObjectIdentifier snova_49_11_3_shake_esk = snova.branch("28").branch("2");
+    ASN1ObjectIdentifier snova_56_25_2_ssk = snova.branch("29").branch("2");
+    ASN1ObjectIdentifier snova_56_25_2_esk = snova.branch("30").branch("2");
+    ASN1ObjectIdentifier snova_56_25_2_shake_ssk = snova.branch("31").branch("2");
+    ASN1ObjectIdentifier snova_56_25_2_shake_esk = snova.branch("32").branch("2");
+    ASN1ObjectIdentifier snova_60_10_4_ssk = snova.branch("33").branch("2");
+    ASN1ObjectIdentifier snova_60_10_4_esk = snova.branch("34").branch("2");
+    ASN1ObjectIdentifier snova_60_10_4_shake_ssk = snova.branch("35").branch("2");
+    ASN1ObjectIdentifier snova_60_10_4_shake_esk = snova.branch("36").branch("2");
+    ASN1ObjectIdentifier snova_66_15_3_ssk = snova.branch("37").branch("2");
+    ASN1ObjectIdentifier snova_66_15_3_esk = snova.branch("38").branch("2");
+    ASN1ObjectIdentifier snova_66_15_3_shake_ssk = snova.branch("39").branch("2");
+    ASN1ObjectIdentifier snova_66_15_3_shake_esk = snova.branch("40").branch("2");
+    ASN1ObjectIdentifier snova_75_33_2_ssk = snova.branch("41").branch("2");
+    ASN1ObjectIdentifier snova_75_33_2_esk = snova.branch("42").branch("2");
+    ASN1ObjectIdentifier snova_75_33_2_shake_ssk = snova.branch("43").branch("2");
+    ASN1ObjectIdentifier snova_75_33_2_shake_esk = snova.branch("44").branch("2");
 
     /*
      * Snova, NIST round 3 (SNOVA v3.0). Round 3 replaced every round-2 parameter set with nine sets
@@ -886,87 +888,96 @@ public interface BCObjectIdentifiers
      * 1.3.9999.* identifiers for FAEST, add them as additional commented constants
      * alongside the BC-arc identifiers below (cf. the {@link #mayo_1} / {@link #mayo1}
      * dual-arc precedent in the Mayo block).
+     * <p>
+     * Each identifier is a parameter-set leaf with .2 appended for FAEST v2.0, the NIST round-2
+     * version, which the implementation follows; the round-3 identifiers below append .3 to the same
+     * leaves. Bouncy Castle 1.85 to 1.87 used the bare leaves, which are no longer recognised.
      */
     ASN1ObjectIdentifier faest = bc_sig.branch("12");
 
-    ASN1ObjectIdentifier faest_128s = faest.branch("1");
-    ASN1ObjectIdentifier faest_128f = faest.branch("2");
-    ASN1ObjectIdentifier faest_192s = faest.branch("3");
-    ASN1ObjectIdentifier faest_192f = faest.branch("4");
-    ASN1ObjectIdentifier faest_256s = faest.branch("5");
-    ASN1ObjectIdentifier faest_256f = faest.branch("6");
+    ASN1ObjectIdentifier faest_128s = faest.branch("1").branch("2");
+    ASN1ObjectIdentifier faest_128f = faest.branch("2").branch("2");
+    ASN1ObjectIdentifier faest_192s = faest.branch("3").branch("2");
+    ASN1ObjectIdentifier faest_192f = faest.branch("4").branch("2");
+    ASN1ObjectIdentifier faest_256s = faest.branch("5").branch("2");
+    ASN1ObjectIdentifier faest_256f = faest.branch("6").branch("2");
 
-    ASN1ObjectIdentifier faest_em_128s = faest.branch("7");
-    ASN1ObjectIdentifier faest_em_128f = faest.branch("8");
-    ASN1ObjectIdentifier faest_em_192s = faest.branch("9");
-    ASN1ObjectIdentifier faest_em_192f = faest.branch("10");
-    ASN1ObjectIdentifier faest_em_256s = faest.branch("11");
-    ASN1ObjectIdentifier faest_em_256f = faest.branch("12");
+    ASN1ObjectIdentifier faest_em_128s = faest.branch("7").branch("2");
+    ASN1ObjectIdentifier faest_em_128f = faest.branch("8").branch("2");
+    ASN1ObjectIdentifier faest_em_192s = faest.branch("9").branch("2");
+    ASN1ObjectIdentifier faest_em_192f = faest.branch("10").branch("2");
+    ASN1ObjectIdentifier faest_em_256s = faest.branch("11").branch("2");
+    ASN1ObjectIdentifier faest_em_256f = faest.branch("12").branch("2");
 
     /*
      * FAEST, NIST round 3 (FAEST v3). The parameter sets keep their names, but v3 neither makes nor
      * accepts a v2 signature although the two versions encode their keys alike. Each identifier is
-     * the round-2 leaf with .3 appended. The round-2 identifiers above remain the ones in use until
-     * the round-3 implementation replaces the round-2 one.
+     * the parameter-set leaf with .3 appended. The round-2 identifiers above remain the ones in use
+     * until the round-3 implementation replaces the round-2 one.
      */
-    ASN1ObjectIdentifier faest_128s_r3 = faest_128s.branch("3");
-    ASN1ObjectIdentifier faest_128f_r3 = faest_128f.branch("3");
-    ASN1ObjectIdentifier faest_192s_r3 = faest_192s.branch("3");
-    ASN1ObjectIdentifier faest_192f_r3 = faest_192f.branch("3");
-    ASN1ObjectIdentifier faest_256s_r3 = faest_256s.branch("3");
-    ASN1ObjectIdentifier faest_256f_r3 = faest_256f.branch("3");
+    ASN1ObjectIdentifier faest_128s_r3 = faest.branch("1").branch("3");
+    ASN1ObjectIdentifier faest_128f_r3 = faest.branch("2").branch("3");
+    ASN1ObjectIdentifier faest_192s_r3 = faest.branch("3").branch("3");
+    ASN1ObjectIdentifier faest_192f_r3 = faest.branch("4").branch("3");
+    ASN1ObjectIdentifier faest_256s_r3 = faest.branch("5").branch("3");
+    ASN1ObjectIdentifier faest_256f_r3 = faest.branch("6").branch("3");
 
-    ASN1ObjectIdentifier faest_em_128s_r3 = faest_em_128s.branch("3");
-    ASN1ObjectIdentifier faest_em_128f_r3 = faest_em_128f.branch("3");
-    ASN1ObjectIdentifier faest_em_192s_r3 = faest_em_192s.branch("3");
-    ASN1ObjectIdentifier faest_em_192f_r3 = faest_em_192f.branch("3");
-    ASN1ObjectIdentifier faest_em_256s_r3 = faest_em_256s.branch("3");
-    ASN1ObjectIdentifier faest_em_256f_r3 = faest_em_256f.branch("3");
+    ASN1ObjectIdentifier faest_em_128s_r3 = faest.branch("7").branch("3");
+    ASN1ObjectIdentifier faest_em_128f_r3 = faest.branch("8").branch("3");
+    ASN1ObjectIdentifier faest_em_192s_r3 = faest.branch("9").branch("3");
+    ASN1ObjectIdentifier faest_em_192f_r3 = faest.branch("10").branch("3");
+    ASN1ObjectIdentifier faest_em_256s_r3 = faest.branch("11").branch("3");
+    ASN1ObjectIdentifier faest_em_256f_r3 = faest.branch("12").branch("3");
 
     /**
      * MQOM v2.1 ("MQ on my Mind"). BC-allocated arc pending NIST OID assignment.
      * 36 child OIDs follow the canonical naming
      * {@code mqom2_<category>_<base-field>_<trade-off>_<variant>}
      * with category in {cat1, cat3, cat5}, base-field in {gf2, gf16, gf256},
-     * trade-off in {fast, short}, variant in {r3, r5}.
+     * trade-off in {fast, short}, variant in {r3, r5} (the 3-round and 5-round protocol
+     * variants, not NIST rounds).
+     * <p>
+     * Each identifier is a parameter-set leaf with .2 appended for version 2.1, the NIST round-2
+     * version; version 3.0 takes the Open Quantum Safe identifiers below. Bouncy Castle 1.85 to 1.87
+     * used the bare leaves, which are no longer recognised.
      */
     ASN1ObjectIdentifier mqom = bc_sig.branch("13");
-    ASN1ObjectIdentifier mqom2_cat1_gf2_fast_r3      = mqom.branch("1");
-    ASN1ObjectIdentifier mqom2_cat1_gf2_fast_r5      = mqom.branch("2");
-    ASN1ObjectIdentifier mqom2_cat1_gf2_short_r3     = mqom.branch("3");
-    ASN1ObjectIdentifier mqom2_cat1_gf2_short_r5     = mqom.branch("4");
-    ASN1ObjectIdentifier mqom2_cat1_gf16_fast_r3     = mqom.branch("5");
-    ASN1ObjectIdentifier mqom2_cat1_gf16_fast_r5     = mqom.branch("6");
-    ASN1ObjectIdentifier mqom2_cat1_gf16_short_r3    = mqom.branch("7");
-    ASN1ObjectIdentifier mqom2_cat1_gf16_short_r5    = mqom.branch("8");
-    ASN1ObjectIdentifier mqom2_cat1_gf256_fast_r3    = mqom.branch("9");
-    ASN1ObjectIdentifier mqom2_cat1_gf256_fast_r5    = mqom.branch("10");
-    ASN1ObjectIdentifier mqom2_cat1_gf256_short_r3   = mqom.branch("11");
-    ASN1ObjectIdentifier mqom2_cat1_gf256_short_r5   = mqom.branch("12");
-    ASN1ObjectIdentifier mqom2_cat3_gf2_fast_r3      = mqom.branch("13");
-    ASN1ObjectIdentifier mqom2_cat3_gf2_fast_r5      = mqom.branch("14");
-    ASN1ObjectIdentifier mqom2_cat3_gf2_short_r3     = mqom.branch("15");
-    ASN1ObjectIdentifier mqom2_cat3_gf2_short_r5     = mqom.branch("16");
-    ASN1ObjectIdentifier mqom2_cat3_gf16_fast_r3     = mqom.branch("17");
-    ASN1ObjectIdentifier mqom2_cat3_gf16_fast_r5     = mqom.branch("18");
-    ASN1ObjectIdentifier mqom2_cat3_gf16_short_r3    = mqom.branch("19");
-    ASN1ObjectIdentifier mqom2_cat3_gf16_short_r5    = mqom.branch("20");
-    ASN1ObjectIdentifier mqom2_cat3_gf256_fast_r3    = mqom.branch("21");
-    ASN1ObjectIdentifier mqom2_cat3_gf256_fast_r5    = mqom.branch("22");
-    ASN1ObjectIdentifier mqom2_cat3_gf256_short_r3   = mqom.branch("23");
-    ASN1ObjectIdentifier mqom2_cat3_gf256_short_r5   = mqom.branch("24");
-    ASN1ObjectIdentifier mqom2_cat5_gf2_fast_r3      = mqom.branch("25");
-    ASN1ObjectIdentifier mqom2_cat5_gf2_fast_r5      = mqom.branch("26");
-    ASN1ObjectIdentifier mqom2_cat5_gf2_short_r3     = mqom.branch("27");
-    ASN1ObjectIdentifier mqom2_cat5_gf2_short_r5     = mqom.branch("28");
-    ASN1ObjectIdentifier mqom2_cat5_gf16_fast_r3     = mqom.branch("29");
-    ASN1ObjectIdentifier mqom2_cat5_gf16_fast_r5     = mqom.branch("30");
-    ASN1ObjectIdentifier mqom2_cat5_gf16_short_r3    = mqom.branch("31");
-    ASN1ObjectIdentifier mqom2_cat5_gf16_short_r5    = mqom.branch("32");
-    ASN1ObjectIdentifier mqom2_cat5_gf256_fast_r3    = mqom.branch("33");
-    ASN1ObjectIdentifier mqom2_cat5_gf256_fast_r5    = mqom.branch("34");
-    ASN1ObjectIdentifier mqom2_cat5_gf256_short_r3   = mqom.branch("35");
-    ASN1ObjectIdentifier mqom2_cat5_gf256_short_r5   = mqom.branch("36");
+    ASN1ObjectIdentifier mqom2_cat1_gf2_fast_r3      = mqom.branch("1").branch("2");
+    ASN1ObjectIdentifier mqom2_cat1_gf2_fast_r5      = mqom.branch("2").branch("2");
+    ASN1ObjectIdentifier mqom2_cat1_gf2_short_r3     = mqom.branch("3").branch("2");
+    ASN1ObjectIdentifier mqom2_cat1_gf2_short_r5     = mqom.branch("4").branch("2");
+    ASN1ObjectIdentifier mqom2_cat1_gf16_fast_r3     = mqom.branch("5").branch("2");
+    ASN1ObjectIdentifier mqom2_cat1_gf16_fast_r5     = mqom.branch("6").branch("2");
+    ASN1ObjectIdentifier mqom2_cat1_gf16_short_r3    = mqom.branch("7").branch("2");
+    ASN1ObjectIdentifier mqom2_cat1_gf16_short_r5    = mqom.branch("8").branch("2");
+    ASN1ObjectIdentifier mqom2_cat1_gf256_fast_r3    = mqom.branch("9").branch("2");
+    ASN1ObjectIdentifier mqom2_cat1_gf256_fast_r5    = mqom.branch("10").branch("2");
+    ASN1ObjectIdentifier mqom2_cat1_gf256_short_r3   = mqom.branch("11").branch("2");
+    ASN1ObjectIdentifier mqom2_cat1_gf256_short_r5   = mqom.branch("12").branch("2");
+    ASN1ObjectIdentifier mqom2_cat3_gf2_fast_r3      = mqom.branch("13").branch("2");
+    ASN1ObjectIdentifier mqom2_cat3_gf2_fast_r5      = mqom.branch("14").branch("2");
+    ASN1ObjectIdentifier mqom2_cat3_gf2_short_r3     = mqom.branch("15").branch("2");
+    ASN1ObjectIdentifier mqom2_cat3_gf2_short_r5     = mqom.branch("16").branch("2");
+    ASN1ObjectIdentifier mqom2_cat3_gf16_fast_r3     = mqom.branch("17").branch("2");
+    ASN1ObjectIdentifier mqom2_cat3_gf16_fast_r5     = mqom.branch("18").branch("2");
+    ASN1ObjectIdentifier mqom2_cat3_gf16_short_r3    = mqom.branch("19").branch("2");
+    ASN1ObjectIdentifier mqom2_cat3_gf16_short_r5    = mqom.branch("20").branch("2");
+    ASN1ObjectIdentifier mqom2_cat3_gf256_fast_r3    = mqom.branch("21").branch("2");
+    ASN1ObjectIdentifier mqom2_cat3_gf256_fast_r5    = mqom.branch("22").branch("2");
+    ASN1ObjectIdentifier mqom2_cat3_gf256_short_r3   = mqom.branch("23").branch("2");
+    ASN1ObjectIdentifier mqom2_cat3_gf256_short_r5   = mqom.branch("24").branch("2");
+    ASN1ObjectIdentifier mqom2_cat5_gf2_fast_r3      = mqom.branch("25").branch("2");
+    ASN1ObjectIdentifier mqom2_cat5_gf2_fast_r5      = mqom.branch("26").branch("2");
+    ASN1ObjectIdentifier mqom2_cat5_gf2_short_r3     = mqom.branch("27").branch("2");
+    ASN1ObjectIdentifier mqom2_cat5_gf2_short_r5     = mqom.branch("28").branch("2");
+    ASN1ObjectIdentifier mqom2_cat5_gf16_fast_r3     = mqom.branch("29").branch("2");
+    ASN1ObjectIdentifier mqom2_cat5_gf16_fast_r5     = mqom.branch("30").branch("2");
+    ASN1ObjectIdentifier mqom2_cat5_gf16_short_r3    = mqom.branch("31").branch("2");
+    ASN1ObjectIdentifier mqom2_cat5_gf16_short_r5    = mqom.branch("32").branch("2");
+    ASN1ObjectIdentifier mqom2_cat5_gf256_fast_r3    = mqom.branch("33").branch("2");
+    ASN1ObjectIdentifier mqom2_cat5_gf256_fast_r5    = mqom.branch("34").branch("2");
+    ASN1ObjectIdentifier mqom2_cat5_gf256_short_r3   = mqom.branch("35").branch("2");
+    ASN1ObjectIdentifier mqom2_cat5_gf256_short_r5   = mqom.branch("36").branch("2");
 
     /*
      * MQOM, NIST round 3 (MQOM v3.0) - the Open Quantum Safe identifiers. Version 3.0 removed all 36
@@ -1020,36 +1031,43 @@ public interface BCObjectIdentifiers
      * security-level is in {Is, Ip, III, V} and encoding-variant is in
      * {classic, pkc, pkc_skc}. See pqov reference implementation
      * (https://github.com/pqov/pqov) for the algorithm definitions.
+     * <p>
+     * Each identifier is a parameter-set leaf with .2 appended for the NIST round-2 version, which
+     * the implementation follows; the round-3 identifiers below append .3 to the same leaves. Bouncy
+     * Castle 1.85 to 1.87 used the bare leaves, which are no longer recognised.
      */
     ASN1ObjectIdentifier uov = bc_sig.branch("14");
-    ASN1ObjectIdentifier uov_Is_classic   = uov.branch("1");
-    ASN1ObjectIdentifier uov_Is_pkc       = uov.branch("2");
-    ASN1ObjectIdentifier uov_Is_pkc_skc   = uov.branch("3");
-    ASN1ObjectIdentifier uov_Ip_classic   = uov.branch("4");
-    ASN1ObjectIdentifier uov_Ip_pkc       = uov.branch("5");
-    ASN1ObjectIdentifier uov_Ip_pkc_skc   = uov.branch("6");
-    ASN1ObjectIdentifier uov_III_classic  = uov.branch("7");
-    ASN1ObjectIdentifier uov_III_pkc      = uov.branch("8");
-    ASN1ObjectIdentifier uov_III_pkc_skc  = uov.branch("9");
-    ASN1ObjectIdentifier uov_V_classic    = uov.branch("10");
-    ASN1ObjectIdentifier uov_V_pkc        = uov.branch("11");
-    ASN1ObjectIdentifier uov_V_pkc_skc    = uov.branch("12");
+    ASN1ObjectIdentifier uov_Is_classic   = uov.branch("1").branch("2");
+    ASN1ObjectIdentifier uov_Is_pkc       = uov.branch("2").branch("2");
+    ASN1ObjectIdentifier uov_Is_pkc_skc   = uov.branch("3").branch("2");
+    ASN1ObjectIdentifier uov_Ip_classic   = uov.branch("4").branch("2");
+    ASN1ObjectIdentifier uov_Ip_pkc       = uov.branch("5").branch("2");
+    ASN1ObjectIdentifier uov_Ip_pkc_skc   = uov.branch("6").branch("2");
+    ASN1ObjectIdentifier uov_III_classic  = uov.branch("7").branch("2");
+    ASN1ObjectIdentifier uov_III_pkc      = uov.branch("8").branch("2");
+    ASN1ObjectIdentifier uov_III_pkc_skc  = uov.branch("9").branch("2");
+    ASN1ObjectIdentifier uov_V_classic    = uov.branch("10").branch("2");
+    ASN1ObjectIdentifier uov_V_pkc        = uov.branch("11").branch("2");
+    ASN1ObjectIdentifier uov_V_pkc_skc    = uov.branch("12").branch("2");
 
     /*
-     * UOV, NIST round 3. Round 3 changed (n, m) of uov-Ip, uov-III and uov-V and left uov-Is as it
-     * was, so the three uov-Is identifiers above serve both rounds. Each round-3 identifier is the
-     * round-2 leaf with .3 appended. The round-2 identifiers above remain the ones in use until the
-     * round-3 implementation replaces the round-2 one.
+     * UOV, NIST round 3. Round 3 changed (n, m) of uov-Ip, uov-III and uov-V. Its changelog leaves
+     * uov-Is as it was, but uov-Is takes round-3 identifiers too, so that every round-3 set ends in .3.
+     * Each round-3 identifier is the parameter-set leaf with .3 appended. The round-2 identifiers above
+     * remain the ones in use until the round-3 implementation replaces the round-2 one.
      */
-    ASN1ObjectIdentifier uov_Ip_classic_r3   = uov_Ip_classic.branch("3");
-    ASN1ObjectIdentifier uov_Ip_pkc_r3       = uov_Ip_pkc.branch("3");
-    ASN1ObjectIdentifier uov_Ip_pkc_skc_r3   = uov_Ip_pkc_skc.branch("3");
-    ASN1ObjectIdentifier uov_III_classic_r3  = uov_III_classic.branch("3");
-    ASN1ObjectIdentifier uov_III_pkc_r3      = uov_III_pkc.branch("3");
-    ASN1ObjectIdentifier uov_III_pkc_skc_r3  = uov_III_pkc_skc.branch("3");
-    ASN1ObjectIdentifier uov_V_classic_r3    = uov_V_classic.branch("3");
-    ASN1ObjectIdentifier uov_V_pkc_r3        = uov_V_pkc.branch("3");
-    ASN1ObjectIdentifier uov_V_pkc_skc_r3    = uov_V_pkc_skc.branch("3");
+    ASN1ObjectIdentifier uov_Is_classic_r3   = uov.branch("1").branch("3");
+    ASN1ObjectIdentifier uov_Is_pkc_r3       = uov.branch("2").branch("3");
+    ASN1ObjectIdentifier uov_Is_pkc_skc_r3   = uov.branch("3").branch("3");
+    ASN1ObjectIdentifier uov_Ip_classic_r3   = uov.branch("4").branch("3");
+    ASN1ObjectIdentifier uov_Ip_pkc_r3       = uov.branch("5").branch("3");
+    ASN1ObjectIdentifier uov_Ip_pkc_skc_r3   = uov.branch("6").branch("3");
+    ASN1ObjectIdentifier uov_III_classic_r3  = uov.branch("7").branch("3");
+    ASN1ObjectIdentifier uov_III_pkc_r3      = uov.branch("8").branch("3");
+    ASN1ObjectIdentifier uov_III_pkc_skc_r3  = uov.branch("9").branch("3");
+    ASN1ObjectIdentifier uov_V_classic_r3    = uov.branch("10").branch("3");
+    ASN1ObjectIdentifier uov_V_pkc_r3        = uov.branch("11").branch("3");
+    ASN1ObjectIdentifier uov_V_pkc_skc_r3    = uov.branch("12").branch("3");
 
     /**
      * SQIsign (Short Quaternion and Isogeny Signature). BC-allocated arc
@@ -1057,20 +1075,24 @@ public interface BCObjectIdentifiers
      * NIST's PQC standardisation. Three child OIDs follow the canonical
      * NIST-API parameter-set naming {@code sqisign_lvl<n>} with
      * n in {1, 3, 5}.
+     * <p>
+     * Each identifier is a parameter-set leaf with .2 appended for SQIsign v2, the NIST round-2
+     * version, which the implementation follows; the round-3 identifiers below append .3 to the same
+     * leaves. Bouncy Castle 1.85 to 1.87 used the bare leaves, which are no longer recognised.
      */
     ASN1ObjectIdentifier sqisign       = bc_sig.branch("19");
-    ASN1ObjectIdentifier sqisign_lvl1  = sqisign.branch("1");
-    ASN1ObjectIdentifier sqisign_lvl3  = sqisign.branch("2");
-    ASN1ObjectIdentifier sqisign_lvl5  = sqisign.branch("3");
+    ASN1ObjectIdentifier sqisign_lvl1  = sqisign.branch("1").branch("2");
+    ASN1ObjectIdentifier sqisign_lvl3  = sqisign.branch("2").branch("2");
+    ASN1ObjectIdentifier sqisign_lvl5  = sqisign.branch("3").branch("2");
 
     /*
      * SQIsign, NIST round 3 (SQIsign v3), which neither makes nor accepts a v2 signature. Each
-     * identifier is the round-2 leaf with .3 appended. The round-2 identifiers above remain the ones
-     * in use until the round-3 implementation replaces the round-2 one.
+     * identifier is the parameter-set leaf with .3 appended. The round-2 identifiers above remain the
+     * ones in use until the round-3 implementation replaces the round-2 one.
      */
-    ASN1ObjectIdentifier sqisign_lvl1_r3  = sqisign_lvl1.branch("3");
-    ASN1ObjectIdentifier sqisign_lvl3_r3  = sqisign_lvl3.branch("3");
-    ASN1ObjectIdentifier sqisign_lvl5_r3  = sqisign_lvl5.branch("3");
+    ASN1ObjectIdentifier sqisign_lvl1_r3  = sqisign.branch("1").branch("3");
+    ASN1ObjectIdentifier sqisign_lvl3_r3  = sqisign.branch("2").branch("3");
+    ASN1ObjectIdentifier sqisign_lvl5_r3  = sqisign.branch("3").branch("3");
 
     /**
      * HAETAE &mdash; lattice-based signature scheme submitted to the
@@ -1108,25 +1130,27 @@ public interface BCObjectIdentifiers
      * SDitH (Syndrome-Decoding-in-the-Head). BC-allocated arc pending NIST OID
      * assignment. Version 1.1 of the specification, the round-1 submission, defines 12 variants
      * formed from the cross of {hypercube, threshold} × {cat1, cat3, cat5} × {gf256, p251};
-     * all 12 are wired in. Branches are assigned in canonical order:
+     * all 12 are wired in. Leaves are assigned in canonical order:
      * hypercube cat1/3/5 gf256 = .1/.2/.3, hypercube cat1/3/5 p251 = .4/.5/.6,
-     * threshold cat1/3/5 gf256 = .7/.8/.9, threshold cat1/3/5 p251 = .10/.11/.12.
+     * threshold cat1/3/5 gf256 = .7/.8/.9, threshold cat1/3/5 p251 = .10/.11/.12,
+     * and each identifier is its leaf with .1 appended for the round-1 version. Bouncy Castle 1.85
+     * to 1.87 used the bare leaves, which are no longer recognised.
      * Versions 2.0 (round 2) and 3.0 (round 3) replaced this MPC-in-the-Head scheme with a
      * VOLE-in-the-Head one over GF(2).
      */
     ASN1ObjectIdentifier sdith = bc_sig.branch("16");
-    ASN1ObjectIdentifier sdith_hypercube_cat1_gf256 = sdith.branch("1");
-    ASN1ObjectIdentifier sdith_hypercube_cat3_gf256 = sdith.branch("2");
-    ASN1ObjectIdentifier sdith_hypercube_cat5_gf256 = sdith.branch("3");
-    ASN1ObjectIdentifier sdith_hypercube_cat1_p251  = sdith.branch("4");
-    ASN1ObjectIdentifier sdith_hypercube_cat3_p251  = sdith.branch("5");
-    ASN1ObjectIdentifier sdith_hypercube_cat5_p251  = sdith.branch("6");
-    ASN1ObjectIdentifier sdith_threshold_cat1_gf256 = sdith.branch("7");
-    ASN1ObjectIdentifier sdith_threshold_cat3_gf256 = sdith.branch("8");
-    ASN1ObjectIdentifier sdith_threshold_cat5_gf256 = sdith.branch("9");
-    ASN1ObjectIdentifier sdith_threshold_cat1_p251  = sdith.branch("10");
-    ASN1ObjectIdentifier sdith_threshold_cat3_p251  = sdith.branch("11");
-    ASN1ObjectIdentifier sdith_threshold_cat5_p251  = sdith.branch("12");
+    ASN1ObjectIdentifier sdith_hypercube_cat1_gf256 = sdith.branch("1").branch("1");
+    ASN1ObjectIdentifier sdith_hypercube_cat3_gf256 = sdith.branch("2").branch("1");
+    ASN1ObjectIdentifier sdith_hypercube_cat5_gf256 = sdith.branch("3").branch("1");
+    ASN1ObjectIdentifier sdith_hypercube_cat1_p251  = sdith.branch("4").branch("1");
+    ASN1ObjectIdentifier sdith_hypercube_cat3_p251  = sdith.branch("5").branch("1");
+    ASN1ObjectIdentifier sdith_hypercube_cat5_p251  = sdith.branch("6").branch("1");
+    ASN1ObjectIdentifier sdith_threshold_cat1_gf256 = sdith.branch("7").branch("1");
+    ASN1ObjectIdentifier sdith_threshold_cat3_gf256 = sdith.branch("8").branch("1");
+    ASN1ObjectIdentifier sdith_threshold_cat5_gf256 = sdith.branch("9").branch("1");
+    ASN1ObjectIdentifier sdith_threshold_cat1_p251  = sdith.branch("10").branch("1");
+    ASN1ObjectIdentifier sdith_threshold_cat3_p251  = sdith.branch("11").branch("1");
+    ASN1ObjectIdentifier sdith_threshold_cat5_p251  = sdith.branch("12").branch("1");
 
     /*
      * SDitH, NIST round 3 (SD-in-the-Head-3, version 3.0). None of its twelve proposed parameter sets
@@ -1155,43 +1179,47 @@ public interface BCObjectIdentifiers
      * <p>
      * Twelve parameter sets covering NIST security categories 1/3/5 with various
      * (q, L, v, m) combinations.
+     * <p>
+     * Each identifier is a parameter-set leaf with .2 appended for the NIST round-2 version, which
+     * the implementation follows; the round-3 identifiers below append .3 to the same leaves. Bouncy
+     * Castle 1.85 to 1.87 used the bare leaves, which are no longer recognised.
      */
     ASN1ObjectIdentifier qruov = bc_sig.branch("17");
 
-    ASN1ObjectIdentifier qruov1q127L3v156m54 = qruov.branch("1");
-    ASN1ObjectIdentifier qruov1q31L3v165m60 = qruov.branch("2");
-    ASN1ObjectIdentifier qruov1q31L10v600m70 = qruov.branch("3");
-    ASN1ObjectIdentifier qruov1q7L10v740m100 = qruov.branch("4");
-    ASN1ObjectIdentifier qruov3q127L3v228m78 = qruov.branch("5");
-    ASN1ObjectIdentifier qruov3q31L3v246m87 = qruov.branch("6");
-    ASN1ObjectIdentifier qruov3q31L10v890m100 = qruov.branch("7");
-    ASN1ObjectIdentifier qruov3q7L10v1100m140 = qruov.branch("8");
-    ASN1ObjectIdentifier qruov5q127L3v306m105 = qruov.branch("9");
-    ASN1ObjectIdentifier qruov5q31L3v324m114 = qruov.branch("10");
-    ASN1ObjectIdentifier qruov5q31L10v1120m120 = qruov.branch("11");
-    ASN1ObjectIdentifier qruov5q7L10v1490m190 = qruov.branch("12");
+    ASN1ObjectIdentifier qruov1q127L3v156m54 = qruov.branch("1").branch("2");
+    ASN1ObjectIdentifier qruov1q31L3v165m60 = qruov.branch("2").branch("2");
+    ASN1ObjectIdentifier qruov1q31L10v600m70 = qruov.branch("3").branch("2");
+    ASN1ObjectIdentifier qruov1q7L10v740m100 = qruov.branch("4").branch("2");
+    ASN1ObjectIdentifier qruov3q127L3v228m78 = qruov.branch("5").branch("2");
+    ASN1ObjectIdentifier qruov3q31L3v246m87 = qruov.branch("6").branch("2");
+    ASN1ObjectIdentifier qruov3q31L10v890m100 = qruov.branch("7").branch("2");
+    ASN1ObjectIdentifier qruov3q7L10v1100m140 = qruov.branch("8").branch("2");
+    ASN1ObjectIdentifier qruov5q127L3v306m105 = qruov.branch("9").branch("2");
+    ASN1ObjectIdentifier qruov5q31L3v324m114 = qruov.branch("10").branch("2");
+    ASN1ObjectIdentifier qruov5q31L10v1120m120 = qruov.branch("11").branch("2");
+    ASN1ObjectIdentifier qruov5q7L10v1490m190 = qruov.branch("12").branch("2");
 
     /*
      * QR-UOV, NIST round 3. Round 3 changed signing and verification (a rank threshold on the oil
      * system, and the signature is the lexicographically smaller of s and -s), so no set is compatible
-     * with round 2. It keeps all twelve round-2 (q, L, v, m) sets, whose identifiers are the round-2
+     * with round 2. It keeps all twelve round-2 (q, L, v, m) sets, whose identifiers are their
      * leaves with .3 appended, and adds three q = 127, L = 10 sets, which take the BC leaves 13 to 15
      * with .3 appended. As in round 2, the identifiers name the sets with the SHAKE-based PRG. The
      * round-2 identifiers above remain the ones in use until the round-3 implementation replaces the
      * round-2 one.
      */
-    ASN1ObjectIdentifier qruov1q127L3v156m54_r3 = qruov1q127L3v156m54.branch("3");
-    ASN1ObjectIdentifier qruov1q31L3v165m60_r3 = qruov1q31L3v165m60.branch("3");
-    ASN1ObjectIdentifier qruov1q31L10v600m70_r3 = qruov1q31L10v600m70.branch("3");
-    ASN1ObjectIdentifier qruov1q7L10v740m100_r3 = qruov1q7L10v740m100.branch("3");
-    ASN1ObjectIdentifier qruov3q127L3v228m78_r3 = qruov3q127L3v228m78.branch("3");
-    ASN1ObjectIdentifier qruov3q31L3v246m87_r3 = qruov3q31L3v246m87.branch("3");
-    ASN1ObjectIdentifier qruov3q31L10v890m100_r3 = qruov3q31L10v890m100.branch("3");
-    ASN1ObjectIdentifier qruov3q7L10v1100m140_r3 = qruov3q7L10v1100m140.branch("3");
-    ASN1ObjectIdentifier qruov5q127L3v306m105_r3 = qruov5q127L3v306m105.branch("3");
-    ASN1ObjectIdentifier qruov5q31L3v324m114_r3 = qruov5q31L3v324m114.branch("3");
-    ASN1ObjectIdentifier qruov5q31L10v1120m120_r3 = qruov5q31L10v1120m120.branch("3");
-    ASN1ObjectIdentifier qruov5q7L10v1490m190_r3 = qruov5q7L10v1490m190.branch("3");
+    ASN1ObjectIdentifier qruov1q127L3v156m54_r3 = qruov.branch("1").branch("3");
+    ASN1ObjectIdentifier qruov1q31L3v165m60_r3 = qruov.branch("2").branch("3");
+    ASN1ObjectIdentifier qruov1q31L10v600m70_r3 = qruov.branch("3").branch("3");
+    ASN1ObjectIdentifier qruov1q7L10v740m100_r3 = qruov.branch("4").branch("3");
+    ASN1ObjectIdentifier qruov3q127L3v228m78_r3 = qruov.branch("5").branch("3");
+    ASN1ObjectIdentifier qruov3q31L3v246m87_r3 = qruov.branch("6").branch("3");
+    ASN1ObjectIdentifier qruov3q31L10v890m100_r3 = qruov.branch("7").branch("3");
+    ASN1ObjectIdentifier qruov3q7L10v1100m140_r3 = qruov.branch("8").branch("3");
+    ASN1ObjectIdentifier qruov5q127L3v306m105_r3 = qruov.branch("9").branch("3");
+    ASN1ObjectIdentifier qruov5q31L3v324m114_r3 = qruov.branch("10").branch("3");
+    ASN1ObjectIdentifier qruov5q31L10v1120m120_r3 = qruov.branch("11").branch("3");
+    ASN1ObjectIdentifier qruov5q7L10v1490m190_r3 = qruov.branch("12").branch("3");
 
     ASN1ObjectIdentifier qruov1q127L10v540m60 = qruov.branch("13").branch("3");
     ASN1ObjectIdentifier qruov3q127L10v820m90 = qruov.branch("14").branch("3");

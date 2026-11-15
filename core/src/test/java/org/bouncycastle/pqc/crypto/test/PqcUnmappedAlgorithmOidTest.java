@@ -291,6 +291,56 @@ public class PqcUnmappedAlgorithmOidTest
     }
 
     /**
+     * Bouncy Castle 1.81 to 1.87 identified the NIST round-2 versions of SNOVA, FAEST, MQOM, UOV,
+     * QR-UOV and SQIsign, and the round-1 version of SDitH, by bare parameter-set leaves; each
+     * identifier now has its round appended. A key under a bare leaf must be turned away as an
+     * unrecognised algorithm identifier, on the private and the public side, rather than reach a
+     * branch.
+     */
+    public void testUnsuffixedRoundLeavesRejected()
+        throws Exception
+    {
+        assertEquals(BCObjectIdentifiers.snova.branch("1").branch("2"), BCObjectIdentifiers.snova_24_5_4_ssk);
+        assertEquals(BCObjectIdentifiers.faest.branch("1").branch("2"), BCObjectIdentifiers.faest_128s);
+        assertEquals(BCObjectIdentifiers.mqom.branch("1").branch("2"), BCObjectIdentifiers.mqom2_cat1_gf2_fast_r3);
+        assertEquals(BCObjectIdentifiers.uov.branch("1").branch("2"), BCObjectIdentifiers.uov_Is_classic);
+        assertEquals(BCObjectIdentifiers.qruov.branch("1").branch("2"), BCObjectIdentifiers.qruov1q127L3v156m54);
+        assertEquals(BCObjectIdentifiers.sqisign.branch("1").branch("2"), BCObjectIdentifiers.sqisign_lvl1);
+        assertEquals(BCObjectIdentifiers.sdith.branch("1").branch("1"),
+            BCObjectIdentifiers.sdith_hypercube_cat1_gf256);
+
+        ASN1ObjectIdentifier[] arcs = new ASN1ObjectIdentifier[]
+        {
+            BCObjectIdentifiers.snova, BCObjectIdentifiers.faest, BCObjectIdentifiers.mqom, BCObjectIdentifiers.uov,
+            BCObjectIdentifiers.qruov, BCObjectIdentifiers.sqisign, BCObjectIdentifiers.sdith
+        };
+        int[] leafCounts = new int[]{ 44, 12, 36, 12, 12, 3, 12 };
+
+        for (int a = 0; a != arcs.length; a++)
+        {
+            for (int leaf = 1; leaf <= leafCounts[a]; leaf++)
+            {
+                ASN1ObjectIdentifier algOID = arcs[a].branch(Integer.toString(leaf));
+
+                assertTrue("private key under bare leaf " + algOID + " is not turned away as unrecognised",
+                    isRejectedAsUnrecognised(algOID));
+
+                SubjectPublicKeyInfo keyInfo = new SubjectPublicKeyInfo(new AlgorithmIdentifier(algOID), new byte[64]);
+                try
+                {
+                    PublicKeyFactory.createKey(keyInfo.getEncoded());
+                    fail("no exception for public key under bare leaf " + algOID);
+                }
+                catch (IOException e)
+                {
+                    assertTrue("public key under bare leaf " + algOID + " rejected for another reason: " + e,
+                        e.getMessage() != null && e.getMessage().indexOf("not recognised") >= 0);
+                }
+            }
+        }
+    }
+
+    /**
      * Compatibility assertion and drift guard in one. Every OID declared in BCObjectIdentifiers
      * below one of the dispatch arcs must either still reach its branch, or be one of the 16
      * known-unimplemented OQS hybrids or the round-3 OIDs declared ahead of their implementations.
