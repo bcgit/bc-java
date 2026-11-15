@@ -73,6 +73,54 @@ public class PqcUnmappedAlgorithmOidTest
     };
 
     /**
+     * The NIST round-3 additional-signature OIDs below a dispatch arc: declared in
+     * BCObjectIdentifiers ahead of the round-3 implementations, so not yet recognised. An entry
+     * leaves this list when its round-3 implementation is wired in.
+     */
+    private static final ASN1ObjectIdentifier[] ROUND3_UNIMPLEMENTED_OIDS = new ASN1ObjectIdentifier[]
+    {
+        BCObjectIdentifiers.snova_I_K_aes,
+        BCObjectIdentifiers.snova_I_B_aes,
+        BCObjectIdentifiers.snova_I_S_aes,
+        BCObjectIdentifiers.snova_III_K_aes,
+        BCObjectIdentifiers.snova_III_B_aes,
+        BCObjectIdentifiers.snova_III_S_aes,
+        BCObjectIdentifiers.snova_V_K_aes,
+        BCObjectIdentifiers.snova_V_B_aes,
+        BCObjectIdentifiers.snova_V_S_aes,
+        BCObjectIdentifiers.faest_128s_r3,
+        BCObjectIdentifiers.faest_128f_r3,
+        BCObjectIdentifiers.faest_192s_r3,
+        BCObjectIdentifiers.faest_192f_r3,
+        BCObjectIdentifiers.faest_256s_r3,
+        BCObjectIdentifiers.faest_256f_r3,
+        BCObjectIdentifiers.faest_em_128s_r3,
+        BCObjectIdentifiers.faest_em_128f_r3,
+        BCObjectIdentifiers.faest_em_192s_r3,
+        BCObjectIdentifiers.faest_em_192f_r3,
+        BCObjectIdentifiers.faest_em_256s_r3,
+        BCObjectIdentifiers.faest_em_256f_r3,
+        BCObjectIdentifiers.qruov1q127L3v156m54_r3,
+        BCObjectIdentifiers.qruov1q31L3v165m60_r3,
+        BCObjectIdentifiers.qruov1q31L10v600m70_r3,
+        BCObjectIdentifiers.qruov1q7L10v740m100_r3,
+        BCObjectIdentifiers.qruov3q127L3v228m78_r3,
+        BCObjectIdentifiers.qruov3q31L3v246m87_r3,
+        BCObjectIdentifiers.qruov3q31L10v890m100_r3,
+        BCObjectIdentifiers.qruov3q7L10v1100m140_r3,
+        BCObjectIdentifiers.qruov5q127L3v306m105_r3,
+        BCObjectIdentifiers.qruov5q31L3v324m114_r3,
+        BCObjectIdentifiers.qruov5q31L10v1120m120_r3,
+        BCObjectIdentifiers.qruov5q7L10v1490m190_r3,
+        BCObjectIdentifiers.qruov1q127L10v540m60,
+        BCObjectIdentifiers.qruov3q127L10v820m90,
+        BCObjectIdentifiers.qruov5q127L10v1040m110,
+        BCObjectIdentifiers.sqisign_lvl1_r3,
+        BCObjectIdentifiers.sqisign_lvl3_r3,
+        BCObjectIdentifiers.sqisign_lvl5_r3,
+    };
+
+    /**
      * Every arc the private-key dispatch used to select with {@code algOID.on(arc)}. An arbitrary
      * undeclared leaf below each of these is matched by the subtree test but has no parameters.
      * An arc leaves this list when its branch leaves the factories - the round 3 Classic McEliece
@@ -245,7 +293,8 @@ public class PqcUnmappedAlgorithmOidTest
     /**
      * Compatibility assertion and drift guard in one. Every OID declared in BCObjectIdentifiers
      * below one of the dispatch arcs must either still reach its branch, or be one of the 16
-     * known-unimplemented OQS hybrids. A declared OID that stops dispatching means the narrowed
+     * known-unimplemented OQS hybrids or the round-3 OIDs declared ahead of their implementations.
+     * A declared OID that stops dispatching means the narrowed
      * predicate cut too deep; a newly declared OID with no parameters table entry shows up here as
      * an unexpected "not recognised", which is exactly the drift that produced this defect.
      */
@@ -256,6 +305,10 @@ public class PqcUnmappedAlgorithmOidTest
         for (int i = 0; i != OQS_HYBRID_OIDS.length; i++)
         {
             expectedUnmapped.add(OQS_HYBRID_OIDS[i].getId());
+        }
+        for (int i = 0; i != ROUND3_UNIMPLEMENTED_OIDS.length; i++)
+        {
+            expectedUnmapped.add(ROUND3_UNIMPLEMENTED_OIDS[i].getId());
         }
 
         List unexpectedUnmapped = new ArrayList();

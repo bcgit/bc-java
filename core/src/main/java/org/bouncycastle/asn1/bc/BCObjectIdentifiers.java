@@ -672,6 +672,29 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier mayo5 = mayo_5;
 
     /*
+     * Mayo, NIST round 3 - the Open Quantum Safe identifiers oqs-provider assigns to the round-3
+     * parameter sets. Round 3 changed n and m of MAYO-1, n, o and k of MAYO-2, and the whipping
+     * schedule of all four sets, so no set is compatible with round 2. The round-2 identifiers above
+     * remain the ones in use until the round-3 implementation replaces the round-2 one.
+     */
+    /** 1.3.9999.8.1.5 OQS_OID_MAYO1 */
+    ASN1ObjectIdentifier mayo_1_r3 = new ASN1ObjectIdentifier("1.3.9999.8.1.5");
+    /** 1.3.9999.8.1.6 OQS_OID_P256_MAYO1 */
+    ASN1ObjectIdentifier p256_mayo1_r3 = new ASN1ObjectIdentifier("1.3.9999.8.1.6");
+    /** 1.3.9999.8.2.5 OQS_OID_MAYO2 */
+    ASN1ObjectIdentifier mayo_2_r3 = new ASN1ObjectIdentifier("1.3.9999.8.2.5");
+    /** 1.3.9999.8.2.6 OQS_OID_P256_MAYO2 */
+    ASN1ObjectIdentifier p256_mayo2_r3 = new ASN1ObjectIdentifier("1.3.9999.8.2.6");
+    /** 1.3.9999.8.3.5 OQS_OID_MAYO3 */
+    ASN1ObjectIdentifier mayo_3_r3 = new ASN1ObjectIdentifier("1.3.9999.8.3.5");
+    /** 1.3.9999.8.3.6 OQS_OID_P384_MAYO3 */
+    ASN1ObjectIdentifier p384_mayo3_r3 = new ASN1ObjectIdentifier("1.3.9999.8.3.6");
+    /** 1.3.9999.8.5.5 OQS_OID_MAYO5 */
+    ASN1ObjectIdentifier mayo_5_r3 = new ASN1ObjectIdentifier("1.3.9999.8.5.5");
+    /** 1.3.9999.8.5.6 OQS_OID_P521_MAYO5 */
+    ASN1ObjectIdentifier p521_mayo5_r3 = new ASN1ObjectIdentifier("1.3.9999.8.5.6");
+
+    /*
      * cross
      */
 //    /** 1.3.6.1.4.1.62245.2.1.1.2 OQS_OID_CROSSRSDP128BALANCED */
@@ -808,6 +831,43 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier snova_75_33_2_shake_ssk = snova.branch("43");
     ASN1ObjectIdentifier snova_75_33_2_shake_esk = snova.branch("44");
 
+    /*
+     * Snova, NIST round 3 (SNOVA v3.0). Round 3 replaced every round-2 parameter set with nine sets
+     * (v, o, q, l, r, m1, m2), dropped the expanded secret key and hashes the public key into the
+     * signature. The nine sets with the default SHAKE128 public XOF take the Open Quantum Safe
+     * identifiers; the nine sets with the AES128CTR public XOF, which oqs-provider does not assign,
+     * take the BC leaves 45 to 53 with .3 appended. The round-2 identifiers above remain the ones in
+     * use until the round-3 implementation replaces the round-2 one.
+     */
+    /** 1.3.9999.10.1.3 OQS_OID_SNOVA1K */
+    ASN1ObjectIdentifier snova_I_K = new ASN1ObjectIdentifier("1.3.9999.10.1.3");
+    /** 1.3.9999.10.2.3 OQS_OID_SNOVA1B */
+    ASN1ObjectIdentifier snova_I_B = new ASN1ObjectIdentifier("1.3.9999.10.2.3");
+    /** 1.3.9999.10.3.3 OQS_OID_SNOVA1S */
+    ASN1ObjectIdentifier snova_I_S = new ASN1ObjectIdentifier("1.3.9999.10.3.3");
+    /** 1.3.9999.10.4.3 OQS_OID_SNOVA3K */
+    ASN1ObjectIdentifier snova_III_K = new ASN1ObjectIdentifier("1.3.9999.10.4.3");
+    /** 1.3.9999.10.5.3 OQS_OID_SNOVA3B */
+    ASN1ObjectIdentifier snova_III_B = new ASN1ObjectIdentifier("1.3.9999.10.5.3");
+    /** 1.3.9999.10.6.3 OQS_OID_SNOVA3S */
+    ASN1ObjectIdentifier snova_III_S = new ASN1ObjectIdentifier("1.3.9999.10.6.3");
+    /** 1.3.9999.10.7.3 OQS_OID_SNOVA5K */
+    ASN1ObjectIdentifier snova_V_K = new ASN1ObjectIdentifier("1.3.9999.10.7.3");
+    /** 1.3.9999.10.8.3 OQS_OID_SNOVA5B */
+    ASN1ObjectIdentifier snova_V_B = new ASN1ObjectIdentifier("1.3.9999.10.8.3");
+    /** 1.3.9999.10.9.3 OQS_OID_SNOVA5S */
+    ASN1ObjectIdentifier snova_V_S = new ASN1ObjectIdentifier("1.3.9999.10.9.3");
+
+    ASN1ObjectIdentifier snova_I_K_aes = snova.branch("45").branch("3");
+    ASN1ObjectIdentifier snova_I_B_aes = snova.branch("46").branch("3");
+    ASN1ObjectIdentifier snova_I_S_aes = snova.branch("47").branch("3");
+    ASN1ObjectIdentifier snova_III_K_aes = snova.branch("48").branch("3");
+    ASN1ObjectIdentifier snova_III_B_aes = snova.branch("49").branch("3");
+    ASN1ObjectIdentifier snova_III_S_aes = snova.branch("50").branch("3");
+    ASN1ObjectIdentifier snova_V_K_aes = snova.branch("51").branch("3");
+    ASN1ObjectIdentifier snova_V_B_aes = snova.branch("52").branch("3");
+    ASN1ObjectIdentifier snova_V_S_aes = snova.branch("53").branch("3");
+
     /**
      * FAEST &mdash; symmetric-primitive signature scheme based on AES and the
      * VOLE-in-the-Head proof system. See
@@ -843,6 +903,25 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier faest_em_256s = faest.branch("11");
     ASN1ObjectIdentifier faest_em_256f = faest.branch("12");
 
+    /*
+     * FAEST, NIST round 3 (FAEST v3). The parameter sets keep their names, but v3 neither makes nor
+     * accepts a v2 signature although the two versions encode their keys alike. Each identifier is
+     * the round-2 leaf with .3 appended. The round-2 identifiers above remain the ones in use until
+     * the round-3 implementation replaces the round-2 one.
+     */
+    ASN1ObjectIdentifier faest_128s_r3 = faest_128s.branch("3");
+    ASN1ObjectIdentifier faest_128f_r3 = faest_128f.branch("3");
+    ASN1ObjectIdentifier faest_192s_r3 = faest_192s.branch("3");
+    ASN1ObjectIdentifier faest_192f_r3 = faest_192f.branch("3");
+    ASN1ObjectIdentifier faest_256s_r3 = faest_256s.branch("3");
+    ASN1ObjectIdentifier faest_256f_r3 = faest_256f.branch("3");
+
+    ASN1ObjectIdentifier faest_em_128s_r3 = faest_em_128s.branch("3");
+    ASN1ObjectIdentifier faest_em_128f_r3 = faest_em_128f.branch("3");
+    ASN1ObjectIdentifier faest_em_192s_r3 = faest_em_192s.branch("3");
+    ASN1ObjectIdentifier faest_em_192f_r3 = faest_em_192f.branch("3");
+    ASN1ObjectIdentifier faest_em_256s_r3 = faest_em_256s.branch("3");
+    ASN1ObjectIdentifier faest_em_256f_r3 = faest_em_256f.branch("3");
 
     /**
      * MQOM v2.1 ("MQ on my Mind"). BC-allocated arc pending NIST OID assignment.
@@ -889,6 +968,50 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier mqom2_cat5_gf256_short_r3   = mqom.branch("35");
     ASN1ObjectIdentifier mqom2_cat5_gf256_short_r5   = mqom.branch("36");
 
+    /*
+     * MQOM, NIST round 3 (MQOM v3.0) - the Open Quantum Safe identifiers. Version 3.0 removed all 36
+     * version 2.1 sets and defines 18 new ones: fast and short over GF(16) and shorter over GF(2), each
+     * with the correlated-tree (ct) and one-tree (ot) optimisation, for categories 1, 3 and 5. The
+     * version 2.1 identifiers above remain the ones in use until the version 3.0 implementation
+     * replaces the version 2.1 one.
+     */
+    /** 1.3.9999.11.1.9 OQS_OID_MQOM3CAT1GF16FASTCT */
+    ASN1ObjectIdentifier mqom3_cat1_gf16_fast_ct = new ASN1ObjectIdentifier("1.3.9999.11.1.9");
+    /** 1.3.9999.11.1.11 OQS_OID_MQOM3CAT1GF16FASTOT */
+    ASN1ObjectIdentifier mqom3_cat1_gf16_fast_ot = new ASN1ObjectIdentifier("1.3.9999.11.1.11");
+    /** 1.3.9999.11.1.13 OQS_OID_MQOM3CAT1GF16SHORTCT */
+    ASN1ObjectIdentifier mqom3_cat1_gf16_short_ct = new ASN1ObjectIdentifier("1.3.9999.11.1.13");
+    /** 1.3.9999.11.1.15 OQS_OID_MQOM3CAT1GF16SHORTOT */
+    ASN1ObjectIdentifier mqom3_cat1_gf16_short_ot = new ASN1ObjectIdentifier("1.3.9999.11.1.15");
+    /** 1.3.9999.11.1.17 OQS_OID_MQOM3CAT1GF2SHORTERCT */
+    ASN1ObjectIdentifier mqom3_cat1_gf2_shorter_ct = new ASN1ObjectIdentifier("1.3.9999.11.1.17");
+    /** 1.3.9999.11.1.19 OQS_OID_MQOM3CAT1GF2SHORTEROT */
+    ASN1ObjectIdentifier mqom3_cat1_gf2_shorter_ot = new ASN1ObjectIdentifier("1.3.9999.11.1.19");
+    /** 1.3.9999.11.3.9 OQS_OID_MQOM3CAT3GF16FASTCT */
+    ASN1ObjectIdentifier mqom3_cat3_gf16_fast_ct = new ASN1ObjectIdentifier("1.3.9999.11.3.9");
+    /** 1.3.9999.11.3.11 OQS_OID_MQOM3CAT3GF16FASTOT */
+    ASN1ObjectIdentifier mqom3_cat3_gf16_fast_ot = new ASN1ObjectIdentifier("1.3.9999.11.3.11");
+    /** 1.3.9999.11.3.13 OQS_OID_MQOM3CAT3GF16SHORTCT */
+    ASN1ObjectIdentifier mqom3_cat3_gf16_short_ct = new ASN1ObjectIdentifier("1.3.9999.11.3.13");
+    /** 1.3.9999.11.3.15 OQS_OID_MQOM3CAT3GF16SHORTOT */
+    ASN1ObjectIdentifier mqom3_cat3_gf16_short_ot = new ASN1ObjectIdentifier("1.3.9999.11.3.15");
+    /** 1.3.9999.11.3.17 OQS_OID_MQOM3CAT3GF2SHORTERCT */
+    ASN1ObjectIdentifier mqom3_cat3_gf2_shorter_ct = new ASN1ObjectIdentifier("1.3.9999.11.3.17");
+    /** 1.3.9999.11.3.19 OQS_OID_MQOM3CAT3GF2SHORTEROT */
+    ASN1ObjectIdentifier mqom3_cat3_gf2_shorter_ot = new ASN1ObjectIdentifier("1.3.9999.11.3.19");
+    /** 1.3.9999.11.5.9 OQS_OID_MQOM3CAT5GF16FASTCT */
+    ASN1ObjectIdentifier mqom3_cat5_gf16_fast_ct = new ASN1ObjectIdentifier("1.3.9999.11.5.9");
+    /** 1.3.9999.11.5.11 OQS_OID_MQOM3CAT5GF16FASTOT */
+    ASN1ObjectIdentifier mqom3_cat5_gf16_fast_ot = new ASN1ObjectIdentifier("1.3.9999.11.5.11");
+    /** 1.3.9999.11.5.13 OQS_OID_MQOM3CAT5GF16SHORTCT */
+    ASN1ObjectIdentifier mqom3_cat5_gf16_short_ct = new ASN1ObjectIdentifier("1.3.9999.11.5.13");
+    /** 1.3.9999.11.5.15 OQS_OID_MQOM3CAT5GF16SHORTOT */
+    ASN1ObjectIdentifier mqom3_cat5_gf16_short_ot = new ASN1ObjectIdentifier("1.3.9999.11.5.15");
+    /** 1.3.9999.11.5.17 OQS_OID_MQOM3CAT5GF2SHORTERCT */
+    ASN1ObjectIdentifier mqom3_cat5_gf2_shorter_ct = new ASN1ObjectIdentifier("1.3.9999.11.5.17");
+    /** 1.3.9999.11.5.19 OQS_OID_MQOM3CAT5GF2SHORTEROT */
+    ASN1ObjectIdentifier mqom3_cat5_gf2_shorter_ot = new ASN1ObjectIdentifier("1.3.9999.11.5.19");
+
     /**
      * UOV (Unbalanced Oil and Vinegar). BC-allocated arc pending NIST OID
      * assignment from the additional-signatures round of NIST's PQC
@@ -912,6 +1035,22 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier uov_V_pkc        = uov.branch("11");
     ASN1ObjectIdentifier uov_V_pkc_skc    = uov.branch("12");
 
+    /*
+     * UOV, NIST round 3. Round 3 changed (n, m) of uov-Ip, uov-III and uov-V and left uov-Is as it
+     * was, so the three uov-Is identifiers above serve both rounds. Each round-3 identifier is the
+     * round-2 leaf with .3 appended. The round-2 identifiers above remain the ones in use until the
+     * round-3 implementation replaces the round-2 one.
+     */
+    ASN1ObjectIdentifier uov_Ip_classic_r3   = uov_Ip_classic.branch("3");
+    ASN1ObjectIdentifier uov_Ip_pkc_r3       = uov_Ip_pkc.branch("3");
+    ASN1ObjectIdentifier uov_Ip_pkc_skc_r3   = uov_Ip_pkc_skc.branch("3");
+    ASN1ObjectIdentifier uov_III_classic_r3  = uov_III_classic.branch("3");
+    ASN1ObjectIdentifier uov_III_pkc_r3      = uov_III_pkc.branch("3");
+    ASN1ObjectIdentifier uov_III_pkc_skc_r3  = uov_III_pkc_skc.branch("3");
+    ASN1ObjectIdentifier uov_V_classic_r3    = uov_V_classic.branch("3");
+    ASN1ObjectIdentifier uov_V_pkc_r3        = uov_V_pkc.branch("3");
+    ASN1ObjectIdentifier uov_V_pkc_skc_r3    = uov_V_pkc_skc.branch("3");
+
     /**
      * SQIsign (Short Quaternion and Isogeny Signature). BC-allocated arc
      * pending NIST OID assignment from the additional-signatures round of
@@ -923,6 +1062,15 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier sqisign_lvl1  = sqisign.branch("1");
     ASN1ObjectIdentifier sqisign_lvl3  = sqisign.branch("2");
     ASN1ObjectIdentifier sqisign_lvl5  = sqisign.branch("3");
+
+    /*
+     * SQIsign, NIST round 3 (SQIsign v3), which neither makes nor accepts a v2 signature. Each
+     * identifier is the round-2 leaf with .3 appended. The round-2 identifiers above remain the ones
+     * in use until the round-3 implementation replaces the round-2 one.
+     */
+    ASN1ObjectIdentifier sqisign_lvl1_r3  = sqisign_lvl1.branch("3");
+    ASN1ObjectIdentifier sqisign_lvl3_r3  = sqisign_lvl3.branch("3");
+    ASN1ObjectIdentifier sqisign_lvl5_r3  = sqisign_lvl5.branch("3");
 
     /**
      * HAETAE &mdash; lattice-based signature scheme submitted to the
@@ -958,11 +1106,13 @@ public interface BCObjectIdentifiers
 
     /**
      * SDitH (Syndrome-Decoding-in-the-Head). BC-allocated arc pending NIST OID
-     * assignment. The Round-2 submission defines 12 variants formed from the
-     * cross of {hypercube, threshold} × {cat1, cat3, cat5} × {gf256, p251};
+     * assignment. Version 1.1 of the specification, the round-1 submission, defines 12 variants
+     * formed from the cross of {hypercube, threshold} × {cat1, cat3, cat5} × {gf256, p251};
      * all 12 are wired in. Branches are assigned in canonical order:
      * hypercube cat1/3/5 gf256 = .1/.2/.3, hypercube cat1/3/5 p251 = .4/.5/.6,
      * threshold cat1/3/5 gf256 = .7/.8/.9, threshold cat1/3/5 p251 = .10/.11/.12.
+     * Versions 2.0 (round 2) and 3.0 (round 3) replaced this MPC-in-the-Head scheme with a
+     * VOLE-in-the-Head one over GF(2).
      */
     ASN1ObjectIdentifier sdith = bc_sig.branch("16");
     ASN1ObjectIdentifier sdith_hypercube_cat1_gf256 = sdith.branch("1");
@@ -977,6 +1127,27 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier sdith_threshold_cat1_p251  = sdith.branch("10");
     ASN1ObjectIdentifier sdith_threshold_cat3_p251  = sdith.branch("11");
     ASN1ObjectIdentifier sdith_threshold_cat5_p251  = sdith.branch("12");
+
+    /*
+     * SDitH, NIST round 3 (SD-in-the-Head-3, version 3.0). None of its twelve proposed parameter sets
+     * has a counterpart above, so they take the BC leaves 13 to 24 with .3 appended: the six main sets
+     * with hash-based grinding, then the six alternative sets with cipher-based grinding. The
+     * version 1.1 identifiers above remain the ones in use until the version 3.0 implementation
+     * replaces the version 1.1 one.
+     */
+    ASN1ObjectIdentifier sdith3_L1_gf2_short = sdith.branch("13").branch("3");
+    ASN1ObjectIdentifier sdith3_L1_gf2_fast  = sdith.branch("14").branch("3");
+    ASN1ObjectIdentifier sdith3_L3_gf2_short = sdith.branch("15").branch("3");
+    ASN1ObjectIdentifier sdith3_L3_gf2_fast  = sdith.branch("16").branch("3");
+    ASN1ObjectIdentifier sdith3_L5_gf2_short = sdith.branch("17").branch("3");
+    ASN1ObjectIdentifier sdith3_L5_gf2_fast  = sdith.branch("18").branch("3");
+
+    ASN1ObjectIdentifier sdith3_L1_gf2_short_cipherpow = sdith.branch("19").branch("3");
+    ASN1ObjectIdentifier sdith3_L1_gf2_fast_cipherpow  = sdith.branch("20").branch("3");
+    ASN1ObjectIdentifier sdith3_L3_gf2_short_cipherpow = sdith.branch("21").branch("3");
+    ASN1ObjectIdentifier sdith3_L3_gf2_fast_cipherpow  = sdith.branch("22").branch("3");
+    ASN1ObjectIdentifier sdith3_L5_gf2_short_cipherpow = sdith.branch("23").branch("3");
+    ASN1ObjectIdentifier sdith3_L5_gf2_fast_cipherpow  = sdith.branch("24").branch("3");
 
     /**
      * QR-UOV &mdash; multivariate signature scheme based on quotient-ring UOV.
@@ -999,6 +1170,32 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier qruov5q31L3v324m114 = qruov.branch("10");
     ASN1ObjectIdentifier qruov5q31L10v1120m120 = qruov.branch("11");
     ASN1ObjectIdentifier qruov5q7L10v1490m190 = qruov.branch("12");
+
+    /*
+     * QR-UOV, NIST round 3. Round 3 changed signing and verification (a rank threshold on the oil
+     * system, and the signature is the lexicographically smaller of s and -s), so no set is compatible
+     * with round 2. It keeps all twelve round-2 (q, L, v, m) sets, whose identifiers are the round-2
+     * leaves with .3 appended, and adds three q = 127, L = 10 sets, which take the BC leaves 13 to 15
+     * with .3 appended. As in round 2, the identifiers name the sets with the SHAKE-based PRG. The
+     * round-2 identifiers above remain the ones in use until the round-3 implementation replaces the
+     * round-2 one.
+     */
+    ASN1ObjectIdentifier qruov1q127L3v156m54_r3 = qruov1q127L3v156m54.branch("3");
+    ASN1ObjectIdentifier qruov1q31L3v165m60_r3 = qruov1q31L3v165m60.branch("3");
+    ASN1ObjectIdentifier qruov1q31L10v600m70_r3 = qruov1q31L10v600m70.branch("3");
+    ASN1ObjectIdentifier qruov1q7L10v740m100_r3 = qruov1q7L10v740m100.branch("3");
+    ASN1ObjectIdentifier qruov3q127L3v228m78_r3 = qruov3q127L3v228m78.branch("3");
+    ASN1ObjectIdentifier qruov3q31L3v246m87_r3 = qruov3q31L3v246m87.branch("3");
+    ASN1ObjectIdentifier qruov3q31L10v890m100_r3 = qruov3q31L10v890m100.branch("3");
+    ASN1ObjectIdentifier qruov3q7L10v1100m140_r3 = qruov3q7L10v1100m140.branch("3");
+    ASN1ObjectIdentifier qruov5q127L3v306m105_r3 = qruov5q127L3v306m105.branch("3");
+    ASN1ObjectIdentifier qruov5q31L3v324m114_r3 = qruov5q31L3v324m114.branch("3");
+    ASN1ObjectIdentifier qruov5q31L10v1120m120_r3 = qruov5q31L10v1120m120.branch("3");
+    ASN1ObjectIdentifier qruov5q7L10v1490m190_r3 = qruov5q7L10v1490m190.branch("3");
+
+    ASN1ObjectIdentifier qruov1q127L10v540m60 = qruov.branch("13").branch("3");
+    ASN1ObjectIdentifier qruov3q127L10v820m90 = qruov.branch("14").branch("3");
+    ASN1ObjectIdentifier qruov5q127L10v1040m110 = qruov.branch("15").branch("3");
 
     /**
      * AIMer post-quantum digital signature scheme (KpqC Round 2 submission).
