@@ -115,6 +115,14 @@ public class SupportedAlgorithms
 
         public abstract boolean matches(int keyAlgorithm, ASN1ObjectIdentifier curveOID);
 
+        /**
+         * Return true if a key of this algorithm may carry the given OpenPGP public key algorithm ID.
+         *
+         * @param publicKeyAlgorithmTag OpenPGP public key algorithm ID
+         * @return true if the ID can be assigned to a key of this algorithm
+         */
+        public abstract boolean isAssignableTo(int publicKeyAlgorithmTag);
+
         public abstract String toString();
     }
 
@@ -126,6 +134,14 @@ public class SupportedAlgorithms
         {
             super(keyRef, algorithmId);
             this.keySize = keySize;
+        }
+
+        @Override
+        public boolean isAssignableTo(int publicKeyAlgorithmTag)
+        {
+            return publicKeyAlgorithmTag == PublicKeyAlgorithmTags.RSA_GENERAL
+                || publicKeyAlgorithmTag == PublicKeyAlgorithmTags.RSA_ENCRYPT
+                || publicKeyAlgorithmTag == PublicKeyAlgorithmTags.RSA_SIGN;
         }
 
         @Override
@@ -160,6 +176,32 @@ public class SupportedAlgorithms
         {
             super(keyRef, algorithmId);
             this.curve = curve;
+        }
+
+        @Override
+        public boolean isAssignableTo(int publicKeyAlgorithmTag)
+        {
+            if (curve.equals(GNUObjectIdentifiers.Ed25519) || curve.equals(EdECObjectIdentifiers.id_Ed25519))
+            {
+                return publicKeyAlgorithmTag == PublicKeyAlgorithmTags.EDDSA_LEGACY
+                    || publicKeyAlgorithmTag == PublicKeyAlgorithmTags.Ed25519;
+            }
+            if (curve.equals(CryptlibObjectIdentifiers.curvey25519) || curve.equals(EdECObjectIdentifiers.id_X25519))
+            {
+                return publicKeyAlgorithmTag == PublicKeyAlgorithmTags.ECDH
+                    || publicKeyAlgorithmTag == PublicKeyAlgorithmTags.X25519;
+            }
+            if (curve.equals(EdECObjectIdentifiers.id_Ed448))
+            {
+                return publicKeyAlgorithmTag == PublicKeyAlgorithmTags.Ed448;
+            }
+            if (curve.equals(EdECObjectIdentifiers.id_X448))
+            {
+                return publicKeyAlgorithmTag == PublicKeyAlgorithmTags.X448;
+            }
+            // the NIST, Brainpool and secp256k1 curves
+            return publicKeyAlgorithmTag == PublicKeyAlgorithmTags.ECDSA
+                || publicKeyAlgorithmTag == PublicKeyAlgorithmTags.ECDH;
         }
 
         @Override

@@ -60,7 +60,7 @@ public class SimulatorOpenPGPSmartCardBackend
                                boolean subkey)
             throws PGPException
     {
-        PGPKeyPairGenerator kpGen = implementation.implementation.pgpKeyPairGeneratorProvider()
+        PGPKeyPairGenerator kpGen = implementation.getOpenPGPImplementation().pgpKeyPairGeneratorProvider()
                 .get(keyVersion, creationTime);
 
         PGPKeyPair kp;
@@ -113,7 +113,7 @@ public class SimulatorOpenPGPSmartCardBackend
 
         if (subkey)
         {
-            return kp.asSubkey(implementation.implementation.keyFingerPrintCalculator());
+            return kp.asSubkey(implementation.getOpenPGPImplementation().keyFingerPrintCalculator());
         }
         return kp;
     }

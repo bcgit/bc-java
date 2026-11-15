@@ -34,14 +34,7 @@ public class SmartCardChangePINTest
     {
         for (OpenPGPSmartCardBackend backend : manager.getBackends())
         {
-            try
-            {
-                performTestOn(backend);
-            }
-            catch (Exception e)
-            {
-                e.printStackTrace();
-            }
+            performTestOn(backend);
         }
     }
 
@@ -63,37 +56,55 @@ public class SmartCardChangePINTest
     private void testChangeAdminPIN(OpenPGPSmartCard card)
             throws CardException
     {
-        // -DM System.out.println
-        // test old PIN
         char[] oldAdminPin = properties.getAdminPin();
-        isTrue("Cannot verify old admin PIN" , card.checkAdminPIN(c -> oldAdminPin));
+        isTrue("Cannot verify old admin PIN", card.checkAdminPIN(c -> oldAdminPin));
 
-        // change to new PIN
         char[] newAdminPin = "12131415".toCharArray();
         card.changeAdminPIN(c -> oldAdminPin, c -> newAdminPin);
-        isTrue("Cannot verify new admin PIN after changing it", card.checkAdminPIN(c -> newAdminPin));
-        isTrue("Old admin PIN erroneously still verifies", !card.checkAdminPIN(c -> oldAdminPin));
-
-        // change back admin PIN
-        card.changeAdminPIN(c -> newAdminPin, c -> oldAdminPin);
+        try
+        {
+            isTrue("Cannot verify new admin PIN after changing it", card.checkAdminPIN(c -> newAdminPin));
+            isTrue("Old admin PIN erroneously still verifies", !card.checkAdminPIN(c -> oldAdminPin));
+        }
+        finally
+        {
+            // change back, so a failure does not leave the card with an unknown PIN
+            card.changeAdminPIN(c -> newAdminPin, c -> oldAdminPin);
+        }
+        isTrue("Cannot verify admin PIN after changing it back", card.checkAdminPIN(c -> oldAdminPin));
     }
 
     private void testChangeUserPIN(OpenPGPSmartCard card)
             throws CardException
     {
-        // -DM System.out.println
-        // test old PIN
         char[] oldUserPIN = properties.getUserPin();
         isTrue("Cannot verify old user PIN", card.checkUserPIN(c -> oldUserPIN));
 
-        // change to new PIN
+        // a wrong old PIN is refused and leaves the PIN as it was
         char[] newUserPIN = "121314".toCharArray();
-        card.changeUserPIN(c -> oldUserPIN, c -> newUserPIN);
-        isTrue("Cannot verify new user PIN after changing it", card.checkUserPIN(c -> newUserPIN));
-        isTrue("Old user PIN erroneously still verifies", !card.checkUserPIN(c -> oldUserPIN));
+        try
+        {
+            card.changeUserPIN(c -> "999999".toCharArray(), c -> newUserPIN);
+            fail("User PIN changed with a wrong old PIN");
+        }
+        catch (CardException e)
+        {
+            // expected
+        }
+        isTrue("Rejected change altered the user PIN", card.checkUserPIN(c -> oldUserPIN));
 
-        // change back user PIN
-        card.changeUserPIN(c -> newUserPIN, c -> oldUserPIN);
+        card.changeUserPIN(c -> oldUserPIN, c -> newUserPIN);
+        try
+        {
+            isTrue("Cannot verify new user PIN after changing it", card.checkUserPIN(c -> newUserPIN));
+            isTrue("Old user PIN erroneously still verifies", !card.checkUserPIN(c -> oldUserPIN));
+        }
+        finally
+        {
+            // change back, so a failure does not leave the card with an unknown PIN
+            card.changeUserPIN(c -> newUserPIN, c -> oldUserPIN);
+        }
+        isTrue("Cannot verify user PIN after changing it back", card.checkUserPIN(c -> oldUserPIN));
     }
 
     public static void main(String[] args)

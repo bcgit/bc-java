@@ -6,7 +6,6 @@ import org.bouncycastle.asn1.sec.SECObjectIdentifiers;
 import org.bouncycastle.asn1.teletrust.TeleTrusTObjectIdentifiers;
 import org.bouncycastle.asn1.x9.X9ObjectIdentifiers;
 import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
-import org.bouncycastle.bcpg.SecretKeyPacket;
 import org.bouncycastle.bcpg.sig.KeyFlags;
 import org.bouncycastle.crypto.AsymmetricBlockCipher;
 import org.bouncycastle.crypto.BufferedAsymmetricBlockCipher;
@@ -36,9 +35,9 @@ import org.bouncycastle.openpgp.PGPPrivateKey;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.PGPRuntimeOperationException;
 import org.bouncycastle.openpgp.PGPSecretKey;
+import org.bouncycastle.openpgp.api.ExternalOpenPGPKeyUtils;
 import org.bouncycastle.openpgp.api.KeyPassphraseProvider;
 import org.bouncycastle.openpgp.api.OpenPGPCertificate;
-import org.bouncycastle.openpgp.api.OpenPGPImplementation;
 import org.bouncycastle.openpgp.api.OpenPGPKey;
 import org.bouncycastle.openpgp.api.exception.KeyPassphraseException;
 import org.bouncycastle.openpgp.operator.bc.BcPGPKeyConverter;
@@ -58,6 +57,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 
 import static org.bouncycastle.bcpg.PublicKeyAlgorithmTags.ECDH;
 import static org.bouncycastle.bcpg.PublicKeyAlgorithmTags.ECDSA;
@@ -178,7 +178,7 @@ public class SimulatorOpenPGPSmartCard
         supported.add(new SupportedAlgorithms.RSA(KEY_REF_SIGNATURE, RSA_GENERAL, 4096));
         supported.add(new SupportedAlgorithms.EC(KEY_REF_SIGNATURE, ECDSA, X9ObjectIdentifiers.prime256v1)); // prime256v1 1.2.840.10045.3.1.7
         supported.add(new SupportedAlgorithms.EC(KEY_REF_SIGNATURE, ECDSA, SECObjectIdentifiers.secp384r1)); // secp384r1 1.3.132.0.34
-        supported.add(new SupportedAlgorithms.EC(KEY_REF_SIGNATURE, ECDSA, SECObjectIdentifiers.secp521r1)); // secp384r1 1.3.132.0.35
+        supported.add(new SupportedAlgorithms.EC(KEY_REF_SIGNATURE, ECDSA, SECObjectIdentifiers.secp521r1)); // secp521r1 1.3.132.0.35
         supported.add(new SupportedAlgorithms.EC(KEY_REF_SIGNATURE, ECDSA, SECObjectIdentifiers.secp256k1)); // secp256k1 1.3.132.0.10
         supported.add(new SupportedAlgorithms.EC(KEY_REF_SIGNATURE, ECDSA, TeleTrusTObjectIdentifiers.brainpoolP256r1)); // brainpoolP256r1 1.3.36.3.3.2.8.1.1.7
         supported.add(new SupportedAlgorithms.EC(KEY_REF_SIGNATURE, ECDSA, TeleTrusTObjectIdentifiers.brainpoolP384r1)); // brainpoolP384r1 1.3.36.3.3.2.8.1.1.11
@@ -189,13 +189,13 @@ public class SimulatorOpenPGPSmartCard
         supported.add(new SupportedAlgorithms.RSA(KEY_REF_DECRYPTION, RSA_GENERAL, 2048));
         supported.add(new SupportedAlgorithms.RSA(KEY_REF_DECRYPTION, RSA_GENERAL, 3072));
         supported.add(new SupportedAlgorithms.RSA(KEY_REF_DECRYPTION, RSA_GENERAL, 4096));
-        supported.add(new SupportedAlgorithms.EC(KEY_REF_DECRYPTION, ECDSA, X9ObjectIdentifiers.prime256v1)); // prime256v1/secp256r1 1.2.840.10045.3.1.7
-        supported.add(new SupportedAlgorithms.EC(KEY_REF_DECRYPTION, ECDSA, SECObjectIdentifiers.secp384r1)); // secp384r1 1.3.132.0.34
-        supported.add(new SupportedAlgorithms.EC(KEY_REF_DECRYPTION, ECDSA, SECObjectIdentifiers.secp521r1)); // secp384r1 1.3.132.0.35
-        supported.add(new SupportedAlgorithms.EC(KEY_REF_DECRYPTION, ECDSA, SECObjectIdentifiers.secp256k1)); // secp256k1 1.3.132.0.10
-        supported.add(new SupportedAlgorithms.EC(KEY_REF_DECRYPTION, ECDSA, TeleTrusTObjectIdentifiers.brainpoolP256r1)); // brainpoolP256r1 1.3.36.3.3.2.8.1.1.7
-        supported.add(new SupportedAlgorithms.EC(KEY_REF_DECRYPTION, ECDSA, TeleTrusTObjectIdentifiers.brainpoolP384r1)); // brainpoolP384r1 1.3.36.3.3.2.8.1.1.11
-        supported.add(new SupportedAlgorithms.EC(KEY_REF_DECRYPTION, ECDSA, TeleTrusTObjectIdentifiers.brainpoolP512r1)); // brainpoolP512r1 1.3.36.3.3.2.8.1.1.13
+        supported.add(new SupportedAlgorithms.EC(KEY_REF_DECRYPTION, ECDH, X9ObjectIdentifiers.prime256v1)); // prime256v1/secp256r1 1.2.840.10045.3.1.7
+        supported.add(new SupportedAlgorithms.EC(KEY_REF_DECRYPTION, ECDH, SECObjectIdentifiers.secp384r1)); // secp384r1 1.3.132.0.34
+        supported.add(new SupportedAlgorithms.EC(KEY_REF_DECRYPTION, ECDH, SECObjectIdentifiers.secp521r1)); // secp521r1 1.3.132.0.35
+        supported.add(new SupportedAlgorithms.EC(KEY_REF_DECRYPTION, ECDH, SECObjectIdentifiers.secp256k1)); // secp256k1 1.3.132.0.10
+        supported.add(new SupportedAlgorithms.EC(KEY_REF_DECRYPTION, ECDH, TeleTrusTObjectIdentifiers.brainpoolP256r1)); // brainpoolP256r1 1.3.36.3.3.2.8.1.1.7
+        supported.add(new SupportedAlgorithms.EC(KEY_REF_DECRYPTION, ECDH, TeleTrusTObjectIdentifiers.brainpoolP384r1)); // brainpoolP384r1 1.3.36.3.3.2.8.1.1.11
+        supported.add(new SupportedAlgorithms.EC(KEY_REF_DECRYPTION, ECDH, TeleTrusTObjectIdentifiers.brainpoolP512r1)); // brainpoolP512r1 1.3.36.3.3.2.8.1.1.13
         supported.add(new SupportedAlgorithms.EC(KEY_REF_DECRYPTION, ECDH, CryptlibObjectIdentifiers.curvey25519)); // curve25519 (X25519) 1.3.6.1.4.1.3029.1.5.1
 
         // Authentication
@@ -204,7 +204,7 @@ public class SimulatorOpenPGPSmartCard
         supported.add(new SupportedAlgorithms.RSA(KEY_REF_AUTHENTICATION, RSA_GENERAL, 4096));
         supported.add(new SupportedAlgorithms.EC(KEY_REF_AUTHENTICATION, ECDSA, X9ObjectIdentifiers.prime256v1)); // prime256v1 1.2.840.10045.3.1.7
         supported.add(new SupportedAlgorithms.EC(KEY_REF_AUTHENTICATION, ECDSA, SECObjectIdentifiers.secp384r1)); // secp384r1 1.3.132.0.34
-        supported.add(new SupportedAlgorithms.EC(KEY_REF_AUTHENTICATION, ECDSA, SECObjectIdentifiers.secp521r1)); // secp384r1 1.3.132.0.35
+        supported.add(new SupportedAlgorithms.EC(KEY_REF_AUTHENTICATION, ECDSA, SECObjectIdentifiers.secp521r1)); // secp521r1 1.3.132.0.35
         supported.add(new SupportedAlgorithms.EC(KEY_REF_AUTHENTICATION, ECDSA, SECObjectIdentifiers.secp256k1)); // secp256k1 1.3.132.0.10
         supported.add(new SupportedAlgorithms.EC(KEY_REF_AUTHENTICATION, ECDSA, TeleTrusTObjectIdentifiers.brainpoolP256r1)); // brainpoolP256r1 1.3.36.3.3.2.8.1.1.7
         supported.add(new SupportedAlgorithms.EC(KEY_REF_AUTHENTICATION, ECDSA, TeleTrusTObjectIdentifiers.brainpoolP384r1)); // brainpoolP384r1 1.3.36.3.3.2.8.1.1.11
@@ -217,7 +217,12 @@ public class SimulatorOpenPGPSmartCard
     @Override
     public OpenPGPHardwareKey getKeyByKeyRef(byte keyRef)
     {
-        return hardwareKeys.get(keyRef);
+        OpenPGPHardwareKey key = hardwareKeys.get(keyRef);
+        if (key == null)
+        {
+            throw new NoSuchElementException("No key with keyRef " + keyRef);
+        }
+        return key;
     }
 
     @Override
@@ -230,30 +235,49 @@ public class SimulatorOpenPGPSmartCard
     public boolean checkUserPIN(CardPinProvider userPinProvider)
             throws CardException
     {
-        return Arrays.areEqual(userPIN, userPinProvider.providePIN(this));
+        return checkPIN(userPIN, userPinProvider, "user");
     }
 
     @Override
     public boolean checkAdminPIN(CardPinProvider adminPinProvider)
             throws CardException
     {
-        return Arrays.areEqual(adminPIN, adminPinProvider.providePIN(this));
+        return checkPIN(adminPIN, adminPinProvider, "admin");
+    }
+
+    private boolean checkPIN(char[] cardPIN, CardPinProvider pinProvider, String pinName)
+            throws CardException
+    {
+        char[] pin = requirePin(pinProvider, pinName);
+        try
+        {
+            return Arrays.areEqual(cardPIN, pin);
+        }
+        finally
+        {
+            Arrays.fill(pin, '\0');
+        }
+    }
+
+    private char[] changePIN(char[] cardPIN, CardPinProvider oldPinProvider, CardPinProvider newPinProvider,
+                             String pinName)
+            throws CardException
+    {
+        if (!checkPIN(cardPIN, oldPinProvider, pinName))
+        {
+            throw new CardException("Invalid simulator " + pinName + " PIN");
+        }
+        // the returned copy becomes the card's PIN, so it is not cleared here
+        return requirePin(newPinProvider, pinName);
     }
 
     @Override
     public OpenPGPSmartCard changeUserPIN(CardPinProvider oldPinProvider, CardPinProvider newPinProvider)
             throws CardException
     {
-        char[] oldPIN = oldPinProvider.providePIN(this);
-        char[] newPIN = newPinProvider.providePIN(this);
-        if (Arrays.areEqual(userPIN, oldPIN))
-        {
-            userPIN = Arrays.clone(newPIN);
-        }
-        else
-        {
-            throw new CardException("Invalid simulator user PIN");
-        }
+        char[] newPIN = changePIN(userPIN, oldPinProvider, newPinProvider, "user");
+        Arrays.fill(userPIN, '\0');
+        userPIN = newPIN;
         return this;
     }
 
@@ -261,16 +285,9 @@ public class SimulatorOpenPGPSmartCard
     public OpenPGPSmartCard changeAdminPIN(CardPinProvider oldPinProvider, CardPinProvider newPinProvider)
             throws CardException
     {
-        char[] oldPIN = oldPinProvider.providePIN(this);
-        char[] newPIN = newPinProvider.providePIN(this);
-        if (Arrays.areEqual(adminPIN, oldPIN))
-        {
-            adminPIN = Arrays.clone(newPIN);
-        }
-        else
-        {
-            throw new CardException("Invalid simulator admin PIN");
-        }
+        char[] newPIN = changePIN(adminPIN, oldPinProvider, newPinProvider, "admin");
+        Arrays.fill(adminPIN, '\0');
+        adminPIN = newPIN;
         return this;
     }
 
@@ -287,7 +304,7 @@ public class SimulatorOpenPGPSmartCard
     /**
      * {@inheritDoc}
      * <p>
-     * The simulator enforces no admin PIN, so <code>adminPin</code> is ignored.
+     * The simulator checks <code>adminPin</code> against its own admin PIN.
      */
     @Override
     public SimulatorOpenPGPSmartCard uploadKey(byte keyRef,
@@ -305,7 +322,7 @@ public class SimulatorOpenPGPSmartCard
     }
 
     @Override
-    public PGPPublicKey generateKey(
+    protected PGPPublicKey implGenerateKey(
             SupportedAlgorithms.Algorithm algorithm,
             int keyVersion,
             int publicKeyAlgorithmTag,
@@ -313,11 +330,17 @@ public class SimulatorOpenPGPSmartCard
             CardPinProvider adminPinProvider)
             throws CardException
     {
-        OpenPGPImplementation implementation = getBackend().getImplementation().implementation;
-        char[] pin = adminPinProvider.providePIN(this);
-        if (!Arrays.areEqual(pin, adminPIN))
+        char[] pin = requirePin(adminPinProvider, "admin");
+        try
         {
-            throw new CardException("Invalid simulator admin PIN");
+            if (!Arrays.areEqual(pin, adminPIN))
+            {
+                throw new CardException("Invalid simulator admin PIN");
+            }
+        }
+        finally
+        {
+            Arrays.fill(pin, '\0');
         }
 
         Date now = new Date();
@@ -328,15 +351,13 @@ public class SimulatorOpenPGPSmartCard
         }
         catch (PGPException e)
         {
-            throw new CardException("Cannot generate key.");
+            throw new CardException("Cannot generate key.", e);
         }
 
         OpenPGPCertificate.OpenPGPComponentKey componentKey = subkey ?
                 new OpenPGPCertificate.OpenPGPSubkey(keyPair.getPublicKey(), null) :
                 new OpenPGPCertificate.OpenPGPPrimaryKey(keyPair.getPublicKey(), null);
-        PGPSecretKey extSecKey = new PGPSecretKey(
-                new SecretKeyPacket(keyPair.getPublicKey().getPublicKeyPacket(), null),
-                keyPair.getPublicKey());
+        PGPSecretKey extSecKey = ExternalOpenPGPKeyUtils.toExternalKey(keyPair.getPublicKey(), true);
 
         privateKeys.put(algorithm.keyRef, keyPair);
         hardwareKeys.put(algorithm.keyRef,
@@ -389,7 +410,7 @@ public class SimulatorOpenPGPSmartCard
                        OpenPGPHardwareKey key,
                        OpenPGPKey.OpenPGPSecretKey stubKey,
                        KeyPassphraseProvider userPinProvider)
-            throws KeyPassphraseException
+            throws KeyPassphraseException, CardException
     {
         if (!Arrays.areEqual(userPIN, userPinProvider.getKeyPassword(stubKey)))
         {
@@ -448,10 +469,6 @@ public class SimulatorOpenPGPSmartCard
         catch (PGPException | IOException | CryptoException e)
         {
             throw new PGPRuntimeOperationException("Unable to create signature: " + e.getMessage(), e);
-        }
-        catch (CardException e)
-        {
-            throw new RuntimeException(e);
         }
     }
 

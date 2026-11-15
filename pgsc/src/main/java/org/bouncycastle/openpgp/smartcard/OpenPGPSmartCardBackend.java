@@ -507,7 +507,7 @@ public abstract class OpenPGPSmartCardBackend<T extends OpenPGPSmartCard>
     {
         validatePublicKeyAlgorithm(pubKey, publicKeyAlgorithmTag);
 
-        KeyFingerPrintCalculator fpCalc = implementation.implementation.keyFingerPrintCalculator();
+        KeyFingerPrintCalculator fpCalc = implementation.getOpenPGPImplementation().keyFingerPrintCalculator();
         PGPPublicKey pgpPublicKey = converter.getPGPPublicKey(keyVersion, publicKeyAlgorithmTag, pubKey, creationTime);
         if (subkey)
         {

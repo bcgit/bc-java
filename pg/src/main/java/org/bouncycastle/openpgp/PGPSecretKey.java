@@ -488,7 +488,7 @@ public class PGPSecretKey
      * Return true if the key is marked as external and the locator strategy is set to "best effort".
      * When the locator hint is set to "best effort", or when a consuming implementation does not understand a given
      * locator hint, or when a given locator hint fails to point to a useful device, a consuming implementation SHOULD
-     * use a "best effort" strategy to identify an external subsystem that provides access ta a secret key that matches
+     * use a "best effort" strategy to identify an external subsystem that provides access to a secret key that matches
      * the corresponding public key material.
      *
      * @see <a href="https://datatracker.ietf.org/doc/draft-ietf-openpgp-external-secrets/">
@@ -504,8 +504,9 @@ public class PGPSecretKey
 
     /**
      * If this key is externally backed ({@link #isExternalKey()}), return its locator hint, otherwise
-     * return null. An empty hint means "best effort" - the caller should search whatever subsystems it
-     * knows about; a non-empty hint has the hint type in its first octet.
+     * return null. An empty hint means the key is unavailable (draft-ietf-openpgp-external-secrets-01; the
+     * earlier draft, followed by BC 1.86 and 1.87, read it as "best effort"); a non-empty hint has the hint
+     * type in its first octet, where 0 means "best effort".
      *
      * @see SecretKeyPacket#getExternalKeyLocatorHint()
      * @see <a href="https://datatracker.ietf.org/doc/draft-ietf-openpgp-external-secrets/">

@@ -1,6 +1,7 @@
 package org.bouncycastle.openpgp.smartcard;
 
 import org.bouncycastle.bcpg.KeyIdentifier;
+import org.bouncycastle.bcpg.PublicKeyPacket;
 import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.api.KeyPassphraseProvider;
@@ -268,7 +269,7 @@ public abstract class OpenPGPSmartCard
      * @throws CardException if communication with the card fails
      * @throws PGPException if the key cannot be prepared for the card
      */
-    public OpenPGPSmartCard uploadSigningKey(OpenPGPPrivateKey key, KeyPassphraseProvider adminPinProvider)
+    public OpenPGPSmartCard uploadSigningKey(OpenPGPPrivateKey key, CardPinProvider adminPinProvider)
             throws PGPException, CardException
     {
         return uploadKey(OpenPGPHardwareKey.KEY_REF_SIGNATURE, key, adminPinProvider);
@@ -283,7 +284,7 @@ public abstract class OpenPGPSmartCard
      * @throws CardException if communication with the card fails
      * @throws PGPException if the key cannot be prepared for the card
      */
-    public OpenPGPSmartCard uploadDecryptionKey(OpenPGPPrivateKey key, KeyPassphraseProvider adminPinProvider)
+    public OpenPGPSmartCard uploadDecryptionKey(OpenPGPPrivateKey key, CardPinProvider adminPinProvider)
             throws CardException, PGPException
     {
         return uploadKey(OpenPGPHardwareKey.KEY_REF_DECRYPTION, key, adminPinProvider);
@@ -298,7 +299,7 @@ public abstract class OpenPGPSmartCard
      * @throws CardException if communication with the card fails
      * @throws PGPException if the key cannot be prepared for the card
      */
-    public OpenPGPSmartCard uploadAuthenticationKey(OpenPGPPrivateKey key, KeyPassphraseProvider adminPinProvider)
+    public OpenPGPSmartCard uploadAuthenticationKey(OpenPGPPrivateKey key, CardPinProvider adminPinProvider)
             throws CardException, PGPException
     {
         return uploadKey(OpenPGPHardwareKey.KEY_REF_AUTHENTICATION, key, adminPinProvider);
@@ -316,10 +317,10 @@ public abstract class OpenPGPSmartCard
      */
     public OpenPGPSmartCard uploadKey(byte keyRef,
                                       OpenPGPPrivateKey key,
-                                      KeyPassphraseProvider adminPinProvider)
+                                      CardPinProvider adminPinProvider)
             throws PGPException, CardException
     {
-        char[] adminPin = requireUserPin(adminPinProvider, key.getSecretKey());
+        char[] adminPin = requirePin(adminPinProvider, "admin");
         OpenPGPSmartCard card;
         try
         {
@@ -348,20 +349,58 @@ public abstract class OpenPGPSmartCard
             throws CardException, PGPException;
 
     /**
-     * Generate an OpenPGP key on the device.
+     * Generate an OpenPGP key on the device, replacing any key in the slot of <pre>algorithm</pre>.
+     * The arguments are checked before the card is touched, so a key in the slot survives a rejected request.
+     *
+     * @param algorithm algorithm description
+     * @param keyVersion OpenPGP key version (4, 5 or 6)
+     * @param publicKeyAlgorithmTag OpenPGP Public Key Algorithm Tag, which must be assignable to <pre>algorithm</pre>
+     * @param subkey whether the key is a subkey
+     * @param adminPinProvider provider for the devices admin PIN
+     * @return generated bare OpenPGP public key
+     * @throws IllegalArgumentException if the key version or algorithm tag does not fit the algorithm
+     * @throws CardException if the key cannot be generated, e.g. because communication fails
+     */
+    public PGPPublicKey generateKey(SupportedAlgorithms.Algorithm algorithm,
+                                    int keyVersion,
+                                    int publicKeyAlgorithmTag,
+                                    boolean subkey,
+                                    CardPinProvider adminPinProvider)
+            throws CardException
+    {
+        if (keyVersion != PublicKeyPacket.VERSION_4 && keyVersion != PublicKeyPacket.LIBREPGP_5
+            && keyVersion != PublicKeyPacket.VERSION_6)
+        {
+            throw new IllegalArgumentException("Unsupported key version " + keyVersion);
+        }
+        if (!algorithm.isAssignableTo(publicKeyAlgorithmTag))
+        {
+            throw new IllegalArgumentException("Cannot assign public key algorithm ID " + publicKeyAlgorithmTag
+                + " to " + algorithm);
+        }
+
+        return implGenerateKey(algorithm, keyVersion, publicKeyAlgorithmTag, subkey, adminPinProvider);
+    }
+
+    /**
+     * Generate an OpenPGP key on the device, with arguments already checked by
+     * {@link #generateKey(SupportedAlgorithms.Algorithm, int, int, boolean, CardPinProvider)}.
+     * Implementations record the new key's fingerprint and generation time on the card, so that it is
+     * reported by {@link #getKeyByKeyRef(byte)} and can be reconstructed by {@link #reconstructPGPPublicKey(byte)}.
+     *
      * @param algorithm algorithm description
      * @param keyVersion OpenPGP key version
      * @param publicKeyAlgorithmTag OpenPGP Public Key Algorithm Tag
      * @param subkey whether the key is a subkey
      * @param adminPinProvider provider for the devices admin PIN
      * @return generated bare OpenPGP public key
-     * @throws CardException
+     * @throws CardException if the key cannot be generated
      */
-    public abstract PGPPublicKey generateKey(SupportedAlgorithms.Algorithm algorithm,
-                                             int keyVersion,
-                                             int publicKeyAlgorithmTag,
-                                             boolean subkey,
-                                             CardPinProvider adminPinProvider)
+    protected abstract PGPPublicKey implGenerateKey(SupportedAlgorithms.Algorithm algorithm,
+                                                    int keyVersion,
+                                                    int publicKeyAlgorithmTag,
+                                                    boolean subkey,
+                                                    CardPinProvider adminPinProvider)
             throws CardException;
 
     /**
@@ -476,6 +515,30 @@ public abstract class OpenPGPSmartCard
                                    KeyPassphraseProvider userPinProvider)
             throws PGPException, CardException;
 
+    /**
+     * Fetch a card PIN. A {@link CardPinProvider} keeps ownership of the array it returns, so the
+     * card works on a copy and clears that copy when done.
+     *
+     * @param pinProvider provider of the PIN
+     * @param pinName name of the PIN for the error message, e.g. "admin"
+     * @return a copy of the PIN, which the caller must clear
+     * @throws CardException if no PIN is provided
+     */
+    protected char[] requirePin(CardPinProvider pinProvider, String pinName)
+            throws CardException
+    {
+        char[] pin = Arrays.clone(pinProvider.providePIN(this));
+        if (pin == null || pin.length == 0)
+        {
+            throw new CardException("No " + pinName + " PIN provided for card " + getSerialNumber());
+        }
+        return pin;
+    }
+
+    /**
+     * Supplies a PIN (user or admin) of a card. The provider keeps ownership of the array it returns:
+     * the card copies it and clears its own copy, so a provider may hand out the same array more than once.
+     */
     @FunctionalInterface
     public interface CardPinProvider
     {

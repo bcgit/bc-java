@@ -1,7 +1,7 @@
 package org.bouncycastle.openpgp.smartcard.test;
 
-import org.bouncycastle.bcpg.ArmoredOutputStream;
-import org.bouncycastle.bcpg.BCPGOutputStream;
+import org.bouncycastle.bcpg.PublicKeyAlgorithmTags;
+import org.bouncycastle.openpgp.PGPException;
 import org.bouncycastle.openpgp.PGPPublicKey;
 import org.bouncycastle.openpgp.smartcard.BcOpenPGPSmartCardImplementation;
 import org.bouncycastle.openpgp.smartcard.JcaOpenPGPSmartCardImplementation;
@@ -14,8 +14,8 @@ import org.bouncycastle.openpgp.smartcard.card.SupportedAlgorithms;
 import org.bouncycastle.openpgp.smartcard.simulator.SimulatorOpenPGPSmartCard;
 import org.bouncycastle.openpgp.smartcard.simulator.SimulatorOpenPGPSmartCardBackend;
 import org.bouncycastle.openpgp.smartcard.yubikey.YubikeyTestInstanceProvider;
+import org.bouncycastle.util.Arrays;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.List;
 
@@ -35,23 +35,17 @@ public class SmartCardKeyGenerationTest
     }
 
     @Override
-    public void performTest() throws Exception
+    public void performTest()
+            throws Exception
     {
         for (OpenPGPSmartCardBackend backend : manager.getBackends())
         {
-            try
-            {
-                performTestOn(backend);
-            }
-            catch (Exception e)
-            {
-                e.printStackTrace();
-            }
+            performTestOn(backend);
         }
     }
 
     private void performTestOn(OpenPGPSmartCardBackend backend)
-            throws CardException, IOException
+            throws CardException, PGPException, IOException
     {
         // -DM System.out.println
         System.out.println("Run SmartCardKeyGenerationTest on backend " + backend.getName());
@@ -64,9 +58,9 @@ public class SmartCardKeyGenerationTest
             for (byte keyRef : new byte[]{OpenPGPHardwareKey.KEY_REF_SIGNATURE, OpenPGPHardwareKey.KEY_REF_DECRYPTION})
             {
                 SupportedAlgorithms keyAlgorithms = cardAlgorithms.filter(keyRef);
+                isTrue("no algorithms advertised for key slot " + keyRef, !keyAlgorithms.getAlgorithms().isEmpty());
                 for (SupportedAlgorithms.Algorithm alg : keyAlgorithms.getAlgorithms())
                 {
-                    long currentTime = System.currentTimeMillis();
                     // -DM System.out.println
                     System.out.println("Generate key " + alg.toString());
                     PGPPublicKey publicKey = card.generateKey(
@@ -74,18 +68,48 @@ public class SmartCardKeyGenerationTest
                             4,
                             alg.algorithmId,
                             true,
-                            k -> "12345678".toCharArray());
-                    ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-                    ArmoredOutputStream aOut = new ArmoredOutputStream(bOut);
-                    BCPGOutputStream pOut = new BCPGOutputStream(aOut);
-                    publicKey.encode(pOut);
-                    pOut.close();
-                    aOut.close();
-                    // -DM System.out.println
-                    System.out.println(bOut);
-                    // -DM System.out.println
-                    System.out.println("Took " + ((System.currentTimeMillis() - currentTime) / 1000) +  " seconds");
+                            c -> properties.getAdminPin());
+
+                    isTrue(alg + ": algorithm ID " + publicKey.getAlgorithm(), alg.algorithmId == publicKey.getAlgorithm());
+                    isTrue(alg + ": not a subkey", !publicKey.isMasterKey());
+
+                    // the card reports the new key, and it can be rebuilt from the card's own record of it
+                    OpenPGPHardwareKey hwKey = card.getKeyByKeyRef(keyRef);
+                    isTrue(alg + ": no key reported in slot " + keyRef, hwKey != null);
+                    isTrue(alg + ": card reports a different fingerprint",
+                            Arrays.areEqual(publicKey.getFingerprint(), hwKey.getFingerprint()));
+                    isTrue(alg + ": reconstructed key has a different fingerprint",
+                            Arrays.areEqual(publicKey.getFingerprint(),
+                                    card.reconstructPGPPublicKey(keyRef).getFingerprint()));
+                    isTrue(alg + ": generated key not found by fingerprint",
+                            card.hasKeyWithFingerprint(publicKey.getFingerprint()));
                 }
+
+                // a request whose algorithm ID does not fit the algorithm is refused before the slot is touched
+                byte[] fingerprint = card.getKeyByKeyRef(keyRef).getFingerprint();
+                SupportedAlgorithms.Algorithm alg = keyAlgorithms.getAlgorithms().get(0);
+                int wrongTag = (alg instanceof SupportedAlgorithms.RSA)
+                        ? PublicKeyAlgorithmTags.ECDSA : PublicKeyAlgorithmTags.RSA_GENERAL;
+                try
+                {
+                    card.generateKey(alg, 4, wrongTag, true, c -> properties.getAdminPin());
+                    fail(alg + ": algorithm ID " + wrongTag + " accepted");
+                }
+                catch (IllegalArgumentException e)
+                {
+                    // expected
+                }
+                try
+                {
+                    card.generateKey(alg, 3, alg.algorithmId, true, c -> properties.getAdminPin());
+                    fail(alg + ": key version 3 accepted");
+                }
+                catch (IllegalArgumentException e)
+                {
+                    // expected
+                }
+                isTrue(alg + ": rejected request changed the key in slot " + keyRef,
+                        Arrays.areEqual(fingerprint, card.getKeyByKeyRef(keyRef).getFingerprint()));
             }
         }
     }
