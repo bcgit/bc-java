@@ -31,10 +31,13 @@ Date: 2026, TBD
 
 - ShamirSplitSecret now inverts once per share in getSecret() and once per call in divide(), rather than once per pair of shares and once per byte, making division about 17 to 20 times faster and recovery 1.3 times (3 shares) to 8 times (128 shares) faster. Results are unchanged (github #2558).
 - The Shamir secret splitting classes now clear the temporary copies of shares and polynomial coefficients they make when splitting, recovering, multiplying and dividing.
+- The OpenPGP smart card API (bcpgsc) can now list a card's supported algorithms, change its user and admin PINs, and generate a key on the card (PR #2565).
 
 #### Additional Notes
 
 - The BC OIDs of SNOVA, FAEST, MQOM, UOV, QR-UOV and SQIsign now end in .2 and those of SDitH in .1, the round implemented; the previous OIDs are still read but no longer written.
+- bcpgsc API changes: card PINs for key upload are now supplied by an OpenPGPSmartCard.CardPinProvider, ExternalOpenPGPKeyUtils moved to org.bouncycastle.openpgp.api, and card implementations now provide getKeys() and getKeyByKeyRef().
+- External secret keys now follow draft-ietf-openpgp-external-secrets-01, where an empty locator hint means the key is unavailable rather than "best effort", so such keys written by 1.86 and 1.87 now read as unavailable.
 
 <a id="r1rv87"></a>
 
