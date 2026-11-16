@@ -4,6 +4,7 @@ import java.math.BigInteger;
 
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 
 /**
@@ -37,6 +38,12 @@ public class BLS12_381ProofOfPossession
     {
     }
 
+    /**
+     * Sign under the ProofOfPossession suite: {@code sig = sk * H(message)} with the POP suite's DST.
+     *
+     * @deprecated use {@link #sign(byte[], byte[])} with the key's 32-byte encoding.
+     */
+    @Deprecated
     public static BLS12_381G2Point sign(BigInteger sk, byte[] message)
     {
         if (sk == null || sk.signum() <= 0 || sk.compareTo(BLS12_381G1.ORDER) >= 0)
@@ -46,6 +53,27 @@ public class BLS12_381ProofOfPossession
         BLS12_381G2HashToCurve h = new BLS12_381G2HashToCurve(DST);
         // Constant-time: sk is secret.
         return h.hashToCurve(message).constantTimeMultiplyInG2(sk);
+    }
+
+    /**
+     * Sign under the ProofOfPossession suite, {@code sig = sk * H(message)}
+     * with the POP suite's DST, for the secret key given as its 32-byte
+     * big-endian encoding, never converted to a {@link BigInteger}.
+     *
+     * @throws IllegalArgumentException if sk is not 32 bytes or not in [1, r - 1].
+     */
+    public static BLS12_381G2Point sign(byte[] sk, byte[] message)
+    {
+        int[] k = BLS12_381Scalar.secretFromBytes(sk);
+        try
+        {
+            BLS12_381G2HashToCurve h = new BLS12_381G2HashToCurve(DST);
+            return h.hashToCurve(message).constantTimeMultiplyInG2(k);
+        }
+        finally
+        {
+            Arrays.fill(k, 0);
+        }
     }
 
     public static boolean verify(ECPoint pk, byte[] message, BLS12_381G2Point signature)
@@ -58,7 +86,9 @@ public class BLS12_381ProofOfPossession
      * {@code SkToPk(sk)} via the POP DST and the public-key encoding so a
      * verifier can confirm the signer holds the matching secret key without
      * any context message.
+     * @deprecated use {@link #popProve(byte[])} with the key's 32-byte encoding.
      */
+    @Deprecated
     public static BLS12_381G2Point popProve(BigInteger sk)
     {
         // skToPk validates sk for us — it throws on sk <= 0 or sk >= r.
@@ -67,6 +97,29 @@ public class BLS12_381ProofOfPossession
         BLS12_381G2HashToCurve h = new BLS12_381G2HashToCurve(POP_DST);
         // Constant-time: sk is secret.
         return h.hashToCurve(pkBytes).constantTimeMultiplyInG2(sk);
+    }
+
+    /**
+     * Generate a proof-of-possession, bound to {@code SkToPk(sk)} by the POP
+     * DST and the public-key encoding, for the secret key given as its 32-byte
+     * big-endian encoding, never converted to a {@link BigInteger}.
+     *
+     * @throws IllegalArgumentException if sk is not 32 bytes or not in [1, r - 1].
+     */
+    public static BLS12_381G2Point popProve(byte[] sk)
+    {
+        int[] k = BLS12_381Scalar.secretFromBytes(sk);
+        try
+        {
+            ECPoint pk = BLS12_381BasicScheme.skToPk(sk);
+            byte[] pkBytes = BLS12_381Serialization.compressG1(pk);
+            BLS12_381G2HashToCurve h = new BLS12_381G2HashToCurve(POP_DST);
+            return h.hashToCurve(pkBytes).constantTimeMultiplyInG2(k);
+        }
+        finally
+        {
+            Arrays.fill(k, 0);
+        }
     }
 
     /**

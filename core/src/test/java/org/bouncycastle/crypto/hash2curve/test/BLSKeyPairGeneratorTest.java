@@ -232,7 +232,7 @@ public class BLSKeyPairGeneratorTest
     {
         try
         {
-            new BLSPrivateKeyParameters(BLSParameters.bls12_381, null);
+            new BLSPrivateKeyParameters(BLSParameters.bls12_381, (BigInteger)null);
             fail("null secret should be rejected");
         }
         catch (IllegalArgumentException expected)

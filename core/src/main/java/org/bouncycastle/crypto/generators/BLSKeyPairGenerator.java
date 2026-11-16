@@ -1,6 +1,5 @@
 package org.bouncycastle.crypto.generators;
 
-import java.math.BigInteger;
 import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
@@ -64,10 +63,11 @@ public class BLSKeyPairGenerator
         // sign-time would be pointless if a heap inspector could just
         // read the seed material from a separate file.)
         byte[] ikm = new byte[32];
+        byte[] sk = null;
         try
         {
             random.nextBytes(ikm);
-            BigInteger sk = BLS12_381BasicScheme.keyGen(ikm, new byte[0]);
+            sk = BLS12_381BasicScheme.keyGenEncoded(ikm, new byte[0]);
 
             ECPoint pk = BLS12_381BasicScheme.skToPk(sk);
             return new AsymmetricCipherKeyPair(
@@ -77,6 +77,10 @@ public class BLSKeyPairGenerator
         finally
         {
             Arrays.fill(ikm, (byte)0);
+            if (sk != null)
+            {
+                Arrays.fill(sk, (byte)0);
+            }
         }
     }
 }

@@ -36,7 +36,9 @@ public class BLS12_381MessageAugmentation
     /**
      * Sign under the MessageAugmentation suite:
      * {@code sig = sk * H(SkToPk(sk) || message)} with the AUG DST.
+     * @deprecated use {@link #sign(byte[], byte[])} with the key's 32-byte encoding.
      */
+    @Deprecated
     public static BLS12_381G2Point sign(BigInteger sk, byte[] message)
     {
         ECPoint pk = BLS12_381BasicScheme.skToPk(sk);
@@ -44,6 +46,30 @@ public class BLS12_381MessageAugmentation
         BLS12_381G2HashToCurve h = new BLS12_381G2HashToCurve(DST);
         // Constant-time: sk is secret.
         return h.hashToCurve(augmented).constantTimeMultiplyInG2(sk);
+    }
+
+    /**
+     * Sign under the MessageAugmentation suite,
+     * {@code sig = sk * H(SkToPk(sk) || message)} with the AUG DST, for the
+     * secret key given as its 32-byte big-endian encoding, never converted to
+     * a {@link BigInteger}.
+     *
+     * @throws IllegalArgumentException if sk is not 32 bytes or not in [1, r - 1].
+     */
+    public static BLS12_381G2Point sign(byte[] sk, byte[] message)
+    {
+        int[] k = BLS12_381Scalar.secretFromBytes(sk);
+        try
+        {
+            ECPoint pk = BLS12_381BasicScheme.skToPk(sk);
+            byte[] augmented = augment(pk, message);
+            BLS12_381G2HashToCurve h = new BLS12_381G2HashToCurve(DST);
+            return h.hashToCurve(augmented).constantTimeMultiplyInG2(k);
+        }
+        finally
+        {
+            Arrays.fill(k, 0);
+        }
     }
 
     /**

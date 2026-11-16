@@ -4,6 +4,8 @@ import java.math.BigInteger;
 
 import org.bouncycastle.math.ec.ECCurve;
 import org.bouncycastle.math.ec.ECPoint;
+import org.bouncycastle.math.raw.Nat;
+import org.bouncycastle.util.Arrays;
 
 /**
  * Curve parameters for BLS12-381 G1, the prime-order subgroup of {@code E(Fp)}
@@ -111,14 +113,16 @@ public class BLS12_381G1
      * Constant-time scalar multiplication on G1, suitable for secret
      * scalars (e.g. {@code sk * G1_gen} in {@code skToPk}).
      * <p>
-     * Same approach as {@link BLS12_381G2Point#constantTimeMultiply}: a
-     * fixed-iteration "double, conditionally add" ladder over 256 bits
-     * with an array-indexed select replacing the bit-conditional
-     * {@code if}. Same caveats apply — the underlying BC ECPoint
-     * arithmetic still has data-dependent branches for infinity / equal-x
-     * cases (negligibly probable for random secret scalars on a
-     * prime-order subgroup), and JVM-level timing variance is not
-     * addressable in pure Java.
+     * On the canonical curve (see {@link #isCanonicalCurve}) this is a
+     * fixed-iteration "double, add, select" ladder over the low 256 bits of
+     * the scalar, as for the points outside G2 in
+     * {@link BLS12_381G2Point#constantTimeMultiply}, whose notes apply: the
+     * field arithmetic is the constant-time {@link Fp}, the addition and
+     * doubling are the complete formulas of Renes, Costello and Batina (no
+     * exceptional cases on E(Fp), whose order is odd), and the sum or the
+     * double is kept by a masked select. On any other curve object it falls
+     * back to the same ladder on the curve's own {@link ECPoint} arithmetic,
+     * which is not constant time.
      */
     public static ECPoint constantTimeMultiply(ECPoint p, BigInteger scalar)
     {
@@ -134,7 +138,54 @@ public class BLS12_381G1
         {
             return p.getCurve().getInfinity();
         }
+        if (isCanonicalCurve(p.getCurve()))
+        {
+            int[] k = BLS12_381Scalar.low256(scalar);
+            try
+            {
+                return constantTimeMultiplyFp(p, k);
+            }
+            finally
+            {
+                Arrays.fill(k, 0);
+            }
+        }
+        return genericLadder(p, scalar);
+    }
 
+    /**
+     * Constant-time scalar multiplication on G1 by the unsigned big-endian
+     * scalar of at most 32 bytes, such as
+     * {@code BLSPrivateKeyParameters.getEncoded()}: as
+     * {@link #constantTimeMultiply(ECPoint, BigInteger)}, but on the canonical
+     * curve the scalar is converted to fixed-width limbs directly, never held
+     * as a {@link BigInteger}.
+     *
+     * @throws IllegalArgumentException if the scalar is null or longer than 32 bytes.
+     */
+    public static ECPoint constantTimeMultiply(ECPoint p, byte[] scalar)
+    {
+        int[] k = BLS12_381Scalar.fromBytes(scalar);
+        try
+        {
+            if (p.isInfinity())
+            {
+                return p.getCurve().getInfinity();
+            }
+            if (isCanonicalCurve(p.getCurve()))
+            {
+                return constantTimeMultiplyFp(p, k);
+            }
+            return genericLadder(p, new BigInteger(1, scalar));
+        }
+        finally
+        {
+            Arrays.fill(k, 0);
+        }
+    }
+
+    private static ECPoint genericLadder(ECPoint p, BigInteger scalar)
+    {
         final int FIXED_BITS = 256;
         ECPoint r = p.getCurve().getInfinity();
         ECPoint[] options = new ECPoint[2];
@@ -148,5 +199,139 @@ public class BLS12_381G1
             r = options[bit];
         }
         return r.normalize();
+    }
+
+    private static final int S = Fp.SIZE;
+
+    /**
+     * The ladder of {@link #constantTimeMultiply} on {@link Fp}, over all 256
+     * bits of k, given as limbs, points held as projective (X : Y : Z) in one
+     * array, X, Y and Z at 0, S and 2S.
+     */
+    private static ECPoint constantTimeMultiplyFp(ECPoint p, int[] k)
+    {
+        ECPoint n = p.normalize();
+        int[] q = new int[3 * S];
+        Fp.fromBigInteger(n.getAffineXCoord().toBigInteger(), q, 0);
+        Fp.fromBigInteger(n.getAffineYCoord().toBigInteger(), q, S);
+        System.arraycopy(Fp.ONE, 0, q, 2 * S, S);
+
+        // the point at infinity, (0 : 1 : 0)
+        int[] r = new int[3 * S];
+        System.arraycopy(Fp.ONE, 0, r, S, S);
+
+        int[] s = new int[3 * S];
+        try
+        {
+            for (int i = 255; i >= 0; --i)
+            {
+                completeDouble(r, r);
+                completeAdd(r, q, s);
+                Nat.cmov(3 * S, (k[i >>> 5] >>> (i & 31)) & 1, s, 0, r, 0);
+            }
+            if (Fp.isZero(r, 2 * S))
+            {
+                return p.getCurve().getInfinity();
+            }
+            int[] zInv = new int[S];
+            Fp.inv(r, 2 * S, zInv, 0);
+            Fp.mul(r, 0, zInv, 0, r, 0);
+            Fp.mul(r, S, zInv, 0, r, S);
+            return p.getCurve().createPoint(Fp.toBigInteger(r, 0), Fp.toBigInteger(r, S));
+        }
+        finally
+        {
+            Arrays.fill(r, 0);
+            Arrays.fill(s, 0);
+        }
+    }
+
+    /** z = 12 z, that is 3b for b = 4. */
+    private static void mulB3(int[] z)
+    {
+        int[] t4 = new int[S];
+        Fp.add(z, 0, z, 0, t4, 0);
+        Fp.add(t4, 0, t4, 0, t4, 0);
+        Fp.add(t4, 0, t4, 0, z, 0);
+        Fp.add(z, 0, t4, 0, z, 0);
+    }
+
+    /**
+     * z = p + q, complete addition in homogeneous projective coordinates for
+     * a = 0: Algorithm 7 of Renes, Costello and Batina, "Complete addition
+     * formulas for prime order elliptic curves" (EUROCRYPT 2016). z may be p
+     * or q.
+     */
+    private static void completeAdd(int[] p, int[] q, int[] z)
+    {
+        int[] t0 = new int[S], t1 = new int[S], t2 = new int[S], t3 = new int[S], t4 = new int[S];
+        int[] x3 = new int[S], y3 = new int[S], z3 = new int[S];
+        Fp.mul(p, 0, q, 0, t0, 0);
+        Fp.mul(p, S, q, S, t1, 0);
+        Fp.mul(p, 2 * S, q, 2 * S, t2, 0);
+        Fp.add(p, 0, p, S, t3, 0);
+        Fp.add(q, 0, q, S, t4, 0);
+        Fp.mul(t3, 0, t4, 0, t3, 0);
+        Fp.add(t0, 0, t1, 0, t4, 0);
+        Fp.sub(t3, 0, t4, 0, t3, 0);
+        Fp.add(p, S, p, 2 * S, t4, 0);
+        Fp.add(q, S, q, 2 * S, x3, 0);
+        Fp.mul(t4, 0, x3, 0, t4, 0);
+        Fp.add(t1, 0, t2, 0, x3, 0);
+        Fp.sub(t4, 0, x3, 0, t4, 0);
+        Fp.add(p, 0, p, 2 * S, x3, 0);
+        Fp.add(q, 0, q, 2 * S, y3, 0);
+        Fp.mul(x3, 0, y3, 0, x3, 0);
+        Fp.add(t0, 0, t2, 0, y3, 0);
+        Fp.sub(x3, 0, y3, 0, y3, 0);
+        Fp.add(t0, 0, t0, 0, x3, 0);
+        Fp.add(x3, 0, t0, 0, t0, 0);
+        mulB3(t2);
+        Fp.add(t1, 0, t2, 0, z3, 0);
+        Fp.sub(t1, 0, t2, 0, t1, 0);
+        mulB3(y3);
+        Fp.mul(t4, 0, y3, 0, x3, 0);
+        Fp.mul(t3, 0, t1, 0, t2, 0);
+        Fp.sub(t2, 0, x3, 0, x3, 0);
+        Fp.mul(y3, 0, t0, 0, y3, 0);
+        Fp.mul(t1, 0, z3, 0, t1, 0);
+        Fp.add(t1, 0, y3, 0, y3, 0);
+        Fp.mul(t0, 0, t3, 0, t0, 0);
+        Fp.mul(z3, 0, t4, 0, z3, 0);
+        Fp.add(z3, 0, t0, 0, z3, 0);
+        System.arraycopy(x3, 0, z, 0, S);
+        System.arraycopy(y3, 0, z, S, S);
+        System.arraycopy(z3, 0, z, 2 * S, S);
+    }
+
+    /**
+     * z = 2p, doubling in homogeneous projective coordinates for a = 0:
+     * Algorithm 9 of Renes, Costello and Batina. z may be p.
+     */
+    private static void completeDouble(int[] p, int[] z)
+    {
+        int[] t0 = new int[S], t1 = new int[S], t2 = new int[S];
+        int[] x3 = new int[S], y3 = new int[S], z3 = new int[S];
+        Fp.sqr(p, S, t0, 0);
+        Fp.add(t0, 0, t0, 0, z3, 0);
+        Fp.add(z3, 0, z3, 0, z3, 0);
+        Fp.add(z3, 0, z3, 0, z3, 0);
+        Fp.mul(p, S, p, 2 * S, t1, 0);
+        Fp.sqr(p, 2 * S, t2, 0);
+        mulB3(t2);
+        Fp.mul(t2, 0, z3, 0, x3, 0);
+        Fp.add(t0, 0, t2, 0, y3, 0);
+        Fp.mul(t1, 0, z3, 0, z3, 0);
+        Fp.add(t2, 0, t2, 0, t1, 0);
+        Fp.add(t1, 0, t2, 0, t2, 0);
+        Fp.sub(t0, 0, t2, 0, t0, 0);
+        Fp.mul(t0, 0, y3, 0, y3, 0);
+        Fp.add(x3, 0, y3, 0, y3, 0);
+        Fp.mul(p, 0, p, S, t1, 0);
+        Fp.mul(t0, 0, t1, 0, x3, 0);
+        Fp.add(x3, 0, x3, 0, x3, 0);
+        System.arraycopy(x3, 0, z, 0, S);
+        System.arraycopy(y3, 0, z, S, S);
+        System.arraycopy(z3, 0, z, 2 * S, S);
     }
 }

@@ -56,8 +56,38 @@ public class BLS12_381BasicScheme
      * @param ikm input keying material; the spec requires at least 32 bytes.
      * @param keyInfo optional context binding; pass an empty array if not used.
      * @return a secret key {@code 0 < sk < r}.
+     * @deprecated use {@link #keyGenEncoded(byte[], byte[])}, which never holds the key as a {@link BigInteger}.
      */
+    @Deprecated
     public static BigInteger keyGen(byte[] ikm, byte[] keyInfo)
+    {
+        byte[] sk = keyGenEncoded(ikm, keyInfo);
+        try
+        {
+            return new BigInteger(1, sk);
+        }
+        finally
+        {
+            Arrays.fill(sk, (byte)0);
+        }
+    }
+
+    /**
+     * Derive a secret key from input keying material per
+     * draft-irtf-cfrg-bls-signature sec. 2.3, as its 32-byte big-endian
+     * encoding, the form {@code BLSPrivateKeyParameters} holds it in. The
+     * reduction of the key derivation output mod r is made in fixed-width
+     * arithmetic, so the key is never held as a {@link BigInteger}.
+     * <p>
+     * Same {@code (ikm, keyInfo)} input always produces the same secret key,
+     * so {@code ikm} should come from a high-entropy source the caller
+     * controls (e.g. {@code SecureRandom.nextBytes}).
+     *
+     * @param ikm input keying material; the spec requires at least 32 bytes.
+     * @param keyInfo optional context binding; pass an empty array if not used.
+     * @return the 32-byte encoding of a secret key {@code 0 < sk < r}.
+     */
+    public static byte[] keyGenEncoded(byte[] ikm, byte[] keyInfo)
     {
         if (ikm == null || ikm.length < 32)
         {
@@ -73,7 +103,6 @@ public class BLS12_381BasicScheme
         info = Arrays.append(info, (byte)(L & 0xff));
 
         byte[] salt = KEYGEN_SALT_INIT;
-        BigInteger r = BLS12_381G1.ORDER;
         byte[] okm = new byte[L];
 
         try
@@ -85,10 +114,17 @@ public class BLS12_381BasicScheme
                 HKDFBytesGenerator hkdf = new HKDFBytesGenerator(SHA256Digest.newInstance());
                 hkdf.init(new HKDFParameters(ikmWithZero, salt, info));
                 hkdf.generateBytes(okm, 0, L);
-                BigInteger sk = new BigInteger(1, okm).mod(r);
-                if (sk.signum() != 0)
+                int[] sk = BLS12_381Scalar.reduce(okm, 0, L);
+                try
                 {
-                    return sk;
+                    if (BLS12_381Scalar.isValidSecret(sk))
+                    {
+                        return BLS12_381Scalar.toBytes(sk);
+                    }
+                }
+                finally
+                {
+                    Arrays.fill(sk, 0);
                 }
             }
             throw new IllegalStateException("KeyGen failed to produce a non-zero secret key");
@@ -102,7 +138,9 @@ public class BLS12_381BasicScheme
 
     /**
      * Derive the public key for a given secret key: {@code PK = sk * G1_gen}.
+     * @deprecated use {@link #skToPk(byte[])} with the key's 32-byte encoding.
      */
+    @Deprecated
     public static ECPoint skToPk(BigInteger sk)
     {
         if (sk == null || sk.signum() <= 0 || sk.compareTo(BLS12_381G1.ORDER) >= 0)
@@ -111,6 +149,21 @@ public class BLS12_381BasicScheme
         }
         ECCurve curve = BLS12_381G1.createCurve();
         // Constant-time: sk is secret.
+        return BLS12_381G1.constantTimeMultiply(BLS12_381G1.getGenerator(curve), sk);
+    }
+
+    /**
+     * Derive the public key {@code PK = sk * G1_gen} for the secret key given
+     * as its 32-byte big-endian encoding, never converted to a
+     * {@link BigInteger}.
+     *
+     * @throws IllegalArgumentException if sk is not 32 bytes or not in [1, r - 1].
+     */
+    public static ECPoint skToPk(byte[] sk)
+    {
+        int[] k = BLS12_381Scalar.secretFromBytes(sk);
+        Arrays.fill(k, 0);
+        ECCurve curve = BLS12_381G1.createCurve();
         return BLS12_381G1.constantTimeMultiply(BLS12_381G1.getGenerator(curve), sk);
     }
 
@@ -143,7 +196,9 @@ public class BLS12_381BasicScheme
     /**
      * Sign a message under the BasicScheme: {@code sig = sk * H(message)}
      * where {@code H} is hash-to-G2 with the suite's DST.
+     * @deprecated use {@link #sign(byte[], byte[])} with the key's 32-byte encoding.
      */
+    @Deprecated
     public static BLS12_381G2Point sign(BigInteger sk, byte[] message)
     {
         if (sk == null || sk.signum() <= 0 || sk.compareTo(BLS12_381G1.ORDER) >= 0)
@@ -154,6 +209,28 @@ public class BLS12_381BasicScheme
         BLS12_381G2Point q = h.hashToCurve(message);
         // Constant-time: sk is secret.
         return q.constantTimeMultiplyInG2(sk);
+    }
+
+    /**
+     * Sign a message under the BasicScheme, {@code sig = sk * H(message)}
+     * where {@code H} is hash-to-G2 with the suite's DST, for the secret key
+     * given as its 32-byte big-endian encoding, never converted to a
+     * {@link BigInteger}.
+     *
+     * @throws IllegalArgumentException if sk is not 32 bytes or not in [1, r - 1].
+     */
+    public static BLS12_381G2Point sign(byte[] sk, byte[] message)
+    {
+        int[] k = BLS12_381Scalar.secretFromBytes(sk);
+        try
+        {
+            BLS12_381G2HashToCurve h = new BLS12_381G2HashToCurve(DST);
+            return h.hashToCurve(message).constantTimeMultiplyInG2(k);
+        }
+        finally
+        {
+            Arrays.fill(k, 0);
+        }
     }
 
     /**

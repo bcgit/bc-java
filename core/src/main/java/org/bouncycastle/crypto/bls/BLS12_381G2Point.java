@@ -2,16 +2,19 @@ package org.bouncycastle.crypto.bls;
 
 import java.math.BigInteger;
 
+import org.bouncycastle.util.Arrays;
+
 /**
  * Affine point on the BLS12-381 G2 curve {@code E: y^2 = x^3 + 4*(1+I)} over
  * Fp^2.
  * <p>
  * Points are held in affine coordinates. {@link #add} and {@link #doublePoint}
- * work affinely, one {@link Fp2Element#inverse()} each; the two scalar
- * multiplications run in Jacobian coordinates ({@code x = X/Z^2},
- * {@code y = Y/Z^3}) with mixed additions of affine points, so they need a
- * single inversion to return to affine form at the end (plus one for the
- * GLS table of {@link #constantTimeMultiply} on G2).
+ * work affinely, one {@link Fp2Element#inverse()} each. {@link #multiply} runs
+ * in Jacobian coordinates ({@code x = X/Z^2}, {@code y = Y/Z^3}) with mixed
+ * additions of affine points, and {@link #constantTimeMultiply} in
+ * homogeneous projective coordinates ({@code x = X/Z}, {@code y = Y/Z}) with
+ * complete formulas, so each needs a single inversion to return to affine
+ * form at the end.
  * <p>
  * Two scalar-multiplication APIs are provided: {@link #multiply} is the
  * variable-time double-and-add — fast for public scalars (cofactor
@@ -133,26 +136,22 @@ public final class BLS12_381G2Point
      * {@link BLS12_381SubgroupCheck#isInG2Subgroup}, which looks only at the
      * public point) use the GLS method, with four 64-bit digits and the
      * endomorphism &psi; (64 doublings and 64 additions). Other points use a
-     * fixed-iteration
-     * "double, conditionally add" ladder over 256 bits. In both, the
-     * conditional addition is always computed and then chosen by an
-     * array-indexed select rather than an {@code if}, so every iteration
-     * performs the same point operations whatever the scalar bits.
+     * fixed-iteration "double, add, select" ladder over the low 256 bits of
+     * the scalar.
      * <p>
-     * <b>Caveats.</b> "Constant-time" here means the
-     * scalar-bit-pattern-independent at the scalar-mult loop level.
-     * The underlying Jacobian point ops still have data-dependent branches
-     * for the infinity / equal-x cases of the mixed addition (the accumulator
-     * is at infinity until the scalar's first set bit; the equal-x cases are
-     * negligibly probable for random secret scalars on a prime-order
-     * subgroup), the GLS method splits the scalar into its digits with
-     * {@link BigInteger} division, which is not constant time (the field
-     * arithmetic itself is), the table entry is chosen by an
-     * array index, which a cache-timing observer can see, and the JVM
-     * itself may introduce cache / GC / JIT timing variance that pure
-     * Java cannot fully eliminate. Sufficient against a remote network
-     * timing attacker on a typical workload; not a substitute for a
-     * constant-time native implementation against a co-located
+     * Both run the same instructions whatever the scalar: the scalar is taken
+     * as fixed-width limbs, reduced mod r and split into its GLS digits by
+     * masked subtractions ({@link BLS12_381Scalar}); every step makes the same
+     * point operations, with the complete addition and doubling formulas of
+     * Renes, Costello and Batina, which have no exceptional cases for the
+     * point at infinity or equal inputs on a curve of odd order, as this one
+     * is; a table entry is read by a scan of every entry under a mask, and the
+     * ladder keeps the sum or the double by a masked select. The field
+     * arithmetic is constant time ({@link Fp}). What remains is the
+     * conversion of the scalar from a {@link BigInteger}, whose own
+     * representation follows its magnitude, and the JVM itself, whose cache,
+     * GC and JIT behaviour pure Java cannot fully control: not a substitute
+     * for a constant-time native implementation against a co-located
      * adversary with cache-line resolution.
      */
     public BLS12_381G2Point constantTimeMultiply(BigInteger scalar)
@@ -174,22 +173,71 @@ public final class BLS12_381G2Point
             return constantTimeMultiplyInG2(scalar);
         }
 
-        // Fixed-width scalar handling: read 256 bits regardless of the
-        // actual bit length of scalar, so the iteration count carries no
-        // information about the secret.
-        final int FIXED_BITS = 256;
-        Fp2Element[] r = JACOBIAN_INFINITY;
-        Fp2Element[][] options = new Fp2Element[2][];
-        for (int i = FIXED_BITS - 1; i >= 0; --i)
+        int[] k = BLS12_381Scalar.low256(scalar);
+        try
         {
-            r = jacobianDouble(r);
-            Fp2Element[] candidate = jacobianAddAffine(r, x, y);
-            options[0] = r;
-            options[1] = candidate;
-            int bit = scalar.testBit(i) ? 1 : 0;
-            r = options[bit];
+            return ladder(k);
         }
-        return fromJacobian(r);
+        finally
+        {
+            Arrays.fill(k, 0);
+        }
+    }
+
+    /**
+     * Constant-time scalar multiplication by the unsigned big-endian scalar of
+     * at most 32 bytes, such as {@code BLSPrivateKeyParameters.getEncoded()}:
+     * as {@link #constantTimeMultiply(BigInteger)}, but the scalar is converted
+     * to fixed-width limbs directly, never held as a {@link BigInteger}.
+     *
+     * @throws IllegalArgumentException if the scalar is null or longer than 32 bytes.
+     */
+    public BLS12_381G2Point constantTimeMultiply(byte[] scalar)
+    {
+        int[] k = BLS12_381Scalar.fromBytes(scalar);
+        try
+        {
+            if (infinity)
+            {
+                return INFINITY;
+            }
+            if (BLS12_381SubgroupCheck.isInG2Subgroup(this))
+            {
+                int[] kr = BLS12_381Scalar.modOrder(k);
+                try
+                {
+                    return constantTimeMultiplyInG2(kr);
+                }
+                finally
+                {
+                    Arrays.fill(kr, 0);
+                }
+            }
+            return ladder(k);
+        }
+        finally
+        {
+            Arrays.fill(k, 0);
+        }
+    }
+
+    /**
+     * [k] P, for k as limbs, by a fixed-iteration "double, add, select" ladder
+     * over all 256 bits.
+     */
+    private BLS12_381G2Point ladder(int[] k)
+    {
+        Fp2Element[] q = { x, y, Fp2Element.ONE };
+        Fp2Element[] r = PROJECTIVE_INFINITY;
+        for (int i = 255; i >= 0; --i)
+        {
+            r = completeDouble(r);
+            Fp2Element[] s = completeAdd(r, q);
+            int bit = (k[i >>> 5] >>> (i & 31)) & 1;
+            r = new Fp2Element[]{ Fp2Element.select(bit, s[0], r[0]), Fp2Element.select(bit, s[1], r[1]),
+                Fp2Element.select(bit, s[2], r[2]) };
+        }
+        return fromProjective(r);
     }
 
     /**
@@ -198,100 +246,84 @@ public final class BLS12_381G2Point
      * x = -|x|, and r = x^4 - x^2 + 1 &lt; |x|^4, so {@code k mod r} has four
      * base-|x| digits below 2^64 and
      * {@code [k] P = [k0] P - [k1] ψ(P) + [k2] ψ²(P) - [k3] ψ³(P)}. The four
-     * multiplications share 64 doublings, and each step adds one of the 15
-     * non-empty subset sums of the four base points from a table (always
-     * computed, an addition of a dummy entry when the digit bits are all
-     * zero, and chosen by an array-indexed select, as in
-     * {@link #constantTimeMultiply}): 64 doublings and 64 mixed additions
-     * instead of 256 of each. The caveats there apply here too.
+     * multiplications share 64 doublings, and each step adds one of the 16
+     * subset sums of the four base points from a table, the point at infinity
+     * among them, read by a masked scan of all of them: 64 doublings and 64
+     * additions instead of 256 of each. The notes on
+     * {@link #constantTimeMultiply} apply here too.
      * <p>
      * The result is wrong for a point outside G2; callers must know the point
      * is in G2, as hash-to-curve output is.
      */
     BLS12_381G2Point constantTimeMultiplyInG2(BigInteger scalar)
     {
+        int[] k = BLS12_381Scalar.modOrder(scalar);
+        try
+        {
+            return constantTimeMultiplyInG2(k);
+        }
+        finally
+        {
+            Arrays.fill(k, 0);
+        }
+    }
+
+    /**
+     * {@link #constantTimeMultiplyInG2(BigInteger)} for a scalar given as
+     * limbs, already reduced mod r.
+     */
+    BLS12_381G2Point constantTimeMultiplyInG2(int[] k)
+    {
         if (infinity)
         {
             return INFINITY;
         }
 
-        long[] d = new long[4];
-        BigInteger k = scalar.mod(BLS12_381G2.ORDER);
-        for (int i = 0; i < 4; ++i)
+        long[] d = BLS12_381Scalar.glsDigits(k);
+        try
         {
-            BigInteger[] qr = k.divideAndRemainder(ABS_X);
-            d[i] = qr[1].longValue();
-            k = qr[0];
-        }
-
-        // Base points (-1)^i psi^i(P), since |x|^i = (-1)^i x^i.
-        BLS12_381G2Point[] base = new BLS12_381G2Point[4];
-        base[0] = this;
-        BLS12_381G2Point psi = this;
-        for (int i = 1; i < 4; ++i)
-        {
-            psi = BLS12_381SubgroupCheck.psiG2(psi);
-            base[i] = (i & 1) != 0 ? psi.negate() : psi;
-        }
-
-        // table[b] = sum of base[i] over the bits i of b, in Jacobian form, then
-        // all made affine with one inversion (Montgomery's trick).
-        Fp2Element[][] table = new Fp2Element[16][];
-        for (int b = 1; b < 16; ++b)
-        {
-            int low = b & -b;
-            int i = low == 1 ? 0 : low == 2 ? 1 : low == 4 ? 2 : 3;
-            table[b] = b == low
-                ? new Fp2Element[]{ base[i].x, base[i].y, Fp2Element.ONE }
-                : jacobianAddAffine(table[b ^ low], base[i].x, base[i].y);
-        }
-        Fp2Element[] tx = new Fp2Element[16];
-        Fp2Element[] ty = new Fp2Element[16];
-        toAffine(table, tx, ty);
-
-        Fp2Element[] r = JACOBIAN_INFINITY;
-        Fp2Element[][] options = new Fp2Element[2][];
-        for (int bit = 63; bit >= 0; --bit)
-        {
-            r = jacobianDouble(r);
-            int idx = (int)((d[0] >>> bit) & 1) | (int)((d[1] >>> bit) & 1) << 1
-                | (int)((d[2] >>> bit) & 1) << 2 | (int)((d[3] >>> bit) & 1) << 3;
-            // Entry 15 stands in for the empty sum, whose sum is then discarded.
-            int entry = idx | ((idx - 1) >>> 31) * 15;
-            options[0] = r;
-            options[1] = jacobianAddAffine(r, tx[entry], ty[entry]);
-            r = options[(idx | -idx) >>> 31];
-        }
-        return fromJacobian(r);
-    }
-
-    /**
-     * Converts {@code table[1..15]} from Jacobian to affine form with one
-     * inversion: the inverse of the product of all Z, then each Z's inverse
-     * from it and the prefix products (Montgomery's trick).
-     */
-    private static void toAffine(Fp2Element[][] table, Fp2Element[] tx, Fp2Element[] ty)
-    {
-        int n = table.length;
-        Fp2Element[] prefix = new Fp2Element[n];
-        Fp2Element acc = Fp2Element.ONE;
-        for (int b = 1; b < n; ++b)
-        {
-            if (table[b][2].isZero())
+            // Base points (-1)^i psi^i(P), since |x|^i = (-1)^i x^i.
+            BLS12_381G2Point[] base = new BLS12_381G2Point[4];
+            base[0] = this;
+            BLS12_381G2Point psi = this;
+            for (int i = 1; i < 4; ++i)
             {
-                throw new IllegalStateException("point not in G2");
+                psi = BLS12_381SubgroupCheck.psiG2(psi);
+                base[i] = (i & 1) != 0 ? psi.negate() : psi;
             }
-            prefix[b] = acc;
-            acc = acc.mul(table[b][2]);
+
+            // (tx, ty, tz)[b] = sum of base[i] over the bits i of b, projective; entry 0 is infinity.
+            Fp2Element[] tx = new Fp2Element[16];
+            Fp2Element[] ty = new Fp2Element[16];
+            Fp2Element[] tz = new Fp2Element[16];
+            tx[0] = PROJECTIVE_INFINITY[0];
+            ty[0] = PROJECTIVE_INFINITY[1];
+            tz[0] = PROJECTIVE_INFINITY[2];
+            for (int b = 1; b < 16; ++b)
+            {
+                int low = b & -b;
+                int i = low == 1 ? 0 : low == 2 ? 1 : low == 4 ? 2 : 3;
+                Fp2Element[] e = completeAdd(new Fp2Element[]{ tx[b ^ low], ty[b ^ low], tz[b ^ low] },
+                    new Fp2Element[]{ base[i].x, base[i].y, Fp2Element.ONE });
+                tx[b] = e[0];
+                ty[b] = e[1];
+                tz[b] = e[2];
+            }
+
+            Fp2Element[] r = PROJECTIVE_INFINITY;
+            for (int bit = 63; bit >= 0; --bit)
+            {
+                r = completeDouble(r);
+                int idx = (int)((d[0] >>> bit) & 1) | (int)((d[1] >>> bit) & 1) << 1
+                    | (int)((d[2] >>> bit) & 1) << 2 | (int)((d[3] >>> bit) & 1) << 3;
+                r = completeAdd(r, new Fp2Element[]{ Fp2Element.lookup(tx, idx), Fp2Element.lookup(ty, idx),
+                    Fp2Element.lookup(tz, idx) });
+            }
+            return fromProjective(r);
         }
-        Fp2Element inv = acc.inverse();
-        for (int b = n - 1; b >= 1; --b)
+        finally
         {
-            Fp2Element zInv = inv.mul(prefix[b]);
-            inv = inv.mul(table[b][2]);
-            Fp2Element zInv2 = zInv.square();
-            tx[b] = table[b][0].mul(zInv2);
-            ty[b] = table[b][1].mul(zInv2).mul(zInv);
+            Arrays.fill(d, 0L);
         }
     }
 
@@ -398,6 +430,84 @@ public final class BLS12_381G2Point
         Fp2Element zInv = p[2].inverse();
         Fp2Element zInv2 = zInv.square();
         return new BLS12_381G2Point(p[0].mul(zInv2), p[1].mul(zInv2).mul(zInv), false);
+    }
+
+    /** The point at infinity in homogeneous projective coordinates. */
+    private static final Fp2Element[] PROJECTIVE_INFINITY = { Fp2Element.ZERO, Fp2Element.ONE, Fp2Element.ZERO };
+
+    /** a * 3b' for b' = 4(1 + I): 12 a (1 + I). */
+    private static Fp2Element mulB3(Fp2Element a)
+    {
+        Fp2Element t = a.mulByNonResidue();
+        Fp2Element t4 = t.add(t);
+        t4 = t4.add(t4);
+        Fp2Element t8 = t4.add(t4);
+        return t8.add(t4);
+    }
+
+    /**
+     * Complete addition in homogeneous projective coordinates for a = 0:
+     * Algorithm 7 of Renes, Costello and Batina, "Complete addition formulas
+     * for prime order elliptic curves" (EUROCRYPT 2016), 12M. Correct for every
+     * pair of inputs, the point at infinity and equal points included, on a
+     * curve with no point of order 2, which E'(Fp^2) has not (its order is
+     * odd).
+     */
+    private static Fp2Element[] completeAdd(Fp2Element[] p, Fp2Element[] q)
+    {
+        Fp2Element x1 = p[0], y1 = p[1], z1 = p[2];
+        Fp2Element x2 = q[0], y2 = q[1], z2 = q[2];
+        Fp2Element t0 = x1.mul(x2);
+        Fp2Element t1 = y1.mul(y2);
+        Fp2Element t2 = z1.mul(z2);
+        Fp2Element t3 = x1.add(y1).mul(x2.add(y2)).sub(t0.add(t1));
+        Fp2Element t4 = y1.add(z1).mul(y2.add(z2)).sub(t1.add(t2));
+        Fp2Element y3 = x1.add(z1).mul(x2.add(z2)).sub(t0.add(t2));
+        t0 = t0.add(t0).add(t0);
+        t2 = mulB3(t2);
+        Fp2Element z3 = t1.add(t2);
+        t1 = t1.sub(t2);
+        y3 = mulB3(y3);
+        Fp2Element x3 = t3.mul(t1).sub(t4.mul(y3));
+        y3 = t1.mul(z3).add(y3.mul(t0));
+        z3 = z3.mul(t4).add(t0.mul(t3));
+        return new Fp2Element[]{ x3, y3, z3 };
+    }
+
+    /**
+     * Doubling in homogeneous projective coordinates for a = 0: Algorithm 9 of
+     * Renes, Costello and Batina, 6M + 2S; the point at infinity doubles to
+     * itself.
+     */
+    private static Fp2Element[] completeDouble(Fp2Element[] p)
+    {
+        Fp2Element x = p[0], y = p[1], z = p[2];
+        Fp2Element t0 = y.square();
+        Fp2Element z3 = t0.add(t0);
+        z3 = z3.add(z3);
+        z3 = z3.add(z3);
+        Fp2Element t1 = y.mul(z);
+        Fp2Element t2 = mulB3(z.square());
+        Fp2Element x3 = t2.mul(z3);
+        Fp2Element y3 = t0.add(t2);
+        z3 = t1.mul(z3);
+        t2 = t2.add(t2).add(t2);
+        t0 = t0.sub(t2);
+        y3 = x3.add(t0.mul(y3));
+        x3 = t0.mul(x.mul(y));
+        x3 = x3.add(x3);
+        return new Fp2Element[]{ x3, y3, z3 };
+    }
+
+    /** Converts projective {@code (X : Y : Z)} to the affine point {@code (X/Z, Y/Z)}. */
+    private static BLS12_381G2Point fromProjective(Fp2Element[] p)
+    {
+        if (p[2].isZero())
+        {
+            return INFINITY;
+        }
+        Fp2Element zInv = p[2].inverse();
+        return new BLS12_381G2Point(p[0].mul(zInv), p[1].mul(zInv), false);
     }
 
     public boolean equals(Object other)

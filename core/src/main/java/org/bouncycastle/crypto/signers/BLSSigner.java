@@ -117,15 +117,17 @@ public class BLSSigner
             throw new IllegalStateException("BLSSigner not initialised for signing");
         }
         byte[] msg = buffer.snapshot();
+        byte[] sk = privateKey.getEncoded();
         try
         {
             BLS12_381G2HashToCurve h = new BLS12_381G2HashToCurve(dst);
             BLS12_381G2Point q = h.hashToCurve(msg);
-            BLS12_381G2Point sig = q.constantTimeMultiply(privateKey.getSecret());
+            BLS12_381G2Point sig = q.constantTimeMultiply(sk);
             return BLS12_381Serialization.compressG2(sig);
         }
         finally
         {
+            Arrays.fill(sk, (byte)0);
             // Wipe the snapshot copy in addition to the resetting the
             // backing buffer — hashToCurve has already read every byte
             // through the SHA-256 expand_message_xmd, so the array is

@@ -2,6 +2,7 @@ package org.bouncycastle.crypto.bls;
 
 import java.math.BigInteger;
 
+import org.bouncycastle.math.raw.Nat;
 import org.bouncycastle.util.Arrays;
 
 /**
@@ -293,6 +294,37 @@ public final class Fp2Element
         // a is a square in Fp^2 iff a^((p^2 - 1) / 2) = 1.
         BigInteger qMinus1Over2 = P.multiply(P).subtract(BigInteger.ONE).shiftRight(1);
         return modPow(qMinus1Over2).equals(ONE);
+    }
+
+    /**
+     * a if the low bit of {@code bit} is 1 and b if it is 0, by a masked move
+     * of the limbs: the same instructions either way.
+     */
+    static Fp2Element select(int bit, Fp2Element a, Fp2Element b)
+    {
+        int[] z = Arrays.clone(b.v);
+        Nat.cmov(2 * S, bit, a.v, 0, z, 0);
+        return new Fp2Element(z);
+    }
+
+    /**
+     * t[idx], read by a scan of every entry of t, each masked by whether its
+     * index is idx, so the memory touched does not depend on idx; idx must be
+     * an index of t, and t at most 2^31 entries long.
+     */
+    static Fp2Element lookup(Fp2Element[] t, int idx)
+    {
+        int[] z = new int[2 * S];
+        for (int i = 0; i < t.length; ++i)
+        {
+            int mask = ((i ^ idx) - 1) >> 31;
+            int[] v = t[i].v;
+            for (int j = 0; j < 2 * S; ++j)
+            {
+                z[j] |= v[j] & mask;
+            }
+        }
+        return new Fp2Element(z);
     }
 
     /**

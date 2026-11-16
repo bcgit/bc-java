@@ -35,12 +35,14 @@ Date: 2026, TBD
 - The Shamir secret splitting classes now clear the temporary copies of shares and polynomial coefficients they make when splitting, recovering, multiplying and dividing.
 - The OpenPGP smart card API (bcpgsc) can now list a card's supported algorithms, change its user and admin PINs, and generate a key on the card (PR #2565).
 - BLS12-381 now does its field arithmetic in a constant-time fixed-width Montgomery field rather than BigInteger, with constant-time inversion, making signing and verification a further 1.5 to 1.9 times faster, relates to github #2556.
+- BLS12-381 signing and key generation no longer branch on or index memory by the private key, and BLSPrivateKeyParameters, BLSSigner and BLSKeyPairGenerator hold the key as its 32-byte encoding rather than a BigInteger, with new byte[] overloads of keyGen, skToPk, sign and constantTimeMultiply, relates to github #2556.
 
 #### Additional Notes
 
 - The BC OIDs of SNOVA, FAEST, MQOM, UOV, QR-UOV and SQIsign now end in .2 and those of SDitH in .1, the round implemented; the previous OIDs are still read but no longer written.
 - bcpgsc API changes: card PINs for key upload are now supplied by an OpenPGPSmartCard.CardPinProvider, ExternalOpenPGPKeyUtils moved to org.bouncycastle.openpgp.api, and card implementations now provide getKeys() and getKeyByKeyRef().
 - External secret keys now follow draft-ietf-openpgp-external-secrets-01, where an empty locator hint means the key is unavailable rather than "best effort", so such keys written by 1.86 and 1.87 now read as unavailable.
+- The BLS methods taking or returning the private key as a BigInteger (BLS12_381BasicScheme.keyGen, skToPk and sign, the ProofOfPossession and MessageAugmentation sign and popProve, and BLSPrivateKeyParameters' BigInteger constructor and getSecret()) are deprecated in favour of their byte[] forms.
 
 <a id="r1rv87"></a>
 
