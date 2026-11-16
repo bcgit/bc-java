@@ -295,8 +295,9 @@ public class NaccacheSternTest
      * rather than stopping at the match. This walks a plaintext range wide enough to hit every entry
      * of every table - the paper key's digits are the plaintext modulo 3, 5, 7, 11, 13 and 17 - and
      * checks the recovered value each time, which is what a search that selects the wrong index would
-     * fail. It also counts the randomiser draws, one per prime, since the exponent carrying phi(n) is
-     * blinded and nothing else on the decrypt path draws.
+     * fail. It also counts the randomiser draws: one per prime when the tables are built, the rest of
+     * each table being powers of that one blinded exponentiation, and then one per prime for each
+     * decryption, since the exponent carrying phi(n) is blinded and nothing else on either path draws.
      */
     private void testEveryDigitAndBlinding(AsymmetricCipherKeyPair pair)
         throws InvalidCipherTextException
@@ -308,6 +309,12 @@ public class NaccacheSternTest
 
         NaccacheSternEngine dec = new NaccacheSternEngine();
         dec.init(false, new ParametersWithRandom(pair.getPrivate(), counting));
+
+        if (counting.count != smallPrimes.size())
+        {
+            fail("NaccacheStern table construction did not blind one exponent per small prime (draws "
+                + counting.count + ")");
+        }
 
         for (int m = 1; m != 256; m++)
         {
