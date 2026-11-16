@@ -60,6 +60,17 @@ public class ECDomainParameters
         }
         // we can't check for h == null here as h is optional in X9.62 as it is not required for ECDSA
 
+        // by Hasse's theorem neither n nor h can exceed the field size by more than 2 bits (see ECCurve)
+        int maxBitLength = curve.getFieldSize() + 2;
+        if (n.bitLength() > maxBitLength)
+        {
+            throw new IllegalArgumentException("n out of range for curve");
+        }
+        if (h != null && h.bitLength() > maxBitLength)
+        {
+            throw new IllegalArgumentException("h out of range for curve");
+        }
+
         this.curve = curve;
         this.G = validatePublicPoint(curve, G);
         this.n = n;

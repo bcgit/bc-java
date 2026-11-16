@@ -111,6 +111,25 @@ public abstract class ECCurve
 
     public abstract int getFieldSize();
 
+    /**
+     * Bound a declared subgroup order and cofactor by the field size. By Hasse's theorem the group has at most
+     * q + 1 + 2 * sqrt(q) points, so neither value can exceed the bit length of q plus one, which is fieldSize + 2
+     * bits for F2m (q = 2^m); larger values are rejected before any point arithmetic uses them.
+     */
+    static void checkOrderAndCofactor(int fieldSize, BigInteger order, BigInteger cofactor)
+    {
+        int maxBitLength = fieldSize + 2;
+
+        if (order != null && order.bitLength() > maxBitLength)
+        {
+            throw new IllegalArgumentException("EC curve order out of range");
+        }
+        if (cofactor != null && cofactor.bitLength() > maxBitLength)
+        {
+            throw new IllegalArgumentException("EC curve cofactor out of range");
+        }
+    }
+
     public abstract ECFieldElement fromBigInteger(BigInteger x);
 
     public abstract boolean isValidFieldElement(BigInteger x);
@@ -745,6 +764,8 @@ public abstract class ECCurve
             this.r = ECFieldElement.Fp.calculateResidue(q);
             this.infinity = new ECPoint.Fp(this, null, null);
 
+            checkOrderAndCofactor(q.bitLength(), order, cofactor);
+
             this.a = this.fromBigInteger(a);
             this.b = this.fromBigInteger(b);
             this.order = order;
@@ -1250,6 +1271,8 @@ public abstract class ECCurve
             BigInteger cofactor)
         {
             super(m, k1, k2, k3);
+
+            checkOrderAndCofactor(m, order, cofactor);
 
             this.m = m;
             this.k1 = k1;

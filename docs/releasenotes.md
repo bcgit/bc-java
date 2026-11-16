@@ -26,6 +26,7 @@ Date: 2026, TBD
 - ECCSIKeyPairGenerator drew v as a 256-bit value on every curve, so on curves with an order above 256 bits a few SSKs issued under one KSAK revealed the KSAK. v is now drawn from all of [1, q-1]; a KMS that issued SSKs on such a curve needs a new KSAK. Affected 1.81 to 1.87.
 - The PKCS12 KeyStore wrote SecretKey entries into the certificates' encrypted block, which on the default types uses 40-bit RC2, rather than under the private keys' 3DES; they now get a block of their own under the private key algorithm. Affected 1.85 to 1.87; a file keeps the old layout until it is stored again.
 - The GOST R 34.10 signers (ECGOST3410Signer, GOST3410Signer and the NONEWITHECGOST3410 services) did not replace a message representative of 0 mod q with 1, as RFC 7091 and RFC 5832 require, so a signature over such a digest revealed the private key; verification now applies the same rule.
+- EC domain parameters with explicit curve parameters could declare a subgroup order or cofactor of any size, and decoding a public key or certificate carrying them spent CPU time proportional to the declared order before the key was rejected. Both are now bounded by the field size, as Hasse's theorem requires.
 
 #### Additional Features and Functionality
 
