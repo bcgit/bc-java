@@ -1,7 +1,6 @@
 package org.bouncycastle.asn1;
 
 import java.io.IOException;
-import java.math.BigInteger;
 import java.util.Date;
 
 import org.bouncycastle.util.Arrays;
@@ -58,30 +57,34 @@ public class DERGeneralizedTime
         int whole = hasMinutes() ? (hasSeconds() ? 14 : 12) : 10;
         int unitSeconds = (whole == 10) ? 3600 : (whole == 12) ? 60 : 1;
 
-        String fraction = "";
-        if (whole < end && (contents[whole] == '.' || contents[whole] == ','))
-        {
-            fraction = Strings.fromByteArray(Arrays.copyOfRange(contents, whole + 1, end));
-        }
+        int fractionStart = whole + 1;
+        boolean hasFraction = whole < end && (contents[whole] == '.' || contents[whole] == ',');
 
+        // The fraction is multiplied by unitSeconds one digit at a time from the right: the carry out of
+        // the leading digit is the whole number of seconds, the digits left behind are the fraction of a
+        // second. This is linear in the length of the fraction, which the encoding does not bound.
         int seconds = 0;
-        String secondsFraction = "";
-        if (fraction.length() != 0)
+        byte[] secondsFraction = new byte[hasFraction ? end - fractionStart : 0];
+        int fractionLength = secondsFraction.length;
+        if (fractionLength != 0)
         {
-            BigInteger[] carried = new BigInteger(fraction).multiply(BigInteger.valueOf(unitSeconds))
-                .divideAndRemainder(BigInteger.valueOf(10).pow(fraction.length()));
-            seconds = carried[0].intValue();
-            secondsFraction = carried[1].toString();
-            while (secondsFraction.length() < fraction.length())
+            int carry = 0;
+            for (int i = fractionLength - 1; i >= 0; i--)
             {
-                secondsFraction = "0" + secondsFraction;
+                int digit = contents[fractionStart + i] - '0';
+                if (digit < 0 || digit > 9)
+                {
+                    throw new IllegalArgumentException("invalid fraction in GeneralizedTime");
+                }
+                int v = digit * unitSeconds + carry;
+                secondsFraction[i] = (byte)('0' + v % 10);
+                carry = v / 10;
             }
-            int last = secondsFraction.length();
-            while (last > 0 && secondsFraction.charAt(last - 1) == '0')
+            seconds = carry;
+            while (fractionLength > 0 && secondsFraction[fractionLength - 1] == '0')
             {
-                last--;
+                fractionLength--;
             }
-            secondsFraction = secondsFraction.substring(0, last);
         }
 
         StringBuffer derTime = new StringBuffer(Strings.fromByteArray(Arrays.copyOfRange(contents, 0, whole)));
@@ -94,9 +97,9 @@ public class DERGeneralizedTime
         {
             appendTwoDigits(derTime, seconds);
         }
-        if (secondsFraction.length() != 0)
+        if (fractionLength != 0)
         {
-            derTime.append('.').append(secondsFraction);
+            derTime.append('.').append(Strings.fromByteArray(Arrays.copyOfRange(secondsFraction, 0, fractionLength)));
         }
         derTime.append('Z');
 

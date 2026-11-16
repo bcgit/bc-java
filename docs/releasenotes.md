@@ -27,6 +27,7 @@ Date: 2026, TBD
 - The PKCS12 KeyStore wrote SecretKey entries into the certificates' encrypted block, which on the default types uses 40-bit RC2, rather than under the private keys' 3DES; they now get a block of their own under the private key algorithm. Affected 1.85 to 1.87; a file keeps the old layout until it is stored again.
 - The GOST R 34.10 signers (ECGOST3410Signer, GOST3410Signer and the NONEWITHECGOST3410 services) did not replace a message representative of 0 mod q with 1, as RFC 7091 and RFC 5832 require, so a signature over such a digest revealed the private key; verification now applies the same rule.
 - EC domain parameters with explicit curve parameters could declare a subgroup order or cofactor of any size, and decoding a public key or certificate carrying them spent CPU time proportional to the declared order before the key was rejected. Both are now bounded by the field size, as Hasse's theorem requires.
+- Since 1.87, writing a GeneralizedTime with a fractional part as DER took time quadratic in the length of the fraction, so re-encoding a certificate or other structure carrying a very long one could take seconds of CPU. It is now linear.
 
 #### Additional Features and Functionality
 

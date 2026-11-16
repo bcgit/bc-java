@@ -1,5 +1,7 @@
 package org.bouncycastle.asn1.test;
 
+import java.math.BigInteger;
+import java.security.SecureRandom;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.SimpleTimeZone;
@@ -189,10 +191,105 @@ public class GeneralizedTimeTest
         }
     }
 
+    /**
+     * The DER form of a long fraction must cost time linear in its length, as the encoding does not
+     * bound the length of the fraction.
+     */
+    private void longFractionTest()
+        throws Exception
+    {
+        int digits = 1000000;
+        StringBuffer sb = new StringBuffer("20261116120000.");
+        for (int i = 0; i != digits; i++)
+        {
+            sb.append((char)('1' + i % 9));
+        }
+        sb.append("000Z");
+        byte[] text = Strings.toByteArray(sb.toString());
+        // read as the decoder reads a GeneralizedTime off the wire (3-byte long-form length)
+        byte[] header = { 0x18, (byte)0x83, (byte)(text.length >> 16), (byte)(text.length >> 8), (byte)text.length };
+        ASN1Primitive lenient = ASN1Primitive.fromByteArray(Arrays.concatenate(header, text));
+
+        long start = System.currentTimeMillis();
+        byte[] der = lenient.getEncoded(ASN1Encoding.DER);
+        long elapsed = System.currentTimeMillis() - start;
+
+        isTrue("long fraction took " + elapsed + "ms", elapsed < 1000);
+        String expected = sb.toString().substring(0, sb.length() - 4) + "Z";
+        isEquals("long fraction", expected, ASN1GeneralizedTime.getInstance(der).getTimeString());
+    }
+
+    /**
+     * Compare the DER fraction carry against the exact BigInteger arithmetic for random fractions of an
+     * hour, a minute and a second.
+     */
+    private void randomFractionTest()
+        throws Exception
+    {
+        SecureRandom random = new SecureRandom();
+        String[] prefixes = { "2026010112", "202601011230", "20260101123015" };
+        int[] units = { 3600, 60, 1 };
+        for (int t = 0; t != 300; t++)
+        {
+            int kind = t % 3;
+            int len = 1 + random.nextInt(40);
+            StringBuffer fraction = new StringBuffer();
+            for (int i = 0; i != len; i++)
+            {
+                fraction.append((char)('0' + random.nextInt(10)));
+            }
+            String text = prefixes[kind] + "." + fraction + "Z";
+
+            BigInteger[] carried = new BigInteger(fraction.toString()).multiply(BigInteger.valueOf(units[kind]))
+                .divideAndRemainder(BigInteger.valueOf(10).pow(len));
+            int seconds = carried[0].intValue();
+            String rem = carried[1].toString();
+            while (rem.length() < len)
+            {
+                rem = "0" + rem;
+            }
+            int last = rem.length();
+            while (last > 0 && rem.charAt(last - 1) == '0')
+            {
+                last--;
+            }
+            rem = rem.substring(0, last);
+
+            StringBuffer expected = new StringBuffer("20260101");
+            if (kind == 0)
+            {
+                expected.append("12").append(twoDigits(seconds / 60)).append(twoDigits(seconds % 60));
+            }
+            else if (kind == 1)
+            {
+                expected.append("1230").append(twoDigits(seconds));
+            }
+            else
+            {
+                expected.append("123015");
+            }
+            if (rem.length() != 0)
+            {
+                expected.append('.').append(rem);
+            }
+            expected.append('Z');
+
+            byte[] der = new DERGeneralizedTime(Strings.toByteArray(text)).getEncoded();
+            isEquals(text, expected.toString(), ASN1GeneralizedTime.getInstance(der).getTimeString());
+        }
+    }
+
+    private static String twoDigits(int value)
+    {
+        return value < 10 ? "0" + value : Integer.toString(value);
+    }
+
     public void performTest()
         throws Exception
     {
         derFractionTest();
+        longFractionTest();
+        randomFractionTest();
 
         SimpleDateFormat dateF = new SimpleDateFormat("yyyyMMddHHmmss'Z'");
 
