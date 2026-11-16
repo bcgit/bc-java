@@ -67,7 +67,7 @@ public class ExternalOpenPGPKeyUtils
      */
     public OpenPGPKey fromCertificate(OpenPGPCertificate certificate, byte[] locatorHint)
     {
-        List<PGPSecretKey> keys = new ArrayList<>();
+        List<PGPSecretKey> keys = new ArrayList<PGPSecretKey>();
         for (OpenPGPCertificate.OpenPGPComponentKey componentKey : certificate.getKeys())
         {
             PGPPublicKey publicKey = componentKey.getPGPPublicKey();
@@ -113,7 +113,7 @@ public class ExternalOpenPGPKeyUtils
      */
     public OpenPGPKey toExternalKey(OpenPGPKey key, byte[] locatorHint)
     {
-        List<OpenPGPSecretKey> secretKeys = new ArrayList<>();
+        List<OpenPGPSecretKey> secretKeys = new ArrayList<OpenPGPSecretKey>();
         for (OpenPGPSecretKey sk : key.getSecretKeys().values())
         {
             secretKeys.add(new OpenPGPSecretKey(
@@ -191,7 +191,7 @@ public class ExternalOpenPGPKeyUtils
      */
     public OpenPGPKey toExternalKey(OpenPGPKey key, KeyIdentifier componentKey, byte[] locatorHint)
     {
-        List<OpenPGPSecretKey> secretKeys = new ArrayList<>();
+        List<OpenPGPSecretKey> secretKeys = new ArrayList<OpenPGPSecretKey>();
         for (OpenPGPSecretKey sk : key.getSecretKeys().values())
         {
             if (sk.getKeyIdentifier().matchesExplicit(componentKey))
