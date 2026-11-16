@@ -323,6 +323,45 @@ public class AIMerTest
     }
 
     /**
+     * initSign(key) takes its randomness from the default source, not from the SecureRandom an earlier
+     * initSign(key, random) on the same object was given.
+     */
+    public void testInitSignWithoutRandomUsesDefaultSource()
+        throws Exception
+    {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("AIMer", "BCPQC");
+
+        kpg.initialize(AIMerParameterSpec.aimer128f, new SecureRandom());
+
+        KeyPair kp = kpg.generateKeyPair();
+
+        CountingSecureRandom random = new CountingSecureRandom();
+        Signature signer = Signature.getInstance("AIMer", "BCPQC");
+
+        signer.initSign(kp.getPrivate(), random);
+        signer.update(msg, 0, msg.length);
+        signer.sign();
+
+        assertTrue("initSign(key, random) did not draw from random", random.count > 0);
+
+        int count = random.count;
+
+        signer.initSign(kp.getPrivate());
+        signer.update(msg, 0, msg.length);
+
+        byte[] s = signer.sign();
+
+        assertEquals("initSign(key) drew from the SecureRandom of an earlier init", count, random.count);
+
+        Signature verifier = Signature.getInstance("AIMer", "BCPQC");
+
+        verifier.initVerify(kp.getPublic());
+        verifier.update(msg, 0, msg.length);
+
+        assertTrue(verifier.verify(s));
+    }
+
+    /**
      * A public key that is not an AIMer key is refused with an InvalidKeyException that keeps the
      * decoding failure as its cause.
      */
@@ -389,5 +428,17 @@ public class AIMerTest
 
         assertEquals(spec.getName() + ": public key equality", kp.getPublic(), decPub);
         assertEquals(spec.getName() + ": private key equality", kp.getPrivate(), decPriv);
+    }
+
+    private static class CountingSecureRandom
+        extends SecureRandom
+    {
+        int count;
+
+        public void nextBytes(byte[] bytes)
+        {
+            count++;
+            super.nextBytes(bytes);
+        }
     }
 }

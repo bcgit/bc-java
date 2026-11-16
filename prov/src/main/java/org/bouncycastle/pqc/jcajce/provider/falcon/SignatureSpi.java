@@ -24,7 +24,6 @@ public class SignatureSpi
 {
     private ByteArrayOutputStream bOut;
     private FalconSigner signer;
-    private SecureRandom random;
     private FalconParameters parameters;
 
     protected SignatureSpi(FalconSigner signer)
@@ -76,14 +75,18 @@ public class SignatureSpi
         signer.init(false, key.getKeyParams());
     }
 
-    protected void engineInitSign(PrivateKey privateKey, SecureRandom random)
+    protected void engineInitSign(PrivateKey privateKey)
         throws InvalidKeyException
     {
-        this.random = random;
-        engineInitSign(privateKey);
+        engineInitSign(privateKey, null);
     }
 
-    protected void engineInitSign(PrivateKey privateKey)
+    /**
+     * Each init decides afresh where signing draws its randomness from: the SecureRandom given here, or the default
+     * source for an init given none. Signature.initSign(key) calls engineInitSign(key) only, so a SecureRandom kept from
+     * an earlier initSign(key, random) would otherwise go on being used in place of the default.
+     */
+    protected void engineInitSign(PrivateKey privateKey, SecureRandom random)
         throws InvalidKeyException
     {
         bOut.reset();

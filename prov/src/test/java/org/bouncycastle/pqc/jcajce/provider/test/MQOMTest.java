@@ -175,6 +175,45 @@ public class MQOMTest
     }
 
     /**
+     * initSign(key) takes its randomness from the default source, not from the SecureRandom an earlier
+     * initSign(key, random) on the same object was given.
+     */
+    public void testInitSignWithoutRandomUsesDefaultSource()
+        throws Exception
+    {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("MQOM", PROVIDER);
+
+        kpg.initialize(MQOMParameterSpec.mqom2_cat1_gf2_fast_r3, new SecureRandom());
+
+        KeyPair kp = kpg.generateKeyPair();
+
+        CountingSecureRandom random = new CountingSecureRandom();
+        Signature signer = Signature.getInstance("MQOM", PROVIDER);
+
+        signer.initSign(kp.getPrivate(), random);
+        signer.update(msg, 0, msg.length);
+        signer.sign();
+
+        assertTrue("initSign(key, random) did not draw from random", random.count > 0);
+
+        int count = random.count;
+
+        signer.initSign(kp.getPrivate());
+        signer.update(msg, 0, msg.length);
+
+        byte[] s = signer.sign();
+
+        assertEquals("initSign(key) drew from the SecureRandom of an earlier init", count, random.count);
+
+        Signature verifier = Signature.getInstance("MQOM", PROVIDER);
+
+        verifier.initVerify(kp.getPublic());
+        verifier.update(msg, 0, msg.length);
+
+        assertTrue(verifier.verify(s));
+    }
+
+    /**
      * A public key that is not an MQOM key is refused with an InvalidKeyException that keeps the
      * decoding failure as its cause.
      */
@@ -281,5 +320,17 @@ public class MQOMTest
     {
         KeyPairGenerator kpg = KeyPairGenerator.getInstance(Strings.toUpperCase(spec.getName()), PROVIDER);
         return kpg.generateKeyPair();
+    }
+
+    private static class CountingSecureRandom
+        extends SecureRandom
+    {
+        int count;
+
+        public void nextBytes(byte[] bytes)
+        {
+            count++;
+            super.nextBytes(bytes);
+        }
     }
 }

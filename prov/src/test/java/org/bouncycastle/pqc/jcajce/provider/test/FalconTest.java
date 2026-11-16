@@ -387,6 +387,45 @@ public class FalconTest
     }
 
     /**
+     * initSign(key) takes its randomness from the default source, not from the SecureRandom an earlier
+     * initSign(key, random) on the same object was given.
+     */
+    public void testInitSignWithoutRandomUsesDefaultSource()
+        throws Exception
+    {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("Falcon", "BC");
+
+        kpg.initialize(FalconParameterSpec.falcon_512, new SecureRandom());
+
+        KeyPair kp = kpg.generateKeyPair();
+
+        CountingSecureRandom random = new CountingSecureRandom();
+        Signature signer = Signature.getInstance("Falcon", "BC");
+
+        signer.initSign(kp.getPrivate(), random);
+        signer.update(msg, 0, msg.length);
+        signer.sign();
+
+        assertTrue("initSign(key, random) did not draw from random", random.count > 0);
+
+        int count = random.count;
+
+        signer.initSign(kp.getPrivate());
+        signer.update(msg, 0, msg.length);
+
+        byte[] s = signer.sign();
+
+        assertEquals("initSign(key) drew from the SecureRandom of an earlier init", count, random.count);
+
+        Signature verifier = Signature.getInstance("Falcon", "BC");
+
+        verifier.initVerify(kp.getPublic());
+        verifier.update(msg, 0, msg.length);
+
+        assertTrue(verifier.verify(s));
+    }
+
+    /**
      * count = 0
      * seed = 061550234D158C5EC95595FE04EF7A25767F2E24CC2BC479D09D86DC9ABCFDE7056A8C266F9EF97ED08541DBD2E1FFA1
      * mlen = 33
@@ -447,6 +486,18 @@ public class FalconTest
         sig.update(msg, 0, msg.length);
 
         assertTrue(sig.verify(detachedSig));
+    }
+
+    private static class CountingSecureRandom
+        extends SecureRandom
+    {
+        int count;
+
+        public void nextBytes(byte[] bytes)
+        {
+            count++;
+            super.nextBytes(bytes);
+        }
     }
 
     private static class RiggedRandom
