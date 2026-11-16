@@ -43,9 +43,6 @@ public class BLS12_381SubgroupCheck
      */
     private static final BigInteger BETA;
 
-    /** Jacobian coordinates (X, Y, Z) of the point at infinity on G1. */
-    private static final BigInteger[] JACOBIAN_INFINITY = { BigInteger.ONE, BigInteger.ONE, BigInteger.ZERO };
-
     /** &psi; coefficient for G2 x-coordinate: 1 / ((1 + I)^((p - 1) / 3)) in Fp&sup2;. */
     private static final Fp2Element PSI_X;
 
@@ -163,30 +160,63 @@ public class BLS12_381SubgroupCheck
      */
     private static boolean sigmaIsMinusXSquared(BigInteger x, BigInteger y, BigInteger beta)
     {
-        BigInteger[] q = jacobianMulAbsX(jacobianMulAbsX(new BigInteger[]{ x, y, BigInteger.ONE }));
-        if (q[2].signum() == 0)
+        int[] xe = fp(x), ye = fp(y);
+        int[][] q = jacobianMulAbsX(jacobianMulAbsX(new int[][]{ xe, ye, Fp.ONE }));
+        if (Fp.isZero(q[2], 0))
         {
             return false;
         }
-        BigInteger zz = sqrFp(q[2]);
-        return q[0].equals(mulFp(mulFp(beta, x), zz))
-            && q[1].equals(Fp2Element.negFp(mulFp(y, mulFp(zz, q[2]))));
+        int[] zz = sqr(q[2]);
+        return Fp.eq(q[0], 0, mul(mul(fp(beta), xe), zz), 0)
+            & Fp.eq(q[1], 0, neg(mul(ye, mul(zz, q[2]))), 0);
     }
 
-    private static BigInteger mulFp(BigInteger a, BigInteger b)
+    private static int[] fp(BigInteger a)
     {
-        return Fp2Element.reduce(a.multiply(b));
+        int[] z = new int[Fp.SIZE];
+        Fp.fromBigInteger(a, z, 0);
+        return z;
     }
 
-    private static BigInteger sqrFp(BigInteger a)
+    private static int[] mul(int[] a, int[] b)
     {
-        return Fp2Element.reduce(a.multiply(a));
+        int[] z = new int[Fp.SIZE];
+        Fp.mul(a, 0, b, 0, z, 0);
+        return z;
+    }
+
+    private static int[] sqr(int[] a)
+    {
+        int[] z = new int[Fp.SIZE];
+        Fp.sqr(a, 0, z, 0);
+        return z;
+    }
+
+    private static int[] add(int[] a, int[] b)
+    {
+        int[] z = new int[Fp.SIZE];
+        Fp.add(a, 0, b, 0, z, 0);
+        return z;
+    }
+
+    private static int[] sub(int[] a, int[] b)
+    {
+        int[] z = new int[Fp.SIZE];
+        Fp.sub(a, 0, b, 0, z, 0);
+        return z;
+    }
+
+    private static int[] neg(int[] a)
+    {
+        int[] z = new int[Fp.SIZE];
+        Fp.neg(a, 0, z, 0);
+        return z;
     }
 
     /** {@code [|x|] P} by left-to-right double-and-add: 63 doublings, 5 additions. */
-    private static BigInteger[] jacobianMulAbsX(BigInteger[] p)
+    private static int[][] jacobianMulAbsX(int[][] p)
     {
-        BigInteger[] r = p;
+        int[][] r = p;
         for (int i = ABS_X.bitLength() - 2; i >= 0; --i)
         {
             r = jacobianDouble(r);
@@ -199,65 +229,65 @@ public class BLS12_381SubgroupCheck
     }
 
     /** dbl-2009-l (Explicit-Formulas Database) for a = 0: 2M + 5S. Infinity doubles to infinity. */
-    private static BigInteger[] jacobianDouble(BigInteger[] p)
+    private static int[][] jacobianDouble(int[][] p)
     {
-        BigInteger x1 = p[0], y1 = p[1], z1 = p[2];
-        BigInteger a = sqrFp(x1);
-        BigInteger b = sqrFp(y1);
-        BigInteger c = sqrFp(b);
-        BigInteger t = Fp2Element.subFp(Fp2Element.subFp(sqrFp(Fp2Element.addFp(x1, b)), a), c);
-        BigInteger d = Fp2Element.addFp(t, t);
-        BigInteger e = Fp2Element.addFp(Fp2Element.addFp(a, a), a);
-        BigInteger x3 = Fp2Element.subFp(sqrFp(e), Fp2Element.addFp(d, d));
-        BigInteger c8 = Fp2Element.addFp(c, c);
-        c8 = Fp2Element.addFp(c8, c8);
-        c8 = Fp2Element.addFp(c8, c8);
-        BigInteger y3 = Fp2Element.subFp(mulFp(e, Fp2Element.subFp(d, x3)), c8);
-        BigInteger yz = mulFp(y1, z1);
-        return new BigInteger[]{ x3, y3, Fp2Element.addFp(yz, yz) };
+        int[] x1 = p[0], y1 = p[1], z1 = p[2];
+        int[] a = sqr(x1);
+        int[] b = sqr(y1);
+        int[] c = sqr(b);
+        int[] t = sub(sub(sqr(add(x1, b)), a), c);
+        int[] d = add(t, t);
+        int[] e = add(add(a, a), a);
+        int[] x3 = sub(sqr(e), add(d, d));
+        int[] c8 = add(c, c);
+        c8 = add(c8, c8);
+        c8 = add(c8, c8);
+        int[] y3 = sub(mul(e, sub(d, x3)), c8);
+        int[] yz = mul(y1, z1);
+        return new int[][]{ x3, y3, add(yz, yz) };
     }
 
     /**
      * add-2007-bl (Explicit-Formulas Database): 11M + 5S. Handles either
      * input at infinity and the doubling and inverse cases, which the
-     * formula does not.
+     * formula does not. Those branches depend on the point, which is public.
      */
-    private static BigInteger[] jacobianAdd(BigInteger[] p, BigInteger[] q)
+    private static int[][] jacobianAdd(int[][] p, int[][] q)
     {
-        BigInteger x1 = p[0], y1 = p[1], z1 = p[2];
-        BigInteger x2 = q[0], y2 = q[1], z2 = q[2];
-        if (z1.signum() == 0)
+        int[] x1 = p[0], y1 = p[1], z1 = p[2];
+        int[] x2 = q[0], y2 = q[1], z2 = q[2];
+        if (Fp.isZero(z1, 0))
         {
             return q;
         }
-        if (z2.signum() == 0)
+        if (Fp.isZero(z2, 0))
         {
             return p;
         }
-        BigInteger z1z1 = sqrFp(z1);
-        BigInteger z2z2 = sqrFp(z2);
-        BigInteger u1 = mulFp(x1, z2z2);
-        BigInteger u2 = mulFp(x2, z1z1);
-        BigInteger s1 = mulFp(mulFp(y1, z2), z2z2);
-        BigInteger s2 = mulFp(mulFp(y2, z1), z1z1);
-        BigInteger h = Fp2Element.subFp(u2, u1);
-        BigInteger sy = Fp2Element.subFp(s2, s1);
-        if (h.signum() == 0)
+        int[] z1z1 = sqr(z1);
+        int[] z2z2 = sqr(z2);
+        int[] u1 = mul(x1, z2z2);
+        int[] u2 = mul(x2, z1z1);
+        int[] s1 = mul(mul(y1, z2), z2z2);
+        int[] s2 = mul(mul(y2, z1), z1z1);
+        int[] h = sub(u2, u1);
+        int[] sy = sub(s2, s1);
+        if (Fp.isZero(h, 0))
         {
             // Same x: P + P is a doubling, P + (-P) is infinity.
-            return sy.signum() == 0 ? jacobianDouble(p) : JACOBIAN_INFINITY;
+            return Fp.isZero(sy, 0) ? jacobianDouble(p) : new int[][]{ Fp.ONE, Fp.ONE, new int[Fp.SIZE] };
         }
-        BigInteger h2 = Fp2Element.addFp(h, h);
-        BigInteger i = sqrFp(h2);
-        BigInteger j = mulFp(h, i);
-        BigInteger r = Fp2Element.addFp(sy, sy);
-        BigInteger v = mulFp(u1, i);
-        BigInteger x3 = Fp2Element.subFp(Fp2Element.subFp(sqrFp(r), j), Fp2Element.addFp(v, v));
-        BigInteger s1j = mulFp(s1, j);
-        BigInteger y3 = Fp2Element.subFp(mulFp(r, Fp2Element.subFp(v, x3)), Fp2Element.addFp(s1j, s1j));
-        BigInteger zs = sqrFp(Fp2Element.addFp(z1, z2));
-        BigInteger z3 = mulFp(Fp2Element.subFp(Fp2Element.subFp(zs, z1z1), z2z2), h);
-        return new BigInteger[]{ x3, y3, z3 };
+        int[] h2 = add(h, h);
+        int[] i = sqr(h2);
+        int[] j = mul(h, i);
+        int[] r = add(sy, sy);
+        int[] v = mul(u1, i);
+        int[] x3 = sub(sub(sqr(r), j), add(v, v));
+        int[] s1j = mul(s1, j);
+        int[] y3 = sub(mul(r, sub(v, x3)), add(s1j, s1j));
+        int[] zs = sqr(add(z1, z2));
+        int[] z3 = mul(sub(sub(zs, z1z1), z2z2), h);
+        return new int[][]{ x3, y3, z3 };
     }
 
     /**

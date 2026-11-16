@@ -1,98 +1,96 @@
 package org.bouncycastle.crypto.bls;
 
-import java.math.BigInteger;
-
 /**
- * An unreduced element of Fp^2: both components are integers, possibly
- * negative, standing for their residues mod p. Products of reduced
- * {@link Fp2Element}s are formed here without reduction, summed, and reduced
- * once by {@link #reduce()}: "lazy reduction". In the Fp^6 / Fp^12 tower each
- * output coefficient is a sum of several Fp^2 products, so this halves the
- * number of reductions there, and a reduction costs several times what the
- * multiplication itself does.
+ * An unreduced element of Fp^2: both components are wide values of
+ * {@link Fp#WIDE}, integers, possibly negative, standing for their
+ * Montgomery reductions. Products of {@link Fp2Element}s are formed here in
+ * full, summed, and reduced once by {@link #reduce()}: "lazy reduction". In
+ * the Fp^6 / Fp^12 tower each output coefficient is a sum of several Fp^2
+ * products, so this halves the number of reductions there.
  * <p>
- * Bounds: a product of two reduced elements has components in
- * {@code (-2p^2, 2p^2)}; the tower formulas add at most a handful of such
- * terms, staying far inside the {@code |x| < 2^WIDE_BITS} (about 97 p^2)
- * that {@link #reduce()} accepts. It checks that bound rather than assume it.
+ * Bounds: a product of two elements has components in {@code (-2p^2, 2p^2)};
+ * the tower formulas add at most a handful of such terms, staying far inside
+ * the {@code |x| < 2^768} (about 97 p^2) that {@link Fp#reduceWide} accepts.
+ * It checks that bound rather than assume it.
  */
 final class Fp2Wide
 {
-    private static final BigInteger P = Fp2Element.P;
+    private static final int S = Fp.SIZE;
+    private static final int W = Fp.WIDE;
 
-    private static final int K = P.bitLength();
+    /** c0 at 0, c1 at {@link Fp#WIDE}. */
+    private final int[] w;
 
-    /** Inputs to {@link #reduceFp} must be below {@code 2^WIDE_BITS} in absolute value. */
-    private static final int WIDE_BITS = 2 * K + 6;
-
-    /** Barrett constant {@code floor(2^WIDE_BITS / p)}. */
-    private static final BigInteger MU = BigInteger.ONE.shiftLeft(WIDE_BITS).divide(P);
-
-    final BigInteger c0;
-    final BigInteger c1;
-
-    private Fp2Wide(BigInteger c0, BigInteger c1)
+    private Fp2Wide(int[] w)
     {
-        this.c0 = c0;
-        this.c1 = c1;
+        this.w = w;
     }
 
-    /** {@code a * b}, unreduced, by Karatsuba: three multiplications. */
+    /**
+     * {@code a * b}, unreduced, by Karatsuba: three products,
+     * {@code a0 b0 - a1 b1} and {@code (a0 + a1)(b0 + b1) - a0 b0 - a1 b1}.
+     */
     static Fp2Wide mul(Fp2Element a, Fp2Element b)
     {
-        BigInteger ac = a.c0().multiply(b.c0());
-        BigInteger bd = a.c1().multiply(b.c1());
-        BigInteger sum = a.c0().add(a.c1()).multiply(b.c0().add(b.c1()));
-        return new Fp2Wide(ac.subtract(bd), sum.subtract(ac).subtract(bd));
+        int[] x = a.v, y = b.v;
+        int[] s = new int[2 * S];
+        Fp.add(x, 0, x, S, s, 0);
+        Fp.add(y, 0, y, S, s, S);
+        int[] t = new int[3 * W];
+        Fp.mulWide(x, 0, y, 0, t, 0);
+        Fp.mulWide(x, S, y, S, t, W);
+        Fp.mulWide(s, 0, s, S, t, 2 * W);
+        int[] z = new int[2 * W];
+        Fp.subWide(t, 0, t, W, z, 0);
+        Fp.subWide2(t, 2 * W, t, 0, t, W, z, W);
+        return new Fp2Wide(z);
     }
 
-    /** {@code a^2 = (a0 + a1)(a0 - a1) + 2 a0 a1 * I}, unreduced: two multiplications. */
+    /** {@code a^2 = (a0 + a1)(a0 - a1) + 2 a0 a1 * I}, unreduced: two products. */
     static Fp2Wide square(Fp2Element a)
     {
-        BigInteger a0 = a.c0(), a1 = a.c1();
-        return new Fp2Wide(a0.add(a1).multiply(a0.subtract(a1)), a0.multiply(a1).shiftLeft(1));
+        int[] x = a.v;
+        int[] s = new int[2 * S];
+        Fp.add(x, 0, x, S, s, 0);
+        Fp.sub(x, 0, x, S, s, S);
+        int[] z = new int[2 * W];
+        Fp.mulWide(s, 0, s, S, z, 0);
+        Fp.mulWide(x, 0, x, S, z, W);
+        Fp.addWide(z, W, z, W, z, W);
+        return new Fp2Wide(z);
     }
 
     Fp2Wide add(Fp2Wide o)
     {
-        return new Fp2Wide(c0.add(o.c0), c1.add(o.c1));
+        int[] z = new int[2 * W];
+        Fp.addWide(w, 0, o.w, 0, z, 0);
+        Fp.addWide(w, W, o.w, W, z, W);
+        return new Fp2Wide(z);
     }
 
     Fp2Wide sub(Fp2Wide o)
     {
-        return new Fp2Wide(c0.subtract(o.c0), c1.subtract(o.c1));
+        int[] z = new int[2 * W];
+        Fp.subWide(w, 0, o.w, 0, z, 0);
+        Fp.subWide(w, W, o.w, W, z, W);
+        return new Fp2Wide(z);
     }
 
     /** Multiply by the Fp^6 non-residue {@code 1 + I}: {@code (c0 - c1) + (c0 + c1) * I}. */
     Fp2Wide mulByNonResidue()
     {
-        return new Fp2Wide(c0.subtract(c1), c0.add(c1));
+        int[] z = new int[2 * W];
+        Fp.subWide(w, 0, w, W, z, 0);
+        Fp.addWide(w, 0, w, W, z, W);
+        return new Fp2Wide(z);
     }
 
     /** The reduced element: one reduction per component. */
     Fp2Element reduce()
     {
-        return Fp2Element.ofReduced(reduceFp(c0), reduceFp(c1));
-    }
-
-    /**
-     * {@code x mod p} for {@code |x| < 2^WIDE_BITS}, by Barrett reduction of
-     * {@code |x|}: the quotient estimate never exceeds {@code floor(|x| / p)}
-     * and falls short by less than 3, so at most two corrective subtractions.
-     */
-    static BigInteger reduceFp(BigInteger x)
-    {
-        BigInteger m = x.abs();
-        if (m.bitLength() > WIDE_BITS)
-        {
-            throw new IllegalStateException("lazy reduction bound exceeded");
-        }
-        BigInteger q = m.shiftRight(K - 1).multiply(MU).shiftRight(WIDE_BITS - K + 1);
-        BigInteger r = m.subtract(q.multiply(P));
-        while (r.compareTo(P) >= 0)
-        {
-            r = r.subtract(P);
-        }
-        return (x.signum() < 0 && r.signum() != 0) ? P.subtract(r) : r;
+        int[] z = new int[2 * S];
+        Fp.reduceWide(w, 0, z, 0);
+        Fp.reduceWide(w, W, z, S);
+        return new Fp2Element(z);
     }
 }

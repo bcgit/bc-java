@@ -118,8 +118,8 @@ public class BLS12_381Pairing
             return Fp12Element.ONE;
         }
 
-        BigInteger[] negXP = new BigInteger[n];
-        BigInteger[] yP = new BigInteger[n];
+        int[][] negXP = new int[n][Fp.SIZE];
+        int[][] yP = new int[n][Fp.SIZE];
         Fp2Element[] xQ = new Fp2Element[n];
         Fp2Element[] yQ = new Fp2Element[n];
         Fp2Element[][] t = new Fp2Element[n][];
@@ -132,8 +132,8 @@ public class BLS12_381Pairing
                 continue;
             }
             ECPoint normalised = g1Points[i].normalize();
-            negXP[k] = normalised.getAffineXCoord().toBigInteger().negate().mod(Fp2Element.P);
-            yP[k] = normalised.getAffineYCoord().toBigInteger();
+            Fp.fromBigInteger(normalised.getAffineXCoord().toBigInteger().negate(), negXP[k], 0);
+            Fp.fromBigInteger(normalised.getAffineYCoord().toBigInteger(), yP[k], 0);
             xQ[k] = g2Points[i].x();
             yQ[k] = g2Points[i].y();
             t[k] = new Fp2Element[]{ xQ[k], yQ[k], Fp2Element.ONE };
@@ -262,7 +262,7 @@ public class BLS12_381Pairing
      * {@code Y^2 - 3b'Z^2}, {@code -3X^2*xP} and {@code 2YZ*yP}. Any Fp&sup2;
      * factor on a line is removed by the final exponentiation.
      */
-    private static Fp12Element doublingStep(Fp12Element f, Fp2Element[] t, BigInteger negXP, BigInteger yP)
+    private static Fp12Element doublingStep(Fp12Element f, Fp2Element[] t, int[] negXP, int[] yP)
     {
         Fp2Element x1 = t[0], y1 = t[1], z1 = t[2];
         if (y1.isZero())
@@ -314,7 +314,7 @@ public class BLS12_381Pairing
      * {@code -theta*xP} and {@code lambda*yP}.
      */
     private static Fp12Element additionStep(Fp12Element f, Fp2Element[] t, Fp2Element xQ, Fp2Element yQ,
-        BigInteger negXP, BigInteger yP)
+        int[] negXP, int[] yP)
     {
         Fp2Element x1 = t[0], y1 = t[1], z1 = t[2];
         Fp2Element theta = y1.sub(yQ.mul(z1));

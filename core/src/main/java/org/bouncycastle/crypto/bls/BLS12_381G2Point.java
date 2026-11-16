@@ -116,10 +116,11 @@ public final class BLS12_381G2Point
             return INFINITY;
         }
         // slope = (3*x^2) / (2*y)  (curve has A = 0)
-        Fp2Element threeXSquared = x.square().mulFp(BigInteger.valueOf(3));
-        Fp2Element twoY = y.mulFp(BigInteger.valueOf(2));
+        Fp2Element xSquared = x.square();
+        Fp2Element threeXSquared = xSquared.add(xSquared).add(xSquared);
+        Fp2Element twoY = y.add(y);
         Fp2Element slope = threeXSquared.mul(twoY.inverse());
-        Fp2Element x3 = slope.square().sub(x.mulFp(BigInteger.valueOf(2)));
+        Fp2Element x3 = slope.square().sub(x.add(x));
         Fp2Element y3 = slope.mul(x.sub(x3)).sub(y);
         return new BLS12_381G2Point(x3, y3, false);
     }
@@ -144,8 +145,10 @@ public final class BLS12_381G2Point
      * for the infinity / equal-x cases of the mixed addition (the accumulator
      * is at infinity until the scalar's first set bit; the equal-x cases are
      * negligibly probable for random secret scalars on a prime-order
-     * subgroup), the {@link BigInteger} field arithmetic is not constant
-     * time, and the JVM
+     * subgroup), the GLS method splits the scalar into its digits with
+     * {@link BigInteger} division, which is not constant time (the field
+     * arithmetic itself is), the table entry is chosen by an
+     * array index, which a cache-timing observer can see, and the JVM
      * itself may introduce cache / GC / JIT timing variance that pure
      * Java cannot fully eliminate. Sufficient against a remote network
      * timing attacker on a typical workload; not a substitute for a

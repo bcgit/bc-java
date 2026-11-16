@@ -34,6 +34,7 @@ Date: 2026, TBD
 - ShamirSplitSecret now inverts once per share in getSecret() and once per call in divide(), rather than once per pair of shares and once per byte, making division about 17 to 20 times faster and recovery 1.3 times (3 shares) to 8 times (128 shares) faster. Results are unchanged (github #2558).
 - The Shamir secret splitting classes now clear the temporary copies of shares and polynomial coefficients they make when splitting, recovering, multiplying and dividing.
 - The OpenPGP smart card API (bcpgsc) can now list a card's supported algorithms, change its user and admin PINs, and generate a key on the card (PR #2565).
+- BLS12-381 now does its field arithmetic in a constant-time fixed-width Montgomery field rather than BigInteger, with constant-time inversion, making signing and verification a further 1.5 to 1.9 times faster, relates to github #2556.
 
 #### Additional Notes
 
