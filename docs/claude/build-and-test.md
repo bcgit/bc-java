@@ -1,38 +1,24 @@
 # Build & test
 
-The build is Gradle multi-module. **JDK 25+ is required to drive Gradle**: the `compileJava25Java` task (e.g. `prov/build.gradle`, `tls/build.gradle`) is unconditional and sets `options.release = 25`, so a Gradle daemon launched under JDK 21/17/etc. fails `:prov:compileJava25Java` with `error: release version 25 not supported`, and that failed compile can leave `core/build/classes/java/main` empty (cascading into confusing "package does not exist" errors on the next step). (Separately, JDK 21+ is the floor for the Error Prone compiler plugin, which is compiled for Java 21 / class file 65 — an older daemon fails `:core:compileJava` with `UnsupportedClassVersionError: …ErrorProneJavacPlugin … class file version 65.0 … up to <NN>.0`.) A JDK 25 is expected at `/opt/jdk-25`; drive Gradle with `JAVA_HOME=/opt/jdk-25 BC_JDK25=/opt/jdk-25 ./gradlew …`. Optional environment variables `BC_JDK8`, `BC_JDK11`, `BC_JDK17`, `BC_JDK21`, `BC_JDK25` opt in version-specific test tasks (compiled against MR-jar overlays). The default `:test` aggregates `:core:test :prov:test :prov:test11 :prov:test15 :prov:test17 :pkix:test :pg:test :pgsc:test :tls:test :tls-klog:test :mls:test :mail:test :jmail:test`.
-
-Per-module test tasks (`:util:test`, `:pkix:test`, …) restrict to `AllTest*` classes, so `--tests org.foo.SomeTest` for a non-`AllTests` class reports "No tests found"; run the aggregating suite instead, by **exact** class name (a glob like `*cms.test.AllTests` fails to match under the `AllTest*` include — `--tests org.bouncycastle.cms.test.AllTests` works).
+Gradle multi-module. **Drive Gradle with JDK 25+**: `JAVA_HOME=/opt/jdk-25 BC_JDK25=/opt/jdk-25 ./gradlew …`. The unconditional `compileJava25Java` (`options.release = 25`) fails on an older daemon with `error: release version 25 not supported` and can leave `core/build/classes/java/main` empty (cascading "package does not exist"); Error Prone needs JDK 21+ (`UnsupportedClassVersionError: …ErrorProneJavacPlugin … class file version 65.0`). Optional `BC_JDK8`/`BC_JDK11`/`BC_JDK17`/`BC_JDK21`/`BC_JDK25` enable the version-specific test tasks (each `onlyIf` its variable; unset skips silently). Default `:test` aggregates `:core:test :prov:test :prov:test11 :prov:test15 :prov:test17 :pkix:test :pg:test :pgsc:test :tls:test :tls-klog:test :mls:test :mail:test :jmail:test`.
 
 ```
 ./gradlew clean build                                # full build + all tests
 ./gradlew :prov:compileJava :prov:compileTestJava    # quick compile-only check
-./gradlew :prov:test --tests <fqcn>                  # one JUnit class
+./gradlew :prov:test --tests <AllTests fqcn>          # one suite (exact AllTests name, see below)
 ./gradlew -PexcludeTests=<glob> :prov:test           # exclude pattern
-./gradlew :prov:checkstyleMain                       # brace/style check (see conventions.md)
+./gradlew :prov:checkstyleMain                       # brace/style check — CI fails on it (see conventions.md)
 ```
 
-Style (Allman braces etc.) is machine-enforced on `src/main` by checkstyle and fails CI — run `checkstyleMain` before pushing. See the Code style section in `conventions.md` for what the config enforces.
-
-`bc-test-data` (separate repo `bcgit/bc-test-data`) must be checked out for the full suite to pass. `TestResourceFinder.findTestResource(homeDir, fileName)` (six per-module copies under `<module>/src/test/java/org/bouncycastle/test/`) resolves the bc-test-data root in this order:
-
-1. The system property `bc.test.data.home`, if set.
-2. The environment variable `BC_TEST_DATA_HOME`, if set.
-3. Walk up from the working directory looking for a directory literally named `bc-test-data` — the default that makes `./gradlew :prov:test` work when bc-test-data is checked out as a sibling of `bc-java`.
-
-When the property or environment variable is supplied, the named path is required to exist; a mistyped value fails fast with a `FileNotFoundException` naming both the source (`-Dbc.test.data.home` or `$BC_TEST_DATA_HOME`) and the bad path, rather than silently falling through. The Gradle build no longer sets the property itself; supply `-Dbc.test.data.home=/path/to/bc-test-data` (or export `BC_TEST_DATA_HOME` once in your shell) only when the sibling-checkout convention doesn't fit your layout. Direct `java -cp ... junit.textui.TestRunner ...` invocations follow the same rule.
+- Per-module test tasks only include `AllTest*` classes: `--tests` on any other class reports "No tests found", and a glob like `*cms.test.AllTests` fails too — give the suite's **exact** FQCN (`--tests org.bouncycastle.cms.test.AllTests`).
+- `bc-test-data` (`bcgit/bc-test-data`) is needed for the full suite. `TestResourceFinder.findTestResource(homeDir, fileName)` (per-module copies under `<module>/src/test/java/org/bouncycastle/test/`) resolves it from `-Dbc.test.data.home`, then `$BC_TEST_DATA_HOME`, then by walking up from the working directory to a directory named `bc-test-data` (a sibling checkout just works). A set-but-wrong property/variable fails fast with `FileNotFoundException`; Gradle does not set it.
 
 ## Running an individual test fast
 
-Two conventions coexist:
+- `SimpleTest` subclasses have a `main()` printing `<TestName>: Okay` or the failure message.
+- JUnit `TestCase` classes: `java -cp ... junit.textui.TestRunner org.bouncycastle.pkcs.test.PKCS12UtilTest`.
 
-- `org.bouncycastle.util.test.SimpleTest` subclasses (~half of the suite) override `performTest()` and call `fail(msg)` / `isTrue(msg, cond)` / `areEqual(a, b)`. They have a `main()` that registers `BouncyCastleProvider` and prints `<TestName>: Okay` on success or `<TestName>: <message>` on failure.
-- `junit.framework.TestCase` subclasses (the other half, especially in `pkix/.../pkcs/test`, `pkix/.../cms/test`, etc.) use plain JUnit assertions and are aggregated by an `AllTests` suite class. Run one via `junit.textui.TestRunner`:
-  ```
-  java -cp ... junit.textui.TestRunner org.bouncycastle.pkcs.test.PKCS12UtilTest
-  ```
-
-To iterate quickly on either flavour, run directly without Gradle. The full classpath you need:
+Classpath for running directly (add `-Dbc.test.data.home=…` if bc-test-data isn't a sibling):
 
 ```
 java -cp pkix/build/classes/java/main:pkix/build/classes/java/test:pkix/src/test/resources:\
@@ -46,200 +32,69 @@ java -cp pkix/build/classes/java/main:pkix/build/classes/java/test:pkix/src/test
      org.bouncycastle.openssl.test.ParserTest
 ```
 
-If your bc-test-data checkout isn't a sibling of `bc-java`, add `-Dbc.test.data.home=/abs/path/to/bc-test-data` to the command. Otherwise the walk-up search picks it up automatically.
-
-Common gotchas:
-- `*/build/resources/main` directories are required — some tests pull resource files (e.g. `lowmcL1.bin.properties` for Picnic, GOST tables) that fail with cryptic `NullPointerException` if missing.
-- `prov/src/test/resources` and `core/src/test/resources` carry test fixtures referenced by `TestResourceFinder` and direct classpath lookups. Other modules have their own too — e.g. `pg/src/test/resources` holds the OpenPGP/keybox fixtures (`pgpdata/*.kbx` for `KeyBoxTest`), loaded via `getResourceAsStream`. Put `<module>/src/test/resources` on the classpath (not just `<module>/build/resources/test`, which is empty until `processTestResources` runs), or a test fails with a misleading NPE / "Cannot take get instance of null" from a null resource stream in a *different* sub-test than the one you changed.
-- IDE-built classes under `out/production/...` (IntelliJ) are NOT on the Gradle classpath — don't reference them, and beware that they can drift from Gradle's outputs.
-- After deleting or renaming a test method (e.g. when rolling back an edit), the stale `.class` file lingers under `<module>/build/classes/java/test/`. JUnit's `TestSuite.class` reflection-walk will still find and run the stale method, surfacing confusing `ClassNotFoundException` / `NoClassDefFoundError` for inner-class artifacts that were removed. Run `./gradlew :<module>:compileTestJava --rerun-tasks` (or `:<module>:clean`) after a rollback to flush.
+- `*/build/resources/main` are required (resource files such as the GOST tables) — missing ones give cryptic NPEs.
+- Put `<module>/src/test/resources` on the path (e.g. `pg/src/test/resources` for `pgpdata/*.kbx`), not `build/resources/test` (empty until `processTestResources`) — otherwise a null resource stream fails a *different* sub-test with an NPE / "Cannot take get instance of null".
+- IntelliJ's `out/production/...` is not Gradle's output; don't use it.
+- After deleting/renaming a test method or inner class, stale `.class` files under `build/classes/java/test/` still run and throw `ClassNotFoundException`/`NoClassDefFoundError`; flush with `:<module>:compileTestJava --rerun-tasks` or `:<module>:clean`.
+- For `core` changes exercised through `prov`, mind the core-into-prov trap (`architecture.md`): compile both, `core` first on the classpath.
 
 ## A green Gradle run can mean the tests never ran — and the tree can move under you
 
-Two ways a "BUILD SUCCESSFUL" has lied in practice. Both are cheap to check and expensive to miss.
+**`UP-TO-DATE` test tasks** still print `BUILD SUCCESSFUL`. Tell: wall time in seconds. Confirm with `--console=plain` (`> Task :pkix:test UP-TO-DATE`) or check result-file timestamps. When in doubt: `:<module>:cleanTest :<module>:test`. `find` here is `bfs`: `-newermt` wants an ISO-8601 stamp, not `"30 minutes ago"`.
 
-**`UP-TO-DATE` test tasks.** Gradle will skip a test task it believes is current and still print
-`BUILD SUCCESSFUL`. The tell is the wall time: `:pkix:test` in seconds when it normally takes
-minutes. Confirm with `--console=plain` and look for `> Task :pkix:test UP-TO-DATE` (a real run
-prints the task line with no suffix), or check the result XML is actually fresh:
+**Where results land:**
+- Most modules: `<module>/build/test-results/test/*.xml`.
+- `:core:test` and `:prov:test` write `TEST-<fqcn>.xml` directly in `<module>/build/test-results/` (no `test/` subdir), one per **leaf** `TestCase`, not per suite. The `prov` per-task subdirs (`test8/`, `test11/`, …) hold only `binary/`; totals are in `<module>/build/reports/tests/<task>/index.html`. So globbing `test-results/test/*.xml` there finds nothing even after a real run.
+- The `AllTest*` filter applies to core too: a `TestCase` no `AllTests` references never runs (`Blake2bpDigestTest`/`Blake2spDigestTest` until github #2488). A leaf's missing XML is how a missing registration shows.
+- Clean full `:core:test` here: ~8 minutes, 787 tests.
 
-```
-find <module>/build -name "*.xml" -path "*test-result*" -printf "%TH:%TM %p\n" | sort | tail
-```
+**HEAD moves while a suite runs** — the maintainer pulls into this clone mid-session (this once produced a wrong "my change broke three unrelated tests"):
+- Print `git log --oneline -1` before and after any long run; trust the result only if they match.
+- Before/after comparisons (stash the fix, re-run) must both be at the same HEAD. `git stash push` names the commit it stashed against — read it.
+- `git log --oneline <old-head>..HEAD -- <paths>` shows whether incoming work touched your files.
+- **Never `git checkout` a tag or branch in this clone to build it.** Use `git worktree add ../bc-java-<tag> <tag>` (beside `bc-java`, so the bc-test-data walk-up still works); `git worktree remove` when done.
 
-`ls`-ing the results directory is not enough — the directory mtime updates even when nothing is
-rewritten, and `find -newermt "-30 minutes"` is *not* valid relative syntax (it silently matches
-nothing; use `-newermt "30 minutes ago"`).
+**`BC_JDK8` is exported in the maintainer's shell**, so `:prov:test` also runs `test8`: the suite against the *built jar* on a real JDK 8, `maxParallelForks = 8`. A `:prov:test` that is suddenly slow or fails in untouched tests is usually `test8`.
 
-**Where core and prov write their results is not where the docs above imply.** `:core:test` puts
-its XML straight into `core/build/test-results/TEST-<fqcn>.xml` — there is no `test-results/test/`
-subdirectory — and each file is named for a leaf `TestCase` class, not for the suite that ran it
-(so `crypto.params.LMSTests` appears and `crypto.params.AllTests` does not). That does **not** mean
-core runs classes outside the suites: the `AllTest*` filter in the root `build.gradle` applies to
-every subproject, core included, so a `TestCase` that no `AllTests` references never runs.
-`Blake2bpDigestTest` and `Blake2spDigestTest` sat in that hole until github #2488. A leaf's XML
-appearing proves a suite reached it; its absence is how a missing registration shows.
-`:prov:test` is the same shape: all 79 per-class XML files sit at `prov/build/test-results/*.xml` while
-the per-task subdirectories (`test8/`, `test11/`, …) hold only a `binary/` directory, with each task's
-totals in `prov/build/reports/tests/<task>/index.html`.
+## Verifying a fix actually catches the bug (stash-the-fix)
 
-Globbing the documented `<module>/build/test-results/test/*.xml` path against either therefore returns
-zero files after a run that did execute 135 suites, which looks exactly like the skipped-tests trap
-above. Check `core/build/reports/tests/test/index.html` for the totals, or glob `TEST-*.xml` one
-level up. On this machine a clean full `:core:test` is ~8 minutes and 787 tests.
+For any defect fix: write the reproducing test, `git stash push <fix-files>`, recompile (`./gradlew :<module>:compileJava`; for `core` fixes also `:prov:compileJava`), confirm the test fails on the original symptom, `git stash pop`, confirm it passes.
 
-Note also that `find` here is `bfs`, not GNU find: it rejects `-newermt "30 minutes ago"` outright
-("Invalid timestamp") and wants an ISO-8601 stamp, so relative-time filtering needs a different
-approach than the one above. When in doubt force it: `:<module>:cleanTest :<module>:test`.
-
-**HEAD moves while a suite runs.** The maintainer pulls into this clone during a session, so a long
-`:core:test` / `:prov:test` can straddle a merge and describe a tree that no longer exists. This
-has already produced a confident-but-wrong "my change broke three unrelated tests" (the failures
-belonged to the pre-pull tree). So:
-
-- Print `git log --oneline -1` immediately before launching a long run and again when it finishes;
-  only trust the result if they match.
-- A before/after comparison (stash the fix, re-run) is only valid if **both** runs are at the same
-  HEAD. Re-run the baseline if a pull landed between them.
-- `git stash push <paths>` names the commit it stashed against ("WIP on main: <hash> <subject>") —
-  a free HEAD check, worth reading rather than skipping.
-- `git log --oneline <old-head>..HEAD -- <paths you changed>` says whether the incoming work
-  touched what you are touching; uncommitted edits usually survive a pull untouched, but verify
-  rather than assume.
-
-For the same reason, **never `git checkout` a tag or branch in this clone to build it** — that
-strands the maintainer's in-flight work and moves HEAD under anything already running. Use a worktree:
-`git worktree add ../bc-java-<tag> <tag>` builds identically and leaves the clone untouched
-(`git worktree remove` when done). Put it **beside** `bc-java` rather than anywhere else, so the
-`bc-test-data` walk-up above still finds the existing checkout with no configuration.
-
-**`BC_JDK8` is exported in the maintainer's shell**, so `:prov:test` pulls in `test8`, which runs the suite
-against the *built jar* on a real JDK 8 with `maxParallelForks = 8`. That is a different execution
-path from running a test class directly against `build/classes`, and the only place some failures
-appear. A `:prov:test` that suddenly takes much longer, or fails in tests you did not touch, is
-usually `test8`.
-
-## Verifying a fix actually catches the bug
-
-The repo's working norm for any defect-fix patch is: write the test that reproduces the bug, then **stash the fix** (`git stash push <fix-files>`), recompile (`./gradlew :<module>:compileJava`), rerun the test to confirm it now fails on the original symptom, then `git stash pop` and rerun to confirm it now passes. This catches tests that pass for the wrong reason. Use it whenever you add a regression test alongside a fix.
-
-When the fix is in `core/`, remember to recompile `prov` too (the `core`-into-`prov` trap below) so the test JVM picks up the updated bytecode rather than a stale `prov/build/classes` shadow.
-
-When the fix *introduces the API the test compiles against* (new public setters, a new class), stashing the whole patch just breaks the test compile — it proves the API is new, not that the test catches the bug. Stash or temporarily remove only the enforcement (the check lines inside the method), recompile the main tree, and confirm the negative cases fail on the original symptom before restoring. The `JceKTSKeyTransRecipient` constraint port (`915e7f3ffb`) is the worked example.
+When the fix *introduces the API the test compiles against*, stash only the enforcement lines inside the method instead — stashing the whole patch just proves the API is new (worked example: `JceKTSKeyTransRecipient`, `915e7f3ffb`).
 
 ### A green run after breaking the code means the test never reached it — verify the break landed
 
-The same stash/mutate technique also answers "is this call site actually on my new code path?": put a `throw` at the top of the new method and confirm each test that should exercise it now fails. But a **false green** — the test passing when the code is deliberately broken — has two boring causes far more often than it has an interesting one, and both point you at innocent code:
+Same technique answers "is this call site on my new path?" (put a `throw` at the top of the new method). A false green usually means:
+- **The edit didn't apply** — a `sed` whose anchor missed is a silent no-op. `grep -c` the marker in the source *and* `javap -p -c <class> | grep -c` it in the compiled class.
+- **A stale `prov` copy shadowed it** (core-into-prov trap) — compile `:core:compileJava :prov:compileJava`, put `core` first, and check the marker in both class trees.
 
-- **The edit didn't apply.** A scripted `sed`/`replace` whose anchor doesn't match is a silent no-op. Assert it: `grep -c` the marker in the source *and* `javap -p -c <class> | grep -c` it in the compiled class before believing any test result.
-- **A stale `prov` copy shadowed it.** Per the `core`-into-`prov` trap, `prov/build/classes/java/main` contains its own build of every `core` class. If it precedes `core/build/classes/java/main` on a hand-built classpath, or if only `:core:compileJava` was re-run, the JVM loads the old bytecode. Compile both (`:core:compileJava :prov:compileJava`) and put `core` first — and confirm the marker is present in *both* class trees.
-
-This bit the EC constant-time multiplier work (`965f42dae9`), where both causes fired in turn and produced a confident but wrong "none of these paths are wired" conclusion. It invalidates ordinary test *results* the same way it invalidates a probe, so when a `core` change is exercised through `prov` tests, compile both and order the classpath core-first as routine.
+Both fired in turn on the EC constant-time multiplier work (`965f42dae9`).
 
 ## Parsing base64 out of Java source: `+` is the concatenation operator
 
-A recurring shape in this tree is a PEM or key blob spread over many `"...\n" +` string literals.
-Stripping "non-base64" characters with something like `re.sub(r'[^A-Za-z0-9+/=]', '', text)` keeps
-the `+` that joins the literals, silently corrupting the decode — the result still base64-decodes,
-just into garbage, so the failure is a wrong *answer* rather than an error. This produced a
-confident undercount of the OpenSSH test keys (8 of 15) that survived two rounds of "checking".
-Extract the contents of each `"..."` literal instead, then join. Where a tool can confirm the
-result — `ssh-keygen -l -f`, `openssl asn1parse` — use it as the authority rather than the parse.
+For PEM/key blobs spread over `"...\n" +` literals, extract each `"..."` literal's contents and join — don't strip non-base64 characters with a regex, which keeps the `+` and silently decodes garbage. Use `ssh-keygen -l -f` / `openssl asn1parse` as the authority where possible.
 
-## The legacy jdk15to18 (Java 5) build has a *runtime* floor Gradle can't see
+## Java source floor (legacy Ant builds)
 
-Besides the Gradle build there is a legacy Ant distribution, `jdk15to18`, driven by `sh build1-5to1-8` (→ `ant/jdk15+.xml`). It is **1.5-bytecode compiled on JDK 8 and run on a genuine JRE 5**. Because the compile uses JDK 8's libraries (no `bootclasspath`), Gradle (`--release 8`) and the Ant build both happily accept Java 6/7/8 APIs — but those then throw `NoSuchMethodError`/`NoClassDefFoundError` at **runtime on JRE 5**. So a change that is perfectly Gradle-clean can still break the legacy jar.
+`src/main/java` (and test code the legacy builds stage) is also built by the Ant distributions: `build1-4` compiles it with the **real JDK 1.4 javac** after a regex preprocessor that strips generics, annotations, varargs *declarations* and rewrites `StringBuilder`→`StringBuffer`; `build1-5to1-8` compiles on JDK 8 but runs on a **genuine JRE 5**, so Java 6+ APIs fail only at runtime. Gradle accepts all of this, so it can't catch it. Therefore:
 
-Practical rule when touching reachable `src/main/java`: don't introduce Java 6/7/8 APIs. Route through the BC util wrappers that carry `jdk1.5` overlays (`Longs`/`Integers`/`BigIntegers`), use `Exceptions.ioException` not `new IOException(msg,cause)`, `Strings.toByteArray` not `getBytes(StandardCharsets…)`, `instanceof Destroyable` not `SecretKey.destroy()`, `System.arraycopy` not `java.util.Arrays.copyOf`, etc. This is the *runtime* sibling of the Java-4 *source* floor.
+- No enhanced-for, autoboxing, enums, covariant return overrides, varargs *call sites*, or post-1.4 APIs.
+- `StandardCharsets` / `getBytes(charset)` → `Strings.toByteArray` / `Strings.toUTF8ByteArray`.
+- `java.util.Arrays.copyOf(Range)` → BC `Arrays` or `System.arraycopy`.
+- `new IOException(msg, cause)` → `Exceptions.ioException`; `new X(msg, cause)` for any `java.security`/`javax.crypto` exception → the `SecurityExceptions` factory (see conventions.md); own subclasses use `super(msg)` + `initCause`.
+- `String.contains`/`isEmpty`, `Integer.numberOfLeadingZeros`/`compare` (→ BC `Integers`/`Longs`), `java.util.concurrent`, `ArrayDeque`, `ThreadLocal.remove()` (→ `set(null)`), `SecretKey.destroy()` (→ `instanceof Destroyable`).
+- Implementing a generic interface (`Comparator<Foo>`) must use the erased `Object` signature and cast inside — the preprocessor strips the type argument but not the parameter types.
+- A new `Properties.X` constant must also be added to `core/src/main/jdk1.4/org/bouncycastle/util/Properties.java`.
+- `System.getenv` throws `java.lang.Error` on JRE 1.4 — guard with `catch (Error)`.
 
-Full workflow (build → **sign with the `bcsign` helper, release machine only** → test), the complete API→fix table, the test-exclusion overlay mechanism, and the diagnostic for telling a real bug from a JRE-5 JIT defect (`-Xint`) are in the `build-jdk15to18` skill.
-
-There is an even stricter Java 1.4 distribution (`sh build1-4`) that compiles with a genuine 1.4 javac — post-1.4 APIs fail it at *compile* time, and it has its own overlay trees, source preprocessor, and signing flow: see `build-jdk14.md`.
-
-## Driving the Ant builds, and the two ways they lie about succeeding
-
-`build1-4`, `build1-5to1-8` and `build1-8+` all wrap Ant the same way, and two traps come with that.
-
-**A clean checkout cannot build at all.** `ant/jdk15+.xml:38` and `ant/jdk18+.xml` both reference
-`<fileset dir="core/src/main/resources" …>`, but that directory holds **no tracked files** — git
-cannot carry an empty directory, so it exists in any long-lived clone and is simply absent from a
-fresh clone, checkout or worktree. Ant then dies on the first target with
-`core/src/main/resources not found`. It is invisible locally and hits anyone building a release tag,
-so `mkdir -p core/src/main/resources` is step one in a new tree. The sibling `prov`, `pkix` and
-`mail` resource directories each carry tracked files and are fine; `jdk14.xml`, `jdk13.xml` and
-`bc+-build.xml` don't reference the core one.
-
-**The scripts do not propagate an Ant failure.** Each is
-
-```sh
-if ant -f ant/<file> build-provider
-then
-    ant -f ant/<file> build
-    ant -f ant/<file> zip-src
-fi
-```
-
-so a failing `build-provider` skips the body and the script still exits **0** (a shell `if` with no
-`else` succeeds), a failing `build` is masked by the `zip-src` that runs after it, and only
-`zip-src`'s status ever reaches the caller. This is the Ant-side sibling of the `UP-TO-DATE` trap
-above: grep the log for `BUILD FAILED`, or check the jars actually appeared under
-`build/artifacts/<jdkdir>/jars/`, rather than trusting `$?`.
-
-The three builds also share `build/`. They stage into separate subdirectories and write separate
-artifact trees, but they run Ant over one tree — run them sequentially, never in parallel.
-
-Build only, no tests, on this machine (r1rv86, warm, fresh worktree): `build1-8+` 50s / 9 jars,
-`build1-5to1-8` 1m21s / 9 jars, `build1-4` 56s / 8 jars — about 1.6G of artifacts in total, with no
-`bcjmail` on the jdk1.4 line. Worth knowing because `build-jdk14.md` quotes "~25 minutes" for that
-pipeline: that is build plus signing plus the full test run, and the build alone is a minute.
-
-Each artifact tree holds `jars/`, a `<module>-<vmrange>-<ver>/` directory per module carrying
-`src.zip` and `javadoc/`, and `lcrypto-<vmrange>-<ver>/` — the source distribution as a **directory**.
-Nothing in the repository creates the `lcrypto-<vmrange>-<ver>.tar.gz` / `.zip` archives the download
-page links (`grep -E '<(tar|zip) ' ant/*.xml` finds only the per-module `src.zip` tasks), so those
-come from a release step outside the tree: a missing archive on the site means that step didn't run,
-not that the tag is short of content.
-
-### The Ant `jdk18+` build is not the published `jdk18on` artifact
-
-`build1-8+` produces a `bcprov-jdk18on-<ver>.jar` with **zero** `META-INF/versions/` entries and an
-`Ant-Version: Apache Ant 1.6.5` manifest — the published multi-release jar comes from Gradle. Don't
-reach for the Ant output when reproducing a released artifact. What it is genuinely good for is the
-two variants Gradle does not build at all, `bcprov-ext-jdk18on` and `bctest-jdk18on`.
-
-Note also that both wrapper scripts post-process the provider jars *after* Ant to add the
-`META-INF/services/java.security.Provider` registration, and do it differently: `build1-5to1-8`
-loops `jar uf` over a `bcprov*jdk15to18*.jar` glob (so it catches `bcprov-ext` and a debug build)
-while `build1-8+` uses a `tar` pipe and names the two jars explicitly. That is where to look when a
-provider jar loads from Gradle but not from an Ant build.
+Full API list, overlay rules, the Ant build/sign/test flow and its traps: `docs/claude/build-jdk14.md` and the `build-jdk15to18` skill.
 
 ## OSS-Fuzz builds `main` with its own script — keep two things compatible with it
 
-Google's OSS-Fuzz runs bc-java continuously as the `bc-java` project in the `google/oss-fuzz` repository
-(`projects/bc-java`: `project.yaml`, `Dockerfile`, `build.sh` and the `*Fuzzer.java` harnesses, which live
-there rather than in this tree). Its `Dockerfile` clones `main` at build time, so a change here can break the
-fuzzing build without anything in this repository failing. Two couplings have done so:
+`google/oss-fuzz` `projects/bc-java` (`build.sh`, `Dockerfile`, the `*Fuzzer.java` harnesses) clones `main` daily, so a change here can break fuzzing with nothing failing locally:
 
-- **It builds on JDK 17.** `build.sh` runs `gradle jar` with Error Prone disabled and every versioned
-  source set above 17 excluded by name (`-x compileJava23Java -x java23Classes -x compileJava25Java
-  -x java25Classes`). A new `src/main/jdkNN` source set compiled for a release above 17 fails the build
-  with `release version NN not supported` until a matching `-x` pair is added to their `build.sh`. The
-  jdk23 `Pack` overlay broke it this way in 2026-10, and the project went unfuzzed until it was noticed.
-- **Test helpers it compiles must not need JUnit.** A harness that reuses this tree's test code puts
-  `pkix/src/test/java` on its classpath without JUnit. `CMSTestUtil` once gained a `junit.framework.Assert`
-  import and that harness stopped compiling; it now throws `AssertionError` instead, and should stay that way.
+- **It builds on JDK 17** (`gradle jar`, Error Prone off, `-x compileJava23Java -x java23Classes -x compileJava25Java -x java25Classes`). A new `src/main/jdkNN` source set above 17 breaks it with `release version NN not supported` until their `build.sh` gains a matching `-x` pair (the jdk23 `Pack` overlay did this in 2026-10).
+- **Test helpers it compiles must not need JUnit** — a harness puts `pkix/src/test/java` on its classpath without JUnit. `CMSTestUtil` throws `AssertionError`, not `junit.framework.Assert`; keep it so.
+- **Malformed-input fixes** must throw `IllegalArgumentException`/`IllegalStateException` (incl. `ASN1ParsingException`) or the checked exception the API declares. Any other unchecked exception from parsing (NPE, `ClassCastException`, index/arithmetic) is filed as a crash.
 
-Build status is public: the `bc-java` entry in `https://oss-fuzz-build-logs.storage.googleapis.com/status.json`
-gives each day's result and a build id, and `log-<build id>.txt` in the same bucket is the full log. Check it
-after any build change of the kinds above. To reproduce a run locally, check out `google/oss-fuzz` and use
-`python3 infra/helper.py build_image bc-java`, `build_fuzzers` (with a local source path and
-`-e GIT_CONFIG_COUNT=1 -e GIT_CONFIG_KEY_0=safe.directory -e GIT_CONFIG_VALUE_0='*'`, since `core/build.gradle`
-runs `git` in a tree the container's root user does not own), `check_build`, then `run_fuzzer`; give the
-mounted source a real git clone rather than an export, for the same `git` call.
-
-The harnesses treat `IllegalArgumentException` and `IllegalStateException` (including
-`ASN1ParsingException`) as the library's normal report of a malformed structure; any other unchecked
-exception from parsing untrusted input — `NullPointerException`, `ClassCastException`, an index or
-arithmetic exception, or an unchecked exception escaping a method that declares a checked one — is filed as
-a crash. Malformed-input fixes should therefore land as `getInstance`/size checks that throw
-`IllegalArgumentException`, or as the checked exception the API already declares.
+Status: the `bc-java` entry in `https://oss-fuzz-build-logs.storage.googleapis.com/status.json` (build id → `log-<build id>.txt` in the same bucket); check it after build changes. Local repro: in a `google/oss-fuzz` checkout, `python3 infra/helper.py build_image bc-java`, then `build_fuzzers` with a local source path (a real git clone) and `-e GIT_CONFIG_COUNT=1 -e GIT_CONFIG_KEY_0=safe.directory -e GIT_CONFIG_VALUE_0='*'` (`core/build.gradle` runs `git`), then `check_build`, `run_fuzzer`.

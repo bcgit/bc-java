@@ -2,11 +2,21 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-The detailed guidance is split across the files below (imported automatically). Add new guidance to the file whose topic it fits, and create a new `docs/claude/<topic>.md` + import line here when a genuinely new topic appears.
+## Always loaded
 
-- @docs/claude/build-and-test.md — driving the Gradle build, running individual tests fast, the stash-the-fix verification discipline, why a green Gradle run can mean the tests never ran and the tree can move under a long one, and keeping the build and test helpers compatible with the OSS-Fuzz project.
-- @docs/claude/build-jdk14.md — the jdk1.4 (build1-4) legacy build: source preprocessing (what the regexes fix and what they can't), the real-1.4-javac compile floor, overlay delete-vs-sync discipline, the build → bcsign4 → test flow and its signing/staleness traps, the `release.debug` variant.
-- @docs/claude/architecture.md — module graph and the `core`-into-`prov` trap, MR-jar overlays, `module-info.java` / `package-info.java` upkeep, where examples live, JCE provider registration, adding a PQC algorithm, `.bc` vs `.jcajce` package layering.
-- @docs/claude/conventions.md — test conventions, X.509 / ASN.1 RFC discipline, strict cert parse vs reviewer, DER lenient-read/strict-write, exception-message contract, `SecurityExceptions` cause-chaining, property constants, non-standard interop, PKCS#12 SPI pair, CMS streaming I/O, CMS recipient constraints, operator close discipline, duplicated OID tables, receiver-side `AlgorithmIdentifier` comparison, stateful hash-based private keys (the position is stored twice - cross-check it; checksum vs recomputation; the `docs/formats` byte-level docs move with the encoding), compatibility retries that mask the real parse error, the name-finder/test count lock, checking whether the type already solves it, release notes (short entries), updating `specifications.md` / `interoperability.md` every release, crediting reporters in CONTRIBUTORS.md (and keeping entries short), commit messages, URL checking, code style.
-- @docs/claude/release-checks.md — the pre-release verification of the signed jars: all three legacy Ant builds built, signed and tested (with the masked-failure and incremental-compile traps), overlay drift audit, the multi-release linkage gate plus a JDK 8-25 runtime probe, OSGi resolution statically and in a real Karaf container, module descriptors against jar contents, duplicate classes across the binary jars, signatures — each with the published 1.86.x jars as a negative control — the debug variants of the legacy jars, and tagging `bc-java` and `bc-test-data`.
-- @docs/claude/upstream-lts-ports.md — the `UPSTREAM-*.md` porting workflow: verifying the doc against this tree, diffing against the BC-LTS checkout, tests/release-note trimmings, keeping the .md out of the commit.
+- @docs/claude/build-and-test.md — driving Gradle (JDK 25), running single tests fast, the Java 1.4 source floor, stash-the-fix verification, why a green run can mean nothing ran, HEAD moving mid-run, OSS-Fuzz compatibility.
+- @docs/claude/architecture.md — module graph and the `core`-into-`prov` trap, MR-jar overlays (hook classes, the mirror-image trap, `multiReleaseCheck`), `module-info` / `package-info` / OSGi wiring, `misc/` examples, `.bc` vs `.jcajce` layering, core's import control.
+- @docs/claude/conventions.md — tests, exceptions and `SecurityExceptions`, `Properties` constants, release notes and the CVE embargo, version bumps, CONTRIBUTORS, commit messages, URL checking, code style.
+
+## Read on demand — open the file before starting the matching work
+
+| Read | Before |
+|---|---|
+| `docs/claude/domain-notes.md` (the relevant section) | changing X.509/ASN.1 x509 types, DER time handling, `AlgorithmIdentifier` comparison, `DefaultAlgorithmNameFinder`, a `Signature` SPI's `verify`/`setParameter`, LMS/HSS/XMSS private keys, CMS streaming/recipients/key agreement, PKCS#12 keystore SPIs, OpenPGP packet format or pg operator tests, the dual-located OID tables, a decoder's compatibility retry |
+| `docs/claude/build-jdk14.md` | touching `src/main/jdk1.x` / `src/test/jdk1.x` overlays, `ant/*.xml`, running `build1-4` / `build1-5to1-8` / `build1-8+`, or diagnosing a legacy-build failure |
+| `docs/claude/release-checks.md` | verifying a release candidate, tagging a release |
+| `docs/claude/upstream-lts-ports.md` | porting an `UPSTREAM-*.md` change from the BC-LTS tree |
+
+Skills cover the rest: `bcpqc-add-algorithm` (any PQC port), `build-jdk15to18`, `build-jdk13-docker`, `legacy-source-javadoc-jars`, `windows-build`.
+
+Add new guidance to the file whose topic it fits. Keep the always-loaded files to rules a typical change needs; area-specific detail goes in an on-demand file with a row in the table above.

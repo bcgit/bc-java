@@ -14,306 +14,117 @@ mail / jmail ── S/MIME on top of CMS     — depends on pkix
 mls  ── Messaging Layer Security
 ```
 
-**Important quirk**: `prov/build.gradle` adds `core/src/main/java` directly to its `srcDirs`. The published `bcprov-<vmrange>.jar` therefore contains both the `core` lightweight API **and** the `prov` JCE provider classes. Practical implications:
+`prov/build.gradle` adds `core/src/main/java` to its `srcDirs`, so `bcprov` contains both `core` and the provider, and every `core` file is compiled twice (`:core:compileJava` and `:prov:compileJava`):
 
-- Editing a file under `core/src/main/java/...` will be compiled twice — once by `:core:compileJava`, once by `:prov:compileJava`. If a stale `prov` class file persists after a `core` change, classes loaded from `prov/build/classes/...` may shadow your edit. When in doubt, run `:prov:compileJava --rerun-tasks` or clear `prov/build/classes`.
-- A change in `core` can break `prov` tests that compile against both source trees.
+- A stale `prov/build/classes` copy can shadow a `core` edit. When in doubt, `:prov:compileJava --rerun-tasks` or clear `prov/build/classes`.
+- A `core` change can break `prov` tests.
 
 ## Multi-Release JAR overlays
 
-`prov`, `pkix`, `pg`, `tls`, etc. ship as MR-jars. Inside each module:
+`prov`, `pkix`, `pg`, `tls`, etc. ship as MR-jars:
 
-- `src/main/java` — base sources, compiled with `--release 8`
-- `src/main/jdk1.9`, `jdk1.11`, `jdk1.15`, `jdk17`, `jdk25` — version-specific overlays packaged under `META-INF/versions/<n>/`. `core` has its own `src/main/jdk23` (`Pack`, whose `longToLittleEndian` only pays off where C2 merges byte stores), built into both the `bccore` jar and, through `prov/build.gradle`'s `java23` source set, `bcprov`
-- `src/main/j2me`, `src/main/jdk1.1` … `jdk1.5`, `src/main/ext-jdk1.9` — alternate distributions for the legacy Ant builds (J2ME, pre-1.6 JDKs). **Gradle does not compile these.** Don't edit them when fixing a Gradle-build bug; they're separate trees maintained for the J2ME/legacy distributions.
+- `src/main/java` — base sources, `--release 8`.
+- `src/main/jdk1.9`, `jdk1.11`, `jdk1.15`, `jdk17`, `jdk25` — overlays packaged under `META-INF/versions/<n>/`. `core` also has `src/main/jdk23` (`Pack`), built into `bccore` and, via `prov/build.gradle`'s `java23` source set, `bcprov`.
+- `src/main/j2me`, `jdk1.1` … `jdk1.5`, `ext-jdk1.9` — legacy Ant distributions. **Gradle does not compile these**; don't edit them to fix a Gradle-build bug.
 
-The same applies to tests: `src/test/java` is the Gradle-driven tree; `src/test/jdk1.4`, `src/test/j2me`, `src/test/jdk1.1` are alternate trees, while `src/test/jdk1.11`, `jdk1.15`, `jdk17`, `jdk25` are MR-jar test overlays driven by the `test11`/`test15`/`test17`/`test25` Gradle tasks.
+Tests likewise: `src/test/java` is Gradle's tree; `src/test/jdk1.4`, `j2me`, `jdk1.1` are legacy; `src/test/jdk1.11`, `jdk1.15`, `jdk17`, `jdk25` are MR test overlays run by `test11`/`test15`/`test17`/`test25`.
 
 ### Always check for MR overlays when editing a class, and test the overlaid behaviour
 
-Before changing a method in `src/main/java`, check whether that class has a version-specific twin under `src/main/jdk1.9|jdk1.11|jdk1.15|jdk17|jdk23|jdk25` (`find <module>/src/main -name <Class>.java`; for a `core` class, look under `core/src/main` too). Only classes needing JDK-version-specific integration are overlaid (e.g. `edec/BC11XDHPublicKey`, `jcajce/util/SpecUtil`), but when one is, the overlay **reimplements** the method — so a bug fix or behaviour change to the base is silently *not* applied on JDK ≥ the overlay's version unless you mirror it into every overlay. These overlays rot exactly like the legacy-Ant trees: they were forked once and forgotten.
+Before changing a method in `src/main/java`, run `find <module>/src/main -name <Class>.java` (for a `core` class, also `core/src/main`). An overlay **reimplements** the method, so a base fix is silently not applied on JDK >= that version unless mirrored into every overlay. Overlays rot like the legacy trees.
+
+**The normal suite does not cover overlays.** `testN` runs *only* classes compiled from `src/test/jdk1.N` (via `AllTestsN` suites); base tests are on the classpath but not executed. When you touch or find drift in an overlaid class, add a `src/test/jdk1.N` test and register it in that `AllTestsN`. A thin `TestCase` running the base `SimpleTest` (`new XxxTest().perform()` / `assertTrue(result.isSuccessful())`) reuses the vectors — model: `prov/src/test/jdk1.11|jdk1.15/.../OpenSSHKeyFactoryMRTest.java`.
+
+**Put the test in the highest overlay's test tree** when a class in overlay N calls anything with a copy in a higher overlay: each `testN` sees only JDK N's resolution, so a `jdk17` test cannot see a jdk17-vs-jdk25 mismatch. Today that is `src/test/jdk25`, run by `test25`. Each `testN` is `onlyIf` its `BC_JDK<N>` env var is set — unset skips silently. Model: `prov/src/test/jdk25/.../KemSpiMRTest.java` — one class per SPI package tree, plus an `AllTests25` in its package (`test25` filters `AllTest*`). `test25` writes no per-class XML; read `prov/build/reports/tests/test25/index.html`.
 
 ### Prefer hook classes to whole-SPI overlays
 
-Because MR-jar resolution is per class file, a **base-tree class can call a class that is overlaid** — on JDK ≥ N the versioned copy is loaded even though the caller came from the jar root. `ECUtil.getNameFrom` → `SpecUtil` (jdk1.11 twin adds the `NamedParameterSpec` fast path) was the original example. So when a provider SPI needs version-specific behaviour, don't fork the whole SPI into `src/main/jdk1.N` — keep the SPI (and its registered inner classes) once in the base tree, and route the genuinely version-specific pieces through a small package-private hook class whose jdk1.N twin swaps them. The `edec` package is the worked example after its 2026 de-duplication: the five SPIs exist only in base and delegate key construction/conversion to `XDHKeys` (jdk1.11 twin: `XECKey` integration) and `EdDSAKeys` (jdk1.15 twin: `EdECKey` + JDK `EdDSAParameterSpec` bridging), with shared byte-level helpers in the never-overlaid `EdECUtil`. The pre-restructure whole-SPI forks had accumulated four behavioural drifts (UKM salt ignored, `EMULATE_ORACLE` dead, RFC 8418 registrations missing per github #2131, third-party-key fallback lost) — the hook shape makes that class of drift impossible, and shrinks what must be kept in step to the hook's method set (state the twin-sync rule in both copies' javadoc). Base copies of hook methods that only exist for a newer JDK return null ("not bridged here"), and the base tree must stay Java-4-source-floor clean since new base classes are swept into the legacy Ant builds.
+MR resolution is per class file, so a base-tree class calling an overlaid class gets the versioned copy on JDK >= N (`ECUtil.getNameFrom` → `SpecUtil`, whose jdk1.11 twin adds the `NamedParameterSpec` path). So don't fork a whole SPI into `src/main/jdk1.N`: keep the SPI and its registered inner classes once in base, and route the version-specific pieces through a small package-private hook class with a jdk1.N twin.
+
+Worked example: `edec`. The five SPIs exist only in base and delegate to `XDHKeys` (jdk1.11 twin: `XECKey`) and `EdDSAKeys` (jdk1.15 twin: `EdECKey` + JDK `EdDSAParameterSpec`), with shared helpers in the never-overlaid `EdECUtil`. The earlier whole-SPI forks had drifted four ways. State the twin-sync rule in both copies' javadoc. Base copies of hook methods that exist only for a newer JDK return null ("not bridged here"), and new base classes must stay legacy-build clean (see `build-and-test.md`).
 
 ### The mirror-image trap: an overlaid class must not host code a lower overlay calls
 
-The hook pattern above works because resolution is per class file — but that cuts both ways, and the
-reverse direction is a runtime `NoSuchMethodError` rather than silent drift. If class `H` exists in
-`jdk17` **and** `jdk25`, and class `C` exists **only** in `jdk17`, then on a JDK 25 runtime `C` loads
-from `META-INF/versions/17` while `H` loads from `META-INF/versions/25`. A call from `C` to a method
-that only the jdk17 copy of `H` defines compiles fine (javac sees one `H` per source set) and dies at
-the call site on JDK 25 only.
+If hook `H` exists in `jdk17` **and** `jdk25` and caller `C` only in `jdk17`, then on JDK 25 `C` loads from `versions/17` and `H` from `versions/25`. A call to a method only the jdk17 `H` defines compiles and throws `NoSuchMethodError` on JDK 25 only.
 
-So: **a class that has versioned twins is a version hook and nothing else.** Put the version-varying
-answers on it and nothing more; shared helper bodies belong on a class with *no* twin anywhere above
-the overlay that calls it. `org.bouncycastle.jcajce.util.SpiUtil` is the cautionary example — it
-exists in base/`jdk17`/`jdk25` purely so `hasKDF()` / `hasKEM()` can differ, and when the twenty
-`javax.crypto.KEM` SPI classes (`jdk17`-only) had their shared prologue extracted onto it, every
-encapsulate and decapsulate threw `NoSuchMethodError` on JDK 25 while JDK 21 stayed green. The fix
-was to move the two helpers to `jcajce.provider.asymmetric.util.KemSpiUtil`, a `jdk17`-only class in
-a package with no overlay above the base tree, and to say so in both classes' javadoc.
+- **A class with versioned twins is a version hook and nothing else.** Shared helper bodies go on a class with no twin above the caller's overlay. Cautionary example: `org.bouncycastle.jcajce.util.SpiUtil` (base/`jdk17`/`jdk25`, for `hasKDF()`/`hasKEM()`) briefly hosted the `jdk17`-only KEM SPIs' shared prologue and broke every KEM operation on JDK 25; the helpers now live in `jcajce.provider.asymmetric.util.KemSpiUtil`, `jdk17`-only.
+- Check: `find <module>/src/main -name <Callee>.java` — a directory with a version **higher** than the caller's makes the call unsafe. Confirm against the jar: `unzip -l <module>/build/libs/bcprov-jdk18on-*.jar | grep '<Callee>.class'` — callee at `versions/17` and `versions/25`, caller only at `versions/17`, is the broken shape.
+- **The reverse direction too:** a root class compiled against a hook's base copy is paired on JDK 9+ with its `versions/9` copy, so the copies must agree on every member a root caller uses, name *and* descriptor (return type included). `tls`'s `SSLEngineUtil.create(ContextData)` returned `SSLEngine` in `jdk1.5` and `ProvSSLEngine` in `jdk1.9`, so `SSLContext.createSSLEngine()` threw `NoSuchMethodError` on JDK 9+ in 1.86 (github #2448), exposed once `-implicit:none` stopped `compileJava9Java` recompiling the base tree into `versions/9`.
 
-Checking this is mechanical, and worth doing whenever you add a cross-class call inside an overlay:
-for the callee, `find <module>/src/main -name <Callee>.java` — if that lists a directory whose
-version is **higher** than the caller's, the call is unsafe. Confirm against the built jar rather
-than the source tree, since the jar is what resolves:
-
-```
-unzip -l <module>/build/libs/bcprov-jdk18on-*.jar | grep '<Callee>.class'   # one entry per overlay
-```
-
-Two entries at `versions/17` and `versions/25` for the callee, one at `versions/17` for the caller,
-is the broken shape.
-
-**The same trap runs the other way, and both directions are now machine-checked.** A *root* class
-compiled against the base copy of a hook can be paired at runtime with the hook's `versions/9` copy,
-so the two copies of a hook must agree on every member a root caller uses - name *and* descriptor,
-return type included. `tls`'s `SSLEngineUtil` had `create(ContextData)` returning `SSLEngine` in
-`src/main/jdk1.5` and `ProvSSLEngine` in `src/main/jdk1.9` from 2019 on, and every
-`SSLContext.createSSLEngine()` on JDK 9+ failed with `NoSuchMethodError` in the 1.86 jar
-(github #2448). It had never failed before because `compileJava9Java` reached the whole base tree
-through `options.sourcepath` and implicitly recompiled it into `versions/9` (447 classes in the 1.85
-bctls jar, `ProvSSLContextSpi` among them), which kept every descriptor consistent by accident; the
-`-implicit:none` added in 1.86 to stop that duplication exposed the mismatch. Now
-`gradle/multirelease.gradle` gives every distributed module a `multiReleaseCheck` task (on `check`,
-so `build` runs it) that reads the constant pool of every class in the built jar **and in the sibling
-BC jars the module depends on**, loaded as one class universe the way a deployment's classpath is, and
-fails when a member reference does not resolve against the copy of its target that a JDK would pair
-with the caller's copy - covering this direction, the `SpiUtil` direction above, inherited members
-through in-universe supertypes, and a companion jar's calls into an overlaid `bcprov` class (`bcpkix`,
-`bcpg` and `bctls` all make such calls; `bccore` is left out of the universe because its classes ship
-inside `bcprov`). A failure reads `<caller> (root) -> <owner>.<name><descriptor> is absent from the
-versions/N copy paired with it on JDK N`; the fix is always to make the copies agree (or move the
-member to a class with no twin), never to widen the gate. The root project carries the same check as
-`multiReleaseCheckJar` for jars the build did not produce - a published release, say:
-`./gradlew multiReleaseCheckJar -PmrJar=<jar>[,<jar>]` checks each jar alone and
-`-PmrClasspath=<jar>,<jar>,...` loads several as one universe (first jar wins on a duplicate copy).
-Run against the published `bctls-jdk18on-1.86.jar` it reports exactly the two `SSLEngineUtil.create`
-pairings, which is the negative test to repeat after any change to the script. The BC-FJA tree carries
-the same script against its HMAC-stamped `checksumJar` output. Pair it with a test in the highest
-overlay's test tree (`tls/src/test/jdk25/.../SSLEngineMRTest` is the model for this case): the gate
-proves the jar links, the test proves the path runs.
-
-Crucially, the MR overlay's behaviour is **not covered by the normal test suite**. The `test11`/`test15`/`test17`/`test25` tasks run *only* the classes compiled from `src/test/jdk1.N` (their `testClassesDirs`), wired through the `AllTests11`/`AllTests15`/… suites — the base `src/test/java` tests are on the classpath but are **not executed** there. So a base test that would catch the drift never runs against the MR-jar, and the divergence ships undetected. When you touch (or find drift in) an MR-overlaid class, add a `src/test/jdk1.N` test that exercises the overlaid path against the multi-release jar and register it in the matching `AllTestsN` suite. A thin JUnit `TestCase` that runs the relevant base `SimpleTest` via `new XxxTest().perform()` / `assertTrue(result.isSuccessful())` reuses the existing vectors without duplication — see `prov/src/test/jdk1.11|jdk1.15/.../OpenSSHKeyFactoryMRTest.java`, added after the `edec` `KeyFactorySpi` OpenSSH path was found to have drifted (jdk1.11/jdk1.15 lacked passphrase support and threw the wrong exception type, uncaught because no `test11`/`test15` test covered it).
-
-**Which overlay's test tree, though?** Each `testN` task is the *only* one that puts a JDK N runtime
-in front of the multi-release jar, so a test only ever exercises the resolution its own version
-produces. A test under `src/test/jdk17` cannot see a jdk17-vs-jdk25 mismatch at all: there the caller
-and every hook alike come from `versions/17`. So when a class in overlay N calls anything that has a
-copy in a *higher* overlay, the test has to go in the **highest** overlay's test tree — today
-`src/test/jdk25`, run by `test25` (`BC_JDK25` must be exported for it to run at all; each task is
-`onlyIf` its `BC_JDK<N>` env var is set, so an unset one skips silently and prints nothing).
-
-This is exactly how the `SpiUtil` break above shipped: eleven `*KEM17Test` classes covered all ten
-KEM families through `javax.crypto.KEM` under `src/test/jdk17`, and every one passed, while
-`src/test/jdk25` held three KDF tests and nothing else — so the jdk17-only SPIs had no JDK 25
-coverage of any kind. `prov/src/test/jdk25/.../KemSpiMRTest.java` closes it, and is the model: pick
-one class per SPI *package tree* rather than all of them (they share the helper, so one is enough to
-catch a break) and add an `AllTests25` in its package, since `test25`'s filter is
-`includeTestsMatching "AllTest*"`. Note `test25` emits its results as the HTML report plus
-`test-results/test25/binary`, not per-class XML — read
-`prov/build/reports/tests/test25/index.html` for the counts rather than looking for `TEST-*.xml`.
+**Both directions are machine-checked.** `gradle/multirelease.gradle` gives every distributed module a `multiReleaseCheck` task (on `check`, so `build` runs it): it reads the constant pool of every class in the built jar plus the sibling BC jars it depends on, as one class universe (`bccore` excluded — it ships inside `bcprov`), and fails when a member reference does not resolve against the copy a JDK would pair with the caller. A failure reads `<caller> (root) -> <owner>.<name><descriptor> is absent from the versions/N copy paired with it on JDK N`; fix by making the copies agree or moving the member to a class with no twin — never by widening the gate. For jars the build did not produce, the root project has `multiReleaseCheckJar`: `./gradlew multiReleaseCheckJar -PmrJar=<jar>[,<jar>]` checks each jar alone, `-PmrClasspath=<jar>,<jar>,...` loads them as one universe (first jar wins on a duplicate). Negative test after any change to the script: the published `bctls-jdk18on-1.86.jar` must report exactly the two `SSLEngineUtil.create` pairings. Pair the gate with a test in the highest overlay's test tree (`tls/src/test/jdk25/.../SSLEngineMRTest`): the gate proves the jar links, the test proves the path runs.
 
 ## Update `module-info.java` when you add or remove package
 
-Each Gradle-built module has a JPMS descriptor at `<module>/src/main/jdk1.9/module-info.java` (e.g. `prov/src/main/jdk1.9/module-info.java`, `pkix/src/main/jdk1.9/module-info.java`) listing every exported package. The Java 8 sources under `<module>/src/main/java` and the descriptor are bundled into the same multi-release jar; the descriptor is the source of truth for what's visible when downstream code runs on JDK 9+ with `--module-path`. A **new module** needs its own `src/main/jdk1.9/module-info.java` plus the `java9` source set and `META-INF/versions/9` jar wiring in its `build.gradle` (copy `pg`'s) — `pgsc` was added in 1.87 without one and would have shipped as the file-name-derived automatic module `bcpgsc.jdk18on`. A package that exists in the source tree but isn't listed in `module-info.java` is invisible to modular consumers — class-path consumers still see it, which is why the omission is easy to miss locally. Note: `core` itself has no module-info; its sources are bundled into the published `bcprov` jar via the core-into-prov srcDirs trick, so the `prov` module-info exports `core` packages.
+Each Gradle module has a JPMS descriptor at `<module>/src/main/jdk1.9/module-info.java`; it is what modular (JDK 9+ `--module-path`) consumers see. An unlisted package is invisible to them but fine on the class path, so the omission is easy to miss — only a modular consumer gets `module org.bouncycastle.provider does not export …`.
 
-`prov` additionally carries a parallel `prov/src/main/ext-jdk1.9/module-info.java` for the legacy Ant build that ships separately. Keep the two **identical** (`diff` them) — it's not Gradle-built, but it's tracked and consumed by the legacy distribution, and nothing fails when it drifts: SMAUG-T's `opens`/`exports` for `pqc.jcajce.provider.smaugt` were missing from it until the 1.87 release check.
-
-When you add a class, ask which case applies:
-
-- **Existing package** (e.g. dropping `ECBModeCipher` into `org.bouncycastle.crypto.modes`, already in `prov/.../module-info.java`) — no descriptor change needed. `module-info.java` exports packages, not classes.
-- **New package** (a directory that doesn't yet exist under any `org.bouncycastle.*` tree) — add `exports org.bouncycastle.your.new.package;` to the corresponding module's `module-info.java`. The Gradle modules are `prov` (which also covers core), `util`, `pkix`, `tls`, `mail` / `jmail`, `pg`, `pgsc`, `mls` — pick the one whose `src/main/java` your new package physically lives under.
-
-Symmetrically, if you delete or merge away an entire package, remove its `exports` entry from both the `jdk1.9` and (where it exists) `ext-jdk1.9` descriptors. The compile-time signal that catches a missed entry — `module org.bouncycastle.provider does not export org.bouncycastle.crypto.foo` — only fires for modular downstream consumers, so a class-path-only test run won't surface it.
+- **New class in an existing package** — no change; descriptors export packages.
+- **New package** — add `exports org.bouncycastle.<pkg>;` to the module whose `src/main/java` holds it (`prov` covers `core`, which has no descriptor; others: `util`, `pkix`, `tls`, `mail`/`jmail`, `pg`, `pgsc`, `mls`).
+- **Removed package** — remove its `exports`.
+- **New module** — needs its own `src/main/jdk1.9/module-info.java` plus the `java9` source set and `META-INF/versions/9` jar wiring in `build.gradle` (copy `pg`'s), or it ships as a file-name-derived automatic module (`pgsc` nearly did in 1.87).
+- **`prov` has a second descriptor**, `prov/src/main/ext-jdk1.9/module-info.java`, for the legacy Ant build. Keep it **identical** to the jdk1.9 one (`diff` prints nothing); nothing fails when it drifts.
 
 ## The OSGi `Export-Package` manifest is a *second*, silent place to wire a package
 
-Each Gradle module also ships as an OSGi bundle: `<module>/build.gradle` applies the `biz.aQute.bnd.builder` plugin and sets `Export-Package` / `Import-Package` manifest attributes from a `packages` brace-list string (e.g. `pkix/build.gradle`'s `org.bouncycastle.{cades|cert|cmc|cms|…|tsp}.*`, `util/build.gradle`'s `org.bouncycastle.asn1.{bsi|cmc|…|tsp}.*` plus a separate `org.bouncycastle.oer.*`). This is **independent of `module-info.java`** and easy to leave out of step:
+Each module's `build.gradle` applies `biz.aQute.bnd.builder` and sets `Export-Package` / `Import-Package` from a `packages` brace-list (e.g. `pkix`'s `org.bouncycastle.{cades|cert|cmc|cms|…|tsp}.*`, `util`'s `org.bouncycastle.asn1.{bsi|cmc|…|tsp}.*` plus `org.bouncycastle.oer.*`), independent of `module-info.java`:
 
-- **A new sub-package of an already-listed family** (e.g. `org.bouncycastle.cms.foo` under `…{…|cms|…}.*`) needs no change — the `.*` glob covers it.
-- **A new top-level family** (a brace-list token that isn't there yet) must be **added to the `packages` string** in that module's `build.gradle`, or it is silently absent from the OSGi bundle even though `module-info.java` exports it. This drift is invisible to a normal build — the only signal is inspecting the built jar's `META-INF/MANIFEST.MF` (or `jar --describe-module` vs the manifest). Real cases found this way: `cades` missing from `pkix`, `asn1.mod` from `util`.
-- **`prov` is the exception**: its list is the negative form `!org.bouncycastle.internal.*,org.bouncycastle.*;version=…`, i.e. export everything except `internal.*`, so a new `prov`/`core` package is auto-exported and needs no `build.gradle` edit (only a `module-info.java` one). The trade-off is that `prov` can *over*-export a package you meant to conceal unless you add it to the `!…` prefix (this is why `org.bouncycastle.apache.bzip2` is OSGi-exported but JPMS-concealed).
+- A new sub-package of a listed family is covered by the `.*` glob.
+- A **new top-level family** must be added to the `packages` string, or it is silently missing from the bundle (`cades` in `pkix` and `asn1.mod` in `util` were). Only the built jar's `META-INF/MANIFEST.MF` shows it.
+- **`prov` is the exception**: `!org.bouncycastle.internal.*,org.bouncycastle.*;version=…` exports everything but `internal.*`, so new prov/core packages need no `build.gradle` edit — but a package meant to be concealed must be added to the `!…` prefix (`org.bouncycastle.apache.bzip2` is OSGi-exported but JPMS-concealed).
 
-So "add a package" is a three-file habit: `module-info.java` (both `jdk1.9` and `ext-jdk1.9` for prov), the module's `package-info.java`, and — for a new top-level family in a module other than `prov` — the `packages` brace-list in `build.gradle`. Removing a family means removing it from all three.
+So "add a package" is a three-file habit: `module-info.java` (both prov descriptors), `package-info.java`, and — for a new top-level family outside `prov` — the `build.gradle` `packages` list. Removing a family means all three.
 
 ## Every new package ships a `package-info.java`
 
-When you introduce a new package, drop a `package-info.java` alongside the first class. A one-sentence Javadoc above the `package …;` declaration is enough — name what the package is for, point at the relevant RFC / spec / sibling package when it helps a reader orient. Mirror the style of the existing files (e.g. `pkix/.../cms/package-info.java`, `core/.../asn1/package-info.java`): brief, factual, no boilerplate. The package-info is what shows up in the generated Javadoc package list, so a missing one shows up as an unnamed bucket in the consumer-facing API docs.
-
-This is symmetric with the `module-info.java` rule above: a new package that's exported but undocumented is half-wired the same way one that's documented but unexported is half-wired. Add both files in the same change.
+Add it with the first class: a one-sentence Javadoc above `package …;` saying what the package is for, pointing at the RFC/spec/sibling package where useful. Mirror existing ones (`pkix/.../cms/package-info.java`, `core/.../asn1/package-info.java`). Without it the package is an unnamed bucket in the API docs.
 
 ## Examples live in `misc/`, not in the Gradle modules
 
-`misc/` is the canonical home for example / demo code. Existing example packages: `misc/src/main/java/org/bouncycastle/{asn1,asn1/x500,cades,cbor/c509,cert,cert/plants,cms,crypto,jcajce,mail/smime,mls,openpgp,pqc/crypto,tls}/examples/`. It is also where a **test harness that needs third-party jars** belongs — `org.bouncycastle.mls.examples.client` (the MLS working group's gRPC interop runner, with its `src/main/proto/mls_client.proto` and the protobuf codegen plugin) moved here out of the published `mls` module, which had been shipping classes needing `io.grpc` / `com.google.protobuf` in a jar whose POM and OSGi manifest declared neither. Take such dependencies **by Maven coordinate**, not as jars hand-placed under `test/libs` and pulled in with `files()`: those are invisible to Dependabot (its config says so) and to any dependency scanner, which is how that set drifted three CVEs behind — CVE-2024-7246 and CVE-2025-55163 in gRPC, CVE-2024-7254 in protobuf-java — with nothing anywhere to report it. `misc` not being published is what makes a real coordinate free of consequence for the shipped jars. New example code should land here, never inside a **published** Gradle module (core/prov/pkix/pg/...) — that would force it into the published `bc*` jars and make it part of the JPMS-exported API surface.
-
-`misc` **is** a Gradle module (in `settings.gradle`, with a `misc/build.gradle`) — but a deliberately *non-publishing* one: it is compiled and its example smoke-tests are run by `./gradlew :misc:build` so the examples don't rot against the library APIs, but it defines **no** `publishing` block and is **not** in the root `build.gradle` `distModules` list, so nothing from `misc` ships to Maven or into the distribution jars. Keep it that way — the whole point is that example code compiles under CI without becoming shipped API. Two consequences to preserve: (1) the shared `config/checkstyle/checkstyle.xml` exempts every `org.bouncycastle..*.examples.*` package from the `DebugMethodChecker` (examples legitimately call `System.out.println` / `System.exit`), so example files carry **no** `-DM` squelch comments — the Allman-brace checks (`LeftCurly`/`RightCurly`) still apply; (2) `misc/build.gradle` declares its cross-module deps explicitly (`prov`, `util`, `pkix`, `pg`, `mail`, plus `javax.mail`) since the `project(...)` deps are `implementation` (non-transitive), and `misc/src/test` carries its own `org.bouncycastle.test.PrintTestResult` copy like every other module's test tree. `pg/src/main/java/org/bouncycastle/openpgp/examples/` was the last published-module holdout and moved here in `06152ac3e2`, so **no published module has an `examples` package under `src/main/java` any more**, and no `module-info.java` exports one — `PublicKeyByteArrayHandler` (github #1414) and the older PBE-only `ByteArrayHandler` now sit side by side under `misc/.../openpgp/examples/`. Three kinds of `examples` directory do still exist under published modules and are **not** counterexamples to leave or to "consolidate": `<module>/src/main/javadoc/.../examples` (javadoc-only trees, nothing compiled from them), and `core/src/main/j2me/.../crypto/examples` plus `pg/src/main/jdk1.1/.../openpgp/examples` (legacy Ant distribution overlays, which Gradle does not compile).
-
-When moving existing example code into `misc/`, remember to drop any matching `exports …examples;` line from the source module's `module-info.java` files (both `jdk1.9` and `ext-jdk1.9` variants when the source was `prov`).
-
-When the natural place for an example would be a generic JCE alias that BC deliberately doesn't ship (e.g. `Cipher.ECIESwithSHA256andAES-ECB` — non-standard for ECIES per IEEE 1363a / ISO 18033-2 / SECG SEC 1; see `misc/.../crypto/examples/ECIESAESECBExample.java` for the model, github #1095), the convention is: don't register the alias, ship a `misc/` example that builds the construction locally via the lightweight API, and open the class-level javadoc with the reason BC doesn't endorse the named form (cite the relevant standard sections) plus a pointer at the standards-compliant variant production callers should prefer. The example exists so the next person searching for the non-standard form has a concrete answer rather than nothing.
+- Example/demo code goes in `misc/src/main/java/org/bouncycastle/<area>/examples/`, never in a published module (it would ship in the `bc*` jars and become exported API). No published module has an `examples` package under `src/main/java` now, and no `module-info.java` exports one. When moving examples in, drop any `exports …examples;` from the source module's descriptors (both prov ones if from `prov`).
+- Not counterexamples: `<module>/src/main/javadoc/.../examples` (javadoc only), `core/src/main/j2me/.../crypto/examples` and `pg/src/main/jdk1.1/.../openpgp/examples` (legacy overlays).
+- `misc` is a Gradle module, deliberately **non-publishing**: `./gradlew :misc:build` compiles and smoke-tests examples, but it has no `publishing` block and is not in the root `distModules`. Keep it that way.
+- Checkstyle exempts `org.bouncycastle..*.examples.*` from `DebugMethodChecker`, so examples carry **no** `-DM` squelch comments; Allman-brace checks still apply.
+- `misc/build.gradle` declares its cross-module deps explicitly (`prov`, `util`, `pkix`, `pg`, `mail`, `javax.mail`) since `project(...)` deps are non-transitive; `misc/src/test` has its own `PrintTestResult` copy.
+- Test harnesses needing third-party jars belong here too (e.g. `org.bouncycastle.mls.examples.client`, the MLS gRPC interop runner). Take such dependencies **by Maven coordinate**, never as jars under `test/libs` via `files()` — those are invisible to Dependabot and scanners (that gRPC/protobuf set drifted three CVEs behind).
+- For a non-standard JCE alias BC deliberately doesn't register (e.g. `Cipher.ECIESwithSHA256andAES-ECB`, github #1095): don't register it; ship a `misc/` example building it via the lightweight API, whose class javadoc gives the reason (cite the standards) and points at the compliant variant. Model: `misc/.../crypto/examples/ECIESAESECBExample.java`.
 
 ## JCE provider registration
 
-`BouncyCastleProvider` (in `prov`) registers algorithms by string name through `ConfigurableProvider.addAlgorithm("Cipher.SM2", "...GMCipherSpi$SM2")` etc. Per-algorithm registration code lives in `prov/src/main/java/org/bouncycastle/jcajce/provider/{asymmetric,symmetric,digest,keystore,...}/<Family>.java`. The corresponding `*Spi` classes (CipherSpi, KeyFactorySpi, KeyPairGeneratorSpi, etc.) are siblings under the same package. When adding or fixing a JCE-visible behaviour, the registration `Family.java` is the entry point; the underlying lightweight engine usually lives in `core/src/main/java/org/bouncycastle/crypto/engines/`.
+`BouncyCastleProvider` registers by name via `ConfigurableProvider.addAlgorithm("Cipher.SM2", "...GMCipherSpi$SM2")`. Per-family registration lives in `prov/src/main/java/org/bouncycastle/jcajce/provider/{asymmetric,symmetric,digest,keystore,...}/<Family>.java`, with the `*Spi` classes as siblings — that `Family.java` is the entry point for a JCE-visible change. The lightweight engine is usually in `core/.../crypto/engines/`.
 
-## Adding a PQC algorithm: BCPQC ≠ BC, but BC needs the OID table too
+## PQC algorithms: BCPQC ≠ BC
 
-PQC algorithms live in a second provider, `BouncyCastlePQCProvider` (`BCPQC`), separate from `BouncyCastleProvider` (`BC`). The two providers have independent service tables. A new algorithm wired only into `BCPQC` will be reachable through `*.getInstance(name, "BCPQC")` calls and matching MR-jar / module-info exports, but it will NOT be recognised when a `X.509 CertificateFactory` / `KeyFactory` / etc. is obtained from the standard `BC` provider — which is the much more common path in caller code, because most BC-using applications add only `BouncyCastleProvider`.
-
-The bridge is `BouncyCastleProvider.loadPQCKeys()` in `prov/src/main/java/org/bouncycastle/jce/provider/BouncyCastleProvider.java`. It is called from the `BouncyCastleProvider` constructor and registers an `AsymmetricKeyInfoConverter` (typically the BCPQC-side `KeyFactorySpi`) against every PQC OID via `addKeyInfoConverter(OID, new <Pqc>KeyFactorySpi())`. The `BC` provider's certificate / PKCS#8 / SubjectPublicKeyInfo parsing then routes unknown OIDs through this converter table — so a `CertificateFactory.getInstance("X.509", "BC")` can extract and decode a FAEST / Snova / Mayo / etc. public key even though the actual algorithm is implemented in BCPQC.
-
-Practical checklist when porting a new PQC algorithm — easy to leave any of these out and end up with a half-wired addition:
-
-- `core/src/main/java/org/bouncycastle/asn1/bc/BCObjectIdentifiers.java` (or `NISTObjectIdentifiers.java` for NIST-standardised schemes) — one OID per parameter set. **Grep the existing `bc_sig.branch(...)` / `bc_kem.branch(...)` arcs before picking a number.** A collision with another algorithm's parent arc is silent at compile time and only fires when `BouncyCastlePQCProvider.<init>` runs the second `Mappings.configure`, where it throws `IllegalStateException: duplicate provider key (Alg.Alias.KeyFactory.<oid>)` — diagnosable but not until provider load.
-- `core/src/main/java/org/bouncycastle/pqc/crypto/<alg>/` — lightweight classes: `*Parameters`, `*PublicKeyParameters`, `*PrivateKeyParameters`, `*KeyGenerationParameters`, `*KeyPairGenerator`, `*Signer` (or KEM equivalents). The `MessageSigner` contract is the **bare signature**: `generateSignature` returns exactly the parameter set's signature bytes, never the reference harness's `crypto_sign` "sm" envelope (`signature || message`, or `message || signature` for some harnesses), and `verifySignature` requires exactly that length rather than merely enough of it. The KAT files record the envelope; the test rebuilds it (see `TestUtils.SignerOperation.toVectorSignature`, or `FalconTest` inline). MAYO, SNOVA, QR-UOV, SQIsign and AIMer all shipped the envelope and had to be corrected in 1.86 (github #2403) — a sign-then-verify round-trip test does not catch it, so assert the length and that neither envelope ordering verifies (`core/src/test/java/org/bouncycastle/pqc/crypto/test/PqcSignatureEncodingTest.java`).
-- `core/src/main/java/org/bouncycastle/pqc/crypto/util/Utils.java` — `<alg>Oids` / `<alg>Params` maps plus `<alg>OidLookup` / `<alg>ParamsLookup` helpers.
-- `core/src/main/java/org/bouncycastle/pqc/crypto/util/PublicKeyFactory.java` — `<Alg>Converter` inner class + one `converters.put(oid, new <Alg>Converter())` per OID.
-- `core/src/main/java/org/bouncycastle/pqc/crypto/util/PrivateKeyFactory.java` — `else if (algOID.on(BCObjectIdentifiers.<alg>))` branch.
-- `core/src/main/java/org/bouncycastle/pqc/crypto/util/SubjectPublicKeyInfoFactory.java` and `PrivateKeyInfoFactory.java` — `instanceof <Alg>PublicKeyParameters` / `<Alg>PrivateKeyParameters` branches.
-- `prov/src/main/java/org/bouncycastle/pqc/jcajce/spec/<Alg>ParameterSpec.java` — `AlgorithmParameterSpec` with one constant per parameter set + `fromName(String)` lookup.
-- `prov/src/main/java/org/bouncycastle/pqc/jcajce/interfaces/<Alg>Key.java` — `extends Key` with `getParameterSpec()`.
-- `prov/src/main/java/org/bouncycastle/pqc/jcajce/provider/<alg>/` — `BC<Alg>PublicKey` (use `Arrays.areEqual`) and `BC<Alg>PrivateKey` (use `Arrays.constantTimeAreEqual` in `equals()` for the secret-bearing path), `<Alg>KeyFactorySpi`, `<Alg>KeyPairGeneratorSpi`, `SignatureSpi` (or KEM equivalents) — each with one inner subclass per parameter set.
-- `prov/src/main/java/org/bouncycastle/pqc/jcajce/provider/<Alg>.java` — `Mappings` extending `AsymmetricAlgorithmProvider`, calling `addKeyFactoryAlgorithm` / `addKeyPairGeneratorAlgorithm` / `addSignatureAlgorithm` for each parameter set.
-- `prov/.../jcajce/provider/BouncyCastlePQCProvider.java` — add `"<Alg>"` to `ALGORITHMS`.
-- `prov/.../jce/provider/BouncyCastleProvider.java` — in `loadPQCKeys()`, `addKeyInfoConverter(BCObjectIdentifiers.<alg>_<param>, new <Alg>KeyFactorySpi())` for every OID. **This is the BCPQC→BC bridge; skip it and certs / PKCS#8 work fine through BCPQC but break through BC.** Test it.
-- `prov/src/main/jdk1.9/module-info.java` — `opens org.bouncycastle.pqc.jcajce.provider.<alg> to java.base;` plus `exports org.bouncycastle.pqc.crypto.<alg>;` plus `exports org.bouncycastle.pqc.jcajce.provider.<alg>;`. Mirror all three lines into `prov/src/main/ext-jdk1.9/module-info.java`, which is kept identical to the Gradle descriptor.
-- Tests in `prov/src/test/java/org/bouncycastle/pqc/jcajce/provider/test/<Alg>Test.java` plus an entry in `AllTests.java`, and the signature-encoding assertions above in `core`'s `PqcSignatureEncodingTest` / `PqcMalformedInputTest`. Include a `testBcProviderKeyInfoConverter`-style case that exercises `BouncyCastleProvider.getPublicKey(SubjectPublicKeyInfo)` and `getPrivateKey(PrivateKeyInfo)` against every parameter set, proving the `loadPQCKeys()` registration works.
-- `docs/releasenotes.md` — one `-` bullet under the current unreleased version's "Additional Features and Functionality" block.
-
-### Two JCA-boundary details the checklist does not spell out
-
-Both were found in the stateful hash-based signers (github #2408), which predate the contract the
-newer signers settled on — but neither is specific to them, and neither is caught by a
-sign-then-verify round trip.
-
-- **A fixed-size signature encoding has to be length-checked when it is parsed.** If the parse
-  reads its fields at fixed offsets and never looks at the total length, appending arbitrary bytes
-  to a valid signature yields a second, different encoding that still verifies — encoding
-  uniqueness gone, for a scheme whose signature the spec defines as an exact byte count.
-  `XMSSSignature.Builder.withSignature()` had this and `XMSSMTSignature` did not, so the same
-  library disagreed with itself: RFC 8391 sec. 4.1.8 fixes an XMSS signature at
-  `4 + n + (len + h) * n` bytes and the check is a three-line `if`. Assert the appended *and* the
-  truncated case; the truncated one often already fails for an unrelated reason, which is what
-  makes the appended one easy to miss. See also the `Signature.verify()` contract in
-  `conventions.md`.
-- **`generateKeyPair()` with no preceding `initialize()` must return a fully-formed key.** The
-  uninitialised branch is a second, parallel initialisation path, and it has to set *everything*
-  `initialize(spec, random)` sets — not just `param`. Check its parameters are actually
-  constructible (XMSS^MT defaulted to height 10 with 20 layers, which is not a legal parameter set
-  at all, so the call simply threw), and check every *other* field the SPI carries: both the XMSS
-  and XMSS^MT generators left `treeDigest` null there, so a default-generated key threw
-  `NullPointerException` from `equals()`, `hashCode()` and `getTreeDigest()`. Grep the SPI for
-  fields assigned in `initialize` and confirm the default branch assigns each one. A one-line
-  `KeyPairGenerator.getInstance("<Alg>").generateKeyPair()` test that then round-trips the key
-  through its `KeyFactory` and compares it to itself covers both failures.
-
-## PQC engines should stay package-private — drive KATs through the public API
-
-The lightweight `<Alg>Engine` produced when porting a reference C/Rust implementation tends to expose low-level entry points (`engine.keyGen(seedKey, sk, pk)`, `engine.sign(sk, msg, salt, mseed)`) that KAT vectors need but legitimate callers never touch. Resist the urge to make `<Alg>Engine` public just so `<Alg>KatTest` can poke at internals — that leaks the engine into the published `bcprov` API surface where it becomes load-bearing, and any future internal refactor has to preserve the engine signature too.
-
-The standard pattern is to keep the engine package-private and drive `<Alg>KeyPairGenerator` / `<Alg>Signer` with a deterministic `SecureRandom` that emits exactly the bytes the KAT prescribes:
-
-- `org.bouncycastle.util.test.FixedSecureRandom(bytes)` — emits a pre-baked byte sequence, single-shot (reconstruct it for each call site that needs the same seed). Use when the test wants a specific seed.
-- `org.bouncycastle.pqc.crypto.test.NISTSecureRandom(seed, personalization)` — the NIST CTR-DRBG upstream KAT generators use to derive per-vector randomness from a 48-byte seed. The same DRBG instance can be reused across keygen + sign because the public-API call sites consume from it in the same order the reference C harness did.
-
-Concrete: `MQOMKeyPairGenerator.generateKeyPair` reads `2 * seedSize` bytes via `random.nextBytes`; `MQOMSigner.generateSignature` then reads `mseed` (`seedSize`) followed by `salt` (`saltSize`). A single `NISTSecureRandom drbg = new NISTSecureRandom(seed, null)` shared between both calls reproduces the upstream KAT byte-for-byte without any engine reference. `UOVKeyPairGenerator` and `HawkKeyPairGenerator` follow the same shape (32-byte `SK_SEED_BYTES` for UOV, `SALT_BYTES` from `<Alg>Parameters` etc.). The rewritten `MQOMTest` / `MQOMKatTest` / `UOVTest` and the already-conforming `HawkTest` are the worked examples.
-
-If you find yourself unable to demote `<Alg>Engine` to package-private without breaking tests, that is the symptom — rewrite the tests against the public `<Alg>KeyPairGenerator` / `<Alg>Signer` with `FixedSecureRandom` / `NISTSecureRandom` first, then demote.
-
-A KAT that fails on the *first* vector's public key after a reference-implementation update is as
-likely to be the harness as the engine: check which `randombytes` the reference's KAT driver links
-before touching the port. HQC's 2025-08-22 reference generated its KATs from a SHAKE256 PRNG
-(`prng_init`, seed || 0x00), so `HQCTest` carried a private `Shake256SecureRandom`; the 2026-10-12
-reference deleted that PRNG and its `tests/kats/test_kat.c` seeds `lib/nist-rng/rng.c`'s AES-256
-CTR-DRBG again (`randombytes_init(seed, NULL, 256)`), i.e. `NISTSecureRandom(seed, null)`. The engine
-was right and every round-trip test was green; only the DRBG differed. The reference's
-`kats/*/intermediates_values` dumps (seed_pke, y, x, h, s, the RS and RM codewords, ...) are the
-oracle for the next step when the DRBG is not the cause. HQC's reference lives at
-`gitlab.com/pqc-hqc/hqc`; pre-release work lands on its `next-release` branch, with `main` and the
-tag lagging, so diff `v<last tag>..origin/next-release` to see what a specification update changed
-in code (the spec's changelog page lists the design changes, but code-level ones such as a KAT RNG
-swap, an XOF domain byte or a bit order only show in the diff).
+PQC algorithms live in the separate `BouncyCastlePQCProvider` (`BCPQC`), whose service table is independent of `BC`'s. `BouncyCastleProvider.loadPQCKeys()` is the bridge: it must `addKeyInfoConverter(oid, new <Alg>KeyFactorySpi())` for **every** PQC OID, or certificates and PKCS#8 keys using it decode through `BCPQC` but not through `BC` (the common path). Keep `<Alg>Engine` package-private and drive KATs through the public generator/signer with `FixedSecureRandom` / `NISTSecureRandom`. For any port — signature or KEM, which follows the same checklist shape — use the `bcpqc-add-algorithm` skill, which holds the full file checklist and the signature-encoding contract.
 
 ## Package layering: `.bc` (lightweight) vs `.jcajce` (JCA/JCE)
 
-The high-level modules (`pkix`, `pg`, `mail`/`jmail`, `tls`, `mls`) split their public surface by which low-level crypto stack a class touches:
+In `pkix`, `pg`, `mail`/`jmail`, `tls` and `mls`:
 
-- **`.bc` subpackages** — lightweight implementations using `org.bouncycastle.crypto.*` engines / signers / digests directly. Examples: `org.bouncycastle.cms.bc`, `org.bouncycastle.openpgp.bc`, `org.bouncycastle.operator.bc`.
-- **`.jcajce` subpackages** — JCA/JCE implementations that call `java.security.*` / `javax.crypto.*` classes (typically through a `JcaJceHelper` so the provider is overridable). Examples: `org.bouncycastle.cms.jcajce`, `org.bouncycastle.openpgp.operator.jcajce`, `org.bouncycastle.operator.jcajce`.
-- **Top-level packages** (e.g. `org.bouncycastle.cms`, `org.bouncycastle.openpgp`, `org.bouncycastle.cades`, `org.bouncycastle.cert`) — abstractions over BOTH stacks. They may take `DigestCalculatorProvider` / `ContentSigner` / `ContentVerifier` / `X509CertificateHolder` etc. from `org.bouncycastle.operator`, `org.bouncycastle.cert`, and `org.bouncycastle.asn1`, but must not import:
-    - `java.security.MessageDigest`, `java.security.Signature`, `javax.crypto.Cipher`, `java.security.cert.X509Certificate` (or any other `java.security.*` / `javax.crypto.*` class) — those belong in `.jcajce`;
-    - `org.bouncycastle.crypto.*` (engines, signers, digests, params, generators) — those belong in `.bc`.
+- **`.bc` subpackages** use `org.bouncycastle.crypto.*` directly (`cms.bc`, `openpgp.bc`, `operator.bc`).
+- **`.jcajce` subpackages** use `java.security.*` / `javax.crypto.*`, usually through a `JcaJceHelper` (`cms.jcajce`, `openpgp.operator.jcajce`, `operator.jcajce`).
+- **Top-level packages** (`cms`, `openpgp`, `cades`, `cert`, …) abstract over both. They may use `org.bouncycastle.operator` / `cert` / `asn1` types (`DigestCalculatorProvider`, `ContentSigner`, `ContentVerifier`, `X509CertificateHolder`) but must not import any `java.security.*` / `javax.crypto.*` class except `java.security.SecureRandom`, nor any `org.bouncycastle.crypto.*` class (no exception at all).
 
-The only `java.security` class allowed to be referenced from a non-`.jcajce` package is `java.security.SecureRandom`. There is **no** equivalent exception for `org.bouncycastle.crypto.*`: any direct lightweight import means the class belongs in a `.bc` subpackage, full stop.
+In practice: a top-level digest takes a `DigestCalculatorProvider`; a top-level signature check takes a `ContentVerifierProvider` / `SignerInfoVerifier` (define a new operator in `org.bouncycastle.operator`, or module-locally like `cert.plants.MTCCosignerVerifierProvider`, with `.bc`/`.jcajce` implementations if none fits); a `Signer` / `AsymmetricKeyParameter` parameter means the class belongs in `.bc`; to wrap a `Jca*` builder, wrap its JCA-free parent (`SignerInfoGeneratorBuilder`) or move to `.jcajce`; JCA- or lightweight-friendly factories go in the peer package. Decide the split up front for a new package.
 
-Practical implications when adding code:
-
-- Need an algorithm digest in a top-level utility? Take a `DigestCalculatorProvider` parameter and call `provider.get(algId).getOutputStream().write(...)` — never `MessageDigest.getInstance(...)` and never `new SHA256Digest()`.
-- Need to verify a signature in a top-level utility? Take a `ContentVerifierProvider` / `SignerInfoVerifier` (or similar operator) — never `Signature.getInstance(...)` and never `new Ed25519Signer()`. If no existing operator fits, define one in `org.bouncycastle.operator` (or a module-local equivalent like `org.bouncycastle.cert.plants.MTCCosignerVerifierProvider`) and ship lightweight and JCA implementations as `.bc` / `.jcajce` peers.
-- Need a `Signer` or `AsymmetricKeyParameter` parameter? That's a `.bc` signature — push the class into the `.bc` subpackage.
-- Need to wrap an existing `Jca*` builder? Either (a) wrap the JCA-free parent (e.g. wrap `SignerInfoGeneratorBuilder` instead of `JcaSignerInfoGeneratorBuilder`) so the class can stay at the top, or (b) move the class into the `.jcajce` subpackage.
-- A top-level class that does need to expose a JCA-friendly or lightweight-friendly factory method should ship the factory in its `.jcajce` or `.bc` peer instead of pulling JCA/lightweight imports into the top package.
-
-The rule applies uniformly to `pkix` (`cms`, `cades`, `tsp`, `cert`, `operator`, ...), `pg`, `mail`/`jmail`, `tls`, and `mls`.
-
-`pg` carries one extra layering rule, and it is machine-enforced: **`org.bouncycastle.openpgp.operator`
-must not import `org.bouncycastle.openpgp.api`** (or any of its subpackages). The dependency runs
-api -> operator, not back; a class that needs both belongs in `org.bouncycastle.openpgp.api.operator`,
-where `PGPContentSignerBuilderProviderFactory` sits. A second `ImportControl` module in
-`config/checkstyle/checkstyle.xml` applies `config/checkstyle/import-control-pg-operator.xml` to
-`pg/src/main/java/org/bouncycastle/openpgp/operator` (subpackages included), so a new import fails
-`:pg:checkstyleMain` with `Disallowed import - org.bouncycastle.openpgp.api.<X>. [ImportControl]`.
-As with the core import control, checkstyle only sees imports - a fully-qualified
-`org.bouncycastle.openpgp.api.Foo` in a method body would slip past, so keep an eye out in review. When adding a new package under any of these modules, decide on the split up-front: if any class needs `java.security` / `javax.crypto` beyond `SecureRandom`, the package should be a `.jcajce` subpackage; if any class needs `org.bouncycastle.crypto.*`, the package should be a `.bc` subpackage. A JCA-free, lightweight-free top-level parent is usually still appropriate to host the operator interfaces both flavours adapt to.
+**`pg` extra rule, machine-enforced:** `org.bouncycastle.openpgp.operator` (and subpackages) must not import `org.bouncycastle.openpgp.api.*`; a class needing both goes in `org.bouncycastle.openpgp.api.operator` (where `PGPContentSignerBuilderProviderFactory` is). `config/checkstyle/import-control-pg-operator.xml` enforces it, failing `:pg:checkstyleMain` with `Disallowed import - org.bouncycastle.openpgp.api.<X>. [ImportControl]`. Checkstyle sees only imports — watch for fully-qualified names in review.
 
 ## Shared prov/pkix cert-path logic goes in `asn1.x509` as a public pure-ASN.1 validator
 
-The cert-path stacks — prov's `jce/provider` validator, prov's legacy `org.bouncycastle.x509` API,
-and pkix's `pkix/jcajce` revocation checker — cannot share package-private code: prov cannot see
-pkix, and `org.bouncycastle.internal.*` is JPMS-concealed and OSGi-excluded, so it is invisible to
-the pkix module/bundle (the same constraint behind the dual-located OID tables). The established
-pattern when the same RFC 5280 rule logic is needed in more than one stack: extract a **public,
-pure-ASN.1 engine class into core's `org.bouncycastle.asn1.x509`** (visible everywhere via the
-core-into-prov bundling, no module-info/OSGi edits needed) with a **public checked exception**,
-and keep thin per-module wrappers that do the JCA extraction and rethrow as their local
-`AnnotatedException` with the message text preserved verbatim (messages are test contract). Keep
-the wrappers' extraction *lazy* where the original was — expose `requiresX(...)` predicates from
-the engine rather than letting a wrapper eagerly compute a value whose failure path the original
-only reached conditionally. Worked examples: `PKIXNameConstraintValidator` /
-`NameConstraintValidatorException` (RFC 5280 sec. 6.1.4) and `PKIXCRLValidator` /
-`CRLValidatorException` (sec. 6.3.3 CRL scope rules, `222b3af2b7`). JCA-bound duplication
-(CertPathBuilder plumbing, `Signature`/CRL verification, store selectors) does **not** fit this
-pattern — sharing it would mean minting new public JCA API in prov, a different trade-off.
+prov's `jce/provider` validator, prov's legacy `org.bouncycastle.x509` API and pkix's `pkix/jcajce` revocation checker cannot share package-private code (prov cannot see pkix; `org.bouncycastle.internal.*` is JPMS-concealed and OSGi-excluded). When the same RFC 5280 logic is needed in more than one stack:
+
+- Extract a **public, pure-ASN.1 engine class into core's `org.bouncycastle.asn1.x509`** with a **public checked exception** (no module-info/OSGi edits needed).
+- Keep thin per-module wrappers that do the JCA extraction and rethrow as their local `AnnotatedException`, message text verbatim.
+- Keep extraction *lazy* where the original was: expose `requiresX(...)` predicates rather than having a wrapper eagerly compute a value whose failure the original reached only conditionally.
+- Worked examples: `PKIXNameConstraintValidator` / `NameConstraintValidatorException` (RFC 5280 sec. 6.1.4), `PKIXCRLValidator` / `CRLValidatorException` (sec. 6.3.3).
+- JCA-bound duplication (CertPathBuilder plumbing, `Signature`/CRL verification, store selectors) does not fit; sharing it would mean new public JCA API in prov.
 
 ## `core` keeps the JDK security API out: SecureRandom + Destroyable only
 
-`core/src/main/java` is the lightweight API — it must not lean on the JCA/JCE. The allowed JDK
-security surface is exactly:
+`core/src/main/java` may use exactly:
 
 - **`java.security`**: `SecureRandom` only.
-- **`javax.security`**: `javax.security.auth.Destroyable` and `javax.security.auth.DestroyFailedException` only (the `Destroyable` contract on secret-bearing key parameters and `SecretWithEncapsulation`).
-- **`javax.crypto`**: nothing, ever.
+- **`javax.security`**: `javax.security.auth.Destroyable` and `DestroyFailedException` only.
+- **`javax.crypto`**: nothing.
 
-No JCA crypto-operation or spec class (`MessageDigest`, `Signature`, `Cipher`, `KeyFactory`,
-`java.security.cert.*`, `java.security.spec.*`, ...) belongs in `core` — that's what the `prov`
-`*Spi` layer is for. Audited 2026-07: the tree conforms, with five files of non-crypto
-security-manager/configuration plumbing as the vetted exception set — `CryptoServicesPermission`
-(is a `java.security.Permission`), `CryptoServicesRegistrar` (`AccessController`/`PrivilegedAction`/`Permission`
-checks), `util/Properties` (those plus `java.security.Security` for the security-property fallback),
-`util/Strings` (`doPrivileged` for `line.separator`), and `util/test/FixedSecureRandom`
-(`java.security.Provider` for the `SecureRandom(spi, provider)` super constructor). Don't add to
-that list without the maintainer signing off.
+No JCA operation or spec class (`MessageDigest`, `Signature`, `Cipher`, `KeyFactory`, `java.security.cert.*`, `java.security.spec.*`, …) — that is the `prov` `*Spi` layer's job. The vetted exceptions are five files of security-manager/configuration plumbing: `CryptoServicesPermission`, `CryptoServicesRegistrar`, `util/Properties`, `util/Strings`, `util/test/FixedSecureRandom`. Don't add to them without the maintainer signing off.
 
-The rule is **machine-enforced**: an `ImportControl` module in `config/checkstyle/checkstyle.xml`
-applies `config/checkstyle/import-control-core.xml` to `core/src/main/java` (path-scoped, so the
-`prov` checkstyle task — whose srcDirs include core — applies it to the core sources only). A new
-disallowed import fails `:core:checkstyleMain` / CI with `Disallowed import - <class>.
-[ImportControl]`; a newly-vetted exception means editing the import-control file's per-file `allow`
-list. Checkstyle only covers imports — a fully-qualified `java.security.Foo` in a method body would
-slip past, so keep an eye out in review. (The jdk1.1/jdk1.2 overlay trees legitimately *contain*
-`java/security/...` source files — those are the clean-room backport classes those legacy
-distributions ship, not references. The legacy Ant builds use their own `checkstyle/bc-checks.xml`
-outside this repo, so they don't run this check.)
+Machine-enforced: `config/checkstyle/import-control-core.xml`, applied path-scoped to `core/src/main/java` (also when the `prov` checkstyle task sees the core sources). A violation fails `:core:checkstyleMain` with `Disallowed import - <class>. [ImportControl]`; a newly vetted exception means editing that file's per-file `allow` list. Only imports are checked — watch for fully-qualified names in review. The jdk1.1/jdk1.2 overlays legitimately *contain* `java/security/...` backport sources; the legacy Ant builds don't run this check.

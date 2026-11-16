@@ -1,9 +1,9 @@
 ---
-name: bcpqc-add-signature-algorithm
-description: Port a post-quantum signature algorithm into the BCPQC provider, end to end — lightweight engine plus JCA/JCE wiring, OID converter plumbing, BC↔BCPQC bridge, module-info, tests, and release notes. Use this skill whenever the user wants to add a new PQC signature scheme (FAEST, SNOVA, MAYO, HAWK, etc.) to BCPQC, port a reference C/Rust implementation into BC, or finish a half-wired PQC algorithm whose certs/keys can't be decoded through the standard BC provider. Reach for this skill even when the user only mentions the algorithm name and the verb is "add", "port", "wire up", or "integrate" — the file set and the BC-vs-BCPQC split that this skill captures are non-obvious and easy to half-finish.
+name: bcpqc-add-algorithm
+description: Port a post-quantum signature or KEM algorithm into the BCPQC provider, end to end — lightweight engine plus JCA/JCE wiring, OID converter plumbing, BC↔BCPQC bridge, module-info, tests, and release notes. Use this skill whenever the user wants to add a new PQC signature scheme (FAEST, SNOVA, MAYO, HAWK, etc.) or KEM to BCPQC, port a reference C/Rust implementation into BC, or finish a half-wired PQC algorithm whose certs/keys can't be decoded through the standard BC provider. Reach for this skill even when the user only mentions the algorithm name and the verb is "add", "port", "wire up", or "integrate" — the file set and the BC-vs-BCPQC split that this skill captures are non-obvious and easy to half-finish.
 ---
 
-# Adding a PQC signature algorithm to BCPQC
+# Adding a PQC signature or KEM algorithm to BCPQC
 
 This skill walks through the cross-file plumbing required to introduce a new post-quantum signature algorithm into the Bouncy Castle PQC provider. The file set is large (~15 files for a 12-parameter-set algorithm), several of the connections are non-obvious from reading any single file, and one critical step — wiring the algorithm into the *plain* `BC` provider as well as `BCPQC` — is easy to miss and silently breaks `CertificateFactory` / `KeyFactory` users.
 
@@ -20,7 +20,7 @@ The walk-through below uses **SNOVA as the canonical reference template**. The 2
 
 Before this skill kicks in, the lightweight side of the algorithm must already be in place:
 
-- OIDs in `core/src/main/java/org/bouncycastle/asn1/bc/BCObjectIdentifiers.java` (one per parameter set), typically grouped under a parent arc like `BCObjectIdentifiers.faest = bc_sig.branch("12")`
+- OIDs in `core/src/main/java/org/bouncycastle/asn1/bc/BCObjectIdentifiers.java` (or `NISTObjectIdentifiers.java` for NIST-standardised schemes), one per parameter set, typically grouped under a parent arc like `BCObjectIdentifiers.faest = bc_sig.branch("12")`. **Grep the existing `bc_sig.branch(...)` / `bc_kem.branch(...)` arcs before picking a number**: a collision with another algorithm's arc compiles fine and only fails at provider load, when the second `Mappings.configure` throws `IllegalStateException: duplicate provider key (Alg.Alias.KeyFactory.<oid>)`.
 - A parameter-set class `<Alg>Parameters` with public static constants for every parameter set, exposing `getName()` returning the canonical (typically lower-case) name
 - `<Alg>PublicKeyParameters` and `<Alg>PrivateKeyParameters` extending `AsymmetricKeyParameter` with `getEncoded()` and `getParameters()`
 - `<Alg>KeyPairGenerator` implementing `AsymmetricCipherKeyPairGenerator`
@@ -32,10 +32,24 @@ Before this skill kicks in, the lightweight side of the algorithm must already b
 - `generateSignature(byte[])` returns exactly the parameter set's signature bytes. Have the engine write the bare signature — don't allocate `sigBytes + message.length` and strip the message afterwards.
 - `verifySignature(byte[], byte[])` requires **exactly** that length, `return false` otherwise. A `>=` / "long enough" check makes the encoding non-unique (trailing bytes ride along on a valid signature) and a missing check indexes past the end of a short buffer, throwing out of `Signature.verify()`.
 - The KAT files still record the envelope, so the **test** rebuilds it — see the `TestUtils.SignerOperation.toVectorSignature` hook, or `FalconTest`, which does the same reconstruction inline.
+- The same applies to any parse helper that reads a fixed-size signature at fixed offsets (a `*Signature` builder or `getInstance`): check the total length, or appended bytes give a second encoding that still verifies. `XMSSSignature.Builder.withSignature()` lacked this while `XMSSMTSignature` had it (github #2408; RFC 8391 sec. 4.1.8 fixes the size). Test both the appended and the truncated case — the truncated one often fails for an unrelated reason, which hides a missing check.
 
 This is not hypothetical: MAYO, SNOVA, QR-UOV, SQIsign and AIMer all shipped the envelope and had to be corrected in 1.86 (github #2403). Because `ContentSigner` hands the signature straight into the structure being signed, the envelope propagated a verbatim copy of the signed data into every certificate, CRL, CMS `SignedData` and TLS `CertificateVerify` built on those algorithms. A sign-then-verify round-trip test passes happily with an envelope on both ends, which is why it survived five ports — hence the encoding assertion in Step 15.
 
 If any of these are missing, that's a separate task (porting the reference implementation). This skill picks up *after* that's done.
+
+**KEM ports** follow the same checklist shape: swap `Signer`/`SignatureSpi` for the KEM equivalents (KEM generator/extractor, `KeyGenerator`/`Cipher` SPIs) and keep every other step, the `loadPQCKeys()` bridge included.
+
+### Keep `<Alg>Engine` package-private; drive KATs through the public API
+
+A ported reference implementation's engine exposes low-level entry points (`engine.keyGen(seedKey, sk, pk)`, `engine.sign(sk, msg, salt, mseed)`) that KATs want but callers never need. Don't make `<Alg>Engine` public for the KAT test — that puts it in the published `bcprov` API and freezes its signature. Instead drive `<Alg>KeyPairGenerator` / `<Alg>Signer` with a deterministic `SecureRandom` that emits exactly the bytes the KAT prescribes:
+
+- `org.bouncycastle.util.test.FixedSecureRandom(bytes)` — a pre-baked byte sequence, single-shot (build a fresh one per call site needing the same seed).
+- `org.bouncycastle.pqc.crypto.test.NISTSecureRandom(seed, personalization)` — the NIST CTR-DRBG the reference KAT generators use on a 48-byte seed. One instance can be shared across keygen and sign, because the public-API call sites consume it in the same order the C harness did (e.g. `MQOMKeyPairGenerator` reads `2 * seedSize`, then `MQOMSigner` reads `mseed` then `salt`).
+
+Worked examples: `MQOMTest` / `MQOMKatTest`, `UOVTest`, `HawkTest`. If the engine can't be demoted without breaking tests, rewrite the tests against the public classes first, then demote.
+
+**A KAT failing on the first vector's public key after a reference update is as likely the harness as the engine.** Check which `randombytes` the reference's KAT driver links before touching the port. HQC is the example: the 2025-08-22 reference generated KATs from a SHAKE256 PRNG (`prng_init`, seed || 0x00, hence `HQCTest`'s private `Shake256SecureRandom`); the 2026-10-12 reference went back to `lib/nist-rng/rng.c`'s AES-256 CTR-DRBG (`randombytes_init(seed, NULL, 256)`), i.e. `NISTSecureRandom(seed, null)`. If the DRBG isn't the cause, the reference's `kats/*/intermediates_values` dumps are the next oracle. HQC's reference is `gitlab.com/pqc-hqc/hqc`; pre-release work lands on `next-release` (`main` and the tag lag), so diff `v<last tag>..origin/next-release` to see code-level changes (KAT RNG, XOF domain bytes, bit order) the spec changelog omits.
 
 ## The two-provider split — read this first
 
@@ -181,7 +195,7 @@ Extends `java.security.Signature`. Contains a `ByteArrayOutputStream bOut` for m
 
 In `engineInitVerify` / `engineInitSign`, when the SPI was constructed with a specific parameter set, verify the key's algorithm matches the SPI's parameter set with an exact-message error — `"signature configured for " + canonicalAlg`. Tests in other algorithms assert on that exact string, so the message format is part of the contract; copy it verbatim from SNOVA's `SignatureSpi`.
 
-`engineVerify` must never let an unchecked exception out: a signature that will not decode is `false`, one this engine cannot process is a `SignatureException` (built through `SecurityExceptions.signatureException`), and the accumulated message is cleared in a `finally` so the object survives a rejection. The lightweight signer throws unchecked for malformed input by design — translating that is the SPI's job. Full contract, and the malformed-signature battery to check it with, in the `Signature.verify()` section of `docs/claude/conventions.md`.
+`engineVerify` must never let an unchecked exception out: a signature that will not decode is `false`, one this engine cannot process is a `SignatureException` (built through `SecurityExceptions.signatureException`), and the accumulated message is cleared in a `finally` so the object survives a rejection. The lightweight signer throws unchecked for malformed input by design — translating that is the SPI's job. Full contract, and the malformed-signature battery to check it with, in the `Signature.verify()` section of `docs/claude/domain-notes.md`.
 
 ### Step 11 — `prov/.../pqc/jcajce/provider/<Alg>.java` (the Mappings class)
 
@@ -235,7 +249,7 @@ exports org.bouncycastle.pqc.jcajce.provider.<alg>;
 
 `org.bouncycastle.pqc.jcajce.spec` and `org.bouncycastle.pqc.jcajce.interfaces` are already exported in aggregate; no per-algorithm entry needed there.
 
-Also mirror the `pqc.crypto.<alg>` export in `prov/src/main/ext-jdk1.9/module-info.java` (the legacy ant-build descriptor). Do NOT add the `provider.<alg>` line there — the legacy distribution intentionally omits the jcajce-side provider package exports for SNOVA / Mayo / NTRUPlus, and the new algorithm should follow that precedent.
+Mirror all three lines into `prov/src/main/ext-jdk1.9/module-info.java` (the legacy Ant-build descriptor). The two prov descriptors are kept **identical** — `diff prov/src/main/jdk1.9/module-info.java prov/src/main/ext-jdk1.9/module-info.java` must print nothing, and the release checks enforce it. Nothing fails when they drift (SMAUG-T's lines were missing from the ext copy until the 1.87 release check).
 
 ### Step 15 — Tests
 
@@ -282,7 +296,7 @@ java -cp "$CP" junit.textui.TestRunner org.bouncycastle.pqc.jcajce.provider.test
 
 **1. The BC↔BCPQC bridge (step 13).** This bears repeating because it's the bug that catches every BCPQC port. Symptom: `Signature.getInstance("<Alg>", "BCPQC")` works fine; `CertificateFactory.getInstance("X.509", "BC").generateCertificate(certWithAlgKey)` returns a cert whose `getPublicKey()` is null. Cause: forgot the `loadPQCKeys()` entries. Test: `testBcProviderKeyInfoConverter` (step 15).
 
-**2. Stale `prov/build/classes` shadowing a `core/` edit.** The `core` sources are copied into `prov`'s `srcDirs` via the `core`-into-`prov` trap (see CLAUDE.md "Module graph"), so a `core/.../pqc/crypto/util/Utils.java` change is compiled into BOTH `core/build/classes` and `prov/build/classes`. If one is stale, the JVM may load the old class from `prov` and the new lookup in `Utils.faestParamsLookup` returns null. When in doubt: `./gradlew :prov:compileJava --rerun-tasks`.
+**2. Stale `prov/build/classes` shadowing a `core/` edit.** The `core` sources are copied into `prov`'s `srcDirs` via the `core`-into-`prov` trap (see `docs/claude/architecture.md`), so a `core/.../pqc/crypto/util/Utils.java` change is compiled into BOTH `core/build/classes` and `prov/build/classes`. If one is stale, the JVM may load the old class from `prov` and the new lookup in `Utils.faestParamsLookup` returns null. When in doubt: `./gradlew :prov:compileJava --rerun-tasks`.
 
 **3. `<Alg>ParameterSpec.fromName` case folding.** SNOVA's `fromName` lower-cases the input before lookup but the keys are registered in UPPER case in some places — this is a pre-existing oddity in `SnovaParameterSpec.java`. If you copy SNOVA verbatim, make sure your parameter-set names match the casing of the keys you `put()` into the `parameters` HashMap. FAEST's parameter names are already lower-case (`faest_128s` etc.) so this falls out for free; SNOVA-like upper-case names need the casing reconciled.
 
@@ -290,7 +304,7 @@ java -cp "$CP" junit.textui.TestRunner org.bouncycastle.pqc.jcajce.provider.test
 
 **5. Module-info — modular consumers only.** The compile-time error that catches a missing `exports` line in `module-info.java` only fires when a downstream module-path consumer tries to use the new package. A class-path-only test run won't surface the omission. Manually verify the descriptor edits even when the build passes.
 
-**6. CLAUDE.md's "Adding a PQC algorithm" section** is the shorter sibling of this skill — it lists the same file checklist in prose form for the case where Claude isn't loading this skill but is reading CLAUDE.md. Keep both in sync if you change the workflow.
+**6. This skill is the single home of the PQC porting checklist.** `docs/claude/architecture.md` only points here; change the workflow in this file.
 
 ## Reference template files
 
