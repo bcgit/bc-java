@@ -20,6 +20,7 @@ import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.ECKeyParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.signers.ECGOST3410Signer;
+import org.bouncycastle.jcajce.provider.asymmetric.util.BaseInitRandomSignatureSpi;
 import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
 import org.bouncycastle.jce.interfaces.ECKey;
 import org.bouncycastle.jce.interfaces.ECPublicKey;
@@ -29,7 +30,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
  * Signature for GOST34.10 2012 512. Algorithm is the same as for GOST34.10 2001
  */
 public class ECGOST2012SignatureSpi512
-    extends java.security.SignatureSpi
+    extends BaseInitRandomSignatureSpi
     implements PKCSObjectIdentifiers, X509ObjectIdentifiers
 {
 
@@ -85,20 +86,7 @@ public class ECGOST2012SignatureSpi512
         signer.init(false, param);
     }
 
-    protected void engineInitSign(
-        PrivateKey privateKey)
-        throws InvalidKeyException
-    {
-        engineInitSign(privateKey, null);
-    }
-
-    /**
-     * Each init decides afresh where signing draws its randomness from: the SecureRandom given here, or the default
-     * source for an init given none. Signature.initSign(key) calls engineInitSign(key) only, so the SecureRandom that
-     * java.security.SignatureSpi keeps in appRandom from an earlier initSign(key, random) would otherwise go on being
-     * used in place of the default.
-     */
-    protected void engineInitSign(
+    protected void signInit(
         PrivateKey privateKey,
         SecureRandom random)
         throws InvalidKeyException

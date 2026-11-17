@@ -11,13 +11,14 @@ import java.security.spec.AlgorithmParameterSpec;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
+import org.bouncycastle.jcajce.provider.asymmetric.util.BaseInitRandomSignature;
 import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 import org.bouncycastle.pqc.crypto.snova.SnovaParameters;
 import org.bouncycastle.pqc.crypto.snova.SnovaSigner;
 import org.bouncycastle.util.Strings;
 
 public class SignatureSpi
-    extends java.security.Signature
+    extends BaseInitRandomSignature
 {
     private final ByteArrayOutputStream bOut;
     private final SnovaSigner signer;
@@ -72,18 +73,7 @@ public class SignatureSpi
         signer.init(false, key.getKeyParams());
     }
 
-    protected void engineInitSign(PrivateKey privateKey)
-        throws InvalidKeyException
-    {
-        engineInitSign(privateKey, null);
-    }
-
-    /**
-     * Each init decides afresh where signing draws its randomness from: the SecureRandom given here, or the default
-     * source for an init given none. Signature.initSign(key) calls engineInitSign(key) only, so a SecureRandom kept from
-     * an earlier initSign(key, random) would otherwise go on being used in place of the default.
-     */
-    protected void engineInitSign(PrivateKey privateKey, SecureRandom random)
+    protected void signInit(PrivateKey privateKey, SecureRandom random)
         throws InvalidKeyException
     {
         bOut.reset();

@@ -30,7 +30,6 @@ public class SignatureSpi
 {
     private Digest                  digest;
     private DSA                     signer;
-    private SecureRandom            appRandom;
 
     public SignatureSpi()
     {
@@ -74,7 +73,19 @@ public class SignatureSpi
     }
 
     protected void engineInitSign(
-        PrivateKey  privateKey)
+        PrivateKey privateKey)
+        throws InvalidKeyException
+    {
+        engineInitSign(privateKey, null);
+    }
+
+    /**
+     * Each init decides afresh where signing draws its randomness from: the SecureRandom given here, or the default
+     * source for an init given none.
+     */
+    protected void engineInitSign(
+        PrivateKey privateKey,
+        SecureRandom random)
         throws InvalidKeyException
     {
         CipherParameters    param;
@@ -90,9 +101,9 @@ public class SignatureSpi
 
         digest.reset();
 
-        if (appRandom != null)
+        if (random != null)
         {
-            signer.init(true, new ParametersWithRandom(param, appRandom));
+            signer.init(true, new ParametersWithRandom(param, random));
         }
         else
         {

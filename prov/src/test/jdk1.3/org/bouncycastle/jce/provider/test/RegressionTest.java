@@ -74,6 +74,7 @@ public class RegressionTest
         new SerialisationTest(),
         new Shacal2Test(),
         new SigNameTest(),
+        new SignatureInitRandomTest(),
         new SignatureTest(),
         new SigTest(),
         new SipHash128Test(),

@@ -3,6 +3,7 @@ package org.bouncycastle.jce.provider.test;
 import java.math.BigInteger;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
+import java.security.SecureRandom;
 import java.security.Security;
 import java.security.Signature;
 
@@ -11,6 +12,7 @@ import org.bouncycastle.asn1.ASN1Sequence;
 import org.bouncycastle.jcajce.spec.SM2ParameterSpec;
 import org.bouncycastle.jce.interfaces.ECPrivateKey;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.bouncycastle.jce.spec.ECNamedCurveGenParameterSpec;
 import org.bouncycastle.jce.spec.ECParameterSpec;
 import org.bouncycastle.math.ec.ECConstants;
 import org.bouncycastle.math.ec.ECCurve;
@@ -133,6 +135,56 @@ public class SM2SignatureTest
     {
         doSignerTestFp();
         doKeyGenRangeCheck();
+        doSetParameterAfterInit();
+    }
+
+    /**
+     * An SM2ParameterSpec given after initSign / initVerify applies to the operation under way.
+     */
+    private void doSetParameterAfterInit()
+        throws Exception
+    {
+        byte[] msg = Strings.toByteArray("message digest");
+        SM2ParameterSpec idSpec = new SM2ParameterSpec(Strings.toByteArray("ALICE123@YAHOO.COM"));
+
+        KeyPairGenerator kpGen = KeyPairGenerator.getInstance("EC", "BC");
+
+        kpGen.initialize(new ECNamedCurveGenParameterSpec("sm2p256v1"), new SecureRandom());
+
+        KeyPair kp = kpGen.generateKeyPair();
+
+        Signature signer = Signature.getInstance("SM3withSM2", "BC");
+
+        signer.initSign(kp.getPrivate(), new SecureRandom());
+        signer.setParameter(idSpec);
+        signer.update(msg);
+
+        byte[] sig = signer.sign();
+
+        Signature verifier = Signature.getInstance("SM3withSM2", "BC");
+
+        verifier.setParameter(idSpec);
+        verifier.initVerify(kp.getPublic());
+        verifier.update(msg);
+
+        isTrue("SM2 ID set after initSign not used for signing", verifier.verify(sig));
+
+        verifier = Signature.getInstance("SM3withSM2", "BC");
+
+        verifier.initVerify(kp.getPublic());
+        verifier.setParameter(idSpec);
+        verifier.update(msg);
+
+        isTrue("SM2 ID set after initVerify not used for verifying", verifier.verify(sig));
+
+        verifier = Signature.getInstance("SM3withSM2", "BC");
+
+        verifier.initVerify(kp.getPublic());
+        verifier.update(msg);
+
+        isTrue("SM2 signature with an ID verified under the default ID", !verifier.verify(sig));
+
+        isTrue("SM2 getParameters() not null", signer.getParameters() == null);
     }
     
     public static void main(

@@ -20,11 +20,12 @@ import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.GOST3411Digest;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.signers.DSTU4145Signer;
+import org.bouncycastle.jcajce.provider.asymmetric.util.BaseInitRandomSignatureSpi;
 import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
 import org.bouncycastle.jce.interfaces.ECKey;
 
 public class SignatureSpi
-    extends java.security.SignatureSpi
+    extends BaseInitRandomSignatureSpi
     implements PKCSObjectIdentifiers, X509ObjectIdentifiers
 {
     private Digest digest;
@@ -69,20 +70,7 @@ public class SignatureSpi
 
     // The BCDSTU4145PrivateKey branch is a deliberate placeholder for the parameter support noted in its TODO.
     @SuppressWarnings("DuplicateBranches")
-    protected void engineInitSign(
-        PrivateKey privateKey)
-        throws InvalidKeyException
-    {
-        engineInitSign(privateKey, null);
-    }
-
-    /**
-     * Each init decides afresh where signing draws its randomness from: the SecureRandom given here, or the default
-     * source for an init given none. Signature.initSign(key) calls engineInitSign(key) only, so the SecureRandom that
-     * java.security.SignatureSpi keeps in appRandom from an earlier initSign(key, random) would otherwise go on being
-     * used in place of the default.
-     */
-    protected void engineInitSign(
+    protected void signInit(
         PrivateKey privateKey,
         SecureRandom random)
         throws InvalidKeyException

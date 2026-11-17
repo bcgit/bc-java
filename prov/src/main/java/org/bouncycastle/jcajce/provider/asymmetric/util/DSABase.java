@@ -2,7 +2,6 @@ package org.bouncycastle.jcajce.provider.asymmetric.util;
 
 import java.math.BigInteger;
 import java.security.SignatureException;
-import java.security.SignatureSpi;
 import java.security.spec.AlgorithmParameterSpec;
 
 import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
@@ -12,7 +11,7 @@ import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.signers.DSAEncoding;
 
 public abstract class DSABase
-    extends SignatureSpi
+    extends BaseInitRandomSignatureSpi
     implements PKCSObjectIdentifiers, X509ObjectIdentifiers
 {
     protected Digest        digest;

@@ -58,7 +58,7 @@ public class SignatureSpi
         signer.init(false, param);
     }
 
-    protected void doEngineInitSign(
+    protected void signInit(
         PrivateKey privateKey,
         SecureRandom random)
         throws InvalidKeyException

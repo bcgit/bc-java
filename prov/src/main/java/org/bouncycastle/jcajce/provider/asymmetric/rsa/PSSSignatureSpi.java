@@ -9,7 +9,6 @@ import java.security.ProviderException;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.SignatureException;
-import java.security.SignatureSpi;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.AlgorithmParameterSpec;
@@ -23,12 +22,13 @@ import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.engines.RSABlindedEngine;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
+import org.bouncycastle.jcajce.provider.asymmetric.util.BaseInitRandomSignatureSpi;
 import org.bouncycastle.jcajce.provider.util.DigestFactory;
 import org.bouncycastle.jcajce.util.BCJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 
 public class PSSSignatureSpi
-    extends SignatureSpi
+    extends BaseInitRandomSignatureSpi
 {
     // RFC 4055 3.1: the RSASSA-PSS-params trailerField "value MUST be 1" (RFC 8017 A.2.3 trailerFieldBC).
     private static final int TRAILER_FIELD_BC = 1;
@@ -45,7 +45,6 @@ public class PSSSignatureSpi
     private byte trailer;
     private boolean isRaw;
     private RSAKeyParameters key;
-    private SecureRandom random;
 
     private org.bouncycastle.crypto.signers.PSSSigner pss;
     private boolean isInitState = true;
@@ -127,20 +126,7 @@ public class PSSSignatureSpi
         isInitState = true;
     }
 
-    protected void engineInitSign(
-        PrivateKey privateKey)
-        throws InvalidKeyException
-    {
-        engineInitSign(privateKey, null);
-    }
-
-    /**
-     * Each init decides afresh where signing draws its randomness from: the SecureRandom given here, or the default
-     * source for an init given none, and a setParameter() that follows goes on with it. Signature.initSign(key) calls
-     * engineInitSign(key) only, so a SecureRandom kept from an earlier initSign(key, random) would otherwise go on
-     * being used in place of the default.
-     */
-    protected void engineInitSign(
+    protected void signInit(
         PrivateKey privateKey,
         SecureRandom random)
         throws InvalidKeyException
@@ -151,7 +137,6 @@ public class PSSSignatureSpi
         }
 
         key = RSAUtil.generatePrivateKeyParameter((RSAPrivateKey)privateKey);
-        this.random = random;
         pss = new org.bouncycastle.crypto.signers.PSSSigner(signer, contentDigest, mgfDigest, saltLength, trailer);
 
         if (random != null)
@@ -292,9 +277,9 @@ public class PSSSignatureSpi
                 if (key.isPrivate())
                 {
                     // signing goes on with the source the init chose
-                    if (random != null)
+                    if (appRandom != null)
                     {
-                        pss.init(true, new ParametersWithRandom(key, random));
+                        pss.init(true, new ParametersWithRandom(key, appRandom));
                     }
                     else
                     {

@@ -39,20 +39,7 @@ public class SignatureSpi
         signer.init(false, param);
     }
 
-    protected void engineInitSign(
-        PrivateKey privateKey)
-        throws InvalidKeyException
-    {
-        engineInitSign(privateKey, null);
-    }
-
-    /**
-     * Each init decides afresh where signing draws its randomness from: the SecureRandom given here, or the default
-     * source for an init given none. Signature.initSign(key) calls engineInitSign(key) only, so the SecureRandom that
-     * java.security.SignatureSpi keeps in appRandom from an earlier initSign(key, random) would otherwise go on being
-     * used in place of the default.
-     */
-    protected void engineInitSign(
+    protected void signInit(
         PrivateKey privateKey,
         SecureRandom random)
         throws InvalidKeyException

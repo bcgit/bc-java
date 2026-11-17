@@ -21,7 +21,6 @@ public abstract class DSABase
     protected Digest digest;
     protected DSAExt signer;
     protected DSAEncoding encoding;
-    private SecureRandom              appRandom;
 
     protected DSABase(
         String name,
@@ -40,7 +39,19 @@ public abstract class DSABase
         PrivateKey privateKey)
         throws InvalidKeyException
     {
-        doEngineInitSign(privateKey, appRandom);
+        engineInitSign(privateKey, null);
+    }
+
+    /**
+     * Each init decides afresh where signing draws its randomness from: the SecureRandom given here, or the default
+     * source for an init given none.
+     */
+    protected void engineInitSign(
+        PrivateKey privateKey,
+        SecureRandom random)
+        throws InvalidKeyException
+    {
+        signInit(privateKey, random);
     }
 
     protected void engineUpdate(
@@ -122,6 +133,6 @@ public abstract class DSABase
         throw new UnsupportedOperationException("engineSetParameter unsupported");
     }
 
-    protected abstract void doEngineInitSign(PrivateKey privateKey, SecureRandom random)
+    protected abstract void signInit(PrivateKey privateKey, SecureRandom random)
         throws InvalidKeyException;
 }
