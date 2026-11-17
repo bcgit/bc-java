@@ -129,7 +129,7 @@ public class RegressionTest
             new VMPCTest(),
             new Grainv1Test(),
             new Grain128Test(),
-            //new NaccacheSternTest(),
+            new NaccacheSternTest(),
             new SRP6Test(),
             new ResetTest(),
             new NullTest(),
