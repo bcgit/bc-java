@@ -257,6 +257,87 @@ public class BigIntegersTest
         }
     }
 
+    public void testModPowBaseBlinded()
+    {
+        BigInteger sm9N = new BigInteger("B640000002A3A6F1D603AB4FF58EC74521F2934B1A7AEEDBE56F9B27E351457D", 16);
+        BigInteger p256N = new BigInteger("FFFFFFFF00000000FFFFFFFFFFFFFFFFBCE6FAADA7179E84F3B9CAC2FC632551", 16);
+        BigInteger sakkeQ = new BigInteger(
+            "265EAEC7C2958FF69971846636B4195E905B0338672D20986FA6B8D62CF8068B" +
+            "BD02AAC9F8BF03C6C8A1CC354C69672C39E46CE7FDF222864D5B49FD2999A9B4" +
+            "389B1921CC9AD335144AB173595A07386DABFD2A0C614AA0A9F3CF14870F026A" +
+            "A7E535ABD5A5C7C7FF38FA08E2615F6C203177C42B1EB3A1D99B601EBFAA17FB", 16);
+
+        // prime moduli, down to the smallest with room for a blinding value in [2, M - 2], and
+        // composite ones, for which a blinding value sharing a factor with M has to be redrawn
+        // (most of them, for 15 and 1155)
+        BigInteger[] moduli = new BigInteger[]
+        {
+            sakkeQ, sm9N, p256N, BigInteger.valueOf(5), BigInteger.valueOf(7),
+            BigInteger.valueOf(15), BigInteger.valueOf(1155), sm9N.multiply(p256N)
+        };
+
+        SecureRandom random = new SecureRandom();
+
+        for (int i = 0; i != moduli.length; i++)
+        {
+            BigInteger m = moduli[i];
+            BigInteger mSub1 = m.subtract(BigIntegers.ONE);
+            BigInteger[] bases = new BigInteger[]
+            {
+                BigIntegers.ONE, mSub1,
+                BigIntegers.createRandomInRange(BigIntegers.ONE, mSub1, random),
+                BigIntegers.createRandomInRange(BigIntegers.ONE, mSub1, random)
+            };
+            BigInteger[] exponents = new BigInteger[]
+            {
+                BigIntegers.ZERO, BigIntegers.ONE, mSub1,
+                BigIntegers.createRandomInRange(BigIntegers.ZERO, mSub1, random),
+                BigIntegers.createRandomInRange(BigIntegers.ZERO, mSub1, random),
+                new BigInteger(m.bitLength() + 64, random)
+            };
+
+            for (int j = 0; j != bases.length; j++)
+            {
+                for (int k = 0; k != exponents.length; k++)
+                {
+                    BigInteger x = bases[j], e = exponents[k];
+
+                    // the blinding value differs on each call and must cancel exactly
+                    Assert.assertEquals("m=" + m.toString(16) + " x=" + x.toString(16) + " e=" + e.toString(16),
+                        x.modPow(e, m), BigIntegers.modPowBaseBlinded(m, x, e, random));
+                }
+            }
+        }
+
+        // the base must be in [1, M)
+        BigInteger[] badBases = new BigInteger[]{ BigIntegers.ZERO, BigIntegers.ONE.negate(), p256N };
+        for (int i = 0; i != badBases.length; i++)
+        {
+            try
+            {
+                BigIntegers.modPowBaseBlinded(p256N, badBases[i], BigIntegers.TWO, random);
+
+                fail("no exception thrown");
+            }
+            catch (IllegalArgumentException e)
+            {
+                // ignore
+            }
+        }
+
+        // modOddInverse itself still reports a value that is not invertible
+        try
+        {
+            BigIntegers.modOddInverse(BigInteger.valueOf(15), BigInteger.valueOf(6));
+
+            fail("no exception thrown");
+        }
+        catch (ArithmeticException e)
+        {
+            // ignore
+        }
+    }
+
     public void testModSubtract()
     {
         BigInteger[] moduli = new BigInteger[]

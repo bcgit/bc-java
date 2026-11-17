@@ -930,8 +930,7 @@ public class DHTest
     /**
      * A 513-bit safe prime p = 2q+1 whose generator 2 is a quadratic non-residue, so it has the full
      * order p-1 rather than the order q the DH parameter generator picks. Legal DH domain parameters,
-     * and needed here: with a generator of order q every public value lies in that subgroup, and a
-     * blinding multiple of q would then be indistinguishable from one of p-1.
+     * and used here so that the public values do not all lie in the order-q subgroup.
      */
     private static final BigInteger FULL_ORDER_P = new BigInteger(
           "182ef717044f5800cc88ede15393b297bb5601295a6fb8a38dd4b7d283cc3b44"
@@ -939,17 +938,34 @@ public class DHTest
     private static final BigInteger FULL_ORDER_G = BigInteger.valueOf(2);
 
     /**
-     * Agreement blinds the private exponent with a fresh random multiple of p-1 per call, which leaves
-     * the shared secret alone only if the multiple really is of the group order. Both sides must still
-     * agree, and repeated agreements must be stable, over parameters whose public values do not all
-     * lie in the order-q subgroup.
+     * The peer chooses the base that is raised to our private value, so DHBasicAgreement blinds that
+     * base with a fresh random value per call. Base blinding does not depend on the group order or
+     * on the exponent length, so the parameters only vary them: a generator of full order p-1, a
+     * safe prime with and without q, and a short exponent. The result must be unchanged, both sides
+     * must still agree, repeated agreements must be stable, and the blinding must draw on the random
+     * given to init.
      */
     private void testBlindedAgreementWithFullOrderGenerator()
     {
-        SecureRandom random = new SecureRandom();
-        DHParameters dhParams = new DHParameters(FULL_ORDER_P, FULL_ORDER_G);
+        DHParameters[] paramSets = new DHParameters[]
+            {
+                new DHParameters(FULL_ORDER_P, FULL_ORDER_G),
+                DHStandardGroups.rfc2409_768,
+                new DHParameters(DHStandardGroups.rfc2409_768.getP(), DHStandardGroups.rfc2409_768.getG()),
+                DHStandardGroups.rfc7919_ffdhe2048
+            };
 
-        for (int i = 0; i != 8; i++)
+        for (int set = 0; set != paramSets.length; set++)
+        {
+            testBlindedAgreement(paramSets[set], set == 0 ? 8 : 2);
+        }
+    }
+
+    private void testBlindedAgreement(DHParameters dhParams, int runs)
+    {
+        SecureRandom random = new SecureRandom();
+
+        for (int i = 0; i != runs; i++)
         {
             DHBasicKeyPairGenerator kpGen = new DHBasicKeyPairGenerator();
             kpGen.init(new DHKeyGenerationParameters(random, dhParams));
@@ -969,11 +985,17 @@ public class DHTest
 
             BigInteger aSecret = aAgree.calculateAgreement(bPair.getPublic());
 
-            if (aRandom.count != 1)
+            if (aRandom.count == 0)
             {
-                fail("blinded agreement: the caller's SecureRandom was not used (run " + i
-                    + ", draws " + aRandom.count + ")");
+                fail("blinded agreement: the caller's SecureRandom was not used (run " + i + ")");
             }
+
+            BigInteger aX = ((DHPrivateKeyParameters)aPair.getPrivate()).getX();
+            if (!aSecret.equals(((DHPublicKeyParameters)bPair.getPublic()).getY().modPow(aX, dhParams.getP())))
+            {
+                fail("blinded agreement: not the plain exponentiation (run " + i + ")");
+            }
+
             BigInteger bSecret = bAgree.calculateAgreement(aPair.getPublic());
 
             if (!aSecret.equals(bSecret))
@@ -981,8 +1003,8 @@ public class DHTest
                 fail("blinded agreement: the two sides disagree (run " + i + ")");
             }
 
-            // the blinding multiple is redrawn per call, so a wrong multiple shows up as repeated
-            // agreements over the same key pair disagreeing with each other
+            // the blinding value is redrawn per call, so one that did not cancel shows up as
+            // repeated agreements over the same key pair disagreeing with each other
             for (int rep = 0; rep != 8; rep++)
             {
                 if (!aSecret.equals(aAgree.calculateAgreement(bPair.getPublic())))
@@ -1025,11 +1047,10 @@ public class DHTest
             fail("blinded DHAgreement: the two sides disagree");
         }
 
-        // both exponentiations in calculateAgreement carry a private exponent and are blinded
-        if (aRandom.count != 2)
+        // the base raised to the long-term key is blinded, from the random given to init
+        if (aRandom.count == 0)
         {
-            fail("blinded DHAgreement: expected two blinding draws from the caller's SecureRandom, got "
-                + aRandom.count);
+            fail("blinded DHAgreement: the caller's SecureRandom was not used");
         }
     }
 

@@ -160,19 +160,27 @@ public class ElGamalEngine
             }
 
             ElGamalPrivateKeyParameters priv = (ElGamalPrivateKeyParameters)key;
-            // a shortcut, which generally relies on p being prime amongst other things.
-            // if a problem with this shows up, check the p and g values!
-            //
-            // gamma is caller-supplied and the exponent carries the private key, so the exponent is
-            // blinded with a random multiple of p-1 before the variable-time BigInteger.modPow sees
-            // it. gamma^(p-1) = 1 (mod p) by Fermat for any gamma coprime to p, which the range
-            // check above guarantees, so the result is unchanged. The multiple has to be of p-1 and
-            // not of the subgroup order: gamma need not lie in the order-q subgroup, and for a safe
-            // prime an odd multiple of q would flip the sign of the result for the elements that
-            // do not.
-            BigInteger blindedExp = BigIntegers.createBlindedExponent(pSub1.subtract(priv.getX()), pSub1, random);
 
-            BigInteger m = gamma.modPow(blindedExp, p).multiply(phi).mod(p);
+            // m = gamma^-x * phi. gamma is caller-supplied and the exponent is the (potentially
+            // reused) private key, so the base is blinded: the timing of the variable-time modPow
+            // could otherwise be accumulated against the key over many decryptions. gamma is public,
+            // so it is inverted first, in variable time, which leaves x itself as the exponent rather
+            // than p - 1 - x, the size of p however short x is. This relies on p being prime; if a
+            // problem shows up, check the p and g values! The product with phi is the plaintext, so
+            // it is formed in fixed time.
+            BigInteger gammaInv;
+            try
+            {
+                gammaInv = BigIntegers.modOddInverseVar(p, gamma);
+            }
+            catch (ArithmeticException e)
+            {
+                // only for a p that is not prime
+                throw new IllegalArgumentException("ElGamal ciphertext element is weak");
+            }
+
+            BigInteger shared = BigIntegers.modPowBaseBlinded(p, gammaInv, priv.getX(), random);
+            BigInteger m = BigIntegers.modMult(p, shared, phi);
 
             return BigIntegers.asUnsignedByteArray(m);
         }

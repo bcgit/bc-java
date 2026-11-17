@@ -34,10 +34,12 @@ public class NaccacheSternEngine
     // decryption can compare byte by byte without the length itself saying anything.
     private byte[][][] lookup = null;
 
-    // phi(n) / p for each small prime p, the exponent decryption raises the ciphertext to. Worked
-    // out once when the tables are built rather than divided out again for every block; no more
-    // sensitive than the tables themselves.
-    private BigInteger[] phiNOverPrime = null;
+    // Decryption raises the ciphertext to phi(n) / sigma, once per block, and that power to
+    // sigma / p for each small prime p. phi(n) / sigma is secret, worked out once when the tables
+    // are built rather than divided out again for every block, and no more sensitive than the
+    // tables themselves; the sigma / p are not secret.
+    private BigInteger phiNOverSigma = null;
+    private BigInteger[] sigmaOverPrime = null;
 
     private int modulusLength;
 
@@ -104,7 +106,7 @@ public class NaccacheSternEngine
             int reductions = Integers.bitLength(count);
             int crtBits = sigma.bitLength() + reductions;
 
-            BigInteger[] cofactors = new BigInteger[count];
+            sigmaOverPrime = new BigInteger[count];
             crtLength = (crtBits + 31) >>> 5;
             crtCofactors = new int[count][];
             crtInverses = new int[count];
@@ -112,9 +114,9 @@ public class NaccacheSternEngine
             {
                 BigInteger prime = (BigInteger)primes.elementAt(i);
 
-                cofactors[i] = exactDivide(sigma, prime, sigma.bitLength());
-                crtCofactors[i] = Nat.fromBigInteger(crtBits, cofactors[i]);
-                crtInverses[i] = cofactors[i].modInverse(prime).intValue();
+                sigmaOverPrime[i] = exactDivide(sigma, prime, sigma.bitLength());
+                crtCofactors[i] = Nat.fromBigInteger(crtBits, sigmaOverPrime[i]);
+                crtInverses[i] = sigmaOverPrime[i].modInverse(prime).intValue();
             }
 
             crtSigmaMultiples = new int[reductions][];
@@ -125,10 +127,9 @@ public class NaccacheSternEngine
 
             // phi(n) / p_i = (phi(n) / sigma) * (sigma / p_i), so one exact division serves every
             // prime. sigma divides phi(n), and the quotient is below 2^k for k the modulus bit length.
-            BigInteger phiNOverSigma = exactDivide(priv.getPhi_n(), sigma, priv.getModulus().bitLength());
+            phiNOverSigma = exactDivide(priv.getPhi_n(), sigma, priv.getModulus().bitLength());
 
             lookup = new byte[count][][];
-            phiNOverPrime = new BigInteger[count];
             for (int i = 0; i < count; i++)
             {
                 BigInteger actualPrime = (BigInteger)primes.elementAt(i);
@@ -143,8 +144,6 @@ public class NaccacheSternEngine
                     System.out.println("Constructing lookup ArrayList for " + actualPrimeValue);
                 }
 
-                phiNOverPrime[i] = phiNOverSigma.multiply(cofactors[i]);
-
                 // entry j is g^(j * phi(n) / p) = h^j for h = g^(phi(n) / p), so one exponentiation
                 // and then repeated multiplication build the table. The exponent carries phi(n),
                 // which is the private key, so it is randomised with a multiple of phi(n) before the
@@ -154,7 +153,11 @@ public class NaccacheSternEngine
                 // value. If p divides both P - 1 and Q - 1 for n = PQ (always so for p = 2), then
                 // h = 1 for every g, every entry is 1, and that digit always decrypts as 0; the key
                 // is invalid but this does not detect it.
-                BigInteger exponent = BigIntegers.createBlindedExponent(phiNOverPrime[i], priv.getPhi_n(), random);
+                // TODO As decryption does, compute g^(phi(n) / sigma) once and raise it to sigma / p
+                // for each prime: one full-size exponentiation rather than one per prime. Those
+                // powers would have a secret base, so this wants a constant-time exponentiation first.
+                BigInteger exponent = BigIntegers.createBlindedExponent(
+                    phiNOverSigma.multiply(sigmaOverPrime[i]), priv.getPhi_n(), random);
                 BigInteger h = priv.getG().modPow(exponent, priv.getModulus());
                 BigInteger entry = ONE;
 
@@ -267,6 +270,22 @@ public class NaccacheSternEngine
         {
             NaccacheSternPrivateKeyParameters priv = (NaccacheSternPrivateKeyParameters)key;
             Vector primes = priv.getSmallPrimes();
+            BigInteger modulus = priv.getModulus();
+
+            // The digit for each small prime p comes from input^(phi(n) / p) =
+            // (input^(phi(n) / sigma))^(sigma / p), so the secret exponent phi(n) / sigma is used once
+            // per block and the exponents per prime are not secret. input is the caller's ciphertext
+            // and phi(n) / sigma is as good as the private key, so the base is blinded for that
+            // exponentiation: the timing of the variable-time modPow could otherwise be accumulated
+            // against the key over many decryptions. An input that is zero mod n has no digits, and
+            // one sharing a factor with n fails the lookup below, as it always did.
+            input = input.mod(modulus);
+            if (input.signum() == 0)
+            {
+                throw new InvalidCipherTextException("Lookup failed");
+            }
+
+            BigInteger power = BigIntegers.modPowBaseBlinded(modulus, input, phiNOverSigma, random);
 
             // The plaintext is recombined from its digits d_i = plaintext mod p_i by the CRT, in a
             // fixed-length accumulator so that neither the digits nor the sum steer the work
@@ -278,17 +297,10 @@ public class NaccacheSternEngine
             {
                 for (int i = 0; i < primes.size(); i++)
                 {
-                    // input is the caller's ciphertext and the exponent is derived from phi(n), which
-                    // is the private key - recovering it factors the modulus - so the exponent is
-                    // randomised before the variable-time modPow sees it. input^phi(n) = 1 (mod n) by
-                    // Euler for any input coprime to n, so the result is unchanged; an input sharing
-                    // a factor with n decrypts to a different value than before, but it failed the
-                    // lookup below either way, and producing one means the caller has already
-                    // factored the modulus.
-                    BigInteger exponent = BigIntegers.createBlindedExponent(
-                        phiNOverPrime[i], priv.getPhi_n(), random);
-
-                    BigInteger exp = input.modPow(exponent, priv.getModulus());
+                    // the base here is a function of the plaintext only (g^(m * phi(n) / sigma) for
+                    // plaintext m), so the variable-time modPow can at most tell something of the
+                    // plaintext, nothing of the key
+                    BigInteger exp = power.modPow(sigmaOverPrime[i], modulus);
                     byte[][] al = lookup[i];
                     if (al.length != ((BigInteger)primes.elementAt(i)).intValue())
                     {

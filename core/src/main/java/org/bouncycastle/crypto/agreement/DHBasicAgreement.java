@@ -85,14 +85,14 @@ public class DHBasicAgreement
             throw new IllegalArgumentException("Diffie-Hellman public key is weak");
         }
 
-        // peerY is peer-supplied and the exponent is our private value, which for static-static
-        // agreement is long lived, so the exponent is blinded before the variable-time modPow sees
-        // it. The multiple is of p-1 rather than of the subgroup order: peerY has only been range
-        // checked here, so it need not lie in the order-q subgroup, and for a safe prime an odd
-        // multiple of q would give the wrong shared secret for the values that do not.
-        BigInteger blindedX = BigIntegers.createBlindedExponent(key.getX(), pSub1, random);
-
-        BigInteger result = peerY.modPow(blindedX, p);
+        // The exponent is our private value, long lived for static-static agreement, and the peer
+        // chooses the base, so the base is blinded: the timing of the variable-time modPow could
+        // otherwise be accumulated against the key over many agreements. A key used only once gains
+        // nothing from this, but that cannot be told here. The exponent is not blinded with a
+        // multiple of the order as well: peerY has only been range checked, so the multiple would
+        // have to be of p-1, which grows a short exponent to the size of p, and a small multiple
+        // only dilutes the leak.
+        BigInteger result = BigIntegers.modPowBaseBlinded(p, peerY, key.getX(), random);
         if (result.equals(ONE))
         {
             throw new IllegalStateException("Shared key can't be 1");

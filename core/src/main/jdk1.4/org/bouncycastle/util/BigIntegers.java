@@ -458,6 +458,17 @@ public final class BigIntegers
 
     public static BigInteger modOddInverse(BigInteger M, BigInteger X)
     {
+        BigInteger z = implModOddInverse(M, X);
+        if (z == null)
+        {
+            throw new ArithmeticException("BigInteger not invertible.");
+        }
+        return z;
+    }
+
+    // null when X is not invertible
+    private static BigInteger implModOddInverse(BigInteger M, BigInteger X)
+    {
         if (!M.testBit(0))
         {
             throw new IllegalArgumentException("'M' must be odd");
@@ -478,9 +489,58 @@ public final class BigIntegers
         int[] z = Nat.create(len);
         if (0 == Mod.modOddInverse(m, x, z))
         {
-            throw new ArithmeticException("BigInteger not invertible.");
+            return null;
         }
         return Nat.toBigInteger(len, z);
+    }
+
+    /**
+     * Return X<sup>E</sup> mod M for an odd M and X in the range [1, M), with the base blinded so
+     * that a chosen X cannot steer the timing.
+     * <p>
+     * For a fresh random v this computes (X * v)<sup>E</sup> * (v<sup>-1</sup>)<sup>E</sup>.
+     * {@link BigInteger#modPow(BigInteger, BigInteger)} is not constant time, and with a fixed secret
+     * exponent its timing for chosen bases can be accumulated over many calls (Kocher 1996, Brumley
+     * and Boneh 2003); here neither exponentiation sees a base the caller of the enclosing operation
+     * knows. The exponent itself is not randomised: the operations it causes are the same on every
+     * call, so their count remains visible, but once. This is the countermeasure for a long-lived
+     * exponent and a base a peer chooses, where the small multiple
+     * {@link #createBlindedExponent(BigInteger, BigInteger, SecureRandom)} adds only dilutes the
+     * leak, and it needs no knowledge of the group order. It costs two exponentiations and an
+     * inversion.
+     * </p>
+     *
+     * @param M the modulus, which must be odd and at least 5. For a composite M, a blinding value
+     * sharing a factor with it is redrawn.
+     * @param X the base, in the range [1, M).
+     * @param E the (secret) exponent.
+     * @param random the source of the blinding value.
+     * @return X<sup>E</sup> mod M.
+     */
+    // TODO Replace by a constant-time exponentiation when one is available
+    public static BigInteger modPowBaseBlinded(BigInteger M, BigInteger X, BigInteger E, SecureRandom random)
+    {
+        // zero cannot be blinded (the product with v stays zero), and modMult below rejects X >= M
+        if (X.signum() <= 0)
+        {
+            throw new IllegalArgumentException("'X' must be positive");
+        }
+
+        // the blinding is only as good as v is secret, so v stays on the fixed-time helpers. For a
+        // prime M the first v is always invertible; for a composite M, one sharing a factor with M
+        // is redrawn.
+        BigInteger v, vInv;
+        do
+        {
+            v = createRandomInRange(TWO, M.subtract(TWO), random);
+            vInv = implModOddInverse(M, v);
+        }
+        while (vInv == null);
+
+        BigInteger blinded = modMult(M, X, v).modPow(E, M);
+        BigInteger unblind = vInv.modPow(E, M);
+
+        return modMult(M, blinded, unblind);
     }
 
     public static BigInteger modOddInverseVar(BigInteger M, BigInteger X)
