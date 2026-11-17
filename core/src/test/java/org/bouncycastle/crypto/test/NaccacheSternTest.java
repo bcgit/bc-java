@@ -140,6 +140,7 @@ public class NaccacheSternTest
         }
 
         testEveryDigitAndBlinding(pair);
+        testPlaintextRange(pair);
 
         //
         // key generation test
@@ -336,6 +337,47 @@ public class NaccacheSternTest
                 fail("NaccacheStern decryption recovered the wrong value for m = " + m
                     + ", got " + new BigInteger(1, recovered));
             }
+        }
+    }
+
+    /**
+     * Decryption recombines the digits by the CRT in a fixed-length accumulator, reduced mod sigma by
+     * masked subtractions. This walks the whole plaintext range [0, sigma) of the paper key with a
+     * prime stride, plus its ends, so the sums before reduction spread over [0, count * sigma).
+     */
+    private void testPlaintextRange(AsymmetricCipherKeyPair pair)
+        throws InvalidCipherTextException
+    {
+        NaccacheSternEngine enc = new NaccacheSternEngine();
+        enc.init(true, pair.getPublic());
+
+        NaccacheSternEngine dec = new NaccacheSternEngine();
+        dec.init(false, pair.getPrivate());
+
+        int sigmaValue = sigma.intValue();
+
+        checkRoundTrip(enc, dec, 0);
+        checkRoundTrip(enc, dec, 1);
+        checkRoundTrip(enc, dec, sigmaValue - 2);
+        checkRoundTrip(enc, dec, sigmaValue - 1);
+
+        for (int m = 2; m < sigmaValue - 2; m += 1009)
+        {
+            checkRoundTrip(enc, dec, m);
+        }
+    }
+
+    private void checkRoundTrip(NaccacheSternEngine enc, NaccacheSternEngine dec, int m)
+        throws InvalidCipherTextException
+    {
+        byte[] plain = BigInteger.valueOf(m).toByteArray();
+        byte[] cipherText = enc.processBlock(plain, 0, plain.length);
+        byte[] recovered = dec.processBlock(cipherText, 0, cipherText.length);
+
+        if (!BigInteger.valueOf(m).equals(new BigInteger(1, recovered)))
+        {
+            fail("NaccacheStern decryption recovered the wrong value for m = " + m
+                + ", got " + new BigInteger(1, recovered));
         }
     }
 

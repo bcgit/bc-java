@@ -14,8 +14,10 @@ import org.bouncycastle.crypto.constraints.DefaultServiceProperties;
 import org.bouncycastle.crypto.params.NaccacheSternKeyParameters;
 import org.bouncycastle.crypto.params.NaccacheSternPrivateKeyParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
+import org.bouncycastle.math.raw.Nat;
 import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.BigIntegers;
+import org.bouncycastle.util.Integers;
 
 /**
  * NaccacheStern Engine. For details on this cipher, please see
@@ -38,11 +40,17 @@ public class NaccacheSternEngine
 
     private int modulusLength;
 
+    // CRT recombination data, derived only from the small primes: for each prime p_i, sigma / p_i
+    // (at the accumulator length) and its inverse mod p_i; and sigma * 2^j for the final reduction
+    private int crtLength;
+    private int[][] crtCofactors;
+    private int[] crtInverses;
+    private int[][] crtSigmaMultiples;
+
     private SecureRandom random;
 
     private boolean debug = false;
 
-    private static BigInteger ZERO = BigInteger.valueOf(0);
     private static BigInteger ONE = BigInteger.valueOf(1);
 
     /**
@@ -81,9 +89,41 @@ public class NaccacheSternEngine
             }
             NaccacheSternPrivateKeyParameters priv = (NaccacheSternPrivateKeyParameters)key;
             Vector primes = priv.getSmallPrimes();
-            lookup = new byte[primes.size()][][];
-            phiNOverPrime = new BigInteger[primes.size()];
-            for (int i = 0; i < primes.size(); i++)
+            int count = primes.size();
+
+            // sum_i d_i * (sigma / p_i) * ((sigma / p_i)^-1 mod p_i) is below count * sigma, so
+            // bitLength(count) masked subtractions of sigma * 2^j reduce it mod sigma; the
+            // accumulator is sized for that sum
+            BigInteger sigma = ONE;
+            for (int i = 0; i < count; i++)
+            {
+                sigma = sigma.multiply((BigInteger)primes.elementAt(i));
+            }
+
+            int reductions = Integers.bitLength(count);
+            int crtBits = sigma.bitLength() + reductions;
+
+            crtLength = (crtBits + 31) >>> 5;
+            crtCofactors = new int[count][];
+            crtInverses = new int[count];
+            for (int i = 0; i < count; i++)
+            {
+                BigInteger prime = (BigInteger)primes.elementAt(i);
+                BigInteger cofactor = sigma.divide(prime);
+
+                crtCofactors[i] = Nat.fromBigInteger(crtBits, cofactor);
+                crtInverses[i] = cofactor.modInverse(prime).intValue();
+            }
+
+            crtSigmaMultiples = new int[reductions][];
+            for (int j = 0; j < reductions; j++)
+            {
+                crtSigmaMultiples[j] = Nat.fromBigInteger(crtBits, sigma.shiftLeft(j));
+            }
+
+            lookup = new byte[count][][];
+            phiNOverPrime = new BigInteger[count];
+            for (int i = 0; i < count; i++)
             {
                 BigInteger actualPrime = (BigInteger)primes.elementAt(i);
                 int actualPrimeValue = actualPrime.intValue();
@@ -217,106 +257,93 @@ public class NaccacheSternEngine
         }
         else
         {
-            Vector plain = new Vector();
             NaccacheSternPrivateKeyParameters priv = (NaccacheSternPrivateKeyParameters)key;
             Vector primes = priv.getSmallPrimes();
-            // Get Chinese Remainders of CipherText
-            for (int i = 0; i < primes.size(); i++)
+
+            // The plaintext is recombined from its digits d_i = plaintext mod p_i by the CRT, in a
+            // fixed-length accumulator so that neither the digits nor the sum steer the work
+            // (BigInteger arithmetic shortcuts zero operands, sizes products by their values, and
+            // reduces by a division that follows the quotient).
+            int[] acc = Nat.create(crtLength);
+            int[] tmp = Nat.create(crtLength);
+            try
             {
-                // input is the caller's ciphertext and the exponent is derived from phi(n), which is
-                // the private key - recovering it factors the modulus - so the exponent is randomised
-                // before the variable-time modPow sees it. input^phi(n) = 1 (mod n) by Euler for any
-                // input coprime to n, so the result is unchanged; an input sharing a factor with n
-                // decrypts to a different value than before, but it failed the lookup below either
-                // way, and producing one means the caller has already factored the modulus.
-                BigInteger exponent = BigIntegers.createBlindedExponent(
-                    phiNOverPrime[i], priv.getPhi_n(), random);
-
-                BigInteger exp = input.modPow(exponent, priv.getModulus());
-                byte[][] al = lookup[i];
-                if (al.length != ((BigInteger)primes.elementAt(i)).intValue())
+                for (int i = 0; i < primes.size(); i++)
                 {
-                    if (debug)
+                    // input is the caller's ciphertext and the exponent is derived from phi(n), which
+                    // is the private key - recovering it factors the modulus - so the exponent is
+                    // randomised before the variable-time modPow sees it. input^phi(n) = 1 (mod n) by
+                    // Euler for any input coprime to n, so the result is unchanged; an input sharing
+                    // a factor with n decrypts to a different value than before, but it failed the
+                    // lookup below either way, and producing one means the caller has already
+                    // factored the modulus.
+                    BigInteger exponent = BigIntegers.createBlindedExponent(
+                        phiNOverPrime[i], priv.getPhi_n(), random);
+
+                    BigInteger exp = input.modPow(exponent, priv.getModulus());
+                    byte[][] al = lookup[i];
+                    if (al.length != ((BigInteger)primes.elementAt(i)).intValue())
                     {
-                        // -DM System.out.println
-                        System.out.println("Prime is " + primes.elementAt(i) + ", lookup table has size " + al.length);
-                    }
-                    throw new InvalidCipherTextException("Error in lookup Array for "
-                                    + ((BigInteger)primes.elementAt(i)).intValue()
-                                    + ": Size mismatch. Expected ArrayList with length "
-                                    + ((BigInteger)primes.elementAt(i)).intValue() + " but found ArrayList of length "
-                                    + al.length);
-                }
-
-                // The index of the match IS the plaintext digit for this prime, so returning as soon
-                // as it is found - which Vector.indexOf did - made the running time reveal it. Scan
-                // the whole table instead and select the index with a mask.
-                byte[] expEnc = BigIntegers.asUnsignedByteArray(modulusLength, exp);
-                int found = 0;                                  // 0 for no match, else digit + 1
-
-                for (int j = 0; j != al.length; j++)
-                {
-                    byte[] candidate = al[j];
-                    int nonEqual = 0;
-
-                    for (int k = 0; k != modulusLength; k++)
-                    {
-                        nonEqual |= (candidate[k] ^ expEnc[k]) & 0xFF;
-                    }
-
-                    int isEqual = (nonEqual - 1) >> 31;         // -1 when equal, 0 otherwise
-                    int stillLooking = (found - 1) >> 31;       // -1 until something has matched
-
-                    found |= (j + 1) & isEqual & stillLooking;
-                }
-
-                int lookedup = found - 1;
-
-                if (lookedup == -1)
-                {
-                    if (debug)
-                    {
-                        // -DM 3 System.out.print
-                        System.out.println("Actual prime is " + primes.elementAt(i));
-                        System.out.println("Decrypted value is " + exp);
-
-                        System.out.println("LookupList for " + primes.elementAt(i) + " with size " + al.length
-                                        + " is: ");
-                        for (int j = 0; j < al.length; j++)
+                        if (debug)
                         {
                             // -DM System.out.println
-                            System.out.println(new BigInteger(1, al[j]));
+                            System.out.println("Prime is " + primes.elementAt(i) + ", lookup table has size " + al.length);
                         }
+                        throw new InvalidCipherTextException("Error in lookup Array for "
+                                        + ((BigInteger)primes.elementAt(i)).intValue()
+                                        + ": Size mismatch. Expected ArrayList with length "
+                                        + ((BigInteger)primes.elementAt(i)).intValue() + " but found ArrayList of length "
+                                        + al.length);
                     }
-                    throw new InvalidCipherTextException("Lookup failed");
+
+                    // the CRT term d_i * (sigma / p_i) * ((sigma / p_i)^-1 mod p_i) mod sigma is
+                    // (sigma / p_i) * t_i for t_i = d_i * (sigma / p_i)^-1 mod p_i, and the lookup
+                    // yields t_i directly, so each term is below sigma and needs no reduction of its
+                    // own
+                    int t = fixedTimeLookup(al, BigIntegers.asUnsignedByteArray(modulusLength, exp), crtInverses[i]);
+
+                    if (t < 0)
+                    {
+                        if (debug)
+                        {
+                            // -DM 3 System.out.print
+                            System.out.println("Actual prime is " + primes.elementAt(i));
+                            System.out.println("Decrypted value is " + exp);
+
+                            System.out.println("LookupList for " + primes.elementAt(i) + " with size " + al.length
+                                            + " is: ");
+                            for (int j = 0; j < al.length; j++)
+                            {
+                                // -DM System.out.println
+                                System.out.println(new BigInteger(1, al[j]));
+                            }
+                        }
+                        throw new InvalidCipherTextException("Lookup failed");
+                    }
+
+                    Nat.mulWordAddTo(crtLength, t, crtCofactors[i], 0, acc, 0);
                 }
-                plain.addElement(BigInteger.valueOf(lookedup));
+
+                // acc < count * sigma <= 2^reductions * sigma, and each masked subtraction of
+                // sigma * 2^j halves the bound, leaving acc < sigma
+                for (int j = crtSigmaMultiples.length - 1; j >= 0; --j)
+                {
+                    int borrow = Nat.sub(crtLength, acc, crtSigmaMultiples[j], tmp);
+                    Nat.cmov(crtLength, ~borrow, tmp, 0, acc, 0);
+                }
+
+                // No check that g^test re-encrypts to the input: a valid ciphertext need not equal
+                // g^test, since probabilistic encryption multiplies in x^sigma and addCryptedBlocks
+                // can leave a sum beyond sigma
+                BigInteger test = Nat.toBigInteger(crtLength, acc);
+
+                output = test.toByteArray();
             }
-            BigInteger test = chineseRemainder(plain, primes);
-
-            // Should not be used as an oracle, so reencrypt output to see
-            // if it corresponds to input
-
-            // this breaks probabilisic encryption, so disable it. Anyway, we do
-            // use the first n primes for key generation, so it is pretty easy
-            // to guess them. But as stated in the paper, this is not a security
-            // breach. So we can just work with the correct sigma.
-
-            // if (debug) {
-            //      System.out.println("Decryption is " + test);
-            // }
-            // if ((key.getG().modPow(test, key.getModulus())).equals(input)) {
-            //      output = test.toByteArray();
-            // } else {
-            //      if(debug){
-            //          System.out.println("Engine seems to be used as an oracle,
-            //          returning null");
-            //      }
-            //      output = null;
-            // }
-
-            output = test.toByteArray();
-
+            finally
+            {
+                Arrays.clear(acc);
+                Arrays.clear(tmp);
+            }
         }
 
         return output;
@@ -489,37 +516,6 @@ public class NaccacheSternEngine
     }
 
     /**
-     * Computes the integer x that is expressed through the given primes and the
-     * congruences with the chinese remainder theorem (CRT).
-     * 
-     * @param congruences
-     *            the congruences c_i
-     * @param primes
-     *            the primes p_i
-     * @return an integer x for that x % p_i == c_i
-     */
-    private static BigInteger chineseRemainder(Vector congruences, Vector primes)
-    {
-        BigInteger retval = ZERO;
-        BigInteger all = ONE;
-        for (int i = 0; i < primes.size(); i++)
-        {
-            all = all.multiply((BigInteger)primes.elementAt(i));
-        }
-        for (int i = 0; i < primes.size(); i++)
-        {
-            BigInteger a = (BigInteger)primes.elementAt(i);
-            BigInteger b = all.divide(a);
-            BigInteger b_ = b.modInverse(a);
-            BigInteger tmp = b.multiply(b_);
-            tmp = tmp.multiply((BigInteger)congruences.elementAt(i));
-            retval = retval.add(tmp);
-        }
-
-        return retval.mod(all);
-    }
-
-    /**
      * phi(n) / p for one of the key's small primes, without BigInteger.divide, whose running time
      * follows the quotient. p divides sigma, which divides phi(n), so the division is exact and the
      * quotient is below 2^k for k the bit length of the modulus; it is therefore
@@ -531,5 +527,45 @@ public class NaccacheSternEngine
         BigInteger m = ONE.shiftLeft(priv.getModulus().bitLength());
 
         return priv.getPhi_n().multiply(p.modInverse(m)).and(m.subtract(ONE));
+    }
+
+    /**
+     * The index of the match is the plaintext digit d for this prime (the table length p), so
+     * returning as soon as it is found - which Vector.indexOf did - made the running time reveal it.
+     * Scan the whole table instead and select by mask. The CRT needs d only as d * inv mod p, so that
+     * is what is selected, from a running j * inv mod p.
+     *
+     * @return d * inv mod p, or -1 if the value is not in the table.
+     */
+    private static int fixedTimeLookup(byte[][] table, byte[] value, int inv)
+    {
+        int p = table.length;
+
+        int found = 0;                                      // -1 once something has matched
+        int r = 0;                                          // j * inv mod p
+        int result = 0;
+
+        for (int j = 0; j < p; ++j)
+        {
+            byte[] candidate = table[j];
+            int diff = 0;
+
+            for (int k = 0; k < value.length; ++k)
+            {
+                diff |= (candidate[k] ^ value[k]) & 0xFF;
+            }
+
+            int isEqual = (diff - 1) >> 31;                 // -1 when equal, 0 otherwise
+
+            result |= r & isEqual & ~found;
+            found |= isEqual;
+
+            // r + inv < 2p, and with p below 2^31 the difference r + inv - p is in (-2^31, 2^31)
+            int s = r + inv;
+            int below = (s - p) >> 31;                      // all ones when s < p
+            r = s - (p & ~below);
+        }
+
+        return result | ~found;
     }
 }
