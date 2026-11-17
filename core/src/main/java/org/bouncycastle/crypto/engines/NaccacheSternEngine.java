@@ -32,6 +32,10 @@ public class NaccacheSternEngine
     // decryption can compare byte by byte without the length itself saying anything.
     private byte[][][] lookup = null;
 
+    // phi(n) / p for each small prime p, the exponent decryption raises the ciphertext to. Worked
+    // out once when the tables are built rather than divided out again for every block.
+    private BigInteger[] phiNOverPrime = null;
+
     private int modulusLength;
 
     private SecureRandom random;
@@ -78,6 +82,7 @@ public class NaccacheSternEngine
             NaccacheSternPrivateKeyParameters priv = (NaccacheSternPrivateKeyParameters)key;
             Vector primes = priv.getSmallPrimes();
             lookup = new byte[primes.size()][][];
+            phiNOverPrime = new BigInteger[primes.size()];
             for (int i = 0; i < primes.size(); i++)
             {
                 BigInteger actualPrime = (BigInteger)primes.elementAt(i);
@@ -92,14 +97,23 @@ public class NaccacheSternEngine
                     System.out.println("Constructing lookup ArrayList for " + actualPrimeValue);
                 }
 
-                BigInteger accJ = ZERO;
+                phiNOverPrime[i] = phiNOverSmallPrime(priv, actualPrime);
+
+                // entry j is g^(j * phi(n) / p) = h^j for h = g^(phi(n) / p), so one exponentiation
+                // and then repeated multiplication build the table. The exponent carries phi(n),
+                // which is the private key, so it is randomised with a multiple of phi(n) before the
+                // variable-time modPow sees it; g is coprime to n, so h is unchanged. The entries are
+                // as sensitive as the key - h - 1 shares a prime factor with n - so the chain uses
+                // the fixed-time modMult rather than multiply and mod, whose reduction follows the
+                // value.
+                BigInteger exponent = BigIntegers.createBlindedExponent(phiNOverPrime[i], priv.getPhi_n(), random);
+                BigInteger h = priv.getG().modPow(exponent, priv.getModulus());
+                BigInteger entry = ONE;
 
                 for (int j = 1; j < actualPrimeValue; j++)
                 {
-                    accJ = accJ.add(priv.getPhi_n());
-                    BigInteger comp = accJ.divide(actualPrime);
-                    lookup[i][j] = BigIntegers.asUnsignedByteArray(modulusLength,
-                        priv.getG().modPow(comp, priv.getModulus()));
+                    entry = BigIntegers.modMult(priv.getModulus(), entry, h);
+                    lookup[i][j] = BigIntegers.asUnsignedByteArray(modulusLength, entry);
                 }
             }
         }
@@ -216,7 +230,7 @@ public class NaccacheSternEngine
                 // decrypts to a different value than before, but it failed the lookup below either
                 // way, and producing one means the caller has already factored the modulus.
                 BigInteger exponent = BigIntegers.createBlindedExponent(
-                    priv.getPhi_n().divide((BigInteger)primes.elementAt(i)), priv.getPhi_n(), random);
+                    phiNOverPrime[i], priv.getPhi_n(), random);
 
                 BigInteger exp = input.modPow(exponent, priv.getModulus());
                 byte[][] al = lookup[i];
@@ -503,5 +517,19 @@ public class NaccacheSternEngine
         }
 
         return retval.mod(all);
+    }
+
+    /**
+     * phi(n) / p for one of the key's small primes, without BigInteger.divide, whose running time
+     * follows the quotient. p divides sigma, which divides phi(n), so the division is exact and the
+     * quotient is below 2^k for k the bit length of the modulus; it is therefore
+     * phi(n) * p^-1 mod 2^k, one multiplication and a mask. The inverse is of the small prime alone.
+     * Only correct when p divides phi(n), which is why it stays private to this engine.
+     */
+    private static BigInteger phiNOverSmallPrime(NaccacheSternPrivateKeyParameters priv, BigInteger p)
+    {
+        BigInteger m = ONE.shiftLeft(priv.getModulus().bitLength());
+
+        return priv.getPhi_n().multiply(p.modInverse(m)).and(m.subtract(ONE));
     }
 }
