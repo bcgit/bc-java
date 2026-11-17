@@ -36,6 +36,23 @@ Bouncy Castle Java supports the following formats and standards.
 | Algorithm Identifiers for ML-KEM | [RFC 9935](https://www.rfc-editor.org/rfc/rfc9935) |
 | Algorithm Identifiers for SLH-DSA | [RFC 9909](https://www.rfc-editor.org/rfc/rfc9909) |
 
+## Certifications
+
+The following lists certifications with relevant links to certificates and documentation.
+
+| Type | Language | Version | External Reference | Documentation |
+|---|---|---|---|---|
+| FIPS 140-3 | Java | 2.1.1 | [Cryptographic Module Validation Program (CMVP) Certificate #4943](https://csrc.nist.gov/projects/cryptographic-module-validation-program/certificate/4943) | [BC-FJA 2.1.1 (Bouncy Castle FIPS Java API) User Guide](https://downloads.bouncycastle.org/fips-java/docs/BC-FJA-UserGuide-2.1.1.pdf) |
+| FIPS 140-3 | Java | 2.0.0 | [Cryptographic Module Validation Program (CMVP) Certificate #4743](https://csrc.nist.gov/projects/cryptographic-module-validation-program/certificate/4743) | [BC-FJA 2.0.0 (Bouncy Castle FIPS Java API) User Guide](https://downloads.bouncycastle.org/fips-java/docs/BC-FJA-UserGuide-2.0.0.pdf) |
+| FIPS 140-2 | Java | 1.0.2.4 | [Cryptographic Module Validation Program (CMVP) Certificate #4616](https://csrc.nist.gov/projects/cryptographic-module-validation-program/certificate/4616)  | [BC-FJA 1.0.2 (Bouncy Castle FIPS Java API) User Guide](https://downloads.bouncycastle.org/fips-java/docs/BC-FJA-UserGuide-1.0.2.pdf) |
+| FIPS 140-2 | Java | 1.0.2.3, 1.0.2.2, 1.0.2.1 | [Cryptographic Module Validation Program (CMVP) Certificate #3514](https://csrc.nist.gov/projects/cryptographic-module-validation-program/certificate/3514) | [BC-FJA 1.0.2 (Bouncy Castle FIPS Java API) User Guide](https://downloads.bouncycastle.org/fips-java/docs/BC-FJA-UserGuide-1.0.2.pdf) |
+| FIPS 140-2 | Java | 1.0.1 | [Cryptographic Module Validation Program (CMVP) Certificate #3152](https://csrc.nist.gov/projects/cryptographic-module-validation-program/certificate/3152) (Historical) | [BC-FJA (Bouncy Castle FIPS Java API) User Guide](https://downloads.bouncycastle.org/fips-java/docs/BC-FJA-UserGuide-1.0.1.pdf) |
+| FIPS 140-2 | Java | 1.0.0 | [Cryptographic Module Validation Program (CMVP) Certificate #2768](https://csrc.nist.gov/projects/cryptographic-module-validation-program/certificate/2768) (Historical) | [BC-FJA (Bouncy Castle FIPS Java API) User Guide](https://downloads.bouncycastle.org/fips-java/docs/BC-FJA-UserGuide-1.0.0.pdf) |
+| FIPS 140-2 | C# | 1.0.2 | [Cryptographic Module Validation Program (CMVP) Certificate #4416](https://csrc.nist.gov/projects/cryptographic-module-validation-program/certificate/4416) | [BC-FNA 1.0.2 (Bouncy Castle FIPS .NET API) User Guide](https://downloads.bouncycastle.org/fips-csharp/docs/BC-FNA-UserGuide-1.0.2.pdf) |
+| FIPS 140-2 | C# | 1.0.1 | [Cryptographic Module Validation Program (CMVP) Certificate #2792](https://csrc.nist.gov/projects/cryptographic-module-validation-program/certificate/2792) (Historical) | [BC-FNA (Bouncy Castle FIPS .NET API) User Guide](https://downloads.bouncycastle.org/fips-csharp/docs/BC-FNA-UserGuide-1.0.1.pdf) |
+
+For more information about the Bouncy Castle FIPS Java API and how it presents cryptography, refer to [The Bouncy Castle FIPS Java API in 100 Examples](https://downloads.bouncycastle.org/fips-java/docs/BCFipsIn100.pdf) and sample code at [https://downloads.bouncycastle.org/fips-java/code/bc-fips-100-java.tar.gz](https://downloads.bouncycastle.org/fips-java/code/bc-fips-100-java.tar.gz) and [https://downloads.bouncycastle.org/fips-java/code/bc-fips-100-java.zip](https://downloads.bouncycastle.org/fips-java/code/bc-fips-100-java.zip).
+
 ## Algorithms & Key Types
 
 Bouncy Castle supports the following public key algorithm types and key sizes/curves.
