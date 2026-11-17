@@ -9,7 +9,6 @@ import java.security.ProviderException;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.SignatureException;
-import java.security.SignatureSpi;
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.AlgorithmParameterSpec;
@@ -23,12 +22,13 @@ import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.engines.RSABlindedEngine;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
+import org.bouncycastle.jcajce.provider.asymmetric.util.BaseInitRandomSignatureSpi;
 import org.bouncycastle.jcajce.provider.util.DigestFactory;
 import org.bouncycastle.jcajce.util.BCJcaJceHelper;
 import org.bouncycastle.jcajce.util.JcaJceHelper;
 
 public class PSSSignatureSpi
-    extends SignatureSpi
+    extends BaseInitRandomSignatureSpi
 {
     // RFC 4055 3.1: the RSASSA-PSS-params trailerField "value MUST be 1" (RFC 8017 A.2.3 trailerFieldBC).
     private static final int TRAILER_FIELD_BC = 1;
@@ -45,7 +45,6 @@ public class PSSSignatureSpi
     private byte trailer;
     private boolean isRaw;
     private RSAKeyParameters key;
-    private SecureRandom random;
 
     private org.bouncycastle.crypto.signers.PSSSigner pss;
     private boolean isInitState = true;
@@ -127,17 +126,9 @@ public class PSSSignatureSpi
         isInitState = true;
     }
 
-    protected void engineInitSign(
+    protected void signInit(
         PrivateKey privateKey,
         SecureRandom random)
-        throws InvalidKeyException
-    {
-        this.random = random;
-        engineInitSign(privateKey);
-    }
-
-    protected void engineInitSign(
-        PrivateKey privateKey)
         throws InvalidKeyException
     {
         if (!(privateKey instanceof RSAPrivateKey))
@@ -285,7 +276,15 @@ public class PSSSignatureSpi
                 pss = new org.bouncycastle.crypto.signers.PSSSigner(signer, contentDigest, mgfDigest, saltLength, trailer);
                 if (key.isPrivate())
                 {
-                    pss.init(true, key);
+                    // signing goes on with the source the init chose
+                    if (appRandom != null)
+                    {
+                        pss.init(true, new ParametersWithRandom(key, appRandom));
+                    }
+                    else
+                    {
+                        pss.init(true, key);
+                    }
                 }
                 else
                 {

@@ -27,6 +27,7 @@ public class RegressionTest
         new ElGamalTest(),
         new ECIESTest(),
         new SigTest(),
+        new SignatureInitRandomTest(),
         new CertTest(),
         new PKCS10CertRequestTest(),
         new EncryptedPrivateKeyInfoTest(),

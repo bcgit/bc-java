@@ -142,6 +142,45 @@ public class SDitHTest
         assertTrue("initVerify after initSign kept the earlier update", sig.verify(s));
     }
 
+    /**
+     * initSign(key) takes its randomness from the default source, not from the SecureRandom an earlier
+     * initSign(key, random) on the same object was given.
+     */
+    public void testInitSignWithoutRandomUsesDefaultSource()
+        throws Exception
+    {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("SDitH", "BCPQC");
+
+        kpg.initialize(SDitHParameterSpec.sdith_hypercube_cat1_gf256, new SecureRandom());
+
+        KeyPair kp = kpg.generateKeyPair();
+
+        CountingSecureRandom random = new CountingSecureRandom();
+        Signature signer = Signature.getInstance("SDitH", "BCPQC");
+
+        signer.initSign(kp.getPrivate(), random);
+        signer.update(msg, 0, msg.length);
+        signer.sign();
+
+        assertTrue("initSign(key, random) did not draw from random", random.count > 0);
+
+        int count = random.count;
+
+        signer.initSign(kp.getPrivate());
+        signer.update(msg, 0, msg.length);
+
+        byte[] s = signer.sign();
+
+        assertEquals("initSign(key) drew from the SecureRandom of an earlier init", count, random.count);
+
+        Signature verifier = Signature.getInstance("SDitH", "BCPQC");
+
+        verifier.initVerify(kp.getPublic());
+        verifier.update(msg, 0, msg.length);
+
+        assertTrue(verifier.verify(s));
+    }
+
     public void testForeignKeyRejected()
         throws Exception
     {
@@ -286,5 +325,17 @@ public class SDitHTest
         assertNotNull("BC bridge should resolve SDitH private key", priv);
         assertEquals(kp.getPublic(), pub);
         assertEquals(kp.getPrivate(), priv);
+    }
+
+    private static class CountingSecureRandom
+        extends SecureRandom
+    {
+        int count;
+
+        public void nextBytes(byte[] bytes)
+        {
+            count++;
+            super.nextBytes(bytes);
+        }
     }
 }

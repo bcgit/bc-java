@@ -11,6 +11,7 @@ import java.security.spec.AlgorithmParameterSpec;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
+import org.bouncycastle.jcajce.provider.asymmetric.util.BaseInitRandomSignature;
 import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 import org.bouncycastle.pqc.crypto.haetae.HAETAEParameters;
 import org.bouncycastle.pqc.crypto.haetae.HAETAESigner;
@@ -26,11 +27,10 @@ import org.bouncycastle.util.Strings;
  * {@code "signature configured for " + canonicalName}.
  */
 public class SignatureSpi
-    extends java.security.Signature
+    extends BaseInitRandomSignature
 {
     private final ByteArrayOutputStream bOut;
     private final HAETAESigner signer;
-    private SecureRandom random;
     private final HAETAEParameters parameters;
 
     protected SignatureSpi(HAETAESigner signer)
@@ -82,14 +82,7 @@ public class SignatureSpi
         signer.init(false, key.getKeyParams());
     }
 
-    protected void engineInitSign(PrivateKey privateKey, SecureRandom random)
-        throws InvalidKeyException
-    {
-        this.random = random;
-        engineInitSign(privateKey);
-    }
-
-    protected void engineInitSign(PrivateKey privateKey)
+    protected void signInit(PrivateKey privateKey, SecureRandom random)
         throws InvalidKeyException
     {
         bOut.reset();

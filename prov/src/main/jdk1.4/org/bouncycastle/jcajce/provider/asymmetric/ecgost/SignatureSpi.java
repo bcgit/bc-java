@@ -4,6 +4,7 @@ import java.math.BigInteger;
 import java.security.InvalidKeyException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.SecureRandom;
 import java.security.SignatureException;
 import java.security.spec.AlgorithmParameterSpec;
 
@@ -17,6 +18,7 @@ import org.bouncycastle.crypto.digests.GOST3411Digest;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.signers.ECGOST3410Signer;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
+import org.bouncycastle.jcajce.provider.asymmetric.util.BaseInitRandomSignature;
 import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
 import org.bouncycastle.jce.interfaces.ECKey;
 import org.bouncycastle.jce.interfaces.ECPublicKey;
@@ -25,7 +27,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.jcajce.provider.asymmetric.util.GOST3410Util;
 
 public class SignatureSpi
-    extends java.security.Signature
+    extends BaseInitRandomSignature
     implements PKCSObjectIdentifiers, X509ObjectIdentifiers
 {
     private Digest                  digest;
@@ -72,8 +74,9 @@ public class SignatureSpi
         signer.init(false, param);
     }
 
-    protected void engineInitSign(
-        PrivateKey  privateKey)
+    protected void signInit(
+        PrivateKey      privateKey,
+        SecureRandom    random)
         throws InvalidKeyException
     {
         CipherParameters    param;
@@ -89,9 +92,9 @@ public class SignatureSpi
 
         digest.reset();
 
-        if (appRandom != null)
+        if (random != null)
         {
-            signer.init(true, new ParametersWithRandom(param, appRandom));
+            signer.init(true, new ParametersWithRandom(param, random));
         }
         else
         {

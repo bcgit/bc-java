@@ -7,7 +7,6 @@ import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.security.SecureRandom;
 import java.security.SignatureException;
-import java.security.Signature;
 import java.security.interfaces.DSAKey;
 import java.security.spec.AlgorithmParameterSpec;
 
@@ -31,12 +30,13 @@ import org.bouncycastle.crypto.digests.SHA3Digest;
 import org.bouncycastle.crypto.digests.SHA512Digest;
 import org.bouncycastle.crypto.digests.RIPEMD160Digest;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
+import org.bouncycastle.jcajce.provider.asymmetric.util.BaseInitRandomSignature;
 import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 import org.bouncycastle.crypto.signers.HMacDSAKCalculator;
 import org.bouncycastle.util.Arrays;
 
 public class DSASigner
-    extends Signature
+    extends BaseInitRandomSignature
     implements PKCSObjectIdentifiers, X509ObjectIdentifiers
 {
     private Digest                  digest;
@@ -88,17 +88,18 @@ public class DSASigner
         initSigner(false, param);
     }
 
-    protected void engineInitSign(
-        PrivateKey  privateKey)
+    protected void signInit(
+        PrivateKey      privateKey,
+        SecureRandom    random)
         throws InvalidKeyException
     {
         CipherParameters    param;
 
         param = DSAUtil.generatePrivateKeyParameter(privateKey);
 
-        if (appRandom != null)
+        if (random != null)
         {
-            param = new ParametersWithRandom(param, appRandom);
+            param = new ParametersWithRandom(param, random);
         }
 
         digest.reset();

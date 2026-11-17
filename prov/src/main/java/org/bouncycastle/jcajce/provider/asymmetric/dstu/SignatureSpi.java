@@ -5,6 +5,7 @@ import java.security.AlgorithmParameters;
 import java.security.InvalidKeyException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.SecureRandom;
 import java.security.SignatureException;
 import java.security.spec.AlgorithmParameterSpec;
 
@@ -19,11 +20,12 @@ import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.digests.GOST3411Digest;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.signers.DSTU4145Signer;
+import org.bouncycastle.jcajce.provider.asymmetric.util.BaseInitRandomSignatureSpi;
 import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
 import org.bouncycastle.jce.interfaces.ECKey;
 
 public class SignatureSpi
-    extends java.security.SignatureSpi
+    extends BaseInitRandomSignatureSpi
     implements PKCSObjectIdentifiers, X509ObjectIdentifiers
 {
     private Digest digest;
@@ -68,8 +70,9 @@ public class SignatureSpi
 
     // The BCDSTU4145PrivateKey branch is a deliberate placeholder for the parameter support noted in its TODO.
     @SuppressWarnings("DuplicateBranches")
-    protected void engineInitSign(
-        PrivateKey privateKey)
+    protected void signInit(
+        PrivateKey privateKey,
+        SecureRandom random)
         throws InvalidKeyException
     {
         CipherParameters param = null;
@@ -91,9 +94,9 @@ public class SignatureSpi
             digest = new GOST3411Digest(expandSbox(DSTU4145Params.getDefaultDKE()));
         }
 
-        if (appRandom != null)
+        if (random != null)
         {
-            signer.init(true, new ParametersWithRandom(param, appRandom));
+            signer.init(true, new ParametersWithRandom(param, random));
         }
         else
         {

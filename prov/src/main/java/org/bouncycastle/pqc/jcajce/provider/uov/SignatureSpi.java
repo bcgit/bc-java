@@ -11,6 +11,7 @@ import java.security.spec.AlgorithmParameterSpec;
 import org.bouncycastle.asn1.x509.SubjectPublicKeyInfo;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
+import org.bouncycastle.jcajce.provider.asymmetric.util.BaseInitRandomSignature;
 import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 import org.bouncycastle.pqc.crypto.uov.UOVParameters;
 import org.bouncycastle.pqc.crypto.uov.UOVSigner;
@@ -23,12 +24,11 @@ import org.bouncycastle.util.Strings;
  * accepts whatever variant the supplied key carries.
  */
 public class SignatureSpi
-    extends java.security.Signature
+    extends BaseInitRandomSignature
 {
     private final ByteArrayOutputStream bOut;
     private final UOVSigner signer;
     private final UOVParameters parameters;
-    private SecureRandom random;
 
     protected SignatureSpi(UOVSigner signer)
     {
@@ -74,14 +74,7 @@ public class SignatureSpi
         signer.init(false, key.getKeyParams());
     }
 
-    protected void engineInitSign(PrivateKey privateKey, SecureRandom random)
-            throws InvalidKeyException
-    {
-        this.random = random;
-        engineInitSign(privateKey);
-    }
-
-    protected void engineInitSign(PrivateKey privateKey)
+    protected void signInit(PrivateKey privateKey, SecureRandom random)
             throws InvalidKeyException
     {
         bOut.reset();

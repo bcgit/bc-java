@@ -40,6 +40,7 @@ public class FaestTest
         test.testFaestSign();
         test.testReinitDiscardsBufferedMessage();
         test.testForeignPublicKeyKeepsCause();
+        test.testInitSignWithoutRandomUsesDefaultSource();
         test.testBcProviderKeyInfoConverter();
     }
 
@@ -268,6 +269,45 @@ public class FaestTest
         }
     }
 
+    /**
+     * initSign(key) takes its randomness from the default source, not from the SecureRandom an earlier
+     * initSign(key, random) on the same object was given.
+     */
+    public void testInitSignWithoutRandomUsesDefaultSource()
+        throws Exception
+    {
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("Faest", "BCPQC");
+
+        kpg.initialize(FaestParameterSpec.faest_128f, new SecureRandom());
+
+        KeyPair kp = kpg.generateKeyPair();
+
+        CountingSecureRandom random = new CountingSecureRandom();
+        Signature signer = Signature.getInstance("Faest", "BCPQC");
+
+        signer.initSign(kp.getPrivate(), random);
+        signer.update(msg, 0, msg.length);
+        signer.sign();
+
+        assertTrue("initSign(key, random) did not draw from random", random.count > 0);
+
+        int count = random.count;
+
+        signer.initSign(kp.getPrivate());
+        signer.update(msg, 0, msg.length);
+
+        byte[] s = signer.sign();
+
+        assertEquals("initSign(key) drew from the SecureRandom of an earlier init", count, random.count);
+
+        Signature verifier = Signature.getInstance("Faest", "BCPQC");
+
+        verifier.initVerify(kp.getPublic());
+        verifier.update(msg, 0, msg.length);
+
+        assertTrue(verifier.verify(s));
+    }
+
     public void testRestrictedKeyPairGen()
         throws Exception
     {
@@ -372,6 +412,18 @@ public class FaestTest
 
         assertEquals(spec.getName() + ": public key equality", kp.getPublic(), decPub);
         assertEquals(spec.getName() + ": private key equality", kp.getPrivate(), decPriv);
+    }
+
+    private static class CountingSecureRandom
+        extends SecureRandom
+    {
+        int count;
+
+        public void nextBytes(byte[] bytes)
+        {
+            count++;
+            super.nextBytes(bytes);
+        }
     }
 
     private static class RiggedRandom

@@ -5,6 +5,7 @@ import java.security.AlgorithmParameters;
 import java.security.InvalidKeyException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.SecureRandom;
 import java.security.SignatureException;
 import java.security.spec.AlgorithmParameterSpec;
 
@@ -19,6 +20,7 @@ import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.ECKeyParameters;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.signers.ECGOST3410Signer;
+import org.bouncycastle.jcajce.provider.asymmetric.util.BaseInitRandomSignatureSpi;
 import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
 import org.bouncycastle.jce.interfaces.ECKey;
 import org.bouncycastle.jce.interfaces.ECPublicKey;
@@ -28,7 +30,7 @@ import org.bouncycastle.jce.provider.BouncyCastleProvider;
  * Signature for GOST34.10 2012 256. Algorithm is the same as for GOST34.10 2001
  */
 public class ECGOST2012SignatureSpi256
-    extends java.security.SignatureSpi
+    extends BaseInitRandomSignatureSpi
     implements PKCSObjectIdentifiers, X509ObjectIdentifiers
 {
     private Digest                  digest;
@@ -82,8 +84,9 @@ public class ECGOST2012SignatureSpi256
         signer.init(false, param);
     }
 
-    protected void engineInitSign(
-        PrivateKey  privateKey)
+    protected void signInit(
+        PrivateKey      privateKey,
+        SecureRandom    random)
         throws InvalidKeyException
     {
         ECKeyParameters param;
@@ -104,9 +107,9 @@ public class ECGOST2012SignatureSpi256
         
         digest.reset();
 
-        if (appRandom != null)
+        if (random != null)
         {
-            signer.init(true, new ParametersWithRandom(param, appRandom));
+            signer.init(true, new ParametersWithRandom(param, random));
         }
         else
         {

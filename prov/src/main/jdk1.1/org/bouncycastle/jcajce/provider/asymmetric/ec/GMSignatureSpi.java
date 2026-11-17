@@ -27,7 +27,6 @@ public class GMSignatureSpi
     private AlgorithmParameters engineParams;
     private SM2ParameterSpec paramSpec;
 
-    private SecureRandom              appRandom;
 
     private SM2Signer signer;
 
@@ -54,11 +53,23 @@ public class GMSignatureSpi
         PrivateKey privateKey)
         throws InvalidKeyException
     {
+        engineInitSign(privateKey, null);
+    }
+
+    /**
+     * Each init decides afresh where signing draws its randomness from: the SecureRandom given here, or the default
+     * source for an init given none.
+     */
+    protected void engineInitSign(
+        PrivateKey privateKey,
+        SecureRandom random)
+        throws InvalidKeyException
+    {
         CipherParameters param = ECUtil.generatePrivateKeyParameter(privateKey);
 
-        if (appRandom != null)
+        if (random != null)
         {
-            param = new ParametersWithRandom(param, appRandom);
+            param = new ParametersWithRandom(param, random);
         }
 
         if (paramSpec != null)

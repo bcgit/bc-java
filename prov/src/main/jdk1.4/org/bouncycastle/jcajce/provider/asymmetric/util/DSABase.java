@@ -1,10 +1,6 @@
 package org.bouncycastle.jcajce.provider.asymmetric.util;
 
 import java.math.BigInteger;
-import java.security.InvalidKeyException;
-import java.security.PrivateKey;
-import java.security.SecureRandom;
-import java.security.Signature;
 import java.security.SignatureException;
 import java.security.spec.AlgorithmParameterSpec;
 
@@ -15,7 +11,7 @@ import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.signers.DSAEncoding;
 
 public abstract class DSABase
-    extends Signature
+    extends BaseInitRandomSignature
     implements PKCSObjectIdentifiers, X509ObjectIdentifiers
 {
     protected Digest digest;
@@ -33,13 +29,6 @@ public abstract class DSABase
         this.digest = digest;
         this.signer = signer;
         this.encoding = encoding;
-    }
-
-    protected void engineInitSign(
-        PrivateKey privateKey)
-        throws InvalidKeyException
-    {
-        doEngineInitSign(privateKey, appRandom);
     }
 
     protected void engineUpdate(
@@ -120,7 +109,4 @@ public abstract class DSABase
     {
         throw new UnsupportedOperationException("engineSetParameter unsupported");
     }
-
-    protected abstract void doEngineInitSign(PrivateKey privateKey, SecureRandom random)
-        throws InvalidKeyException;
 }

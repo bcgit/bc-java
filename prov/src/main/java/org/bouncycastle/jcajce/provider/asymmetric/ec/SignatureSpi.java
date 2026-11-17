@@ -4,6 +4,7 @@ import java.security.AlgorithmParameters;
 import java.security.InvalidKeyException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.SecureRandom;
 
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DSAExt;
@@ -38,17 +39,18 @@ public class SignatureSpi
         signer.init(false, param);
     }
 
-    protected void engineInitSign(
-        PrivateKey privateKey)
+    protected void signInit(
+        PrivateKey privateKey,
+        SecureRandom random)
         throws InvalidKeyException
     {
         CipherParameters param = ECUtils.generatePrivateKeyParameter(privateKey);
 
         digest.reset();
 
-        if (appRandom != null)
+        if (random != null)
         {
-            signer.init(true, new ParametersWithRandom(param, appRandom));
+            signer.init(true, new ParametersWithRandom(param, random));
         }
         else
         {

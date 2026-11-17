@@ -5,6 +5,7 @@ import java.security.InvalidAlgorithmParameterException;
 import java.security.InvalidKeyException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.SecureRandom;
 import java.security.SignatureException;
 import java.security.spec.AlgorithmParameterSpec;
 
@@ -14,18 +15,16 @@ import org.bouncycastle.crypto.digests.SHA256Digest;
 import org.bouncycastle.crypto.params.ParametersWithID;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.signers.SM2Signer;
+import org.bouncycastle.jcajce.provider.asymmetric.util.BaseInitRandomSignatureSpi;
 import org.bouncycastle.jcajce.provider.asymmetric.util.ECUtil;
 import org.bouncycastle.jcajce.spec.SM2ParameterSpec;
-import org.bouncycastle.jcajce.util.BCJcaJceHelper;
-import org.bouncycastle.jcajce.util.JcaJceHelper;
 
 public class GMSignatureSpi
-    extends java.security.SignatureSpi
+    extends BaseInitRandomSignatureSpi
 {
-    private final JcaJceHelper helper = new BCJcaJceHelper();
-
-    private AlgorithmParameters engineParams;
     private SM2ParameterSpec paramSpec;
+    private CipherParameters keyParam;
+    private boolean forSigning;
 
     private final SM2Signer signer;
 
@@ -37,34 +36,40 @@ public class GMSignatureSpi
     protected void engineInitVerify(PublicKey publicKey)
         throws InvalidKeyException
     {
-        CipherParameters param = ECUtils.generatePublicKeyParameter(publicKey);
+        keyParam = ECUtils.generatePublicKeyParameter(publicKey);
+        forSigning = false;
 
-        if (paramSpec != null)
-        {
-            param = new ParametersWithID(param, paramSpec.getID());
-        }
-
-        signer.init(false, param);
+        initSigner();
     }
 
-    protected void engineInitSign(
-        PrivateKey privateKey)
+    protected void signInit(
+        PrivateKey privateKey,
+        SecureRandom random)
         throws InvalidKeyException
     {
         CipherParameters param = ECUtil.generatePrivateKeyParameter(privateKey);
 
-        if (appRandom != null)
+        if (random != null)
         {
-            param = new ParametersWithRandom(param, appRandom);
+            param = new ParametersWithRandom(param, random);
         }
 
+        keyParam = param;
+        forSigning = true;
+
+        initSigner();
+    }
+
+    // the ID is part of the init, so a setParameter() after initSign/initVerify has to initialise again
+    private void initSigner()
+    {
         if (paramSpec != null)
         {
-            signer.init(true, new ParametersWithID(param, paramSpec.getID()));
+            signer.init(forSigning, new ParametersWithID(keyParam, paramSpec.getID()));
         }
         else
         {
-            signer.init(true, param);
+            signer.init(forSigning, keyParam);
         }
     }
 
@@ -106,6 +111,11 @@ public class GMSignatureSpi
         if (params instanceof SM2ParameterSpec)
         {
             paramSpec = (SM2ParameterSpec)params;
+
+            if (keyParam != null)
+            {
+                initSigner();
+            }
         }
         else
         {
@@ -113,25 +123,12 @@ public class GMSignatureSpi
         }
     }
 
+    /**
+     * SM2 has no AlgorithmParameters encoding for its user ID, so there are none to return.
+     */
     protected AlgorithmParameters engineGetParameters()
     {
-        if (engineParams == null)
-        {
-            if (paramSpec != null)
-            {
-                try
-                {
-                    engineParams = helper.createAlgorithmParameters("PSS");
-                    engineParams.init(paramSpec);
-                }
-                catch (Exception e)
-                {
-                    throw new RuntimeException(e.toString());
-                }
-            }
-        }
-
-        return engineParams;
+        return null;
     }
 
     protected void engineSetParameter(

@@ -73,6 +73,18 @@ public class PSSTest
         }
     }
 
+    private static class CountingSecureRandom
+        extends SecureRandom
+    {
+        int count;
+
+        public void nextBytes(byte[] bytes)
+        {
+            count++;
+            super.nextBytes(bytes);
+        }
+    }
+
     private RSAPublicKeySpec pubKeySpec = new RSAPublicKeySpec(
         new BigInteger("a56e4a0e701017589a5187dc7ea841d156f2ec0e36ad52a44dfeb1e61f7ad991d8c51056ffedb162b4c0f283a12a88a394dff526ab7291cbb307ceabfce0b1dfd5cd9508096d5b2b8b6df5d671ef6377c0921cb23c270a70e2598e6ff89d19f105acc2d3f0cb35f29280e1386b6f64c4ef22e1e1f20d0ce8cffb2249bd9a2137",16),
         new BigInteger("010001",16));
@@ -322,6 +334,7 @@ public class PSSTest
         testShake256Sha512Pss();
         testTrailerFieldRejection(priv2048Key, pub2048Key);
         testTrailerFieldInCertificate(priv2048Key, pub2048Key);
+        testSetParameterKeepsInitRandom(priv2048Key, pub2048Key);
     }
 
     /**
@@ -447,6 +460,34 @@ public class PSSTest
         {
             isEquals("Exception extracting parameters: unknown trailer field", e.getMessage());
         }
+    }
+
+    /**
+     * A setParameter() between initSign(key, random) and sign() rebuilds the signer, which has to go on drawing its
+     * salt from random rather than from the default source.
+     */
+    private void testSetParameterKeepsInitRandom(PrivateKey privKey, PublicKey pubKey)
+        throws Exception
+    {
+        byte[] msg = Strings.toByteArray("setParameter after initSign");
+        PSSParameterSpec spec = new PSSParameterSpec("SHA-256", "MGF1", MGF1ParameterSpec.SHA256, 32, 1);
+        CountingSecureRandom random = new CountingSecureRandom();
+
+        Signature s = Signature.getInstance("SHA256withRSAandMGF1", "BC");
+
+        s.initSign(privKey, random);
+        s.setParameter(spec);
+        s.update(msg);
+
+        byte[] sig = s.sign();
+
+        isTrue("setParameter() after initSign(key, random) stopped drawing from random", random.count > 0);
+
+        s.initVerify(pubKey);
+        s.setParameter(spec);
+        s.update(msg);
+
+        isTrue("signature made after setParameter() failed to verify", s.verify(sig));
     }
 
     /**

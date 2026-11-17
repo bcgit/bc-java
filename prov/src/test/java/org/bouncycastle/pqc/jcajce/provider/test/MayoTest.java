@@ -369,5 +369,56 @@ public class MayoTest
         }
     }
 
-}
+    /**
+     * initSign(key) takes its randomness from the default source, not from the SecureRandom an earlier
+     * initSign(key, random) on the same object was given.
+     */
+    public void testInitSignWithoutRandomUsesDefaultSource()
+        throws Exception
+    {
+        byte[] message = Strings.toByteArray("Hello World!");
 
+        KeyPairGenerator kpg = KeyPairGenerator.getInstance("Mayo", "BCPQC");
+
+        kpg.initialize(MayoParameterSpec.mayo1, new SecureRandom());
+
+        KeyPair kp = kpg.generateKeyPair();
+
+        CountingSecureRandom random = new CountingSecureRandom();
+        Signature signer = Signature.getInstance("Mayo", "BCPQC");
+
+        signer.initSign(kp.getPrivate(), random);
+        signer.update(message, 0, message.length);
+        signer.sign();
+
+        assertTrue("initSign(key, random) did not draw from random", random.count > 0);
+
+        int count = random.count;
+
+        signer.initSign(kp.getPrivate());
+        signer.update(message, 0, message.length);
+
+        byte[] s = signer.sign();
+
+        assertEquals("initSign(key) drew from the SecureRandom of an earlier init", count, random.count);
+
+        Signature verifier = Signature.getInstance("Mayo", "BCPQC");
+
+        verifier.initVerify(kp.getPublic());
+        verifier.update(message, 0, message.length);
+
+        assertTrue(verifier.verify(s));
+    }
+
+    private static class CountingSecureRandom
+        extends SecureRandom
+    {
+        int count;
+
+        public void nextBytes(byte[] bytes)
+        {
+            count++;
+            super.nextBytes(bytes);
+        }
+    }
+}
