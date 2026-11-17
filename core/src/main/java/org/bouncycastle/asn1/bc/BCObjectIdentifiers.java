@@ -1277,6 +1277,13 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier id_FrodoKEM1344_AES_X448_SHA3_256 = pqc_kem_composite_frodokem.branch("8");
 
     /**
+     * attributes(6) - CMS/S-MIME attribute types
+     * <p>
+     * 1.3.6.1.4.1.22554.6
+     */
+    ASN1ObjectIdentifier bc_attr = bc.branch("6");
+
+    /**
      * X-Wing, the X25519 and ML-KEM-768 hybrid KEM of draft-connolly-cfrg-xwing-kem-11. The value is the
      * draft's id-XWing (Section 5.8), assigned in its authors' private enterprise arc rather than in the
      * Bouncy Castle arc: { 1 3 6 1 4 1 62253 25722 }. The subjectPublicKey is the raw 1216-byte
