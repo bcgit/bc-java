@@ -35,7 +35,8 @@ public class NaccacheSternEngine
     private byte[][][] lookup = null;
 
     // phi(n) / p for each small prime p, the exponent decryption raises the ciphertext to. Worked
-    // out once when the tables are built rather than divided out again for every block.
+    // out once when the tables are built rather than divided out again for every block; no more
+    // sensitive than the tables themselves.
     private BigInteger[] phiNOverPrime = null;
 
     private int modulusLength;
@@ -103,16 +104,17 @@ public class NaccacheSternEngine
             int reductions = Integers.bitLength(count);
             int crtBits = sigma.bitLength() + reductions;
 
+            BigInteger[] cofactors = new BigInteger[count];
             crtLength = (crtBits + 31) >>> 5;
             crtCofactors = new int[count][];
             crtInverses = new int[count];
             for (int i = 0; i < count; i++)
             {
                 BigInteger prime = (BigInteger)primes.elementAt(i);
-                BigInteger cofactor = sigma.divide(prime);
 
-                crtCofactors[i] = Nat.fromBigInteger(crtBits, cofactor);
-                crtInverses[i] = cofactor.modInverse(prime).intValue();
+                cofactors[i] = exactDivide(sigma, prime, sigma.bitLength());
+                crtCofactors[i] = Nat.fromBigInteger(crtBits, cofactors[i]);
+                crtInverses[i] = cofactors[i].modInverse(prime).intValue();
             }
 
             crtSigmaMultiples = new int[reductions][];
@@ -120,6 +122,10 @@ public class NaccacheSternEngine
             {
                 crtSigmaMultiples[j] = Nat.fromBigInteger(crtBits, sigma.shiftLeft(j));
             }
+
+            // phi(n) / p_i = (phi(n) / sigma) * (sigma / p_i), so one exact division serves every
+            // prime. sigma divides phi(n), and the quotient is below 2^k for k the modulus bit length.
+            BigInteger phiNOverSigma = exactDivide(priv.getPhi_n(), sigma, priv.getModulus().bitLength());
 
             lookup = new byte[count][][];
             phiNOverPrime = new BigInteger[count];
@@ -137,7 +143,7 @@ public class NaccacheSternEngine
                     System.out.println("Constructing lookup ArrayList for " + actualPrimeValue);
                 }
 
-                phiNOverPrime[i] = phiNOverSmallPrime(priv, actualPrime);
+                phiNOverPrime[i] = phiNOverSigma.multiply(cofactors[i]);
 
                 // entry j is g^(j * phi(n) / p) = h^j for h = g^(phi(n) / p), so one exponentiation
                 // and then repeated multiplication build the table. The exponent carries phi(n),
@@ -145,7 +151,9 @@ public class NaccacheSternEngine
                 // variable-time modPow sees it; g is coprime to n, so h is unchanged. The entries are
                 // as sensitive as the key - h - 1 shares a prime factor with n - so the chain uses
                 // the fixed-time modMult rather than multiply and mod, whose reduction follows the
-                // value.
+                // value. If p divides both P - 1 and Q - 1 for n = PQ (always so for p = 2), then
+                // h = 1 for every g, every entry is 1, and that digit always decrypts as 0; the key
+                // is invalid but this does not detect it.
                 BigInteger exponent = BigIntegers.createBlindedExponent(phiNOverPrime[i], priv.getPhi_n(), random);
                 BigInteger h = priv.getG().modPow(exponent, priv.getModulus());
                 BigInteger entry = ONE;
@@ -335,6 +343,11 @@ public class NaccacheSternEngine
                 // No check that g^test re-encrypts to the input: a valid ciphertext need not equal
                 // g^test, since probabilistic encryption multiplies in x^sigma and addCryptedBlocks
                 // can leave a sum beyond sigma
+                // TODO[api] Encode the plaintext straight from acc, without the BigInteger round
+                // trip, and unsigned as the RSA and ElGamal engines do: the signed toByteArray adds
+                // a 0x00 when the top bit is set (the value is never negative), which can take the
+                // output past getOutputBlockSize(). processData concatenates these value-length
+                // blocks, so decrypting there also loses any block's leading zero bytes.
                 BigInteger test = Nat.toBigInteger(crtLength, acc);
 
                 output = test.toByteArray();
@@ -516,17 +529,15 @@ public class NaccacheSternEngine
     }
 
     /**
-     * phi(n) / p for one of the key's small primes, without BigInteger.divide, whose running time
-     * follows the quotient. p divides sigma, which divides phi(n), so the division is exact and the
-     * quotient is below 2^k for k the bit length of the modulus; it is therefore
-     * phi(n) * p^-1 mod 2^k, one multiplication and a mask. The inverse is of the small prime alone.
-     * Only correct when p divides phi(n), which is why it stays private to this engine.
+     * x / d for odd d dividing x, with the quotient below 2^bits, without BigInteger.divide, whose
+     * running time follows the quotient: it is x * d^-1 mod 2^bits, one multiplication and a mask.
+     * Only correct when d divides x, which is why it stays private to this engine.
      */
-    private static BigInteger phiNOverSmallPrime(NaccacheSternPrivateKeyParameters priv, BigInteger p)
+    private static BigInteger exactDivide(BigInteger x, BigInteger d, int bits)
     {
-        BigInteger m = ONE.shiftLeft(priv.getModulus().bitLength());
+        BigInteger m = ONE.shiftLeft(bits);
 
-        return priv.getPhi_n().multiply(p.modInverse(m)).and(m.subtract(ONE));
+        return x.multiply(d.modInverse(m)).and(m.subtract(ONE));
     }
 
     /**
