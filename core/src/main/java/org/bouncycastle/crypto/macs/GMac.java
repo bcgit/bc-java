@@ -4,10 +4,12 @@ import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.InvalidCipherTextException;
 import org.bouncycastle.crypto.Mac;
+import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.modes.GCMModeCipher;
 import org.bouncycastle.crypto.params.AEADParameters;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.bouncycastle.util.Arrays;
 
 
 /**
@@ -16,11 +18,22 @@ import org.bouncycastle.crypto.params.ParametersWithIV;
  * <p>
  * GMac is an invocation of the GCM mode where no data is encrypted (i.e. all input data to the Mac
  * is processed as additional authenticated data with the underlying GCM block cipher).
+ * <p>
+ * A GMAC tag is a function of the key and nonce masking a hash of the input, so two tags under one
+ * key and nonce over different inputs allow forgeries: each message needs a fresh nonce through
+ * {@link #init}. After the first tag under a nonce, a further {@link #doFinal} (with or without a
+ * {@link #reset}) is accepted only for the identical input, for which it returns the same tag; any
+ * other input is refused with an IllegalStateException. The check is the underlying cipher's
+ * verification of that tag in decryption mode.
  */
 public class GMac implements Mac
 {
     private final GCMModeCipher cipher;
     private int macSizeBits;
+
+    // the parameters the cipher was last initialised with, and the tag produced under them, if any
+    private AEADParameters parameters;
+    private byte[] tag;
 
     /**
      * Creates a GMAC based on the operation of a block cipher in GCM mode.
@@ -69,6 +82,8 @@ public class GMac implements Mac
 
             // GCM is always operated in encrypt mode to calculate MAC
             cipher.init(true, param);
+            this.parameters = param;
+            this.tag = null;
         }
         else if (params instanceof ParametersWithIV)
         {
@@ -78,7 +93,10 @@ public class GMac implements Mac
             final KeyParameter keyParam = (KeyParameter)param.getParameters();
 
             // GCM is always operated in encrypt mode to calculate MAC
-            cipher.init(true, new AEADParameters(keyParam, macSizeBits, iv));
+            AEADParameters aeadParam = new AEADParameters(keyParam, macSizeBits, iv);
+            cipher.init(true, aeadParam);
+            this.parameters = aeadParam;
+            this.tag = null;
         }
         else
         {
@@ -110,15 +128,40 @@ public class GMac implements Mac
     public int doFinal(byte[] out, int outOff)
         throws DataLengthException, IllegalStateException
     {
+        if (tag == null)
+        {
+            int len;
+            try
+            {
+                len = cipher.doFinal(out, outOff);
+            }
+            catch (InvalidCipherTextException e)
+            {
+                // Impossible in encrypt mode
+                throw new IllegalStateException(e.toString());
+            }
+            tag = Arrays.copyOfRange(out, outOff, outOff + len);
+            // from here on the cipher verifies the input against this tag
+            cipher.init(false, parameters);
+            return len;
+        }
+
+        if (outOff > out.length - tag.length)
+        {
+            throw new OutputLengthException("output buffer too short");
+        }
         try
         {
-            return cipher.doFinal(out, outOff);
+            cipher.processBytes(tag, 0, tag.length, new byte[tag.length], 0);
+            cipher.doFinal(new byte[tag.length], 0);
         }
         catch (InvalidCipherTextException e)
         {
-            // Impossible in encrypt mode
-            throw new IllegalStateException(e.toString());
+            cipher.reset();
+            throw new IllegalStateException("GMAC cannot be reused with the same nonce over different data");
         }
+        System.arraycopy(tag, 0, out, outOff, tag.length);
+        return tag.length;
     }
 
     public void reset()

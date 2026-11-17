@@ -11,14 +11,22 @@ import java.security.Security;
 import javax.crypto.Cipher;
 import javax.crypto.CipherInputStream;
 import javax.crypto.CipherOutputStream;
+import javax.crypto.Mac;
 import javax.crypto.NoSuchPaddingException;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import org.bouncycastle.asn1.nist.NISTObjectIdentifiers;
+import org.bouncycastle.crypto.engines.AESEngine;
+import org.bouncycastle.crypto.modes.AEADBlockCipher;
+import org.bouncycastle.crypto.modes.CCMBlockCipher;
+import org.bouncycastle.crypto.modes.GCMBlockCipher;
+import org.bouncycastle.crypto.params.AEADParameters;
+import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.prng.FixedSecureRandom;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.TestRandomData;
 
@@ -515,6 +523,9 @@ public class AESTest
 
         oidTest(oids, names, 4);
 
+        macReuseTest("AESCCMMAC");
+        macReuseTest("AES-GMAC");
+
 
         String[] wrapOids = {
             NISTObjectIdentifiers.id_aes128_wrap.getId(),
@@ -537,6 +548,63 @@ public class AESTest
         gcmTest();
         gcmTestWithRandom();
         ocbTest();
+    }
+
+    /**
+     * A CCM or GMAC tag is a function of key and nonce masking a MAC of the input, so after the first
+     * tag under a nonce only the identical input may be tagged again; different input needs a new nonce.
+     */
+    private void macReuseTest(String algorithm)
+        throws Exception
+    {
+        SecretKeySpec key = new SecretKeySpec(Hex.decode("000102030405060708090a0b0c0d0e0f"), "AES");
+        byte[] nonce = Hex.decode("101112131415161718191a1b");
+        byte[] data = Strings.toByteArray("the message the tag is over");
+        byte[] other = Strings.toByteArray("another message");
+
+        Mac mac = Mac.getInstance(algorithm, "BC");
+        mac.init(key, new IvParameterSpec(nonce));
+        mac.update(data);
+        byte[] tag = mac.doFinal();
+
+        AEADBlockCipher mode = algorithm.equals("AESCCMMAC")
+            ? (AEADBlockCipher)CCMBlockCipher.newInstance(AESEngine.newInstance())
+            : (AEADBlockCipher)GCMBlockCipher.newInstance(AESEngine.newInstance());
+        mode.init(true, new AEADParameters(new KeyParameter(key.getEncoded()), tag.length * 8, nonce));
+        mode.processAADBytes(data, 0, data.length);
+        byte[] expected = new byte[tag.length];
+        mode.doFinal(expected, 0);
+        isTrue(algorithm + " tag", Arrays.areEqual(expected, tag));
+
+        mac.update(data);
+        isTrue(algorithm + " repeat", Arrays.areEqual(tag, mac.doFinal()));
+        mac.update(other);
+        mac.reset();
+        mac.update(data);
+        isTrue(algorithm + " repeat after reset", Arrays.areEqual(tag, mac.doFinal()));
+
+        mac.update(other);
+        try
+        {
+            mac.doFinal();
+            fail(algorithm + " tagged different data under the same nonce");
+        }
+        catch (IllegalStateException e)
+        {
+            isTrue(algorithm + " message: " + e.getMessage(),
+                e.getMessage().endsWith("cannot be reused with the same nonce over different data"));
+        }
+        mac.update(data);
+        isTrue(algorithm + " repeat after refusal", Arrays.areEqual(tag, mac.doFinal()));
+
+        byte[] nonce2 = Arrays.clone(nonce);
+        nonce2[0] ^= 1;
+        mac.init(key, new IvParameterSpec(nonce2));
+        mac.update(other);
+        byte[] otherTag = mac.doFinal();
+        isTrue(algorithm + " new nonce", otherTag.length == tag.length && !Arrays.areEqual(tag, otherTag));
+        mac.update(other);
+        isTrue(algorithm + " repeat under new nonce", Arrays.areEqual(otherTag, mac.doFinal()));
     }
 
     public static void main(

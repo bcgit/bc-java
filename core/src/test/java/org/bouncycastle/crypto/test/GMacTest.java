@@ -2,11 +2,13 @@ package org.bouncycastle.crypto.test;
 
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.Mac;
+import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.macs.GMac;
 import org.bouncycastle.crypto.modes.GCMBlockCipher;
 import org.bouncycastle.crypto.params.KeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithIV;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.SimpleTest;
@@ -116,10 +118,78 @@ public class GMacTest extends SimpleTest
             testMultibyte(mac, testCase);
         }
 
+        testReuse();
+
         // Invalid mac size
         testInvalidMacSize(97);
         testInvalidMacSize(136);
         testInvalidMacSize(24);
+    }
+
+    /**
+     * After the first tag under a nonce only the identical input may be tagged again, with or without a
+     * reset(); different input is refused and needs a new nonce through init().
+     */
+    private void testReuse()
+    {
+        TestCase testCase = TEST_VECTORS[0];
+        byte[] ad = testCase.getAd();
+        byte[] other = Strings.toByteArray("other input");
+        Mac mac = new GMac(GCMBlockCipher.newInstance(AESEngine.newInstance()), testCase.getTag().length * 8);
+        mac.init(new ParametersWithIV(new KeyParameter(testCase.getKey()), testCase.getIv()));
+
+        int len = testCase.getTag().length;
+        byte[] out = new byte[len + 5];
+        mac.update(ad, 0, ad.length);
+        isEquals(len, mac.doFinal(out, 5));
+        isTrue("first tag", areEqual(testCase.getTag(), Arrays.copyOfRange(out, 5, 5 + len)));
+
+        Arrays.fill(out, (byte)0);
+        mac.update(ad, 0, ad.length);
+        isEquals(len, mac.doFinal(out, 3));
+        isTrue("repeated tag", areEqual(testCase.getTag(), Arrays.copyOfRange(out, 3, 3 + len)));
+
+        mac.update(other, 0, other.length);
+        mac.reset();
+        checkMac(mac, ad, testCase);
+
+        mac.update(other, 0, other.length);
+        try
+        {
+            mac.doFinal(new byte[len], 0);
+            fail("tag over different input under the same nonce");
+        }
+        catch (IllegalStateException e)
+        {
+            isEquals("GMAC cannot be reused with the same nonce over different data", e.getMessage());
+        }
+        checkMac(mac, ad, testCase);
+
+        mac.update(ad, 0, ad.length);
+        try
+        {
+            mac.doFinal(new byte[len + 2], 3);
+            fail("short output buffer accepted");
+        }
+        catch (OutputLengthException e)
+        {
+            // expected
+        }
+        mac.reset();
+
+        byte[] iv2 = Arrays.clone(testCase.getIv());
+        iv2[0] ^= 1;
+        mac.init(new ParametersWithIV(new KeyParameter(testCase.getKey()), iv2));
+        mac.update(other, 0, other.length);
+        byte[] otherTag = new byte[len];
+        mac.doFinal(otherTag, 0);
+        isTrue("new nonce", !areEqual(testCase.getTag(), otherTag));
+    }
+
+    private void checkMac(Mac mac, byte[] ad, TestCase testCase)
+    {
+        mac.update(ad, 0, ad.length);
+        checkMac(mac, testCase);
     }
 
     private void testInvalidMacSize(int size)

@@ -20,6 +20,7 @@ import org.bouncycastle.crypto.CryptoServicesRegistrar;
 import org.bouncycastle.crypto.DataLengthException;
 import org.bouncycastle.crypto.DefaultBufferedBlockCipher;
 import org.bouncycastle.crypto.InvalidCipherTextException;
+import org.bouncycastle.crypto.OutputLengthException;
 import org.bouncycastle.crypto.Mac;
 import org.bouncycastle.crypto.engines.AESEngine;
 import org.bouncycastle.crypto.engines.AESWrapEngine;
@@ -51,6 +52,7 @@ import org.bouncycastle.jcajce.provider.symmetric.util.GcmSpecUtil;
 import org.bouncycastle.jcajce.provider.symmetric.util.IvAlgorithmParameters;
 import org.bouncycastle.jcajce.provider.symmetric.util.PBESecretKeyFactory;
 import org.bouncycastle.jcajce.spec.AEADParameterSpec;
+import org.bouncycastle.util.Arrays;
 import org.bouncycastle.util.Exceptions;
 
 public final class AES
@@ -326,6 +328,14 @@ public final class AES
         }
     }
 
+    /**
+     * CCM over associated data only, as a MAC. The tag is CBC-MAC masked by a function of the key
+     * and nonce, so two tags under one key and nonce over different inputs allow forgeries: each
+     * message needs a fresh nonce through init(). After the first tag under a nonce, a further
+     * doFinal() (with or without a reset()) is accepted only for the identical input, for which it
+     * returns the same tag, as GMac does; the check is CCM's verification of that tag in decryption
+     * mode.
+     */
     static class CCMMac
         implements Mac
     {
@@ -333,12 +343,18 @@ public final class AES
 
         private int macLength = 8;
 
+        // the parameters CCM was last initialised with, and the tag produced under them, if any
+        private CipherParameters parameters;
+        private byte[] tag;
+
         public void init(CipherParameters params)
             throws IllegalArgumentException
         {
             ccm.init(true, params);
 
             this.macLength = ccm.getMac().length;
+            this.parameters = params;
+            this.tag = null;
         }
 
         public String getAlgorithmName()
@@ -366,14 +382,39 @@ public final class AES
         public int doFinal(byte[] out, int outOff)
             throws DataLengthException, IllegalStateException
         {
+            if (tag == null)
+            {
+                int len;
+                try
+                {
+                    len = ccm.doFinal(out, outOff);
+                }
+                catch (InvalidCipherTextException e)
+                {
+                    throw new IllegalStateException("exception on doFinal(): " + e.toString());
+                }
+                tag = Arrays.copyOfRange(out, outOff, outOff + len);
+                // from here on CCM verifies the input against this tag
+                ccm.init(false, parameters);
+                return len;
+            }
+
+            if (outOff > out.length - tag.length)
+            {
+                throw new OutputLengthException("output buffer too short");
+            }
             try
             {
-                return ccm.doFinal(out, 0);
+                ccm.processBytes(tag, 0, tag.length, null, 0);
+                ccm.doFinal(new byte[tag.length], 0);
             }
             catch (InvalidCipherTextException e)
             {
-                throw new IllegalStateException("exception on doFinal(): " + e.toString());
+                ccm.reset();
+                throw new IllegalStateException("CCM MAC cannot be reused with the same nonce over different data");
             }
+            System.arraycopy(tag, 0, out, outOff, tag.length);
+            return tag.length;
         }
 
         public void reset()
