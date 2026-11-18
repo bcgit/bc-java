@@ -1876,9 +1876,9 @@ public class DHTest
         aAgree.doPhase(bPair.getPublic(), true);
         byte[] aSecret = aAgree.generateSecret();
 
-        if (aRandom.count != 1)
+        if (aRandom.count == 0)
         {
-            fail("JCE DH agreement did not blind its exponent (draws " + aRandom.count + ")");
+            fail("JCE DH agreement did not blind its base");
         }
 
         KeyAgreement bAgree = KeyAgreement.getInstance("DH", "BC");
@@ -1890,7 +1890,8 @@ public class DHTest
             fail("JCE DH agreement: the two sides disagree");
         }
 
-        // the multiple is redrawn per call, so a wrong one shows up as repeats disagreeing
+        // the blinding value is redrawn per call, so one that did not cancel shows up as repeats
+        // disagreeing
         for (int rep = 0; rep != 8; rep++)
         {
             KeyAgreement again = KeyAgreement.getInstance("DH", "BC");

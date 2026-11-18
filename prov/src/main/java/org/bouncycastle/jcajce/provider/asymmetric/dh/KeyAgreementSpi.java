@@ -178,14 +178,11 @@ public class KeyAgreementSpi
         else
         {
             // peerY comes from the other party and x is our private value, which for static-static
-            // agreement is long lived, so the exponent is blinded before the variable-time modPow
-            // sees it. A multiple of p-1 rather than of the subgroup order: peerY has only been range
-            // checked above, so it need not lie in the order-q subgroup. This mirrors
-            // DHBasicAgreement, which this branch deliberately does not call - doing so would change
-            // the exception types the JCE contract here promises.
-            BigInteger blindedX = BigIntegers.createBlindedExponent(x, p.subtract(ONE), random);
-
-            BigInteger res = peerY.modPow(blindedX, p);
+            // agreement is long lived, so the base is blinded: the timing of the variable-time
+            // modPow could otherwise be accumulated against the key over many agreements. This
+            // mirrors DHBasicAgreement, which this branch deliberately does not call - doing so
+            // would change the exception types the JCE contract here promises.
+            BigInteger res = BigIntegers.modPowBaseBlinded(p, peerY, x, random);
             if (res.compareTo(ONE) == 0)
             {
                 throw new InvalidKeyException("Shared key can't be 1");

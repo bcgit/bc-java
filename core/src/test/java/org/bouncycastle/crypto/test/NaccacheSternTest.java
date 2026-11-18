@@ -140,6 +140,7 @@ public class NaccacheSternTest
         }
 
         testEveryDigitAndBlinding(pair);
+        testPlaintextRange(pair);
 
         //
         // key generation test
@@ -295,9 +296,10 @@ public class NaccacheSternTest
      * rather than stopping at the match. This walks a plaintext range wide enough to hit every entry
      * of every table - the paper key's digits are the plaintext modulo 3, 5, 7, 11, 13 and 17 - and
      * checks the recovered value each time, which is what a search that selects the wrong index would
-     * fail. It also counts the randomiser draws: one per prime when the tables are built, the rest of
-     * each table being powers of that one blinded exponentiation, and then one per prime for each
-     * decryption, since the exponent carrying phi(n) is blinded and nothing else on either path draws.
+     * fail. It also checks the blinding: building the tables blinds one exponent per prime, the rest
+     * of each table being powers of that one blinded exponentiation, and each decryption blinds the
+     * ciphertext it raises to the secret exponent, so it draws on the random given to init, though
+     * no longer for an exponent.
      */
     private void testEveryDigitAndBlinding(AsymmetricCipherKeyPair pair)
         throws InvalidCipherTextException
@@ -322,13 +324,17 @@ public class NaccacheSternTest
             byte[] cipherText = enc.processBlock(plain, 0, plain.length);
 
             counting.count = 0;
+            counting.calls = 0;
 
             byte[] recovered = dec.processBlock(cipherText, 0, cipherText.length);
 
-            if (counting.count != smallPrimes.size())
+            if (counting.calls == 0)
             {
-                fail("NaccacheStern decryption did not blind one exponent per small prime (m = " + m
-                    + ", draws " + counting.count + ")");
+                fail("NaccacheStern decryption did not blind its base (m = " + m + ")");
+            }
+            if (counting.count != 0)
+            {
+                fail("NaccacheStern decryption blinded an exponent (m = " + m + ", draws " + counting.count + ")");
             }
 
             if (!BigInteger.valueOf(m).equals(new BigInteger(1, recovered)))
@@ -340,8 +346,49 @@ public class NaccacheSternTest
     }
 
     /**
-     * Counts randomiser draws only - the randomiser is seven bits, so it is the only single-byte
-     * request the decrypt path makes.
+     * Decryption recombines the digits by the CRT in a fixed-length accumulator, reduced mod sigma by
+     * masked subtractions. This walks the whole plaintext range [0, sigma) of the paper key with a
+     * prime stride, plus its ends, so the sums before reduction spread over [0, count * sigma).
+     */
+    private void testPlaintextRange(AsymmetricCipherKeyPair pair)
+        throws InvalidCipherTextException
+    {
+        NaccacheSternEngine enc = new NaccacheSternEngine();
+        enc.init(true, pair.getPublic());
+
+        NaccacheSternEngine dec = new NaccacheSternEngine();
+        dec.init(false, pair.getPrivate());
+
+        int sigmaValue = sigma.intValue();
+
+        checkRoundTrip(enc, dec, 0);
+        checkRoundTrip(enc, dec, 1);
+        checkRoundTrip(enc, dec, sigmaValue - 2);
+        checkRoundTrip(enc, dec, sigmaValue - 1);
+
+        for (int m = 2; m < sigmaValue - 2; m += 1009)
+        {
+            checkRoundTrip(enc, dec, m);
+        }
+    }
+
+    private void checkRoundTrip(NaccacheSternEngine enc, NaccacheSternEngine dec, int m)
+        throws InvalidCipherTextException
+    {
+        byte[] plain = BigInteger.valueOf(m).toByteArray();
+        byte[] cipherText = enc.processBlock(plain, 0, plain.length);
+        byte[] recovered = dec.processBlock(cipherText, 0, cipherText.length);
+
+        if (!BigInteger.valueOf(m).equals(new BigInteger(1, recovered)))
+        {
+            fail("NaccacheStern decryption recovered the wrong value for m = " + m
+                + ", got " + new BigInteger(1, recovered));
+        }
+    }
+
+    /**
+     * count is of exponent blinding draws only - the blinding multiple is seven bits, so it is the
+     * only single-byte request the engine makes. calls is of every request.
      */
     private static class CountingRandom
         extends SecureRandom
@@ -349,6 +396,7 @@ public class NaccacheSternTest
         private final SecureRandom delegate;
 
         int count;
+        int calls;
 
         CountingRandom(SecureRandom delegate)
         {
@@ -357,6 +405,7 @@ public class NaccacheSternTest
 
         public void nextBytes(byte[] bytes)
         {
+            calls++;
             if (bytes.length == 1)
             {
                 count++;

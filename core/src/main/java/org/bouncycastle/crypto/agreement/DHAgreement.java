@@ -115,24 +115,19 @@ public class DHAgreement
             ? pub.getY()
             : new DHPublicKeyParameters(pub.getY(), dhParams).getY();
 
-        // Both bases are peer-supplied and both exponents are private - privateValue is this run's
-        // ephemeral, key.getX() is the long-term key - so both exponents are blinded before the
-        // variable-time modPow. The multiples are of p-1 rather than of the subgroup order: the
-        // DHPublicKeyParameters construction above only checks the subgroup when the parameters carry
-        // q, so a base outside the order-q subgroup is possible, and for a safe prime an odd multiple
-        // of q would give the wrong shared secret for such a base.
-        BigInteger pSub1 = p.subtract(ONE);
-
-        BigInteger blindedPrivateValue = BigIntegers.createBlindedExponent(privateValue, pSub1, random);
-
-        BigInteger result = peerY.modPow(blindedPrivateValue, p);
+        // privateValue is this run's ephemeral value, made by calculateMessage: nothing accumulates
+        // against a value used once, so this exponentiation is left as it is.
+        BigInteger result = peerY.modPow(privateValue, p);
         if (result.equals(ONE))
         {
             throw new IllegalStateException("Shared key can't be 1");
         }
 
-        BigInteger blindedX = BigIntegers.createBlindedExponent(key.getX(), pSub1, random);
+        // The peer chooses the base that is raised to the long-term key, so that base is blinded:
+        // the timing of the variable-time modPow could otherwise be accumulated against the key
+        // over many agreements.
+        BigInteger staticPart = BigIntegers.modPowBaseBlinded(p, peerMessage, key.getX(), random);
 
-        return peerMessage.modPow(blindedX, p).multiply(result).mod(p);
+        return staticPart.multiply(result).mod(p);
     }
 }
