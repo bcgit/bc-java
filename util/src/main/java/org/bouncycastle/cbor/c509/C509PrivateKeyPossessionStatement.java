@@ -76,19 +76,19 @@ public class C509PrivateKeyPossessionStatement
         throws IOException
     {
         CBORDecoder in = new CBORDecoder(cborEncoding);
-        C509PrivateKeyPossessionStatement statement = parse(in);
+        C509PrivateKeyPossessionStatement statement = parse(false, in);
         in.expectEnd();
         return statement;
     }
 
-    static C509PrivateKeyPossessionStatement parse(CBORDecoder in)
+    static C509PrivateKeyPossessionStatement parse(boolean nativeForm, CBORDecoder in)
         throws IOException
     {
         if (in.readArrayHeader() != 3)
         {
             throw new IOException("C509 PrivateKeyPossessionStatement array must have 3 elements");
         }
-        X500Name issuer = C509Name.parse(in).toX500Name();
+        X500Name issuer = C509Name.parse(nativeForm, in).toX500Name();
         BigInteger serialNumber = new BigInteger(1, C509Certificate.readSerialNumber(in));
         C509Certificate certificate = null;
         if (in.nextIsNull())
@@ -182,17 +182,17 @@ public class C509PrivateKeyPossessionStatement
         throws IOException
     {
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
-        encodeTo(new CBOREncoder(bOut));
+        encodeTo(false, new CBOREncoder(bOut));
         return bOut.toByteArray();
     }
 
-    void encodeTo(CBOREncoder out)
+    void encodeTo(boolean nativeForm, CBOREncoder out)
         throws IOException
     {
         C509Name issuerName;
         try
         {
-            issuerName = C509Name.fromX500Name(issuer);
+            issuerName = C509Name.fromX500Name(nativeForm, issuer);
         }
         catch (IllegalArgumentException e)
         {

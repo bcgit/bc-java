@@ -101,7 +101,8 @@ public class C509CertificationRequest
         Fields fields = parseTBSFields(in);
         byte[] signatureValueItem = in.readEncodedItem();
         CBORDecoder valueIn = new CBORDecoder(signatureValueItem);
-        byte[] signature = C509SignatureValueCodec.decodeSignatureValue(fields.subjectSignatureAlgorithm, valueIn);
+        byte[] signature = C509SignatureValueCodec.decodeSignatureValue(fields.requestType == TYPE_NATIVE,
+            fields.subjectSignatureAlgorithm, valueIn);
         valueIn.expectEnd();
         in.expectEnd();
         return fields.build(signatureValueItem, signature);
@@ -129,8 +130,9 @@ public class C509CertificationRequest
         CBORDecoder tbsIn = new CBORDecoder(tbsCertificationRequest);
         Fields fields = parseTBSFields(tbsIn);
         tbsIn.expectEnd();
-        byte[] signatureValueItem = C509SignatureValueCodec.encodeSignatureValue(fields.subjectSignatureAlgorithm,
-            signature, options.getEcdsaSignatureValueWidth());
+        byte[] signatureValueItem = C509SignatureValueCodec.encodeSignatureValue(
+            fields.requestType == TYPE_NATIVE, fields.subjectSignatureAlgorithm, signature,
+            options.getEcdsaSignatureValueWidth());
         return fields.build(signatureValueItem, signature);
     }
 
@@ -163,7 +165,9 @@ public class C509CertificationRequest
             throw new IOException("unsupported c509CertificationRequestType: " + fields.requestType);
         }
         fields.subjectSignatureAlgorithm = C509AlgorithmIdentifier.parseSignatureAlgorithm(in);
-        fields.subject = C509Name.parse(in);
+        // an unregistered int code has a meaning only where there is no RFC 2986 form to reconstruct
+        boolean nativeForm = fields.requestType == TYPE_NATIVE;
+        fields.subject = C509Name.parse(nativeForm, in);
         fields.subjectPublicKeyAlgorithm = C509AlgorithmIdentifier.parsePublicKeyAlgorithm(in);
         fields.subjectPublicKeyItem = in.readEncodedItem();
         fields.subjectPublicKeyInfo = C509PublicKeyCodec.decodeSubjectPublicKey(fields.subjectPublicKeyAlgorithm,
@@ -177,12 +181,12 @@ public class C509CertificationRequest
         fields.attributes = new C509Attribute[attributeCount / 2];
         for (int i = 0; i != fields.attributes.length; i++)
         {
-            fields.attributes[i] = parseAttribute(in);
+            fields.attributes[i] = parseAttribute(nativeForm, in);
         }
         return fields;
     }
 
-    private static C509Attribute parseAttribute(CBORDecoder in)
+    private static C509Attribute parseAttribute(boolean nativeForm, CBORDecoder in)
         throws IOException
     {
         int major = in.peekMajorType();
@@ -197,7 +201,7 @@ public class C509CertificationRequest
                 // the value has type Extensions (Section 4.3.1); validate it fully
                 value = in.readEncodedItem();
                 CBORDecoder valueIn = new CBORDecoder(value);
-                C509Extensions.parse(valueIn);
+                C509Extensions.parse(nativeForm, valueIn);
                 valueIn.expectEnd();
             }
             else if (registryValue == C509Attribute.CHALLENGE_PASSWORD)
@@ -214,8 +218,14 @@ public class C509CertificationRequest
                 // the value has type PrivateKeyPossessionStatement (Section 4.3.3)
                 value = in.readEncodedItem();
                 CBORDecoder valueIn = new CBORDecoder(value);
-                C509PrivateKeyPossessionStatement.parse(valueIn);
+                C509PrivateKeyPossessionStatement.parse(nativeForm, valueIn);
                 valueIn.expectEnd();
+            }
+            else if (nativeForm)
+            {
+                // an unregistered attribute: the value is carried as the CBOR item it is
+                oid = C509UnregisteredCodes.toOID(C509UnregisteredCodes.CR_ATTRIBUTE, registryValue);
+                value = in.readEncodedItem();
             }
             else
             {
@@ -227,6 +237,7 @@ public class C509CertificationRequest
         if (major == CBORType.BYTE_STRING)
         {
             ASN1ObjectIdentifier oid = C509Oids.fromContents(in.readByteString());
+            C509UnregisteredCodes.checkNotStandIn(nativeForm, oid);
             byte[] value = in.readEncodedItem();
             CBORDecoder valueIn = new CBORDecoder(value);
             byte[] derValue = valueIn.readByteString();
@@ -329,10 +340,12 @@ public class C509CertificationRequest
         C509AlgorithmIdentifier pkAlg = C509AlgorithmIdentifier.forPublicKeyAlgorithm(
             subjectPublicKeyInfo.getAlgorithm());
 
+        boolean nativeForm = requestType == TYPE_NATIVE;
+
         C509Name subjectName;
         try
         {
-            subjectName = C509Name.fromX500Name(subject);
+            subjectName = C509Name.fromX500Name(nativeForm, subject);
         }
         catch (IllegalArgumentException e)
         {
@@ -355,7 +368,7 @@ public class C509CertificationRequest
         out.writeArrayHeader(2 * attributeCount);
         if (extensionRequest != null)
         {
-            C509Extensions c509Extensions = C509Extensions.fromX509Extensions(extensionRequest);
+            C509Extensions c509Extensions = C509Extensions.fromX509Extensions(nativeForm, extensionRequest);
             if (requestType == TYPE_NATIVE)
             {
                 for (int i = 0; i != c509Extensions.size(); i++)
@@ -379,7 +392,7 @@ public class C509CertificationRequest
         if (possessionStatement != null)
         {
             out.writeInteger(C509Attribute.PRIVATE_KEY_POSSESSION_STATEMENT);
-            possessionStatement.encodeTo(out);
+            possessionStatement.encodeTo(nativeForm, out);
         }
         return bOut.toByteArray();
     }
@@ -488,7 +501,7 @@ public class C509CertificationRequest
             else if (possessionStatement != null)
             {
                 attrEnc.writeInteger(C509Attribute.PRIVATE_KEY_POSSESSION_STATEMENT);
-                possessionStatement.encodeTo(attrEnc);
+                possessionStatement.encodeTo(false, attrEnc);
             }
             else if (pkcs_9_at_challengePassword.equals(attribute.getAttrType()) && values.size() == 1
                 && (values.getObjectAt(0) instanceof ASN1UTF8String
@@ -596,7 +609,7 @@ public class C509CertificationRequest
         {
         case C509Attribute.EXTENSION_REQUEST:
         {
-            C509Extensions extensions = C509Extensions.parse(valueIn);
+            C509Extensions extensions = C509Extensions.parse(false, valueIn);
             valueIn.expectEnd();
             Extensions x509Extensions = extensions.toX509Extensions();
             if (x509Extensions == null)
@@ -615,7 +628,7 @@ public class C509CertificationRequest
         }
         case C509Attribute.PRIVATE_KEY_POSSESSION_STATEMENT:
         {
-            C509PrivateKeyPossessionStatement statement = C509PrivateKeyPossessionStatement.parse(valueIn);
+            C509PrivateKeyPossessionStatement statement = C509PrivateKeyPossessionStatement.parse(false, valueIn);
             valueIn.expectEnd();
             return new Attribute(attribute.getAttrType(), new DERSet(statement.toPrivateKeyPossessionStatement()));
         }

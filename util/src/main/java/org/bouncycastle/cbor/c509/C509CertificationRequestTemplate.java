@@ -310,11 +310,8 @@ public class C509CertificationRequestTemplate
             else
             {
                 // negative attributeType is not allowed in a template (Section 4.4)
+                // a template is not tied to a request type, so an unregistered value is carried as it is
                 long value = in.readUnsignedInteger();
-                if (C509AttributeType.getOID(value) == null)
-                {
-                    throw new IOException("unknown C509 RDN attribute value: " + value);
-                }
                 registryValue = Longs.valueOf(value);
             }
             long minOccurs = in.readUnsignedInteger();
@@ -354,9 +351,9 @@ public class C509CertificationRequestTemplate
             {
                 // negative extensionID is not allowed in a template (Section 4.4)
                 long value = in.readUnsignedInteger();
-                if (C509ExtensionType.getOID(value) == null)
+                if (value == 0)
                 {
-                    throw new IOException("unknown C509 extension value: " + value);
+                    throw new IOException("C509 extensionID cannot be 0");
                 }
                 registryValue = Longs.valueOf(value);
             }

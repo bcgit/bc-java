@@ -9,6 +9,7 @@ import org.bouncycastle.cbor.CBORDecoder;
 import org.bouncycastle.cbor.CBOREncoder;
 import org.bouncycastle.cbor.CBORType;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Exceptions;
 import org.bouncycastle.util.Longs;
 
 /**
@@ -39,6 +40,27 @@ public class C509Extensions
      */
     public static C509Extensions fromX509Extensions(Extensions x509Extensions)
     {
+        try
+        {
+            return fromX509Extensions(false, x509Extensions);
+        }
+        catch (IOException e)
+        {
+            // only a stand-in extension can fail, and there are none outside the native form
+            throw Exceptions.illegalStateException(e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Build the C509 form of a set of extensions, writing an extension under a
+     * stand-in object identifier as the unregistered int it represents when the
+     * extensions are for a natively signed structure (see {@link C509UnregisteredCodes}).
+     *
+     * @throws IOException if a stand-in extension is malformed.
+     */
+    static C509Extensions fromX509Extensions(boolean nativeForm, Extensions x509Extensions)
+        throws IOException
+    {
         if (x509Extensions == null)
         {
             return new C509Extensions(new C509Extension[0]);
@@ -52,10 +74,26 @@ public class C509Extensions
             boolean critical = ext.isCritical();
             Long registryValue = C509ExtensionType.getValue(oids[i]);
             byte[] cborValue = null;
+            if (registryValue == null && nativeForm)
+            {
+                Long code = C509UnregisteredCodes.codeOf(C509UnregisteredCodes.EXTENSION, oids[i]);
+                if (code != null)
+                {
+                    if (code.longValue() < 1 || C509ExtensionType.getOID(code.longValue()) != null)
+                    {
+                        throw new IOException("C509 unregistered code identifier " + oids[i]
+                            + " does not name an unregistered extension value");
+                    }
+                    // the value is the CBOR item itself
+                    checkSingleItem(extnValue);
+                    result[i] = new C509Extension(code, oids[i], critical, extnValue, extnValue);
+                    continue;
+                }
+            }
             if (registryValue != null)
             {
-                cborValue = C509ExtensionValueCodec.encodeValue(registryValue.intValue(), extnValue);
-                if (cborValue != null && !decodesBackTo(registryValue.intValue(), cborValue, extnValue))
+                cborValue = C509ExtensionValueCodec.encodeValue(nativeForm, registryValue.intValue(), extnValue);
+                if (cborValue != null && !decodesBackTo(nativeForm, registryValue.intValue(), cborValue, extnValue))
                 {
                     // the specific encoding does not reproduce this exact DER; use the
                     // generic form so the extension still converts faithfully
@@ -74,12 +112,20 @@ public class C509Extensions
         return new C509Extensions(result);
     }
 
-    private static boolean decodesBackTo(int registryValue, byte[] cborValue, byte[] extnValue)
+    private static void checkSingleItem(byte[] cborValue)
+        throws IOException
+    {
+        CBORDecoder in = new CBORDecoder(cborValue);
+        in.readEncodedItem();
+        in.expectEnd();
+    }
+
+    private static boolean decodesBackTo(boolean nativeForm, int registryValue, byte[] cborValue, byte[] extnValue)
     {
         try
         {
             CBORDecoder in = new CBORDecoder(cborValue);
-            byte[] der = C509ExtensionValueCodec.decodeValue(registryValue, in);
+            byte[] der = C509ExtensionValueCodec.decodeValue(nativeForm, registryValue, in);
             in.expectEnd();
             return Arrays.areEqual(der, extnValue);
         }
@@ -91,8 +137,11 @@ public class C509Extensions
 
     /**
      * Parse the extensions field.
+     *
+     * @param nativeForm true if the field is part of a natively signed structure, where
+     *        an unregistered code is read as its stand-in.
      */
-    static C509Extensions parse(CBORDecoder in)
+    static C509Extensions parse(boolean nativeForm, CBORDecoder in)
         throws IOException
     {
         int major = in.peekMajorType();
@@ -110,7 +159,7 @@ public class C509Extensions
             new CBOREncoder(bOut).writeUnsignedInteger(keyUsage);
             byte[] cborValue = bOut.toByteArray();
             return new C509Extensions(new C509Extension[]
-                { buildRegistered(C509ExtensionType.KEY_USAGE, critical, cborValue) });
+                { buildRegistered(nativeForm, C509ExtensionType.KEY_USAGE, critical, cborValue) });
         }
 
         int count = in.readArrayHeader();
@@ -121,7 +170,7 @@ public class C509Extensions
         C509Extension[] extensions = new C509Extension[count / 2];
         for (int i = 0; i != extensions.length; i++)
         {
-            extensions[i] = parseExtension(in);
+            extensions[i] = parseExtension(nativeForm, in);
         }
         if (extensions.length == 1 && extensions[0].getRegistryValue() != null
             && extensions[0].getRegistryValue().longValue() == C509ExtensionType.KEY_USAGE)
@@ -138,7 +187,7 @@ public class C509Extensions
         return new C509Extensions(extensions);
     }
 
-    private static C509Extension parseExtension(CBORDecoder in)
+    private static C509Extension parseExtension(boolean nativeForm, CBORDecoder in)
         throws IOException
     {
         int major = in.peekMajorType();
@@ -157,12 +206,13 @@ public class C509Extensions
                 throw new IOException("C509 extensionID out of range: " + idValue);
             }
             byte[] cborValue = in.readEncodedItem();
-            return buildRegistered(registryValue, critical, cborValue);
+            return buildRegistered(nativeForm, registryValue, critical, cborValue);
         }
 
         if (major == CBORType.BYTE_STRING)
         {
             ASN1ObjectIdentifier oid = C509Oids.fromContents(in.readByteString());
+            C509UnregisteredCodes.checkNotStandIn(nativeForm, oid);
             boolean critical = false;
             byte[] extnValue;
             if (in.peekMajorType() == CBORType.ARRAY)
@@ -185,17 +235,25 @@ public class C509Extensions
         throw new IOException("C509 extensionID expected, found major type " + major);
     }
 
-    private static C509Extension buildRegistered(long registryValue, boolean critical, byte[] cborValue)
+    private static C509Extension buildRegistered(boolean nativeForm, long registryValue, boolean critical,
+        byte[] cborValue)
         throws IOException
     {
         ASN1ObjectIdentifier oid = C509ExtensionType.getOID(registryValue);
         if (oid == null)
         {
-            throw new IOException("unknown C509 extension value: " + registryValue);
+            if (!nativeForm)
+            {
+                throw new IOException("unknown C509 extension value: " + registryValue);
+            }
+            // an unregistered extension: the value is carried as the CBOR item it is
+            return new C509Extension(Longs.valueOf(registryValue),
+                C509UnregisteredCodes.toOID(C509UnregisteredCodes.EXTENSION, registryValue), critical,
+                cborValue, cborValue);
         }
         CBORDecoder valueIn = new CBORDecoder(cborValue);
         // registered values are all small, so the narrowing is exact
-        byte[] extnValue = C509ExtensionValueCodec.decodeValue((int)registryValue, valueIn);
+        byte[] extnValue = C509ExtensionValueCodec.decodeValue(nativeForm, (int)registryValue, valueIn);
         valueIn.expectEnd();
         return new C509Extension(Longs.valueOf(registryValue), oid, critical, cborValue, extnValue);
     }

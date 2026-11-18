@@ -18,6 +18,12 @@ import org.bouncycastle.util.Arrays;
  * Both forms materialize the DER encoding of the extension value at construction, so
  * an instance always answers {@link #getExtnId()} and {@link #getExtnValue()}
  * regardless of the wire form used.
+ * <p>
+ * A natively signed certificate may also carry an extensionID the registry does not
+ * define. Such an extension reports the int as its registry value and a stand-in
+ * object identifier (see {@link C509UnregisteredCodes}) as its extnId; its value has
+ * no DER form, so {@link #getExtnValue()} returns the encoding of the CBOR item that
+ * followed the int.
  */
 public class C509Extension
 {

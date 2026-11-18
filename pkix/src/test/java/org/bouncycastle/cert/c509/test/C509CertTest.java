@@ -13,6 +13,7 @@ import java.security.spec.ECGenParameterSpec;
 import java.util.Date;
 
 import junit.framework.TestCase;
+import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x509.Certificate;
@@ -28,6 +29,7 @@ import org.bouncycastle.cbor.c509.C509CertificationRequest;
 import org.bouncycastle.cbor.c509.C509PrivateKey;
 import org.bouncycastle.cbor.c509.C509PrivateKeyPossessionStatement;
 import org.bouncycastle.cbor.c509.C509SignatureAlgorithm;
+import org.bouncycastle.cbor.c509.C509UnregisteredCodes;
 import org.bouncycastle.cbor.c509.COSEC509;
 import org.bouncycastle.asn1.pkcs.PrivateKeyInfo;
 import org.bouncycastle.cert.X509CertificateHolder;
@@ -284,13 +286,13 @@ public class C509CertTest
     public void testDraftVectorSignatures()
         throws Exception
     {
-        // every signed certificate of draft-ietf-cose-c509-test-vectors-02 verifies in
+        // every signed certificate of draft-ietf-cose-c509-test-vectors-04 verifies in
         // both its forms: the type 3 signature over the reconstructed DER and the type 2
         // signature over the CBOR TBSCertificate. Section 2's CA is unsigned and signs
-        // the X25519 and X448 certificates of Sections 3.12 and 3.13; Section 7 uses a
+        // the X25519 and X448 certificates of Sections 3.12 and 3.13; Section 8 uses a
         // private curve the provider cannot verify with.
-        String[] tags = { "3_1", "3_2", "3_3", "3_4", "3_5", "3_6", "3_7", "3_8", "3_9", "3_11", "3_12", "3_13",
-            "3_14", "3_15", "4_1", "4_17", "4_18", "4_19", "4_20", "4_21", "4_22" };
+        String[] tags = { "3_1", "3_2", "3_3", "3_4", "3_5", "3_6", "3_7", "3_8", "3_9", "3_10", "3_11", "3_12",
+            "3_13", "3_14", "3_15", "4_1", "4_17", "4_18", "4_19", "4_20", "4_21", "4_22" };
         SubjectPublicKeyInfo caKey = new C509CertificateHolder(vector("2_t2")).getSubjectPublicKeyInfo();
         String[] forms = { "_t3", "_t2" };
         for (int i = 0; i != tags.length; i++)
@@ -306,8 +308,17 @@ public class C509CertTest
             }
         }
 
-        // the ECDSA certification requests of Sections 8.1 and 8.2 verify with their subject key
-        String[] requests = { "8_1_t3", "8_1_t2", "8_2_t3" };
+        // Section 7's certificate exists in the type 2 form only: its 8-byte codes have no X.509 counterpart
+        C509CertificateHolder unregistered = new C509CertificateHolder(vector("7_t2"));
+        assertTrue("7_t2 does not verify", unregistered.isSignatureValid(
+            new JcaC509ContentVerifierProviderBuilder().setProvider("BC").build(unregistered.getSubjectPublicKeyInfo())));
+        ASN1ObjectIdentifier[] critical = unregistered.getExtensions().getCriticalExtensionOIDs();
+        assertEquals(1, critical.length);
+        assertTrue(C509UnregisteredCodes.isUnregisteredCode(critical[0]));
+
+        // the ECDSA certification requests of Sections 9.1 and 9.2 verify with their subject key,
+        // as does Section 11's with its 8-byte attribute type
+        String[] requests = { "9_1_t3", "9_1_t2", "9_2_t3", "11_t2" };
         for (int i = 0; i != requests.length; i++)
         {
             C509CertificationRequestHolder holder = new C509CertificationRequestHolder(vector(requests[i]));

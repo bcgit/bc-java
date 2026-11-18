@@ -14,6 +14,11 @@ import org.bouncycastle.util.Arrays;
  * 1 (challengePassword) and 2 (privateKeyPossessionStatement). For the generic ~oid
  * form the value byte string carries the DER encoding of the attribute values SET
  * (the RFC 2986 'values' field).
+ * <p>
+ * A natively signed request may also carry an int the registry does not define. Such
+ * an attribute reports the value as its registry value, a stand-in object identifier
+ * (see {@link C509UnregisteredCodes}) as its type, and the CBOR item that followed the
+ * int as its value.
  */
 public class C509Attribute
 {
@@ -33,6 +38,11 @@ public class C509Attribute
         this.registryValue = registryValue;
         this.oid = oid;
         this.cborValue = cborValue;
+    }
+
+    static boolean isRegistered(long code)
+    {
+        return code >= EXTENSION_REQUEST && code <= PRIVATE_KEY_POSSESSION_STATEMENT;
     }
 
     /**

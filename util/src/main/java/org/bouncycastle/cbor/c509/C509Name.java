@@ -67,7 +67,7 @@ public class C509Name
         throws IOException
     {
         CBORDecoder in = new CBORDecoder(cborEncoding);
-        C509Name name = parse(in);
+        C509Name name = parse(false, in);
         in.expectEnd();
         return name;
     }
@@ -75,12 +75,16 @@ public class C509Name
     /**
      * Parse a C509 Name from a decoder, validating it fully and materializing the
      * X.500 view.
+     *
+     * @param nativeForm true if the name is part of a natively signed structure, where
+     *        an unregistered attribute type is read as its stand-in (see
+     *        {@link C509UnregisteredCodes}).
      */
-    static C509Name parse(CBORDecoder in)
+    static C509Name parse(boolean nativeForm, CBORDecoder in)
         throws IOException
     {
         byte[] encoded = in.readEncodedItem();
-        return new C509Name(encoded, toX500Name(encoded));
+        return new C509Name(encoded, toX500Name(nativeForm, encoded));
     }
 
     /**
@@ -91,9 +95,18 @@ public class C509Name
      */
     public static C509Name fromX500Name(X500Name name)
     {
+        return fromX500Name(false, name);
+    }
+
+    /**
+     * Build the C509 form of an X.500 name, writing a stand-in attribute type as the
+     * unregistered int it represents when the name is for a natively signed structure.
+     */
+    static C509Name fromX500Name(boolean nativeForm, X500Name name)
+    {
         try
         {
-            byte[] encoded = encodeX500Name(name);
+            byte[] encoded = encodeX500Name(nativeForm, name);
             return new C509Name(encoded, name);
         }
         catch (IOException e)
@@ -145,7 +158,7 @@ public class C509Name
     /*
      * X500Name -> CBOR
      */
-    private static byte[] encodeX500Name(X500Name name)
+    private static byte[] encodeX500Name(boolean nativeForm, X500Name name)
         throws IOException
     {
         RDN[] rdns = name.getRDNs();
@@ -180,15 +193,34 @@ public class C509Name
         for (int i = 0; i != rdns.length; i++)
         {
             AttributeTypeAndValue atv = rdns[i].getFirst();
-            writeAttribute(out, atv);
+            writeAttribute(nativeForm, out, atv);
         }
         return bOut.toByteArray();
     }
 
-    private static void writeAttribute(CBOREncoder out, AttributeTypeAndValue atv)
+    private static void writeAttribute(boolean nativeForm, CBOREncoder out, AttributeTypeAndValue atv)
         throws IOException
     {
         Long code = C509AttributeType.getValue(atv.getType());
+        if (code == null && nativeForm)
+        {
+            code = C509UnregisteredCodes.codeOf(C509UnregisteredCodes.RDN_ATTRIBUTE, atv.getType());
+            if (code != null)
+            {
+                if (code.longValue() < 0 || C509AttributeType.getOID(code.longValue()) != null)
+                {
+                    throw new IOException("C509 unregistered code identifier " + atv.getType()
+                        + " does not name an unregistered RDN attribute value");
+                }
+                if (!(atv.getValue() instanceof ASN1UTF8String)
+                    && !(atv.getValue() instanceof ASN1PrintableString && code.longValue() > 0))
+                {
+                    // there is no ~oid form to fall back to
+                    throw new IOException("C509 unregistered RDN attribute " + code
+                        + " takes a utf8String or printableString value");
+                }
+            }
+        }
         ASN1Encodable value = atv.getValue();
 
         if (code != null)
@@ -312,7 +344,7 @@ public class C509Name
     /*
      * CBOR -> X500Name
      */
-    private static X500Name toX500Name(byte[] encoded)
+    private static X500Name toX500Name(boolean nativeForm, byte[] encoded)
         throws IOException
     {
         CBORDecoder in = new CBORDecoder(encoded);
@@ -335,13 +367,13 @@ public class C509Name
         AttributeTypeAndValue[] atvs = new AttributeTypeAndValue[count / 2];
         for (int i = 0; i != atvs.length; i++)
         {
-            atvs[i] = readAttribute(in);
+            atvs[i] = readAttribute(nativeForm, in);
         }
         in.expectEnd();
         return buildX500Name(atvs);
     }
 
-    private static AttributeTypeAndValue readAttribute(CBORDecoder in)
+    private static AttributeTypeAndValue readAttribute(boolean nativeForm, CBORDecoder in)
         throws IOException
     {
         int major = in.peekMajorType();
@@ -349,10 +381,19 @@ public class C509Name
         {
             long typeValue = in.readInteger();
             long code = typeValue < 0 ? -typeValue : typeValue;
+            if (code < 0)
+            {
+                // only -2^63 survives negation, and the registry range is 0 to 2^63 - 1 (Section 8.6)
+                throw new IOException("C509 RDN attribute value out of range: " + typeValue);
+            }
             ASN1ObjectIdentifier oid = C509AttributeType.getOID(code);
             if (oid == null)
             {
-                throw new IOException("unknown C509 RDN attribute value: " + code);
+                if (!nativeForm)
+                {
+                    throw new IOException("unknown C509 RDN attribute value: " + code);
+                }
+                oid = C509UnregisteredCodes.toOID(C509UnregisteredCodes.RDN_ATTRIBUTE, code);
             }
             String text = readSpecialText(in);
             ASN1Encodable value;
@@ -378,6 +419,7 @@ public class C509Name
         if (major == CBORType.BYTE_STRING)
         {
             ASN1ObjectIdentifier oid = C509Oids.fromContents(in.readByteString());
+            C509UnregisteredCodes.checkNotStandIn(nativeForm, oid);
             byte[] valueEncoding = in.readByteString();
             ASN1Primitive value;
             try

@@ -141,8 +141,9 @@ public class C509Certificate
         CBORDecoder tbsIn = new CBORDecoder(tbsCertificate);
         Fields fields = parseTBSFields(tbsIn);
         tbsIn.expectEnd();
-        byte[] signatureValueItem = C509SignatureValueCodec.encodeSignatureValue(fields.issuerSignatureAlgorithm,
-            signature, options.getEcdsaSignatureValueWidth());
+        byte[] signatureValueItem = C509SignatureValueCodec.encodeSignatureValue(
+            fields.certificateType == TYPE_NATIVE, fields.issuerSignatureAlgorithm, signature,
+            options.getEcdsaSignatureValueWidth());
         return fields.build(signatureValueItem, signature);
     }
 
@@ -152,7 +153,8 @@ public class C509Certificate
         Fields fields = parseTBSFields(in);
         byte[] signatureValueItem = in.readEncodedItem();
         CBORDecoder valueIn = new CBORDecoder(signatureValueItem);
-        byte[] signature = C509SignatureValueCodec.decodeSignatureValue(fields.issuerSignatureAlgorithm, valueIn);
+        byte[] signature = C509SignatureValueCodec.decodeSignatureValue(fields.certificateType == TYPE_NATIVE,
+            fields.issuerSignatureAlgorithm, valueIn);
         valueIn.expectEnd();
         return fields.build(signatureValueItem, signature);
     }
@@ -190,6 +192,9 @@ public class C509Certificate
             throw new IOException("unsupported c509CertificateType: " + fields.certificateType);
         }
 
+        // an unregistered int code has a meaning only where there is no X.509 form to reconstruct
+        boolean nativeForm = fields.certificateType == TYPE_NATIVE;
+
         fields.serialNumber = readSerialNumber(in);
 
         fields.issuerSignatureAlgorithm = C509AlgorithmIdentifier.parseSignatureAlgorithm(in);
@@ -201,7 +206,7 @@ public class C509Certificate
         }
         else
         {
-            fields.issuer = C509Name.parse(in);
+            fields.issuer = C509Name.parse(nativeForm, in);
         }
 
         fields.notBefore = checkValiditySeconds(in.readUnsignedInteger(), "validityNotBefore");
@@ -219,7 +224,7 @@ public class C509Certificate
             }
         }
 
-        fields.subject = C509Name.parse(in);
+        fields.subject = C509Name.parse(nativeForm, in);
         if (fields.issuer != null && fields.issuer.equals(fields.subject))
         {
             throw new IOException("C509 issuer identical to the subject must be encoded as null");
@@ -228,7 +233,7 @@ public class C509Certificate
         fields.subjectPublicKeyItem = in.readEncodedItem();
         fields.subjectPublicKeyInfo = C509PublicKeyCodec.decodeSubjectPublicKey(fields.subjectPublicKeyAlgorithm,
             fields.subjectPublicKeyItem);
-        fields.extensions = C509Extensions.parse(in);
+        fields.extensions = C509Extensions.parse(nativeForm, in);
 
         return fields;
     }
@@ -302,19 +307,20 @@ public class C509Certificate
         C509AlgorithmIdentifier pkAlg = C509AlgorithmIdentifier.forPublicKeyAlgorithm(
             subjectPublicKeyInfo.getAlgorithm());
 
-        C509Name subjectName = fromX500NameChecked(subject);
+        boolean nativeForm = certificateType == TYPE_NATIVE;
+        C509Name subjectName = fromX500NameChecked(nativeForm, subject);
         C509Name issuerName = null;
         // null only for an octet-for-octet identical issuer (Section 3.1.4); X500Name.equals is too lenient
         if (issuer != null
             && !Arrays.areEqual(issuer.getEncoded(ASN1Encoding.DER), subject.getEncoded(ASN1Encoding.DER)))
         {
-            issuerName = fromX500NameChecked(issuer);
+            issuerName = fromX500NameChecked(nativeForm, issuer);
         }
 
         byte[] subjectPublicKeyItem = C509PublicKeyCodec.encodeSubjectPublicKey(pkAlg, subjectPublicKeyInfo,
             options.isPointCompression(), certificateType == TYPE_NATIVE);
 
-        C509Extensions c509Extensions = C509Extensions.fromX509Extensions(extensions);
+        C509Extensions c509Extensions = C509Extensions.fromX509Extensions(nativeForm, extensions);
         if (certificateType == TYPE_NATIVE)
         {
             checkNativeExtensions(c509Extensions);
@@ -357,12 +363,12 @@ public class C509Certificate
         return bOut.toByteArray();
     }
 
-    private static C509Name fromX500NameChecked(X500Name name)
+    private static C509Name fromX500NameChecked(boolean nativeForm, X500Name name)
         throws IOException
     {
         try
         {
-            return C509Name.fromX500Name(name);
+            return C509Name.fromX500Name(nativeForm, name);
         }
         catch (IllegalArgumentException e)
         {

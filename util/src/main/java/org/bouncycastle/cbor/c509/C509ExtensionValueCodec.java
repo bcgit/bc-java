@@ -174,13 +174,13 @@ class C509ExtensionValueCodec
      * extension, returning the encoded CBOR item, or null when the value cannot be
      * faithfully represented (the caller then uses the generic ~oid form).
      */
-    static byte[] encodeValue(int extensionType, byte[] extnValue)
+    static byte[] encodeValue(boolean nativeForm, int extensionType, byte[] extnValue)
     {
         try
         {
             ByteArrayOutputStream bOut = new ByteArrayOutputStream();
             CBOREncoder out = new CBOREncoder(bOut);
-            if (!encodeValue(extensionType, extnValue, out))
+            if (!encodeValue(nativeForm, extensionType, extnValue, out))
             {
                 return null;
             }
@@ -198,7 +198,7 @@ class C509ExtensionValueCodec
         }
     }
 
-    private static boolean encodeValue(int extensionType, byte[] extnValue, CBOREncoder out)
+    private static boolean encodeValue(boolean nativeForm, int extensionType, byte[] extnValue, CBOREncoder out)
         throws IOException
     {
         switch (extensionType)
@@ -228,7 +228,7 @@ class C509ExtensionValueCodec
             out.writeArrayHeader(2 * gns.length);
             for (int i = 0; i != gns.length; i++)
             {
-                if (!encodeGeneralName(out, gns[i], false))
+                if (!encodeGeneralName(nativeForm, out, gns[i], false))
                 {
                     return false;
                 }
@@ -264,9 +264,9 @@ class C509ExtensionValueCodec
         }
         case C509ExtensionType.CRL_DISTRIBUTION_POINTS:
         case C509ExtensionType.FRESHEST_CRL:
-            return encodeDistributionPoints(out, extnValue);
+            return encodeDistributionPoints(nativeForm, out, extnValue);
         case C509ExtensionType.CERTIFICATE_POLICIES:
-            return encodeCertificatePolicies(out, extnValue);
+            return encodeCertificatePolicies(nativeForm, out, extnValue);
         case C509ExtensionType.AUTHORITY_KEY_IDENTIFIER:
         {
             AuthorityKeyIdentifier aki = AuthorityKeyIdentifier.getInstance(ASN1Primitive.fromByteArray(extnValue));
@@ -288,7 +288,7 @@ class C509ExtensionValueCodec
             out.writeArrayHeader(2 * gns.length);
             for (int i = 0; i != gns.length; i++)
             {
-                if (!encodeGeneralName(out, gns[i], false))
+                if (!encodeGeneralName(nativeForm, out, gns[i], false))
                 {
                     return false;
                 }
@@ -315,7 +315,8 @@ class C509ExtensionValueCodec
             for (int i = 0; i != count; i++)
             {
                 ASN1ObjectIdentifier purpose = ASN1ObjectIdentifier.getInstance(seq.getObjectAt(i));
-                Long code = ekuOidToCode.get(purpose);
+                Long code = codeFor(nativeForm, ekuOidToCode, ekuCodeToOid,
+                    C509UnregisteredCodes.EXTENDED_KEY_USAGE, purpose);
                 if (code != null)
                 {
                     out.writeInteger(code.longValue());
@@ -364,7 +365,7 @@ class C509ExtensionValueCodec
             return true;
         }
         case C509ExtensionType.NAME_CONSTRAINTS:
-            return encodeNameConstraints(out, extnValue);
+            return encodeNameConstraints(nativeForm, out, extnValue);
         case C509ExtensionType.POLICY_MAPPINGS:
         {
             ASN1Sequence seq = ASN1Sequence.getInstance(ASN1Primitive.fromByteArray(extnValue));
@@ -381,8 +382,8 @@ class C509ExtensionValueCodec
                 {
                     return false;
                 }
-                writePolicyId(out, ASN1ObjectIdentifier.getInstance(mapping.getObjectAt(0)));
-                writePolicyId(out, ASN1ObjectIdentifier.getInstance(mapping.getObjectAt(1)));
+                writePolicyId(nativeForm, out, ASN1ObjectIdentifier.getInstance(mapping.getObjectAt(0)));
+                writePolicyId(nativeForm, out, ASN1ObjectIdentifier.getInstance(mapping.getObjectAt(1)));
             }
             return true;
         }
@@ -461,7 +462,7 @@ class C509ExtensionValueCodec
      * Decode the specific CBOR encoding of a registered extension value back to the
      * DER encoding of the extension value.
      */
-    static byte[] decodeValue(int extensionType, CBORDecoder in)
+    static byte[] decodeValue(boolean nativeForm, int extensionType, CBORDecoder in)
         throws IOException
     {
         switch (extensionType)
@@ -477,7 +478,7 @@ class C509ExtensionValueCodec
             {
                 return derEncode(new GeneralNames(new GeneralName(GeneralName.dNSName, in.readTextString())));
             }
-            return derEncode(decodeGeneralNames(in, false));
+            return derEncode(decodeGeneralNames(nativeForm, in, false));
         }
         case C509ExtensionType.BASIC_CONSTRAINTS:
         {
@@ -498,9 +499,9 @@ class C509ExtensionValueCodec
         }
         case C509ExtensionType.CRL_DISTRIBUTION_POINTS:
         case C509ExtensionType.FRESHEST_CRL:
-            return decodeDistributionPoints(in);
+            return decodeDistributionPoints(nativeForm, in);
         case C509ExtensionType.CERTIFICATE_POLICIES:
-            return decodeCertificatePolicies(in);
+            return decodeCertificatePolicies(nativeForm, in);
         case C509ExtensionType.AUTHORITY_KEY_IDENTIFIER:
         {
             if (in.peekMajorType() == CBORType.BYTE_STRING)
@@ -513,7 +514,7 @@ class C509ExtensionValueCodec
                 throw new IOException("malformed C509 AuthorityKeyIdentifier");
             }
             byte[] keyId = in.readByteString();
-            GeneralNames issuer = decodeGeneralNames(in, false);
+            GeneralNames issuer = decodeGeneralNames(nativeForm, in, false);
             BigInteger serial = readBiguint(in);
             return derEncode(new AuthorityKeyIdentifier(keyId, issuer, serial));
         }
@@ -529,12 +530,12 @@ class C509ExtensionValueCodec
                 }
                 for (int i = 0; i != count; i++)
                 {
-                    purposes.add(readEKUPurpose(in));
+                    purposes.add(readEKUPurpose(nativeForm, in));
                 }
             }
             else
             {
-                purposes.add(readEKUPurpose(in));
+                purposes.add(readEKUPurpose(nativeForm, in));
             }
             return derEncode(new DERSequence(purposes));
         }
@@ -569,7 +570,7 @@ class C509ExtensionValueCodec
             return derEncode(new DERSequence(descriptions));
         }
         case C509ExtensionType.NAME_CONSTRAINTS:
-            return decodeNameConstraints(in);
+            return decodeNameConstraints(nativeForm, in);
         case C509ExtensionType.POLICY_MAPPINGS:
         {
             int count = in.readArrayHeader();
@@ -580,8 +581,8 @@ class C509ExtensionValueCodec
             ASN1EncodableVector mappings = new ASN1EncodableVector();
             for (int i = 0; i != count; i += 2)
             {
-                ASN1ObjectIdentifier issuerPolicy = readPolicyId(in);
-                ASN1ObjectIdentifier subjectPolicy = readPolicyId(in);
+                ASN1ObjectIdentifier issuerPolicy = readPolicyId(nativeForm, in);
+                ASN1ObjectIdentifier subjectPolicy = readPolicyId(nativeForm, in);
                 mappings.add(new DERSequence(new ASN1Encodable[]{ issuerPolicy, subjectPolicy }));
             }
             return derEncode(new DERSequence(mappings));
@@ -694,7 +695,7 @@ class C509ExtensionValueCodec
     /*
      * General names (Sections 3.3 and 8.13).
      */
-    static boolean encodeGeneralName(CBOREncoder out, GeneralName name, boolean constraintContext)
+    static boolean encodeGeneralName(boolean nativeForm, CBOREncoder out, GeneralName name, boolean constraintContext)
         throws IOException
     {
         switch (name.getTagNo())
@@ -752,7 +753,7 @@ class C509ExtensionValueCodec
             C509Name dirName;
             try
             {
-                dirName = C509Name.fromX500Name(X500Name.getInstance(name.getName()));
+                dirName = C509Name.fromX500Name(nativeForm, X500Name.getInstance(name.getName()));
             }
             catch (IllegalArgumentException e)
             {
@@ -792,7 +793,7 @@ class C509ExtensionValueCodec
         }
     }
 
-    static GeneralName decodeGeneralName(CBORDecoder in, boolean constraintContext)
+    static GeneralName decodeGeneralName(boolean nativeForm, CBORDecoder in, boolean constraintContext)
         throws IOException
     {
         int type = in.readInt();
@@ -847,7 +848,7 @@ class C509ExtensionValueCodec
         case GN_DNS_NAME:
             return new GeneralName(GeneralName.dNSName, in.readTextString());
         case GN_DIRECTORY_NAME:
-            return new GeneralName(GeneralName.directoryName, C509Name.parse(in).toX500Name());
+            return new GeneralName(GeneralName.directoryName, C509Name.parse(nativeForm, in).toX500Name());
         case GN_URI:
             return new GeneralName(GeneralName.uniformResourceIdentifier, in.readTextString());
         case GN_IP_ADDRESS:
@@ -870,7 +871,7 @@ class C509ExtensionValueCodec
         }
     }
 
-    static GeneralNames decodeGeneralNames(CBORDecoder in, boolean constraintContext)
+    static GeneralNames decodeGeneralNames(boolean nativeForm, CBORDecoder in, boolean constraintContext)
         throws IOException
     {
         int count = in.readArrayHeader();
@@ -881,7 +882,7 @@ class C509ExtensionValueCodec
         GeneralName[] names = new GeneralName[count / 2];
         for (int i = 0; i != names.length; i++)
         {
-            names[i] = decodeGeneralName(in, constraintContext);
+            names[i] = decodeGeneralName(nativeForm, in, constraintContext);
         }
         return new GeneralNames(names);
     }
@@ -953,7 +954,7 @@ class C509ExtensionValueCodec
     /*
      * CRL Distribution Points / Freshest CRL.
      */
-    private static boolean encodeDistributionPoints(CBOREncoder out, byte[] extnValue)
+    private static boolean encodeDistributionPoints(boolean nativeForm, CBOREncoder out, byte[] extnValue)
         throws IOException
     {
         CRLDistPoint crldp = CRLDistPoint.getInstance(ASN1Primitive.fromByteArray(extnValue));
@@ -1039,7 +1040,7 @@ class C509ExtensionValueCodec
             {
                 try
                 {
-                    C509Name.fromX500Name(crlIssuers[i]).encodeTo(out);
+                    C509Name.fromX500Name(nativeForm, crlIssuers[i]).encodeTo(out);
                 }
                 catch (IllegalArgumentException e)
                 {
@@ -1050,7 +1051,7 @@ class C509ExtensionValueCodec
         return true;
     }
 
-    private static byte[] decodeDistributionPoints(CBORDecoder in)
+    private static byte[] decodeDistributionPoints(boolean nativeForm, CBORDecoder in)
         throws IOException
     {
         if (in.peekMajorType() == CBORType.TEXT_STRING)
@@ -1106,7 +1107,7 @@ class C509ExtensionValueCodec
             }
             else
             {
-                crlIssuer = C509Name.parse(in).toX500Name();
+                crlIssuer = C509Name.parse(nativeForm, in).toX500Name();
             }
             points[i] = buildDistributionPoint(uris, reasons, crlIssuer);
         }
@@ -1137,10 +1138,11 @@ class C509ExtensionValueCodec
     /*
      * Certificate Policies.
      */
-    private static void writePolicyId(CBOREncoder out, ASN1ObjectIdentifier policy)
+    private static void writePolicyId(boolean nativeForm, CBOREncoder out, ASN1ObjectIdentifier policy)
         throws IOException
     {
-        Long code = policyOidToCode.get(policy);
+        Long code = codeFor(nativeForm, policyOidToCode, policyCodeToOid,
+            C509UnregisteredCodes.CERTIFICATE_POLICY, policy);
         if (code != null)
         {
             out.writeInteger(code.longValue());
@@ -1151,23 +1153,66 @@ class C509ExtensionValueCodec
         }
     }
 
-    private static ASN1ObjectIdentifier readPolicyId(CBORDecoder in)
+    private static ASN1ObjectIdentifier readPolicyId(boolean nativeForm, CBORDecoder in)
         throws IOException
     {
         if (in.peekMajorType() == CBORType.BYTE_STRING)
         {
-            return C509Oids.fromContents(in.readByteString());
+            return readOid(nativeForm, in);
         }
         long code = in.readInteger();
         ASN1ObjectIdentifier policy = policyCodeToOid.get(Longs.valueOf(code));
         if (policy == null)
         {
-            throw new IOException("unknown C509 certificate policy value: " + code);
+            if (!nativeForm)
+            {
+                throw new IOException("unknown C509 certificate policy value: " + code);
+            }
+            policy = C509UnregisteredCodes.toOID(C509UnregisteredCodes.CERTIFICATE_POLICY, code);
         }
         return policy;
     }
 
-    private static boolean encodeCertificatePolicies(CBOREncoder out, byte[] extnValue)
+    static boolean isRegisteredPolicy(long code)
+    {
+        return policyCodeToOid.containsKey(Longs.valueOf(code));
+    }
+
+    static boolean isRegisteredExtendedKeyUsage(long code)
+    {
+        return ekuCodeToOid.containsKey(Longs.valueOf(code));
+    }
+
+    /**
+     * Return the int code an object identifier is written as: its registry value or,
+     * in a natively signed structure, the unregistered code it stands in for. Null
+     * means the ~oid form.
+     */
+    private static Long codeFor(boolean nativeForm, Map<ASN1ObjectIdentifier, Long> oidToCode,
+        Map<Long, ASN1ObjectIdentifier> codeToOid, ASN1ObjectIdentifier arc, ASN1ObjectIdentifier oid)
+        throws IOException
+    {
+        Long code = oidToCode.get(oid);
+        if (code == null && nativeForm)
+        {
+            code = C509UnregisteredCodes.codeOf(arc, oid);
+            if (code != null && codeToOid.containsKey(code))
+            {
+                throw new IOException("C509 unregistered code identifier " + oid + " names a registered value");
+            }
+        }
+        return code;
+    }
+
+    private static ASN1ObjectIdentifier readOid(boolean nativeForm, CBORDecoder in)
+        throws IOException
+    {
+        ASN1ObjectIdentifier oid = C509Oids.fromContents(in.readByteString());
+        C509UnregisteredCodes.checkNotStandIn(nativeForm, oid);
+        return oid;
+    }
+
+    private static boolean encodeCertificatePolicies(boolean nativeForm, CBOREncoder out, byte[] extnValue)
         throws IOException
     {
         ASN1Sequence seq = ASN1Sequence.getInstance(ASN1Primitive.fromByteArray(extnValue));
@@ -1182,7 +1227,7 @@ class C509ExtensionValueCodec
         for (int i = 0; i != count; i++)
         {
             PolicyInformation policy = PolicyInformation.getInstance(seq.getObjectAt(i));
-            writePolicyId(tmp, policy.getPolicyIdentifier());
+            writePolicyId(nativeForm, tmp, policy.getPolicyIdentifier());
             ASN1Sequence qualifiers = policy.getPolicyQualifiers();
             int qualifierCount = qualifiers == null ? 0 : qualifiers.size();
             tmp.writeArrayHeader(2 * qualifierCount);
@@ -1222,7 +1267,7 @@ class C509ExtensionValueCodec
         return true;
     }
 
-    private static byte[] decodeCertificatePolicies(CBORDecoder in)
+    private static byte[] decodeCertificatePolicies(boolean nativeForm, CBORDecoder in)
         throws IOException
     {
         int count = in.readArrayHeader();
@@ -1233,7 +1278,7 @@ class C509ExtensionValueCodec
         ASN1EncodableVector policies = new ASN1EncodableVector();
         for (int i = 0; i != count; i += 2)
         {
-            ASN1ObjectIdentifier policyId = readPolicyId(in);
+            ASN1ObjectIdentifier policyId = readPolicyId(nativeForm, in);
             int qualifierCount = in.readArrayHeader();
             if ((qualifierCount & 1) != 0)
             {
@@ -1275,7 +1320,7 @@ class C509ExtensionValueCodec
     /*
      * Name Constraints.
      */
-    private static boolean encodeNameConstraints(CBOREncoder out, byte[] extnValue)
+    private static boolean encodeNameConstraints(boolean nativeForm, CBOREncoder out, byte[] extnValue)
         throws IOException
     {
         NameConstraints nc = NameConstraints.getInstance(ASN1Primitive.fromByteArray(extnValue));
@@ -1287,11 +1332,11 @@ class C509ExtensionValueCodec
         }
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
         CBOREncoder tmp = new CBOREncoder(bOut);
-        if (!encodeGeneralSubtrees(tmp, permitted))
+        if (!encodeGeneralSubtrees(nativeForm, tmp, permitted))
         {
             return false;
         }
-        if (!encodeGeneralSubtrees(tmp, excluded))
+        if (!encodeGeneralSubtrees(nativeForm, tmp, excluded))
         {
             return false;
         }
@@ -1300,7 +1345,7 @@ class C509ExtensionValueCodec
         return true;
     }
 
-    private static boolean encodeGeneralSubtrees(CBOREncoder out, GeneralSubtree[] subtrees)
+    private static boolean encodeGeneralSubtrees(boolean nativeForm, CBOREncoder out, GeneralSubtree[] subtrees)
         throws IOException
     {
         if (subtrees == null)
@@ -1321,7 +1366,7 @@ class C509ExtensionValueCodec
             {
                 return false;
             }
-            if (!encodeGeneralName(tmp, subtrees[i].getBase(), true))
+            if (!encodeGeneralName(nativeForm, tmp, subtrees[i].getBase(), true))
             {
                 return false;
             }
@@ -1331,7 +1376,7 @@ class C509ExtensionValueCodec
         return true;
     }
 
-    private static byte[] decodeNameConstraints(CBORDecoder in)
+    private static byte[] decodeNameConstraints(boolean nativeForm, CBORDecoder in)
         throws IOException
     {
         int count = in.readArrayHeader();
@@ -1339,8 +1384,8 @@ class C509ExtensionValueCodec
         {
             throw new IOException("malformed C509 NameConstraints value");
         }
-        GeneralSubtree[] permitted = decodeGeneralSubtrees(in);
-        GeneralSubtree[] excluded = decodeGeneralSubtrees(in);
+        GeneralSubtree[] permitted = decodeGeneralSubtrees(nativeForm, in);
+        GeneralSubtree[] excluded = decodeGeneralSubtrees(nativeForm, in);
         if (permitted == null && excluded == null)
         {
             throw new IOException("C509 NameConstraints must hold at least one subtree list");
@@ -1348,7 +1393,7 @@ class C509ExtensionValueCodec
         return derEncode(new NameConstraints(permitted, excluded));
     }
 
-    private static GeneralSubtree[] decodeGeneralSubtrees(CBORDecoder in)
+    private static GeneralSubtree[] decodeGeneralSubtrees(boolean nativeForm, CBORDecoder in)
         throws IOException
     {
         if (in.nextIsNull())
@@ -1364,7 +1409,7 @@ class C509ExtensionValueCodec
         GeneralSubtree[] subtrees = new GeneralSubtree[count / 2];
         for (int i = 0; i != subtrees.length; i++)
         {
-            subtrees[i] = new GeneralSubtree(decodeGeneralName(in, true));
+            subtrees[i] = new GeneralSubtree(decodeGeneralName(nativeForm, in, true));
         }
         return subtrees;
     }
@@ -1782,18 +1827,22 @@ class C509ExtensionValueCodec
         return value;
     }
 
-    private static ASN1Encodable readEKUPurpose(CBORDecoder in)
+    private static ASN1Encodable readEKUPurpose(boolean nativeForm, CBORDecoder in)
         throws IOException
     {
         if (in.peekMajorType() == CBORType.BYTE_STRING)
         {
-            return C509Oids.fromContents(in.readByteString());
+            return readOid(nativeForm, in);
         }
         long code = in.readInteger();
         ASN1ObjectIdentifier purpose = ekuCodeToOid.get(Longs.valueOf(code));
         if (purpose == null)
         {
-            throw new IOException("unknown C509 extended key usage value: " + code);
+            if (!nativeForm)
+            {
+                throw new IOException("unknown C509 extended key usage value: " + code);
+            }
+            purpose = C509UnregisteredCodes.toOID(C509UnregisteredCodes.EXTENDED_KEY_USAGE, code);
         }
         return purpose;
     }

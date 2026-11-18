@@ -47,8 +47,8 @@ class C509SignatureValueCodec
      *        to derive it from the component lengths (rounded up to the nearest of
      *        the widths of the common curves).
      */
-    static byte[] encodeSignatureValue(C509AlgorithmIdentifier signatureAlgorithm, byte[] signatureBytes,
-        int ecdsaWidth)
+    static byte[] encodeSignatureValue(boolean nativeForm, C509AlgorithmIdentifier signatureAlgorithm,
+        byte[] signatureBytes, int ecdsaWidth)
         throws IOException
     {
         ByteArrayOutputStream bOut = new ByteArrayOutputStream();
@@ -117,7 +117,7 @@ class C509SignatureValueCodec
             C509Name issuer;
             try
             {
-                issuer = C509Name.fromX500Name(issuerAndSerial.getName());
+                issuer = C509Name.fromX500Name(nativeForm, issuerAndSerial.getName());
             }
             catch (IllegalArgumentException e)
             {
@@ -164,7 +164,8 @@ class C509SignatureValueCodec
      * Decode a signature value item back to the BIT STRING value field of the X.509
      * signature.
      */
-    static byte[] decodeSignatureValue(C509AlgorithmIdentifier signatureAlgorithm, CBORDecoder in)
+    static byte[] decodeSignatureValue(boolean nativeForm, C509AlgorithmIdentifier signatureAlgorithm,
+        CBORDecoder in)
         throws IOException
     {
         if (isDhSigStaticFormat(signatureAlgorithm))
@@ -177,7 +178,7 @@ class C509SignatureValueCodec
             {
                 throw new IOException("C509 DhSigStatic array must have 3 elements");
             }
-            X500Name issuer = C509Name.parse(in).toX500Name();
+            X500Name issuer = C509Name.parse(nativeForm, in).toX500Name();
             BigInteger serialNumber = new BigInteger(1, C509Certificate.readSerialNumber(in));
             byte[] hashValue = in.readByteString();
             return C509ExtensionValueCodec.derEncode(

@@ -41,6 +41,7 @@ Date: 2026, TBD
 - The OpenPGP smart card API (bcpgsc) can now list a card's supported algorithms, change its user and admin PINs, and generate a key on the card (PR #2565).
 - BLS12-381 now does its field arithmetic in a constant-time fixed-width Montgomery field rather than BigInteger, with constant-time inversion, making signing and verification a further 1.5 to 1.9 times faster, relates to github #2556.
 - BLS12-381 signing and key generation no longer branch on or index memory by the private key, and BLSPrivateKeyParameters, BLSSigner and BLSKeyPairGenerator hold the key as its 32-byte encoding rather than a BigInteger, with new byte[] overloads of keyGen, skToPk, sign and constantTimeMultiply, relates to github #2556.
+- Natively signed (type 2) C509 certificates, certification requests and request templates may now carry integer codes that the C509 registries do not define; C509UnregisteredCodes gives the stand-in object identifiers such codes are reported under. Type 3 structures still refuse them (github #2519).
 
 #### Additional Notes
 

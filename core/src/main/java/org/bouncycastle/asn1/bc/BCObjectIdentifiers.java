@@ -1284,6 +1284,18 @@ public interface BCObjectIdentifiers
     ASN1ObjectIdentifier bc_attr = bc.branch("6");
 
     /**
+     * c509(7) - stand-in object identifiers for C509 integer codes with no registered OID
+     * (draft-ietf-cose-cbor-encoded-cert-21 Section 8). There is one sub-arc per C509 registry:
+     * RDN Attributes(1), Extensions(2), Certificate Policies(3), Extended Key Usages(4) and
+     * CR Attributes(5). Under a registry's sub-arc a code N &gt;= 0 is { 0 N } and a code N &lt; 0 is
+     * { 1 (-(N + 1)) }. They exist only so a natively signed (type 2) C509 structure can be viewed
+     * through the OID-based ASN.1 types and must never appear in an X.509 encoding.
+     * <p>
+     * 1.3.6.1.4.1.22554.7
+     */
+    ASN1ObjectIdentifier bc_c509 = bc.branch("7");
+
+    /**
      * X-Wing, the X25519 and ML-KEM-768 hybrid KEM of draft-connolly-cfrg-xwing-kem-11. The value is the
      * draft's id-XWing (Section 5.8), assigned in its authors' private enterprise arc rather than in the
      * Bouncy Castle arc: { 1 3 6 1 4 1 62253 25722 }. The subjectPublicKey is the raw 1216-byte
