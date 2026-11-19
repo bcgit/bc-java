@@ -26,7 +26,12 @@ import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.crypto.DataLengthException;
+import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.Signer;
+import org.bouncycastle.crypto.digests.MD5Digest;
+import org.bouncycastle.crypto.digests.SHA1Digest;
+import org.bouncycastle.crypto.digests.SHA512Digest;
+import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.crypto.generators.MLDSAKeyPairGenerator;
 import org.bouncycastle.crypto.params.MLDSAKeyGenerationParameters;
 import org.bouncycastle.crypto.params.MLDSAParameters;
@@ -524,6 +529,157 @@ public class MLDSATest
             {
                 buf.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
             }
+        }
+    }
+
+    // github #2564: ACVP HashML-DSA vectors (ACVP-Server sample vsId 42) for all twelve pre-hash functions.
+    public void testHashSigGenPreHashVectorSet()
+        throws Exception
+    {
+        List vectors = TestUtils.readVectors("pqc/crypto/mldsa", "ML-DSA-sigGen-preHash.txt");
+        assertEquals(90, vectors.size());
+
+        for (int i = 0; i != vectors.size(); i++)
+        {
+            Map buf = (Map)vectors.get(i);
+            String tcId = (String)buf.get("tcId");
+            String hashAlg = (String)buf.get("hashAlg");
+            MLDSAParameters parameters = (MLDSAParameters)PARAMETERS_MAP.get((String)buf.get("parameterSet"));
+            MLDSAPrivateKeyParameters privParams = new MLDSAPrivateKeyParameters(parameters, Hex.decode((String)buf.get("sk")), null);
+            byte[] message = Hex.decode((String)buf.get("message"));
+            byte[] signature = Hex.decode((String)buf.get("signature"));
+
+            CipherParameters sigParams = privParams;
+            if (!TestUtils.parseBoolean((String)buf.get("deterministic")))
+            {
+                sigParams = new ParametersWithRandom(privParams, new FixedSecureRandom(Hex.decode((String)buf.get("rnd"))));
+            }
+            sigParams = new ParametersWithContext(sigParams, Hex.decode((String)buf.get("context")));
+
+            HashMLDSASigner signer = new HashMLDSASigner(TestUtils.createPreHashDigest(hashAlg));
+            signer.init(true, sigParams);
+            signer.update(message, 0, message.length);
+            assertTrue("tcId " + tcId + " " + hashAlg, Arrays.areEqual(signature, signer.generateSignature()));
+
+            // the same signer, re-initialised, with the externally computed hash
+            if (!TestUtils.parseBoolean((String)buf.get("deterministic")))
+            {
+                sigParams = new ParametersWithContext(
+                    new ParametersWithRandom(privParams, new FixedSecureRandom(Hex.decode((String)buf.get("rnd")))),
+                    Hex.decode((String)buf.get("context")));
+            }
+            signer.init(true, sigParams);
+            assertTrue("tcId " + tcId + " " + hashAlg + " (external hash)",
+                Arrays.areEqual(signature, signer.generateSignature(TestUtils.preHash(hashAlg, message))));
+        }
+    }
+
+    public void testHashSigVerPreHashVectorSet()
+        throws Exception
+    {
+        List vectors = TestUtils.readVectors("pqc/crypto/mldsa", "ML-DSA-sigVer-preHash.txt");
+        assertEquals(45, vectors.size());
+
+        for (int i = 0; i != vectors.size(); i++)
+        {
+            Map buf = (Map)vectors.get(i);
+            String tcId = (String)buf.get("tcId");
+            String hashAlg = (String)buf.get("hashAlg");
+            boolean expected = TestUtils.parseBoolean((String)buf.get("testPassed"));
+            MLDSAParameters parameters = (MLDSAParameters)PARAMETERS_MAP.get((String)buf.get("parameterSet"));
+            MLDSAPublicKeyParameters pubParams = new MLDSAPublicKeyParameters(parameters, Hex.decode((String)buf.get("pk")));
+            byte[] message = Hex.decode((String)buf.get("message"));
+            byte[] signature = Hex.decode((String)buf.get("signature"));
+            CipherParameters verParams = new ParametersWithContext(pubParams, Hex.decode((String)buf.get("context")));
+
+            HashMLDSASigner verifier = new HashMLDSASigner(TestUtils.createPreHashDigest(hashAlg));
+            verifier.init(false, verParams);
+            verifier.update(message, 0, message.length);
+            assertEquals("tcId " + tcId + " " + hashAlg, expected, verifier.verifySignature(signature));
+
+            verifier.init(false, verParams);
+            assertEquals("tcId " + tcId + " " + hashAlg + " (external hash)", expected,
+                verifier.verifySignature(TestUtils.preHash(hashAlg, message), signature));
+        }
+    }
+
+    public void testHashPreHashDigestConstructor()
+        throws Exception
+    {
+        MLDSAKeyPairGenerator kpGen = new MLDSAKeyPairGenerator();
+        kpGen.init(new MLDSAKeyGenerationParameters(new SecureRandom(), MLDSAParameters.ml_dsa_44_with_sha512));
+        AsymmetricCipherKeyPair kp = kpGen.generateKeyPair();
+        byte[] msg = Strings.toByteArray("the quick brown fox jumps over the lazy dog");
+
+        // an explicit SHA-512 is the default for a with_sha512 key
+        HashMLDSASigner defaultSigner = new HashMLDSASigner();
+        defaultSigner.init(true, kp.getPrivate());
+        defaultSigner.update(msg, 0, msg.length);
+        byte[] defaultSig = defaultSigner.generateSignature();
+
+        HashMLDSASigner explicitSigner = new HashMLDSASigner(new SHA512Digest());
+        explicitSigner.init(true, kp.getPrivate());
+        explicitSigner.update(msg, 0, msg.length);
+        assertTrue(Arrays.areEqual(defaultSig, explicitSigner.generateSignature()));
+
+        // init discards anything already absorbed by the supplied digest
+        Digest dirty = new SHAKEDigest(256);
+        dirty.update((byte)1);
+        HashMLDSASigner shakeSigner = new HashMLDSASigner(dirty);
+        shakeSigner.init(true, kp.getPrivate());
+        shakeSigner.update(msg, 0, msg.length);
+        byte[] shakeSig = shakeSigner.generateSignature();
+
+        HashMLDSASigner shakeVerifier = new HashMLDSASigner(new SHAKEDigest(256));
+        shakeVerifier.init(false, kp.getPublic());
+        shakeVerifier.update(msg, 0, msg.length);
+        assertTrue(shakeVerifier.verifySignature(shakeSig));
+
+        // the pre-hash function is bound into the signature
+        HashMLDSASigner wrongVerifier = new HashMLDSASigner();
+        wrongVerifier.init(false, kp.getPublic());
+        wrongVerifier.update(msg, 0, msg.length);
+        assertFalse(wrongVerifier.verifySignature(shakeSig));
+
+        // the external hash must match the supplied digest's size
+        try
+        {
+            shakeVerifier.verifySignature(new byte[32], shakeSig);
+            fail("short hash accepted");
+        }
+        catch (IllegalArgumentException e)
+        {
+            assertEquals("hash length wrong for SHAKE256: expected 64 bytes, got 32", e.getMessage());
+        }
+
+        try
+        {
+            new HashMLDSASigner(new SHA1Digest());
+            fail("SHA-1 accepted");
+        }
+        catch (IllegalArgumentException e)
+        {
+            assertEquals("unsupported pre-hash digest: SHA-1", e.getMessage());
+        }
+
+        try
+        {
+            new HashMLDSASigner(new MD5Digest());
+            fail("MD5 accepted");
+        }
+        catch (IllegalArgumentException e)
+        {
+            assertEquals("unrecognised digest algorithm: MD5", e.getMessage());
+        }
+
+        try
+        {
+            new HashMLDSASigner(null);
+            fail("null accepted");
+        }
+        catch (NullPointerException e)
+        {
+            assertEquals("preHashDigest cannot be null", e.getMessage());
         }
     }
 

@@ -41,6 +41,7 @@ Date: 2026, TBD
 
 - ShamirSplitSecret now inverts once per share in getSecret() and once per call in divide(), rather than once per pair of shares and once per byte, making division about 17 to 20 times faster and recovery 1.3 times (3 shares) to 8 times (128 shares) faster. Results are unchanged (github #2558).
 - The Shamir secret splitting classes now clear the temporary copies of shares and polynomial coefficients they make when splitting, recovering, multiplying and dividing.
+- HashMLDSASigner and HashSLHDSASigner have a new constructor taking the pre-hash digest, allowing any of the twelve SHA-2, SHA-3 and SHAKE pre-hash functions ACVP tests; there are no OIDs for these signatures, so no JCA support. HashSLHDSASigner can now also sign and verify an externally computed hash (github #2564).
 - The OpenPGP smart card API (bcpgsc) can now list a card's supported algorithms, change its user and admin PINs, and generate a key on the card (PR #2565).
 - BLS12-381 now does its field arithmetic in a constant-time fixed-width Montgomery field rather than BigInteger, with constant-time inversion, making signing and verification a further 1.5 to 1.9 times faster, relates to github #2556.
 - BLS12-381 signing and key generation no longer branch on or index memory by the private key, and BLSPrivateKeyParameters, BLSSigner and BLSKeyPairGenerator hold the key as its 32-byte encoding rather than a BigInteger, with new byte[] overloads of keyGen, skToPk, sign and constantTimeMultiply, relates to github #2556.

@@ -13,8 +13,14 @@ import java.util.Map;
 import junit.framework.TestCase;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.Signer;
+import org.bouncycastle.crypto.digests.MD5Digest;
+import org.bouncycastle.crypto.digests.SHA1Digest;
+import org.bouncycastle.crypto.digests.SHA256Digest;
+import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.crypto.generators.SLHDSAKeyPairGenerator;
+import org.bouncycastle.crypto.params.ParametersWithContext;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.params.SLHDSAKeyGenerationParameters;
 import org.bouncycastle.crypto.params.SLHDSAParameters;
@@ -29,6 +35,7 @@ import org.bouncycastle.crypto.util.SubjectPublicKeyInfoFactory;
 import org.bouncycastle.pqc.crypto.MessageSigner;
 import org.bouncycastle.test.TestResourceFinder;
 import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 import org.bouncycastle.util.test.FixedSecureRandom;
 
@@ -646,6 +653,200 @@ public class SLHDSATest
                     assertEquals("'" + names[i] + "' has invalid length", e.getMessage());
                 }
             }
+        }
+    }
+
+    // github #2564: ACVP HashSLH-DSA vectors (ACVP-Server sample vsId 53) for all twelve pre-hash functions.
+    public void testHashSigGenPreHashVectorSet()
+        throws Exception
+    {
+        List vectors = TestUtils.readVectors("pqc/crypto/slhdsa/acvp", "SLH-DSA-sigGen-preHash.txt");
+        assertEquals(72, vectors.size());
+
+        for (int i = 0; i != vectors.size(); i++)
+        {
+            Map buf = (Map)vectors.get(i);
+            String tcId = (String)buf.get("tcId");
+            String hashAlg = (String)buf.get("hashAlg");
+            SLHDSAParameters parameters = (SLHDSAParameters)parametersMap.get((String)buf.get("parameterSet"));
+            SLHDSAPrivateKeyParameters privParams = new SLHDSAPrivateKeyParameters(parameters, Hex.decode((String)buf.get("sk")));
+            byte[] message = Hex.decode((String)buf.get("message"));
+            byte[] signature = Hex.decode((String)buf.get("signature"));
+
+            // signing with the slow "s" parameter sets is costly, so they alternate between the two paths
+            boolean small = parameters.getName().endsWith("s");
+
+            HashSLHDSASigner signer = new HashSLHDSASigner(TestUtils.createPreHashDigest(hashAlg));
+            if (!small || i % 2 == 0)
+            {
+                signer.init(true, signingParameters(buf, privParams));
+                signer.update(message, 0, message.length);
+                assertTrue("tcId " + tcId + " " + hashAlg, Arrays.areEqual(signature, signer.generateSignature()));
+            }
+            if (!small || i % 2 != 0)
+            {
+                signer.init(true, signingParameters(buf, privParams));
+                assertTrue("tcId " + tcId + " " + hashAlg + " (external hash)",
+                    Arrays.areEqual(signature, signer.generateSignature(TestUtils.preHash(hashAlg, message))));
+            }
+        }
+    }
+
+    public void testHashSigVerPreHashVectorSet()
+        throws Exception
+    {
+        List vectors = TestUtils.readVectors("pqc/crypto/slhdsa/acvp", "SLH-DSA-sigVer-preHash.txt");
+        assertEquals(56, vectors.size());
+
+        for (int i = 0; i != vectors.size(); i++)
+        {
+            Map buf = (Map)vectors.get(i);
+            String tcId = (String)buf.get("tcId");
+            String hashAlg = (String)buf.get("hashAlg");
+            boolean expected = TestUtils.parseBoolean((String)buf.get("testPassed"));
+            SLHDSAParameters parameters = (SLHDSAParameters)parametersMap.get((String)buf.get("parameterSet"));
+            SLHDSAPublicKeyParameters pubParams = new SLHDSAPublicKeyParameters(parameters, Hex.decode((String)buf.get("pk")));
+            byte[] message = Hex.decode((String)buf.get("message"));
+            byte[] signature = Hex.decode((String)buf.get("signature"));
+            CipherParameters verParams = new ParametersWithContext(pubParams, Hex.decode((String)buf.get("context")));
+
+            HashSLHDSASigner verifier = new HashSLHDSASigner(TestUtils.createPreHashDigest(hashAlg));
+            verifier.init(false, verParams);
+            verifier.update(message, 0, message.length);
+            assertEquals("tcId " + tcId + " " + hashAlg, expected, verifier.verifySignature(signature));
+
+            verifier.init(false, verParams);
+            assertEquals("tcId " + tcId + " " + hashAlg + " (external hash)", expected,
+                verifier.verifySignature(TestUtils.preHash(hashAlg, message), signature));
+        }
+    }
+
+    private static CipherParameters signingParameters(Map buf, SLHDSAPrivateKeyParameters privParams)
+    {
+        CipherParameters sigParams = privParams;
+        if (!TestUtils.parseBoolean((String)buf.get("deterministic")))
+        {
+            sigParams = new ParametersWithRandom(privParams,
+                new FixedSecureRandom(Hex.decode((String)buf.get("additionalRandomness"))));
+        }
+        return new ParametersWithContext(sigParams, Hex.decode((String)buf.get("context")));
+    }
+
+    public void testHashPreHashDigestConstructor()
+        throws Exception
+    {
+        SLHDSAKeyPairGenerator kpGen = new SLHDSAKeyPairGenerator();
+        kpGen.init(new SLHDSAKeyGenerationParameters(new SecureRandom(), SLHDSAParameters.sha2_128f));
+        AsymmetricCipherKeyPair kp = kpGen.generateKeyPair();
+        byte[] msg = Strings.toByteArray("the quick brown fox jumps over the lazy dog");
+
+        // SHA-256 is the default for a SHA2-128 key, and the external hash form gives the same signature
+        HashSLHDSASigner defaultSigner = new HashSLHDSASigner();
+        defaultSigner.init(true, kp.getPrivate());
+        defaultSigner.update(msg, 0, msg.length);
+        byte[] defaultSig = defaultSigner.generateSignature();
+
+        HashSLHDSASigner explicitSigner = new HashSLHDSASigner(new SHA256Digest());
+        explicitSigner.init(true, kp.getPrivate());
+        explicitSigner.update(msg, 0, msg.length);
+        assertTrue(Arrays.areEqual(defaultSig, explicitSigner.generateSignature()));
+
+        defaultSigner.init(true, kp.getPrivate());
+        assertTrue(Arrays.areEqual(defaultSig, defaultSigner.generateSignature(TestUtils.preHash("SHA2-256", msg))));
+
+        HashSLHDSASigner defaultVerifier = new HashSLHDSASigner();
+        defaultVerifier.init(false, kp.getPublic());
+        assertTrue(defaultVerifier.verifySignature(TestUtils.preHash("SHA2-256", msg), defaultSig));
+
+        // init discards anything already absorbed by the supplied digest
+        Digest dirty = new SHAKEDigest(256);
+        dirty.update((byte)1);
+        HashSLHDSASigner shakeSigner = new HashSLHDSASigner(dirty);
+        shakeSigner.init(true, kp.getPrivate());
+        shakeSigner.update(msg, 0, msg.length);
+        byte[] shakeSig = shakeSigner.generateSignature();
+
+        HashSLHDSASigner shakeVerifier = new HashSLHDSASigner(new SHAKEDigest(256));
+        shakeVerifier.init(false, kp.getPublic());
+        shakeVerifier.update(msg, 0, msg.length);
+        assertTrue(shakeVerifier.verifySignature(shakeSig));
+
+        // the pre-hash function is bound into the signature
+        defaultVerifier.init(false, kp.getPublic());
+        defaultVerifier.update(msg, 0, msg.length);
+        assertFalse(defaultVerifier.verifySignature(shakeSig));
+
+        // the external hash must match the pre-hash function's size
+        try
+        {
+            shakeVerifier.verifySignature(new byte[32], shakeSig);
+            fail("short hash accepted");
+        }
+        catch (IllegalArgumentException e)
+        {
+            assertEquals("hash length wrong for SHAKE256: expected 64 bytes, got 32", e.getMessage());
+        }
+
+        defaultSigner.init(true, kp.getPrivate());
+        try
+        {
+            defaultSigner.generateSignature(new byte[33]);
+            fail("long hash accepted");
+        }
+        catch (IllegalArgumentException e)
+        {
+            assertEquals("hash length wrong for SHA-256: expected 32 bytes, got 33", e.getMessage());
+        }
+
+        // the external hash methods respect the init direction
+        try
+        {
+            defaultSigner.verifySignature(new byte[32], defaultSig);
+            fail("verify on a signing signer");
+        }
+        catch (IllegalStateException e)
+        {
+            assertEquals("HashSLHDSASigner not initialised for verification", e.getMessage());
+        }
+
+        try
+        {
+            shakeVerifier.generateSignature(new byte[64]);
+            fail("sign on a verifying signer");
+        }
+        catch (IllegalStateException e)
+        {
+            assertEquals("HashSLHDSASigner not initialised for signature generation.", e.getMessage());
+        }
+
+        try
+        {
+            new HashSLHDSASigner(new SHA1Digest());
+            fail("SHA-1 accepted");
+        }
+        catch (IllegalArgumentException e)
+        {
+            assertEquals("unsupported pre-hash digest: SHA-1", e.getMessage());
+        }
+
+        try
+        {
+            new HashSLHDSASigner(new MD5Digest());
+            fail("MD5 accepted");
+        }
+        catch (IllegalArgumentException e)
+        {
+            assertEquals("unrecognised digest algorithm: MD5", e.getMessage());
+        }
+
+        try
+        {
+            new HashSLHDSASigner(null);
+            fail("null accepted");
+        }
+        catch (NullPointerException e)
+        {
+            assertEquals("preHashDigest cannot be null", e.getMessage());
         }
     }
 

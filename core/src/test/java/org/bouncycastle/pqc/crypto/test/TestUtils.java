@@ -1,19 +1,31 @@
 package org.bouncycastle.pqc.crypto.test;
 
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.security.SecureRandom;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import junit.framework.Assert;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPair;
 import org.bouncycastle.crypto.AsymmetricCipherKeyPairGenerator;
 import org.bouncycastle.crypto.CipherParameters;
+import org.bouncycastle.crypto.Digest;
 import org.bouncycastle.crypto.EncapsulatedSecretExtractor;
 import org.bouncycastle.crypto.EncapsulatedSecretGenerator;
 import org.bouncycastle.crypto.SecretWithEncapsulation;
 import org.bouncycastle.crypto.Signer;
+import org.bouncycastle.crypto.digests.SHA224Digest;
+import org.bouncycastle.crypto.digests.SHA256Digest;
+import org.bouncycastle.crypto.digests.SHA384Digest;
+import org.bouncycastle.crypto.digests.SHA3Digest;
+import org.bouncycastle.crypto.digests.SHA512Digest;
+import org.bouncycastle.crypto.digests.SHA512tDigest;
+import org.bouncycastle.crypto.digests.SHAKEDigest;
 import org.bouncycastle.crypto.params.AsymmetricKeyParameter;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.pqc.crypto.MessageSigner;
@@ -27,6 +39,96 @@ import org.bouncycastle.util.encoders.Hex;
 
 class TestUtils
 {
+    /**
+     * Read an ACVP-derived "key = value" vector file, one map per blank-line separated block.
+     */
+    static List readVectors(String homeDir, String fileName)
+        throws IOException
+    {
+        BufferedReader bin = new BufferedReader(new InputStreamReader(
+            TestResourceFinder.findTestResource(homeDir, fileName)));
+        List vectors = new ArrayList();
+        Map buf = new HashMap();
+        String line;
+        while ((line = bin.readLine()) != null)
+        {
+            line = line.trim();
+            if (line.startsWith("#"))
+            {
+                continue;
+            }
+            if (line.length() == 0)
+            {
+                if (!buf.isEmpty())
+                {
+                    vectors.add(buf);
+                    buf = new HashMap();
+                }
+                continue;
+            }
+            int a = line.indexOf("=");
+            if (a > -1)
+            {
+                buf.put(line.substring(0, a).trim(), line.substring(a + 1).trim());
+            }
+        }
+        if (!buf.isEmpty())
+        {
+            vectors.add(buf);
+        }
+        bin.close();
+        return vectors;
+    }
+
+    static byte[] preHash(String hashAlg, byte[] message)
+    {
+        Digest digest = createPreHashDigest(hashAlg);
+        byte[] hash = new byte[digest.getDigestSize()];
+        digest.update(message, 0, message.length);
+        digest.doFinal(hash, 0);
+        return hash;
+    }
+
+    /**
+     * Map an ACVP hashAlg name to its digest.
+     */
+    static Digest createPreHashDigest(String acvpName)
+    {
+        if (acvpName.equals("SHA2-224"))
+        {
+            return new SHA224Digest();
+        }
+        if (acvpName.equals("SHA2-256"))
+        {
+            return new SHA256Digest();
+        }
+        if (acvpName.equals("SHA2-384"))
+        {
+            return new SHA384Digest();
+        }
+        if (acvpName.equals("SHA2-512"))
+        {
+            return new SHA512Digest();
+        }
+        if (acvpName.equals("SHA2-512/224"))
+        {
+            return new SHA512tDigest(224);
+        }
+        if (acvpName.equals("SHA2-512/256"))
+        {
+            return new SHA512tDigest(256);
+        }
+        if (acvpName.startsWith("SHA3-"))
+        {
+            return new SHA3Digest(Integer.parseInt(acvpName.substring(5)));
+        }
+        if (acvpName.startsWith("SHAKE-"))
+        {
+            return new SHAKEDigest(Integer.parseInt(acvpName.substring(6)));
+        }
+        throw new IllegalArgumentException("unknown ACVP hash: " + acvpName);
+    }
+
     static boolean parseBoolean(String value)
     {
         return "true".equalsIgnoreCase(value);

@@ -1,10 +1,7 @@
 package org.bouncycastle.crypto.signers;
 
-import java.io.IOException;
 import java.security.SecureRandom;
 
-import org.bouncycastle.asn1.ASN1Encoding;
-import org.bouncycastle.asn1.ASN1ObjectIdentifier;
 import org.bouncycastle.crypto.CipherParameters;
 import org.bouncycastle.crypto.CryptoException;
 import org.bouncycastle.crypto.CryptoServicesRegistrar;
@@ -19,8 +16,6 @@ import org.bouncycastle.crypto.params.MLDSAPublicKeyParameters;
 import org.bouncycastle.crypto.params.ParametersWithContext;
 import org.bouncycastle.crypto.params.ParametersWithRandom;
 import org.bouncycastle.crypto.signers.mldsa.MLDSAEngine;
-import org.bouncycastle.pqc.crypto.DigestUtils;
-import org.bouncycastle.util.Exceptions;
 
 /**
  * Pre-hash ("HashML-DSA" / "ExtHash") ML-DSA (FIPS 204) signer/verifier.
@@ -32,6 +27,12 @@ import org.bouncycastle.util.Exceptions;
  * the two-argument overload) throws {@link IllegalArgumentException}. See
  * <a href="https://github.com/bcgit/bc-java/issues/2367">github #2367</a>.
  * </p>
+ * <p>
+ * By default the pre-hash function is the one named by the key's parameter set (SHA-512, the only
+ * one with a HashML-DSA object identifier). {@link #HashMLDSASigner(Digest)} allows any of the
+ * other pre-hash functions FIPS 204 sec. 5.4 permits and ACVP tests; there are no object
+ * identifiers for those signatures, so identifying them to a verifier is up to the caller.
+ * </p>
  */
 public class HashMLDSASigner
     implements Signer
@@ -42,14 +43,53 @@ public class HashMLDSASigner
     private MLDSAPrivateKeyParameters privKey;
     private SecureRandom random;
 
+    private final Digest preHashDigest;
+    private final byte[] preHashOIDEncoding;
+
     private MLDSAEngine engine;
     private Digest digest;
     private byte[] digestOIDEncoding;
 
     private byte[] rho, k, t0, t1, s1, s2;
 
+    /**
+     * Create a signer whose pre-hash function is the one named by the parameter set of the
+     * key it is initialised with (SHA-512).
+     */
     public HashMLDSASigner()
     {
+        this.preHashDigest = null;
+        this.preHashOIDEncoding = null;
+    }
+
+    /**
+     * Create a signer using the passed in pre-hash function, whatever the parameter set of the
+     * key it is initialised with. The digest must be one of SHA-224, SHA-256, SHA-384, SHA-512,
+     * SHA-512/224, SHA-512/256, SHA3-224, SHA3-256, SHA3-384, SHA3-512, SHAKE128 (256 bit output)
+     * or SHAKE256 (512 bit output). Its object identifier is absorbed into the signature as FIPS 204
+     * Algorithm 4 requires.
+     * <p>
+     * FIPS 204 sec. 5.4 requires the pre-hash function to provide at least the parameter set's
+     * classical security strength (128, 192 or 256 bits for ML-DSA-44, -65 and -87) against
+     * collision and second preimage attacks, so, for example, SHA-256 is only suitable with
+     * ML-DSA-44. This is not enforced here, as ACVP tests other pairings as well.
+     * </p>
+     * <p>
+     * The digest is used directly, not copied, so must not be shared with another user.
+     * </p>
+     *
+     * @param preHashDigest the digest to pre-hash the message with.
+     * @throws IllegalArgumentException if the digest is not one of the above.
+     */
+    public HashMLDSASigner(Digest preHashDigest)
+    {
+        if (preHashDigest == null)
+        {
+            throw new NullPointerException("preHashDigest cannot be null");
+        }
+
+        this.preHashDigest = preHashDigest;
+        this.preHashOIDEncoding = Utils.getPreHashOIDEncoding(preHashDigest);
     }
 
     public void init(boolean forSigning, CipherParameters param)
@@ -121,16 +161,16 @@ public class HashMLDSASigner
 
     private void initDigest(MLDSAParameters parameters)
     {
-        digest = createDigest(parameters);
-
-        ASN1ObjectIdentifier oid = DigestUtils.getDigestOid(digest.getAlgorithmName());
-        try
+        if (preHashDigest != null)
         {
-            digestOIDEncoding = oid.getEncoded(ASN1Encoding.DER);
+            digest = preHashDigest;
+            digest.reset();
+            digestOIDEncoding = preHashOIDEncoding;
         }
-        catch (IOException e)
+        else
         {
-            throw Exceptions.illegalStateException("oid encoding failed", e);
+            digest = createDigest(parameters);
+            digestOIDEncoding = Utils.getPreHashOIDEncoding(digest);
         }
     }
 
@@ -160,10 +200,10 @@ public class HashMLDSASigner
      * Sign a message that has already been hashed externally. See FIPS 204 sec. 5.4
      * (HashML-DSA): the caller supplies the digest of the message and the signer
      * absorbs it together with the DER encoding of the digest algorithm's OID
-     * (derived from the parameter set this signer was initialised with) into the
-     * mu computation, just as the streaming form would. The supplied hash must
-     * have been produced with the digest algorithm matching the configured
-     * parameter set.
+     * (the digest passed to the constructor, or else the one derived from the parameter
+     * set this signer was initialised with) into the mu computation, just as the
+     * streaming form would. The supplied hash must have been produced with that
+     * digest algorithm.
      *
      * @param hash the digest of the message.
      * @return the ML-DSA signature.
