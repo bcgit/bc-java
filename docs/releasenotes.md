@@ -15,6 +15,7 @@ Date: 2026, TBD
 
 #### Defects Fixed
 
+- The EST client's JsseDefaultHostnameAuthorizer matched a server certificate with no DNS subject alternative names against its subject common name, which name constraints on dNSName do not cover. As in BCJSSE, it now does so only when org.bouncycastle.jsse.hostname_check_cn_fallback is set to true.
 - The JKS reader used by the FIPS and IFIPS key store types, and by PKCS12 with keystore.type.compat set, allocated whatever certificate length a store declared, so a crafted store could exhaust memory. A length that is negative or exceeds the store is now refused with an EOFException.
 - A dNSName with a wildcard in its leftmost label, such as *.example.com or b*.example.com, escaped an excluded name constraint for a host one label below its base, such as bar.example.com, which hostname checking would then accept. Such names are now excluded.
 - The BERBitString and BEROctetString constructors taking a segment limit accepted one too small to carry any data - below 2 for a BIT STRING, below 1 for an OCTET STRING - and encoding such an object then ran until memory was exhausted or failed with an unchecked exception. Such a limit is now rejected with an IllegalArgumentException.
