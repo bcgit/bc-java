@@ -24,48 +24,47 @@ public class DumpUtil
     {
         if (startIndent < 0)
         {
-            throw new IllegalArgumentException("Start-Indent must be a positive number");
+            throw new IllegalArgumentException("'startIndent' must be a positive number");
         }
         if (array == null)
         {
             return "<null>";
         }
 
-        // -DM Hex.toHexString
-        String hex = Hex.toHexString(array);
-        StringBuilder withWhiteSpace = new StringBuilder();
-        // shift the dump a number of octets to the right
-        for (int i = 0; i < startIndent; i++)
-        {
-            withWhiteSpace.append("  ");
-        }
-        // Split into hex octets (pairs of two chars)
-        String[] octets = withWhiteSpace.append(hex).toString().split("(?<=\\G.{2})");
+        // The first startIndent positions are blank, shifting the bytes right
+        int count = startIndent + array.length;
 
         StringBuilder out = new StringBuilder();
-        int l = 0;
-        byte[] counterLabel = new byte[4];
-
-        while (l < octets.length)
+        for (int row = 0; row < count; row += 16)
         {
-            // index row
-            Pack.intToBigEndian(l, counterLabel, 0);
-            out.append(Hex.toHexString(counterLabel)).append("  ");
-            // first 8 octets of a line
-            for (int i = l ; i < l + 8 && i < octets.length; i++)
-            {
-                out.append(octets[i]).append(" ");
-            }
-            out.append(" ");
-            // second 8 octets of a line
-            for (int i = l+8; i < l + 16 && i < octets.length; i++)
-            {
-                out.append(octets[i]).append(" ");
-            }
-            out.append("\n");
+            // -DM Hex.toHexString
+            out.append(Hex.toHexString(Pack.intToBigEndian(row))).append(' ');
 
-            l += 16;
+            int rowEnd = Math.min(row + 16, count);
+            for (int i = row; i < rowEnd; ++i)
+            {
+                if (i == row + 8)
+                {
+                    out.append(' ');
+                }
+
+                out.append(' ').append(i < startIndent ? "  " : HEX_PAIRS[array[i - startIndent] & 0xFF]);
+            }
+            out.append('\n');
         }
         return out.toString();
+    }
+
+    private static final String[] HEX_PAIRS = createHexPairs();
+
+    private static String[] createHexPairs()
+    {
+        String[] hexPairs = new String[256];
+        for (int i = 0; i < 256; ++i)
+        {
+            // -DM Hex.toHexString
+            hexPairs[i] = Hex.toHexString(new byte[]{ (byte)i });
+        }
+        return hexPairs;
     }
 }
