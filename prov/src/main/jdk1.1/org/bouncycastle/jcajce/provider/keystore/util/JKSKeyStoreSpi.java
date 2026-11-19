@@ -277,6 +277,11 @@ public class JKSKeyStoreSpi
                             }
 
                             int l = dIn.readInt();
+                            // dIn reads straight from the in-memory store, so available() is exact
+                            if (l < 0 || l > storeStream.available())
+                            {
+                                throw new EOFException("certificate entry length exceeds the remaining store data");
+                            }
                             byte[] certData = new byte[l];
                             dIn.readFully(certData);
 
