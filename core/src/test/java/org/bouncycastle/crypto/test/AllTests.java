@@ -24,6 +24,7 @@ public class AllTests
         suite.addTestSuite(HPKEPQVectorsTest.class);
         suite.addTestSuite(Blake2bpDigestTest.class);
         suite.addTestSuite(Blake2spDigestTest.class);
+        suite.addTestSuite(ChaCha7539CounterLimitTest.class);
         return new BCTestSetup(suite);
     }
     
