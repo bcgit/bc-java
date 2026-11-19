@@ -267,6 +267,7 @@ public class PKIXNameConstraintsTest
         testIPv4MappedAddressBypass();
         testQuotedLocalPartEmailBypass();
         testEmptyLabelRefused();
+        testWildcardExcludedDNS();
 
         testSGP22LegacySerialNumber();
         testSGP22NameConstraints();
@@ -296,6 +297,57 @@ public class PKIXNameConstraintsTest
         // uniformResourceIdentifier: the host trailing dot is stripped like the dNSName path.
         isTrue("trailing-dot URI host must be caught by the excluded competitor.example subtree",
             isExcluded(uriName("competitor.example"), uriName("https://competitor.example./")));
+    }
+
+    /**
+     * A dNSName with a wildcard in its leftmost label stands for every host one label below its
+     * base, so it must not escape an excluded host constraint at that level: hostname matching would
+     * otherwise accept the certificate for the excluded host. Partial wildcards ("b*", "*r", "b*r")
+     * are matched by hostname checking too, so they are covered as well.
+     */
+    private void testWildcardExcludedDNS() throws Exception
+    {
+        GeneralName bar = dnsName("bar.example.com");
+        String[] covering = new String[]{
+            "*.example.com", "b*.example.com", "*r.example.com", "b*r.example.com",
+            "*.EXAMPLE.com", "B*.Example.Com", "*.example.com.", "b*r.example.com." };
+        for (int i = 0; i != covering.length; i++)
+        {
+            isTrue(covering[i] + " must be caught by excluded bar.example.com",
+                isExcluded(bar, dnsName(covering[i])));
+        }
+        isTrue("*.example.com must be caught by excluded bar.example.com.",
+            isExcluded(dnsName("bar.example.com."), dnsName("*.example.com")));
+        isTrue("*.example.com must be caught by excluded BAR.EXAMPLE.COM",
+            isExcluded(dnsName("BAR.EXAMPLE.COM"), dnsName("*.example.com")));
+
+        // the excluded host one label below a deeper wildcard base
+        isTrue("*.bar.example.com must be caught by excluded a.bar.example.com",
+            isExcluded(dnsName("a.bar.example.com"), dnsName("*.bar.example.com")));
+
+        // a wildcard cannot reach two labels down, and a ".domain" constraint excludes only
+        // subdomains of bar.example.com, which a single-label wildcard over example.com does not name
+        isTrue("*.example.com must not be caught by excluded a.bar.example.com",
+            !isExcluded(dnsName("a.bar.example.com"), dnsName("*.example.com")));
+        isTrue("b*.example.com must not be caught by excluded a.bar.example.com",
+            !isExcluded(dnsName("a.bar.example.com"), dnsName("b*.example.com")));
+        isTrue("*.example.com must not be caught by excluded .bar.example.com",
+            !isExcluded(dnsName(".bar.example.com"), dnsName("*.example.com")));
+        // a '*' outside the leftmost label is not a wildcard
+        isTrue("bar.*.com must not be caught by excluded bar.example.com",
+            !isExcluded(bar, dnsName("bar.*.com")));
+        // a wildcard over a different base, and a plain sibling, are unaffected
+        isTrue("*.example.org must not be caught by excluded bar.example.com",
+            !isExcluded(bar, dnsName("*.example.org")));
+        isTrue("foo.example.com must not be caught by excluded bar.example.com",
+            !isExcluded(bar, dnsName("foo.example.com")));
+
+        // unchanged: an excluded base or above still excludes the wildcard
+        isTrue("*.example.com must be caught by excluded example.com",
+            isExcluded(dnsName("example.com"), dnsName("*.example.com")));
+        // unchanged: the permitted side still refuses a wildcard wider than the permitted host
+        isTrue("*.example.com must not be permitted by bar.example.com",
+            !isPermitted(bar, dnsName("*.example.com")));
     }
 
     /**

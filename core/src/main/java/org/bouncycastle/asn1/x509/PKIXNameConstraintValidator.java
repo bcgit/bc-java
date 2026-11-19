@@ -1212,10 +1212,56 @@ public class PKIXNameConstraintValidator
 
         checkNoEmptyLabel(dns, "DNS name");
 
-        if (isDNSConstrained(excluded, dns))
+        if (isDNSConstrained(excluded, dns) || isWildcardExcluded(excluded, dns))
         {
             throw new NameConstraintValidatorException("DNS is from an excluded subtree.");
         }
+    }
+
+    /**
+     * A dNSName whose leftmost label carries a wildcard ("*.example.com", or the partial forms
+     * "b*.example.com", "*r.example.com", "b*r.example.com" that hostname matching also honours)
+     * stands for every host one label below its base, so it covers an excluded host at that level
+     * even though the two names have the same number of labels and so neither is within the
+     * other's domain. Such a name is excluded when an excluded host constraint - not a ".domain"
+     * subdomains-only constraint - sits exactly one label below the wildcard's base.
+     */
+    private static boolean isWildcardExcluded(Set excluded, String dns)
+    {
+        String name = stripTrailingDot(dns);
+        int firstDot = name.indexOf('.');
+        if (firstDot <= 0 || name.lastIndexOf('*', firstDot - 1) < 0)
+        {
+            return false;
+        }
+
+        String base = name.substring(firstDot + 1);
+        if (base.length() == 0)
+        {
+            return false;
+        }
+        int baseLabels = Strings.split(base, '.').length;
+
+        Iterator it = excluded.iterator();
+        while (it.hasNext())
+        {
+            String constraint = (String)it.next();
+            if (constraint.startsWith("."))
+            {
+                continue;
+            }
+            constraint = stripTrailingDot(constraint);
+
+            String[] constraintLabels = Strings.split(constraint, '.');
+            if (constraintLabels.length == baseLabels + 1
+                && constraintLabels[0].length() != 0
+                && withinDomain(constraint, base))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static void checkPermittedDNS(Set permitted, String dns)
