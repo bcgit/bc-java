@@ -34,6 +34,7 @@ Date: 2026, TBD
 - Since 1.87, writing a GeneralizedTime with a fractional part as DER took time quadratic in the length of the fraction, so re-encoding a certificate or other structure carrying a very long one could take seconds of CPU. It is now linear.
 - DH agreement (DHBasicAgreement, DHAgreement, the DH KeyAgreement) and ElGamal and NaccacheStern decryption now blind the peer-chosen base instead of adding a small multiple of the group order to the private exponent, which repeated timings could average out. Short-exponent groups (RFC 3526, RFC 7919) run over 3 times faster; full-size exponents take about twice as long.
 - Initialising NaccacheSternEngine for decryption raised g to an exponent derived from phi(n), the private key, with a bare BigInteger.modPow for every lookup table entry. Each table is now built from one blinded exponentiation by fixed-time multiplication, which also makes initialisation over 20 times faster, and decryption recombines the plaintext digits in fixed time.
+- ChaCha7539Engine threw on the last byte of block 0xFFFFFFFF, which RFC 8439 allows, and a caller that caught the exception and carried on got already-used keystream again. The last block is now usable, and any keystream past it is refused without output until the engine is reset or repositioned.
 
 #### Additional Features and Functionality
 
