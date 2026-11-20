@@ -19,6 +19,7 @@ public class AllTests
         TestSuite suite = new TestSuite("ML-KEM Internal Tests");
 
         suite.addTestSuite(SampleNttTest.class);
+        suite.addTestSuite(PointwiseProductTest.class);
 
         return new BCTestSetup(suite);
     }

@@ -176,15 +176,45 @@ class PolyVec
 
     static void pointwiseAccountMontgomery(Poly out, PolyVec inp1, PolyVec inp2, MLKEMEngine engine)
     {
-        Poly t = new Poly();
-
-        Poly.baseMultMontgomery(out, inp1.vec[0], inp2.vec[0]);
-        for (int i = 1; i < engine.getK(); i++)
+        int k = engine.getK();
+        // Decoded coefficients fit 12 bits, and the second operand is reduced after its NTT.
+        // At K <= 4 the diagonal sums are <= 54529020 and the cross sum is <= 109058040.
+        short[] a0 = inp1.vec[0].getCoeffs(), b0 = inp2.vec[0].getCoeffs();
+        short[] a1 = inp1.vec[1].getCoeffs(), b1 = inp2.vec[1].getCoeffs();
+        short[] a2 = k >= 3 ? inp1.vec[2].getCoeffs() : null;
+        short[] b2 = k >= 3 ? inp2.vec[2].getCoeffs() : null;
+        short[] a3 = k == 4 ? inp1.vec[3].getCoeffs() : null;
+        short[] b3 = k == 4 ? inp2.vec[3].getCoeffs() : null;
+        for (int j = 0; j < MLKEMEngine.N; j += 2)
         {
-            Poly.baseMultMontgomery(t, inp1.vec[i], inp2.vec[i]);
-            out.add(t);
+            int next = j + 1;
+            int a00 = a0[j] * b0[j] + a1[j] * b1[j];
+            int a11 = a0[next] * b0[next] + a1[next] * b1[next];
+            int cross = a0[j] * b0[next] + a0[next] * b0[j]
+                + a1[j] * b1[next] + a1[next] * b1[j];
+            if (k >= 3)
+            {
+                a00 += a2[j] * b2[j];
+                a11 += a2[next] * b2[next];
+                cross += a2[j] * b2[next] + a2[next] * b2[j];
+            }
+            if (k == 4)
+            {
+                a00 += a3[j] * b3[j];
+                a11 += a3[next] * b3[next];
+                cross += a3[j] * b3[next] + a3[next] * b3[j];
+            }
+            int zeta = Ntt.ZETAS[64 + (j >> 2)];
+            if ((j & 2) != 0)
+            {
+                zeta = -zeta;
+            }
+            int v = Reduce.montgomeryReduce(a11);
+            int even = Reduce.montgomeryReduce(a00 + zeta * v);
+            int odd = Reduce.montgomeryReduce(cross);
+            out.setCoeffIndex(j, Reduce.barrettReduce((short)even));
+            out.setCoeffIndex(j + 1, Reduce.barrettReduce((short)odd));
         }
-        out.reduce();
     }
 
     void reducePoly()
