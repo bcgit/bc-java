@@ -36,7 +36,7 @@ For Maven (`pom.xml`)
             <!-- Initialize Bouncy Castle and our initializer -->
             <arg>--initialize-at-build-time=org.bouncycastle,com.yourpackage.crypto.BCInitializer</arg>
             <!-- Required for SecureRandom components -->
-            <arg>--initialize-at-run-time=org.bouncycastle.jcajce.provider.drbg.DRBG$Default,org.bouncycastle.jcajce.provider.drbg.DRBG$NonceAndIV</arg>
+            <arg>--initialize-at-run-time=org.bouncycastle.jcajce.provider.drbg.DRBG$Default,org.bouncycastle.jcajce.provider.drbg.DRBG$NonceAndIV,org.bouncycastle.math.ec.tools.TraceOptimizer</arg>
         </buildArgs>
     </configuration>
 </plugin>
@@ -45,7 +45,7 @@ For Maven (`pom.xml`)
 For Gradle (`build.gradle`),
 ```gradle
     buildArgs.add('--initialize-at-build-time=com.yourpackage.crypto.BCInitializer')
-    buildArgs.add("--initialize-at-run-time=org.bouncycastle.jcajce.provider.drbg.DRBG\$Default,org.bouncycastle.jcajce.provider.drbg.DRBG\$NonceAndIV")
+    buildArgs.add("--initialize-at-run-time=org.bouncycastle.jcajce.provider.drbg.DRBG\$Default,org.bouncycastle.jcajce.provider.drbg.DRBG\$NonceAndIV,org.bouncycastle.math.ec.tools.TraceOptimizer")
 ```
 # Key Configuration
 
@@ -101,7 +101,7 @@ public class BouncyCastleFeature implements Feature {
         <buildArgs>
             <arg>--features=com.yourpackage.crypto.BouncyCastleFeature</arg>  <!-- replace with correct package path -->
             <arg>--initialize-at-build-time=org.bouncycastle</arg>
-            <arg>--initialize-at-run-time=org.bouncycastle.jcajce.provider.drbg.DRBG$Default,org.bouncycastle.jcajce.provider.drbg.DRBG$NonceAndIV</arg>
+            <arg>--initialize-at-run-time=org.bouncycastle.jcajce.provider.drbg.DRBG$Default,org.bouncycastle.jcajce.provider.drbg.DRBG$NonceAndIV,org.bouncycastle.math.ec.tools.TraceOptimizer</arg>
         </buildArgs>
     </configuration>
 </plugin>
