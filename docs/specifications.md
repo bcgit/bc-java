@@ -155,7 +155,7 @@ Several properties bound the work done on parameters taken from untrusted input 
 BCJSSE also supports the SunJSSE jdk.tls.\* system properties, several of which are described in section 5.4. Its own properties are read as system properties only, apart from org.bouncycastle.jsse.config and org.bouncycastle.jsse.hostname_check_cn_fallback.
 
 - **org.bouncycastle.jsse.config** - configuration string for a BouncyCastleJsseProvider created with no arguments, as for its String constructor. Default "default".
-- **org.bouncycastle.jsse.hostname_check_cn_fallback** - set to true to let hostname verification fall back to the subject common name when a server certificate has no DNS subject alternative names, as SunJSSE does. By default RFC 9525 applies.
+- **org.bouncycastle.jsse.hostname_check_cn_fallback** - set to true to let hostname verification fall back to the subject common name when a server certificate has no DNS subject alternative names, as SunJSSE does. By default RFC 9525 applies. Also read by the EST client's JsseDefaultHostnameAuthorizer.
 - **org.bouncycastle.jsse.handshakeTimeoutMillis** - handshake timeout in milliseconds. Default 0, none.
 - **org.bouncycastle.jsse.useNamedGroupsOrder** - set to true to make a TLS 1.3 server choose the key share group by its own preference order rather than the client's.
 - **org.bouncycastle.jsse.client.earlyKeyShares** - the named groups a client sends key shares for in its first ClientHello; see section 5.4.

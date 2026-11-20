@@ -208,7 +208,8 @@ public class Properties
 
     /**
      * Opt-in to the legacy "use the subject CN as a fallback identifier" behaviour
-     * in the BC JSSE provider's hostname verifier. When the property is set to
+     * in the BC JSSE provider's hostname verifier and the EST client's
+     * {@code JsseDefaultHostnameAuthorizer}. When the property is set to
      * "true", a TLS server certificate that carries no SAN dNSName entries falls
      * back to the most specific {@code commonName} attribute of the subject DN —
      * this matches SunJSSE and historical OpenSSL behaviour.
@@ -219,9 +220,9 @@ public class Properties
      * Name-Constraint bypass surface (the 2026-03 cross-implementation X.509 audit):
      * a constrained intermediate CA can omit dNSName SAN entries entirely so the
      * path validator's Name-Constraint dNSName checks never fire, then embed an
-     * attacker-controlled hostname in CN — the JSSE verifier would have accepted
+     * attacker-controlled hostname in CN — the verifier would have accepted
      * the connection. Setting the property "false" (or leaving it unset) disables
-     * this fallback path and the JSSE verifier rejects any cert that doesn't carry
+     * this fallback path and both verifiers reject any cert that doesn't carry
      * a matching SAN identifier.
      */
     public static final String JSSE_HOSTNAME_CHECK_CN_FALLBACK = "org.bouncycastle.jsse.hostname_check_cn_fallback";

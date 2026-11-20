@@ -401,7 +401,7 @@ public class PGPClearSignedBareCRTest
     {
         int lf = armored.indexOf("\n\n");
         int crlf = armored.indexOf("\r\n\r\n");
-        int start = (crlf >= 0 && crlf < lf) ? crlf + 4 : lf + 2;
+        int start = (crlf >= 0 && (lf < 0 || crlf < lf)) ? crlf + 4 : lf + 2;
         return armored.substring(start, armored.lastIndexOf("-----BEGIN PGP SIGNATURE-----"));
     }
 

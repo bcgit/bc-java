@@ -25,6 +25,7 @@ import org.bouncycastle.asn1.x500.style.BCStyle;
 import org.bouncycastle.asn1.x509.GeneralName;
 import org.bouncycastle.est.ESTException;
 import org.bouncycastle.util.IPAddress;
+import org.bouncycastle.util.Properties;
 import org.bouncycastle.util.Strings;
 import org.bouncycastle.util.encoders.Hex;
 
@@ -43,6 +44,11 @@ public class JsseDefaultHostnameAuthorizer
      * Base constructor.
      * <p>
      * The authorizer attempts to perform matching (including the use of the wildcard) in accordance with RFC 9525 (formerly RFC 6125).
+     * </p>
+     * <p>
+     * A certificate with no DNS subject alternative names is only matched against the most specific common name
+     * of its subject if {@link Properties#JSSE_HOSTNAME_CHECK_CN_FALLBACK} is set to "true"; by default it does
+     * not match.
      * </p>
      * <p>
      * Known suffixes is a list of public domain suffixes that can't be used as wild cards for
@@ -187,9 +193,17 @@ public class JsseDefaultHostnameAuthorizer
             return false;
         }
 
+        // RFC 9525 sec. 6.3 deprecates the CN as a server identifier, and name constraints on dNSName do not
+        // cover it, so the fallback below is off unless Properties.JSSE_HOSTNAME_CHECK_CN_FALLBACK is set to
+        // "true", as for the BCJSSE endpoint ID check.
+        if (!Properties.isOverrideSet(Properties.JSSE_HOSTNAME_CHECK_CN_FALLBACK))
+        {
+            return false;
+        }
+
         X500Principal subject = cert.getSubjectX500Principal();
 
-        // can't match - would need to check subjectAltName
+        // no subject, so no CN to fall back to
         if (subject == null)
         {
             return false;
