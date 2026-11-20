@@ -751,11 +751,6 @@ public class ECPointTest extends TestCase
     }
 
     /**
-     * decodePoint must reject an empty (or null) encoding with IllegalArgumentException, not leak an
-     * ArrayIndexOutOfBoundsException from the {@code encoded[0]} read. Reachable via any untrusted
-     * EC-point decode (EC key parse, ECDH / ECIES / TLS ephemeral points, ECIESKEMExtractor).
-     */
-    /**
      * Multiplying a point of small odd order used to throw NullPointerException from the WNAF
      * precomputation: the odd-multiples table 1P, 3P, 5P, ... reaches the point at infinity, which
      * the isomorphism-based normalisation of Fp Jacobian curves could not invert, and the table
@@ -811,6 +806,11 @@ public class ECPointTest extends TestCase
         }
     }
 
+    /**
+     * decodePoint must reject an empty (or null) encoding with IllegalArgumentException, not leak an
+     * ArrayIndexOutOfBoundsException from the {@code encoded[0]} read. Reachable via any untrusted
+     * EC-point decode (EC key parse, ECDH / ECIES / TLS ephemeral points, ECIESKEMExtractor).
+     */
     public void testDecodePointRejectsEmptyEncoding()
     {
         ECCurve curve = ECNamedCurveTable.getByName("secp256r1").getCurve();
