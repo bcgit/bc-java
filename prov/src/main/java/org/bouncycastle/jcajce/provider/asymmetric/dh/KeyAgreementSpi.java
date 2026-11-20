@@ -35,6 +35,7 @@ import org.bouncycastle.crypto.params.DHUPrivateParameters;
 import org.bouncycastle.crypto.params.DHUPublicParameters;
 import org.bouncycastle.crypto.util.DigestFactory;
 import org.bouncycastle.jcajce.provider.asymmetric.util.BaseAgreementSpi;
+import org.bouncycastle.jcajce.provider.util.SecurityExceptions;
 import org.bouncycastle.jcajce.spec.DHDomainParameterSpec;
 import org.bouncycastle.jcajce.spec.DHUParameterSpec;
 import org.bouncycastle.jcajce.spec.MQVParameterSpec;
@@ -255,6 +256,8 @@ public class KeyAgreementSpi
         }
         DHPrivateKey    privKey = (DHPrivateKey)key;
 
+        checkPrivateKey(privKey);
+
         // set before the agreements below are initialised, since they are handed this random
         this.random = CryptoServicesRegistrar.getSecureRandom(random);
 
@@ -377,10 +380,26 @@ public class KeyAgreementSpi
 
         DHPrivateKey    privKey = (DHPrivateKey)key;
 
+        checkPrivateKey(privKey);
+
         this.p = privKey.getParams().getP();
         this.g = privKey.getParams().getG();
         this.x = privKey.getX();
         this.random = CryptoServicesRegistrar.getSecureRandom(random);
+    }
+
+    // the plain agreement uses p, g and x directly, so build the light-weight key for the checks it makes on its parameters (a prime q)
+    private void checkPrivateKey(DHPrivateKey privKey)
+        throws InvalidKeyException
+    {
+        try
+        {
+            generatePrivateKeyParameter(privKey);
+        }
+        catch (IllegalArgumentException e)
+        {
+            throw SecurityExceptions.invalidKeyException(e.getMessage(), e);
+        }
     }
 
     protected byte[] doCalcSecret()

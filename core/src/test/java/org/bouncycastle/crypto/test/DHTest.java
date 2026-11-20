@@ -817,9 +817,68 @@ public class DHTest
         }
     }
 
+    /**
+     * SP 800-56A requires q prime: with a composite q the check y^q = 1 mod p on a peer's value admits
+     * elements of small order, which reveal the private value modulo each small factor of q. Our own
+     * key is refused instead, so no agreement can be run with it.
+     */
+    private void testCompositeQRefused()
+    {
+        DHParameters group = DHStandardGroups.rfc7919_ffdhe2048;
+        BigInteger p = group.getP();
+        BigInteger g = group.getG();
+        BigInteger q = group.getQ();
+
+        // prime q: a standard group, twice to exercise the cache, and small primes on either side of the small-factor screen
+        new DHPrivateKeyParameters(BigInteger.valueOf(5), group);
+        new DHPrivateKeyParameters(BigInteger.valueOf(5), new DHParameters(p, g, new BigInteger(q.toByteArray())));
+        new DHPrivateKeyParameters(BigInteger.valueOf(5), new DHParameters(p, g, BigInteger.valueOf(211)));
+        new DHPrivateKeyParameters(BigInteger.valueOf(5), new DHParameters(p, g, BigInteger.valueOf(65537)));
+        // no q: nothing to check
+        new DHPrivateKeyParameters(BigInteger.valueOf(5), new DHParameters(p, g));
+
+        BigInteger[] composites = new BigInteger[]{
+            q.multiply(BigInteger.valueOf(3)),                 // large, no small factor screened out but 3
+            BigInteger.valueOf(2L * 13 * 53 * 5261),           // smooth
+            BigInteger.valueOf(221),                           // 13 * 17, 8 bits
+            BigInteger.valueOf(65537L * 65539),                // no factor below the small-factor bound
+            BigInteger.valueOf(1),
+            BigInteger.valueOf(0),
+            BigInteger.valueOf(-7)
+        };
+        for (int i = 0; i != composites.length; i++)
+        {
+            DHParameters params = new DHParameters(p, g, composites[i]);
+            try
+            {
+                new DHPrivateKeyParameters(BigInteger.valueOf(5), params);
+                fail("composite q accepted: " + composites[i]);
+            }
+            catch (IllegalArgumentException e)
+            {
+                isEquals("DH parameter q is not prime", e.getMessage());
+            }
+        }
+
+        // key generation over such parameters is refused as well
+        DHKeyPairGenerator kpGen = new DHKeyPairGenerator();
+        kpGen.init(new DHKeyGenerationParameters(new SecureRandom(), new DHParameters(p, g, q.multiply(BigInteger.valueOf(3)))));
+        try
+        {
+            kpGen.generateKeyPair();
+            fail("key pair generated over a composite q");
+        }
+        catch (IllegalArgumentException e)
+        {
+            isEquals("DH parameter q is not prime", e.getMessage());
+        }
+    }
+
     public void performTest()
         throws Exception
     {
+        testCompositeQRefused();
+
         testDHBasic(512, 0, g512, p512);
         testDHBasic(768, 0, g768, p768);
         testDHBasic(1024, 0, g1024, p1024);

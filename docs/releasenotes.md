@@ -49,6 +49,7 @@ Date: 2026, TBD
 
 #### Additional Notes
 
+- DH private keys, and so DH, MQV and DHU key agreement, now refuse domain parameters whose q is not prime, as SP 800-56A requires; with a composite q the subgroup check on a peer's value admits small-order elements. Each q is tested once.
 - The BC OIDs of SNOVA, FAEST, MQOM, UOV, QR-UOV and SQIsign now end in .2 and those of SDitH in .1, the round implemented; the previous OIDs are still read but no longer written.
 - bcpgsc API changes: card PINs for key upload are now supplied by an OpenPGPSmartCard.CardPinProvider, ExternalOpenPGPKeyUtils moved to org.bouncycastle.openpgp.api, and card implementations now provide getKeys() and getKeyByKeyRef().
 - External secret keys now follow draft-ietf-openpgp-external-secrets-01, where an empty locator hint means the key is unavailable rather than "best effort", so such keys written by 1.86 and 1.87 now read as unavailable.

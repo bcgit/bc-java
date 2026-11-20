@@ -1,26 +1,88 @@
 package org.bouncycastle.crypto.params;
 
 import java.math.BigInteger;
+import java.util.Collections;
+import java.util.Map;
+import java.util.WeakHashMap;
 
 import javax.security.auth.Destroyable;
+
+import org.bouncycastle.crypto.CryptoServicesRegistrar;
+import org.bouncycastle.math.Primes;
 
 public class DHPrivateKeyParameters
     extends DHKeyParameters
     implements Destroyable
 {
+    // q values already found prime, kept while some parameter set still holds the q
+    private static final Map primeQs = Collections.synchronizedMap(new WeakHashMap());
+
     private BigInteger      x;
 
     private volatile boolean destroyed;
     private int destroyedHashCode;
 
+    /**
+     * Base constructor.
+     *
+     * @param x the private value.
+     * @param params the domain parameters.
+     * @throws IllegalArgumentException if params carries a q that is not prime: SP 800-56A requires a prime q, and
+     * with a composite q the subgroup check on a peer's public value admits elements of small order, which reveal
+     * the private value modulo each small factor of q.
+     */
     public DHPrivateKeyParameters(
         BigInteger      x,
         DHParameters    params)
     {
         super(true, params);
 
+        BigInteger q = params.getQ();
+        if (q != null && !isPrimeQ(q))
+        {
+            throw new IllegalArgumentException("DH parameter q is not prime");
+        }
+
         this.x = x;
-    }   
+    }
+
+    private static boolean isPrimeQ(BigInteger q)
+    {
+        if (primeQs.containsKey(q))
+        {
+            return true;
+        }
+
+        boolean isPrime;
+        int bits = q.bitLength();
+        if (q.signum() <= 0 || bits < 2)
+        {
+            isPrime = false;
+        }
+        else if (bits <= 8)
+        {
+            // hasAnySmallFactors would count a small prime q as its own factor
+            isPrime = q.isProbablePrime(100);
+        }
+        else if (Primes.hasAnySmallFactors(q))
+        {
+            isPrime = false;
+        }
+        else
+        {
+            // FIPS 186-4 C.3, error probability 2^-100
+            int iterations = bits >= 1536 ? 4 : bits >= 1024 ? 5 : bits >= 512 ? 7 : 27;
+
+            isPrime = Primes.isMRProbablePrime(q, CryptoServicesRegistrar.getSecureRandom(), iterations);
+        }
+
+        if (isPrime)
+        {
+            primeQs.put(q, Boolean.TRUE);
+        }
+
+        return isPrime;
+    }
 
     public BigInteger getX()
     {

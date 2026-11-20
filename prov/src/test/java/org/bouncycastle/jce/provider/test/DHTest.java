@@ -1710,9 +1710,53 @@ public class DHTest
         ka.generateSecret();
     }
 
+    /**
+     * A BC DH key built from a spec only creates its light-weight key on demand, so the agreement's own
+     * init has to make it refuse a composite q (see the light-weight DHTest for why it matters).
+     */
+    private void testCompositeQRefusedAtInit()
+        throws Exception
+    {
+        org.bouncycastle.crypto.params.DHParameters group = DHStandardGroups.rfc7919_ffdhe2048;
+        BigInteger p = group.getP();
+        BigInteger g = group.getG();
+        BigInteger q = group.getQ();
+        BigInteger x = BigInteger.valueOf(12345);
+
+        KeyFactory kf = KeyFactory.getInstance("DH", "BC");
+
+        PrivateKey good = kf.generatePrivate(
+            new org.bouncycastle.jcajce.spec.DHExtendedPrivateKeySpec(x, new DHDomainParameterSpec(p, q, g)));
+        KeyAgreement ka = KeyAgreement.getInstance("DH", "BC");
+        ka.init(good);
+        ka.init(good, new DHParameterSpec(p, g));
+
+        PrivateKey bad = kf.generatePrivate(
+            new org.bouncycastle.jcajce.spec.DHExtendedPrivateKeySpec(x, new DHDomainParameterSpec(p, q.multiply(BigInteger.valueOf(3)), g)));
+        try
+        {
+            ka.init(bad);
+            fail("composite q accepted by init(key)");
+        }
+        catch (InvalidKeyException e)
+        {
+            isEquals("DH parameter q is not prime", e.getMessage());
+        }
+        try
+        {
+            ka.init(bad, new DHParameterSpec(p, g));
+            fail("composite q accepted by init(key, spec)");
+        }
+        catch (InvalidKeyException e)
+        {
+            isEquals("DH parameter q is not prime", e.getMessage());
+        }
+    }
+
     public void performTest()
         throws Exception
     {
+        testCompositeQRefusedAtInit();
         testFullLengthPrivateValue();
         testShortPrivateValueLength();
         generalKeyTest();
