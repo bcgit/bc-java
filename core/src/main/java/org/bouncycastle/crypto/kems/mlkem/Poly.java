@@ -40,21 +40,6 @@ class Poly
         }
     }
 
-    static void baseMultMontgomery(Poly r, Poly a, Poly b)
-    {
-        for (int i = 0; i < MLKEMEngine.N / 4; i++)
-        {
-            Ntt.baseMult(r.coeffs, 4 * i,
-                a.getCoeffIndex(4 * i), a.getCoeffIndex(4 * i + 1),
-                b.getCoeffIndex(4 * i), b.getCoeffIndex(4 * i + 1),
-                Ntt.ZETAS[64 + i]);
-            Ntt.baseMult(r.coeffs, 4 * i + 2,
-                a.getCoeffIndex(4 * i + 2), a.getCoeffIndex(4 * i + 3),
-                b.getCoeffIndex(4 * i + 2), b.getCoeffIndex(4 * i + 3),
-                (short)(-1 * Ntt.ZETAS[64 + i]));
-        }
-    }
-
     void add(Poly b)
     {
         for (int i = 0; i < MLKEMEngine.N; i++)

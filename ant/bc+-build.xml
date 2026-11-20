@@ -332,6 +332,7 @@
                  <include name="org/bouncycastle/pqc/asn1/**/*.java" />
                  <exclude name="org/bouncycastle/pqc/**/*Tests.java" />
                  <exclude name="org/bouncycastle/pqc/**/AllTests*.java" />
+                 <exclude name="org/bouncycastle/crypto/kems/mlkem/PointwiseProductTest.java" />
                  <exclude name="org/bouncycastle/crypto/params/*Tests.java" />
                  <exclude name="org/bouncycastle/crypto/signers/lms/*Tests.java" />
                  <exclude name="org/bouncycastle/crypto/signers/xmss/*Tests.java" />
@@ -538,6 +539,7 @@
                  <exclude name="org/bouncycastle/pqc/**/*Tests.java" />
                  <exclude name="org/bouncycastle/pqc/**/*Test.java" />
                  <exclude name="org/bouncycastle/pqc/**/AllTests*.java" />
+                 <exclude name="org/bouncycastle/crypto/kems/mlkem/PointwiseProductTest.java" />
                  <exclude name="org/bouncycastle/crypto/params/*Tests.java" />
                  <exclude name="org/bouncycastle/crypto/signers/lms/*Tests.java" />
                  <exclude name="org/bouncycastle/crypto/signers/xmss/*Tests.java" />

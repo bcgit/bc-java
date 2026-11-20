@@ -70,16 +70,4 @@ class Ntt
             r[i] = mulMont(r[i], ZETAS_INV[127]);
         }
     }
-
-    static void baseMult(short[] r, int off, short a0, short a1, short b0, short b1, short zeta)
-    {
-        short outVal0 = mulMont(a1, b1);
-        outVal0 = mulMont(outVal0, zeta);
-        outVal0 += mulMont(a0, b0);
-        r[off] = outVal0;
-
-        short outVal1 = mulMont(a0, b1);
-        outVal1 += mulMont(a1, b0);
-        r[off + 1] = outVal1;
-    }
 }
