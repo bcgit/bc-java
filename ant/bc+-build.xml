@@ -333,6 +333,7 @@
                  <exclude name="org/bouncycastle/pqc/**/*Tests.java" />
                  <exclude name="org/bouncycastle/pqc/**/AllTests*.java" />
                  <exclude name="org/bouncycastle/crypto/params/*Tests.java" />
+                 <exclude name="org/bouncycastle/crypto/signers/mldsa/AllTests.java" />
                  <exclude name="org/bouncycastle/crypto/signers/lms/*Tests.java" />
                  <exclude name="org/bouncycastle/crypto/signers/xmss/*Tests.java" />
                  <exclude name="org/bouncycastle/crypto/params/LMSVectorUtils.java" />
@@ -1067,6 +1068,7 @@
         </copy>
 
         <delete file="${test.target.src.dir}/org/bouncycastle/crypto/params/AllTests.java" />
+        <delete file="${test.target.src.dir}/org/bouncycastle/crypto/signers/mldsa/AllTests.java" />
         <delete file="${test.target.src.dir}/org/bouncycastle/crypto/signers/lms/AllTests.java" />
         <delete file="${test.target.src.dir}/org/bouncycastle/crypto/signers/xmss/AllTests.java" />
         <delete file="${test.target.src.dir}/org/bouncycastle/pqc/crypto/mayo/AllTests.java" />

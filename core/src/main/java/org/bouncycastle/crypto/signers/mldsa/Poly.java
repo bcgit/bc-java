@@ -198,21 +198,31 @@ class Poly
         int[] thisCoeffs = this.coeffs;
         int L = engine.getDilithiumL();
 
-        int[] u0 = u.getVectorIndex(0).coeffs;
-        int[] v0 = v.getVectorIndex(0).coeffs;
+        // Matrix coefficients are below q and the other operand comes from the forward NTT.
+        // With L <= 7 the absolute sum is at most 7 * (q - 1) * 34162429 < q * 2^31.
+        int[] u0 = u.getVectorIndex(0).coeffs, v0 = v.getVectorIndex(0).coeffs;
+        int[] u1 = u.getVectorIndex(1).coeffs, v1 = v.getVectorIndex(1).coeffs;
+        int[] u2 = u.getVectorIndex(2).coeffs, v2 = v.getVectorIndex(2).coeffs;
+        int[] u3 = u.getVectorIndex(3).coeffs, v3 = v.getVectorIndex(3).coeffs;
+        int[] u4 = L >= 5 ? u.getVectorIndex(4).coeffs : null;
+        int[] v4 = L >= 5 ? v.getVectorIndex(4).coeffs : null;
+        int[] u5 = L == 7 ? u.getVectorIndex(5).coeffs : null;
+        int[] v5 = L == 7 ? v.getVectorIndex(5).coeffs : null;
+        int[] u6 = L == 7 ? u.getVectorIndex(6).coeffs : null;
+        int[] v6 = L == 7 ? v.getVectorIndex(6).coeffs : null;
         for (int k = 0; k < DilithiumN; ++k)
         {
-            thisCoeffs[k] = Reduce.montgomeryReduce((long)u0[k] * (long)v0[k]);
-        }
-
-        for (int i = 1; i < L; ++i)
-        {
-            int[] ui = u.getVectorIndex(i).coeffs;
-            int[] vi = v.getVectorIndex(i).coeffs;
-            for (int k = 0; k < DilithiumN; ++k)
+            long sum = (long)u0[k] * v0[k] + (long)u1[k] * v1[k]
+                + (long)u2[k] * v2[k] + (long)u3[k] * v3[k];
+            if (L >= 5)
             {
-                thisCoeffs[k] += Reduce.montgomeryReduce((long)ui[k] * (long)vi[k]);
+                sum += (long)u4[k] * v4[k];
             }
+            if (L == 7)
+            {
+                sum += (long)u5[k] * v5[k] + (long)u6[k] * v6[k];
+            }
+            thisCoeffs[k] = Reduce.montgomeryReduce(sum);
         }
     }
 
