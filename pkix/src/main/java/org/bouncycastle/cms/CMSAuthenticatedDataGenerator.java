@@ -11,8 +11,10 @@ import org.bouncycastle.asn1.ASN1Encoding;
 import org.bouncycastle.asn1.ASN1OctetString;
 import org.bouncycastle.asn1.ASN1Set;
 import org.bouncycastle.asn1.BEROctetString;
+import org.bouncycastle.asn1.BERSet;
 import org.bouncycastle.asn1.DEROctetString;
 import org.bouncycastle.asn1.DERSet;
+import org.bouncycastle.asn1.DLSet;
 import org.bouncycastle.asn1.cms.AuthenticatedData;
 import org.bouncycastle.asn1.cms.CMSObjectIdentifiers;
 import org.bouncycastle.asn1.cms.ContentInfo;
@@ -127,7 +129,8 @@ public class CMSAuthenticatedDataGenerator
             {
                 throw new CMSException("unable to perform MAC calculation: " + e.getMessage(), e);
             }
-            ASN1Set unauthed = getUnauthedAttrSet();
+            // the unauthenticated attributes see the same parameters as the authenticated ones, as in the stream generator
+            ASN1Set unauthed = getUnauthedAttrSet(parameters);
 
             ContentInfo eci = new ContentInfo(
                 typedData.getContentType(),
@@ -157,7 +160,7 @@ public class CMSAuthenticatedDataGenerator
                 throw new CMSException("unable to perform MAC calculation: " + e.getMessage(), e);
             }
 
-            ASN1Set unauthed = getUnauthedAttrSet();
+            ASN1Set unauthed = getUnauthedAttrSet(CMSUtils.getEmptyParameters());
 
             ContentInfo eci = new ContentInfo(
                 typedData.getContentType(),
@@ -186,12 +189,19 @@ public class CMSAuthenticatedDataGenerator
             :   (ASN1OctetString)new DEROctetString(content);
     }
 
-    private ASN1Set getUnauthedAttrSet()
+    private ASN1Set getUnauthedAttrSet(Map parameters)
     {
+        if (unauthGen == null)
+        {
+            return null;
+        }
+
+        ASN1EncodableVector attrs = unauthGen.getAttributes(parameters).toASN1EncodableVector();
+
         return ASN1Encoding.BER.equals(encoding)
-            ?   CMSUtils.getAttrBERSet(unauthGen)
+            ?   (ASN1Set)new BERSet(attrs)
             :   (ASN1Encoding.DER.equals(encoding)
-                    ?   CMSUtils.getAttrDERSet(unauthGen)
-                    :   CMSUtils.getAttrDLSet(unauthGen));
+                    ?   (ASN1Set)new DERSet(attrs)
+                    :   (ASN1Set)new DLSet(attrs));
     }
 }

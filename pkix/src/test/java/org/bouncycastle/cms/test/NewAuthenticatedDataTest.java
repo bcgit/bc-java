@@ -197,6 +197,74 @@ public class NewAuthenticatedDataTest
         authDecode(enc, data);
     }
 
+    /**
+     * The unauthenticated attribute generator sees the same parameters as the authenticated one: the base
+     * parameters when a digest is used, as the stream generator has always passed them, and none without one.
+     */
+    public void testUnauthAttrGeneratorParameters()
+        throws Exception
+    {
+        byte[] data = "Eric H. Echidna".getBytes();
+        String[] encodings = new String[]{ null, ASN1Encoding.DER, ASN1Encoding.DL };
+
+        for (int i = 0; i != encodings.length; i++)
+        {
+            for (int d = 0; d != 2; d++)
+            {
+                boolean withDigest = (d == 1);
+                CMSAuthenticatedDataGenerator adGen = new CMSAuthenticatedDataGenerator();
+                if (encodings[i] != null)
+                {
+                    adGen.setEncoding(encodings[i]);
+                }
+                adGen.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(_reciCert).setProvider(BC));
+
+                RecordingAttributeTableGenerator unauthGen = new RecordingAttributeTableGenerator();
+                adGen.setUnauthenticatedAttributeGenerator(unauthGen);
+
+                org.bouncycastle.operator.MacCalculator macCalc = new JceCMSMacCalculatorBuilder(CMSAlgorithm.DES_EDE3_CBC).setProvider(BC).build();
+                CMSAuthenticatedData ad;
+                if (withDigest)
+                {
+                    DigestCalculatorProvider calcProvider = new JcaDigestCalculatorProviderBuilder().setProvider(BC).build();
+                    ad = adGen.generate(new CMSProcessableByteArray(data), macCalc,
+                        calcProvider.get(new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1)));
+                }
+                else
+                {
+                    ad = adGen.generate(new CMSProcessableByteArray(data), macCalc);
+                }
+
+                String label = (encodings[i] == null ? "default" : encodings[i]) + (withDigest ? " with digest" : " without digest");
+                checkUnauthParameters(label, unauthGen.getParameters(), withDigest, data, macCalc.getAlgorithmIdentifier());
+
+                ad = new CMSAuthenticatedData(ad.getEncoded(),
+                    new JcaDigestCalculatorProviderBuilder().setProvider(BC).build());
+                assertNotNull(label, ad.getUnauthAttrs().get(RecordingAttributeTableGenerator.ATTR_TYPE));
+            }
+        }
+    }
+
+    static void checkUnauthParameters(String label, Map params, boolean withDigest, byte[] data, AlgorithmIdentifier macAlg)
+        throws Exception
+    {
+        assertNotNull(label, params);
+        if (!withDigest)
+        {
+            assertTrue(label, params.isEmpty());
+            return;
+        }
+
+        assertEquals(label, 4, params.size());
+        assertEquals(label, CMSObjectIdentifiers.data, params.get(CMSAttributeTableGenerator.CONTENT_TYPE));
+        assertEquals(label, OIWObjectIdentifiers.idSHA1,
+            ((AlgorithmIdentifier)params.get(CMSAttributeTableGenerator.DIGEST_ALGORITHM_IDENTIFIER)).getAlgorithm());
+        assertEquals(label, macAlg.getAlgorithm(),
+            ((AlgorithmIdentifier)params.get(CMSAttributeTableGenerator.MAC_ALGORITHM_IDENTIFIER)).getAlgorithm());
+        assertTrue(label, Arrays.equals(java.security.MessageDigest.getInstance("SHA-1", BC).digest(data),
+            (byte[])params.get(CMSAttributeTableGenerator.DIGEST)));
+    }
+
     private byte[] authEncode(byte[] data, String encoding)
         throws Exception
     {

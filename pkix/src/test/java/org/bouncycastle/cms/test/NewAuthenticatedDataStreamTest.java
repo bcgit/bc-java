@@ -146,6 +146,64 @@ public class NewAuthenticatedDataStreamTest
         tryKeyTransWithDigest(new byte[2500], CMSAlgorithm.DES_EDE3_CBC);
     }
 
+    /**
+     * The unauthenticated attribute generator gets the base parameters when a digest is used, on the
+     * indefinite-length path and on the definite-length one, where the final call carries the real digest.
+     */
+    public void testUnauthAttrGeneratorParameters()
+        throws Exception
+    {
+        byte[] data = "Eric H. Echidna".getBytes();
+
+        for (int dl = 0; dl != 2; dl++)
+        {
+            for (int d = 0; d != 2; d++)
+            {
+                boolean definite = (dl == 1);
+                boolean withDigest = (d == 1);
+
+                CMSAuthenticatedDataStreamGenerator adGen = new CMSAuthenticatedDataStreamGenerator();
+                adGen.addRecipientInfoGenerator(new JceKeyTransRecipientInfoGenerator(_reciCert).setProvider(BC));
+                if (definite)
+                {
+                    adGen.setEncoding(ASN1Encoding.DL);
+                }
+
+                RecordingAttributeTableGenerator unauthGen = new RecordingAttributeTableGenerator();
+                adGen.setUnauthenticatedAttributeGenerator(unauthGen);
+
+                MacCalculator macCalc = new JceCMSMacCalculatorBuilder(PKCSObjectIdentifiers.id_hmacWithSHA256).setProvider(BC).build();
+                org.bouncycastle.operator.DigestCalculator digCalc = null;
+                if (withDigest)
+                {
+                    digCalc = new JcaDigestCalculatorProviderBuilder().setProvider(BC).build()
+                        .get(new AlgorithmIdentifier(OIWObjectIdentifiers.idSHA1));
+                }
+
+                ByteArrayOutputStream bOut = new ByteArrayOutputStream();
+                OutputStream aOut;
+                if (definite)
+                {
+                    aOut = withDigest ? adGen.open(bOut, data.length, macCalc, digCalc) : adGen.open(bOut, data.length, macCalc);
+                }
+                else
+                {
+                    aOut = withDigest ? adGen.open(bOut, macCalc, digCalc) : adGen.open(bOut, macCalc);
+                }
+                aOut.write(data);
+                aOut.close();
+
+                String label = (definite ? "DL" : "BER") + (withDigest ? " with digest" : " without digest");
+                NewAuthenticatedDataTest.checkUnauthParameters(label, unauthGen.getParameters(), withDigest, data,
+                    macCalc.getAlgorithmIdentifier());
+
+                CMSAuthenticatedData ad = new CMSAuthenticatedData(bOut.toByteArray(),
+                    new JcaDigestCalculatorProviderBuilder().setProvider(BC).build());
+                assertNotNull(label, ad.getUnauthAttrs().get(RecordingAttributeTableGenerator.ATTR_TYPE));
+            }
+        }
+    }
+
     public void testDefiniteLengthNeedsLengthUpFront()
         throws Exception
     {
