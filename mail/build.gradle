@@ -1,5 +1,5 @@
 plugins {
-  id "biz.aQute.bnd.builder" version "7.1.0"
+  id "biz.aQute.bnd.builder" version "7.2.3"
 }
 
 jar.archiveBaseName = "bcmail-$vmrange"
@@ -21,11 +21,11 @@ dependencies {
     implementation project(':util')
     implementation project(':pkix')
 
-    implementation group: 'javax.mail', name: 'mail', version: '1.4'
+    implementation 'javax.mail:mail:1.4'
     // javax.mail:mail:1.4 pulls in javax.activation:activation:1.1 transitively - both are
     // needed as automatic modules ("mail", "activation") on the module-info.java compile path,
     // since neither javax.mail nor javax.activation is a JDK-bundled module on Java 11+.
-    mailModulePath group: 'javax.mail', name: 'mail', version: '1.4'
+    mailModulePath 'javax.mail:mail:1.4'
 
     java9Implementation files(sourceSets.main.output.classesDirs) {
         builtBy compileJava
@@ -121,15 +121,11 @@ task javadocJar(type: Jar, dependsOn: javadoc) {
   from javadoc.destinationDir
 }
 
-artifacts {
-    archives jar
-    archives javadocJar
-    archives sourcesJar
-}
+assemble.dependsOn javadocJar, sourcesJar
 
 test {
-    forkEvery = 1;
-    maxParallelForks = 8;
+    forkEvery = 1
+    maxParallelForks = 8
     jvmArgs = ['-Dtest.java.version.prefix=any']
 }
 

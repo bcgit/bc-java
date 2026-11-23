@@ -1,11 +1,11 @@
 plugins {
-  id "biz.aQute.bnd.builder" version "7.1.0"
+  id "biz.aQute.bnd.builder" version "7.2.3"
 }
 
 dependencies {
     implementation project(':core')
     testImplementation project(':core')
-    testImplementation group: 'com.unboundid', name: 'unboundid-ldapsdk', version: '6.0.8'
+    testImplementation 'com.unboundid:unboundid-ldapsdk:6.0.8'
 }
 
 evaluationDependsOn(":core")
@@ -188,7 +188,7 @@ compileJava.dependsOn stampVersion
 compileTestJava.dependsOn stampVersion
 
 compileJava {
-    options.release = 8;
+    options.release = 8
 }
 
 compileJava9Java {
@@ -304,11 +304,7 @@ task javadocJar(type: Jar, dependsOn: javadoc) {
     from javadoc.destinationDir
 }
 
-artifacts {
-    archives jar
-    archives javadocJar
-    archives sourcesJar
-}
+assemble.dependsOn javadocJar, sourcesJar
 
 
 
@@ -356,14 +352,14 @@ dependencies {
 }
 
 dependencies {
-    test11Implementation group: 'junit', name: 'junit', version: '4.13.2'
-    test15Implementation group: 'junit', name: 'junit', version: '4.13.2'
-    test17Implementation group: 'junit', name: 'junit', version: '4.13.2'
-    test25Implementation group: 'junit', name: 'junit', version: '4.13.2'
-    test11Implementation group: 'com.unboundid', name: 'unboundid-ldapsdk', version: '6.0.8'
-    test15Implementation group: 'com.unboundid', name: 'unboundid-ldapsdk', version: '6.0.8'
-    test17Implementation group: 'com.unboundid', name: 'unboundid-ldapsdk', version: '6.0.8'
-    test25Implementation group: 'com.unboundid', name: 'unboundid-ldapsdk', version: '6.0.8'
+    test11Implementation 'junit:junit:4.13.2'
+    test15Implementation 'junit:junit:4.13.2'
+    test17Implementation 'junit:junit:4.13.2'
+    test25Implementation 'junit:junit:4.13.2'
+    test11Implementation 'com.unboundid:unboundid-ldapsdk:6.0.8'
+    test15Implementation 'com.unboundid:unboundid-ldapsdk:6.0.8'
+    test17Implementation 'com.unboundid:unboundid-ldapsdk:6.0.8'
+    test25Implementation 'com.unboundid:unboundid-ldapsdk:6.0.8'
     test11Implementation(project(":core"))
     test15Implementation(project(":core"))
     test17Implementation(project(":core"))
@@ -423,7 +419,7 @@ test {
     // Every AllTest* class already runs in its own JVM (forkEvery = 1 from the root build), so
     // the forks share no System/Security property state; run them alongside each other as the
     // other modules' test tasks and prov's own test8 / test11 / test15 / test17 / test25 do.
-    maxParallelForks = 8;
+    maxParallelForks = 8
     jvmArgs = ['-Dtest.java.version.prefix=any']
 }
 
@@ -435,8 +431,8 @@ task test8(type: Test) {
     testClassesDirs = sourceSets.test.output.classesDirs
     classpath = sourceSets.test.runtimeClasspath + files(jar.archiveFile)
 
-    forkEvery = 1;
-    maxParallelForks = 8;
+    forkEvery = 1
+    maxParallelForks = 8
 
     maxHeapSize = "1536m"
     testLogging.showStandardStreams = false
@@ -465,8 +461,8 @@ task test11(type: Test) {
     testClassesDirs = sourceSets.test11.output.classesDirs
     classpath = sourceSets.test11.runtimeClasspath + files(jar.archiveFile)
 
-    forkEvery = 1;
-    maxParallelForks = 8;
+    forkEvery = 1
+    maxParallelForks = 8
 
     maxHeapSize = "1536m"
     testLogging.showStandardStreams = false
@@ -497,8 +493,8 @@ task test15(type: Test) {
     testClassesDirs = sourceSets.test15.output.classesDirs
     classpath = sourceSets.test15.runtimeClasspath + files(jar.archiveFile)
 
-    forkEvery = 1;
-    maxParallelForks = 8;
+    forkEvery = 1
+    maxParallelForks = 8
 
     maxHeapSize = "1536m"
     testLogging.showStandardStreams = false
@@ -529,8 +525,8 @@ task test17(type: Test) {
     testClassesDirs = sourceSets.test17.output.classesDirs
     classpath = sourceSets.test17.runtimeClasspath + files(jar.archiveFile)
 
-    forkEvery = 1;
-    maxParallelForks = 8;
+    forkEvery = 1
+    maxParallelForks = 8
 
     maxHeapSize = "1536m"
     testLogging.showStandardStreams = false
@@ -561,8 +557,8 @@ task test25(type: Test) {
     testClassesDirs = sourceSets.test25.output.classesDirs
     classpath = sourceSets.test25.runtimeClasspath + files(jar.archiveFile)
 
-    forkEvery = 1;
-    maxParallelForks = 8;
+    forkEvery = 1
+    maxParallelForks = 8
 
     maxHeapSize = "1536m"
     testLogging.showStandardStreams = false

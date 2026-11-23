@@ -1,6 +1,6 @@
 
 plugins {
-  id "biz.aQute.bnd.builder" version "7.1.0"
+  id "biz.aQute.bnd.builder" version "7.2.3"
 }
 
 jar.archiveBaseName = "bctls-$vmrange"
@@ -103,11 +103,11 @@ dependencies {
         builtBy compileJava17Java
     }
 
-    test11Implementation group: 'junit', name: 'junit', version: '4.13.2'
-    test15Implementation group: 'junit', name: 'junit', version: '4.13.2'
-    test17Implementation group: 'junit', name: 'junit', version: '4.13.2'
-    test21Implementation group: 'junit', name: 'junit', version: '4.13.2'
-    test25Implementation group: 'junit', name: 'junit', version: '4.13.2'
+    test11Implementation 'junit:junit:4.13.2'
+    test15Implementation 'junit:junit:4.13.2'
+    test17Implementation 'junit:junit:4.13.2'
+    test21Implementation 'junit:junit:4.13.2'
+    test25Implementation 'junit:junit:4.13.2'
 
     test11Implementation project(':prov')
     test11Implementation project(':util')
@@ -268,11 +268,7 @@ task javadocJar(type: Jar, dependsOn: javadoc) {
   from javadoc.destinationDir
 }
 
-artifacts {
-    archives jar
-    archives javadocJar
-    archives sourcesJar
-}
+assemble.dependsOn javadocJar, sourcesJar
 
 publishing {
     publications {
@@ -296,8 +292,8 @@ task test8(type: Test) {
     testClassesDirs = sourceSets.test.output.classesDirs
     classpath = sourceSets.test.runtimeClasspath + files(jar.archiveFile)
 
-    forkEvery = 1;
-    maxParallelForks = 8;
+    forkEvery = 1
+    maxParallelForks = 8
 
     maxHeapSize = "1536m"
     testLogging.showStandardStreams = false
@@ -326,8 +322,8 @@ task test11(type: Test) {
     testClassesDirs = sourceSets.test11.output.classesDirs
     classpath = sourceSets.test11.runtimeClasspath + files(jar.archiveFile)
 
-    forkEvery = 1;
-    maxParallelForks = 8;
+    forkEvery = 1
+    maxParallelForks = 8
 
     maxHeapSize = "1536m"
     testLogging.showStandardStreams = false
@@ -358,8 +354,8 @@ task test15(type: Test) {
     testClassesDirs = sourceSets.test15.output.classesDirs
     classpath = sourceSets.test15.runtimeClasspath + files(jar.archiveFile)
 
-    forkEvery = 1;
-    maxParallelForks = 8;
+    forkEvery = 1
+    maxParallelForks = 8
 
     maxHeapSize = "1536m"
     testLogging.showStandardStreams = false
@@ -390,8 +386,8 @@ task test17(type: Test) {
     testClassesDirs = sourceSets.test17.output.classesDirs
     classpath = sourceSets.test17.runtimeClasspath + files(jar.archiveFile)
 
-    forkEvery = 1;
-    maxParallelForks = 8;
+    forkEvery = 1
+    maxParallelForks = 8
 
     maxHeapSize = "1536m"
     testLogging.showStandardStreams = false
@@ -422,8 +418,8 @@ task test21(type: Test) {
     testClassesDirs = sourceSets.test21.output.classesDirs
     classpath = sourceSets.test21.runtimeClasspath + files(jar.archiveFile)
 
-    forkEvery = 1;
-    maxParallelForks = 8;
+    forkEvery = 1
+    maxParallelForks = 8
 
     maxHeapSize = "1536m"
     testLogging.showStandardStreams = false
@@ -447,15 +443,15 @@ task test21(type: Test) {
 
 task test25(type: Test) {
 
-    // This is testing the 21 code base
+    // This is testing the 25 code base
     onlyIf {System.getenv("BC_JDK25") != null}
     dependsOn jar
 
     testClassesDirs = sourceSets.test25.output.classesDirs
     classpath = sourceSets.test25.runtimeClasspath + files(jar.archiveFile)
 
-    forkEvery = 1;
-    maxParallelForks = 8;
+    forkEvery = 1
+    maxParallelForks = 8
 
     maxHeapSize = "1536m"
     testLogging.showStandardStreams = false

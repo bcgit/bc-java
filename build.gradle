@@ -18,7 +18,7 @@ plugins {
 
 println("Environment setup:")
 ["BC_JDK8", "BC_JDK11", "BC_JDK17","BC_JDK21", "BC_JDK25"].each({ it ->
-    println("Looking for JDK ENV '${it}' found  ${System.getenv(it)}");
+    println("Looking for JDK ENV '${it}' found  ${System.getenv(it)}")
 //    if (System.getenv(it) == null) {
 //        throw new RuntimeException("Looking for JDK ENV '${it}' but found null, see README 'Environmental variables'");
 //    }
@@ -33,20 +33,20 @@ if (JavaVersion.current().isJava8Compatible()) {
     }
 }
 
-def String deriveOSGIVersion(String prjVersion) {
+String deriveOSGIVersion(String prjVersion) {
     if (prjVersion.contains("-SNAPSHOT")) {
         // Snapshots always extend to fourth level and terminate with time in seconds since epoch.
-        prjVersion = prjVersion.replace("-SNAPSHOT", "");
+        prjVersion = prjVersion.replace("-SNAPSHOT", "")
         while (prjVersion.count(".") < 2) {
-            prjVersion = prjVersion + ".0";
+            prjVersion = prjVersion + ".0"
         }
-        prjVersion = prjVersion + "." + System.currentTimeMillis().intdiv(1000L).intdiv(60).intdiv(60).intdiv(24);
+        prjVersion = prjVersion + "." + System.currentTimeMillis().intdiv(1000L).intdiv(60).intdiv(60).intdiv(24)
     }
     return prjVersion
 }
 
 ext {
-    bundle_version = deriveOSGIVersion(version.toString());
+    bundle_version = deriveOSGIVersion(version.toString())
 
     // Number of parallel test forks: half the available processors (at least 1). Each test JVM is
     // heavy (it re-runs the FIPS power-on self-tests on startup) and reserves a sizable heap, so
@@ -70,7 +70,7 @@ configure(allprojects.findAll {it.name != 'bom'}) {
     }
 
     dependencies {
-        testImplementation group: 'junit', name: 'junit', version: '4.13.2'
+        testImplementation 'junit:junit:4.13.2'
     }
     tasks.withType(JavaCompile).configureEach {
         options.errorprone {
@@ -191,8 +191,8 @@ ext {
     // unchanged: <module>-jdk18on-<version> with no debug info.
     ext.releaseDebug = Boolean.parseBoolean(project.findProperty('release.debug')?.toString() ?: 'false')
 
-    JavaVersion current = JavaVersion.current();
-    String range;
+    JavaVersion current = JavaVersion.current()
+    String range
     if (current.compareTo(JavaVersion.VERSION_1_8) <= 0) {
         range = 'jdk15to18'
     } else {
@@ -207,18 +207,18 @@ configure(subprojects.findAll {it.name != 'bom'}) {
     apply plugin: 'maven-publish'
 
 
-    JavaVersion current = JavaVersion.current();
-    int releaseVersion = 8;
+    JavaVersion current = JavaVersion.current()
+    int releaseVersion = 8
     if (current.compareTo(JavaVersion.VERSION_1_8) <= 0) {
         releaseVersion = 5
     }
 
     compileJava {
-        options.release = releaseVersion;
+        options.release = releaseVersion
     }
 
     compileTestJava {
-        options.release = 8;
+        options.release = 8
     }
 
 
@@ -236,8 +236,8 @@ configure(subprojects.findAll {it.name != 'bom'}) {
     }
 
     test {
-        forkEvery = 1;
-        maxParallelForks = 1;
+        forkEvery = 1
+        maxParallelForks = 1
         maxHeapSize = "1536m"
         testLogging.showStandardStreams = false
 
@@ -266,8 +266,8 @@ configure(subprojects.findAll {it.name != 'bom'}) {
     }
 
     checkstyle {
-        configFile = file("$rootDir/config/checkstyle/checkstyle.xml");
-        toolVersion = '14.0.0'; // your choice here
+        configFile = file("$rootDir/config/checkstyle/checkstyle.xml")
+        toolVersion = '14.0.0' // your choice here
         sourceSets = [project.sourceSets.main]
     }
 
@@ -307,7 +307,7 @@ configure(subprojects.findAll {it.name != 'bom'}) {
     }
 
     tasks.withType(JavaCompile).configureEach {
-        options.debug = releaseDebug;
+        options.debug = releaseDebug
     }
 
     tasks.withType(Test).configureEach {

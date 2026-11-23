@@ -1,8 +1,8 @@
 apply plugin: 'application'
 
 dependencies {
-    implementation group: 'org.openjdk.jmh', name: 'jmh-core', version: '1.33'
-    annotationProcessor group: 'org.openjdk.jmh', name: 'jmh-generator-annprocess', version: '1.33'
+    implementation 'org.openjdk.jmh:jmh-core:1.33'
+    annotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.33'
 }
 application {
     mainClass.set("org.bouncycastle.crypto.fpe.SP80038GMicroBenchmark")
@@ -14,8 +14,8 @@ test {
     minHeapSize = "512m"
     maxHeapSize = "8192m"
 
-    maxParallelForks = rootProject.ext.calcTestForks();
-    forkEvery = 1;
+    maxParallelForks = rootProject.ext.calcTestForks()
+    forkEvery = 1
 
     jvmArgs = ['-Dtest.java.version.prefix=any']
 }
@@ -104,11 +104,7 @@ task javadocJar(type: Jar, dependsOn: javadoc) {
     from javadoc.destinationDir
 }
 
-artifacts {
-    archives jar
-    archives javadocJar
-    archives sourcesJar
-}
+assemble.dependsOn javadocJar, sourcesJar
 
 publishing {
     publications {
