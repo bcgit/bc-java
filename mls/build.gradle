@@ -1,7 +1,7 @@
 
 plugins {
 // OSGI
-    id "biz.aQute.bnd.builder" version "7.1.0"
+    id "biz.aQute.bnd.builder" version "7.2.3"
 //     Generate IntelliJ IDEA's .idea & .iml project files
 //    id 'idea'
 }
@@ -97,11 +97,7 @@ task javadocJar(type: Jar, dependsOn: javadoc) {
     from javadoc.destinationDir
 }
 
-artifacts {
-    archives jar
-    archives javadocJar
-    archives sourcesJar
-}
+assemble.dependsOn javadocJar, sourcesJar
 
 test {
     jvmArgs = ['-Dtest.java.version.prefix=any']

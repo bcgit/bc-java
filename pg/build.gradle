@@ -1,6 +1,6 @@
 
 plugins {
-  id "biz.aQute.bnd.builder" version "7.1.0"
+  id "biz.aQute.bnd.builder" version "7.2.3"
 }
 
 sourceSets {
@@ -22,7 +22,7 @@ dependencies {
         builtBy compileJava
     }
 
-    testImplementation group: 'junit', name: 'junit', version: '4.13.2'
+    testImplementation 'junit:junit:4.13.2'
 }
 
 evaluationDependsOn(":prov")
@@ -133,16 +133,12 @@ task javadocJar(type: Jar, dependsOn: javadoc) {
   from javadoc.destinationDir
 }
 
-artifacts {
-    archives jar
-    archives javadocJar
-    archives sourcesJar
-}
+assemble.dependsOn javadocJar, sourcesJar
 
 test {
-    forkEvery = 1;
-    maxParallelForks = 8;
-    maxHeapSize = "3g";
+    forkEvery = 1
+    maxParallelForks = 8
+    maxHeapSize = "3g"
     jvmArgs = ['-Dtest.java.version.prefix=any']
 }
 

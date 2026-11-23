@@ -1,6 +1,6 @@
 
 plugins {
-    id "biz.aQute.bnd.builder" version "7.1.0"
+    id "biz.aQute.bnd.builder" version "7.2.3"
 }
 
 sourceSets {
@@ -30,12 +30,12 @@ dependencies {
     // without YubiKit; an application that wants the YubiKey backend adds
     //   com.yubico.yubikit:openpgp   and   com.yubico.yubikit:desktop
     // to its own classpath, and gets a NoClassDefFoundError from the yubikey package if it does not.
-    compileOnly group: 'com.yubico.yubikit', name: 'openpgp', version: '3.2.0'
-    compileOnly group: 'com.yubico.yubikit', name: 'desktop', version: '3.2.0'
+    compileOnly 'com.yubico.yubikit:openpgp:3.2.0'
+    compileOnly 'com.yubico.yubikit:desktop:3.2.0'
 
-    testImplementation group: 'com.yubico.yubikit', name: 'openpgp', version: '3.2.0'
-    testImplementation group: 'com.yubico.yubikit', name: 'desktop', version: '3.2.0'
-    testImplementation group: 'junit', name: 'junit', version: '4.13.2'
+    testImplementation 'com.yubico.yubikit:openpgp:3.2.0'
+    testImplementation 'com.yubico.yubikit:desktop:3.2.0'
+    testImplementation 'junit:junit:4.13.2'
 }
 
 evaluationDependsOn(":core")
@@ -106,16 +106,12 @@ task javadocJar(type: Jar, dependsOn: javadoc) {
     from javadoc.destinationDir
 }
 
-artifacts {
-    archives jar
-    archives javadocJar
-    archives sourcesJar
-}
+assemble.dependsOn javadocJar, sourcesJar
 
 test {
-    forkEvery = 1;
-    maxParallelForks = 8;
-    maxHeapSize = "3g";
+    forkEvery = 1
+    maxParallelForks = 8
+    maxHeapSize = "3g"
     jvmArgs = ['-Dtest.java.version.prefix=any']
 }
 

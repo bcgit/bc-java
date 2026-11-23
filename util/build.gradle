@@ -1,6 +1,6 @@
 
 plugins {
-  id "biz.aQute.bnd.builder" version "7.1.0"
+  id "biz.aQute.bnd.builder" version "7.2.3"
 }
 
 jar.archiveBaseName = "bcutil-$vmrange"
@@ -20,7 +20,7 @@ dependencies {
 
     implementation project(':prov')
 
-    testImplementation group: 'junit', name: 'junit', version: '4.11'
+    testImplementation 'junit:junit:4.11'
 
     java9Implementation files([sourceSets.main.output.classesDirs]) {
         builtBy compileJava
@@ -100,11 +100,7 @@ task javadocJar(type: Jar, dependsOn: javadoc) {
   from javadoc.destinationDir
 }
 
-artifacts {
-    archives jar
-    archives javadocJar
-    archives sourcesJar
-}
+assemble.dependsOn javadocJar, sourcesJar
 
 publishing {
     publications {
@@ -122,7 +118,7 @@ publishing {
 
 
 test {
-    forkEvery = 1;
-    maxParallelForks = 8;
+    forkEvery = 1
+    maxParallelForks = 8
 }
 
