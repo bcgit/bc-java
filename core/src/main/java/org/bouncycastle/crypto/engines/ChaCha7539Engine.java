@@ -25,73 +25,98 @@ public class ChaCha7539Engine extends Salsa20Engine
         return 12;
     }
 
+    /*
+     * The 32-bit block counter allows 2^32 blocks of 64 bytes (RFC 8439, section 2.4). The block for counter
+     * 0xFFFFFFFF is the last one, and the stream may end exactly after it.
+     */
+    private static final long MAX_COUNTER = 1L << 32;
+    private static final long MAX_POSITION = MAX_COUNTER * 64;
+
+    /*
+     * Set when the counter has moved past 0xFFFFFFFF, i.e. the whole keystream has been used (or skipped). The
+     * counter word itself has wrapped to 0 then, so this flag, not engineState[12], says where the stream is: no
+     * further keystream may be produced until the counter moves back (skip/seekTo) or is reset.
+     */
+    private boolean counterExhausted;
+
+    public byte returnByte(byte in)
+    {
+        if (getPosition() >= MAX_POSITION)
+        {
+            throw new IllegalStateException("attempt to increase counter past 2^32.");
+        }
+
+        return super.returnByte(in);
+    }
+
+    public int processBytes(byte[] in, int inOff, int len, byte[] out, int outOff)
+    {
+        if (len > MAX_POSITION - getPosition())
+        {
+            throw new IllegalStateException("attempt to increase counter past 2^32.");
+        }
+
+        return super.processBytes(in, inOff, len, out, outOff);
+    }
+
+    public long skip(long numberOfBytes)
+    {
+        if (numberOfBytes > MAX_POSITION - getPosition())
+        {
+            throw new IllegalStateException("attempt to increase counter past 2^32.");
+        }
+
+        return super.skip(numberOfBytes);
+    }
+
     protected void advanceCounter(long diff)
     {
-        int hi = (int)(diff >>> 32);
-        int lo = (int)diff;
+        long counter = getCounter();
 
-        if (hi > 0)
+        if (diff < 0 || diff > MAX_COUNTER - counter)
         {
             throw new IllegalStateException("attempt to increase counter past 2^32.");
         }
 
-        int oldState = engineState[12];
-
-        engineState[12] += lo;
-
-        // unsigned overflow: the 32-bit counter wrapped past 2^32 iff its unsigned value decreased
-        if ((engineState[12] & 0xffffffffL) < (oldState & 0xffffffffL))
-        {
-            throw new IllegalStateException("attempt to increase counter past 2^32.");
-        }
+        setCounter(counter + diff);
     }
 
     protected void advanceCounter()
     {
-        if (++engineState[12] == 0)
-        {
-            throw new IllegalStateException("attempt to increase counter past 2^32.");
-        }
+        advanceCounter(1);
     }
 
     protected void retreatCounter(long diff)
     {
-        int hi = (int)(diff >>> 32);
-        int lo = (int)diff;
+        long counter = getCounter();
 
-        if (hi != 0)
+        if (diff < 0 || diff > counter)
         {
             throw new IllegalStateException("attempt to reduce counter past zero.");
         }
 
-        if ((engineState[12] & 0xffffffffL) >= (lo & 0xffffffffL))
-        {
-            engineState[12] -= lo;
-        }
-        else
-        {
-            throw new IllegalStateException("attempt to reduce counter past zero.");
-        }
+        setCounter(counter - diff);
     }
 
     protected void retreatCounter()
     {
-        if (engineState[12] == 0)
-        {
-            throw new IllegalStateException("attempt to reduce counter past zero.");
-        }
-
-        --engineState[12];
+        retreatCounter(1);
     }
 
     protected long getCounter()
     {
-        return engineState[12] & 0xffffffffL;
+        return counterExhausted ? MAX_COUNTER : engineState[12] & 0xffffffffL;
     }
 
     protected void resetCounter()
     {
-        engineState[12] = 0;
+        setCounter(0);
+    }
+
+    private void setCounter(long counter)
+    {
+        engineState[12] = (int)counter;
+        counterExhausted = (counter == MAX_COUNTER);
     }
 
     protected void setKey(byte[] keyBytes, byte[] ivBytes)
