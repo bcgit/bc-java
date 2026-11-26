@@ -67,6 +67,14 @@ class Utils
         return PGPPublicKey.addCertification(publicPrimaryKey, userId, uidSig);
     }
 
+    static PGPPublicKey injectCertification(byte[] rawUserId, PGPPublicKey publicPrimaryKey, PGPSignatureGenerator uidSigGen)
+        throws PGPException
+    {
+        // Inject UID and signature into the certificate, over the user-id's bytes as they are
+        PGPSignature uidSig = uidSigGen.generateCertification(rawUserId, publicPrimaryKey);
+        return PGPPublicKey.addCertification(publicPrimaryKey, rawUserId, uidSig);
+    }
+
     public interface HashedSubpacketsOperation
     {
         void operate(PGPSignatureSubpacketGenerator hashedSubpackets)

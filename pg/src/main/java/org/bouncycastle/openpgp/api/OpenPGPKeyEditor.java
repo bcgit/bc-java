@@ -176,7 +176,7 @@ public class OpenPGPKeyEditor
             if (identity instanceof OpenPGPCertificate.OpenPGPUserId)
             {
                 OpenPGPCertificate.OpenPGPUserId userId = (OpenPGPCertificate.OpenPGPUserId)identity;
-                pubKey = Utils.injectCertification(userId.getUserId(), publicPrimaryKey, idSigGen);
+                pubKey = Utils.injectCertification(userId.getRawUserId(), publicPrimaryKey, idSigGen);
             }
             else
             {

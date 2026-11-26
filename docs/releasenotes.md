@@ -38,6 +38,7 @@ Date: 2026, TBD
 - Since 1.87, writing a GeneralizedTime with a fractional part as DER took time quadratic in the length of the fraction, so re-encoding a certificate or other structure carrying a very long one could take seconds of CPU. It is now linear.
 - DH agreement (DHBasicAgreement, DHAgreement, the DH KeyAgreement) and ElGamal and NaccacheStern decryption now blind the peer-chosen base instead of adding a small multiple of the group order to the private exponent, which repeated timings could average out. Short-exponent groups (RFC 3526, RFC 7919) run over 3 times faster; full-size exponents take about twice as long.
 - Initialising NaccacheSternEngine for decryption raised g to an exponent derived from phi(n), the private key, with a bare BigInteger.modPow for every lookup table entry. Each table is now built from one blinded exponentiation by fixed-time multiplication, which also makes initialisation over 20 times faster, and decryption recombines the plaintext digits in fixed time.
+- OpenPGPCertificate skipped a user ID that is not valid UTF-8 and checked certifications over a user ID's UTF-8 encoding, so a key bound only by such a user ID was unbound with no signing key. User IDs are now held and verified as the bytes of their packet.
 
 #### Additional Features and Functionality
 
@@ -48,6 +49,7 @@ Date: 2026, TBD
 - BLS12-381 now does its field arithmetic in a constant-time fixed-width Montgomery field rather than BigInteger, with constant-time inversion, making signing and verification a further 1.5 to 1.9 times faster, relates to github #2556.
 - BLS12-381 signing and key generation no longer branch on or index memory by the private key, and BLSPrivateKeyParameters, BLSSigner and BLSKeyPairGenerator hold the key as its 32-byte encoding rather than a BigInteger, with new byte[] overloads of keyGen, skToPk, sign and constantTimeMultiply, relates to github #2556.
 - Natively signed (type 2) C509 certificates, certification requests and request templates may now carry integer codes that the C509 registries do not define; C509UnregisteredCodes gives the stand-in object identifiers such codes are reported under. Type 3 structures still refuse them (github #2519).
+- PGPSignatureGenerator.generateCertification(byte[], PGPPublicKey) certifies a user ID given as the bytes of its packet, and OpenPGPUserId.getRawUserId() returns them.
 
 #### Additional Notes
 
