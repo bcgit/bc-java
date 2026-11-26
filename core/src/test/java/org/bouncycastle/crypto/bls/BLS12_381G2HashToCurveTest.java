@@ -312,4 +312,98 @@ public class BLS12_381G2HashToCurveTest
         }
         assertTrue(squares > 0 && squares < inputs.length);
     }
+
+    /**
+     * Pin zero, both kinds of real input, both non-real square-root branches,
+     * and a non-square whose Z multiple is real. In particular, 7 + 13*I
+     * gives a square (a + g)/2, whereas 2*I gives a non-square (a + g)/2.
+     */
+    public void testSqrtOrSqrtZEdgeCases()
+    {
+        Fp2Element[] inputs = {
+            Fp2Element.ZERO, Fp2Element.ONE, Fp2Element.of(4, 0),
+            Fp2Element.of(-1, 0), Fp2Element.of(-4, 0),
+            Fp2Element.of(0, 1), Fp2Element.of(0, 2), Fp2Element.of(0, -2),
+            Fp2Element.of(3, 4), Fp2Element.of(-3, 4), Fp2Element.of(7, 13),
+            Fp2Element.of(1, 1), Fp2Element.of(2, -1), Fp2Element.of(-2, 1)
+        };
+        boolean[] squares = {
+            true, true, true, true, true, true, true, true, true, true, true,
+            false, false, false
+        };
+        Fp2Element z = Fp2Element.of(-2, -1);
+        for (int i = 0; i < inputs.length; ++i)
+        {
+            Fp2Element[] root = new Fp2Element[1];
+            assertEquals("edge case " + i, squares[i],
+                BLS12_381G2HashToCurve.sqrtOrSqrtZ(inputs[i], root));
+            assertEquals("edge case root " + i, squares[i] ? inputs[i] : z.mul(inputs[i]),
+                root[0].square());
+        }
+    }
+
+    /**
+     * Compare with the previous inversion-based formula, independent of the
+     * new inverse-square-root construction. A raw root may change sign;
+     * mapToCurveAndIso3 applies the RFC sign rule afterwards.
+     */
+    public void testSqrtOrSqrtZMatchesPreviousFormula()
+    {
+        BigInteger p = Fp2Element.P;
+        Fp2Element z = Fp2Element.of(-2, -1);
+        // Deterministic public test data, not key material.
+        java.util.Random random = new java.util.Random(0x3819380L);
+        for (int i = 0; i < 256; ++i)
+        {
+            BigInteger a = i < 16 ? BigInteger.valueOf(i) : new BigInteger(p.bitLength(), random).mod(p);
+            BigInteger b = i < 32 ? BigInteger.ZERO : new BigInteger(p.bitLength(), random).mod(p);
+            Fp2Element input = Fp2Element.of(a, b);
+            Fp2Element[] previous = new Fp2Element[1];
+            Fp2Element[] actual = new Fp2Element[1];
+            boolean expectedSquare = previousSqrtOrSqrtZ(input, previous);
+            boolean actualSquare = BLS12_381G2HashToCurve.sqrtOrSqrtZ(input, actual);
+            assertEquals("square verdict " + i, expectedSquare, actualSquare);
+            assertEquals("root squared " + i, actualSquare ? input : z.mul(input), actual[0].square());
+            assertTrue("same root up to sign " + i,
+                previous[0].equals(actual[0]) || previous[0].equals(actual[0].neg()));
+        }
+    }
+
+    // Transcribed from the implementation before the inverse-free change.
+    private static boolean previousSqrtOrSqrtZ(Fp2Element w, Fp2Element[] root)
+    {
+        BigInteger p = Fp2Element.P;
+        BigInteger sqrtExponent = p.add(BigInteger.ONE).shiftRight(2);
+        BigInteger half = BigInteger.valueOf(2).modInverse(p);
+        BigInteger a = w.c0(), b = w.c1();
+        BigInteger norm = a.multiply(a).add(b.multiply(b)).mod(p);
+        BigInteger g = norm.modPow(sqrtExponent, p);
+        boolean isSquare = g.multiply(g).mod(p).equals(norm);
+        if (!isSquare)
+        {
+            Fp2Element zw = Fp2Element.of(-2, -1).mul(w);
+            a = zw.c0();
+            b = zw.c1();
+            g = p.subtract(BigInteger.valueOf(5)).modPow(sqrtExponent, p).multiply(g).mod(p);
+        }
+        if (b.signum() == 0)
+        {
+            BigInteger s = a.modPow(sqrtExponent, p);
+            root[0] = s.multiply(s).mod(p).equals(a)
+                ? Fp2Element.of(s, BigInteger.ZERO) : Fp2Element.of(BigInteger.ZERO, s);
+        }
+        else
+        {
+            BigInteger delta = a.add(g).multiply(half).mod(p);
+            BigInteger x0 = delta.modPow(sqrtExponent, p);
+            if (!x0.multiply(x0).mod(p).equals(delta))
+            {
+                delta = a.subtract(g).multiply(half).mod(p);
+                x0 = delta.modPow(sqrtExponent, p);
+            }
+            BigInteger x1 = b.multiply(x0.shiftLeft(1).modInverse(p)).mod(p);
+            root[0] = Fp2Element.of(x0, x1);
+        }
+        return isSquare;
+    }
 }
