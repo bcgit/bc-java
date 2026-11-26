@@ -410,6 +410,31 @@ public class PGPSignatureGenerator
     }
 
     /**
+     * Generate a certification for the passed in user-id in its raw byte form, as it is held in
+     * its user-id packet. RFC 9580 only recommends UTF-8 for user-ids, so a user-id that is not
+     * valid UTF-8 is certified over its bytes as they are.
+     *
+     * @param rawID  the id we are certifying against the public key, in raw byte form.
+     * @param pubKey the key we are certifying against the id.
+     * @return the certification.
+     * @throws PGPException
+     */
+    public PGPSignature generateCertification(
+        byte[] rawID,
+        PGPPublicKey pubKey)
+        throws PGPException
+    {
+        updateWithPublicKey(pubKey);
+
+        //
+        // hash in the id
+        //
+        updateWithIdData(0xb4, rawID);
+
+        return this.generate();
+    }
+
+    /**
      * Generate a certification for the passed in userAttributes
      *
      * @param userAttributes the id we are certifying against the public key.

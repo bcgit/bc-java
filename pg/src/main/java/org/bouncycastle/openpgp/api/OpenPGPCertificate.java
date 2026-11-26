@@ -48,6 +48,8 @@ import org.bouncycastle.openpgp.api.exception.MalformedOpenPGPSignatureException
 import org.bouncycastle.openpgp.api.exception.MissingIssuerCertException;
 import org.bouncycastle.openpgp.api.util.UTCUtil;
 import org.bouncycastle.openpgp.operator.PGPContentVerifierBuilderProvider;
+import org.bouncycastle.util.Arrays;
+import org.bouncycastle.util.Strings;
 
 /**
  * OpenPGP certificates (TPKs - transferable public keys) are long-living structures that may change during
@@ -2339,7 +2341,7 @@ public class OpenPGPCertificate
             try
             {
                 signature.init(contentVerifierBuilderProvider, issuer.getPGPPublicKey());
-                isCorrect = signature.verifyCertification(target.getUserId(), target.getPrimaryKey().getPGPPublicKey());
+                isCorrect = signature.verifyCertification(target.getRawUserId(), target.getPrimaryKey().getPGPPublicKey());
                 if (!isCorrect)
                 {
                     throw new IncorrectOpenPGPSignatureException(this, "UserID Signature is not correct.");
@@ -2651,7 +2653,7 @@ public class OpenPGPCertificate
             super(rawPubkey, certificate);
             this.identityComponents = new ArrayList<OpenPGPIdentityComponent>();
 
-            Iterator<String> userIds = rawPubkey.getUserIDs();
+            Iterator<byte[]> userIds = rawPubkey.getRawUserIDs();
             while (userIds.hasNext())
             {
                 identityComponents.add(new OpenPGPUserId(userIds.next(), this));
@@ -2951,7 +2953,7 @@ public class OpenPGPCertificate
          */
         protected List<OpenPGPComponentSignature> getUserIdSignatures(OpenPGPUserId identity)
         {
-            Iterator<PGPSignature> iterator = rawPubkey.getSignaturesForID(identity.getUserId());
+            Iterator<PGPSignature> iterator = rawPubkey.getSignaturesForID(identity.getRawUserId());
             return signIterToList(identity, iterator);
         }
 
@@ -3193,22 +3195,49 @@ public class OpenPGPCertificate
     public static class OpenPGPUserId
         extends OpenPGPIdentityComponent
     {
+        private final byte[] rawUserId;
         private final String userId;
 
         public OpenPGPUserId(String userId, OpenPGPPrimaryKey primaryKey)
         {
-            super(primaryKey);
-            this.userId = userId;
+            this(Strings.toUTF8ByteArray(userId), primaryKey);
         }
 
         /**
-         * Return the {@link String} representation of the {@link OpenPGPUserId}.
+         * Create a user-id component from the bytes of its user-id packet. RFC 9580 only
+         * recommends UTF-8 for user-ids, so the bytes are kept as they are: certifications over
+         * the user-id are found and verified over these bytes, whatever their encoding.
+         *
+         * @param rawUserId user-id packet content
+         * @param primaryKey primary key the user-id belongs to
+         */
+        public OpenPGPUserId(byte[] rawUserId, OpenPGPPrimaryKey primaryKey)
+        {
+            super(primaryKey);
+            this.rawUserId = Arrays.clone(rawUserId);
+            this.userId = Strings.fromUTF8ByteArray(rawUserId, true);
+        }
+
+        /**
+         * Return the {@link String} representation of the {@link OpenPGPUserId}. A user-id that is
+         * not valid UTF-8 is decoded leniently, malformed input replaced, so the returned string is
+         * for display; {@link #getRawUserId()} returns the bytes certifications are made over.
          *
          * @return user-id
          */
         public String getUserId()
         {
             return userId;
+        }
+
+        /**
+         * Return the user-id as the bytes of its user-id packet.
+         *
+         * @return user-id bytes
+         */
+        public byte[] getRawUserId()
+        {
+            return Arrays.clone(rawUserId);
         }
 
         @Override
@@ -3232,13 +3261,13 @@ public class OpenPGPCertificate
             {
                 return false;
             }
-            return getUserId().equals(((OpenPGPUserId)obj).getUserId());
+            return Arrays.areEqual(rawUserId, ((OpenPGPUserId)obj).rawUserId);
         }
 
         @Override
         public int hashCode()
         {
-            return userId.hashCode();
+            return Arrays.hashCode(rawUserId);
         }
     }
 
