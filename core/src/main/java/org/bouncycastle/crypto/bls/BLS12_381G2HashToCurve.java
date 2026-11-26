@@ -44,6 +44,9 @@ public class BLS12_381G2HashToCurve
     /** (p + 1) / 4: in Fp, a^((p+1)/4) is a square root of a whenever a is a square (p = 3 mod 4). */
     private static final BigInteger SQRT_EXP = Fp2Element.P.add(BigInteger.ONE).shiftRight(2);
 
+    /** (p - 3) / 4: an inverse square root exponent, up to the quadratic character of the input. */
+    private static final BigInteger INV_SQRT_EXP = Fp2Element.P.subtract(BigInteger.valueOf(3)).shiftRight(2);
+
     /** 1/2 in Fp. */
     private static final BigInteger HALF = BigInteger.valueOf(2).modInverse(Fp2Element.P);
 
@@ -242,8 +245,10 @@ public class BLS12_381G2HashToCurve
      * Works in Fp, as p = 3 (mod 4) allows: {@code a + b*I} is a square exactly
      * when its norm {@code a^2 + b^2} is a square in Fp, and then, with
      * {@code g = sqrt(a^2 + b^2)}, one of {@code (a + g)/2} and {@code (a - g)/2}
-     * is a square {@code x0^2} and {@code x0 + (b / 2x0)*I} is a root. That costs
-     * two or three exponentiations in Fp, against the two or three over Fp^2
+     * is a square {@code x0^2} and {@code x0 + (b / 2x0)*I} is a root. An
+     * inverse square root computes both coordinates with one further
+     * exponentiation and no inversion. That costs two exponentiations in
+     * Fp, against the two or three over Fp^2
      * (one with a 762-bit exponent) of {@link Fp2Element#isSquare} and
      * {@link Fp2Element#sqrtOrNull}. Variable time, like the rest of this class;
      * the input is derived from the public message. Package-private for the
@@ -283,16 +288,19 @@ public class BLS12_381G2HashToCurve
             }
             return Fp2Element.of(BigInteger.ZERO, s);
         }
-        // b != 0: (a + g)/2 * (a - g)/2 = -b^2/4 is a non-square, so exactly one factor is a square.
+        // b != 0 makes delta nonzero: (a + g)/2 * (a - g)/2 = -b^2/4.
+        // For t = delta^((p-3)/4), epsilon = delta*t^2 is +1 or -1.
+        // c = delta*t and d = b*t/2 satisfy c^2-d^2 = epsilon*a and 2*c*d = epsilon*b.
+        // Thus (c + d*I)^2 = epsilon*(a + b*I); when epsilon = -1, rotate by -I.
         BigInteger delta = a.add(g).multiply(HALF).mod(p);
-        BigInteger x0 = delta.modPow(SQRT_EXP, p);
-        if (!x0.multiply(x0).mod(p).equals(delta))
+        BigInteger t = delta.modPow(INV_SQRT_EXP, p);
+        BigInteger c = delta.multiply(t).mod(p);
+        BigInteger d = b.multiply(t).multiply(HALF).mod(p);
+        if (c.multiply(c).mod(p).equals(delta))
         {
-            delta = a.subtract(g).multiply(HALF).mod(p);
-            x0 = delta.modPow(SQRT_EXP, p);
+            return Fp2Element.of(c, d);
         }
-        BigInteger x1 = b.multiply(x0.shiftLeft(1).modInverse(p)).mod(p);
-        return Fp2Element.of(x0, x1);
+        return Fp2Element.of(d, p.subtract(c));
     }
 
     /**
