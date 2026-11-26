@@ -179,6 +179,13 @@ public class PGPCompressedData
                   inf.setInput(buf, 0, len);
               }
 
+              // InflaterInputStream only ends an Inflater it created itself
+              public void close() throws IOException
+              {
+                  super.close();
+                  inf.end();
+              }
+
               private boolean eof = false;
           };
       }
