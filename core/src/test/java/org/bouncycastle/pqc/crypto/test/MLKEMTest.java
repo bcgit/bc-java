@@ -497,7 +497,7 @@ public class MLKEMTest
 
                         byte[] secret = secWenc.getSecret();
                         assertTrue(name  + ": c", Arrays.areEqual(c,  generated_cipher_text));
-                        assertTrue(name  + ": k", Arrays.areEqual(k, 0, secret.length, secret, 0, secret.length));
+                        assertTrue(name  + ": k", Arrays.areEqual(k, secret));
 
                     }
                     buf.clear();
@@ -624,7 +624,7 @@ public class MLKEMTest
                         byte[] secret = secWenc.getSecret();
 
                         assertTrue("encap: c", Arrays.areEqual(c,  generated_cipher_text));
-                        assertTrue("encap: k", Arrays.areEqual(k, 0, secret.length, secret, 0, secret.length));
+                        assertTrue("encap: k", Arrays.areEqual(k, secret));
                     }
                     else
                     {

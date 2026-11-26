@@ -1537,6 +1537,7 @@ public class CompositeSignaturesTest
             byte[] m = (byte[])map.get("m");
             byte[] x5cpk = null;
             PublicKey pubKey = null, certPubKey = null;
+            PrivateKey[] signingKeys;
             PrivateKey privKey = null;
             CertificateFactory cf = CertificateFactory.getInstance("X.509", "BC");
             X509Certificate cert = null;
@@ -1574,6 +1575,7 @@ public class CompositeSignaturesTest
                 x5cpk = ((MLDSAPublicKey)cert.getPublicKey()).getPublicData();
                 certPubKey = kFact.generatePublic(new MLDSAPublicKeySpec(((MLDSAPrivateKey)privKey).getParameterSpec(),
                     x5cpk));
+                signingKeys = new PrivateKey[]{ privKey };
             }
             else
             {
@@ -1587,7 +1589,8 @@ public class CompositeSignaturesTest
                 byte[] pkEncoded = SubjectPublicKeyInfo.getInstance(pubKey.getEncoded()).getPublicKeyData().getBytes();
                 TestCase.assertTrue(Arrays.areEqual(pkEncoded, pk));
                 byte[] skEncoded = PrivateKeyInfo.getInstance(privKey.getEncoded()).getPrivateKey().getOctets();
-                privKey = keyFactory.generatePrivate(new PKCS8EncodedKeySpec(sk_pkcs8));
+                PrivateKey pkcs8Key = keyFactory.generatePrivate(new PKCS8EncodedKeySpec(sk_pkcs8));
+                signingKeys = new PrivateKey[]{ privKey, pkcs8Key };
                 TestCase.assertTrue(Arrays.areEqual(skEncoded, sk));
             }
             Signature signature = Signature.getInstance(oidMap.get(tcId), "BC");
@@ -1605,12 +1608,15 @@ public class CompositeSignaturesTest
             //TestCase.assertTrue(Arrays.areEqual(pk, x5cpk));
 
             // 3. Load the signing private key sk and use it to produce a new signature which can be verified using the provided pk or x5c.
-            signature.initSign(privKey);
-            signature.update(m);
-            byte[] signatureValue = signature.sign();
-            signature.initVerify(pubKey);
-            signature.update(m);
-            TestCase.assertTrue(signature.verify(signatureValue));
+            for (PrivateKey signingKey : signingKeys)
+            {
+                signature.initSign(signingKey);
+                signature.update(m);
+                byte[] signatureValue = signature.sign();
+                signature.initVerify(pubKey);
+                signature.update(m);
+                TestCase.assertTrue(signature.verify(signatureValue));
+            }
         }
     }
 
